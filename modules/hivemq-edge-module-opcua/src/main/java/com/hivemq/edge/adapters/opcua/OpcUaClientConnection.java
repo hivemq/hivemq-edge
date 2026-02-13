@@ -15,6 +15,8 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
+import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
+
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
@@ -31,6 +33,13 @@ import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaSessionActivityListener;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaSubscriptionLifecycleHandler;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.ServiceFaultListener;
 import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
@@ -41,16 +50,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
 
 public class OpcUaClientConnection {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaClientConnection.class);
@@ -91,7 +90,8 @@ public class OpcUaClientConnection {
     synchronized boolean start(final ParsedConfig parsedConfig) {
         log.debug("Subscribing to OPC UA client");
         final OpcUaClient client;
-        final var activityListener = new OpcUaSessionActivityListener(protocolAdapterMetricsService, eventService, adapterId, protocolAdapterState);
+        final var activityListener = new OpcUaSessionActivityListener(
+                protocolAdapterMetricsService, eventService, adapterId, protocolAdapterState);
 
         // Determine preferred MessageSecurityMode with intelligent defaults
         final MessageSecurityMode preferredMode;
@@ -111,38 +111,45 @@ public class OpcUaClientConnection {
                 // For all secure policies, prefer SignAndEncrypt (most secure)
                 preferredMode = MessageSecurityMode.SignAndEncrypt;
                 if (log.isDebugEnabled()) {
-                    log.debug("No message security mode configured, defaulting to SignAndEncrypt for policy {}", policy);
+                    log.debug(
+                            "No message security mode configured, defaulting to SignAndEncrypt for policy {}", policy);
                 }
             }
         }
-        final var endpointFilter = new OpcUaEndpointFilter(adapterId, config.getSecurity().policy().getSecurityPolicy().getUri(), preferredMode, config);
+        final var endpointFilter = new OpcUaEndpointFilter(
+                adapterId, config.getSecurity().policy().getSecurityPolicy().getUri(), preferredMode, config);
         try {
-            client = OpcUaClient
-                .create(
-                        config.getUri(),
-                        endpointFilter,
-                        ignore -> {},
-                        new OpcUaClientConfigurator(adapterId, parsedConfig, config));
+            client = OpcUaClient.create(
+                    config.getUri(),
+                    endpointFilter,
+                    ignore -> {},
+                    new OpcUaClientConfigurator(adapterId, parsedConfig, config));
             client.addFaultListener(serviceFaultListener);
             client.addSessionActivityListener(activityListener);
 
             // Add timeout to connection attempt to prevent hanging forever
             // Wrap synchronous connect() call with CompletableFuture timeout
-            final long connectionTimeoutSecondsMs = config.getConnectionOptions().connectionTimeoutMs();
+            final long connectionTimeoutSecondsMs =
+                    config.getConnectionOptions().connectionTimeoutMs();
             try {
                 CompletableFuture.runAsync(() -> {
-                    try {
-                        client.connect();
-                    } catch (final UaException e) {
-                        throw new RuntimeException(e);
-                    }
-                }).get(connectionTimeoutSecondsMs, TimeUnit.MILLISECONDS);
+                            try {
+                                client.connect();
+                            } catch (final UaException e) {
+                                throw new RuntimeException(e);
+                            }
+                        })
+                        .get(connectionTimeoutSecondsMs, TimeUnit.MILLISECONDS);
                 log.debug("OPC UA client connected successfully for adapter '{}'", adapterId);
             } catch (final TimeoutException e) {
-                log.error("Connection timeout after {} milliseconds for OPC UA adapter '{}'", connectionTimeoutSecondsMs, adapterId);
+                log.error(
+                        "Connection timeout after {} milliseconds for OPC UA adapter '{}'",
+                        connectionTimeoutSecondsMs,
+                        adapterId);
                 eventService
                         .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
-                        .withMessage("Connection timeout after " + connectionTimeoutSecondsMs + " milliseconds for adapter '" + adapterId + "'")
+                        .withMessage("Connection timeout after " + connectionTimeoutSecondsMs
+                                + " milliseconds for adapter '" + adapterId + "'")
                         .withSeverity(Event.SEVERITY.ERROR)
                         .fire();
                 protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
@@ -182,11 +189,19 @@ public class OpcUaClientConnection {
             return false;
         }
 
-        final var subscriptionLifecycleHandler = new OpcUaSubscriptionLifecycleHandler(protocolAdapterMetricsService, tagStreamingService, eventService, adapterId, tags, client, dataPointFactory, config);
+        final var subscriptionLifecycleHandler = new OpcUaSubscriptionLifecycleHandler(
+                protocolAdapterMetricsService,
+                tagStreamingService,
+                eventService,
+                adapterId,
+                tags,
+                client,
+                dataPointFactory,
+                config);
 
         final var subscriptionOptional = subscriptionLifecycleHandler.subscribe(client);
 
-        if(subscriptionOptional.isEmpty()) {
+        if (subscriptionOptional.isEmpty()) {
             log.error("Failed to create or transfer OPC UA subscription. Closing client connection.");
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
             eventService
@@ -201,7 +216,8 @@ public class OpcUaClientConnection {
         final var subscription = subscriptionOptional.get();
         log.trace("Creating Subscription for OPC UA client");
 
-        context.set(new ConnectionContext(subscription.getClient(), serviceFaultListener, activityListener, subscriptionLifecycleHandler));
+        context.set(new ConnectionContext(
+                subscription.getClient(), serviceFaultListener, activityListener, subscriptionLifecycleHandler));
         protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
 
         log.info("Client created and connected successfully");
@@ -212,8 +228,8 @@ public class OpcUaClientConnection {
         log.info("Stopping OPC UA client");
 
         final ConnectionContext ctx = context.getAndSet(null);
-        if(ctx != null) {
-            quietlyCloseClient(ctx.client(),true,  ctx.faultListener(), ctx.activityListener());
+        if (ctx != null) {
+            quietlyCloseClient(ctx.client(), true, ctx.faultListener(), ctx.activityListener());
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
         }
     }
@@ -222,7 +238,7 @@ public class OpcUaClientConnection {
         log.info("Destroying OPC UA client");
 
         final ConnectionContext ctx = context.getAndSet(null);
-        if(ctx != null) {
+        if (ctx != null) {
             quietlyCloseClient(ctx.client(), false, ctx.faultListener(), ctx.activityListener());
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
         }
@@ -262,17 +278,17 @@ public class OpcUaClientConnection {
         }
     }
 
-    @NotNull Optional<OpcUaClient> client() {
+    @NotNull
+    Optional<OpcUaClient> client() {
         final ConnectionContext ctx = context.get();
-        if(ctx != null) {
+        if (ctx != null) {
             return Optional.of(ctx.client());
         }
         return Optional.empty();
     }
 
     private static void quietlyDeleteSubscription(
-            final @NotNull OpcUaClient client,
-            final @NotNull OpcUaSubscription subscription) {
+            final @NotNull OpcUaClient client, final @NotNull OpcUaSubscription subscription) {
         try {
             subscription.delete();
         } catch (final Exception e) {
@@ -291,14 +307,12 @@ public class OpcUaClientConnection {
             final @Nullable ServiceFaultListener faultListener,
             final @Nullable SessionActivityListener activityListener) {
 
-        client
-            .getSubscriptions()
-            .forEach(subscription -> {
-                subscription.setSubscriptionListener(null);
-                if(!keepSubscription) {
-                    quietlyDeleteSubscription(client, subscription);
-                }
-            });
+        client.getSubscriptions().forEach(subscription -> {
+            subscription.setSubscriptionListener(null);
+            if (!keepSubscription) {
+                quietlyDeleteSubscription(client, subscription);
+            }
+        });
         if (faultListener != null) {
             try {
                 client.removeFaultListener(faultListener);
@@ -321,9 +335,9 @@ public class OpcUaClientConnection {
         }
     }
 
-    private record ConnectionContext(@NotNull OpcUaClient client,
-                                     @NotNull ServiceFaultListener faultListener,
-                                     @NotNull SessionActivityListener activityListener,
-                                     @NotNull OpcUaSubscriptionLifecycleHandler subscriptionHandler) {
-    }
+    private record ConnectionContext(
+            @NotNull OpcUaClient client,
+            @NotNull ServiceFaultListener faultListener,
+            @NotNull SessionActivityListener activityListener,
+            @NotNull OpcUaSubscriptionLifecycleHandler subscriptionHandler) {}
 }

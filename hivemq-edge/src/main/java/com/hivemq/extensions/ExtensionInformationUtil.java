@@ -20,8 +20,6 @@ import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.entity.MqttTcpListener;
 import com.hivemq.configuration.service.entity.MqttTlsTcpListener;
 import com.hivemq.configuration.service.entity.MqttTlsWebsocketListener;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.client.parameter.*;
 import com.hivemq.extension.sdk.api.packets.general.MqttVersion;
 import com.hivemq.extensions.client.parameter.ClientInformationImpl;
@@ -31,11 +29,11 @@ import com.hivemq.extensions.client.parameter.ListenerImpl;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.security.auth.SslClientCertificate;
 import io.netty.channel.Channel;
+import java.security.cert.X509Certificate;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.security.cert.X509Certificate;
-
 
 /**
  * @author Florian Limpöck
@@ -45,8 +43,10 @@ public class ExtensionInformationUtil {
 
     private static final Logger log = LoggerFactory.getLogger(ExtensionInformationUtil.class);
 
-    public static @NotNull ClientInformation getAndSetClientInformation(final @NotNull Channel channel, final @NotNull String clientId) {
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+    public static @NotNull ClientInformation getAndSetClientInformation(
+            final @NotNull Channel channel, final @NotNull String clientId) {
+        final ClientConnection clientConnection =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         if (clientConnection.getExtensionClientInformation() == null) {
             clientConnection.setExtensionClientInformation(new ClientInformationImpl(clientId));
         }
@@ -54,7 +54,8 @@ public class ExtensionInformationUtil {
     }
 
     public static @NotNull ConnectionInformation getAndSetConnectionInformation(final @NotNull Channel channel) {
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         if (clientConnection.getExtensionConnectionInformation() == null) {
             clientConnection.setExtensionConnectionInformation(new ConnectionInformationImpl(clientConnection));
         }
@@ -64,7 +65,8 @@ public class ExtensionInformationUtil {
     public static @NotNull MqttVersion mqttVersionFromChannel(final @NotNull Channel channel) {
 
         Preconditions.checkNotNull(channel, "channel must never be null");
-        final ProtocolVersion protocolVersion = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getProtocolVersion();
+        final ProtocolVersion protocolVersion =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getProtocolVersion();
         Preconditions.checkNotNull(protocolVersion, "protocol version must never be null");
 
         return mqttVersionFromProtocolVersion(protocolVersion);
@@ -85,16 +87,17 @@ public class ExtensionInformationUtil {
     public static @Nullable Listener getListenerFromChannel(final @NotNull Channel channel) {
 
         Preconditions.checkNotNull(channel, "channel must never be null");
-        final com.hivemq.configuration.service.entity.Listener hiveMQListener = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getConnectedListener();
+        final com.hivemq.configuration.service.entity.Listener hiveMQListener =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getConnectedListener();
         if (hiveMQListener == null) {
             return null;
         }
 
         return new ListenerImpl(hiveMQListener);
-
     }
 
-    public static @NotNull ListenerType listenerTypeFromInstance(final @NotNull com.hivemq.configuration.service.entity.Listener hiveMQListener) {
+    public static @NotNull ListenerType listenerTypeFromInstance(
+            final @NotNull com.hivemq.configuration.service.entity.Listener hiveMQListener) {
 
         if (hiveMQListener instanceof MqttTlsTcpListener) {
             return ListenerType.TLS_TCP_LISTENER;
@@ -111,7 +114,8 @@ public class ExtensionInformationUtil {
 
         Preconditions.checkNotNull(channel, "channel must never be null");
 
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         try {
             final String cipher = clientConnection.getAuthCipherSuite();
             final String protocol = clientConnection.getAuthProtocol();

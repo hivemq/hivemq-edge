@@ -15,10 +15,9 @@
  */
 package com.hivemq.configuration.reader;
 
-import org.jetbrains.annotations.Nullable;
-
 import java.io.File;
 import java.util.Optional;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A wrapper class for the configuration file used

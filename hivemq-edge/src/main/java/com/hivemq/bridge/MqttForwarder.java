@@ -15,12 +15,11 @@
  */
 package com.hivemq.bridge;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
-
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import org.jetbrains.annotations.NotNull;
 
 public interface MqttForwarder {
 
@@ -70,9 +69,11 @@ public interface MqttForwarder {
 
     void setExecutorService(@NotNull ExecutorService executorService);
 
-    @NotNull String getId();
+    @NotNull
+    String getId();
 
-    @NotNull List<String> getTopics();
+    @NotNull
+    List<String> getTopics();
 
     @FunctionalInterface
     interface AfterForwardCallback {

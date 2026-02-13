@@ -20,12 +20,10 @@ import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.async.Async;
 import com.hivemq.extensions.executor.task.AsyncOutputImpl;
 import com.hivemq.extensions.executor.task.PluginTaskOutput;
 import com.hivemq.util.ThreadFactoryUtil;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.time.Duration;
@@ -33,6 +31,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
@@ -46,7 +45,7 @@ public class PluginOutputAsyncerImpl implements PluginOutPutAsyncer {
     @NotNull
     private final ShutdownHooks shutdownHooks;
 
-    @Inject //method injection, this gets called once after instantiation
+    @Inject // method injection, this gets called once after instantiation
     public void postConstruct() {
         shutdownHooks.add(new PluginOutputAsyncerShutdownHook(scheduledExecutor));
     }
@@ -56,16 +55,16 @@ public class PluginOutputAsyncerImpl implements PluginOutPutAsyncer {
         this.shutdownHooks = shutdownHooks;
 
         final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
-        //enable removing canceled tasks from the executor queue
+        // enable removing canceled tasks from the executor queue
         executor.setRemoveOnCancelPolicy(true);
         executor.setThreadFactory(ThreadFactoryUtil.create("extension-timeout-executor-%d"));
-        //for instrumentation (metrics)
+        // for instrumentation (metrics)
         scheduledExecutor = executor;
     }
 
     @Override
-    public @NotNull <T extends PluginTaskOutput> Async<T> asyncify(final @NotNull T output,
-                                                                   final @NotNull Duration timeout) {
+    public @NotNull <T extends PluginTaskOutput> Async<T> asyncify(
+            final @NotNull T output, final @NotNull Duration timeout) {
 
         output.markAsAsync();
 
@@ -73,14 +72,16 @@ public class PluginOutputAsyncerImpl implements PluginOutPutAsyncer {
 
         Preconditions.checkNotNull(asyncFuture, "Async future cannot be null for async output");
 
-        final ScheduledFuture<?> scheduledFuture = scheduledExecutor.schedule(() -> {
-            output.markAsTimedOut();
-            asyncFuture.set(false);
-        }, timeout.toMillis(), TimeUnit.MILLISECONDS);
+        final ScheduledFuture<?> scheduledFuture = scheduledExecutor.schedule(
+                () -> {
+                    output.markAsTimedOut();
+                    asyncFuture.set(false);
+                },
+                timeout.toMillis(),
+                TimeUnit.MILLISECONDS);
 
         return new AsyncOutputImpl<>(output, asyncFuture, scheduledFuture);
     }
-
 
     static class PluginOutputAsyncerShutdownHook implements HiveMQShutdownHook {
 

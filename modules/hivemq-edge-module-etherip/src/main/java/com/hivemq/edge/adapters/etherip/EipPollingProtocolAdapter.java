@@ -28,20 +28,17 @@ import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.etherip.config.EipSpecificAdapterConfig;
-
-import java.util.Arrays;
 import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
 import com.hivemq.edge.adapters.etherip.model.EtherIpValueFactory;
 import etherip.EtherNetIP;
 import etherip.data.CipException;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.LoggerFactory;
-
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.LoggerFactory;
 
 public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
 
@@ -58,7 +55,6 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
 
     private final @NotNull Map<String, EipTag> tags;
 
-
     public EipPollingProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterInput<EipSpecificAdapterConfig> input) {
@@ -67,7 +63,7 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
         this.adapterConfig = input.getConfig();
         this.dataPointFactory = input.adapterFactories().dataPointFactory();
         this.tags = input.getTags().stream()
-                .map(tag -> (EipTag)tag)
+                .map(tag -> (EipTag) tag)
                 .collect(Collectors.toMap(tag -> tag.getDefinition().getAddress(), tag -> tag));
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.adapterFactories = input.adapterFactories();
@@ -114,38 +110,37 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
         }
     }
 
-
     @Override
     public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
         return adapterInformation;
     }
 
     @Override
-    public void poll(
-            final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
+    public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         final var client = etherNetIP;
         if (client == null) {
             pollingOutput.fail("Polling failed because adapter wasn't started.");
             return;
         }
 
-        final var tagAddresses = tags.values().stream().map(v -> v.getDefinition().getAddress()).toArray(String[]::new);
+        final var tagAddresses =
+                tags.values().stream().map(v -> v.getDefinition().getAddress()).toArray(String[]::new);
         try {
             final var readCipData = client.readTags(tagAddresses);
             for (int i = 0; i < readCipData.length; i++) {
                 final var cipData = readCipData[i];
                 final var tagAddress = tagAddresses[i];
                 EtherIpValueFactory.fromTagAddressAndCipData(tagAddress, cipData)
-                    .map(it -> dataPointFactory.create(tags.get(tagAddress).getName(), it.getValue()))
-                    .ifPresent(dataPoint -> {
-                        if (adapterConfig.getEipToMqttConfig().getPublishChangedDataOnly()) {
-                            if (lastSamples.replaceIfValueIsNew(dataPoint.getTagName(), List.of(dataPoint))) {
+                        .map(it -> dataPointFactory.create(tags.get(tagAddress).getName(), it.getValue()))
+                        .ifPresent(dataPoint -> {
+                            if (adapterConfig.getEipToMqttConfig().getPublishChangedDataOnly()) {
+                                if (lastSamples.replaceIfValueIsNew(dataPoint.getTagName(), List.of(dataPoint))) {
+                                    pollingOutput.addDataPoint(dataPoint);
+                                }
+                            } else {
                                 pollingOutput.addDataPoint(dataPoint);
                             }
-                        } else {
-                            pollingOutput.addDataPoint(dataPoint);
-                        }
-                    });
+                        });
             }
             pollingOutput.finish();
         } catch (final CipException e) {
@@ -171,5 +166,4 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
     public int getMaxPollingErrorsBeforeRemoval() {
         return adapterConfig.getEipToMqttConfig().getMaxPollingErrorsBeforeRemoval();
     }
-
 }

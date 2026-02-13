@@ -15,16 +15,14 @@
  */
 package com.hivemq.limitation;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.hivemq.configuration.service.InternalConfigurations;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Florian Limpöck
@@ -33,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class TopicAliasLimiterImplTest {
 
     private TopicAliasLimiter topicAliasLimiter;
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -60,7 +59,6 @@ public class TopicAliasLimiterImplTest {
 
         assertFalse(topicAliasLimiter.limitExceeded());
         assertFalse(topicAliasLimiter.aliasesAvailable());
-
     }
 
     @Test
@@ -79,7 +77,6 @@ public class TopicAliasLimiterImplTest {
 
         assertTrue(topicAliasLimiter.limitExceeded());
         assertFalse(topicAliasLimiter.aliasesAvailable());
-
     }
 
     @Test
@@ -119,6 +116,5 @@ public class TopicAliasLimiterImplTest {
 
         assertFalse(topicAliasLimiter.limitExceeded());
         assertTrue(topicAliasLimiter.aliasesAvailable());
-
     }
 }

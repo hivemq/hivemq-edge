@@ -15,10 +15,11 @@
  */
 package com.hivemq.bootstrap.netty.initializer;
 
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.*;
+
 import com.hivemq.bootstrap.netty.ChannelDependencies;
-import com.hivemq.configuration.service.entity.Tls;
 import com.hivemq.configuration.service.entity.MqttTlsListener;
-import org.jetbrains.annotations.NotNull;
+import com.hivemq.configuration.service.entity.Tls;
 import com.hivemq.mqtt.handler.connect.NoTlsHandshakeIdleHandler;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.security.exception.SslException;
@@ -30,10 +31,8 @@ import io.netty.channel.Channel;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-
 import java.util.concurrent.TimeUnit;
-
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.*;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
@@ -44,9 +43,10 @@ public abstract class AbstractTlsChannelInitializer extends AbstractChannelIniti
     private final @NotNull SslFactory sslFactory;
     private final @NotNull ChannelDependencies channelDependencies;
 
-    public AbstractTlsChannelInitializer(final @NotNull ChannelDependencies channelDependencies,
-                                         final @NotNull MqttTlsListener mqttTlsListener,
-                                         final @NotNull SslFactory sslFactory) {
+    public AbstractTlsChannelInitializer(
+            final @NotNull ChannelDependencies channelDependencies,
+            final @NotNull MqttTlsListener mqttTlsListener,
+            final @NotNull SslFactory sslFactory) {
 
         super(channelDependencies, mqttTlsListener);
         this.mqttTlsListener = mqttTlsListener;
@@ -69,7 +69,8 @@ public abstract class AbstractTlsChannelInitializer extends AbstractChannelIniti
 
         final IdleStateHandler idleStateHandler = new IdleStateHandler(handshakeTimeout, 0, 0, TimeUnit.MILLISECONDS);
         final MqttServerDisconnector mqttServerDisconnector = channelDependencies.getMqttServerDisconnector();
-        final NoTlsHandshakeIdleHandler noTlsHandshakeIdleHandler = new NoTlsHandshakeIdleHandler(mqttServerDisconnector);
+        final NoTlsHandshakeIdleHandler noTlsHandshakeIdleHandler =
+                new NoTlsHandshakeIdleHandler(mqttServerDisconnector);
         if (handshakeTimeout > 0) {
             ch.pipeline().addLast(NEW_CONNECTION_IDLE_HANDLER, idleStateHandler);
             ch.pipeline().addLast(NO_TLS_HANDSHAKE_IDLE_EVENT_HANDLER, noTlsHandshakeIdleHandler);
@@ -88,11 +89,15 @@ public abstract class AbstractTlsChannelInitializer extends AbstractChannelIniti
 
         ch.pipeline().addFirst(SSL_HANDLER, new SslSniHandler(sslHandler, sslContext));
         ch.pipeline().addAfter(SSL_HANDLER, SSL_EXCEPTION_HANDLER, new SslExceptionHandler(mqttServerDisconnector));
-        ch.pipeline().addAfter(SSL_EXCEPTION_HANDLER, SSL_PARAMETER_HANDLER, channelDependencies.getSslParameterHandler());
+        ch.pipeline()
+                .addAfter(SSL_EXCEPTION_HANDLER, SSL_PARAMETER_HANDLER, channelDependencies.getSslParameterHandler());
 
         if (!Tls.ClientAuthMode.NONE.equals(tls.getClientAuthMode())) {
-            ch.pipeline().addAfter(SSL_PARAMETER_HANDLER, SSL_CLIENT_CERTIFICATE_HANDLER, new SslClientCertificateHandler(tls, mqttServerDisconnector));
+            ch.pipeline()
+                    .addAfter(
+                            SSL_PARAMETER_HANDLER,
+                            SSL_CLIENT_CERTIFICATE_HANDLER,
+                            new SslClientCertificateHandler(tls, mqttServerDisconnector));
         }
     }
-
 }

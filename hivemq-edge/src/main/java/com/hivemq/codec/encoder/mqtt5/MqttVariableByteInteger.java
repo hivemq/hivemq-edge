@@ -15,8 +15,8 @@
  */
 package com.hivemq.codec.encoder.mqtt5;
 
-import org.jetbrains.annotations.NotNull;
 import io.netty.buffer.ByteBuf;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Utility for decoding, encoding and checking variable byte integers.
@@ -38,8 +38,7 @@ public final class MqttVariableByteInteger {
     public static final int FOUR_BYTES_MAX_VALUE = (1 << (VALUE_BITS * 4)) - 1;
     public static final int MAXIMUM_PACKET_SIZE_LIMIT = 1 + 4 + FOUR_BYTES_MAX_VALUE;
 
-    private MqttVariableByteInteger() {
-    }
+    private MqttVariableByteInteger() {}
 
     /**
      * Decodes a variable byte integer from the given byte buffer at the current reader index.

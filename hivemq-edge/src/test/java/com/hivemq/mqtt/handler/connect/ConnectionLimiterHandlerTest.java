@@ -15,6 +15,9 @@
  */
 package com.hivemq.mqtt.handler.connect;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.*;
+
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.metrics.gauges.OpenConnectionsGauge;
 import com.hivemq.mqtt.handler.connack.MqttConnacker;
@@ -28,9 +31,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
 
 /**
  * @author Yannick Weber
@@ -58,6 +58,7 @@ public class ConnectionLimiterHandlerTest {
 
     @Mock
     CONNECT connect;
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -76,7 +77,9 @@ public class ConnectionLimiterHandlerTest {
         limiter.channelRead(ctx, connect);
         assertEquals(10L, limiter.getMaxConnections());
         assertEquals(9L, limiter.getWarnThreshold());
-        verify(mqttConnacker).connackError(any(Channel.class), isNull(), anyString(), eq(Mqtt5ConnAckReasonCode.QUOTA_EXCEEDED), isNull());
+        verify(mqttConnacker)
+                .connackError(
+                        any(Channel.class), isNull(), anyString(), eq(Mqtt5ConnAckReasonCode.QUOTA_EXCEEDED), isNull());
         verify(ctx, never()).close();
     }
 
@@ -101,5 +104,4 @@ public class ConnectionLimiterHandlerTest {
         limiter.channelActive(ctx);
         verify(pipeline, atLeastOnce()).remove(any(ChannelHandler.class));
     }
-
 }

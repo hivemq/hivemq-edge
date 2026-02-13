@@ -15,17 +15,15 @@
  */
 package com.hivemq.extensions.interceptor.publish.parameter;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
 import com.hivemq.extensions.packets.publish.ModifiableOutboundPublishImpl;
 import com.hivemq.extensions.packets.publish.PublishPacketImpl;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Lukas Brandl
@@ -69,7 +67,6 @@ public class PublishOutboundOutputImplTest {
         final PublishOutboundOutputImpl output = new PublishOutboundOutputImpl(asyncer, modifiablePacket);
 
         output.preventPublishDelivery();
-        assertThatThrownBy(() -> output.preventPublishDelivery())
-                .isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> output.preventPublishDelivery()).isInstanceOf(UnsupportedOperationException.class);
     }
 }

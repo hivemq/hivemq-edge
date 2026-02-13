@@ -15,25 +15,23 @@
  */
 package com.hivemq.bootstrap.netty;
 
+import static org.mockito.Mockito.*;
+
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.CorruptedFrameException;
-import io.netty.util.Attribute;
+import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
+import java.util.Optional;
+import javax.net.ssl.SSLException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestChannelAttribute;
-
-import javax.net.ssl.SSLException;
-import java.io.IOException;
-import java.nio.channels.ClosedChannelException;
-import java.util.Optional;
-
-import static org.mockito.Mockito.*;
 
 public class ExceptionHandlerTest {
 
@@ -53,13 +51,15 @@ public class ExceptionHandlerTest {
     ClientConnection clientConnection;
 
     private ExceptionHandler handler;
+
     @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
 
         when(ctx.pipeline()).thenReturn(pipeline);
         when(channel.pipeline()).thenReturn(pipeline);
-        when(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)).thenReturn(new TestChannelAttribute<>(clientConnection));
+        when(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME))
+                .thenReturn(new TestChannelAttribute<>(clientConnection));
         when(clientConnection.getChannelIP()).thenReturn(Optional.of("0.0.0.0"));
         when(ctx.channel()).thenReturn(channel);
 

@@ -15,15 +15,13 @@
  */
 package com.hivemq.bootstrap;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.EnumSet;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Abdullah Imal
  */
 public enum ClientState {
-
     CONNECTING,
 
     AUTHENTICATING,
@@ -38,8 +36,12 @@ public enum ClientState {
     DISCONNECTED_TAKEN_OVER,
     DISCONNECTED_TAKE_OVER_FAILED;
 
-    private static final @NotNull EnumSet<ClientState> DISCONNECTED = EnumSet.of(CONNECT_FAILED,
-            DISCONNECTED_UNSPECIFIED, DISCONNECTED_BY_CLIENT, DISCONNECTED_BY_SERVER, DISCONNECTED_TAKEN_OVER,
+    private static final @NotNull EnumSet<ClientState> DISCONNECTED = EnumSet.of(
+            CONNECT_FAILED,
+            DISCONNECTED_UNSPECIFIED,
+            DISCONNECTED_BY_CLIENT,
+            DISCONNECTED_BY_SERVER,
+            DISCONNECTED_TAKEN_OVER,
             DISCONNECTED_TAKE_OVER_FAILED);
 
     public boolean disconnected() {

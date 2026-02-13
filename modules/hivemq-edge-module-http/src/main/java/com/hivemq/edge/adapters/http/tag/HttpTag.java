@@ -18,18 +18,18 @@ package com.hivemq.edge.adapters.http.tag;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.Tag;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
 
 public class HttpTag implements Tag {
 
     @JsonProperty(value = "name", required = true)
-    @ModuleConfigField(title = "name",
-                       description = "name of the tag to be used in mappings",
-                       format = ModuleConfigField.FieldType.MQTT_TAG,
-                       required = true)
+    @ModuleConfigField(
+            title = "name",
+            description = "name of the tag to be used in mappings",
+            format = ModuleConfigField.FieldType.MQTT_TAG,
+            required = true)
     private final @NotNull String name;
 
     @JsonProperty(value = "description")
@@ -49,7 +49,6 @@ public class HttpTag implements Tag {
         this.definition = definiton;
     }
 
-
     @Override
     public @NotNull HttpTagDefinition getDefinition() {
         return definition;
@@ -67,16 +66,15 @@ public class HttpTag implements Tag {
 
     @Override
     public String toString() {
-        return "HttpTag{" +
-                "name='" +
-                name +
-                '\'' +
-                ", description='" +
-                description +
-                '\'' +
-                ", definition=" +
-                definition +
-                '}';
+        return "HttpTag{" + "name='"
+                + name
+                + '\''
+                + ", description='"
+                + description
+                + '\''
+                + ", definition="
+                + definition
+                + '}';
     }
 
     @Override
@@ -87,9 +85,9 @@ public class HttpTag implements Tag {
         if (!(o instanceof HttpTag httpTag)) {
             return false;
         }
-        return Objects.equals(name, httpTag.name) &&
-                Objects.equals(description, httpTag.description) &&
-                Objects.equals(definition, httpTag.definition);
+        return Objects.equals(name, httpTag.name)
+                && Objects.equals(description, httpTag.description)
+                && Objects.equals(definition, httpTag.definition);
     }
 
     @Override

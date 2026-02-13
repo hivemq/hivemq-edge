@@ -16,18 +16,16 @@
 package com.hivemq.util.render;
 
 import com.hivemq.exceptions.UnrecoverableException;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is a temporary solution until we can get a proper template engine or a XML-parser based approach in place.
@@ -58,7 +56,7 @@ public class IfUtil {
      * @return the value of the environment variable with the specified name
      */
     public static @Nullable String getValue(final @NotNull String name) {
-        //also check java properties if system variable is not found
+        // also check java properties if system variable is not found
         final String systemProperty = System.getProperty(name);
         if (systemProperty != null) {
             return systemProperty;
@@ -80,14 +78,13 @@ public class IfUtil {
                 .map(envName -> Boolean.parseBoolean(getValue(envName)) ? envName : "!" + envName)
                 .toList();
 
-        final Matcher matcher = Pattern.compile(FRAGMENT_VAR_PATTERN)
-                .matcher(text);
+        final Matcher matcher = Pattern.compile(FRAGMENT_VAR_PATTERN).matcher(text);
 
         // Find all tokens
         final List<IfToken> allTokens = new ArrayList<>();
         while (matcher.find()) {
             if (matcher.groupCount() < 1) {
-                //this should never happen as we declared 1 groups in the ENV_VAR_PATTERN
+                // this should never happen as we declared 1 groups in the ENV_VAR_PATTERN
                 log.warn("Found unexpected if placeholder in config.xml");
                 continue;
             }
@@ -158,7 +155,7 @@ public class IfUtil {
         return result.toString();
     }
 
-    private static class IfToken{
+    private static class IfToken {
         private final String content;
         private final int start;
         private final int stop;

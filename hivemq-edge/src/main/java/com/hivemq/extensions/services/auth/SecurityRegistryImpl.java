@@ -13,21 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.services.auth;
 
-import org.jetbrains.annotations.NotNull;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.hivemq.extension.sdk.api.services.auth.SecurityRegistry;
 import com.hivemq.extension.sdk.api.services.auth.provider.AuthenticatorProvider;
 import com.hivemq.extension.sdk.api.services.auth.provider.AuthorizerProvider;
 import com.hivemq.extension.sdk.api.services.auth.provider.EnhancedAuthenticatorProvider;
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensions;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Georg Held
@@ -53,10 +51,10 @@ public class SecurityRegistryImpl implements SecurityRegistry {
     public void setAuthenticatorProvider(final @NotNull AuthenticatorProvider authenticatorProvider) {
         checkNotNull(authenticatorProvider, "authenticatorProvider must not be null");
 
-        final HiveMQExtension extension =
-                hiveMQExtensions.getExtensionForClassloader(authenticatorProvider.getClass().getClassLoader());
+        final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(
+                authenticatorProvider.getClass().getClassLoader());
 
-        if(extension == null || extension.getExtensionClassloader() == null){
+        if (extension == null || extension.getExtensionClassloader() == null) {
             return;
         }
 
@@ -71,10 +69,10 @@ public class SecurityRegistryImpl implements SecurityRegistry {
 
         checkNotNull(enhancedAuthenticatorProvider, "enhancedAuthenticatorProvider must not be null");
 
-        final HiveMQExtension extension =
-                hiveMQExtensions.getExtensionForClassloader(enhancedAuthenticatorProvider.getClass().getClassLoader());
+        final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(
+                enhancedAuthenticatorProvider.getClass().getClassLoader());
 
-        if(extension == null || extension.getExtensionClassloader() == null){
+        if (extension == null || extension.getExtensionClassloader() == null) {
             return;
         }
 

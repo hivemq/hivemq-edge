@@ -1,33 +1,31 @@
 /*
- *  Copyright 2019-present HiveMQ GmbH
+ * Copyright 2019-present HiveMQ GmbH
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
 package com.hivemq.configuration.reader;
 
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
 import jakarta.xml.bind.ValidationEvent;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class PulseExtractor implements ReloadableExtractor<PulseEntity, PulseEntity> {
-    private final static Consumer<PulseEntity> DEFAULT_CONSUMER =
+    private static final Consumer<PulseEntity> DEFAULT_CONSUMER =
             pulseEntity -> log.debug("No consumer registered for Pulse configuration changes.");
     private final @NotNull ConfigFileReaderWriter configFileReaderWriter;
     private final Object lock = new Object();
@@ -63,8 +61,8 @@ public class PulseExtractor implements ReloadableExtractor<PulseEntity, PulseEnt
         final List<ValidationEvent> validationEvents = new ArrayList<>();
         newPulseEntity.validate(validationEvents);
         final List<ValidationEvent> errorEvents = validationEvents.stream()
-                .filter(event -> event.getSeverity() == ValidationEvent.FATAL_ERROR ||
-                        event.getSeverity() == ValidationEvent.ERROR)
+                .filter(event -> event.getSeverity() == ValidationEvent.FATAL_ERROR
+                        || event.getSeverity() == ValidationEvent.ERROR)
                 .toList();
         if (!errorEvents.isEmpty()) {
             errorEvents.forEach(event -> log.error("Pulse config error: {}", event.getMessage()));

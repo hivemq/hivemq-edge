@@ -17,7 +17,6 @@ package com.hivemq.api.error;
 
 import com.hivemq.api.model.ApiErrorMessage;
 import com.hivemq.http.HttpConstants;
-import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;

@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.embedded;
 
 import com.hivemq.embedded.internal.EmbeddedExtensionBuilderImpl;
 import com.hivemq.extension.sdk.api.ExtensionMain;
 import com.hivemq.extension.sdk.api.annotations.DoNotImplement;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStartInput;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStartOutput;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStopInput;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStopOutput;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -46,25 +45,29 @@ public interface EmbeddedExtension {
      * @return The unique ID of the extension.
      * @since CE 2020.5
      */
-    @NotNull String getId();
+    @NotNull
+    String getId();
 
     /**
      * @return The human readable name of the extension.
      * @since CE 2020.5
      */
-    @NotNull String getName();
+    @NotNull
+    String getName();
 
     /**
      * @return The version of the extension.
      * @since CE 2020.5
      */
-    @NotNull String getVersion();
+    @NotNull
+    String getVersion();
 
     /**
      * @return The author of the extension or <code>null</code> if the extension does not provide information about the author.
      * @since CE 2020.5
      */
-    @Nullable String getAuthor();
+    @Nullable
+    String getAuthor();
 
     /**
      * @return the extension's priority. All extensions are called in the order of their priority (highest to lowest).
@@ -85,6 +88,6 @@ public interface EmbeddedExtension {
      *
      * @since CE 2020.5
      */
-    @NotNull ExtensionMain getExtensionMain();
-
+    @NotNull
+    ExtensionMain getExtensionMain();
 }

@@ -31,17 +31,15 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
-
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 ;
 
 @Singleton
@@ -53,10 +51,10 @@ public class TopicFilterPersistenceReaderWriter {
     private final @NotNull XmlMapper xmlMapper = new XmlMapper();
 
     @Inject
-    public TopicFilterPersistenceReaderWriter(
-            final @NotNull SystemInformation systemInformation) {
+    public TopicFilterPersistenceReaderWriter(final @NotNull SystemInformation systemInformation) {
         this.persistenceFile = new File(systemInformation.getSecondaryHiveMQHomeFolder(), PERSISTENCE_FILE_NAME);
-        xmlMapper.setAnnotationIntrospector(AnnotationIntrospector.pair(new JacksonXmlAnnotationIntrospector(),
+        xmlMapper.setAnnotationIntrospector(AnnotationIntrospector.pair(
+                new JacksonXmlAnnotationIntrospector(),
                 new JakartaXmlBindAnnotationIntrospector(TypeFactory.defaultInstance())));
         xmlMapper.enable(SerializationFeature.INDENT_OUTPUT);
         xmlMapper.configure(ToXmlGenerator.Feature.WRITE_XML_DECLARATION, true);
@@ -79,7 +77,8 @@ public class TopicFilterPersistenceReaderWriter {
             JaxbUtils.marshal(persistenceEntity, persistenceFile, marshaller -> {
                 marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
                 marshaller.setProperty(Marshaller.JAXB_SCHEMA_LOCATION, TopicFilterPersistenceEntity.SCHEMA_LOCATION);
-                marshaller.setProperty(Marshaller.JAXB_NO_NAMESPACE_SCHEMA_LOCATION,
+                marshaller.setProperty(
+                        Marshaller.JAXB_NO_NAMESPACE_SCHEMA_LOCATION,
                         TopicFilterPersistenceEntity.NO_NAMESPACE_SCHEMA_LOCATION);
             });
         } catch (final JAXBException e) {
@@ -88,13 +87,14 @@ public class TopicFilterPersistenceReaderWriter {
                     e);
             throw new RuntimeException(e);
         } catch (final Exception e) {
-            log.error("Error while trying to persist the topic filters on disc. Exception happened during writing of " +
-                    PERSISTENCE_FILE_NAME +
-                    ":", e);
+            log.error(
+                    "Error while trying to persist the topic filters on disc. Exception happened during writing of "
+                            + PERSISTENCE_FILE_NAME
+                            + ":",
+                    e);
             throw new RuntimeException(e);
         }
     }
-
 
     private synchronized @NotNull TopicFilterPersistenceEntity readPersistenceXml() {
         log.debug("Reading persistence file {}", persistenceFile);
@@ -116,16 +116,17 @@ public class TopicFilterPersistenceReaderWriter {
         }
     }
 
-    private static @NotNull TopicFilterPersistenceEntity convertToEntity(final @NotNull Collection<TopicFilterPojo> tags) {
-        final List<TopicFilterXmlEntity> tagsAsEntities =
-                tags.stream().map(TopicFilterMapper::topicFilterEntityFromDomainTag).collect(Collectors.toList());
+    private static @NotNull TopicFilterPersistenceEntity convertToEntity(
+            final @NotNull Collection<TopicFilterPojo> tags) {
+        final List<TopicFilterXmlEntity> tagsAsEntities = tags.stream()
+                .map(TopicFilterMapper::topicFilterEntityFromDomainTag)
+                .collect(Collectors.toList());
         return new TopicFilterPersistenceEntity(tagsAsEntities);
-
     }
 
-    private @NotNull List<TopicFilterPojo> convertToTopicFilters(final @NotNull TopicFilterPersistenceEntity persistenceEntity) {
-        return persistenceEntity.getTopicFilters()
-                .stream()
+    private @NotNull List<TopicFilterPojo> convertToTopicFilters(
+            final @NotNull TopicFilterPersistenceEntity persistenceEntity) {
+        return persistenceEntity.getTopicFilters().stream()
                 .map(TopicFilterMapper::topicFilterFromDomainTagEntity)
                 .collect(Collectors.toList());
     }

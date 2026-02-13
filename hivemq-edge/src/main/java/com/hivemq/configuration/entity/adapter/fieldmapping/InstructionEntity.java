@@ -20,14 +20,13 @@ import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.configuration.entity.EntityValidatable;
 import com.hivemq.configuration.entity.combining.DataIdentifierReferenceEntity;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlElement;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class InstructionEntity implements EntityValidatable {
 
@@ -44,8 +43,7 @@ public class InstructionEntity implements EntityValidatable {
     private @Nullable DataIdentifierReferenceEntity origin;
 
     // no- arg for JaxB
-    public InstructionEntity() {
-    }
+    public InstructionEntity() {}
 
     public InstructionEntity(
             final @NotNull String sourceFieldName,
@@ -69,19 +67,24 @@ public class InstructionEntity implements EntityValidatable {
     }
 
     public static @NotNull InstructionEntity from(final @NotNull Instruction model) {
-        return new InstructionEntity(model.sourceFieldName(),
+        return new InstructionEntity(
+                model.sourceFieldName(),
                 model.destinationFieldName(),
-                model.dataIdentifierReference() != null ? model.dataIdentifierReference().toPersistence() : null);
+                model.dataIdentifierReference() != null
+                        ? model.dataIdentifierReference().toPersistence()
+                        : null);
     }
 
     public static @NotNull InstructionEntity from(final @NotNull com.hivemq.edge.api.model.Instruction model) {
-        return new InstructionEntity(model.getSource(),
+        return new InstructionEntity(
+                model.getSource(),
                 model.getDestination(),
                 model.getSourceRef() != null ? DataIdentifierReferenceEntity.from(model.getSourceRef()) : null);
     }
 
     public @NotNull Instruction to() {
-        return new Instruction(getSourceFieldName(),
+        return new Instruction(
+                getSourceFieldName(),
                 getDestinationFieldName(),
                 getOrigin() != null ? DataIdentifierReference.fromPersistence(getOrigin()) : null);
     }
@@ -95,8 +98,8 @@ public class InstructionEntity implements EntityValidatable {
             return false;
         }
         final InstructionEntity that = (InstructionEntity) o;
-        return Objects.equals(getSourceFieldName(), that.getSourceFieldName()) &&
-                Objects.equals(getDestinationFieldName(), that.getDestinationFieldName());
+        return Objects.equals(getSourceFieldName(), that.getSourceFieldName())
+                && Objects.equals(getDestinationFieldName(), that.getDestinationFieldName());
     }
 
     @Override

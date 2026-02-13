@@ -15,6 +15,9 @@
  */
 package com.hivemq.combining.runtime;
 
+import static com.hivemq.combining.model.DataIdentifierReference.Type.TAG;
+import static com.hivemq.combining.model.DataIdentifierReference.Type.TOPIC_FILTER;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
@@ -31,10 +34,6 @@ import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 import com.hivemq.protocols.northbound.TagConsumer;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -42,9 +41,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static com.hivemq.combining.model.DataIdentifierReference.Type.TAG;
-import static com.hivemq.combining.model.DataIdentifierReference.Type.TOPIC_FILTER;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DataCombiningRuntime {
 
@@ -99,9 +98,16 @@ public class DataCombiningRuntime {
                 .distinct()
                 .map(ref -> {
                     log.debug("Starting tag consumer for tag {} with scope {}", ref.id(), ref.scope());
-                    final boolean isPrimary = TAG.equals(combining.sources().primaryReference().type()) &&
-                            ref.id().equals(combining.sources().primaryReference().id()) &&
-                            Objects.equals(ref.scope(), combining.sources().primaryReference().scope());
+                    final boolean isPrimary = TAG.equals(
+                                    combining.sources().primaryReference().type())
+                            && ref.id()
+                                    .equals(combining
+                                            .sources()
+                                            .primaryReference()
+                                            .id())
+                            && Objects.equals(
+                                    ref.scope(),
+                                    combining.sources().primaryReference().scope());
                     return new InternalTagConsumer(ref.id(), ref.scope(), combining, isPrimary);
                 })
                 .forEach(consumer -> {
@@ -119,35 +125,41 @@ public class DataCombiningRuntime {
                 .distinct()
                 .forEach(topicFilter -> {
                     log.debug("Starting mqtt consumer for filter {}", topicFilter);
-                    internalSubscriptions.add(subscribeTopicFilter(combining,
+                    internalSubscriptions.add(subscribeTopicFilter(
+                            combining,
                             topicFilter,
-                            TOPIC_FILTER.equals(combining.sources().primaryReference().type()) &&
-                                    topicFilter.equals(combining.sources().primaryReference().id())));
+                            TOPIC_FILTER.equals(combining
+                                            .sources()
+                                            .primaryReference()
+                                            .type())
+                                    && topicFilter.equals(combining
+                                            .sources()
+                                            .primaryReference()
+                                            .id())));
                 });
 
-        internalSubscriptions.forEach(internalSubscription -> internalSubscription.queueConsumer().start());
+        internalSubscriptions.forEach(
+                internalSubscription -> internalSubscription.queueConsumer().start());
     }
 
     public void stop() {
         consumers.forEach(tagManager::removeConsumer);
         internalSubscriptions.forEach(sub -> {
             sub.queueConsumer().close();
-            localTopicTree.removeSubscriber(sub.subscriber(),
-                    sub.topic(),
-                    sub.sharedName()); //I guess we should keep the subscription?
+            localTopicTree.removeSubscriber(
+                    sub.subscriber(), sub.topic(), sub.sharedName()); // I guess we should keep the subscription?
         });
 
         dataCombiningTransformationService.removeScriptForDataCombining(combining);
     }
 
     public @NotNull InternalSubscription subscribeTopicFilter(
-            final @NotNull DataCombining dataCombining,
-            final @NotNull String topicFilter,
-            final boolean isPrimary) {
+            final @NotNull DataCombining dataCombining, final @NotNull String topicFilter, final boolean isPrimary) {
         final String clientId = dataCombining.id() + "#";
         final QoS qos = QoS.EXACTLY_ONCE;
 
-        final var subscription = new InternalSubscription(clientId,
+        final var subscription = new InternalSubscription(
+                clientId,
                 topicFilter,
                 dataCombining.id().toString(),
                 new QueueConsumer(clientQueuePersistence, dataCombining.id() + "/" + topicFilter, singleWriterService) {
@@ -160,7 +172,8 @@ public class DataCombiningRuntime {
                     }
                 });
 
-        localTopicTree.addTopic(subscription.subscriber(),
+        localTopicTree.addTopic(
+                subscription.subscriber(),
                 new Topic(subscription.topic(), qos, false, true),
                 SubscriptionFlag.getDefaultFlags(true, true, false),
                 subscription.sharedName());
@@ -175,7 +188,8 @@ public class DataCombiningRuntime {
         final ObjectNode rootNode = mapper.createObjectNode();
         topicFilterResults.forEach((topicFilter, publish) -> {
             try {
-                rootNode.set(new DataIdentifierReference(topicFilter, TOPIC_FILTER).toFullyQualifiedName(),
+                rootNode.set(
+                        new DataIdentifierReference(topicFilter, TOPIC_FILTER).toFullyQualifiedName(),
                         mapper.readTree(publish.getPayload()));
             } catch (final IOException e) {
                 log.warn("Exception during json parsing of payload '{}'", publish.getPayload());
@@ -185,7 +199,8 @@ public class DataCombiningRuntime {
 
         tagsToDataPoints.forEach((tagRef, dataPoints) -> dataPoints.forEach(dataPoint -> {
             try {
-                rootNode.set(tagRef.toFullyQualifiedName(),
+                rootNode.set(
+                        tagRef.toFullyQualifiedName(),
                         mapper.readTree(dataPoint.getTagValue().toString()));
             } catch (final IOException e) {
                 log.warn("Exception during json parsing of datapoint '{}'", dataPoint.getTagValue());
@@ -193,13 +208,15 @@ public class DataCombiningRuntime {
             }
         }));
 
-        dataCombiningPublishService.publish(combining.destination(),
-                rootNode.toString().getBytes(StandardCharsets.UTF_8),
-                dataCombining);
+        dataCombiningPublishService.publish(
+                combining.destination(), rootNode.toString().getBytes(StandardCharsets.UTF_8), dataCombining);
     }
 
-    public record InternalSubscription(@NotNull String subscriber, @NotNull String topic, @NotNull String sharedName,
-                                       @NotNull QueueConsumer queueConsumer) {
+    public record InternalSubscription(
+            @NotNull String subscriber,
+            @NotNull String topic,
+            @NotNull String sharedName,
+            @NotNull QueueConsumer queueConsumer) {
         public @NotNull String getQueueId() {
             return sharedName() + '/' + topic();
         }

@@ -15,14 +15,14 @@
  */
 package com.hivemq.extensions.interceptor.unsuback.parameter;
 
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
 import com.hivemq.extensions.packets.unsuback.ModifiableUnsubackPacketImpl;
 import com.hivemq.extensions.packets.unsuback.UnsubackPacketImpl;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Robin Atherton

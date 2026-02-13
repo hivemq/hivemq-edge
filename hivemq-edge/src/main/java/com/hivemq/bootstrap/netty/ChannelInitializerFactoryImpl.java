@@ -15,18 +15,16 @@
  */
 package com.hivemq.bootstrap.netty;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.hivemq.bootstrap.netty.initializer.*;
 import com.hivemq.configuration.service.entity.*;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.logging.EventLog;
 import com.hivemq.security.ssl.NonSslHandler;
 import com.hivemq.security.ssl.SslFactory;
-
-
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
@@ -46,10 +44,11 @@ public class ChannelInitializerFactoryImpl implements ChannelInitializerFactory 
     private final EventLog eventLog;
 
     @Inject
-    public ChannelInitializerFactoryImpl(final @NotNull ChannelDependencies channelDependencies,
-                                         final @NotNull SslFactory sslFactory,
-                                         final @NotNull Provider<NonSslHandler> nonSslHandlerProvider,
-                                         final @NotNull EventLog eventLog) {
+    public ChannelInitializerFactoryImpl(
+            final @NotNull ChannelDependencies channelDependencies,
+            final @NotNull SslFactory sslFactory,
+            final @NotNull Provider<NonSslHandler> nonSslHandlerProvider,
+            final @NotNull EventLog eventLog) {
         this.channelDependencies = channelDependencies;
         this.sslFactory = sslFactory;
         this.nonSslHandlerProvider = nonSslHandlerProvider;
@@ -108,9 +107,9 @@ public class ChannelInitializerFactoryImpl implements ChannelInitializerFactory 
     }
 
     @NotNull
-    protected AbstractChannelInitializer createTlsWebsocketInitializer(final @NotNull MqttTlsWebsocketListener listener) {
+    protected AbstractChannelInitializer createTlsWebsocketInitializer(
+            final @NotNull MqttTlsWebsocketListener listener) {
         sslFactory.verifySslAtBootstrap(listener, listener.getTls());
         return new TlsWebsocketChannelInitializer(channelDependencies, listener, sslFactory);
     }
-
 }

@@ -1,20 +1,22 @@
 /*
- *  Copyright 2019-present HiveMQ GmbH
+ * Copyright 2019-present HiveMQ GmbH
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
 package com.hivemq.pulse.messaging;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 import com.codahale.metrics.NoopMetricRegistry;
 import com.hivemq.adapter.sdk.api.events.EventService;
@@ -43,6 +45,12 @@ import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,35 +60,33 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
-
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class AssetMapperManagerTest {
     @Mock
     private @NotNull AssetMappingExtractor assetMappingExtractor;
+
     @Mock
     private @NotNull PulseExtractor pulseExtractor;
+
     @Mock
     private @NotNull ShutdownHooks shutdownHooks;
+
     @Mock
     private @NotNull LocalTopicTree localTopicTree;
+
     @Mock
     private @NotNull ClientQueuePersistence clientQueuePersistence;
+
     @Mock
     private @NotNull SingleWriterService singleWriterService;
+
     @Mock
     private @NotNull DataCombiningPublishService dataCombiningPublishService;
+
     @Mock
     private @NotNull TagManager tagManager;
+
     @Mock
     private @NotNull DataCombiningTransformationService dataCombiningTransformationService;
 
@@ -91,28 +97,34 @@ public class AssetMapperManagerTest {
     private @NotNull EventService eventService;
 
     private static @NotNull DataCombiner createDataCombiner() {
-        return createDataCombiner(List.of(EntityType.PULSE_AGENT),
-                List.of(List.of(DataIdentifierReference.Type.PULSE_ASSET)));
+        return createDataCombiner(
+                List.of(EntityType.PULSE_AGENT), List.of(List.of(DataIdentifierReference.Type.PULSE_ASSET)));
     }
 
     private static @NotNull DataCombiner createDataCombiner(
             final @NotNull List<EntityType> entityTypes,
             final @NotNull List<List<DataIdentifierReference.Type>> typeLists) {
         final List<EntityReference> entityReferences = entityTypes.stream()
-                .map(entityType -> new EntityReference(entityType, UUID.randomUUID().toString()))
+                .map(entityType ->
+                        new EntityReference(entityType, UUID.randomUUID().toString()))
                 .collect(Collectors.toCollection(ArrayList::new));
-        final List<DataCombining> dataCombinings = IntStream.range(0, typeLists.size()).mapToObj(i -> {
-            final List<Instruction> instructions = typeLists.get(i)
-                    .stream()
-                    .map(type -> new Instruction("source" + i + type.name(),
-                            "destination" + i + type.name(),
-                            new DataIdentifierReference(UUID.randomUUID().toString(), type)))
-                    .collect(Collectors.toCollection(ArrayList::new));
-            return new DataCombining(UUID.randomUUID(),
-                    new DataCombiningSources(instructions.getFirst().dataIdentifierReference(), List.of(), List.of()),
-                    new DataCombiningDestination(UUID.randomUUID().toString(), "topic/" + i, "{}"),
-                    instructions);
-        }).collect(Collectors.toCollection(ArrayList::new));
+        final List<DataCombining> dataCombinings = IntStream.range(0, typeLists.size())
+                .mapToObj(i -> {
+                    final List<Instruction> instructions = typeLists.get(i).stream()
+                            .map(type -> new Instruction(
+                                    "source" + i + type.name(),
+                                    "destination" + i + type.name(),
+                                    new DataIdentifierReference(
+                                            UUID.randomUUID().toString(), type)))
+                            .collect(Collectors.toCollection(ArrayList::new));
+                    return new DataCombining(
+                            UUID.randomUUID(),
+                            new DataCombiningSources(
+                                    instructions.getFirst().dataIdentifierReference(), List.of(), List.of()),
+                            new DataCombiningDestination(UUID.randomUUID().toString(), "topic/" + i, "{}"),
+                            instructions);
+                })
+                .collect(Collectors.toCollection(ArrayList::new));
         return new DataCombiner(UUID.randomUUID(), "name", "description", entityReferences, dataCombinings);
     }
 
@@ -120,13 +132,15 @@ public class AssetMapperManagerTest {
     public void setUp() {
         eventStore = new MockEventStore();
         eventService = new EventServiceDelegateImpl(eventStore);
-        dataCombiningRuntimeFactory = new DataCombiningRuntimeFactory(localTopicTree,
+        dataCombiningRuntimeFactory = new DataCombiningRuntimeFactory(
+                localTopicTree,
                 clientQueuePersistence,
                 singleWriterService,
                 dataCombiningPublishService,
                 tagManager,
                 dataCombiningTransformationService);
-        assetMapperManager = new AssetMapperManager(eventService,
+        assetMapperManager = new AssetMapperManager(
+                eventService,
                 new NoopMetricRegistry(),
                 dataCombiningRuntimeFactory,
                 shutdownHooks,
@@ -147,22 +161,35 @@ public class AssetMapperManagerTest {
     @Test
     public void whenAddNonStreamingAsset_thenNotAdded() {
         assetMapperManager.start();
-        assetMapperManager.refresh(List.of(createDataCombiner(List.of(EntityType.values()),
-                List.of(List.of(DataIdentifierReference.Type.values())))));
+        assetMapperManager.refresh(List.of(createDataCombiner(
+                List.of(EntityType.values()), List.of(List.of(DataIdentifierReference.Type.values())))));
         assertEvents(eventStore.getEvents());
     }
 
     @Test
     public void whenAddAsset_thenAdded() {
         final DataCombiner dataCombiner = createDataCombiner();
-        pulseEntity.getPulseAssetsEntity()
+        pulseEntity
+                .getPulseAssetsEntity()
                 .getPulseAssetEntities()
                 .add(PulseAssetEntity.builder()
-                        .id(UUID.fromString(dataCombiner.dataCombinings().getFirst().destination().assetId()))
+                        .id(UUID.fromString(dataCombiner
+                                .dataCombinings()
+                                .getFirst()
+                                .destination()
+                                .assetId()))
                         .name("name")
                         .description("description")
-                        .topic(dataCombiner.dataCombinings().getFirst().destination().topic())
-                        .schema(dataCombiner.dataCombinings().getFirst().destination().schema())
+                        .topic(dataCombiner
+                                .dataCombinings()
+                                .getFirst()
+                                .destination()
+                                .topic())
+                        .schema(dataCombiner
+                                .dataCombinings()
+                                .getFirst()
+                                .destination()
+                                .schema())
                         .mapping(PulseAssetMappingEntity.builder()
                                 .id(dataCombiner.dataCombinings().getFirst().id())
                                 .status(PulseAssetMappingStatus.STREAMING)
@@ -188,11 +215,23 @@ public class AssetMapperManagerTest {
         final DataCombiner dataCombinerForUpdate = createDataCombiner().withName("name for update");
         Stream.of(dataCombinerForCreation, dataCombinerForDeletion, dataCombinerForUpdate)
                 .map(dataCombiner -> PulseAssetEntity.builder()
-                        .id(UUID.fromString(dataCombiner.dataCombinings().getFirst().destination().assetId()))
+                        .id(UUID.fromString(dataCombiner
+                                .dataCombinings()
+                                .getFirst()
+                                .destination()
+                                .assetId()))
                         .name(dataCombiner.name())
                         .description(dataCombiner.description())
-                        .topic(dataCombiner.dataCombinings().getFirst().destination().topic())
-                        .schema(dataCombiner.dataCombinings().getFirst().destination().schema())
+                        .topic(dataCombiner
+                                .dataCombinings()
+                                .getFirst()
+                                .destination()
+                                .topic())
+                        .schema(dataCombiner
+                                .dataCombinings()
+                                .getFirst()
+                                .destination()
+                                .schema())
                         .mapping(PulseAssetMappingEntity.builder()
                                 .id(dataCombiner.dataCombinings().getFirst().id())
                                 .status(PulseAssetMappingStatus.STREAMING)
@@ -202,14 +241,16 @@ public class AssetMapperManagerTest {
         assetMapperManager.start();
         // Let's add asset mappers for deletion and update.
         assetMapperManager.refresh(List.of(dataCombinerForDeletion, dataCombinerForUpdate));
-        assertEvents(eventStore.getEvents(),
+        assertEvents(
+                eventStore.getEvents(),
                 "Asset mapper 'name for update' was successfully created.",
                 "Asset mapper 'name for deletion' was successfully created.");
         eventStore.getEvents().clear();
         // Update asset mapper for update.
         pulseEntity.getPulseAssetsEntity().getPulseAssetEntities().get(2).setTopic("topic/updated");
         assetMapperManager.refresh(List.of(dataCombinerForCreation, dataCombinerForUpdate));
-        assertEvents(eventStore.getEvents(),
+        assertEvents(
+                eventStore.getEvents(),
                 "Asset mapper 'name for deletion' was successfully deleted.",
                 "Asset mapper 'name for creation' was successfully created.",
                 "Asset mapper 'name for update' was successfully updated.");
@@ -224,7 +265,8 @@ public class AssetMapperManagerTest {
         }
         assertThat(events.size()).isEqualTo(expectedMessages.length + 1);
         final List<String> messages = events.stream().map(Event::getMessage).toList();
-        Stream.of(expectedMessages).forEach(expectedMessage -> assertThat(messages).contains(expectedMessage));
+        Stream.of(expectedMessages)
+                .forEach(expectedMessage -> assertThat(messages).contains(expectedMessage));
         assertThat(messages.getLast()).isEqualTo("Configuration has been successfully updated");
     }
 

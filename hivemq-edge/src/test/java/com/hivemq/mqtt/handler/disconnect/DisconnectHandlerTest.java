@@ -15,6 +15,11 @@
  */
 package com.hivemq.mqtt.handler.disconnect;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import static org.mockito.internal.verification.VerificationModeFactory.times;
+
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.SettableFuture;
@@ -29,18 +34,12 @@ import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import com.hivemq.persistence.clientsession.ClientSessionPersistence;
 import com.hivemq.persistence.connection.ConnectionPersistence;
-
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 public class DisconnectHandlerTest {
 
@@ -59,6 +58,7 @@ public class DisconnectHandlerTest {
 
     MetricsHolder metricsHolder;
     private ClientConnection clientConnection;
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -67,7 +67,8 @@ public class DisconnectHandlerTest {
 
         metricsHolder = new MetricsHolder(new MetricRegistry());
 
-        final DisconnectHandler disconnectHandler = new DisconnectHandler(eventLog, metricsHolder, topicAliasLimiter, clientSessionPersistence, connectionPersistence);
+        final DisconnectHandler disconnectHandler = new DisconnectHandler(
+                eventLog, metricsHolder, topicAliasLimiter, clientSessionPersistence, connectionPersistence);
         channel = new EmbeddedChannel(disconnectHandler);
         clientConnection = new ClientConnection(channel, null);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
@@ -81,11 +82,16 @@ public class DisconnectHandlerTest {
 
         clientConnection.setClientSessionExpiryInterval(1000L);
 
-        channel.writeInbound(new DISCONNECT(Mqtt5DisconnectReasonCode.NORMAL_DISCONNECTION, null, Mqtt5UserProperties.NO_USER_PROPERTIES, null, 2000L));
+        channel.writeInbound(new DISCONNECT(
+                Mqtt5DisconnectReasonCode.NORMAL_DISCONNECTION,
+                null,
+                Mqtt5UserProperties.NO_USER_PROPERTIES,
+                null,
+                2000L));
 
         assertEquals(2000, clientConnection.getClientSessionExpiryInterval().longValue());
 
-        //verify that the client was disconnected
+        // verify that the client was disconnected
         assertFalse(channel.isOpen());
     }
 
@@ -93,11 +99,16 @@ public class DisconnectHandlerTest {
     public void test_disconnection_with_will() {
         assertTrue(channel.isOpen());
 
-        channel.writeInbound(new DISCONNECT(Mqtt5DisconnectReasonCode.SERVER_SHUTTING_DOWN, null, Mqtt5UserProperties.NO_USER_PROPERTIES, null, 2000L));
+        channel.writeInbound(new DISCONNECT(
+                Mqtt5DisconnectReasonCode.SERVER_SHUTTING_DOWN,
+                null,
+                Mqtt5UserProperties.NO_USER_PROPERTIES,
+                null,
+                2000L));
 
         assertTrue(clientConnection.isSendWill());
 
-        //verify that the client was disconnected
+        // verify that the client was disconnected
         assertFalse(channel.isOpen());
     }
 
@@ -105,11 +116,16 @@ public class DisconnectHandlerTest {
     public void test_disconnection_without_will() {
         assertTrue(channel.isOpen());
 
-        channel.writeInbound(new DISCONNECT(Mqtt5DisconnectReasonCode.NORMAL_DISCONNECTION, null, Mqtt5UserProperties.NO_USER_PROPERTIES, null, 2000L));
+        channel.writeInbound(new DISCONNECT(
+                Mqtt5DisconnectReasonCode.NORMAL_DISCONNECTION,
+                null,
+                Mqtt5UserProperties.NO_USER_PROPERTIES,
+                null,
+                2000L));
 
         assertFalse(clientConnection.isSendWill());
 
-        //verify that the client was disconnected
+        // verify that the client was disconnected
         assertFalse(channel.isOpen());
     }
 
@@ -171,7 +187,12 @@ public class DisconnectHandlerTest {
     public void test_disconnect_mqtt5_reason_string_logged() {
 
         final String disconnectReason = "disconnectReason";
-        final DISCONNECT disconnect = new DISCONNECT(Mqtt5DisconnectReasonCode.NORMAL_DISCONNECTION, disconnectReason, Mqtt5UserProperties.NO_USER_PROPERTIES, null, 0);
+        final DISCONNECT disconnect = new DISCONNECT(
+                Mqtt5DisconnectReasonCode.NORMAL_DISCONNECTION,
+                disconnectReason,
+                Mqtt5UserProperties.NO_USER_PROPERTIES,
+                null,
+                0);
         clientConnection = new ClientConnection(channel, null);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
@@ -185,14 +206,13 @@ public class DisconnectHandlerTest {
     @Test
     public void test_DisconnectFutureListener_send_lwt() throws Exception {
 
-        when(clientSessionPersistence.clientDisconnected(anyString(),
-                anyBoolean(),
-                anyLong())).thenReturn(Futures.immediateFuture(null));
+        when(clientSessionPersistence.clientDisconnected(anyString(), anyBoolean(), anyLong()))
+                .thenReturn(Futures.immediateFuture(null));
         clientConnection.proposeClientState(ClientState.DISCONNECTED_TAKEN_OVER);
         clientConnection.setSendWill(true);
         clientConnection.setPreventLwt(false);
 
-        //make the client connected
+        // make the client connected
         clientConnection.setClientId("client");
         clientConnection.setClientSessionExpiryInterval(0L);
         clientConnection.setDisconnectFuture(SettableFuture.create());
@@ -205,16 +225,14 @@ public class DisconnectHandlerTest {
     @Test
     public void test_DisconnectFutureListener_client_session_persistence_failed() throws Exception {
 
-        //make the client connected
+        // make the client connected
         clientConnection.setClientId("client");
         clientConnection.setClientSessionExpiryInterval(0L);
         clientConnection.setDisconnectFuture(SettableFuture.create());
         clientConnection.proposeClientState(ClientState.AUTHENTICATED);
 
-        when(clientSessionPersistence.clientDisconnected(
-                anyString(),
-                anyBoolean(),
-                anyLong())).thenReturn(Futures.immediateFailedFuture(new RuntimeException("test")));
+        when(clientSessionPersistence.clientDisconnected(anyString(), anyBoolean(), anyLong()))
+                .thenReturn(Futures.immediateFailedFuture(new RuntimeException("test")));
 
         channel.disconnect().get();
 

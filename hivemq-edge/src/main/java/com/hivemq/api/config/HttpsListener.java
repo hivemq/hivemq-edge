@@ -15,11 +15,10 @@
  */
 package com.hivemq.api.config;
 
-import org.jetbrains.annotations.NotNull;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.List;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.jetbrains.annotations.NotNull;
 
 public class HttpsListener implements ApiListener {
 
@@ -83,5 +82,4 @@ public class HttpsListener implements ApiListener {
     public @NotNull String getPrivateKeyPassword() {
         return privateKeyPassword;
     }
-
 }

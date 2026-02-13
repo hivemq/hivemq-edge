@@ -27,7 +27,8 @@ public abstract class CombiningModule {
 
     @Provides
     @Singleton
-    static @NotNull DataCombiningTransformationService dataCombiningTransformationService(final DataCombiningTransformationServiceProvider provider) {
+    static @NotNull DataCombiningTransformationService dataCombiningTransformationService(
+            final DataCombiningTransformationServiceProvider provider) {
         return provider.get();
     }
 }

@@ -13,8 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.handler;
+
+import static com.hivemq.extensions.handler.PluginAuthenticatorServiceImpl.AUTH_FAILED_LOG;
+import static com.hivemq.extensions.handler.PluginAuthenticatorServiceImpl.CONNACK_BAD_AUTHENTICATION_METHOD_LOG_STATEMENT;
+import static com.hivemq.extensions.handler.PluginAuthenticatorServiceImpl.DISCONNECT_BAD_AUTHENTICATION_METHOD_LOG_STATEMENT;
+import static com.hivemq.extensions.handler.PluginAuthenticatorServiceImpl.RE_AUTH_FAILED_LOG;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.bootstrap.ClientConnection;
@@ -27,7 +37,6 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.configuration.service.impl.SecurityConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationServiceImpl;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.EnhancedAuthenticator;
 import com.hivemq.extension.sdk.api.auth.SimpleAuthenticator;
 import com.hivemq.extension.sdk.api.services.auth.provider.AuthenticatorProvider;
@@ -55,25 +64,14 @@ import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import com.hivemq.util.ReasonStrings;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.util.Collections;
+import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import util.TestMessageUtil;
-
-import java.util.Collections;
-import java.util.Map;
-
-import static com.hivemq.extensions.handler.PluginAuthenticatorServiceImpl.AUTH_FAILED_LOG;
-import static com.hivemq.extensions.handler.PluginAuthenticatorServiceImpl.CONNACK_BAD_AUTHENTICATION_METHOD_LOG_STATEMENT;
-import static com.hivemq.extensions.handler.PluginAuthenticatorServiceImpl.DISCONNECT_BAD_AUTHENTICATION_METHOD_LOG_STATEMENT;
-import static com.hivemq.extensions.handler.PluginAuthenticatorServiceImpl.RE_AUTH_FAILED_LOG;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class PluginAuthenticatorServiceImplTest {
 
@@ -96,6 +94,7 @@ public class PluginAuthenticatorServiceImplTest {
     private @NotNull PluginAuthenticatorService pluginAuthenticatorService;
     private @NotNull EmbeddedChannel channel;
     private @NotNull ClientConnection clientConnection;
+
     @BeforeEach
     public void setUp() throws Exception {
         clientConnection = new ClientConnection(channel, mock(PublishFlushHandler.class));
@@ -113,10 +112,11 @@ public class PluginAuthenticatorServiceImplTest {
         when(channelHandlerContext.pipeline()).thenReturn(channel.pipeline());
         when(configurationService.securityConfiguration()).thenReturn(securityConfig);
         when(channelHandlerContext.channel()).thenReturn(channel);
-        when(channelDependencies.getAuthInProgressMessageHandler()).thenReturn(new AuthInProgressMessageHandler(
-                mqttConnacker));
+        when(channelDependencies.getAuthInProgressMessageHandler())
+                .thenReturn(new AuthInProgressMessageHandler(mqttConnacker));
 
-        pluginAuthenticatorService = new PluginAuthenticatorServiceImpl(() -> connectHandler,
+        pluginAuthenticatorService = new PluginAuthenticatorServiceImpl(
+                () -> connectHandler,
                 mqttConnacker,
                 mqttServerDisconnector,
                 mqttAuthSender,
@@ -128,6 +128,7 @@ public class PluginAuthenticatorServiceImplTest {
                 extensions,
                 new ServerInformationImpl(new SystemInformationImpl(), new ListenerConfigurationServiceImpl()));
     }
+
     @AfterEach
     public void tearDown() throws Exception {
         InternalConfigurations.AUTH_DENY_UNAUTHENTICATED_CONNECTIONS.set(false);
@@ -141,15 +142,11 @@ public class PluginAuthenticatorServiceImplTest {
         final ModifiableClientSettingsImpl clientSettings =
                 new ModifiableClientSettingsImpl(fullMqtt5Connect.getReceiveMaximum(), null);
 
-        pluginAuthenticatorService.authenticateConnect(channelHandlerContext,
-                clientConnection,
-                fullMqtt5Connect,
-                clientSettings);
+        pluginAuthenticatorService.authenticateConnect(
+                channelHandlerContext, clientConnection, fullMqtt5Connect, clientSettings);
 
-        verify(connectHandler).connectSuccessfulUndecided(channelHandlerContext,
-                clientConnection,
-                fullMqtt5Connect,
-                clientSettings);
+        verify(connectHandler)
+                .connectSuccessfulUndecided(channelHandlerContext, clientConnection, fullMqtt5Connect, clientSettings);
     }
 
     @Test
@@ -160,15 +157,11 @@ public class PluginAuthenticatorServiceImplTest {
         final ModifiableClientSettingsImpl clientSettings =
                 new ModifiableClientSettingsImpl(fullMqtt5Connect.getReceiveMaximum(), null);
 
-        pluginAuthenticatorService.authenticateConnect(channelHandlerContext,
-                clientConnection,
-                fullMqtt5Connect,
-                clientSettings);
+        pluginAuthenticatorService.authenticateConnect(
+                channelHandlerContext, clientConnection, fullMqtt5Connect, clientSettings);
 
-        verify(connectHandler).connectSuccessfulUndecided(channelHandlerContext,
-                clientConnection,
-                fullMqtt5Connect,
-                clientSettings);
+        verify(connectHandler)
+                .connectSuccessfulUndecided(channelHandlerContext, clientConnection, fullMqtt5Connect, clientSettings);
     }
 
     @Test
@@ -179,10 +172,8 @@ public class PluginAuthenticatorServiceImplTest {
         final ModifiableClientSettingsImpl clientSettings =
                 new ModifiableClientSettingsImpl(fullMqtt5Connect.getReceiveMaximum(), null);
 
-        pluginAuthenticatorService.authenticateConnect(channelHandlerContext,
-                clientConnection,
-                fullMqtt5Connect,
-                clientSettings);
+        pluginAuthenticatorService.authenticateConnect(
+                channelHandlerContext, clientConnection, fullMqtt5Connect, clientSettings);
 
         verify(pluginTaskExecutorService).handlePluginInOutTaskExecution(any(), any(), any(), any());
     }
@@ -195,10 +186,8 @@ public class PluginAuthenticatorServiceImplTest {
         final ModifiableClientSettingsImpl clientSettings =
                 new ModifiableClientSettingsImpl(fullMqtt5Connect.getReceiveMaximum(), null);
 
-        pluginAuthenticatorService.authenticateConnect(channelHandlerContext,
-                clientConnection,
-                fullMqtt5Connect,
-                clientSettings);
+        pluginAuthenticatorService.authenticateConnect(
+                channelHandlerContext, clientConnection, fullMqtt5Connect, clientSettings);
 
         verify(pluginTaskExecutorService).handlePluginInOutTaskExecution(any(), any(), any(), any());
     }
@@ -211,10 +200,8 @@ public class PluginAuthenticatorServiceImplTest {
         final ModifiableClientSettingsImpl clientSettings =
                 new ModifiableClientSettingsImpl(fullMqtt5Connect.getReceiveMaximum(), null);
 
-        pluginAuthenticatorService.authenticateConnect(channelHandlerContext,
-                clientConnection,
-                fullMqtt5Connect,
-                clientSettings);
+        pluginAuthenticatorService.authenticateConnect(
+                channelHandlerContext, clientConnection, fullMqtt5Connect, clientSettings);
 
         verify(pluginTaskExecutorService, times(2)).handlePluginInOutTaskExecution(any(), any(), any(), any());
     }
@@ -229,14 +216,16 @@ public class PluginAuthenticatorServiceImplTest {
 
         pluginAuthenticatorService.authenticateAuth(channelHandlerContext, clientConnection, auth);
 
-        verify(mqttServerDisconnector).disconnect(channel,
-                RE_AUTH_FAILED_LOG,
-                ReasonStrings.RE_AUTH_FAILED_NO_AUTHENTICATOR,
-                Mqtt5DisconnectReasonCode.NOT_AUTHORIZED,
-                ReasonStrings.RE_AUTH_FAILED_NO_AUTHENTICATOR,
-                Mqtt5UserProperties.NO_USER_PROPERTIES,
-                true,
-                false);
+        verify(mqttServerDisconnector)
+                .disconnect(
+                        channel,
+                        RE_AUTH_FAILED_LOG,
+                        ReasonStrings.RE_AUTH_FAILED_NO_AUTHENTICATOR,
+                        Mqtt5DisconnectReasonCode.NOT_AUTHORIZED,
+                        ReasonStrings.RE_AUTH_FAILED_NO_AUTHENTICATOR,
+                        Mqtt5UserProperties.NO_USER_PROPERTIES,
+                        true,
+                        false);
     }
 
     @Test
@@ -249,14 +238,16 @@ public class PluginAuthenticatorServiceImplTest {
 
         pluginAuthenticatorService.authenticateAuth(channelHandlerContext, clientConnection, auth);
 
-        verify(mqttServerDisconnector).disconnect(channel,
-                RE_AUTH_FAILED_LOG,
-                ReasonStrings.RE_AUTH_FAILED_NO_AUTHENTICATOR,
-                Mqtt5DisconnectReasonCode.NOT_AUTHORIZED,
-                ReasonStrings.RE_AUTH_FAILED_NO_AUTHENTICATOR,
-                Mqtt5UserProperties.NO_USER_PROPERTIES,
-                true,
-                false);
+        verify(mqttServerDisconnector)
+                .disconnect(
+                        channel,
+                        RE_AUTH_FAILED_LOG,
+                        ReasonStrings.RE_AUTH_FAILED_NO_AUTHENTICATOR,
+                        Mqtt5DisconnectReasonCode.NOT_AUTHORIZED,
+                        ReasonStrings.RE_AUTH_FAILED_NO_AUTHENTICATOR,
+                        Mqtt5UserProperties.NO_USER_PROPERTIES,
+                        true,
+                        false);
     }
 
     @Test
@@ -267,14 +258,18 @@ public class PluginAuthenticatorServiceImplTest {
 
         pluginAuthenticatorService.authenticateAuth(channelHandlerContext, clientConnection, auth);
 
-        verify(mqttServerDisconnector).disconnect(channel,
-                DISCONNECT_BAD_AUTHENTICATION_METHOD_LOG_STATEMENT,
-                "Different auth method",
-                Mqtt5DisconnectReasonCode.BAD_AUTHENTICATION_METHOD,
-                String.format(ReasonStrings.DISCONNECT_PROTOCOL_ERROR_AUTH_METHOD, auth.getType().name()),
-                Mqtt5UserProperties.NO_USER_PROPERTIES,
-                true,
-                false);
+        verify(mqttServerDisconnector)
+                .disconnect(
+                        channel,
+                        DISCONNECT_BAD_AUTHENTICATION_METHOD_LOG_STATEMENT,
+                        "Different auth method",
+                        Mqtt5DisconnectReasonCode.BAD_AUTHENTICATION_METHOD,
+                        String.format(
+                                ReasonStrings.DISCONNECT_PROTOCOL_ERROR_AUTH_METHOD,
+                                auth.getType().name()),
+                        Mqtt5UserProperties.NO_USER_PROPERTIES,
+                        true,
+                        false);
     }
 
     @Test
@@ -311,13 +306,15 @@ public class PluginAuthenticatorServiceImplTest {
 
         pluginAuthenticatorService.authenticateAuth(channelHandlerContext, clientConnection, auth);
 
-        verify(mqttConnacker).connackError(channel,
-                AUTH_FAILED_LOG,
-                ReasonStrings.AUTH_FAILED_NO_AUTHENTICATOR,
-                Mqtt5ConnAckReasonCode.NOT_AUTHORIZED,
-                ReasonStrings.AUTH_FAILED_NO_AUTHENTICATOR,
-                Mqtt5UserProperties.NO_USER_PROPERTIES,
-                true);
+        verify(mqttConnacker)
+                .connackError(
+                        channel,
+                        AUTH_FAILED_LOG,
+                        ReasonStrings.AUTH_FAILED_NO_AUTHENTICATOR,
+                        Mqtt5ConnAckReasonCode.NOT_AUTHORIZED,
+                        ReasonStrings.AUTH_FAILED_NO_AUTHENTICATOR,
+                        Mqtt5UserProperties.NO_USER_PROPERTIES,
+                        true);
     }
 
     @Test
@@ -329,13 +326,15 @@ public class PluginAuthenticatorServiceImplTest {
 
         pluginAuthenticatorService.authenticateAuth(channelHandlerContext, clientConnection, auth);
 
-        verify(mqttConnacker).connackError(channel,
-                AUTH_FAILED_LOG,
-                ReasonStrings.AUTH_FAILED_NO_AUTHENTICATOR,
-                Mqtt5ConnAckReasonCode.NOT_AUTHORIZED,
-                ReasonStrings.AUTH_FAILED_NO_AUTHENTICATOR,
-                Mqtt5UserProperties.NO_USER_PROPERTIES,
-                true);
+        verify(mqttConnacker)
+                .connackError(
+                        channel,
+                        AUTH_FAILED_LOG,
+                        ReasonStrings.AUTH_FAILED_NO_AUTHENTICATOR,
+                        Mqtt5ConnAckReasonCode.NOT_AUTHORIZED,
+                        ReasonStrings.AUTH_FAILED_NO_AUTHENTICATOR,
+                        Mqtt5UserProperties.NO_USER_PROPERTIES,
+                        true);
     }
 
     @Test
@@ -345,13 +344,17 @@ public class PluginAuthenticatorServiceImplTest {
 
         pluginAuthenticatorService.authenticateAuth(channelHandlerContext, clientConnection, auth);
 
-        verify(mqttConnacker).connackError(eq(channel),
-                eq(CONNACK_BAD_AUTHENTICATION_METHOD_LOG_STATEMENT),
-                eq("Different auth method"),
-                eq(Mqtt5ConnAckReasonCode.BAD_AUTHENTICATION_METHOD),
-                eq(String.format(ReasonStrings.DISCONNECT_PROTOCOL_ERROR_AUTH_METHOD, auth.getType().name())),
-                eq(Mqtt5UserProperties.NO_USER_PROPERTIES),
-                eq(true));
+        verify(mqttConnacker)
+                .connackError(
+                        eq(channel),
+                        eq(CONNACK_BAD_AUTHENTICATION_METHOD_LOG_STATEMENT),
+                        eq("Different auth method"),
+                        eq(Mqtt5ConnAckReasonCode.BAD_AUTHENTICATION_METHOD),
+                        eq(String.format(
+                                ReasonStrings.DISCONNECT_PROTOCOL_ERROR_AUTH_METHOD,
+                                auth.getType().name())),
+                        eq(Mqtt5UserProperties.NO_USER_PROPERTIES),
+                        eq(true));
     }
 
     @Test
@@ -382,21 +385,24 @@ public class PluginAuthenticatorServiceImplTest {
     }
 
     private Map<String, WrappedAuthenticatorProvider> createSimple() {
-        return ImmutableMap.of("extension1",
+        return ImmutableMap.of(
+                "extension1",
                 new WrappedAuthenticatorProvider((AuthenticatorProvider) (i -> simpleAuthenticator), classloader1));
     }
 
     private Map<String, WrappedAuthenticatorProvider> createEnhanced() {
-        return ImmutableMap.of("extension1",
-                new WrappedAuthenticatorProvider((EnhancedAuthenticatorProvider) (i -> enhancedAuthenticator),
-                        classloader1));
+        return ImmutableMap.of(
+                "extension1",
+                new WrappedAuthenticatorProvider(
+                        (EnhancedAuthenticatorProvider) (i -> enhancedAuthenticator), classloader1));
     }
 
     private Map<String, WrappedAuthenticatorProvider> createMulti() {
-        return ImmutableMap.of("extension1",
+        return ImmutableMap.of(
+                "extension1",
                 new WrappedAuthenticatorProvider((AuthenticatorProvider) (i -> simpleAuthenticator), classloader1),
                 "extension2",
-                new WrappedAuthenticatorProvider((EnhancedAuthenticatorProvider) (i -> enhancedAuthenticator),
-                        classloader2));
+                new WrappedAuthenticatorProvider(
+                        (EnhancedAuthenticatorProvider) (i -> enhancedAuthenticator), classloader2));
     }
 }

@@ -15,6 +15,10 @@
  */
 package com.hivemq.codec.encoder;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
@@ -27,14 +31,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import util.encoder.TestMessageEncoder;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-
 public class Mqtt3PublishEncoderTest {
 
     private EmbeddedChannel channel;
     private ClientConnection clientConnection;
+
     @BeforeEach
     public void setUp() throws Exception {
         channel = new EmbeddedChannel(new TestMessageEncoder());
@@ -61,7 +62,7 @@ public class Mqtt3PublishEncoderTest {
         assertEquals((byte) 0b0011_0000, buf.readByte());
         assertEquals(14, buf.readByte());
         assertEquals("topic", Strings.getPrefixedString(buf));
-        //There is no message ID!
+        // There is no message ID!
         assertEquals("payload", new String(buf.readBytes(buf.readableBytes()).array(), UTF_8));
 
         assertFalse(buf.isReadable());
@@ -85,7 +86,7 @@ public class Mqtt3PublishEncoderTest {
         assertEquals((byte) 0b0011_0000, buf.readByte());
         assertEquals(15, buf.readByte());
         assertEquals("topié", Strings.getPrefixedString(buf));
-        //There is no message ID!
+        // There is no message ID!
         assertEquals("payload", new String(buf.readBytes(buf.readableBytes()).array(), UTF_8));
 
         assertFalse(buf.isReadable());
@@ -110,7 +111,7 @@ public class Mqtt3PublishEncoderTest {
         assertEquals((byte) 0b0011_1000, buf.readByte());
         assertEquals(14, buf.readByte());
         assertEquals("topic", Strings.getPrefixedString(buf));
-        //There is no message ID!
+        // There is no message ID!
         assertEquals("payload", new String(buf.readBytes(buf.readableBytes()).array(), UTF_8));
 
         assertFalse(buf.isReadable());
@@ -135,7 +136,7 @@ public class Mqtt3PublishEncoderTest {
         assertEquals((byte) 0b0011_0001, buf.readByte());
         assertEquals(14, buf.readByte());
         assertEquals("topic", Strings.getPrefixedString(buf));
-        //There is no message ID!
+        // There is no message ID!
         assertEquals("payload", new String(buf.readBytes(buf.readableBytes()).array(), UTF_8));
 
         assertFalse(buf.isReadable());
@@ -161,7 +162,7 @@ public class Mqtt3PublishEncoderTest {
         assertEquals((byte) 0b0011_1001, buf.readByte());
         assertEquals(14, buf.readByte());
         assertEquals("topic", Strings.getPrefixedString(buf));
-        //There is no message ID!
+        // There is no message ID!
         assertEquals("payload", new String(buf.readBytes(buf.readableBytes()).array(), UTF_8));
 
         assertFalse(buf.isReadable());

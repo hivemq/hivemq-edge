@@ -15,28 +15,27 @@
  */
 package com.hivemq.configuration.service.impl.listener;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
+import static util.TlsTestUtil.createDefaultTLS;
+
 import com.hivemq.configuration.service.entity.Listener;
 import com.hivemq.configuration.service.entity.MqttTcpListener;
 import com.hivemq.configuration.service.entity.MqttTlsTcpListener;
 import com.hivemq.configuration.service.entity.MqttTlsWebsocketListener;
 import com.hivemq.configuration.service.entity.MqttWebsocketListener;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.fail;
-import static util.TlsTestUtil.createDefaultTLS;
-
 public class ListenerConfigurationServiceImplTest {
 
     private ListenerConfigurationServiceImpl listenerConfigurationService;
+
     @BeforeEach
     public void setUp() throws Exception {
         listenerConfigurationService = new ListenerConfigurationServiceImpl();
@@ -49,12 +48,15 @@ public class ListenerConfigurationServiceImplTest {
     public void test_add_listeners() {
 
         final MqttTcpListener mqttTcpListener = new MqttTcpListener(1883, "localhost");
-        final MqttWebsocketListener mqttWebsocketListener =
-                new MqttWebsocketListener.Builder().port(1884).bindAddress("localhost").build();
+        final MqttWebsocketListener mqttWebsocketListener = new MqttWebsocketListener.Builder()
+                .port(1884)
+                .bindAddress("localhost")
+                .build();
 
         final MqttTlsTcpListener mqttTlsTcpListener = new MqttTlsTcpListener(1885, "localhost", createDefaultTLS());
 
-        final MqttTlsWebsocketListener mqttTlsWebsocketListener = new MqttTlsWebsocketListener.Builder().port(1886)
+        final MqttTlsWebsocketListener mqttTlsWebsocketListener = new MqttTlsWebsocketListener.Builder()
+                .port(1886)
                 .bindAddress("localhost")
                 .tls(createDefaultTLS())
                 .build();
@@ -89,9 +91,7 @@ public class ListenerConfigurationServiceImplTest {
                 }
 
                 @Override
-                public void setPort(final int port) {
-
-                }
+                public void setPort(final int port) {}
 
                 @Override
                 public String getBindAddress() {
@@ -112,7 +112,6 @@ public class ListenerConfigurationServiceImplTest {
                 public @Nullable String getExternalHostname() {
                     return null;
                 }
-
             });
         });
     }
@@ -120,24 +119,22 @@ public class ListenerConfigurationServiceImplTest {
     @Test
     public void test_add_invalid_listener_type_subclass_of_tcplistener() {
         assertThrows(IllegalArgumentException.class, () -> {
-            listenerConfigurationService.addListener(new MqttTcpListener(1883, "localhost") {
-            });
+            listenerConfigurationService.addListener(new MqttTcpListener(1883, "localhost") {});
         });
     }
 
     @Test
     public void test_add_invalid_listener_type_subclass_of_tlstcplistener() {
         assertThrows(IllegalArgumentException.class, () -> {
-            listenerConfigurationService.addListener(new MqttTlsTcpListener(1883, "localhost", createDefaultTLS()) {
-            });
+            listenerConfigurationService.addListener(new MqttTlsTcpListener(1883, "localhost", createDefaultTLS()) {});
         });
     }
 
     @Test
     public void test_add_invalid_listener_type_subclass_of_websocketlistener() {
         assertThrows(IllegalArgumentException.class, () -> {
-            final MqttWebsocketListener subclass = new MqttWebsocketListener(123, null, null, false, null, null, null) {
-            };
+            final MqttWebsocketListener subclass =
+                    new MqttWebsocketListener(123, null, null, false, null, null, null) {};
             listenerConfigurationService.addListener(subclass);
         });
     }
@@ -153,14 +150,14 @@ public class ListenerConfigurationServiceImplTest {
             listeners.add(new MqttTcpListener(1884, "localhost"));
             fail();
         } catch (final Exception e) {
-            //Expected
+            // Expected
         }
 
         try {
             listeners.clear();
             fail();
         } catch (final Exception e) {
-            //Expected
+            // Expected
         }
     }
 }

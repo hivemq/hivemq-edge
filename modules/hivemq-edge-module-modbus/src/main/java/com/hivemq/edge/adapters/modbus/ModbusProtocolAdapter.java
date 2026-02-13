@@ -15,6 +15,12 @@
  */
 package com.hivemq.edge.adapters.modbus;
 
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
+import static com.hivemq.edge.adapters.modbus.config.ModbusToMqttConfig.DEFAULT_MAX_POLL_ERRORS_BEFORE_REMOVAL;
+import static com.hivemq.edge.adapters.modbus.config.ModbusToMqttConfig.DEFAULT_POLL_INTERVAL_MILLIS;
+
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.discovery.NodeTree;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
@@ -33,20 +39,13 @@ import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.etherip.PublishChangedDataOnlyHandler;
 import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
-import static com.hivemq.edge.adapters.modbus.config.ModbusToMqttConfig.DEFAULT_MAX_POLL_ERRORS_BEFORE_REMOVAL;
-import static com.hivemq.edge.adapters.modbus.config.ModbusToMqttConfig.DEFAULT_POLL_INTERVAL_MILLIS;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
     private static final Logger log = LoggerFactory.getLogger(ModbusProtocolAdapter.class);
@@ -84,7 +83,8 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
     }
 
     private static void addAddresses(final @NotNull NodeTree tree, final @NotNull String parent) {
-        tree.addNode("grouping-" + ADDRESS_START_IDX,
+        tree.addNode(
+                "grouping-" + ADDRESS_START_IDX,
                 "Addresses " + ADDRESS_START_IDX + "-" + (ADDRESS_START_IDX + ADDRESS_GROUP_IDX - 1),
                 "",
                 "",
@@ -93,7 +93,8 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                 false);
         String parentNode = "grouping-" + ADDRESS_START_IDX;
         for (int i = ADDRESS_START_IDX; i <= ADDRESS_GROUP_MAX; i++) {
-            tree.addNode("address-location-" + i,
+            tree.addNode(
+                    "address-location-" + i,
                     String.valueOf(i),
                     String.valueOf(i),
                     "",
@@ -101,7 +102,8 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                     NodeType.VALUE,
                     true);
             if (i % ADDRESS_GROUP_IDX == 0 && i < ADDRESS_GROUP_MAX) {
-                tree.addNode("grouping-" + i,
+                tree.addNode(
+                        "grouping-" + i,
                         "Addresses " + (i + 1) + "-" + (i + ADDRESS_GROUP_IDX),
                         "",
                         "",
@@ -115,8 +117,7 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
 
     @Override
     public void start(
-            final @NotNull ProtocolAdapterStartInput input,
-            final @NotNull ProtocolAdapterStartOutput output) {
+            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         if (!stopRequested.get() && startRequested.compareAndSet(false, true)) {
             client.connect().whenComplete((unused, throwable) -> {
                 if (throwable == null) {
@@ -143,26 +144,26 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
             log.info("Stopping Modbus protocol adapter {}", adapterId);
             publishChangedDataOnlyHandler.clear();
             try {
-                client
-                    .disconnect()
-                    .whenComplete((unused, throwable) -> {
-                        try {
-                            if (throwable == null) {
-                                protocolAdapterState.setConnectionStatus(DISCONNECTED);
-                                output.stoppedSuccessfully();
-                                log.info("Successfully stopped Modbus protocol adapter {}", adapterId);
-                            } else {
-                                protocolAdapterState.setConnectionStatus(ERROR);
-                                output.failStop(throwable, "Error encountered closing connection to Modbus server.");
-                                log.error("Unable to stop the connection to the Modbus server", throwable);
+                client.disconnect()
+                        .whenComplete((unused, throwable) -> {
+                            try {
+                                if (throwable == null) {
+                                    protocolAdapterState.setConnectionStatus(DISCONNECTED);
+                                    output.stoppedSuccessfully();
+                                    log.info("Successfully stopped Modbus protocol adapter {}", adapterId);
+                                } else {
+                                    protocolAdapterState.setConnectionStatus(ERROR);
+                                    output.failStop(
+                                            throwable, "Error encountered closing connection to Modbus server.");
+                                    log.error("Unable to stop the connection to the Modbus server", throwable);
+                                }
+                            } finally {
+                                startRequested.set(false);
+                                stopRequested.set(false);
                             }
-                        } finally {
-                            startRequested.set(false);
-                            stopRequested.set(false);
-                        }
-                    })
-                    .toCompletableFuture()
-                    .get();
+                        })
+                        .toCompletableFuture()
+                        .get();
             } catch (final InterruptedException | ExecutionException e) {
                 log.error("Unable to stop the connection to the Modbus server", e);
                 output.failStop(e, "Error encountered closing connection to Modbus server.");
@@ -193,32 +194,30 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
             final boolean publishAllChanges = isPublishAllChanges();
 
             @SuppressWarnings("unused")
-            final var unused = CompletableFuture
-                    .allOf(readRegisterFutures)
-                    .whenComplete((result, throwable) -> {
-                        try {
-                            if (throwable != null) {
-                                protocolAdapterState.setConnectionStatus(ERROR);
-                                pollingOutput.fail(throwable, "Unable to read tags from modbus");
-                                return;
-                            }
+            final var unused = CompletableFuture.allOf(readRegisterFutures).whenComplete((result, throwable) -> {
+                try {
+                    if (throwable != null) {
+                        protocolAdapterState.setConnectionStatus(ERROR);
+                        pollingOutput.fail(throwable, "Unable to read tags from modbus");
+                        return;
+                    }
 
-                            protocolAdapterState.setConnectionStatus(CONNECTED);
+                    protocolAdapterState.setConnectionStatus(CONNECTED);
 
-                            for (final CompletableFuture<ResulTuple> readRegisterFuture : readRegisterFutures) {
-                                final ResulTuple entry = readRegisterFuture.join();
-                                final var tagName = entry.tagName();
-                                final var value = entry.value();
-                                final var dataPoints = List.of(dataPointFactory.create(tagName, value));
-                                if (publishAllChanges ||
-                                        publishChangedDataOnlyHandler.replaceIfValueIsNew(tagName, dataPoints)) {
-                                    dataPoints.forEach(pollingOutput::addDataPoint);
-                                }
-                            }
-                        } finally {
-                            pollingOutput.finish();
+                    for (final CompletableFuture<ResulTuple> readRegisterFuture : readRegisterFutures) {
+                        final ResulTuple entry = readRegisterFuture.join();
+                        final var tagName = entry.tagName();
+                        final var value = entry.value();
+                        final var dataPoints = List.of(dataPointFactory.create(tagName, value));
+                        if (publishAllChanges
+                                || publishChangedDataOnlyHandler.replaceIfValueIsNew(tagName, dataPoints)) {
+                            dataPoints.forEach(pollingOutput::addDataPoint);
                         }
-                    });
+                    }
+                } finally {
+                    pollingOutput.finish();
+                }
+            });
         }
     }
 
@@ -231,9 +230,9 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
     @Override
     public int getMaxPollingErrorsBeforeRemoval() {
         final var toMqttConfig = adapterConfig.getModbusToMQTTConfig();
-        return toMqttConfig != null ?
-                toMqttConfig.getMaxPollingErrorsBeforeRemoval() :
-                DEFAULT_MAX_POLL_ERRORS_BEFORE_REMOVAL;
+        return toMqttConfig != null
+                ? toMqttConfig.getMaxPollingErrorsBeforeRemoval()
+                : DEFAULT_MAX_POLL_ERRORS_BEFORE_REMOVAL;
     }
 
     @Override
@@ -243,13 +242,13 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
 
     @Override
     public void discoverValues(
-            final @NotNull ProtocolAdapterDiscoveryInput input,
-            final @NotNull ProtocolAdapterDiscoveryOutput output) {
-        //-- Do the discovery of registers and coils, only for root level
-        //-- Do the discovery of registers and coils, only for root level
+            final @NotNull ProtocolAdapterDiscoveryInput input, final @NotNull ProtocolAdapterDiscoveryOutput output) {
+        // -- Do the discovery of registers and coils, only for root level
+        // -- Do the discovery of registers and coils, only for root level
         final NodeTree nodeTree = output.getNodeTree();
         if (input.getRootNode() == null) {
-            nodeTree.addNode(NODE_ID_HOLDING_REGISTERS,
+            nodeTree.addNode(
+                    NODE_ID_HOLDING_REGISTERS,
                     "Holding Registers",
                     "Holding Registers",
                     "Holding Registers",
@@ -268,6 +267,5 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
         return adapterInformation;
     }
 
-    private record ResulTuple(String tagName, Object value) {
-    }
+    private record ResulTuple(String tagName, Object value) {}
 }

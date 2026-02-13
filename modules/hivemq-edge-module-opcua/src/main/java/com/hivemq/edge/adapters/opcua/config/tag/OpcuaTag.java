@@ -18,18 +18,18 @@ package com.hivemq.edge.adapters.opcua.config.tag;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.Tag;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
 
 public class OpcuaTag implements Tag {
 
     @JsonProperty(value = "name", required = true)
-    @ModuleConfigField(title = "name",
-                       description = "name of the tag to be used in mappings",
-                       format = ModuleConfigField.FieldType.MQTT_TAG,
-                       required = true)
+    @ModuleConfigField(
+            title = "name",
+            description = "name of the tag to be used in mappings",
+            format = ModuleConfigField.FieldType.MQTT_TAG,
+            required = true)
     private final @NotNull String name;
 
     @JsonProperty(value = "description")
@@ -66,16 +66,15 @@ public class OpcuaTag implements Tag {
 
     @Override
     public @NotNull String toString() {
-        return "OpcuaTag{" +
-                "name='" +
-                name +
-                '\'' +
-                ", description='" +
-                description +
-                '\'' +
-                ", definition=" +
-                definition +
-                '}';
+        return "OpcuaTag{" + "name='"
+                + name
+                + '\''
+                + ", description='"
+                + description
+                + '\''
+                + ", definition="
+                + definition
+                + '}';
     }
 
     @Override
@@ -86,9 +85,9 @@ public class OpcuaTag implements Tag {
         if (!(o instanceof OpcuaTag opcuaTag)) {
             return false;
         }
-        return Objects.equals(name, opcuaTag.name) &&
-                Objects.equals(description, opcuaTag.description) &&
-                Objects.equals(definition, opcuaTag.definition);
+        return Objects.equals(name, opcuaTag.name)
+                && Objects.equals(description, opcuaTag.description)
+                && Objects.equals(definition, opcuaTag.definition);
     }
 
     @Override

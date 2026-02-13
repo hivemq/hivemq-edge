@@ -22,5 +22,4 @@ import java.util.function.Consumer;
  *
  * @author Georg Held
  */
-public interface PluginInTask<I extends PluginTaskInput> extends Consumer<I>, PluginTask {
-}
+public interface PluginInTask<I extends PluginTaskInput> extends Consumer<I>, PluginTask {}

@@ -17,9 +17,9 @@ package com.hivemq.codec.encoder.mqtt3;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.encoder.MqttEncoder;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.disconnect.DISCONNECT;
 import io.netty.buffer.ByteBuf;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Lukas Brandl

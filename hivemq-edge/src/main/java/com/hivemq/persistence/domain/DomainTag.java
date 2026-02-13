@@ -18,10 +18,9 @@ package com.hivemq.persistence.domain;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Map;
 
 @Immutable
 public class DomainTag {
@@ -54,7 +53,8 @@ public class DomainTag {
     }
 
     public @NotNull com.hivemq.edge.api.model.DomainTag toModel() {
-        return new com.hivemq.edge.api.model.DomainTag().name(this.tagName)
+        return new com.hivemq.edge.api.model.DomainTag()
+                .name(this.tagName)
                 .description(this.description)
                 .definition(this.definition);
     }
@@ -100,18 +100,17 @@ public class DomainTag {
 
     @Override
     public @NotNull String toString() {
-        return "DomainTag{" +
-                "tagName='" +
-                tagName +
-                '\'' +
-                ", adapterId='" +
-                adapterId +
-                '\'' +
-                ", description='" +
-                description +
-                '\'' +
-                ", definition=" +
-                definition +
-                '}';
+        return "DomainTag{" + "tagName='"
+                + tagName
+                + '\''
+                + ", adapterId='"
+                + adapterId
+                + '\''
+                + ", description='"
+                + description
+                + '\''
+                + ", definition="
+                + definition
+                + '}';
     }
 }

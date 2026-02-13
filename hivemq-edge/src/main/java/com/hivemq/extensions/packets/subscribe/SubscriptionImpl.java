@@ -16,14 +16,13 @@
 package com.hivemq.extensions.packets.subscribe;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.packets.subscribe.RetainHandling;
 import com.hivemq.extension.sdk.api.packets.subscribe.Subscription;
 import com.hivemq.mqtt.message.subscribe.Topic;
-
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -57,7 +56,8 @@ public class SubscriptionImpl implements Subscription {
         this(
                 topic.getTopic(),
                 topic.getQoS().toQos(),
-                Objects.requireNonNull(RetainHandling.fromCode(topic.getRetainHandling().getCode())),
+                Objects.requireNonNull(
+                        RetainHandling.fromCode(topic.getRetainHandling().getCode())),
                 topic.isRetainAsPublished(),
                 topic.isNoLocal());
     }
@@ -96,11 +96,11 @@ public class SubscriptionImpl implements Subscription {
             return false;
         }
         final SubscriptionImpl that = (SubscriptionImpl) o;
-        return topicFilter.equals(that.topicFilter) &&
-                (qos == that.qos) &&
-                (retainHandling == that.retainHandling) &&
-                retainAsPublished == that.retainAsPublished &&
-                noLocal == that.noLocal;
+        return topicFilter.equals(that.topicFilter)
+                && (qos == that.qos)
+                && (retainHandling == that.retainHandling)
+                && retainAsPublished == that.retainAsPublished
+                && noLocal == that.noLocal;
     }
 
     @Override

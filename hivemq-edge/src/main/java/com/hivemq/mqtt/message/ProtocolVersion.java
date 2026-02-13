@@ -40,5 +40,4 @@ public enum ProtocolVersion {
      * The protocol version which indicates a MQTT-SN 2.0 connection
      */
     MQTTSNv2_0,
-
 }

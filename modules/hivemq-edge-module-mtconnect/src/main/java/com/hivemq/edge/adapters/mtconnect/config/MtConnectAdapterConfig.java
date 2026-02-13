@@ -18,11 +18,10 @@ package com.hivemq.edge.adapters.mtconnect.config;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Objects;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
 public class MtConnectAdapterConfig implements ProtocolSpecificAdapterConfig {
@@ -35,48 +34,54 @@ public class MtConnectAdapterConfig implements ProtocolSpecificAdapterConfig {
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
     @JsonProperty("allowUntrustedCertificates")
-    @ModuleConfigField(title = "Allow Untrusted Certificates",
-                       description = "Allow the adapter to connect to untrusted SSL sources (for example expired certificates).",
-                       defaultValue = "false",
-                       format = ModuleConfigField.FieldType.BOOLEAN)
+    @ModuleConfigField(
+            title = "Allow Untrusted Certificates",
+            description = "Allow the adapter to connect to untrusted SSL sources (for example expired certificates).",
+            defaultValue = "false",
+            format = ModuleConfigField.FieldType.BOOLEAN)
     private final boolean allowUntrustedCertificates;
 
     @JsonProperty("httpConnectTimeoutSeconds")
-    @ModuleConfigField(title = "HTTP Connection Timeout",
-                       description = "Timeout (in seconds) to allow the underlying HTTP connection to be established",
-                       defaultValue = DEFAULT_HTTP_CONNECT_TIMEOUT_SECONDS + "",
-                       numberMin = MIN_HTTP_CONNECT_TIMEOUT_SECONDS,
-                       numberMax = MAX_HTTP_CONNECT_TIMEOUT_SECONDS)
+    @ModuleConfigField(
+            title = "HTTP Connection Timeout",
+            description = "Timeout (in seconds) to allow the underlying HTTP connection to be established",
+            defaultValue = DEFAULT_HTTP_CONNECT_TIMEOUT_SECONDS + "",
+            numberMin = MIN_HTTP_CONNECT_TIMEOUT_SECONDS,
+            numberMax = MAX_HTTP_CONNECT_TIMEOUT_SECONDS)
     private final int httpConnectTimeoutSeconds;
 
     @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
-    @ModuleConfigField(title = "Identifier",
-                       description = "Unique identifier for this protocol adapter",
-                       format = ModuleConfigField.FieldType.IDENTIFIER,
-                       required = true,
-                       stringPattern = ID_REGEX,
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
+    @ModuleConfigField(
+            title = "Identifier",
+            description = "Unique identifier for this protocol adapter",
+            format = ModuleConfigField.FieldType.IDENTIFIER,
+            required = true,
+            stringPattern = ID_REGEX,
+            stringMinLength = 1,
+            stringMaxLength = 1024)
     private @Nullable String id;
 
     @JsonProperty("pollingIntervalMillis")
-    @ModuleConfigField(title = "Polling Interval [ms]",
-                       description = "Time in millisecond that this endpoint will be polled",
-                       numberMin = 1,
-                       required = true,
-                       defaultValue = "1000")
+    @ModuleConfigField(
+            title = "Polling Interval [ms]",
+            description = "Time in millisecond that this endpoint will be polled",
+            numberMin = 1,
+            required = true,
+            defaultValue = "1000")
     private int pollingIntervalMillis;
 
     @JsonProperty("maxPollingErrorsBeforeRemoval")
-    @ModuleConfigField(title = "Max. Polling Errors",
-                       description = "Max. errors polling the endpoint before the polling daemon is stopped",
-                       numberMin = 3,
-                       defaultValue = "10")
+    @ModuleConfigField(
+            title = "Max. Polling Errors",
+            description = "Max. errors polling the endpoint before the polling daemon is stopped",
+            numberMin = 3,
+            defaultValue = "10")
     private int maxPollingErrorsBeforeRemoval = 10;
 
     public MtConnectAdapterConfig(
             @JsonProperty(value = "httpConnectTimeoutSeconds") final @Nullable Integer httpConnectTimeoutSeconds,
-            @JsonProperty(value = "maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
+            @JsonProperty(value = "maxPollingErrorsBeforeRemoval")
+                    final @Nullable Integer maxPollingErrorsBeforeRemoval,
             @JsonProperty(value = "pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
             @JsonProperty(value = "allowUntrustedCertificates") final @Nullable Boolean allowUntrustedCertificates) {
         this.allowUntrustedCertificates =

@@ -15,15 +15,16 @@
  */
 package com.hivemq.mqtt.topic.tree;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class NodeTest {
 
     private TopicTreeNode node;
+
     @BeforeEach
     public void setUp() {
         node = new TopicTreeNode("node");

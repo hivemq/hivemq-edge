@@ -21,7 +21,6 @@ import com.hivemq.uns.UnifiedNamespaceService;
 import com.hivemq.uns.impl.UnifiedNamespaceServiceImpl;
 import dagger.Binds;
 import dagger.Module;
-
 import jakarta.inject.Singleton;
 
 /**
@@ -37,7 +36,6 @@ public abstract class UnsServiceModule {
     abstract UnifiedNamespaceService unifiedNamespaceService(UnifiedNamespaceServiceImpl unifiedNamespaceService);
 
     @Binds
-//    @IntoSet
+    //    @IntoSet
     abstract DataGovernancePolicy provideDataGovernancePolicies(UnifiedNamespaceDataGovernancePolicy policy);
-
 }

@@ -22,15 +22,10 @@ import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.*;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.InternalConfigurations;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.util.Exceptions;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
@@ -39,6 +34,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Singleton
 public class ConnectionPersistenceImpl implements ConnectionPersistence {
@@ -93,23 +92,25 @@ public class ConnectionPersistenceImpl implements ConnectionPersistence {
 
         final ListenableFuture<Void> allServersClosedFuture = shutDownListeners();
         final SettableFuture<Void> allClientsClosedFuture = SettableFuture.create();
-        Futures.addCallback(allServersClosedFuture, new FutureCallback<>() {
-            @Override
-            public void onSuccess(final @Nullable Void result) {
-                shutDownClients(allClientsClosedFuture);
-            }
+        Futures.addCallback(
+                allServersClosedFuture,
+                new FutureCallback<>() {
+                    @Override
+                    public void onSuccess(final @Nullable Void result) {
+                        shutDownClients(allClientsClosedFuture);
+                    }
 
-            @Override
-            public void onFailure(final @NotNull Throwable t) {
-                Exceptions.rethrowError(t);
-                log.warn("Shutdown of listeners failed");
-                if (log.isDebugEnabled()) {
-                    log.debug("Original Exception: ", t);
-                }
-                shutDownClients(allClientsClosedFuture);
-            }
-
-        }, MoreExecutors.directExecutor());
+                    @Override
+                    public void onFailure(final @NotNull Throwable t) {
+                        Exceptions.rethrowError(t);
+                        log.warn("Shutdown of listeners failed");
+                        if (log.isDebugEnabled()) {
+                            log.debug("Original Exception: ", t);
+                        }
+                        shutDownClients(allClientsClosedFuture);
+                    }
+                },
+                MoreExecutors.directExecutor());
         return allClientsClosedFuture;
     }
 
@@ -128,17 +129,20 @@ public class ConnectionPersistenceImpl implements ConnectionPersistence {
 
             final ListenableFuture<List<Void>> future = Futures.allAsList(futureBuilder.build());
             final SettableFuture<Void> resultFuture = SettableFuture.create();
-            Futures.addCallback(future, new FutureCallback<>() {
-                @Override
-                public void onSuccess(final @Nullable List<Void> result) {
-                    resultFuture.set(null);
-                }
+            Futures.addCallback(
+                    future,
+                    new FutureCallback<>() {
+                        @Override
+                        public void onSuccess(final @Nullable List<Void> result) {
+                            resultFuture.set(null);
+                        }
 
-                @Override
-                public void onFailure(final @NotNull Throwable t) {
-                    resultFuture.setException(t);
-                }
-            }, MoreExecutors.directExecutor());
+                        @Override
+                        public void onFailure(final @NotNull Throwable t) {
+                            resultFuture.setException(t);
+                        }
+                    },
+                    MoreExecutors.directExecutor());
             return resultFuture;
         } catch (final Exception e) {
             return Futures.immediateFailedFuture(e);
@@ -151,7 +155,8 @@ public class ConnectionPersistenceImpl implements ConnectionPersistence {
             allClientsClosedFuture.set(null);
             return;
         }
-        final List<List<ClientConnection>> connectionPartitions = Lists.partition(allConnections, shutdownPartitionSize);
+        final List<List<ClientConnection>> connectionPartitions =
+                Lists.partition(allConnections, shutdownPartitionSize);
         shutDownPartition(connectionPartitions, 0, allClientsClosedFuture);
     }
 
@@ -178,9 +183,12 @@ public class ConnectionPersistenceImpl implements ConnectionPersistence {
             }
         }
 
-        Futures.whenAllComplete(closeFutures).run(() -> {
-            shutDownPartition(connectionPartitions, index + 1, closeFuture);
-        }, MoreExecutors.directExecutor());
+        Futures.whenAllComplete(closeFutures)
+                .run(
+                        () -> {
+                            shutDownPartition(connectionPartitions, index + 1, closeFuture);
+                        },
+                        MoreExecutors.directExecutor());
     }
 
     @VisibleForTesting

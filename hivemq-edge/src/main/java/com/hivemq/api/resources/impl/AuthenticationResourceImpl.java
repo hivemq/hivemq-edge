@@ -34,11 +34,10 @@ import com.hivemq.util.ErrorResponseUtil;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
@@ -60,14 +59,14 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
         this.tokenVerifier = tokenVerifier;
     }
 
-
-
     @Override
     public @NotNull Response authenticate(final @Nullable UsernamePasswordCredentials credentials) {
 
         final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
-        ApiErrorUtils.validateRequiredField(errorMessages, "userName", credentials != null ? credentials.getUserName() : null, false);
-        ApiErrorUtils.validateRequiredField(errorMessages, "password", credentials != null ? credentials.getPassword() : null, false);
+        ApiErrorUtils.validateRequiredField(
+                errorMessages, "userName", credentials != null ? credentials.getUserName() : null, false);
+        ApiErrorUtils.validateRequiredField(
+                errorMessages, "password", credentials != null ? credentials.getPassword() : null, false);
 
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
             return ErrorResponseUtil.errorResponse(new AuthenticationValidationError(errorMessages.toErrorList()));
@@ -78,10 +77,10 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
                     .findByUsernameAndPassword(userName, password.getBytes(StandardCharsets.UTF_8))
                     .map(user -> {
                         try {
-                            final ApiBearerToken token = new ApiBearerToken().token(tokenGenerator.generateToken(user.toPrincipal()));
+                            final ApiBearerToken token =
+                                    new ApiBearerToken().token(tokenGenerator.generateToken(user.toPrincipal()));
                             if (logger.isTraceEnabled()) {
-                                logger.trace("Bearer authentication was success, token generated for {}",
-                                        userName);
+                                logger.trace("Bearer authentication was success, token generated for {}", userName);
                             }
                             return Response.ok(token).build();
                         } catch (final AuthenticationException e) {

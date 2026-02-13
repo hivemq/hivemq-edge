@@ -15,24 +15,6 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
-import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
-import com.hivemq.edge.adapters.opcua.config.Keystore;
-import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
-import com.hivemq.edge.adapters.opcua.config.SecPolicy;
-import com.hivemq.edge.adapters.opcua.config.Tls;
-import com.hivemq.edge.adapters.opcua.config.TlsChecks;
-import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
-import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.junit.jupiter.api.Test;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 import static com.hivemq.edge.adapters.opcua.Constants.DEFAULT_SECURITY_POLICY;
 import static com.hivemq.edge.adapters.opcua.config.SecPolicy.AES128_SHA256_RSAOAEP;
 import static com.hivemq.edge.adapters.opcua.config.SecPolicy.AES256_SHA256_RSAPSS;
@@ -42,18 +24,32 @@ import static com.hivemq.edge.adapters.opcua.config.SecPolicy.BASIC256SHA256;
 import static com.hivemq.edge.adapters.opcua.config.SecPolicy.NONE;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
+import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
+import com.hivemq.edge.adapters.opcua.config.Keystore;
+import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.SecPolicy;
+import com.hivemq.edge.adapters.opcua.config.Tls;
+import com.hivemq.edge.adapters.opcua.config.TlsChecks;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
+import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.Test;
+
 class OpcUaEndpointFilterTest {
 
-    private final @NotNull List<String> allUris = convertToUri(List.of(NONE,
-            BASIC128RSA15,
-            BASIC256,
-            BASIC256SHA256,
-            AES128_SHA256_RSAOAEP,
-            AES256_SHA256_RSAPSS));
+    private final @NotNull List<String> allUris = convertToUri(
+            List.of(NONE, BASIC128RSA15, BASIC256, BASIC256SHA256, AES128_SHA256_RSAOAEP, AES256_SHA256_RSAPSS));
 
     @Test
     public void whenSingleEndpointConfigSet_thenPickCorrectEndpoint() {
-        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320",
+        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
+                "opc.tcp://127.0.0.1:49320",
                 false,
                 null,
                 null,
@@ -65,7 +61,8 @@ class OpcUaEndpointFilterTest {
         final String configUri = convertToUri(BASIC256SHA256);
         final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter("id", configUri, null, config);
 
-        final Optional<EndpointDescription> result = opcUaEndpointFilter.apply(convertToEndpointDescription(allUris, MessageSecurityMode.SignAndEncrypt));
+        final Optional<EndpointDescription> result =
+                opcUaEndpointFilter.apply(convertToEndpointDescription(allUris, MessageSecurityMode.SignAndEncrypt));
 
         assertThat(result)
                 .isPresent()
@@ -82,7 +79,8 @@ class OpcUaEndpointFilterTest {
         final String configUri = convertToUri(BASIC256SHA256);
         final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter("id", configUri, null, config);
 
-        final Optional<EndpointDescription> result = opcUaEndpointFilter.apply(convertToEndpointDescription(allUris, MessageSecurityMode.SignAndEncrypt));
+        final Optional<EndpointDescription> result =
+                opcUaEndpointFilter.apply(convertToEndpointDescription(allUris, MessageSecurityMode.SignAndEncrypt));
 
         assertThat(result.isPresent()).isFalse();
     }
@@ -94,8 +92,8 @@ class OpcUaEndpointFilterTest {
                 new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320", false, null, null, null, null, null, null);
         final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter("id", configUri, null, config);
 
-        final Optional<EndpointDescription> result =
-                opcUaEndpointFilter.apply(convertToEndpointDescription(convertToUri(List.of(NONE)), MessageSecurityMode.None));
+        final Optional<EndpointDescription> result = opcUaEndpointFilter.apply(
+                convertToEndpointDescription(convertToUri(List.of(NONE)), MessageSecurityMode.None));
 
         assertThat(result.isPresent()).isFalse();
     }
@@ -104,10 +102,11 @@ class OpcUaEndpointFilterTest {
     public void whenDefaultEndpointConfigSet_thenPickMatchingEndpoint() {
         final OpcUaSpecificAdapterConfig config =
                 new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320", false, null, null, null, null, null, null);
-        final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter("id", convertToUri(
-                DEFAULT_SECURITY_POLICY), null, config);
+        final OpcUaEndpointFilter opcUaEndpointFilter =
+                new OpcUaEndpointFilter("id", convertToUri(DEFAULT_SECURITY_POLICY), null, config);
 
-        final Optional<EndpointDescription> result = opcUaEndpointFilter.apply(convertToEndpointDescription(allUris, MessageSecurityMode.None));
+        final Optional<EndpointDescription> result =
+                opcUaEndpointFilter.apply(convertToEndpointDescription(allUris, MessageSecurityMode.None));
 
         assertThat(result)
                 .isPresent()
@@ -119,7 +118,8 @@ class OpcUaEndpointFilterTest {
     @Test
     public void whenMessageSecurityModeSpecified_thenFilterByMode() {
         // Given - Config with keystore and specific mode preference
-        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320",
+        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
+                "opc.tcp://127.0.0.1:49320",
                 false,
                 null,
                 null,
@@ -132,13 +132,21 @@ class OpcUaEndpointFilterTest {
 
         // Create endpoints with different modes for the same policy
         final List<EndpointDescription> endpoints = new ArrayList<>();
-        endpoints.add(new EndpointDescription("opc.tcp://127.0.0.1:49320",
-                null, null, MessageSecurityMode.Sign, policyUri, null, null, null));
-        endpoints.add(new EndpointDescription("opc.tcp://127.0.0.1:49320",
-                null, null, MessageSecurityMode.SignAndEncrypt, policyUri, null, null, null));
+        endpoints.add(new EndpointDescription(
+                "opc.tcp://127.0.0.1:49320", null, null, MessageSecurityMode.Sign, policyUri, null, null, null));
+        endpoints.add(new EndpointDescription(
+                "opc.tcp://127.0.0.1:49320",
+                null,
+                null,
+                MessageSecurityMode.SignAndEncrypt,
+                policyUri,
+                null,
+                null,
+                null));
 
         // When - Filter with Sign mode preference
-        final OpcUaEndpointFilter filterForSign = new OpcUaEndpointFilter("id", policyUri, MessageSecurityMode.Sign, config);
+        final OpcUaEndpointFilter filterForSign =
+                new OpcUaEndpointFilter("id", policyUri, MessageSecurityMode.Sign, config);
         final Optional<EndpointDescription> resultSign = filterForSign.apply(endpoints);
 
         // Then - Sign endpoint is selected
@@ -149,7 +157,8 @@ class OpcUaEndpointFilterTest {
                 .isEqualTo(MessageSecurityMode.Sign);
 
         // When - Filter with SignAndEncrypt mode preference
-        final OpcUaEndpointFilter filterForSignAndEncrypt = new OpcUaEndpointFilter("id", policyUri, MessageSecurityMode.SignAndEncrypt, config);
+        final OpcUaEndpointFilter filterForSignAndEncrypt =
+                new OpcUaEndpointFilter("id", policyUri, MessageSecurityMode.SignAndEncrypt, config);
         final Optional<EndpointDescription> resultSignAndEncrypt = filterForSignAndEncrypt.apply(endpoints);
 
         // Then - SignAndEncrypt endpoint is selected
@@ -163,7 +172,8 @@ class OpcUaEndpointFilterTest {
     @Test
     public void whenNoMessageSecurityModeSpecified_thenAcceptAnyMode() {
         // Given - Config without mode preference (backwards compatibility)
-        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320",
+        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
+                "opc.tcp://127.0.0.1:49320",
                 false,
                 null,
                 null,
@@ -176,10 +186,17 @@ class OpcUaEndpointFilterTest {
 
         // Create endpoints with different modes
         final List<EndpointDescription> endpoints = new ArrayList<>();
-        endpoints.add(new EndpointDescription("opc.tcp://127.0.0.1:49320",
-                null, null, MessageSecurityMode.Sign, policyUri, null, null, null));
-        endpoints.add(new EndpointDescription("opc.tcp://127.0.0.1:49320",
-                null, null, MessageSecurityMode.SignAndEncrypt, policyUri, null, null, null));
+        endpoints.add(new EndpointDescription(
+                "opc.tcp://127.0.0.1:49320", null, null, MessageSecurityMode.Sign, policyUri, null, null, null));
+        endpoints.add(new EndpointDescription(
+                "opc.tcp://127.0.0.1:49320",
+                null,
+                null,
+                MessageSecurityMode.SignAndEncrypt,
+                policyUri,
+                null,
+                null,
+                null));
 
         // When - Filter without mode preference (null)
         final OpcUaEndpointFilter filter = new OpcUaEndpointFilter("id", policyUri, null, config);
@@ -196,7 +213,8 @@ class OpcUaEndpointFilterTest {
     @Test
     public void whenWrongMessageSecurityMode_thenNoEndpointSelected() {
         // Given - Config requesting SignAndEncrypt
-        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig("opc.tcp://127.0.0.1:49320",
+        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
+                "opc.tcp://127.0.0.1:49320",
                 false,
                 null,
                 null,
@@ -208,12 +226,12 @@ class OpcUaEndpointFilterTest {
         final String policyUri = convertToUri(BASIC256SHA256);
 
         // Server only offers Sign mode
-        final List<EndpointDescription> endpoints = List.of(
-                new EndpointDescription("opc.tcp://127.0.0.1:49320",
-                        null, null, MessageSecurityMode.Sign, policyUri, null, null, null));
+        final List<EndpointDescription> endpoints = List.of(new EndpointDescription(
+                "opc.tcp://127.0.0.1:49320", null, null, MessageSecurityMode.Sign, policyUri, null, null, null));
 
         // When - Filter with SignAndEncrypt preference but server only has Sign
-        final OpcUaEndpointFilter filter = new OpcUaEndpointFilter("id", policyUri, MessageSecurityMode.SignAndEncrypt, config);
+        final OpcUaEndpointFilter filter =
+                new OpcUaEndpointFilter("id", policyUri, MessageSecurityMode.SignAndEncrypt, config);
         final Optional<EndpointDescription> result = filter.apply(endpoints);
 
         // Then - No endpoint selected (mode mismatch)
@@ -222,17 +240,10 @@ class OpcUaEndpointFilterTest {
 
     @NotNull
     private static List<EndpointDescription> convertToEndpointDescription(
-            final @NotNull List<String> allUris,
-            final @Nullable MessageSecurityMode mode) {
+            final @NotNull List<String> allUris, final @Nullable MessageSecurityMode mode) {
         final ArrayList<EndpointDescription> endpointList = allUris.stream()
-                .map(policyUri -> new EndpointDescription("opc.tcp://127.0.0.1:49320",
-                        null,
-                        null,
-                        mode,
-                        policyUri,
-                        null,
-                        null,
-                        null))
+                .map(policyUri -> new EndpointDescription(
+                        "opc.tcp://127.0.0.1:49320", null, null, mode, policyUri, null, null, null))
                 .collect(Collectors.toCollection(ArrayList::new));
         Collections.shuffle(endpointList);
         return endpointList;
@@ -247,5 +258,4 @@ class OpcUaEndpointFilterTest {
     private @NotNull String convertToUri(final @NotNull SecPolicy policy) {
         return policy.getSecurityPolicy().getUri();
     }
-
 }

@@ -18,7 +18,6 @@ package com.hivemq.extensions.handler;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
@@ -42,13 +41,13 @@ import com.hivemq.util.Exceptions;
 import com.hivemq.util.ReasonStrings;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Robin Atherton
@@ -77,13 +76,12 @@ public class UnsubscribeInboundInterceptorHandler {
         this.executorService = executorService;
     }
 
-
     public void handleInboundUnsubscribe(
-            final @NotNull ChannelHandlerContext ctx,
-            final @NotNull UNSUBSCRIBE unsubscribe) {
+            final @NotNull ChannelHandlerContext ctx, final @NotNull UNSUBSCRIBE unsubscribe) {
 
         final Channel channel = ctx.channel();
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final String clientId = clientConnection.getClientId();
         if (clientId == null) {
             return;
@@ -118,7 +116,8 @@ public class UnsubscribeInboundInterceptorHandler {
 
         for (final UnsubscribeInboundInterceptor interceptor : interceptors) {
 
-            final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(interceptor.getClass().getClassLoader());
+            final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(
+                    interceptor.getClass().getClassLoader());
             if (extension == null) {
                 context.finishInterceptor();
                 continue;
@@ -185,7 +184,8 @@ public class UnsubscribeInboundInterceptorHandler {
             if (output.isPreventDelivery()) {
                 prevent(output);
             } else {
-                final UNSUBSCRIBE unsubscribe = UNSUBSCRIBE.from(inputHolder.get().getUnsubscribePacket());
+                final UNSUBSCRIBE unsubscribe =
+                        UNSUBSCRIBE.from(inputHolder.get().getUnsubscribePacket());
                 ctx.fireChannelRead(unsubscribe);
             }
         }
@@ -196,10 +196,11 @@ public class UnsubscribeInboundInterceptorHandler {
             for (int i = 0; i < size; i++) {
                 reasonCodesBuilder.add(Mqtt5UnsubAckReasonCode.UNSPECIFIED_ERROR);
             }
-            ctx.channel().writeAndFlush(new UNSUBACK(
-                    output.getUnsubscribePacket().getPacketIdentifier(),
-                    reasonCodesBuilder.build(),
-                    ReasonStrings.UNSUBACK_EXTENSION_PREVENTED));
+            ctx.channel()
+                    .writeAndFlush(new UNSUBACK(
+                            output.getUnsubscribePacket().getPacketIdentifier(),
+                            reasonCodesBuilder.build(),
+                            ReasonStrings.UNSUBACK_EXTENSION_PREVENTED));
         }
     }
 
@@ -227,8 +228,10 @@ public class UnsubscribeInboundInterceptorHandler {
                 interceptor.onInboundUnsubscribe(input, output);
             } catch (final Throwable e) {
                 log.warn(
-                        "Uncaught exception was thrown from extension with id \"{}\" on inbound UNSUBSCRIBE interception. " +
-                                "Extensions are responsible for their own exception handling.", extensionId, e);
+                        "Uncaught exception was thrown from extension with id \"{}\" on inbound UNSUBSCRIBE interception. "
+                                + "Extensions are responsible for their own exception handling.",
+                        extensionId,
+                        e);
                 output.preventDelivery();
                 Exceptions.rethrowError(e);
             }

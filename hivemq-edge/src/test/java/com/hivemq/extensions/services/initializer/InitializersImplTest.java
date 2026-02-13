@@ -13,8 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.services.initializer;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.extension.sdk.api.client.ClientContext;
@@ -28,19 +31,14 @@ import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.persistence.connection.ConnectionPersistenceImpl;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
+import java.io.File;
+import java.util.Iterator;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import util.IsolatedExtensionClassloaderUtil;
-
-import java.io.File;
-import java.util.Iterator;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @since 4.0.0
@@ -57,6 +55,7 @@ public class InitializersImplTest {
 
     private @NotNull InitializersImpl initializers;
     private @NotNull ConnectionPersistence connectionPersistence;
+
     @BeforeEach
     public void setUp() throws Exception {
         connectionPersistence = new ConnectionPersistenceImpl();
@@ -68,8 +67,8 @@ public class InitializersImplTest {
 
     @Test
     public void test_add_success() throws Exception {
-        try (final IsolatedExtensionClassloader cl = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder
-                .toPath(), new Class[]{TestClientInitializerOne.class})) {
+        try (final IsolatedExtensionClassloader cl = IsolatedExtensionClassloaderUtil.buildClassLoader(
+                temporaryFolder.toPath(), new Class[] {TestClientInitializerOne.class})) {
             final ClientInitializer clientInitializer =
                     IsolatedExtensionClassloaderUtil.loadInstance(cl, TestClientInitializerOne.class);
             when(hiveMQExtensions.getExtensionForClassloader(cl)).thenReturn(extension1);
@@ -86,20 +85,19 @@ public class InitializersImplTest {
 
             initializers.addClientInitializer(clientInitializer);
 
-            assertEquals(clientInitializer, initializers.getClientInitializerMap().get("extension1"));
+            assertEquals(
+                    clientInitializer, initializers.getClientInitializerMap().get("extension1"));
         }
     }
 
     @Test
     public void test_add_two_different_priorities() throws Exception {
-        final Class<?>[] classes = {
-                TestClientInitializerOne.class, TestClientInitializerTwo.class
-        };
+        final Class<?>[] classes = {TestClientInitializerOne.class, TestClientInitializerTwo.class};
 
-        try (final IsolatedExtensionClassloader cl1 = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder
-                .toPath(), classes);
-             final IsolatedExtensionClassloader cl2 = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder
-                     .toPath(), classes)) {
+        try (final IsolatedExtensionClassloader cl1 =
+                        IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.toPath(), classes);
+                final IsolatedExtensionClassloader cl2 =
+                        IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.toPath(), classes)) {
             final ClientInitializer clientInitializerOne =
                     IsolatedExtensionClassloaderUtil.loadInstance(cl1, TestClientInitializerOne.class);
             final ClientInitializer clientInitializerTwo =
@@ -124,7 +122,8 @@ public class InitializersImplTest {
 
             assertEquals(2, initializerMap.size());
 
-            final Iterator<Map.Entry<String, ClientInitializer>> iterator = initializerMap.entrySet().iterator();
+            final Iterator<Map.Entry<String, ClientInitializer>> iterator =
+                    initializerMap.entrySet().iterator();
 
             assertEquals(clientInitializerTwo, iterator.next().getValue());
             assertEquals(clientInitializerOne, iterator.next().getValue());
@@ -133,14 +132,12 @@ public class InitializersImplTest {
 
     @Test
     public void test_add_two_equal_priorities() throws Exception {
-        final Class<?>[] classes = {
-                TestClientInitializerOne.class, TestClientInitializerTwo.class
-        };
+        final Class<?>[] classes = {TestClientInitializerOne.class, TestClientInitializerTwo.class};
 
-        try (final IsolatedExtensionClassloader cl1 = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder
-                .toPath(), classes);
-             final IsolatedExtensionClassloader cl2 = IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder
-                     .toPath(), classes)) {
+        try (final IsolatedExtensionClassloader cl1 =
+                        IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.toPath(), classes);
+                final IsolatedExtensionClassloader cl2 =
+                        IsolatedExtensionClassloaderUtil.buildClassLoader(temporaryFolder.toPath(), classes)) {
             final ClientInitializer clientInitializerOne =
                     IsolatedExtensionClassloaderUtil.loadInstance(cl1, TestClientInitializerOne.class);
             final ClientInitializer clientInitializerTwo =
@@ -163,7 +160,8 @@ public class InitializersImplTest {
 
             assertEquals(2, initializerMap.size());
 
-            final Iterator<Map.Entry<String, ClientInitializer>> iterator = initializerMap.entrySet().iterator();
+            final Iterator<Map.Entry<String, ClientInitializer>> iterator =
+                    initializerMap.entrySet().iterator();
 
             // the first one added is the first one shown
             assertEquals(clientInitializerOne, iterator.next().getValue());
@@ -174,16 +172,12 @@ public class InitializersImplTest {
     public static class TestClientInitializerOne implements ClientInitializer {
 
         @Override
-        public void initialize(final @NotNull InitializerInput input, final @NotNull ClientContext pipeline) {
-
-        }
+        public void initialize(final @NotNull InitializerInput input, final @NotNull ClientContext pipeline) {}
     }
 
     public static class TestClientInitializerTwo implements ClientInitializer {
 
         @Override
-        public void initialize(final @NotNull InitializerInput input, final @NotNull ClientContext pipeline) {
-
-        }
+        public void initialize(final @NotNull InitializerInput input, final @NotNull ClientContext pipeline) {}
     }
 }

@@ -15,6 +15,10 @@
  */
 package com.hivemq.configuration.reader;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.common.i18n.StringTemplate;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
@@ -25,13 +29,6 @@ import com.hivemq.configuration.entity.adapter.TagEntity;
 import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.exceptions.UnrecoverableException;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -39,10 +36,12 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 public class ProtocolAdapterExtractorTest {
     @TempDir
@@ -114,7 +113,8 @@ public class ProtocolAdapterExtractorTest {
         assertThat(configFileReader.applyConfig()).isNotNull();
         final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
         assertThat(protocolAdapterExtractor.getAllConfigs()).hasSize(1);
-        final ProtocolAdapterEntity protocolAdapterEntity = protocolAdapterExtractor.getAllConfigs().getFirst();
+        final ProtocolAdapterEntity protocolAdapterEntity =
+                protocolAdapterExtractor.getAllConfigs().getFirst();
         assertThat(protocolAdapterEntity.getAdapterId()).isEqualTo("simInvalid");
         assertThat(protocolAdapterEntity.getProtocolId()).isEqualTo("simulation");
         assertThat(protocolAdapterEntity.getNorthboundMappings()).hasSize(1);
@@ -122,10 +122,13 @@ public class ProtocolAdapterExtractorTest {
                 protocolAdapterEntity.getNorthboundMappings().getFirst();
         assertThat(northboundMappingEntity.getTopic()).isEqualTo("MTConnect/my-steams");
         assertThat(northboundMappingEntity.getTagName()).isEqualTo("tag1");
-        assertThat(northboundMappingEntity.getMessageHandlingOptions()).isEqualTo(MessageHandlingOptions.MQTTMessagePerTag);
+        assertThat(northboundMappingEntity.getMessageHandlingOptions())
+                .isEqualTo(MessageHandlingOptions.MQTTMessagePerTag);
         protocolAdapterEntity.getNorthboundMappings().clear();
-        protocolAdapterEntity.getNorthboundMappings()
-                .add(new NorthboundMappingEntity(northboundMappingEntity.getTagName(),
+        protocolAdapterEntity
+                .getNorthboundMappings()
+                .add(new NorthboundMappingEntity(
+                        northboundMappingEntity.getTagName(),
                         northboundMappingEntity.getTopic(),
                         northboundMappingEntity.getMaxQoS(),
                         null,
@@ -142,17 +145,17 @@ public class ProtocolAdapterExtractorTest {
         // This is a bug that can cause the config to be invalid.
         // @XmlElement(name = "messageHandlingOptions", defaultValue = "MQTTMessagePerTag", nillable = true)
         // private final @Nullable MessageHandlingOptions messageHandlingOptions;
-        assertThat(newConfigString).as("<messageHandlingOptions/> shouldn't contain xsi:nil=\"true\"")
+        assertThat(newConfigString)
+                .as("<messageHandlingOptions/> shouldn't contain xsi:nil=\"true\"")
                 .doesNotContain("<messageHandlingOptions xsi:nil=\"true\"/>");
     }
 
     @ParameterizedTest
     @CsvSource({"true,0", "true,1", "true,2", "false,-1", "false,3", "false,abc"})
     public void whenNorthboundMappingQoSIsProvided_thenApplyConfigShouldWorkAsExpected(
-            final boolean valid,
-            final @NotNull String maxQoS)
-            throws IOException {
-        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter(StringTemplate.format("""
+            final boolean valid, final @NotNull String maxQoS) throws IOException {
+        final ConfigFileReaderWriter configFileReader =
+                getConfigFileReaderWriter(StringTemplate.format("""
                 <hivemq>
                   <protocol-adapters>
                     <protocol-adapter>
@@ -192,10 +195,9 @@ public class ProtocolAdapterExtractorTest {
     @ParameterizedTest
     @CsvSource({"true,true", "true,false", "false,abc"})
     public void whenNorthboundMappingIncludeTagNamesIsProvided_thenApplyConfigShouldWorkAsExpected(
-            final boolean valid,
-            final @NotNull String includeTagNames)
-            throws IOException {
-        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter(StringTemplate.format("""
+            final boolean valid, final @NotNull String includeTagNames) throws IOException {
+        final ConfigFileReaderWriter configFileReader =
+                getConfigFileReaderWriter(StringTemplate.format("""
                 <hivemq>
                   <protocol-adapters>
                     <protocol-adapter>
@@ -235,10 +237,9 @@ public class ProtocolAdapterExtractorTest {
     @ParameterizedTest
     @CsvSource({"true,true", "true,false", "false,abc"})
     public void whenNorthboundMappingIncludeTimestampIsProvided_thenApplyConfigShouldWorkAsExpected(
-            final boolean valid,
-            final @NotNull String includeTimestamp)
-            throws IOException {
-        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter(StringTemplate.format("""
+            final boolean valid, final @NotNull String includeTimestamp) throws IOException {
+        final ConfigFileReaderWriter configFileReader =
+                getConfigFileReaderWriter(StringTemplate.format("""
                 <hivemq>
                   <protocol-adapters>
                     <protocol-adapter>
@@ -278,10 +279,9 @@ public class ProtocolAdapterExtractorTest {
     @ParameterizedTest
     @CsvSource({"true,1", "true,123", "false,0", "false,-1", "false,abc"})
     public void whenNorthboundMappingMessageExpiryIntervalIsProvided_thenApplyConfigShouldWorkAsExpected(
-            final boolean valid,
-            final @NotNull String messageExpiryInterval)
-            throws IOException {
-        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter(StringTemplate.format("""
+            final boolean valid, final @NotNull String messageExpiryInterval) throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter(
+                StringTemplate.format("""
                 <hivemq>
                   <protocol-adapters>
                     <protocol-adapter>
@@ -422,7 +422,8 @@ public class ProtocolAdapterExtractorTest {
                 </hivemq>
                 """);
         // XML schema violation in line '16' and column '51' caused by:
-        // "The prefix "xsi" for attribute "xsi:nil" associated with an element type "messageHandlingOptions" is not bound."
+        // "The prefix "xsi" for attribute "xsi:nil" associated with an element type "messageHandlingOptions" is not
+        // bound."
         assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
     }
 
@@ -460,7 +461,8 @@ public class ProtocolAdapterExtractorTest {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final HiveMQConfigEntity entity = configFileReader.applyConfig();
         assertThat(entity).isNotNull();
-        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
+        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity(
+                "adapterId",
                 "protocolId",
                 1,
                 Map.of(),
@@ -478,13 +480,8 @@ public class ProtocolAdapterExtractorTest {
         assertThat(entity).isNotNull();
         final NorthboundMappingEntity northboundMappingEntity =
                 new NorthboundMappingEntity("tagName", "topic", 1, null, false, true, List.of(), 100L);
-        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(northboundMappingEntity),
-                List.of(),
-                List.of());
+        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity(
+                "adapterId", "protocolId", 1, Map.of(), List.of(northboundMappingEntity), List.of(), List.of());
         entity.getProtocolAdapterConfig().add(protocolAdapterEntity);
         assertThat(configFileReader.internalApplyConfig(entity)).isFalse();
     }
@@ -494,15 +491,10 @@ public class ProtocolAdapterExtractorTest {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final HiveMQConfigEntity entity = configFileReader.applyConfig();
         assertThat(entity).isNotNull();
-        final NorthboundMappingEntity northboundMappingEntity = new NorthboundMappingEntity("tagName",
-                "topic",
-                1,
-                MessageHandlingOptions.MQTTMessagePerSubscription,
-                false,
-                true,
-                List.of(),
-                100L);
-        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
+        final NorthboundMappingEntity northboundMappingEntity = new NorthboundMappingEntity(
+                "tagName", "topic", 1, MessageHandlingOptions.MQTTMessagePerSubscription, false, true, List.of(), 100L);
+        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity(
+                "adapterId",
                 "protocolId",
                 1,
                 Map.of(),
@@ -516,27 +508,14 @@ public class ProtocolAdapterExtractorTest {
     @ParameterizedTest
     @CsvSource({",topic", "tagName,"})
     public void whenNorthboundMappingTagNameOrTopicIsEmpty_setConfigurationShouldReturnFalse(
-            final @NotNull String tagName,
-            final @NotNull String topic)
-            throws IOException {
+            final @NotNull String tagName, final @NotNull String topic) throws IOException {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final HiveMQConfigEntity entity = configFileReader.applyConfig();
         assertThat(entity).isNotNull();
-        final NorthboundMappingEntity northboundMappingEntity = new NorthboundMappingEntity(tagName,
-                topic,
-                1,
-                MessageHandlingOptions.MQTTMessagePerSubscription,
-                false,
-                true,
-                List.of(),
-                100L);
-        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(northboundMappingEntity),
-                List.of(),
-                List.of());
+        final NorthboundMappingEntity northboundMappingEntity = new NorthboundMappingEntity(
+                tagName, topic, 1, MessageHandlingOptions.MQTTMessagePerSubscription, false, true, List.of(), 100L);
+        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity(
+                "adapterId", "protocolId", 1, Map.of(), List.of(northboundMappingEntity), List.of(), List.of());
         entity.getProtocolAdapterConfig().add(protocolAdapterEntity);
         assertThat(configFileReader.internalApplyConfig(entity)).isFalse();
     }
@@ -548,7 +527,8 @@ public class ProtocolAdapterExtractorTest {
         assertThat(entity).isNotNull();
         final SouthboundMappingEntity southboundMappingEntity =
                 new SouthboundMappingEntity("tagName", "topicFilter", new FieldMappingEntity(), "schema");
-        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
+        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity(
+                "adapterId",
                 "protocolId",
                 1,
                 Map.of(),
@@ -562,22 +542,15 @@ public class ProtocolAdapterExtractorTest {
     @ParameterizedTest
     @CsvSource({",topicFilter,schema", "tagName,,schema", "tagName,topicFilter,"})
     public void whenSouthboundMappingTagNameOrTopicFilterOrSchemaIsEmpty_setConfigurationShouldReturnFalse(
-            final @NotNull String tagName,
-            final @NotNull String topicFilter,
-            final @NotNull String schema)
+            final @NotNull String tagName, final @NotNull String topicFilter, final @NotNull String schema)
             throws IOException {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final HiveMQConfigEntity entity = configFileReader.applyConfig();
         assertThat(entity).isNotNull();
         final SouthboundMappingEntity southboundMappingEntity =
                 new SouthboundMappingEntity(tagName, topicFilter, new FieldMappingEntity(), schema);
-        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(southboundMappingEntity),
-                List.of());
+        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity(
+                "adapterId", "protocolId", 1, Map.of(), List.of(), List.of(southboundMappingEntity), List.of());
         entity.getProtocolAdapterConfig().add(protocolAdapterEntity);
         assertThat(configFileReader.internalApplyConfig(entity)).isFalse();
     }
@@ -586,113 +559,25 @@ public class ProtocolAdapterExtractorTest {
     public void whenNoDuplicatedTags_thenAddAdapterReturnsTrue() throws IOException {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
-        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapterId",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(),
-                IntStream.range(0, 10)
-                        .mapToObj(i -> new TagEntity("tag" + i, "description" + i, Map.of()))
-                        .toList()))).isTrue();
-    }
-
-    @Test
-    public void whenNoDuplicatedTags_thenUpdateAdapterReturnsTrue() throws IOException {
-        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
-        final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
-        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapterId",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(),
-                IntStream.range(0, 5)
-                        .mapToObj(i -> new TagEntity("tag" + i, "description" + i, Map.of()))
-                        .toList()))).isTrue();
-        assertThat(protocolAdapterExtractor.updateAdapter(new ProtocolAdapterEntity("adapterId",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(),
-                IntStream.range(0, 10)
-                        .mapToObj(i -> new TagEntity("tag" + i, "description" + i, Map.of()))
-                        .toList()))).isTrue();
-    }
-
-    @Test
-    public void whenNoDuplicatedTags_thenUpdateAllAdaptersReturnsTrue() throws IOException {
-        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
-        final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
-        IntStream.range(0, 10)
-                .forEach(j -> assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapterId" + j,
-                        "protocolId",
-                        1,
-                        Map.of(),
-                        List.of(),
-                        List.of(),
-                        IntStream.range(0, 5)
-                                .mapToObj(i -> new TagEntity("tag" + i, "description" + i, Map.of()))
-                                .toList()))).isTrue());
-        assertThat(protocolAdapterExtractor.updateAllAdapters(IntStream.range(0, 10)
-                .mapToObj(j -> new ProtocolAdapterEntity("adapterId" + j,
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity(
+                        "adapterId",
                         "protocolId",
                         1,
                         Map.of(),
                         List.of(),
                         List.of(),
                         IntStream.range(0, 10)
-                                .mapToObj(i -> new TagEntity("tag123" + i, "description" + i, Map.of()))
-                                .toList()))
-                .toList())).isEqualTo(Configurator.ConfigResult.SUCCESS);
+                                .mapToObj(i -> new TagEntity("tag" + i, "description" + i, Map.of()))
+                                .toList())))
+                .isTrue();
     }
 
     @Test
-    public void whenDuplicatedTags_thenAddAdapterReturnsFalse() throws IOException {
+    public void whenNoDuplicatedTags_thenUpdateAdapterReturnsTrue() throws IOException {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
-        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapterId",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(),
-                IntStream.range(0, 10)
-                        .mapToObj(i -> new TagEntity("tag", "description", Map.of()))
-                        .toList()))).isFalse();
-    }
-
-    @Test
-    public void whenDuplicatedTags_thenUpdateAdapterReturnsFalse() throws IOException {
-        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
-        final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
-        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapterId",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(),
-                IntStream.range(0, 5)
-                        .mapToObj(i -> new TagEntity("tag" + i, "description" + i, Map.of()))
-                        .toList()))).isTrue();
-        assertThat(protocolAdapterExtractor.updateAdapter(new ProtocolAdapterEntity("adapterId",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(),
-                IntStream.range(0, 10)
-                        .mapToObj(i -> new TagEntity("tag", "description", Map.of()))
-                        .toList()))).isFalse();
-    }
-
-    @Test
-    public void whenDuplicatedTags_thenUpdateAllAdaptersReturnsFalse() throws IOException {
-        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
-        final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
-        IntStream.range(0, 10)
-                .forEach(j -> assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapterId" + j,
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity(
+                        "adapterId",
                         "protocolId",
                         1,
                         Map.of(),
@@ -700,31 +585,141 @@ public class ProtocolAdapterExtractorTest {
                         List.of(),
                         IntStream.range(0, 5)
                                 .mapToObj(i -> new TagEntity("tag" + i, "description" + i, Map.of()))
-                                .toList()))).isTrue());
-        assertThat(protocolAdapterExtractor.updateAllAdapters(IntStream.range(0, 10)
-                .mapToObj(j -> new ProtocolAdapterEntity("adapterId" + j,
+                                .toList())))
+                .isTrue();
+        assertThat(protocolAdapterExtractor.updateAdapter(new ProtocolAdapterEntity(
+                        "adapterId",
                         "protocolId",
                         1,
                         Map.of(),
                         List.of(),
                         List.of(),
-                        IntStream.range(0, 10).mapToObj(i -> new TagEntity("tag", "description", Map.of())).toList()))
-                .toList())).isEqualTo(Configurator.ConfigResult.ERROR);
+                        IntStream.range(0, 10)
+                                .mapToObj(i -> new TagEntity("tag" + i, "description" + i, Map.of()))
+                                .toList())))
+                .isTrue();
+    }
+
+    @Test
+    public void whenNoDuplicatedTags_thenUpdateAllAdaptersReturnsTrue() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
+        final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
+        IntStream.range(0, 10).forEach(j -> assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity(
+                        "adapterId" + j,
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        IntStream.range(0, 5)
+                                .mapToObj(i -> new TagEntity("tag" + i, "description" + i, Map.of()))
+                                .toList())))
+                .isTrue());
+        assertThat(protocolAdapterExtractor.updateAllAdapters(IntStream.range(0, 10)
+                        .mapToObj(j -> new ProtocolAdapterEntity(
+                                "adapterId" + j,
+                                "protocolId",
+                                1,
+                                Map.of(),
+                                List.of(),
+                                List.of(),
+                                IntStream.range(0, 10)
+                                        .mapToObj(i -> new TagEntity("tag123" + i, "description" + i, Map.of()))
+                                        .toList()))
+                        .toList()))
+                .isEqualTo(Configurator.ConfigResult.SUCCESS);
+    }
+
+    @Test
+    public void whenDuplicatedTags_thenAddAdapterReturnsFalse() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
+        final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity(
+                        "adapterId",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        IntStream.range(0, 10)
+                                .mapToObj(i -> new TagEntity("tag", "description", Map.of()))
+                                .toList())))
+                .isFalse();
+    }
+
+    @Test
+    public void whenDuplicatedTags_thenUpdateAdapterReturnsFalse() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
+        final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity(
+                        "adapterId",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        IntStream.range(0, 5)
+                                .mapToObj(i -> new TagEntity("tag" + i, "description" + i, Map.of()))
+                                .toList())))
+                .isTrue();
+        assertThat(protocolAdapterExtractor.updateAdapter(new ProtocolAdapterEntity(
+                        "adapterId",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        IntStream.range(0, 10)
+                                .mapToObj(i -> new TagEntity("tag", "description", Map.of()))
+                                .toList())))
+                .isFalse();
+    }
+
+    @Test
+    public void whenDuplicatedTags_thenUpdateAllAdaptersReturnsFalse() throws IOException {
+        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
+        final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
+        IntStream.range(0, 10).forEach(j -> assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity(
+                        "adapterId" + j,
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        IntStream.range(0, 5)
+                                .mapToObj(i -> new TagEntity("tag" + i, "description" + i, Map.of()))
+                                .toList())))
+                .isTrue());
+        assertThat(protocolAdapterExtractor.updateAllAdapters(IntStream.range(0, 10)
+                        .mapToObj(j -> new ProtocolAdapterEntity(
+                                "adapterId" + j,
+                                "protocolId",
+                                1,
+                                Map.of(),
+                                List.of(),
+                                List.of(),
+                                IntStream.range(0, 10)
+                                        .mapToObj(i -> new TagEntity("tag", "description", Map.of()))
+                                        .toList()))
+                        .toList()))
+                .isEqualTo(Configurator.ConfigResult.ERROR);
     }
 
     @Test
     public void whenAdapterExists_thenDeleteAdapterReturnsTrue() throws IOException {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
-        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapterId",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(),
-                IntStream.range(0, 5)
-                        .mapToObj(i -> new TagEntity("tag" + i, "description" + i, Map.of()))
-                        .toList()))).isTrue();
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity(
+                        "adapterId",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        IntStream.range(0, 5)
+                                .mapToObj(i -> new TagEntity("tag" + i, "description" + i, Map.of()))
+                                .toList())))
+                .isTrue();
         assertThat(protocolAdapterExtractor.deleteAdapter("adapterId")).isTrue();
     }
 
@@ -743,23 +738,27 @@ public class ProtocolAdapterExtractorTest {
         final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
 
         // Add first adapter with tag "sharedTag"
-        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter1",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(),
-                List.of(new TagEntity("sharedTag", "description1", Map.of()))))).isTrue();
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity(
+                        "adapter1",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(new TagEntity("sharedTag", "description1", Map.of())))))
+                .isTrue();
 
         // Add second adapter with the same tag name "sharedTag" - should succeed
         // because deduplication is by (adapterId, tagName), not just tagName
-        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter2",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(),
-                List.of(new TagEntity("sharedTag", "description2", Map.of()))))).isTrue();
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity(
+                        "adapter2",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(new TagEntity("sharedTag", "description2", Map.of())))))
+                .isTrue();
 
         assertThat(protocolAdapterExtractor.getAllConfigs()).hasSize(2);
     }
@@ -770,29 +769,32 @@ public class ProtocolAdapterExtractorTest {
         final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
 
         // Update all adapters with multiple adapters having the same tag name
-        assertThat(protocolAdapterExtractor.updateAllAdapters(List.of(new ProtocolAdapterEntity("adapter1",
-                        "protocolId",
-                        1,
-                        Map.of(),
-                        List.of(),
-                        List.of(),
-                        List.of(new TagEntity("sharedTag", "description1", Map.of()))),
-                new ProtocolAdapterEntity("adapter2",
-                        "protocolId",
-                        1,
-                        Map.of(),
-                        List.of(),
-                        List.of(),
-                        List.of(new TagEntity("sharedTag", "description2", Map.of()))),
-                new ProtocolAdapterEntity("adapter3",
-                        "protocolId",
-                        1,
-                        Map.of(),
-                        List.of(),
-                        List.of(),
-                        List.of(new TagEntity("sharedTag",
-                                "description3",
-                                Map.of())))))).isEqualTo(Configurator.ConfigResult.SUCCESS);
+        assertThat(protocolAdapterExtractor.updateAllAdapters(List.of(
+                        new ProtocolAdapterEntity(
+                                "adapter1",
+                                "protocolId",
+                                1,
+                                Map.of(),
+                                List.of(),
+                                List.of(),
+                                List.of(new TagEntity("sharedTag", "description1", Map.of()))),
+                        new ProtocolAdapterEntity(
+                                "adapter2",
+                                "protocolId",
+                                1,
+                                Map.of(),
+                                List.of(),
+                                List.of(),
+                                List.of(new TagEntity("sharedTag", "description2", Map.of()))),
+                        new ProtocolAdapterEntity(
+                                "adapter3",
+                                "protocolId",
+                                1,
+                                Map.of(),
+                                List.of(),
+                                List.of(),
+                                List.of(new TagEntity("sharedTag", "description3", Map.of()))))))
+                .isEqualTo(Configurator.ConfigResult.SUCCESS);
 
         assertThat(protocolAdapterExtractor.getAllConfigs()).hasSize(3);
     }
@@ -803,32 +805,38 @@ public class ProtocolAdapterExtractorTest {
         final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
 
         // Add first adapter with tag "existingTag"
-        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter1",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(),
-                List.of(new TagEntity("existingTag", "description1", Map.of()))))).isTrue();
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity(
+                        "adapter1",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(new TagEntity("existingTag", "description1", Map.of())))))
+                .isTrue();
 
         // Add second adapter with different tag
-        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter2",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(),
-                List.of(new TagEntity("otherTag", "description2", Map.of()))))).isTrue();
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity(
+                        "adapter2",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(new TagEntity("otherTag", "description2", Map.of())))))
+                .isTrue();
 
         // Update second adapter to use "existingTag" - should succeed
         // because (adapter2, existingTag) is different from (adapter1, existingTag)
-        assertThat(protocolAdapterExtractor.updateAdapter(new ProtocolAdapterEntity("adapter2",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(),
-                List.of(new TagEntity("existingTag", "updated description", Map.of()))))).isTrue();
+        assertThat(protocolAdapterExtractor.updateAdapter(new ProtocolAdapterEntity(
+                        "adapter2",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(new TagEntity("existingTag", "updated description", Map.of())))))
+                .isTrue();
     }
 
     @Test
@@ -837,28 +845,34 @@ public class ProtocolAdapterExtractorTest {
         final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
 
         // Add first adapter with tags
-        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter1",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(),
-                List.of(new TagEntity("tag1", "description1", Map.of()),
-                        new TagEntity("tag2", "description2", Map.of()))))).isTrue();
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity(
+                        "adapter1",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(
+                                new TagEntity("tag1", "description1", Map.of()),
+                                new TagEntity("tag2", "description2", Map.of())))))
+                .isTrue();
 
         // Delete the adapter
         assertThat(protocolAdapterExtractor.deleteAdapter("adapter1")).isTrue();
 
         // Add another adapter with the same adapter ID and same tags - should succeed
         // because the old tags were removed from the dedup set
-        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter1",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(),
-                List.of(new TagEntity("tag1", "new description1", Map.of()),
-                        new TagEntity("tag2", "new description2", Map.of()))))).isTrue();
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity(
+                        "adapter1",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(
+                                new TagEntity("tag1", "new description1", Map.of()),
+                                new TagEntity("tag2", "new description2", Map.of())))))
+                .isTrue();
     }
 
     @Test
@@ -867,14 +881,17 @@ public class ProtocolAdapterExtractorTest {
         final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
 
         // Try to add adapter with duplicate tag names within the same adapter
-        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter1",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(),
-                List.of(new TagEntity("duplicateTag", "description1", Map.of()),
-                        new TagEntity("duplicateTag", "description2", Map.of()))))).isFalse();
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity(
+                        "adapter1",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(
+                                new TagEntity("duplicateTag", "description1", Map.of()),
+                                new TagEntity("duplicateTag", "description2", Map.of())))))
+                .isFalse();
 
         assertThat(protocolAdapterExtractor.getAllConfigs()).isEmpty();
     }
@@ -885,29 +902,42 @@ public class ProtocolAdapterExtractorTest {
         final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
 
         // Add adapter with unique tags
-        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter1",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(),
-                List.of(new TagEntity("tag1", "description1", Map.of()),
-                        new TagEntity("tag2", "description2", Map.of()))))).isTrue();
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity(
+                        "adapter1",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(
+                                new TagEntity("tag1", "description1", Map.of()),
+                                new TagEntity("tag2", "description2", Map.of())))))
+                .isTrue();
 
         // Try to update with duplicate tag names within the same adapter
-        assertThat(protocolAdapterExtractor.updateAdapter(new ProtocolAdapterEntity("adapter1",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(),
-                List.of(new TagEntity("duplicateTag", "description1", Map.of()),
-                        new TagEntity("duplicateTag", "description2", Map.of()))))).isFalse();
+        assertThat(protocolAdapterExtractor.updateAdapter(new ProtocolAdapterEntity(
+                        "adapter1",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(
+                                new TagEntity("duplicateTag", "description1", Map.of()),
+                                new TagEntity("duplicateTag", "description2", Map.of())))))
+                .isFalse();
 
         // Original adapter should remain unchanged
         assertThat(protocolAdapterExtractor.getAllConfigs()).hasSize(1);
-        assertThat(protocolAdapterExtractor.getAllConfigs().getFirst().getTags()).hasSize(2);
-        assertThat(protocolAdapterExtractor.getAllConfigs().getFirst().getTags().get(0).getName()).isEqualTo("tag1");
+        assertThat(protocolAdapterExtractor.getAllConfigs().getFirst().getTags())
+                .hasSize(2);
+        assertThat(protocolAdapterExtractor
+                        .getAllConfigs()
+                        .getFirst()
+                        .getTags()
+                        .get(0)
+                        .getName())
+                .isEqualTo("tag1");
     }
 
     @Test
@@ -917,23 +947,26 @@ public class ProtocolAdapterExtractorTest {
         final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
 
         // Try to update all adapters where one adapter has duplicate tag names
-        assertThat(protocolAdapterExtractor.updateAllAdapters(List.of(new ProtocolAdapterEntity("adapter1",
-                        "protocolId",
-                        1,
-                        Map.of(),
-                        List.of(),
-                        List.of(),
-                        List.of(new TagEntity("uniqueTag", "description1", Map.of()))),
-                new ProtocolAdapterEntity("adapter2",
-                        "protocolId",
-                        1,
-                        Map.of(),
-                        List.of(),
-                        List.of(),
-                        List.of(new TagEntity("duplicateTag", "description1", Map.of()),
-                                new TagEntity("duplicateTag",
-                                        "description2",
-                                        Map.of())))))).isEqualTo(Configurator.ConfigResult.ERROR);
+        assertThat(protocolAdapterExtractor.updateAllAdapters(List.of(
+                        new ProtocolAdapterEntity(
+                                "adapter1",
+                                "protocolId",
+                                1,
+                                Map.of(),
+                                List.of(),
+                                List.of(),
+                                List.of(new TagEntity("uniqueTag", "description1", Map.of()))),
+                        new ProtocolAdapterEntity(
+                                "adapter2",
+                                "protocolId",
+                                1,
+                                Map.of(),
+                                List.of(),
+                                List.of(),
+                                List.of(
+                                        new TagEntity("duplicateTag", "description1", Map.of()),
+                                        new TagEntity("duplicateTag", "description2", Map.of()))))))
+                .isEqualTo(Configurator.ConfigResult.ERROR);
     }
 
     @Test
@@ -942,57 +975,68 @@ public class ProtocolAdapterExtractorTest {
         final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
 
         // Add adapter1 with tags [tag1, tag2]
-        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter1",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(),
-                List.of(new TagEntity("tag1", "desc", Map.of()), new TagEntity("tag2", "desc", Map.of()))))).isTrue();
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity(
+                        "adapter1",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(new TagEntity("tag1", "desc", Map.of()), new TagEntity("tag2", "desc", Map.of())))))
+                .isTrue();
 
         // Add adapter2 with tags [tag1, tag3] - tag1 is shared, should succeed
-        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter2",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(),
-                List.of(new TagEntity("tag1", "desc", Map.of()), new TagEntity("tag3", "desc", Map.of()))))).isTrue();
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity(
+                        "adapter2",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(new TagEntity("tag1", "desc", Map.of()), new TagEntity("tag3", "desc", Map.of())))))
+                .isTrue();
 
         // Add adapter3 with tags [tag2, tag3] - both shared, should succeed
-        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter3",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(),
-                List.of(new TagEntity("tag2", "desc", Map.of()), new TagEntity("tag3", "desc", Map.of()))))).isTrue();
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity(
+                        "adapter3",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(new TagEntity("tag2", "desc", Map.of()), new TagEntity("tag3", "desc", Map.of())))))
+                .isTrue();
 
         assertThat(protocolAdapterExtractor.getAllConfigs()).hasSize(3);
 
         // Update adapter1 to have tags [tag1, tag3] - tag3 exists in other adapters, should succeed
-        assertThat(protocolAdapterExtractor.updateAdapter(new ProtocolAdapterEntity("adapter1",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(),
-                List.of(new TagEntity("tag1", "desc", Map.of()), new TagEntity("tag3", "desc", Map.of()))))).isTrue();
+        assertThat(protocolAdapterExtractor.updateAdapter(new ProtocolAdapterEntity(
+                        "adapter1",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(new TagEntity("tag1", "desc", Map.of()), new TagEntity("tag3", "desc", Map.of())))))
+                .isTrue();
 
         // Delete adapter2
         assertThat(protocolAdapterExtractor.deleteAdapter("adapter2")).isTrue();
         assertThat(protocolAdapterExtractor.getAllConfigs()).hasSize(2);
 
         // Re-add adapter2 with all shared tags - should succeed
-        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity("adapter2",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(),
-                List.of(new TagEntity("tag1", "desc", Map.of()),
-                        new TagEntity("tag2", "desc", Map.of()),
-                        new TagEntity("tag3", "desc", Map.of()))))).isTrue();
+        assertThat(protocolAdapterExtractor.addAdapter(new ProtocolAdapterEntity(
+                        "adapter2",
+                        "protocolId",
+                        1,
+                        Map.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(
+                                new TagEntity("tag1", "desc", Map.of()),
+                                new TagEntity("tag2", "desc", Map.of()),
+                                new TagEntity("tag3", "desc", Map.of())))))
+                .isTrue();
 
         assertThat(protocolAdapterExtractor.getAllConfigs()).hasSize(3);
     }
@@ -1039,14 +1083,14 @@ public class ProtocolAdapterExtractorTest {
         assertThat(protocolAdapterExtractor.getAllConfigs()).hasSize(2);
 
         // Verify both adapters have the same tag name
-        assertThat(protocolAdapterExtractor.getAdapterByAdapterId("adapter1")).isPresent()
-                .hasValueSatisfying(adapter -> assertThat(adapter.getTags()
-                        .getFirst()
-                        .getName()).isEqualTo("sharedTag"));
-        assertThat(protocolAdapterExtractor.getAdapterByAdapterId("adapter2")).isPresent()
-                .hasValueSatisfying(adapter -> assertThat(adapter.getTags()
-                        .getFirst()
-                        .getName()).isEqualTo("sharedTag"));
+        assertThat(protocolAdapterExtractor.getAdapterByAdapterId("adapter1"))
+                .isPresent()
+                .hasValueSatisfying(adapter ->
+                        assertThat(adapter.getTags().getFirst().getName()).isEqualTo("sharedTag"));
+        assertThat(protocolAdapterExtractor.getAdapterByAdapterId("adapter2"))
+                .isPresent()
+                .hasValueSatisfying(adapter ->
+                        assertThat(adapter.getTags().getFirst().getName()).isEqualTo("sharedTag"));
     }
 
     @Test

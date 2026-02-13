@@ -16,14 +16,13 @@
 package com.hivemq.http;
 
 import com.hivemq.edge.HiveMQEdgeConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Response filter that obtains the details of the inbound HttpRequest & the output HttpResponse. When enabled, details are
@@ -38,19 +37,20 @@ public class JaxrsResponseFilter implements ContainerResponseFilter {
     private static final boolean DEBUG = Boolean.getBoolean(HiveMQEdgeConstants.DEVELOPMENT_MODE);
 
     @Override
-    public void filter(final ContainerRequestContext requestContext,
-                       final ContainerResponseContext responseContext)
+    public void filter(final ContainerRequestContext requestContext, final ContainerResponseContext responseContext)
             throws IOException {
         if (DEBUG) {
             if (logger.isInfoEnabled()) {
-                if(responseContext.getStatus() >= 400){
-                    logger.info("Http [{}] Error Response [{}] [{}] -> url [{}]",
+                if (responseContext.getStatus() >= 400) {
+                    logger.info(
+                            "Http [{}] Error Response [{}] [{}] -> url [{}]",
                             requestContext.getRequest().getMethod(),
                             responseContext.getStatus(),
                             responseContext.getStatusInfo().getReasonPhrase(),
                             requestContext.getUriInfo().getRequestUri());
                 } else {
-                    logger.info("Http [{}] Response [{}] -> url [{}]",
+                    logger.info(
+                            "Http [{}] Response [{}] -> url [{}]",
                             requestContext.getRequest().getMethod(),
                             responseContext.getStatus(),
                             requestContext.getUriInfo().getRequestUri());

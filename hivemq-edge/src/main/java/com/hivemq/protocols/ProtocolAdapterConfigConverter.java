@@ -34,11 +34,9 @@ public class ProtocolAdapterConfigConverter {
     private final @NotNull ProtocolAdapterFactoryManager factoryManager;
     private final @NotNull ObjectMapper mapper;
 
-
     @Inject
     public ProtocolAdapterConfigConverter(
-            final @NotNull ProtocolAdapterFactoryManager factoryManager,
-            final @NotNull ObjectMapper mapper) {
+            final @NotNull ProtocolAdapterFactoryManager factoryManager, final @NotNull ObjectMapper mapper) {
         this.factoryManager = factoryManager;
         this.mapper = mapper;
     }
@@ -47,28 +45,30 @@ public class ProtocolAdapterConfigConverter {
         // we can assume that writing is enabled as the config for writing
         // should always include the config for reading as well.
         final ProtocolAdapterFactory<?> factory = getProtocolAdapterFactory(entity.getProtocolId());
-        return new ProtocolAdapterConfig(entity.getAdapterId(),
+        return new ProtocolAdapterConfig(
+                entity.getAdapterId(),
                 entity.getProtocolId(),
                 entity.getConfigVersion(),
                 factory.convertConfigObject(mapper, entity.getConfig(), true),
-                entity.getSouthboundMappings()
-                        .stream()
+                entity.getSouthboundMappings().stream()
                         .map(southbound -> southbound.toPersistence(mapper))
                         .toList(),
-                entity.getNorthboundMappings().stream().map(NorthboundMappingEntity::toPersistence).toList(),
-                factory.convertTagDefinitionObjects(mapper, entity.getTags().stream().map(TagEntity::toMap).toList()));
+                entity.getNorthboundMappings().stream()
+                        .map(NorthboundMappingEntity::toPersistence)
+                        .toList(),
+                factory.convertTagDefinitionObjects(
+                        mapper, entity.getTags().stream().map(TagEntity::toMap).toList()));
     }
 
     private @NotNull ProtocolAdapterFactory<?> getProtocolAdapterFactory(final @NotNull String protocolId) {
-        return factoryManager.get(protocolId)
-                .orElseThrow(() -> new IllegalArgumentException("No Factory was found for adapter with protocol id '" +
-                        protocolId +
-                        "'"));
+        return factoryManager
+                .get(protocolId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "No Factory was found for adapter with protocol id '" + protocolId + "'"));
     }
 
     public @NotNull <T extends Tag> T domainTagToTag(
-            final @NotNull String protocolId,
-            final @NotNull DomainTag domainTag) {
+            final @NotNull String protocolId, final @NotNull DomainTag domainTag) {
         //noinspection unchecked
         return (T) getProtocolAdapterFactory(protocolId).convertTagDefinitionObject(mapper, domainTag.toTagMap());
     }

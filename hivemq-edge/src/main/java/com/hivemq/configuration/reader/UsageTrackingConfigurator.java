@@ -16,12 +16,10 @@
 package com.hivemq.configuration.reader;
 
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
-import com.hivemq.configuration.entity.RestrictionsEntity;
 import com.hivemq.configuration.entity.UsageTrackingConfigEntity;
 import com.hivemq.configuration.service.UsageTrackingConfigurationService;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.inject.Inject;
+import org.jetbrains.annotations.NotNull;
 
 public class UsageTrackingConfigurator implements Configurator<UsageTrackingConfigEntity> {
 
@@ -31,13 +29,14 @@ public class UsageTrackingConfigurator implements Configurator<UsageTrackingConf
     private volatile boolean initialized = false;
 
     @Inject
-    public UsageTrackingConfigurator(final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService) {
+    public UsageTrackingConfigurator(
+            final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService) {
         this.usageTrackingConfigurationService = usageTrackingConfigurationService;
     }
 
     @Override
     public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
-        if(initialized && hasChanged(this.configEntity, config.getUsageTracking())) {
+        if (initialized && hasChanged(this.configEntity, config.getUsageTracking())) {
             return true;
         }
         return false;
@@ -48,8 +47,7 @@ public class UsageTrackingConfigurator implements Configurator<UsageTrackingConf
         this.configEntity = config.getUsageTracking();
         this.initialized = true;
 
-        usageTrackingConfigurationService.setTrackingEnabled(
-                configEntity.isEnabled());
+        usageTrackingConfigurationService.setTrackingEnabled(configEntity.isEnabled());
 
         return ConfigResult.SUCCESS;
     }

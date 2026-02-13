@@ -15,8 +15,6 @@
  */
 package com.hivemq.configuration.entity.api;
 
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -25,6 +23,7 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 @XmlRootElement(name = "user")
@@ -32,8 +31,10 @@ import java.util.Objects;
 public class UserEntity {
     @XmlElement(name = "username")
     private String userName = null;
+
     @XmlElement(name = "password")
     private String password = null;
+
     @XmlElementWrapper(name = "roles")
     @XmlElement(name = "role")
     private @NotNull List<String> roles = new ArrayList<>();
@@ -55,9 +56,9 @@ public class UserEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final UserEntity that = (UserEntity) o;
-        return Objects.equals(getUserName(), that.getUserName()) &&
-                Objects.equals(getPassword(), that.getPassword()) &&
-                Objects.equals(getRoles(), that.getRoles());
+        return Objects.equals(getUserName(), that.getUserName())
+                && Objects.equals(getPassword(), that.getPassword())
+                && Objects.equals(getRoles(), that.getRoles());
     }
 
     @Override

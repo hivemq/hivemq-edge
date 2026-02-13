@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package com.hivemq.migration.meta;
+
 import com.hivemq.configuration.service.PersistenceMode;
 import org.jetbrains.annotations.Nullable;
 
@@ -115,7 +116,6 @@ public class MetaInformation {
         this.publishPayloadPersistenceVersion = publishPayloadPersistenceVersion;
     }
 
-
     @Nullable
     public PersistenceMode getRetainedMessagesPersistenceType() {
         return retainedMessagesPersistenceType;
@@ -136,15 +136,14 @@ public class MetaInformation {
 
     @Override
     public String toString() {
-        return "MetaInformation{" +
-                "hivemqVersion='" + hivemqVersion + '\'' +
-                ", clientSessionPersistenceVersion='" + clientSessionPersistenceVersion + '\'' +
-                ", queuedMessagesPersistenceVersion='" + queuedMessagesPersistenceVersion + '\'' +
-                ", subscriptionPersistenceVersion='" + subscriptionPersistenceVersion + '\'' +
-                ", retainedMessagesPersistenceVersion='" + retainedMessagesPersistenceVersion + '\'' +
-                ", publishPayloadPersistenceVersion='" + publishPayloadPersistenceVersion + '\'' +
-                ", retainedMessagesPersistenceType='" + retainedMessagesPersistenceType + '\'' +
-                ", publishPayloadPersistenceType='" + publishPayloadPersistenceType + '\'' +
-                '}';
+        return "MetaInformation{" + "hivemqVersion='"
+                + hivemqVersion + '\'' + ", clientSessionPersistenceVersion='"
+                + clientSessionPersistenceVersion + '\'' + ", queuedMessagesPersistenceVersion='"
+                + queuedMessagesPersistenceVersion + '\'' + ", subscriptionPersistenceVersion='"
+                + subscriptionPersistenceVersion + '\'' + ", retainedMessagesPersistenceVersion='"
+                + retainedMessagesPersistenceVersion + '\'' + ", publishPayloadPersistenceVersion='"
+                + publishPayloadPersistenceVersion + '\'' + ", retainedMessagesPersistenceType='"
+                + retainedMessagesPersistenceType + '\'' + ", publishPayloadPersistenceType='"
+                + publishPayloadPersistenceType + '\'' + '}';
     }
 }

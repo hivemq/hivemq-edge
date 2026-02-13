@@ -46,7 +46,11 @@ public class ApiException extends RuntimeException {
         this.subject = subject;
     }
 
-    public ApiException(final @NotNull String errorMessage, int httpStatusCode, final @NotNull Throwable cause, final @NotNull Object subject) {
+    public ApiException(
+            final @NotNull String errorMessage,
+            int httpStatusCode,
+            final @NotNull Throwable cause,
+            final @NotNull Object subject) {
         super(errorMessage);
         this.errorMessage = errorMessage;
         this.httpStatusCode = httpStatusCode;

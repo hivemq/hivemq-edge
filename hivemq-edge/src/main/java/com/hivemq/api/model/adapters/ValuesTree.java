@@ -18,16 +18,14 @@ package com.hivemq.api.model.adapters;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.api.model.ItemsResponse;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.protocols.params.NodeTreeImpl;
-
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 public class ValuesTree extends ItemsResponse<NodeTreeImpl.ObjectNode> {
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public ValuesTree(
-            @JsonProperty("items") final @NotNull List<NodeTreeImpl.ObjectNode> items) {
+    public ValuesTree(@JsonProperty("items") final @NotNull List<NodeTreeImpl.ObjectNode> items) {
         super(items);
     }
 }

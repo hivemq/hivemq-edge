@@ -21,15 +21,14 @@ import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.ModulesAndExtensionsService;
-import com.hivemq.edge.impl.remote.HiveMQRemoteServiceImpl;
 import com.hivemq.edge.impl.ModulesAndExtensionsServiceImpl;
-import org.jetbrains.annotations.NotNull;
+import com.hivemq.edge.impl.remote.HiveMQRemoteServiceImpl;
 import com.hivemq.extensions.HiveMQExtensions;
 import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.IntoSet;
-
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -39,25 +38,24 @@ public class RemoteServiceModule {
 
     @Provides
     @Singleton
-    static @NotNull HiveMQEdgeRemoteService remoteConfigurationService(final @NotNull SystemInformation systemInformation,
-                                                                        final @NotNull ConfigurationService configurationService,
-                                                                        final @NotNull ObjectMapper objectMapper,
-                                                                       final @NotNull ShutdownHooks shutdownHooks){
+    static @NotNull HiveMQEdgeRemoteService remoteConfigurationService(
+            final @NotNull SystemInformation systemInformation,
+            final @NotNull ConfigurationService configurationService,
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull ShutdownHooks shutdownHooks) {
         return new HiveMQRemoteServiceImpl(systemInformation, configurationService, objectMapper, shutdownHooks);
     }
 
     @Provides
     @Singleton
-    static @NotNull ModulesAndExtensionsService modulesAndExtensionsService(final @NotNull HiveMQExtensions hiveMQExtensions,
-                                                                            final @NotNull HiveMQEdgeRemoteService remoteService){
+    static @NotNull ModulesAndExtensionsService modulesAndExtensionsService(
+            final @NotNull HiveMQExtensions hiveMQExtensions, final @NotNull HiveMQEdgeRemoteService remoteService) {
         return new ModulesAndExtensionsServiceImpl(hiveMQExtensions, remoteService);
     }
 
-
     @Provides
     @IntoSet
-    Boolean eagerSingletons(
-            final @NotNull HiveMQEdgeRemoteService httpService) {
+    Boolean eagerSingletons(final @NotNull HiveMQEdgeRemoteService httpService) {
         // this is used to instantiate all the params, similar to guice's asEagerSingleton and returns nothing
         return Boolean.TRUE;
     }

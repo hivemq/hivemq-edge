@@ -25,6 +25,4 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 @XmlRootElement(name = "udp-listener")
 @XmlAccessorType(XmlAccessType.NONE)
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
-public class UDPListenerEntity extends ListenerEntity {
-
-}
+public class UDPListenerEntity extends ListenerEntity {}

@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.metrics.jmx;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.jmx.JmxReporter;
 import com.google.common.annotations.VisibleForTesting;
 import com.hivemq.configuration.service.InternalConfigurations;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Lukas Brandl
@@ -46,7 +44,7 @@ public class JmxReporterBootstrap {
         this.metricRegistry = metricRegistry;
     }
 
-    @Inject //method injection, this gets called once after instantiation
+    @Inject // method injection, this gets called once after instantiation
     public void postConstruct() {
         final long start = System.currentTimeMillis();
         if (!InternalConfigurations.JMX_REPORTER_ENABLED.get()) {
@@ -62,22 +60,24 @@ public class JmxReporterBootstrap {
          * The behavior was changed in this commit: https://github.com/dropwizard/metrics/pull/1310/files
          * The code below was copied also from this commit.
          */
-        jmxReporter = JmxReporter.forRegistry(metricRegistry).createsObjectNamesWith((type, domain, name) -> {
-            try {
-                ObjectName objectName = new ObjectName(domain, "name", name);
-                if (objectName.isPattern()) {
-                    objectName = new ObjectName(domain, "name", ObjectName.quote(name));
-                }
-                return objectName;
-            } catch (final MalformedObjectNameException e) {
-                try {
-                    return new ObjectName(domain, "name", ObjectName.quote(name));
-                } catch (final MalformedObjectNameException e1) {
-                    log.warn("Unable to register {} {}", type, name, e1);
-                    throw new RuntimeException(e1);
-                }
-            }
-        }).build();
+        jmxReporter = JmxReporter.forRegistry(metricRegistry)
+                .createsObjectNamesWith((type, domain, name) -> {
+                    try {
+                        ObjectName objectName = new ObjectName(domain, "name", name);
+                        if (objectName.isPattern()) {
+                            objectName = new ObjectName(domain, "name", ObjectName.quote(name));
+                        }
+                        return objectName;
+                    } catch (final MalformedObjectNameException e) {
+                        try {
+                            return new ObjectName(domain, "name", ObjectName.quote(name));
+                        } catch (final MalformedObjectNameException e1) {
+                            log.warn("Unable to register {} {}", type, name, e1);
+                            throw new RuntimeException(e1);
+                        }
+                    }
+                })
+                .build();
         jmxReporter.start();
         log.debug("Started JMX Metrics Reporting in {}ms", (System.currentTimeMillis() - start));
     }

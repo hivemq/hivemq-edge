@@ -15,20 +15,17 @@
  */
 package com.hivemq.api.auth.provider.impl.simple;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.hivemq.api.auth.provider.IUsernameRolesProvider;
 import com.hivemq.http.core.UsernamePasswordRoles;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -41,30 +38,32 @@ public class SimpleUsernameRolesProviderImpl implements IUsernameRolesProvider {
         this.usernamePasswordMap = new ConcurrentHashMap<>();
     }
 
-    public SimpleUsernameRolesProviderImpl add(final @NotNull UsernamePasswordRoles usernamePassword){
+    public SimpleUsernameRolesProviderImpl add(final @NotNull UsernamePasswordRoles usernamePassword) {
         checkNotNull(usernamePassword);
-        checkArgument(usernamePassword.getUserName() != null && !usernamePassword.getUserName().isBlank(), "Username must not be <null>");
+        checkArgument(
+                usernamePassword.getUserName() != null
+                        && !usernamePassword.getUserName().isBlank(),
+                "Username must not be <null>");
         usernamePasswordMap.put(usernamePassword.getUserName(), usernamePassword);
         return this;
     }
 
-    public SimpleUsernameRolesProviderImpl remove(final @NotNull String userName){
+    public SimpleUsernameRolesProviderImpl remove(final @NotNull String userName) {
         checkNotNull(userName);
         usernamePasswordMap.remove(userName);
         return this;
     }
 
     @Override
-    public Optional<UsernameRoles> findByUsernameAndPassword(final @NotNull String userName, final byte @NotNull [] password) {
+    public Optional<UsernameRoles> findByUsernameAndPassword(
+            final @NotNull String userName, final byte @NotNull [] password) {
         checkNotNull(userName);
-        return Optional
-                .ofNullable(usernamePasswordMap.get(userName))
-                .map(user -> {
-                    if(!Arrays.equals(user.getPassword(), password)) {
-                        return null;
-                    } else {
-                        return new UsernameRoles(user.getUserName(), Set.copyOf(user.getRoles()));
-                    }
-                });
+        return Optional.ofNullable(usernamePasswordMap.get(userName)).map(user -> {
+            if (!Arrays.equals(user.getPassword(), password)) {
+                return null;
+            } else {
+                return new UsernameRoles(user.getUserName(), Set.copyOf(user.getRoles()));
+            }
+        });
     }
 }

@@ -15,7 +15,6 @@
  */
 package com.hivemq.mqttsn.handler.sleep;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import com.hivemq.mqtt.services.PublishPollService;
@@ -24,12 +23,12 @@ import com.hivemq.mqttsn.MqttsnConnectionHelper;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slj.mqtt.sn.wire.version1_2.payload.MqttsnPingreq;
-
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 
 @Singleton
 @ChannelHandler.Sharable
@@ -41,37 +40,48 @@ public class AwakeHandler extends SimpleChannelInboundHandler<MqttsnPingreq> {
     private final @NotNull MqttServerDisconnector mqttServerDisconnector;
 
     @Inject
-    public AwakeHandler(final @NotNull MqttServerDisconnector mqttServerDisconnector,
-                        final @NotNull PublishPollService pollService) {
+    public AwakeHandler(
+            final @NotNull MqttServerDisconnector mqttServerDisconnector,
+            final @NotNull PublishPollService pollService) {
         this.mqttServerDisconnector = mqttServerDisconnector;
         this.pollService = pollService;
     }
 
     @Override
-    protected void channelRead0(
-            final @NotNull ChannelHandlerContext ctx, final @NotNull MqttsnPingreq msg) throws Exception {
+    protected void channelRead0(final @NotNull ChannelHandlerContext ctx, final @NotNull MqttsnPingreq msg)
+            throws Exception {
 
-        //-- Marker on the Connection when its asleep
+        // -- Marker on the Connection when its asleep
         final MqttsnClientConnection clientConnection = MqttsnConnectionHelper.getConnection(ctx);
         final String clientId = clientConnection.getClientId();
-        if(clientId.equals(msg.getClientId())){
+        if (clientId.equals(msg.getClientId())) {
             clientConnection.setFlushCallback(() -> {
                 log.info("Awake flush is complete, sending PING-RESP {}", clientConnection);
                 clientConnection.proposeSleep();
-                clientConnection.getChannel().writeAndFlush(
-                        MqttsnConnectionHelper.getMessageFactoryForConnection(clientConnection).createPingresp());
+                clientConnection
+                        .getChannel()
+                        .writeAndFlush(MqttsnConnectionHelper.getMessageFactoryForConnection(clientConnection)
+                                .createPingresp());
             });
             clientConnection.proposeAwake();
-            clientConnection.getChannel().eventLoop().submit(() ->
-                    pollService.pollNewMessages(clientConnection.getClientId(), clientConnection.getChannel()));
-            log.info("Waking ping-req clientId matches session clientId on the same connection, allow to wake {}", clientConnection);
+            clientConnection
+                    .getChannel()
+                    .eventLoop()
+                    .submit(() ->
+                            pollService.pollNewMessages(clientConnection.getClientId(), clientConnection.getChannel()));
+            log.info(
+                    "Waking ping-req clientId matches session clientId on the same connection, allow to wake {}",
+                    clientConnection);
         } else {
             log.warn("Waking ping-req clientId MISmatch detected, close connection {}", clientConnection);
-            mqttServerDisconnector.disconnect(ctx.channel(),
-                    "Client '" + clientId + "' (IP: {}) Sent Ping-Req with ClientID that Mismatched Session ClientId. Disconnecting client.",
-                    "Client '" + clientId + "' (IP: {}) Sent Ping-Req with ClientID that Mismatched Session ClientId. Disconnecting client.",
-                    Mqtt5DisconnectReasonCode.UNSPECIFIED_ERROR, null
-            );
+            mqttServerDisconnector.disconnect(
+                    ctx.channel(),
+                    "Client '" + clientId
+                            + "' (IP: {}) Sent Ping-Req with ClientID that Mismatched Session ClientId. Disconnecting client.",
+                    "Client '" + clientId
+                            + "' (IP: {}) Sent Ping-Req with ClientID that Mismatched Session ClientId. Disconnecting client.",
+                    Mqtt5DisconnectReasonCode.UNSPECIFIED_ERROR,
+                    null);
         }
     }
 }

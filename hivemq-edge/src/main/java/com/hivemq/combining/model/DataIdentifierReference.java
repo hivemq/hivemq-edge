@@ -20,13 +20,15 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /// Used exclusively within the combiner.
-public record DataIdentifierReference(String id, Type type, @Nullable String scope) {
+public record DataIdentifierReference(
+        String id, Type type, @Nullable String scope) {
 
     public DataIdentifierReference(final String id, final Type type) {
         this(id, type, null);
     }
 
-    public static @Nullable DataIdentifierReference from(final @Nullable com.hivemq.edge.api.model.DataIdentifierReference model) {
+    public static @Nullable DataIdentifierReference from(
+            final @Nullable com.hivemq.edge.api.model.DataIdentifierReference model) {
         if (model == null) {
             return null;
         }
@@ -79,7 +81,8 @@ public record DataIdentifierReference(String id, Type type, @Nullable String sco
         TAG,
         TOPIC_FILTER;
 
-        public static @NotNull Type from(final com.hivemq.edge.api.model.DataIdentifierReference.@NotNull TypeEnum type) {
+        public static @NotNull Type from(
+                final com.hivemq.edge.api.model.DataIdentifierReference.@NotNull TypeEnum type) {
             return switch (type) {
                 case PULSE_ASSET -> PULSE_ASSET;
                 case TAG -> TAG;

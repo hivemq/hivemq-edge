@@ -15,11 +15,16 @@
  */
 package com.hivemq.codec.decoder;
 
+import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRY_MAX;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import com.google.common.primitives.Bytes;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.decoder.mqtt.mqtt3.Mqtt31ConnectDecoder;
 import com.hivemq.configuration.HivemqId;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.handler.connack.MqttConnacker;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.QoS;
@@ -29,18 +34,13 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestChannelAttribute;
 import util.TestConfigurationBootstrap;
-
-import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRY_MAX;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 public class Mqtt31ConnectDecoderTest {
 
@@ -57,6 +57,7 @@ public class Mqtt31ConnectDecoderTest {
     private @NotNull MqttConnacker connacker;
 
     private static final byte fixedHeader = 0b0001_0000;
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -65,9 +66,11 @@ public class Mqtt31ConnectDecoderTest {
         clientConnection = new ClientConnection(channel, null);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv3_1);
         clientConnection.setClientId("clientId");
-        when(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)).thenReturn(new TestChannelAttribute<>(clientConnection));
+        when(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME))
+                .thenReturn(new TestChannelAttribute<>(clientConnection));
 
-        decoder = new Mqtt31ConnectDecoder(connacker,
+        decoder = new Mqtt31ConnectDecoder(
+                connacker,
                 new ClientIds(new HivemqId()),
                 new TestConfigurationBootstrap().getConfigurationService(),
                 new HivemqId());
@@ -77,13 +80,13 @@ public class Mqtt31ConnectDecoderTest {
     public void test_decode_no_will_no_user_no_pw() {
         final ByteBuf buf = Unpooled.buffer();
 
-        buf.writeBytes(new byte[]{0, 6});
+        buf.writeBytes(new byte[] {0, 6});
         buf.writeBytes("MQIsdp".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b0000_0010);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(8);
         buf.writeBytes("clientId".getBytes(UTF_8));
 
@@ -104,13 +107,13 @@ public class Mqtt31ConnectDecoderTest {
     public void test_decode_no_will_no_user_no_pw_no_clean_session() {
         final ByteBuf buf = Unpooled.buffer();
 
-        buf.writeBytes(new byte[]{0, 6});
+        buf.writeBytes(new byte[] {0, 6});
         buf.writeBytes("MQIsdp".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b0000_0000);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(8);
         buf.writeBytes("clientId".getBytes(UTF_8));
 
@@ -131,13 +134,13 @@ public class Mqtt31ConnectDecoderTest {
     public void test_decode_no_will_user_no_pw() {
         final ByteBuf buf = Unpooled.buffer();
 
-        buf.writeBytes(new byte[]{0, 6});
+        buf.writeBytes(new byte[] {0, 6});
         buf.writeBytes("MQIsdp".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b1000_0000);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(8);
         buf.writeBytes("clientId".getBytes(UTF_8));
         buf.writeShort(8);
@@ -160,13 +163,13 @@ public class Mqtt31ConnectDecoderTest {
     public void test_decode_no_will_user_pw() {
         final ByteBuf buf = Unpooled.buffer();
 
-        buf.writeBytes(new byte[]{0, 6});
+        buf.writeBytes(new byte[] {0, 6});
         buf.writeBytes("MQIsdp".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b1100_0000);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(8);
         buf.writeBytes("clientId".getBytes(UTF_8));
         buf.writeShort(8);
@@ -191,13 +194,13 @@ public class Mqtt31ConnectDecoderTest {
     public void test_decode_will_user_pw() {
         final ByteBuf buf = Unpooled.buffer();
 
-        buf.writeBytes(new byte[]{0, 6});
+        buf.writeBytes(new byte[] {0, 6});
         buf.writeBytes("MQIsdp".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b1100_0100);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(8);
         buf.writeBytes("clientId".getBytes(UTF_8));
         buf.writeShort(9);
@@ -220,7 +223,8 @@ public class Mqtt31ConnectDecoderTest {
 
         assertEquals("username", connectPacket.getUsername());
         assertArrayEquals("password".getBytes(UTF_8), connectPacket.getPassword());
-        assertArrayEquals("willPayload".getBytes(UTF_8), connectPacket.getWillPublish().getPayload());
+        assertArrayEquals(
+                "willPayload".getBytes(UTF_8), connectPacket.getWillPublish().getPayload());
         assertEquals("willTopic", connectPacket.getWillPublish().getTopic());
         assertEquals(QoS.AT_MOST_ONCE, connectPacket.getWillPublish().getQos());
     }
@@ -229,13 +233,13 @@ public class Mqtt31ConnectDecoderTest {
     public void test_decode_will_no_user_no_pw() {
         final ByteBuf buf = Unpooled.buffer();
 
-        buf.writeBytes(new byte[]{0, 6});
+        buf.writeBytes(new byte[] {0, 6});
         buf.writeBytes("MQIsdp".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b0000_0100);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(8);
         buf.writeBytes("clientId".getBytes(UTF_8));
         buf.writeShort(9);
@@ -254,7 +258,8 @@ public class Mqtt31ConnectDecoderTest {
 
         assertNull(connectPacket.getUsername());
         assertNull(connectPacket.getPassword());
-        assertArrayEquals("willPayload".getBytes(UTF_8), connectPacket.getWillPublish().getPayload());
+        assertArrayEquals(
+                "willPayload".getBytes(UTF_8), connectPacket.getWillPublish().getPayload());
         assertEquals("willTopic", connectPacket.getWillPublish().getTopic());
         assertEquals(QoS.AT_MOST_ONCE, connectPacket.getWillPublish().getQos());
     }
@@ -263,13 +268,13 @@ public class Mqtt31ConnectDecoderTest {
     public void test_decode_will_no_user_no_pw_zero_length_topic() {
         final ByteBuf buf = Unpooled.buffer();
 
-        buf.writeBytes(new byte[]{0, 6});
+        buf.writeBytes(new byte[] {0, 6});
         buf.writeBytes("MQIsdp".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b0000_0100);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(8);
         buf.writeBytes("clientId".getBytes(UTF_8));
         buf.writeShort(0);
@@ -285,13 +290,13 @@ public class Mqtt31ConnectDecoderTest {
     public void test_decode_will_qos2_no_user_no_pw() {
         final ByteBuf buf = Unpooled.buffer();
 
-        buf.writeBytes(new byte[]{0, 6});
+        buf.writeBytes(new byte[] {0, 6});
         buf.writeBytes("MQIsdp".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b0001_0100);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(8);
         buf.writeBytes("clientId".getBytes(UTF_8));
         buf.writeShort(9);
@@ -310,7 +315,8 @@ public class Mqtt31ConnectDecoderTest {
 
         assertNull(connectPacket.getUsername());
         assertNull(connectPacket.getPassword());
-        assertArrayEquals("willPayload".getBytes(UTF_8), connectPacket.getWillPublish().getPayload());
+        assertArrayEquals(
+                "willPayload".getBytes(UTF_8), connectPacket.getWillPublish().getPayload());
         assertEquals("willTopic", connectPacket.getWillPublish().getTopic());
         assertEquals(QoS.EXACTLY_ONCE, connectPacket.getWillPublish().getQos());
     }
@@ -319,13 +325,13 @@ public class Mqtt31ConnectDecoderTest {
     public void test_decode_will_qos1_retain_no_user_no_pw() {
         final ByteBuf buf = Unpooled.buffer();
 
-        buf.writeBytes(new byte[]{0, 6});
+        buf.writeBytes(new byte[] {0, 6});
         buf.writeBytes("MQIsdp".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b0010_1100);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(8);
         buf.writeBytes("clientId".getBytes(UTF_8));
         buf.writeShort(9);
@@ -344,7 +350,8 @@ public class Mqtt31ConnectDecoderTest {
 
         assertNull(connectPacket.getUsername());
         assertNull(connectPacket.getPassword());
-        assertArrayEquals("willPayload".getBytes(UTF_8), connectPacket.getWillPublish().getPayload());
+        assertArrayEquals(
+                "willPayload".getBytes(UTF_8), connectPacket.getWillPublish().getPayload());
         assertEquals("willTopic", connectPacket.getWillPublish().getTopic());
         assertEquals(QoS.AT_LEAST_ONCE, connectPacket.getWillPublish().getQos());
     }
@@ -358,13 +365,13 @@ public class Mqtt31ConnectDecoderTest {
 
         final ByteBuf buf = Unpooled.buffer();
 
-        buf.writeBytes(new byte[]{0, 6});
+        buf.writeBytes(new byte[] {0, 6});
         buf.writeBytes("MQIsdp".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b0000_0010);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(0);
 
         final CONNECT connectPacket = decoder.decode(clientConnection, buf, fixedHeader);
@@ -382,13 +389,13 @@ public class Mqtt31ConnectDecoderTest {
 
         final ByteBuf buf = Unpooled.buffer();
 
-        buf.writeBytes(new byte[]{0, 6});
+        buf.writeBytes(new byte[] {0, 6});
         buf.writeBytes("MQIsdp".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b0000_0010);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(1000);
 
         final CONNECT connectPacket = decoder.decode(clientConnection, buf, fixedHeader);
@@ -403,13 +410,13 @@ public class Mqtt31ConnectDecoderTest {
         final ByteBuf buf = Unpooled.buffer();
         final String clientId = "clientId" + '\u0013';
 
-        buf.writeBytes(new byte[]{0, 6});
+        buf.writeBytes(new byte[] {0, 6});
         buf.writeBytes("MQIsdp".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b0010_1100);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(9);
         buf.writeBytes(clientId.getBytes(UTF_8));
         buf.writeShort(9);
@@ -429,13 +436,13 @@ public class Mqtt31ConnectDecoderTest {
         final ByteBuf buf = Unpooled.buffer();
         final String clientId = "clientId" + '\uFFFF';
 
-        buf.writeBytes(new byte[]{0, 6});
+        buf.writeBytes(new byte[] {0, 6});
         buf.writeBytes("MQIsdp".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b0010_1100);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(9);
         buf.writeBytes(clientId.getBytes(UTF_8));
         buf.writeShort(9);
@@ -456,13 +463,13 @@ public class Mqtt31ConnectDecoderTest {
         final byte[] clientId = Bytes.concat("clientId".getBytes(), bytes);
 
         final ByteBuf buf = Unpooled.buffer();
-        buf.writeBytes(new byte[]{0, 6});
+        buf.writeBytes(new byte[] {0, 6});
         buf.writeBytes("MQIsdp".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b0010_1100);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(10);
         buf.writeBytes(clientId);
         buf.writeShort(9);
@@ -484,13 +491,13 @@ public class Mqtt31ConnectDecoderTest {
 
         final ByteBuf buf = Unpooled.buffer();
 
-        buf.writeBytes(new byte[]{0, 6});
+        buf.writeBytes(new byte[] {0, 6});
         buf.writeBytes("MQIsdp".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b1100_0100);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(8);
         buf.writeBytes("clientId".getBytes(UTF_8));
         buf.writeShort(11);
@@ -515,13 +522,13 @@ public class Mqtt31ConnectDecoderTest {
 
         final ByteBuf buf = Unpooled.buffer();
 
-        buf.writeBytes(new byte[]{0, 6});
+        buf.writeBytes(new byte[] {0, 6});
         buf.writeBytes("MQIsdp".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b1100_0100);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(8);
         buf.writeBytes("clientId".getBytes(UTF_8));
         buf.writeShort(12);
@@ -546,13 +553,13 @@ public class Mqtt31ConnectDecoderTest {
 
         final ByteBuf buf = Unpooled.buffer();
 
-        buf.writeBytes(new byte[]{0, 6});
+        buf.writeBytes(new byte[] {0, 6});
         buf.writeBytes("MQIsdp".getBytes(UTF_8));
         buf.writeByte(4);
         buf.writeByte(0b1100_0100);
-        //keepAlive
+        // keepAlive
         buf.writeShort(14);
-        //payload length
+        // payload length
         buf.writeShort(8);
         buf.writeBytes("clientId".getBytes(UTF_8));
         buf.writeShort(12);

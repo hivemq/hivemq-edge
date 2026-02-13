@@ -15,6 +15,11 @@
  */
 package com.hivemq.persistence.clientsession;
 
+import static com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl.splitTopicAndGroup;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
+
 import com.google.common.collect.ImmutableSet;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.mqtt.message.QoS;
@@ -22,17 +27,11 @@ import com.hivemq.mqtt.message.mqtt5.Mqtt5RetainHandling;
 import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.topic.SubscriberWithQoS;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
+import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import java.util.concurrent.ExecutionException;
-
-import static com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl.splitTopicAndGroup;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
 
 /**
  * @author Dominik Obermaier
@@ -47,6 +46,7 @@ public class SharedSubscriptionServiceTest {
     ClientSessionSubscriptionPersistence subscriptionPersistence;
 
     private SharedSubscriptionServiceImpl service;
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -56,7 +56,6 @@ public class SharedSubscriptionServiceTest {
 
         service = new SharedSubscriptionServiceImpl(topicTree, subscriptionPersistence);
     }
-
 
     @Test
     public void test_check_for_shared_subscription() {
@@ -68,7 +67,8 @@ public class SharedSubscriptionServiceTest {
 
         SharedSubscriptionServiceImpl.SharedSubscription sharedSubscription;
 
-        sharedSubscription = service.checkForSharedSubscription(share + oldDelimiter + group + oldDelimiter + topic + subtopic);
+        sharedSubscription =
+                service.checkForSharedSubscription(share + oldDelimiter + group + oldDelimiter + topic + subtopic);
         assertNotNull(sharedSubscription);
         assertEquals(group, sharedSubscription.getShareName());
         assertEquals(topic + subtopic, sharedSubscription.getTopicFilter());
@@ -80,8 +80,8 @@ public class SharedSubscriptionServiceTest {
     @Test
     public void test_createSubscription_shared() throws Exception {
 
-        final Subscription subscription = service.createSubscription(new Topic("$share/group1/topic/1", QoS.AT_LEAST_ONCE,
-                true, true, Mqtt5RetainHandling.DO_NOT_SEND, 1));
+        final Subscription subscription = service.createSubscription(
+                new Topic("$share/group1/topic/1", QoS.AT_LEAST_ONCE, true, true, Mqtt5RetainHandling.DO_NOT_SEND, 1));
 
         assertEquals("topic/1", subscription.getTopic().getTopic());
         assertEquals(QoS.AT_LEAST_ONCE, subscription.getTopic().getQoS());
@@ -93,8 +93,8 @@ public class SharedSubscriptionServiceTest {
     @Test
     public void test_createSubscription_non_shared() throws Exception {
 
-        final Subscription subscription = service.createSubscription(new Topic("share/group1/topic/2", QoS.AT_LEAST_ONCE,
-                true, true, Mqtt5RetainHandling.DO_NOT_SEND, 1));
+        final Subscription subscription = service.createSubscription(
+                new Topic("share/group1/topic/2", QoS.AT_LEAST_ONCE, true, true, Mqtt5RetainHandling.DO_NOT_SEND, 1));
 
         assertEquals("share/group1/topic/2", subscription.getTopic().getTopic());
         assertEquals(QoS.AT_LEAST_ONCE, subscription.getTopic().getQoS());
@@ -105,7 +105,8 @@ public class SharedSubscriptionServiceTest {
 
     @Test
     public void test_split_shared_subscriptions() {
-        final SharedSubscriptionServiceImpl.SharedSubscription sharedSubscription1 = splitTopicAndGroup("group/topic/a");
+        final SharedSubscriptionServiceImpl.SharedSubscription sharedSubscription1 =
+                splitTopicAndGroup("group/topic/a");
         assertEquals("group", sharedSubscription1.getShareName());
         assertEquals("topic/a", sharedSubscription1.getTopicFilter());
 

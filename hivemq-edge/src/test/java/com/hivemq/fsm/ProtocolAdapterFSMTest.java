@@ -15,21 +15,20 @@
  */
 package com.hivemq.fsm;
 
-import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Test;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-
 import static com.hivemq.fsm.ProtocolAdapterFSM.AdapterStateEnum;
 import static com.hivemq.fsm.ProtocolAdapterFSM.State;
 import static com.hivemq.fsm.ProtocolAdapterFSM.StateEnum;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
+
+import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 
 class ProtocolAdapterFSMTest {
 
@@ -110,8 +109,7 @@ class ProtocolAdapterFSMTest {
             }
 
             @Override
-            public void onStopping() {
-            }
+            public void onStopping() {}
 
             @Override
             public boolean startSouthbound() {
@@ -400,7 +398,8 @@ class ProtocolAdapterFSMTest {
         final var fsm = createBasicFSM();
         fsm.startAdapter();
 
-        assertThatThrownBy(() -> fsm.transitionNorthboundState(StateEnum.CLOSING)).isInstanceOf(IllegalStateException.class)
+        assertThatThrownBy(() -> fsm.transitionNorthboundState(StateEnum.CLOSING))
+                .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Cannot transition northbound state to CLOSING");
     }
 
@@ -410,8 +409,8 @@ class ProtocolAdapterFSMTest {
         fsm.startAdapter();
         fsm.transitionNorthboundState(StateEnum.CONNECTING);
 
-        assertThatThrownBy(() -> fsm.transitionNorthboundState(StateEnum.ERROR_CLOSING)).isInstanceOf(
-                        IllegalStateException.class)
+        assertThatThrownBy(() -> fsm.transitionNorthboundState(StateEnum.ERROR_CLOSING))
+                .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Cannot transition northbound state to ERROR_CLOSING");
     }
 
@@ -420,7 +419,8 @@ class ProtocolAdapterFSMTest {
         final var fsm = createBasicFSM();
         fsm.startAdapter();
 
-        assertThatThrownBy(() -> fsm.transitionSouthboundState(StateEnum.CLOSING)).isInstanceOf(IllegalStateException.class)
+        assertThatThrownBy(() -> fsm.transitionSouthboundState(StateEnum.CLOSING))
+                .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Cannot transition southbound state to CLOSING");
     }
 
@@ -451,7 +451,8 @@ class ProtocolAdapterFSMTest {
         fsm.transitionNorthboundState(StateEnum.CONNECTING);
         fsm.transitionNorthboundState(StateEnum.CONNECTED);
 
-        assertThat(stateCount.get()).isEqualTo(4); // STOPPED→STARTING, STARTING→STARTED, DISCONNECTED→CONNECTING, CONNECTING→CONNECTED
+        assertThat(stateCount.get())
+                .isEqualTo(4); // STOPPED→STARTING, STARTING→STARTED, DISCONNECTED→CONNECTING, CONNECTING→CONNECTED
     }
 
     @Test

@@ -16,10 +16,8 @@
 package com.hivemq.edge.modules.adapters.data;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 public class DataPointImpl implements DataPoint {
     private final @NotNull Object tagValue;
@@ -56,22 +54,21 @@ public class DataPointImpl implements DataPoint {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final DataPointImpl dataPoint = (DataPointImpl) o;
-        return treatAsJson == dataPoint.treatAsJson &&
-                Objects.equals(getTagValue(), dataPoint.getTagValue()) &&
-                Objects.equals(getTagName(), dataPoint.getTagName());
+        return treatAsJson == dataPoint.treatAsJson
+                && Objects.equals(getTagValue(), dataPoint.getTagValue())
+                && Objects.equals(getTagName(), dataPoint.getTagName());
     }
 
     @Override
     public String toString() {
-        return "DataPointImpl{" +
-                "tagValue=" +
-                tagValue +
-                ", tagName='" +
-                tagName +
-                '\'' +
-                ", treatAsJson=" +
-                treatAsJson +
-                '}';
+        return "DataPointImpl{" + "tagValue="
+                + tagValue
+                + ", tagName='"
+                + tagName
+                + '\''
+                + ", treatAsJson="
+                + treatAsJson
+                + '}';
     }
 
     @Override

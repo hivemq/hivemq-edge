@@ -13,25 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.configuration.writer;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.api.PreLoginNoticeEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
+import java.io.File;
+import java.io.IOException;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 import wiremock.org.custommonkey.xmlunit.Diff;
 import wiremock.org.custommonkey.xmlunit.XMLUnit;
-
-import java.io.File;
-import java.io.IOException;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SuppressWarnings("NullabilityAnnotations")
 public class ConfigFileWriterTest extends AbstractConfigWriterTest {
@@ -50,10 +48,10 @@ public class ConfigFileWriterTest extends AbstractConfigWriterTest {
 
         final File tempCopyFile = new File(System.getProperty("java.io.tmpdir"), "copy-config.xml");
         tempFile.deleteOnExit();
-        configFileReader.writeConfigToXML(new ConfigurationFile(tempCopyFile).file().get(), false, false);
+        configFileReader.writeConfigToXML(
+                new ConfigurationFile(tempCopyFile).file().get(), false, false);
 
         final String copiedFileContent = FileUtils.readFileToString(tempCopyFile, UTF_8);
-
 
         final Diff diff = XMLUnit.compareXML(originalXml, copiedFileContent);
         if (!diff.identical()) {

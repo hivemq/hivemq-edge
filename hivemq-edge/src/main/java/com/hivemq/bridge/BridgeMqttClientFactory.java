@@ -22,10 +22,9 @@ import com.hivemq.bridge.mqtt.BridgeInterceptorHandler;
 import com.hivemq.bridge.mqtt.BridgeMqttClient;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class BridgeMqttClientFactory {
@@ -51,6 +50,7 @@ public class BridgeMqttClientFactory {
     }
 
     public @NotNull BridgeMqttClient createRemoteClient(final @NotNull MqttBridge bridge) {
-        return new BridgeMqttClient(systemInformation, bridge, bridgeInterceptorHandler, hivemqId, metricRegistry, eventService);
+        return new BridgeMqttClient(
+                systemInformation, bridge, bridgeInterceptorHandler, hivemqId, metricRegistry, eventService);
     }
 }

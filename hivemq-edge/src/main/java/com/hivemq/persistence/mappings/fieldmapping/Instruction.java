@@ -16,25 +16,25 @@
 package com.hivemq.persistence.mappings.fieldmapping;
 
 import com.hivemq.combining.model.DataIdentifierReference;
+import java.util.Objects;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
-import java.util.Optional;
-
-
-public record Instruction(@NotNull String sourceFieldName, @NotNull String destinationFieldName,
-                          @Nullable DataIdentifierReference dataIdentifierReference) {
+public record Instruction(
+        @NotNull String sourceFieldName,
+        @NotNull String destinationFieldName,
+        @Nullable DataIdentifierReference dataIdentifierReference) {
 
     public static Instruction from(final @NotNull com.hivemq.edge.api.model.Instruction model) {
-        return new Instruction(model.getSource(),
-                model.getDestination(),
-                DataIdentifierReference.from(model.getSourceRef()));
+        return new Instruction(
+                model.getSource(), model.getDestination(), DataIdentifierReference.from(model.getSourceRef()));
     }
 
     public @NotNull com.hivemq.edge.api.model.Instruction toModel() {
-        final com.hivemq.edge.api.model.Instruction instruction =
-                new com.hivemq.edge.api.model.Instruction().source(sourceFieldName).destination(destinationFieldName);
+        final com.hivemq.edge.api.model.Instruction instruction = new com.hivemq.edge.api.model.Instruction()
+                .source(sourceFieldName)
+                .destination(destinationFieldName);
         if (dataIdentifierReference() != null) {
             instruction.sourceRef(dataIdentifierReference().to());
         }

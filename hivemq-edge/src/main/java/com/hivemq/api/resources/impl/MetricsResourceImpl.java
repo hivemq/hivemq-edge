@@ -28,13 +28,12 @@ import com.hivemq.api.model.metrics.MetricList;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.edge.api.MetricsApi;
 import com.hivemq.util.ErrorResponseUtil;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
 import java.util.Iterator;
 import java.util.SortedMap;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -54,7 +53,7 @@ public class MetricsResourceImpl extends AbstractApi implements MetricsApi {
         logger.trace("Metrics API obtaining metrics listing");
         final ImmutableList.Builder<Metric> builder = new ImmutableList.Builder<>();
         final Iterator<String> itr = metricsRegistry.getMetrics().keySet().iterator();
-        while (itr.hasNext()){
+        while (itr.hasNext()) {
             builder.add(new Metric(itr.next()));
         }
         return Response.ok(new MetricList(builder.build())).build();
@@ -64,13 +63,13 @@ public class MetricsResourceImpl extends AbstractApi implements MetricsApi {
     public Response getSample(final String metricName) {
         final ApiErrorMessages messages = ApiErrorUtils.createErrorContainer();
         ApiErrorUtils.validateRequiredField(messages, "metricName", metricName, false);
-        if(ApiErrorUtils.hasRequestErrors(messages)){
+        if (ApiErrorUtils.hasRequestErrors(messages)) {
             return ErrorResponseUtil.errorResponse(new UrlParameterMissingError("metricName"));
         } else {
             logger.trace("Metrics API obtaining latest sample for {} at {}", metricName, System.currentTimeMillis());
             final SortedMap<String, Counter> metrics = metricsRegistry.getCounters(MetricFilter.contains(metricName));
             final Counter counter = metrics.get(metricName);
-            if(counter != null){
+            if (counter != null) {
                 final DataPoint dataPoint = new DataPoint(System.currentTimeMillis(), counter.getCount());
                 return Response.ok(dataPoint).build();
             } else {

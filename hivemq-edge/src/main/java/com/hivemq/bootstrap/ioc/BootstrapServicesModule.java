@@ -21,24 +21,26 @@ import com.hivemq.bootstrap.services.CompleteBootstrapService;
 import com.hivemq.bootstrap.services.CompleteBootstrapServiceImpl;
 import com.hivemq.bootstrap.services.PersistenceBootstrapService;
 import com.hivemq.bootstrap.services.PersistenceBootstrapServiceImpl;
-import org.jetbrains.annotations.NotNull;
 import dagger.Binds;
 import dagger.Module;
-
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 @Module
 public abstract class BootstrapServicesModule {
 
     @Singleton
     @Binds
-    abstract @NotNull PersistenceBootstrapService persistenceBootstrapService(final @NotNull PersistenceBootstrapServiceImpl persistenceBootstrapService);
+    abstract @NotNull PersistenceBootstrapService persistenceBootstrapService(
+            final @NotNull PersistenceBootstrapServiceImpl persistenceBootstrapService);
 
     @Singleton
     @Binds
-    abstract @NotNull CompleteBootstrapService completeBootstrapService(final @NotNull CompleteBootstrapServiceImpl completeBootstrapService);
+    abstract @NotNull CompleteBootstrapService completeBootstrapService(
+            final @NotNull CompleteBootstrapServiceImpl completeBootstrapService);
 
     @Singleton
     @Binds
-    abstract @NotNull AfterHiveMQStartBootstrapService afterHiveMQStartBootstrapService(final @NotNull AfterHiveMQStartBootstrapServiceImpl afterHiveMQStartBootstrapService);
+    abstract @NotNull AfterHiveMQStartBootstrapService afterHiveMQStartBootstrapService(
+            final @NotNull AfterHiveMQStartBootstrapServiceImpl afterHiveMQStartBootstrapService);
 }

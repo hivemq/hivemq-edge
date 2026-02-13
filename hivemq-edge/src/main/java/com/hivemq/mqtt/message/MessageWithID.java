@@ -25,8 +25,7 @@ public abstract class MessageWithID implements Message {
 
     protected int packetIdentifier;
 
-    public MessageWithID() {
-    }
+    public MessageWithID() {}
 
     public MessageWithID(final int packetIdentifier) {
         this.packetIdentifier = packetIdentifier;
@@ -38,7 +37,8 @@ public abstract class MessageWithID implements Message {
 
     public void setPacketIdentifier(final int packetIdentifier) {
 
-        checkArgument(packetIdentifier <= 65535, "Message id %s is invalid. Max message id is 65535.", packetIdentifier);
+        checkArgument(
+                packetIdentifier <= 65535, "Message id %s is invalid. Max message id is 65535.", packetIdentifier);
 
         // -1 for QoS 0 publishes. (the only message with optional packet identifier)
         checkArgument(packetIdentifier >= -1, "Message id %s is invalid. Min message id is -1.", packetIdentifier);

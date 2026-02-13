@@ -16,13 +16,11 @@
 package com.hivemq.codec.encoder.mqttsn;
 
 import com.hivemq.bootstrap.netty.ChannelDependencies;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqttsn.MqttsnConnectionHelper;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jetbrains.annotations.NotNull;
 import org.slj.mqtt.sn.spi.IMqttsnCodec;
 import org.slj.mqtt.sn.spi.IMqttsnMessage;
 
@@ -34,7 +32,9 @@ public class MqttSnEncoder extends MessageToByteEncoder<IMqttsnMessage> {
     }
 
     @Override
-    protected void encode(final @NotNull ChannelHandlerContext ctx, final @NotNull IMqttsnMessage msg, final @NotNull ByteBuf out) throws Exception {
+    protected void encode(
+            final @NotNull ChannelHandlerContext ctx, final @NotNull IMqttsnMessage msg, final @NotNull ByteBuf out)
+            throws Exception {
         IMqttsnCodec mqttsnCodec =
                 MqttsnConnectionHelper.getCodecForConnection(MqttsnConnectionHelper.getConnection(ctx));
         out.writeBytes(mqttsnCodec.encode(msg));

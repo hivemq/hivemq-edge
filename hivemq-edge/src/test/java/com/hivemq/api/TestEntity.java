@@ -20,9 +20,7 @@ package com.hivemq.api;
  */
 public class TestEntity {
 
-    public TestEntity() {
-    }
+    public TestEntity() {}
 
     public String key = "";
-
 }

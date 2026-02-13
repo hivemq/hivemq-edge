@@ -18,14 +18,14 @@ package com.hivemq.persistence.generic;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public record DeleteResult (DeleteStatus updateStatus, String errorMessage){
+public record DeleteResult(DeleteStatus updateStatus, String errorMessage) {
 
     public static @NotNull DeleteResult success() {
         return new DeleteResult(DeleteStatus.SUCCESS, null);
     }
 
     public static @NotNull DeleteResult failed(final @NotNull DeleteStatus putStatus) {
-        return new DeleteResult(putStatus,  null);
+        return new DeleteResult(putStatus, null);
     }
 
     public static @NotNull DeleteResult failed(

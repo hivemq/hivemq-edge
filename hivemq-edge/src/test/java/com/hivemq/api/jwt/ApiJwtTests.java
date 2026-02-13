@@ -15,23 +15,22 @@
  */
 package com.hivemq.api.jwt;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.hivemq.api.auth.ApiPrincipal;
 import com.hivemq.api.auth.ApiRoles;
 import com.hivemq.api.auth.AuthenticationException;
 import com.hivemq.api.auth.jwt.JwtAuthenticationProvider;
 import com.hivemq.api.config.ApiJwtConfiguration;
+import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Optional;
-import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Simon L Johnson
@@ -43,7 +42,7 @@ public class ApiJwtTests {
     @Test
     @Timeout(5)
     public void testCreateJWT() throws AuthenticationException {
-        ApiJwtConfiguration configuration = new ApiJwtConfiguration(2048, "Test-Issuer","Test-Audience", 10, 2);
+        ApiJwtConfiguration configuration = new ApiJwtConfiguration(2048, "Test-Issuer", "Test-Audience", 10, 2);
         JwtAuthenticationProvider provider = new JwtAuthenticationProvider(configuration);
         ApiPrincipal principal = new ApiPrincipal("Test-User", Set.of(ApiRoles.ADMIN));
         String token = provider.generateToken(principal);
@@ -53,7 +52,7 @@ public class ApiJwtTests {
     @Test
     @Timeout(5)
     public void testVerifyJWT() throws AuthenticationException {
-        ApiJwtConfiguration configuration = new ApiJwtConfiguration(2048, "Test-Issuer","Test-Audience", 10, 2);
+        ApiJwtConfiguration configuration = new ApiJwtConfiguration(2048, "Test-Issuer", "Test-Audience", 10, 2);
         JwtAuthenticationProvider provider = new JwtAuthenticationProvider(configuration);
         ApiPrincipal originalPrincipal = new ApiPrincipal("Test-User", Set.of(ApiRoles.ADMIN));
         String token = provider.generateToken(originalPrincipal);
@@ -67,7 +66,7 @@ public class ApiJwtTests {
     @Test
     @Timeout(5)
     public void testJWTExpiry() throws AuthenticationException {
-        ApiJwtConfiguration configuration = new ApiJwtConfiguration(2048, "Test-Issuer","Test-Audience", -2, 1);
+        ApiJwtConfiguration configuration = new ApiJwtConfiguration(2048, "Test-Issuer", "Test-Audience", -2, 1);
         JwtAuthenticationProvider provider = new JwtAuthenticationProvider(configuration);
         ApiPrincipal originalPrincipal = new ApiPrincipal("Test-User", Set.of(ApiRoles.ADMIN));
         String token = provider.generateToken(originalPrincipal);
@@ -75,5 +74,4 @@ public class ApiJwtTests {
         Optional<ApiPrincipal> verifiedTokenPrincipal = provider.verify(token);
         assertFalse(verifiedTokenPrincipal.isPresent());
     }
-
 }

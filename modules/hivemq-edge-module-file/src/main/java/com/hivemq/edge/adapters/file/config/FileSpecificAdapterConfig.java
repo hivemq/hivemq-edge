@@ -18,10 +18,9 @@ package com.hivemq.edge.adapters.file.config;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
 
 @SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
 public class FileSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
@@ -29,19 +28,21 @@ public class FileSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
     @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
-    @ModuleConfigField(title = "Identifier",
-                       description = "Unique identifier for this protocol adapter",
-                       format = ModuleConfigField.FieldType.IDENTIFIER,
-                       required = true,
-                       stringPattern = ID_REGEX,
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
+    @ModuleConfigField(
+            title = "Identifier",
+            description = "Unique identifier for this protocol adapter",
+            format = ModuleConfigField.FieldType.IDENTIFIER,
+            required = true,
+            stringPattern = ID_REGEX,
+            stringMinLength = 1,
+            stringMaxLength = 1024)
     private @Nullable String id;
 
     @JsonProperty(value = "fileToMqtt", required = true)
-    @ModuleConfigField(title = "File To MQTT Config",
-                       description = "The configuration for a data stream from File to MQTT",
-                       required = true)
+    @ModuleConfigField(
+            title = "File To MQTT Config",
+            description = "The configuration for a data stream from File to MQTT",
+            required = true)
     private final @Nullable FileToMqttConfig fileToMqttConfig;
 
     public FileSpecificAdapterConfig(

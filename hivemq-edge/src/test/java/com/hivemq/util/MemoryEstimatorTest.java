@@ -15,10 +15,10 @@
  */
 package com.hivemq.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.google.common.primitives.ImmutableIntArray;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MemoryEstimatorTest {
 

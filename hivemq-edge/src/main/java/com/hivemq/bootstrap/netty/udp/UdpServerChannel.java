@@ -16,7 +16,6 @@
 package com.hivemq.bootstrap.netty.udp;
 
 import com.hivemq.configuration.service.InternalConfigurations;
-import org.jetbrains.annotations.NotNull;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
@@ -24,15 +23,15 @@ import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.util.internal.RecyclableArrayList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Shevchik (https://github.com/Shevchik/UdpServerSocketChannel)
@@ -46,8 +45,7 @@ public class UdpServerChannel extends AbstractServerChannel {
     protected final EventLoopGroup group;
     protected final List<Bootstrap> ioBootstraps = new ArrayList<>();
     protected final List<Channel> ioChannels = new ArrayList<>();
-    protected final ConcurrentHashMap<InetSocketAddress, UdpChannel>
-            userChannels = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<InetSocketAddress, UdpChannel> userChannels = new ConcurrentHashMap<>();
 
     protected volatile boolean open = true;
 
@@ -56,24 +54,27 @@ public class UdpServerChannel extends AbstractServerChannel {
         Class<? extends DatagramChannel> channel = NioDatagramChannel.class;
         ChannelInitializer<Channel> initializer = new ChannelInitializer<>() {
             final ReadRouteChannelHandler ioReadRoute = new ReadRouteChannelHandler();
+
             @Override
             protected void initChannel(Channel ioChannel) {
                 ioChannel.pipeline().addLast(ioReadRoute);
             }
         };
 
-        Bootstrap ioBootstrap = new Bootstrap().group(group).
-                channel(channel).handler(initializer);
+        Bootstrap ioBootstrap = new Bootstrap().group(group).channel(channel).handler(initializer);
         ioBootstraps.add(ioBootstrap);
     }
 
     protected class ReadRouteChannelHandler extends SimpleChannelInboundHandler<DatagramPacket> {
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, DatagramPacket p) throws Exception {
-            UdpChannel channel = userChannels.compute(p.sender(), (lAddr, lChannel) -> ((lChannel == null) || !lChannel.isOpen()) ?
-                    new UdpChannel(UdpServerChannel.this, lAddr) : lChannel);
+            UdpChannel channel = userChannels.compute(
+                    p.sender(),
+                    (lAddr, lChannel) -> ((lChannel == null) || !lChannel.isOpen())
+                            ? new UdpChannel(UdpServerChannel.this, lAddr)
+                            : lChannel);
             boolean newChannel = channel.getIsNew();
-            if(log.isTraceEnabled()) {
+            if (log.isTraceEnabled()) {
                 log.trace("determined {} route for packet {} -> {}", (newChannel ? "NEW" : "EXISTING"), p, channel);
             }
             channel.buffers.add(p.content().retain());
@@ -103,10 +104,10 @@ public class UdpServerChannel extends AbstractServerChannel {
         });
     }
 
-
     protected void doUserChannelRemove(UdpChannel userChannel) {
-        this.
-        userChannels.compute((InetSocketAddress) userChannel.remoteAddress(), (lAddr, lChannel) -> lChannel == userChannel ? null : lChannel);
+        this.userChannels.compute(
+                (InetSocketAddress) userChannel.remoteAddress(),
+                (lAddr, lChannel) -> lChannel == userChannel ? null : lChannel);
     }
 
     @Override
@@ -125,9 +126,11 @@ public class UdpServerChannel extends AbstractServerChannel {
         new ArrayList<>(userChannels.values()).forEach(Channel::close);
         ioChannels.forEach(Channel::close);
         try {
-            group.shutdownGracefully(100,
-                    InternalConfigurations.EVENT_LOOP_GROUP_SHUTDOWN_TIMEOUT_MILLISEC,
-                    TimeUnit.MILLISECONDS).sync();
+            group.shutdownGracefully(
+                            100,
+                            InternalConfigurations.EVENT_LOOP_GROUP_SHUTDOWN_TIMEOUT_MILLISEC,
+                            TimeUnit.MILLISECONDS)
+                    .sync();
         } catch (InterruptedException e) {
             log.warn("UDP listener shutdown interrupted", e);
         }
@@ -166,7 +169,6 @@ public class UdpServerChannel extends AbstractServerChannel {
         public ChannelConfig setAutoRead(boolean autoRead) {
             return this;
         }
-
     };
 
     @Override
@@ -185,7 +187,5 @@ public class UdpServerChannel extends AbstractServerChannel {
     }
 
     @Override
-    protected void doBeginRead() throws Exception {
-
-    }
+    protected void doBeginRead() throws Exception {}
 }

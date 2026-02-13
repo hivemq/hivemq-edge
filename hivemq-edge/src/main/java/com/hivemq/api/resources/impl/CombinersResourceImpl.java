@@ -1,19 +1,18 @@
 /*
- *  Copyright 2019-present HiveMQ GmbH
+ * Copyright 2019-present HiveMQ GmbH
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
 package com.hivemq.api.resources.impl;
 
 import com.hivemq.api.errors.AlreadyExistsError;
@@ -40,20 +39,17 @@ import com.hivemq.util.ErrorResponseUtil;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Singleton
 public class CombinersResourceImpl implements CombinersApi {
-
 
     private static final Logger log = LoggerFactory.getLogger(CombinersResourceImpl.class);
 
@@ -78,9 +74,8 @@ public class CombinersResourceImpl implements CombinersApi {
         }
         final @NotNull Optional<DataCombiner> instance = dataCombiningExtractor.getCombinerById(combiner.getId());
         if (instance.isPresent()) {
-            return ErrorResponseUtil.errorResponse(new AlreadyExistsError(String.format(
-                    "DataCombiner already exists '%s'",
-                    combiner.getId())));
+            return ErrorResponseUtil.errorResponse(
+                    new AlreadyExistsError(String.format("DataCombiner already exists '%s'", combiner.getId())));
         }
         final DataCombiner dataCombiner = DataCombiner.fromModel(combiner);
         final Optional<Response> optionalResponse = checkDataCombiner(dataCombiner);
@@ -106,7 +101,8 @@ public class CombinersResourceImpl implements CombinersApi {
         }
         final @NotNull Optional<DataCombiner> instance = dataCombiningExtractor.getCombinerById(combiner.getId());
         if (instance.isEmpty()) {
-            return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combiner.getId().toString()));
+            return ErrorResponseUtil.errorResponse(
+                    new DataCombinerNotFoundError(combiner.getId().toString()));
         }
         final DataCombiner dataCombiner = DataCombiner.fromModel(combiner);
         final Optional<Response> optionalResponse = checkDataCombiner(dataCombiner);
@@ -117,7 +113,8 @@ public class CombinersResourceImpl implements CombinersApi {
         if (updated) {
             return Response.ok().build();
         } else {
-            return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combiner.getId().toString()));
+            return ErrorResponseUtil.errorResponse(
+                    new DataCombinerNotFoundError(combiner.getId().toString()));
         }
     }
 
@@ -135,7 +132,8 @@ public class CombinersResourceImpl implements CombinersApi {
         } catch (final Exception e) {
             final Throwable cause = e.getCause();
             log.warn("Exception occurred during deletion of data combining '{}':", combinerId, cause);
-            return ErrorResponseUtil.errorResponse(new InternalServerError("Exception during deletion of data combiner."));
+            return ErrorResponseUtil.errorResponse(
+                    new InternalServerError("Exception during deletion of data combiner."));
         }
 
         return Response.ok().build();
@@ -144,7 +142,8 @@ public class CombinersResourceImpl implements CombinersApi {
     @Override
     public @NotNull Response getCombiners() {
         final Collection<DataCombiner> allCombiners = dataCombiningExtractor.getAllCombiners();
-        final List<Combiner> combiners = allCombiners.stream().map(DataCombiner::toModel).toList();
+        final List<Combiner> combiners =
+                allCombiners.stream().map(DataCombiner::toModel).toList();
         final CombinerList combinerList = new CombinerList().items(combiners);
         return Response.ok().entity(combinerList).build();
     }
@@ -164,9 +163,12 @@ public class CombinersResourceImpl implements CombinersApi {
         if (instance.isEmpty()) {
             return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combinerId.toString()));
         }
-        final List<com.hivemq.edge.api.model.DataCombining> dataCombinings =
-                instance.get().dataCombinings().stream().map(DataCombining::toModel).toList();
-        return Response.ok().entity(new DataCombiningList().items(dataCombinings)).build();
+        final List<com.hivemq.edge.api.model.DataCombining> dataCombinings = instance.get().dataCombinings().stream()
+                .map(DataCombining::toModel)
+                .toList();
+        return Response.ok()
+                .entity(new DataCombiningList().items(dataCombinings))
+                .build();
     }
 
     @Override
@@ -176,9 +178,7 @@ public class CombinersResourceImpl implements CombinersApi {
             return ErrorResponseUtil.errorResponse(new DataCombinerNotFoundError(combinerId.toString()));
         }
 
-        final List<com.hivemq.edge.api.model.Instruction> instructions = instance.get()
-                .dataCombinings()
-                .stream()
+        final List<com.hivemq.edge.api.model.Instruction> instructions = instance.get().dataCombinings().stream()
                 .filter(c -> c.id().equals(mappingId))
                 .flatMap(dataCombining -> dataCombining.instructions().stream())
                 .map(Instruction::toModel)
@@ -187,16 +187,17 @@ public class CombinersResourceImpl implements CombinersApi {
     }
 
     private @NotNull Optional<Response> checkDataCombiner(final @NotNull DataCombiner dataCombiner) {
-        if (dataCombiner.entityReferences()
-                .stream()
+        if (dataCombiner.entityReferences().stream()
                 .anyMatch(entityReference -> entityReference.type() == EntityType.PULSE_AGENT)) {
-            return Optional.of(ErrorResponseUtil.errorResponse(new InvalidEntityTypeForCombinerError(EntityType.PULSE_AGENT)));
+            return Optional.of(
+                    ErrorResponseUtil.errorResponse(new InvalidEntityTypeForCombinerError(EntityType.PULSE_AGENT)));
         }
         for (final DataCombining dataCombining : dataCombiner.dataCombinings()) {
             final DataIdentifierReference primaryRef = dataCombining.sources().primaryReference();
             if (primaryRef.type() == DataIdentifierReference.Type.PULSE_ASSET) {
-                return Optional.of(ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForCombinerError(
-                        DataIdentifierReference.Type.PULSE_ASSET)));
+                return Optional.of(
+                        ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForCombinerError(
+                                DataIdentifierReference.Type.PULSE_ASSET)));
             }
             // Validate primary TAG reference has scope
             if (primaryRef.type() == DataIdentifierReference.Type.TAG) {
@@ -204,13 +205,13 @@ public class CombinersResourceImpl implements CombinersApi {
                     return Optional.of(ErrorResponseUtil.errorResponse(new MissingScopeForTagError(primaryRef.id())));
                 }
             }
-            if (dataCombining.instructions()
-                    .stream()
+            if (dataCombining.instructions().stream()
                     .filter(instruction -> Objects.nonNull(instruction.dataIdentifierReference()))
-                    .anyMatch(instruction -> instruction.dataIdentifierReference().type() ==
-                            DataIdentifierReference.Type.PULSE_ASSET)) {
-                return Optional.of(ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForCombinerError(
-                        DataIdentifierReference.Type.PULSE_ASSET)));
+                    .anyMatch(instruction ->
+                            instruction.dataIdentifierReference().type() == DataIdentifierReference.Type.PULSE_ASSET)) {
+                return Optional.of(
+                        ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForCombinerError(
+                                DataIdentifierReference.Type.PULSE_ASSET)));
             }
             // Validate TAG references in instructions have scope
             for (final Instruction instruction : dataCombining.instructions()) {

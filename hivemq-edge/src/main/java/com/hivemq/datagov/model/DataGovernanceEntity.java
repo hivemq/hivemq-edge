@@ -22,10 +22,12 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface DataGovernanceEntity {
 
-    @NotNull String getId();
+    @NotNull
+    String getId();
 
-    @NotNull String getName();
+    @NotNull
+    String getName();
 
-    @NotNull boolean isEnabled();
-
+    @NotNull
+    boolean isEnabled();
 }

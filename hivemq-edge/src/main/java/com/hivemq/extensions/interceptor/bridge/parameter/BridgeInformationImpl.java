@@ -15,8 +15,8 @@
  */
 package com.hivemq.extensions.interceptor.bridge.parameter;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.bridge.parameter.BridgeInformation;
+import org.jetbrains.annotations.NotNull;
 
 public class BridgeInformationImpl implements BridgeInformation {
 

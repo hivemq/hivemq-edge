@@ -15,6 +15,12 @@
  */
 package com.hivemq.protocols;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
@@ -37,12 +43,6 @@ import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -51,12 +51,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 class ProtocolAdapterWrapperShutdownRaceConditionTest {
 
@@ -79,9 +78,8 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
         final EventBuilder eventBuilder = new EventBuilderImpl(mock());
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
-        when(protocolAdapterWritingService.startWritingAsync(any(),
-                any(),
-                any())).thenReturn(CompletableFuture.completedFuture(true));
+        when(protocolAdapterWritingService.startWritingAsync(any(), any(), any()))
+                .thenReturn(CompletableFuture.completedFuture(true));
         when(moduleServices.eventService()).thenReturn(eventService);
     }
 
@@ -92,7 +90,8 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
                 new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol");
         final TestWritingAdapter adapter = new TestWritingAdapter(true, adapterState);
 
-        final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(mock(),
+        final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(
+                mock(),
                 protocolAdapterWritingService,
                 protocolAdapterPollingService,
                 mock(),
@@ -132,7 +131,8 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
                     new ProtocolAdapterStateImpl(eventService, "test-adapter-" + i, "test-protocol");
             final TestWritingAdapter adapter = new TestWritingAdapter(true, adapterState);
 
-            final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(mock(),
+            final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(
+                    mock(),
                     protocolAdapterWritingService,
                     protocolAdapterPollingService,
                     mock(),
@@ -151,38 +151,41 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
             final AtomicBoolean statusChangeAttemptedDuringShutdown = new AtomicBoolean(false);
 
             // Thread 1: Stop the adapter
-            final CompletableFuture<Void> stopFuture = CompletableFuture.runAsync(() -> {
-                try {
-                    bothStarted.countDown();
-                    bothStarted.await(2, TimeUnit.SECONDS);
-                    wrapper.stopAsync(false).get(5, TimeUnit.SECONDS);
-                } catch (final Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }, executor);
+            final CompletableFuture<Void> stopFuture = CompletableFuture.runAsync(
+                    () -> {
+                        try {
+                            bothStarted.countDown();
+                            bothStarted.await(2, TimeUnit.SECONDS);
+                            wrapper.stopAsync(false).get(5, TimeUnit.SECONDS);
+                        } catch (final Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    },
+                    executor);
 
             // Thread 2: Try to change status during shutdown
-            final CompletableFuture<Void> statusChangeFuture = CompletableFuture.runAsync(() -> {
-                try {
-                    bothStarted.countDown();
-                    bothStarted.await(2, TimeUnit.SECONDS);
-                    // Small delay to increase chance of hitting the race window
-                    Thread.sleep(10);
-                    final boolean changed =
-                            adapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-                    if (!changed) {
-                        statusChangeAttemptedDuringShutdown.set(true);
-                    }
-                } catch (final Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }, executor);
+            final CompletableFuture<Void> statusChangeFuture = CompletableFuture.runAsync(
+                    () -> {
+                        try {
+                            bothStarted.countDown();
+                            bothStarted.await(2, TimeUnit.SECONDS);
+                            // Small delay to increase chance of hitting the race window
+                            Thread.sleep(10);
+                            final boolean changed =
+                                    adapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+                            if (!changed) {
+                                statusChangeAttemptedDuringShutdown.set(true);
+                            }
+                        } catch (final Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    },
+                    executor);
 
             CompletableFuture.allOf(stopFuture, statusChangeFuture).get(5, TimeUnit.SECONDS);
 
             // Verify the adapter is in a valid state
             assertThat(wrapper.getRuntimeStatus()).isEqualTo(ProtocolAdapterState.RuntimeStatus.STOPPED);
-
         }
 
         executor.shutdown();
@@ -198,7 +201,8 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
         final TestWritingAdapter adapter = new TestWritingAdapter(true, adapterState);
         final AtomicInteger listenerCallCount = new AtomicInteger(0);
 
-        final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(mock(),
+        final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(
+                mock(),
                 protocolAdapterWritingService,
                 protocolAdapterPollingService,
                 mock(),
@@ -235,7 +239,8 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
                 new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol");
         final TestWritingAdapter adapter = new TestWritingAdapter(true, adapterState);
 
-        final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(mock(),
+        final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(
+                mock(),
                 protocolAdapterWritingService,
                 protocolAdapterPollingService,
                 mock(),
@@ -271,7 +276,8 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
                 new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol");
         final TestWritingAdapter adapter = new TestWritingAdapter(false, adapterState); // Will fail
 
-        final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(mock(),
+        final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(
+                mock(),
                 protocolAdapterWritingService,
                 protocolAdapterPollingService,
                 mock(),
@@ -374,8 +380,7 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
         }
 
         @Override
-        public void write(final @NotNull WritingInput writingInput, final @NotNull WritingOutput writingOutput) {
-        }
+        public void write(final @NotNull WritingInput writingInput, final @NotNull WritingOutput writingOutput) {}
 
         @Override
         public @NotNull Class<? extends WritingPayload> getMqttPayloadClass() {
@@ -389,8 +394,7 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
 
         @Override
         public void start(
-                final @NotNull ProtocolAdapterStartInput input,
-                final @NotNull ProtocolAdapterStartOutput output) {
+                final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
             if (success) {
                 adapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
                 output.startedSuccessfully();
@@ -401,8 +405,7 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
 
         @Override
         public void stop(
-                final @NotNull ProtocolAdapterStopInput input,
-                final @NotNull ProtocolAdapterStopOutput output) {
+                final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
             if (success) {
                 adapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
                 output.stoppedSuccessfully();

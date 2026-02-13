@@ -24,15 +24,14 @@ import com.codahale.metrics.jvm.ClassLoadingGaugeSet;
 import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
 import com.codahale.metrics.jvm.ThreadDeadlockDetector;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.lang.management.ManagementFactory;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Singleton
 public class JvmMetricsRegistry {
@@ -44,12 +43,11 @@ public class JvmMetricsRegistry {
     private final @NotNull MetricRegistry metricRegistry;
 
     @Inject
-    public JvmMetricsRegistry(
-            final @NotNull MetricRegistry metricRegistry) {
+    public JvmMetricsRegistry(final @NotNull MetricRegistry metricRegistry) {
         this.metricRegistry = metricRegistry;
     }
 
-    //method injection for eager initialization
+    // method injection for eager initialization
     @Inject
     public void postConstruct() {
 
@@ -65,7 +63,10 @@ public class JvmMetricsRegistry {
     private void registerMemoryMetrics() {
         try {
 
-            registerAll("memory", new MemoryUsageGaugeSet(ManagementFactory.getMemoryMXBean(), ManagementFactory.getMemoryPoolMXBeans()));
+            registerAll(
+                    "memory",
+                    new MemoryUsageGaugeSet(
+                            ManagementFactory.getMemoryMXBean(), ManagementFactory.getMemoryPoolMXBeans()));
 
         } catch (final Exception e) {
             log.warn("Not able to register JVM metrics for Memory usage, this is probably not supported by this JVM");
@@ -78,10 +79,12 @@ public class JvmMetricsRegistry {
     private void registerGarbageCollectorMetrics() {
         try {
 
-            registerAll("garbage-collector", new GarbageCollectorMetricSet(ManagementFactory.getGarbageCollectorMXBeans()));
+            registerAll(
+                    "garbage-collector", new GarbageCollectorMetricSet(ManagementFactory.getGarbageCollectorMXBeans()));
 
         } catch (final Exception e) {
-            log.warn("Not able to register JVM metrics for GarbageCollection, this is probably not supported by this JVM");
+            log.warn(
+                    "Not able to register JVM metrics for GarbageCollection, this is probably not supported by this JVM");
             if (log.isDebugEnabled()) {
                 log.debug("original Exception", e);
             }
@@ -104,8 +107,13 @@ public class JvmMetricsRegistry {
     private void registerThreadStateMetrics() {
         try {
 
-            registerAll("threads", new CachedThreadStatesGaugeSet(ManagementFactory.getThreadMXBean(),
-                    new ThreadDeadlockDetector(ManagementFactory.getThreadMXBean()), 1, TimeUnit.SECONDS));
+            registerAll(
+                    "threads",
+                    new CachedThreadStatesGaugeSet(
+                            ManagementFactory.getThreadMXBean(),
+                            new ThreadDeadlockDetector(ManagementFactory.getThreadMXBean()),
+                            1,
+                            TimeUnit.SECONDS));
 
         } catch (final Exception e) {
             log.warn("Not able to register JVM metrics for Thread states, this is probably not supported by this JVM");
@@ -141,5 +149,4 @@ public class JvmMetricsRegistry {
     private void register(final @NotNull String prefix, final @NotNull Metric metric) {
         metricRegistry.register(JVM_METRIC_PREFIX + prefix, metric);
     }
-
 }

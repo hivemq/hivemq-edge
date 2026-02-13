@@ -25,6 +25,4 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 @XmlRootElement(name = "tcp-listener")
 @XmlAccessorType(XmlAccessType.NONE)
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
-public class TCPListenerEntity extends ListenerEntity {
-
-}
+public class TCPListenerEntity extends ListenerEntity {}

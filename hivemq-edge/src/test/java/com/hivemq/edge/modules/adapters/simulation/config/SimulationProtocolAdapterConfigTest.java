@@ -15,6 +15,15 @@
  */
 package com.hivemq.edge.modules.adapters.simulation.config;
 
+import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
+import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
+import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.events.EventService;
@@ -38,23 +47,13 @@ import com.hivemq.configuration.reader.RestrictionConfigurator;
 import com.hivemq.configuration.reader.SecurityConfigurator;
 import com.hivemq.configuration.reader.UsageTrackingConfigurator;
 import com.hivemq.edge.modules.adapters.simulation.SimulationProtocolAdapterFactory;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Test;
-
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-
-import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
-import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
-import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("unchecked")
 class SimulationProtocolAdapterConfigTest {
@@ -86,42 +85,42 @@ class SimulationProtocolAdapterConfigTest {
         final ProtocolAdapterEntity protocolAdapterEntity = adapters.get(0);
 
         final Map<String, Object> configAsMaps = protocolAdapterEntity.getConfig();
-        final SimulationSpecificAdapterConfig config =
-                (SimulationSpecificAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper,
-                        configAsMaps,
-                        false);
+        final SimulationSpecificAdapterConfig config = (SimulationSpecificAdapterConfig)
+                simulationProtocolAdapterFactory.convertConfigObject(mapper, configAsMaps, false);
 
         assertThat(protocolAdapterEntity.getAdapterId()).isEqualTo("my-simulation-protocol-adapter");
         assertThat(config.getMinValue()).isEqualTo(0);
         assertThat(config.getMaxValue()).isEqualTo(1000);
         assertThat(config.getMinDelay()).isEqualTo(0);
         assertThat(config.getMaxDelay()).isEqualTo(1000);
-        assertThat(config.getSimulationToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(9);
-        assertThat(protocolAdapterEntity.getNorthboundMappings()).satisfiesExactly(subscription -> {
-            assertThat(subscription.getTopic()).isEqualTo("my/topic");
-            assertThat(subscription.getMaxQoS()).isEqualTo(1);
-            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
-            assertThat(subscription.isIncludeTimestamp()).isFalse();
-            assertThat(subscription.isIncludeTagNames()).isTrue();
+        assertThat(config.getSimulationToMqttConfig().getMaxPollingErrorsBeforeRemoval())
+                .isEqualTo(9);
+        assertThat(protocolAdapterEntity.getNorthboundMappings())
+                .satisfiesExactly(
+                        subscription -> {
+                            assertThat(subscription.getTopic()).isEqualTo("my/topic");
+                            assertThat(subscription.getMaxQoS()).isEqualTo(1);
+                            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
+                            assertThat(subscription.isIncludeTimestamp()).isFalse();
+                            assertThat(subscription.isIncludeTagNames()).isTrue();
 
-            assertThat(subscription.getUserProperties()).satisfiesExactly(userProperty -> {
-                assertThat(userProperty.getName()).isEqualTo("my-name");
-                assertThat(userProperty.getValue()).isEqualTo("my-value");
-            });
-        }, subscription -> {
-            assertThat(subscription.getTopic()).isEqualTo("my/topic/2");
-            assertThat(subscription.getMaxQoS()).isEqualTo(1);
-            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
-            assertThat(subscription.isIncludeTimestamp()).isFalse();
-            assertThat(subscription.isIncludeTagNames()).isTrue();
+                            assertThat(subscription.getUserProperties()).satisfiesExactly(userProperty -> {
+                                assertThat(userProperty.getName()).isEqualTo("my-name");
+                                assertThat(userProperty.getValue()).isEqualTo("my-value");
+                            });
+                        },
+                        subscription -> {
+                            assertThat(subscription.getTopic()).isEqualTo("my/topic/2");
+                            assertThat(subscription.getMaxQoS()).isEqualTo(1);
+                            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
+                            assertThat(subscription.isIncludeTimestamp()).isFalse();
+                            assertThat(subscription.isIncludeTagNames()).isTrue();
 
-            assertThat(subscription.getUserProperties()).satisfiesExactly(userProperty -> {
-                assertThat(userProperty.getName()).isEqualTo("my-name");
-                assertThat(userProperty.getValue()).isEqualTo("my-value");
-            });
-        });
-
-
+                            assertThat(subscription.getUserProperties()).satisfiesExactly(userProperty -> {
+                                assertThat(userProperty.getName()).isEqualTo("my-name");
+                                assertThat(userProperty.getValue()).isEqualTo("my-value");
+                            });
+                        });
     }
 
     @Test
@@ -137,14 +136,12 @@ class SimulationProtocolAdapterConfigTest {
         final ProtocolAdapterEntity protocolAdapterEntity = adapters.get(0);
 
         final Map<String, Object> configAsMaps = protocolAdapterEntity.getConfig();
-        final SimulationSpecificAdapterConfig config =
-                (SimulationSpecificAdapterConfig) simulationProtocolAdapterFactory.convertConfigObject(mapper,
-                        configAsMaps,
-                        false);
-
+        final SimulationSpecificAdapterConfig config = (SimulationSpecificAdapterConfig)
+                simulationProtocolAdapterFactory.convertConfigObject(mapper, configAsMaps, false);
 
         assertThat(protocolAdapterEntity.getAdapterId()).isEqualTo("my-simulation-protocol-adapter");
-        assertThat(config.getSimulationToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
+        assertThat(config.getSimulationToMqttConfig().getMaxPollingErrorsBeforeRemoval())
+                .isEqualTo(10);
         assertThat(protocolAdapterEntity.getNorthboundMappings()).satisfiesExactly(subscription -> {
             assertThat(subscription.getTopic()).isEqualTo("my/topic");
             assertThat(subscription.getMaxQoS()).isEqualTo(1);
@@ -171,19 +168,16 @@ class SimulationProtocolAdapterConfigTest {
 
     @Test
     public void unconvertConfigObject_full_valid() {
-        final SimulationToMqttMapping pollingContext = new SimulationToMqttMapping("my/destination",
+        final SimulationToMqttMapping pollingContext = new SimulationToMqttMapping(
+                "my/destination",
                 1,
                 MQTTMessagePerSubscription,
                 false,
                 true,
                 List.of(new MqttUserProperty("my-name", "my-value")));
 
-        final SimulationSpecificAdapterConfig simulationAdapterConfig =
-                new SimulationSpecificAdapterConfig( new SimulationToMqttConfig(List.of(pollingContext), 11, 12),
-                        12,
-                        13,
-                        14,
-                        15);
+        final SimulationSpecificAdapterConfig simulationAdapterConfig = new SimulationSpecificAdapterConfig(
+                new SimulationToMqttConfig(List.of(pollingContext), 11, 12), 12, 13, 14, 15);
 
         final SimulationProtocolAdapterFactory factory =
                 new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
@@ -193,7 +187,6 @@ class SimulationProtocolAdapterConfigTest {
         assertThat(config.get("maxValue")).isEqualTo(13);
         assertThat(config.get("minDelay")).isEqualTo(14);
         assertThat(config.get("maxDelay")).isEqualTo(15);
-
 
         final Map<String, Object> simulationToMqtt = (Map<String, Object>) config.get("simulationToMqtt");
         assertThat(simulationToMqtt.get("pollingIntervalMillis")).isEqualTo(11);
@@ -205,12 +198,8 @@ class SimulationProtocolAdapterConfigTest {
         final SimulationToMqttMapping pollingContext =
                 new SimulationToMqttMapping("my/destination", null, null, null, null, null);
 
-        final SimulationSpecificAdapterConfig simulationAdapterConfig =
-                new SimulationSpecificAdapterConfig( new SimulationToMqttConfig(List.of(pollingContext), null, null),
-                        null,
-                        null,
-                        null,
-                        null);
+        final SimulationSpecificAdapterConfig simulationAdapterConfig = new SimulationSpecificAdapterConfig(
+                new SimulationToMqttConfig(List.of(pollingContext), null, null), null, null, null, null);
 
         final SimulationProtocolAdapterFactory factory =
                 new SimulationProtocolAdapterFactory(protocolAdapterFactoryInput);
@@ -266,17 +255,18 @@ class SimulationProtocolAdapterConfigTest {
         final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(
                 mock(SystemInformation.class),
                 new ConfigurationFile(configFile),
-                List.of(restrictionConfigurator,
-                    securityConfigurator,
-                    mqttConfigurator,
-                    listenerConfigurator,
-                    persistenceConfigurator,
-                    mqttsnConfigurator,
-                    apiConfigurator,
-                    dynamicConfigConfigurator,
-                    usageTrackingConfigurator,
-                    moduleConfigurator,
-                    internalConfigurator));
+                List.of(
+                        restrictionConfigurator,
+                        securityConfigurator,
+                        mqttConfigurator,
+                        listenerConfigurator,
+                        persistenceConfigurator,
+                        mqttsnConfigurator,
+                        apiConfigurator,
+                        dynamicConfigConfigurator,
+                        usageTrackingConfigurator,
+                        moduleConfigurator,
+                        internalConfigurator));
         return readerWriter.applyConfig();
     }
 }

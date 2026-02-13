@@ -15,6 +15,15 @@
  */
 package com.hivemq.edge.adapters.opcua.config;
 
+import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
+import static com.hivemq.edge.adapters.opcua.config.SecPolicy.BASIC128RSA15;
+import static com.hivemq.edge.adapters.opcua.config.SecPolicy.NONE;
+import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
@@ -28,9 +37,6 @@ import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.protocols.ProtocolAdapterConfig;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterFactoryManager;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Test;
-
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -38,15 +44,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
-import static com.hivemq.edge.adapters.opcua.config.SecPolicy.BASIC128RSA15;
-import static com.hivemq.edge.adapters.opcua.config.SecPolicy.NONE;
-import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("unchecked")
 class OpcUaProtocolAdapterConfigTest {
@@ -58,9 +57,9 @@ class OpcUaProtocolAdapterConfigTest {
         final URL resource = getClass().getResource("/opcua-adapter-full-config.xml");
         final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
 
-        final BidirectionalOpcUaSpecificAdapterConfig config = (BidirectionalOpcUaSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
-        assertThat(protocolAdapterConfig.missingTags())
-                .isEmpty();
+        final BidirectionalOpcUaSpecificAdapterConfig config =
+                (BidirectionalOpcUaSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
+        assertThat(protocolAdapterConfig.missingTags()).isEmpty();
 
         assertThat(protocolAdapterConfig.getAdapterId()).isEqualTo("simulation-server-2");
         assertThat(config.getUri()).isEqualTo("opc.tcp://CSM1.local:53530/OPCUA/SimulationServer");
@@ -91,32 +90,36 @@ class OpcUaProtocolAdapterConfigTest {
             assertThat(tls.truststore().password()).isEqualTo("truststore-password");
         });
 
-
-
-        assertThat(protocolAdapterConfig.getNorthboundMappings()).satisfiesExactly(mapping -> {
-            assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
-            assertThat(mapping.getMqttTopic()).isEqualTo("test/blubb/a");
-            assertThat(mapping.getMqttQos()).isEqualTo(1);
-            assertThat(mapping.getMessageExpiryInterval()).isEqualTo(15);
-        }, mapping -> {
-            assertThat(mapping.getTagName()).isEqualTo("ns=2;i=1004");
-            assertThat(mapping.getMqttTopic()).isEqualTo("test/blubbb/b");
-            assertThat(mapping.getMqttQos()).isEqualTo(2);
-            assertThat(mapping.getMessageExpiryInterval()).isEqualTo(16);
-        });
+        assertThat(protocolAdapterConfig.getNorthboundMappings())
+                .satisfiesExactly(
+                        mapping -> {
+                            assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
+                            assertThat(mapping.getMqttTopic()).isEqualTo("test/blubb/a");
+                            assertThat(mapping.getMqttQos()).isEqualTo(1);
+                            assertThat(mapping.getMessageExpiryInterval()).isEqualTo(15);
+                        },
+                        mapping -> {
+                            assertThat(mapping.getTagName()).isEqualTo("ns=2;i=1004");
+                            assertThat(mapping.getMqttTopic()).isEqualTo("test/blubbb/b");
+                            assertThat(mapping.getMqttQos()).isEqualTo(2);
+                            assertThat(mapping.getMessageExpiryInterval()).isEqualTo(16);
+                        });
 
         assertThat(config.getOpcuaToMqttConfig()).satisfies(mapping -> {
             assertThat(mapping.publishingInterval()).isEqualTo(12);
             assertThat(mapping.serverQueueSize()).isEqualTo(13);
         });
 
-        assertThat(protocolAdapterConfig.getSouthboundMappings()).satisfiesExactly(mapping -> {
-            assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
-            assertThat(mapping.getTopicFilter()).isEqualTo("test/blubb/#");
-        }, mapping -> {
-            assertThat(mapping.getTagName()).isEqualTo("ns=2;i=1004");
-            assertThat(mapping.getTopicFilter()).isEqualTo("test/blubbb/#");
-        });
+        assertThat(protocolAdapterConfig.getSouthboundMappings())
+                .satisfiesExactly(
+                        mapping -> {
+                            assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
+                            assertThat(mapping.getTopicFilter()).isEqualTo("test/blubb/#");
+                        },
+                        mapping -> {
+                            assertThat(mapping.getTagName()).isEqualTo("ns=2;i=1004");
+                            assertThat(mapping.getTopicFilter()).isEqualTo("test/blubbb/#");
+                        });
     }
 
     @Test
@@ -124,9 +127,9 @@ class OpcUaProtocolAdapterConfigTest {
         final URL resource = getClass().getResource("/opcua-adapter-minimal-config.xml");
         final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
 
-        final BidirectionalOpcUaSpecificAdapterConfig config = (BidirectionalOpcUaSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
-        assertThat(protocolAdapterConfig.missingTags())
-                .isEmpty();
+        final BidirectionalOpcUaSpecificAdapterConfig config =
+                (BidirectionalOpcUaSpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
+        assertThat(protocolAdapterConfig.missingTags()).isEmpty();
 
         assertThat(protocolAdapterConfig.getAdapterId()).isEqualTo("simulation-server-2");
         assertThat(config.getUri()).isEqualTo("opc.tcp://CSM1.local:53530/OPCUA/SimulationServer");
@@ -166,7 +169,8 @@ class OpcUaProtocolAdapterConfigTest {
     @Test
     public void convertConfigObject_opcuaMissingUri_exception() throws Exception {
         final URL resource = getClass().getResource("/opcua-adapter-missing-uri.xml");
-        assertThatThrownBy(() -> getProtocolAdapterConfig(resource)).hasMessageContaining("Missing required creator property 'uri'");
+        assertThatThrownBy(() -> getProtocolAdapterConfig(resource))
+                .hasMessageContaining("Missing required creator property 'uri'");
     }
 
     @Test
@@ -177,31 +181,32 @@ class OpcUaProtocolAdapterConfigTest {
                 true,
                 null,
                 new Auth(new BasicAuth("my-username", "my-password"), new X509Auth(true)),
-                new Tls(true,
+                new Tls(
+                        true,
                         TlsChecks.NONE,
                         new Keystore("my/keystore/path", "keystore-password", "private-key-password"),
                         new Truststore("my/truststore/path", "truststore-password")),
                 new OpcUaToMqttConfig(1, 1000),
                 new Security(BASIC128RSA15),
-                null
-        );
+                null);
 
         final OpcUaProtocolAdapterFactory opcuaProtocolAdapterFactory =
                 new OpcUaProtocolAdapterFactory(mock(ProtocolAdapterFactoryInput.class));
-        final Map<String, Object> config =
-                opcuaProtocolAdapterFactory.unconvertConfigObject(mapper, adapterConfig);
+        final Map<String, Object> config = opcuaProtocolAdapterFactory.unconvertConfigObject(mapper, adapterConfig);
 
         assertThat(config.get("uri")).isEqualTo("my.uri.com");
 
         final Map<String, Object> opcuaToMqtt = (Map<String, Object>) config.get("opcuaToMqtt");
-        assertThat((List<Map<String, Object>>) opcuaToMqtt.get("opcuaToMqttMappings")).isNull();
+        assertThat((List<Map<String, Object>>) opcuaToMqtt.get("opcuaToMqttMappings"))
+                .isNull();
 
         final Map<String, Object> authMap = (Map<String, Object>) config.get("auth");
         assertThat((Map<String, Object>) authMap.get("basic")).satisfies(basic -> {
             assertThat(basic.get("username")).isEqualTo("my-username");
             assertThat(basic.get("password")).isEqualTo("my-password");
         });
-        assertThat((Map<String, Object>) authMap.get("x509")).satisfies(basic -> assertThat(basic.get("enabled")).isEqualTo(true));
+        assertThat((Map<String, Object>) authMap.get("x509"))
+                .satisfies(basic -> assertThat(basic.get("enabled")).isEqualTo(true));
 
         final Map<String, Object> tlsMap = (Map<String, Object>) config.get("tls");
         assertThat(tlsMap.get("enabled")).isEqualTo(true);
@@ -216,29 +221,20 @@ class OpcUaProtocolAdapterConfigTest {
         });
     }
 
-
     @Test
     public void unconvertConfigObject_default_valid() {
         final BidirectionalOpcUaSpecificAdapterConfig adapterConfig = new BidirectionalOpcUaSpecificAdapterConfig(
-                "my.uri.com",
-                true,
-                null,
-                null,
-                null,
-                new OpcUaToMqttConfig(1, 1000),
-                null,
-                null
-        );
+                "my.uri.com", true, null, null, null, new OpcUaToMqttConfig(1, 1000), null, null);
 
         final OpcUaProtocolAdapterFactory opcuaProtocolAdapterFactory =
                 new OpcUaProtocolAdapterFactory(mock(ProtocolAdapterFactoryInput.class));
-        final Map<String, Object> config =
-                opcuaProtocolAdapterFactory.unconvertConfigObject(mapper, adapterConfig);
+        final Map<String, Object> config = opcuaProtocolAdapterFactory.unconvertConfigObject(mapper, adapterConfig);
 
         assertThat(config.get("uri")).isEqualTo("my.uri.com");
 
         final Map<String, Object> opcuaToMqtt = (Map<String, Object>) config.get("opcuaToMqtt");
-        assertThat((List<Map<String, Object>>) opcuaToMqtt.get("opcuaToMqttMappings")).isNull(); // must be empty
+        assertThat((List<Map<String, Object>>) opcuaToMqtt.get("opcuaToMqttMappings"))
+                .isNull(); // must be empty
 
         assertThat(config.get("auth")).isNull();
 
@@ -246,12 +242,13 @@ class OpcUaProtocolAdapterConfigTest {
         assertThat(tlsMap.get("enabled")).isEqualTo(false);
     }
 
-    private @NotNull ProtocolAdapterConfig getProtocolAdapterConfig(final @NotNull URL resource) throws
-            URISyntaxException {
+    private @NotNull ProtocolAdapterConfig getProtocolAdapterConfig(final @NotNull URL resource)
+            throws URISyntaxException {
         final File path = Path.of(resource.toURI()).toFile();
 
         final HiveMQConfigEntity configEntity = loadConfig(path);
-        final ProtocolAdapterEntity adapterEntity = configEntity.getProtocolAdapterConfig().getFirst();
+        final ProtocolAdapterEntity adapterEntity =
+                configEntity.getProtocolAdapterConfig().getFirst();
 
         final ProtocolAdapterConfigConverter converter = createConverter();
 
@@ -269,7 +266,8 @@ class OpcUaProtocolAdapterConfigTest {
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {
-        final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(mock(SystemInformation.class), new ConfigurationFile(configFile), List.of());
+        final ConfigFileReaderWriter readerWriter =
+                new ConfigFileReaderWriter(mock(SystemInformation.class), new ConfigurationFile(configFile), List.of());
         return readerWriter.applyConfig();
     }
 }

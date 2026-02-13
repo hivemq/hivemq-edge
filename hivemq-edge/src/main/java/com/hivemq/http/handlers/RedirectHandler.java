@@ -17,7 +17,6 @@ package com.hivemq.http.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.http.core.IHttpRequestResponse;
-
 import java.io.IOException;
 
 public class RedirectHandler extends AbstractHttpRequestResponseHandler {

@@ -21,12 +21,11 @@ import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.JsonPayloadCreator;
 import com.hivemq.edge.adapters.file.FilePollingProtocolAdapter;
+import java.util.ArrayList;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class FileJsonPayloadCreator implements JsonPayloadCreator {
 
@@ -42,7 +41,8 @@ public class FileJsonPayloadCreator implements JsonPayloadCreator {
         for (final DataPoint dataPoint : dataPoints) {
             try {
                 final FileDataPoint fileDataPoint = (FileDataPoint) dataPoint;
-                final FilePayload value = new FilePayload(pollingContext.getUserProperties(),
+                final FilePayload value = new FilePayload(
+                        pollingContext.getUserProperties(),
                         dataPoint.getTagValue(),
                         fileDataPoint.getTag().getDefinition().getContentType(),
                         pollingContext.getIncludeTagNames() ? dataPoint.getTagName() : null,
@@ -54,5 +54,4 @@ public class FileJsonPayloadCreator implements JsonPayloadCreator {
         }
         return payloads;
     }
-
 }

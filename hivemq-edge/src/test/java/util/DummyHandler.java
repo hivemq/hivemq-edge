@@ -24,5 +24,4 @@ import io.netty.channel.ChannelHandlerAdapter;
  *
  * @author Dominik Obermaier
  */
-public class DummyHandler extends ChannelHandlerAdapter {
-}
+public class DummyHandler extends ChannelHandlerAdapter {}

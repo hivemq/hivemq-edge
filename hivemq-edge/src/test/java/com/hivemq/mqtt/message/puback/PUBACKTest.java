@@ -15,14 +15,14 @@
  */
 package com.hivemq.mqtt.message.puback;
 
-import org.jetbrains.annotations.NotNull;
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.hivemq.extensions.packets.puback.PubackPacketImpl;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.reason.Mqtt5PubAckReasonCode;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Yannick Weber
@@ -62,8 +62,7 @@ public class PUBACKTest {
                 new MqttUserProperty("user2", "value2"),
                 new MqttUserProperty("user3", "value3"));
 
-        final PUBACK origin =
-                new PUBACK(1, Mqtt5PubAckReasonCode.NOT_AUTHORIZED, "NotAuthorized", userProperties);
+        final PUBACK origin = new PUBACK(1, Mqtt5PubAckReasonCode.NOT_AUTHORIZED, "NotAuthorized", userProperties);
         final PubackPacketImpl packet = new PubackPacketImpl(origin);
 
         final PUBACK merged = PUBACK.from(packet);

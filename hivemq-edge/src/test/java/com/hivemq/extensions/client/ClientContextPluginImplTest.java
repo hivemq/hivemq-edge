@@ -13,8 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.client;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
 
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 import com.hivemq.extension.sdk.api.interceptor.Interceptor;
@@ -23,18 +27,12 @@ import com.hivemq.extension.sdk.api.interceptor.subscribe.SubscribeInboundInterc
 import com.hivemq.extensions.HiveMQExtensions;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
 import com.hivemq.extensions.packets.general.ModifiableDefaultPermissionsImpl;
+import java.io.File;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import util.TestInterceptorUtil;
-
-import java.io.File;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.mock;
 
 /**
  * @since 4.0.0
@@ -56,8 +54,8 @@ public class ClientContextPluginImplTest {
 
         final IsolatedExtensionClassloader classloader =
                 (IsolatedExtensionClassloader) interceptorList.get(0).getClass().getClassLoader();
-        final IsolatedExtensionClassloader anotherClassLoader =
-                (IsolatedExtensionClassloader) anotherInterceptorList.get(0).getClass().getClassLoader();
+        final IsolatedExtensionClassloader anotherClassLoader = (IsolatedExtensionClassloader)
+                anotherInterceptorList.get(0).getClass().getClassLoader();
 
         assertNotNull(classloader);
         assertNotNull(anotherClassLoader);
@@ -100,8 +98,8 @@ public class ClientContextPluginImplTest {
 
         final IsolatedExtensionClassloader classloader =
                 (IsolatedExtensionClassloader) interceptorList.get(0).getClass().getClassLoader();
-        final IsolatedExtensionClassloader anotherClassLoader =
-                (IsolatedExtensionClassloader) anotherInterceptorList.get(0).getClass().getClassLoader();
+        final IsolatedExtensionClassloader anotherClassLoader = (IsolatedExtensionClassloader)
+                anotherInterceptorList.get(0).getClass().getClassLoader();
 
         assertNotNull(classloader);
         assertNotNull(anotherClassLoader);

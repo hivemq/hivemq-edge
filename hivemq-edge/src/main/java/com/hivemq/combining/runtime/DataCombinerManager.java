@@ -15,6 +15,8 @@
  */
 package com.hivemq.combining.runtime;
 
+import static com.hivemq.metrics.HiveMQMetrics.DATA_COMBINERS_COUNT_CURRENT;
+
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
@@ -22,11 +24,6 @@ import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.reader.DataCombiningExtractor;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.VisibleForTesting;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
@@ -39,8 +36,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static com.hivemq.metrics.HiveMQMetrics.DATA_COMBINERS_COUNT_CURRENT;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Singleton
 public class DataCombinerManager {
@@ -62,7 +61,8 @@ public class DataCombinerManager {
         this.dataCombiningConfig = dataCombiningConfig;
         this.eventService = eventService;
         this.dataCombiningRuntimeFactory = dataCombiningRuntimeFactory;
-        metricRegistry.registerGauge(DATA_COMBINERS_COUNT_CURRENT.name(),
+        metricRegistry.registerGauge(
+                DATA_COMBINERS_COUNT_CURRENT.name(),
                 () -> idToDataCombiningInformation.values().size());
         shutdownHooks.add(new HiveMQShutdownHook() {
             @Override
@@ -96,9 +96,8 @@ public class DataCombinerManager {
 
         log.info("DataCombiners: {}", idToDataCombiningInformation.keySet());
 
-        final Map<UUID, DataCombiner> mapOfNewCombinersByUUID = configs
-                .stream()
-                .collect(Collectors.toMap(DataCombiner::id, Function.identity()));
+        final Map<UUID, DataCombiner> mapOfNewCombinersByUUID =
+                configs.stream().collect(Collectors.toMap(DataCombiner::id, Function.identity()));
 
         final List<UUID> listOfExisitingCombiners = new ArrayList<>(idToDataCombiningInformation.keySet());
 
@@ -120,8 +119,12 @@ public class DataCombinerManager {
                 var dataCombiningInformation = idToDataCombiningInformation.get(uuid);
                 deleteDataCombinerInternal(uuid);
                 var dataCombinerName = dataCombiningInformation.dataCombiner().name();
-                var nameOrId = dataCombinerName != null && !dataCombinerName.isEmpty() ? dataCombinerName : dataCombiningInformation.dataCombiner().id();
-                eventService.createCombinerEvent(dataCombiningInformation.dataCombiner().id())
+                var nameOrId = dataCombinerName != null && !dataCombinerName.isEmpty()
+                        ? dataCombinerName
+                        : dataCombiningInformation.dataCombiner().id();
+                eventService
+                        .createCombinerEvent(
+                                dataCombiningInformation.dataCombiner().id())
                         .withSeverity(Event.SEVERITY.INFO)
                         .withMessage(String.format("Combiner '%s' was permanently deleted.", nameOrId))
                         .fire();
@@ -137,8 +140,10 @@ public class DataCombinerManager {
                 var dataCombiner = mapOfNewCombinersByUUID.get(uuid);
                 createDataCombinerInternal(dataCombiner);
                 var dataCombinerName = dataCombiner.name();
-                var nameOrId = dataCombinerName != null && !dataCombinerName.isEmpty() ? dataCombinerName : dataCombiner.id();
-                eventService.createCombinerEvent(dataCombiner.id())
+                var nameOrId =
+                        dataCombinerName != null && !dataCombinerName.isEmpty() ? dataCombinerName : dataCombiner.id();
+                eventService
+                        .createCombinerEvent(dataCombiner.id())
                         .withSeverity(Event.SEVERITY.INFO)
                         .withMessage(String.format("Combiner '%s' was successfully created.", nameOrId))
                         .fire();
@@ -154,8 +159,10 @@ public class DataCombinerManager {
                 var dataCombiner = mapOfNewCombinersByUUID.get(uuid);
                 internalUpdateDataCombiner(mapOfNewCombinersByUUID.get(uuid));
                 var dataCombinerName = dataCombiner.name();
-                var nameOrId = dataCombinerName != null && !dataCombinerName.isEmpty() ? dataCombinerName : dataCombiner.id();
-                eventService.createCombinerEvent(dataCombiner.id())
+                var nameOrId =
+                        dataCombinerName != null && !dataCombinerName.isEmpty() ? dataCombinerName : dataCombiner.id();
+                eventService
+                        .createCombinerEvent(dataCombiner.id())
                         .withSeverity(Event.SEVERITY.INFO)
                         .withMessage(String.format("Combiner '%s' was successfully updated.", nameOrId))
                         .fire();
@@ -163,16 +170,17 @@ public class DataCombinerManager {
                 failedDataCombiners.add(uuid);
                 log.error("Failed updating data combiner {}", uuid, e);
             }
-
         });
 
         if (failedDataCombiners.isEmpty()) {
-            eventService.configurationEvent()
+            eventService
+                    .configurationEvent()
                     .withSeverity(Event.SEVERITY.INFO)
                     .withMessage("Configuration has been successfully updated")
                     .fire();
         } else {
-            eventService.configurationEvent()
+            eventService
+                    .configurationEvent()
                     .withSeverity(Event.SEVERITY.CRITICAL)
                     .withMessage("Reloading of configuration failed")
                     .fire();
@@ -181,21 +189,18 @@ public class DataCombinerManager {
 
     public synchronized @NotNull CompletableFuture<Void> stopAll() {
         return CompletableFuture.runAsync(() -> {
-            idToDataCombiningInformation.values()
-                    .stream()
+            idToDataCombiningInformation.values().stream()
                     .map(DataCombiningInformation::dataCombiningRuntimes)
                     .flatMap(Collection::stream)
                     .forEach(DataCombiningRuntime::stop);
         });
     }
 
-
     private void internalUpdateDataCombiner(final DataCombiner dataCombiner) {
         log.debug("Updating data combiner '{}'", dataCombiner.id());
         deleteDataCombinerInternal(dataCombiner.id());
         createDataCombinerInternal(dataCombiner);
     }
-
 
     private synchronized void createDataCombinerInternal(final @NotNull DataCombiner dataCombiner) {
         log.debug("Creating data combiner '{}'", dataCombiner.id());
@@ -204,12 +209,11 @@ public class DataCombinerManager {
         }
 
         final List<DataCombiningRuntime> dataCombiningRuntimes = createDataCombiningStates(dataCombiner);
-        idToDataCombiningInformation.put(dataCombiner.id(),
-                new DataCombiningInformation(dataCombiner, dataCombiningRuntimes));
+        idToDataCombiningInformation.put(
+                dataCombiner.id(), new DataCombiningInformation(dataCombiner, dataCombiningRuntimes));
 
         dataCombiningRuntimes.forEach(DataCombiningRuntime::start);
     }
-
 
     private synchronized boolean deleteDataCombinerInternal(final @NotNull UUID id) {
         log.debug("Deleting data combiner '{}'", id);
@@ -235,10 +239,10 @@ public class DataCombinerManager {
     }
 
     private @NotNull List<DataCombiningRuntime> createDataCombiningStates(final DataCombiner dataCombiner) {
-        return dataCombiner.dataCombinings().stream().map(dataCombiningRuntimeFactory::build).toList();
+        return dataCombiner.dataCombinings().stream()
+                .map(dataCombiningRuntimeFactory::build)
+                .toList();
     }
 
-    record DataCombiningInformation(DataCombiner dataCombiner, List<DataCombiningRuntime> dataCombiningRuntimes) {
-    }
-
+    record DataCombiningInformation(DataCombiner dataCombiner, List<DataCombiningRuntime> dataCombiningRuntimes) {}
 }

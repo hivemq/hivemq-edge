@@ -17,16 +17,15 @@ package com.hivemq.extensions.packets.publish;
 
 import com.google.common.primitives.ImmutableIntArray;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.connect.WillPublishPacket;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.packets.publish.PayloadFormatIndicator;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.connect.MqttWillPublish;
-
 import java.nio.ByteBuffer;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -78,8 +77,10 @@ public class WillPublishPacketImpl extends PublishPacketImpl implements WillPubl
                 (willPublish.getPayload() == null) ? null : ByteBuffer.wrap(willPublish.getPayload()),
                 willPublish.isRetain(),
                 willPublish.getMessageExpiryInterval(),
-                (willPublish.getPayloadFormatIndicator() == null) ? null :
-                        PayloadFormatIndicator.valueOf(willPublish.getPayloadFormatIndicator().name()),
+                (willPublish.getPayloadFormatIndicator() == null)
+                        ? null
+                        : PayloadFormatIndicator.valueOf(
+                                willPublish.getPayloadFormatIndicator().name()),
                 willPublish.getContentType(),
                 willPublish.getResponseTopic(),
                 willPublish.getCorrelationData() == null ? null : ByteBuffer.wrap(willPublish.getCorrelationData()),

@@ -22,15 +22,14 @@ import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterValidationFailure;
 import com.hivemq.edge.modules.api.adapters.model.ProtocolAdapterValidationFailureImpl;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
-
 import java.util.List;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Encapsulate the management of the schema, and ensure we internally managed API instances to decouple from
@@ -77,18 +76,15 @@ public class ProtocolAdapterSchemaManager {
         } else {
             node = objectMapper.valueToTree(o);
         }
-        return generateSchema().validate(node)
-                .stream()
+        return generateSchema().validate(node).stream()
                 .map(ProtocolAdapterSchemaManager::convertMessage)
                 .collect(Collectors.toList());
     }
 
-
     static ProtocolAdapterValidationFailure convertMessage(final @NotNull ValidationMessage validationMessage) {
-        return new ProtocolAdapterValidationFailureImpl(validationMessage.getMessage(),
+        return new ProtocolAdapterValidationFailureImpl(
+                validationMessage.getMessage(),
                 validationMessage.getEvaluationPath().toString(),
                 validationMessage.getClass());
     }
-
-
 }

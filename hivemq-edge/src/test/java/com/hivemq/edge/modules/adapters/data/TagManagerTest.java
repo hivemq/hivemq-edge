@@ -15,20 +15,18 @@
  */
 package com.hivemq.edge.modules.adapters.data;
 
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.codahale.metrics.NoopMetricRegistry;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.protocols.northbound.TagConsumer;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.junit.jupiter.api.Test;
-
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.Test;
 
 public class TagManagerTest {
 

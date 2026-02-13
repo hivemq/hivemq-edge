@@ -15,19 +15,18 @@
  */
 package com.hivemq.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-
 import java.nio.ByteBuffer;
 import java.util.Optional;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Dominik Obermaier
@@ -35,7 +34,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class Bytes {
 
     private Bytes() {
-        //This is a utility class, don't instantiate it!
+        // This is a utility class, don't instantiate it!
     }
 
     /**
@@ -109,7 +108,6 @@ public class Bytes {
         return rawBytes;
     }
 
-
     /**
      * Prefixes a byte array with the length of the bytes according to the MQTT specification.
      *
@@ -155,10 +153,18 @@ public class Bytes {
      */
     public static long readLong(final byte[] buffer, final int startPosition) {
         if (startPosition + Long.BYTES > buffer.length) {
-            throw new IllegalArgumentException("The provided array[" + buffer.length + "] is to small to read 8 bytes from start position " + startPosition);
+            throw new IllegalArgumentException("The provided array[" + buffer.length
+                    + "] is to small to read 8 bytes from start position " + startPosition);
         }
-        return Longs.fromBytes(buffer[startPosition], buffer[startPosition + 1], buffer[startPosition + 2], buffer[startPosition + 3],
-                buffer[startPosition + 4], buffer[startPosition + 5], buffer[startPosition + 6], buffer[startPosition + 7]);
+        return Longs.fromBytes(
+                buffer[startPosition],
+                buffer[startPosition + 1],
+                buffer[startPosition + 2],
+                buffer[startPosition + 3],
+                buffer[startPosition + 4],
+                buffer[startPosition + 5],
+                buffer[startPosition + 6],
+                buffer[startPosition + 7]);
     }
 
     /**
@@ -171,9 +177,11 @@ public class Bytes {
      */
     public static int readInt(final byte[] buffer, final int startPosition) {
         if (startPosition + Integer.BYTES > buffer.length) {
-            throw new IllegalArgumentException("The provided array[" + buffer.length + "] is to small to read 4 bytes from start position " + startPosition);
+            throw new IllegalArgumentException("The provided array[" + buffer.length
+                    + "] is to small to read 4 bytes from start position " + startPosition);
         }
-        return Ints.fromBytes(buffer[startPosition], buffer[startPosition + 1], buffer[startPosition + 2], buffer[startPosition + 3]);
+        return Ints.fromBytes(
+                buffer[startPosition], buffer[startPosition + 1], buffer[startPosition + 2], buffer[startPosition + 3]);
     }
 
     /**
@@ -186,7 +194,8 @@ public class Bytes {
      */
     public static int readUnsignedShort(final byte[] buffer, final int startPosition) {
         if (startPosition + Short.BYTES > buffer.length) {
-            throw new IllegalArgumentException("The provided array[" + buffer.length + "] is to small to read 2 bytes from start position " + startPosition);
+            throw new IllegalArgumentException("The provided array[" + buffer.length
+                    + "] is to small to read 2 bytes from start position " + startPosition);
         }
         return Ints.fromBytes((byte) 0, (byte) 0, buffer[startPosition], buffer[startPosition + 1]);
     }
@@ -260,8 +269,8 @@ public class Bytes {
     }
 
     @Nullable
-    public static byte[] fromReadOnlyBuffer(final @Nullable ByteBuffer byteBuffer){
-        if(byteBuffer == null){
+    public static byte[] fromReadOnlyBuffer(final @Nullable ByteBuffer byteBuffer) {
+        if (byteBuffer == null) {
             return null;
         }
         final ByteBuffer rewind = byteBuffer.asReadOnlyBuffer().rewind();

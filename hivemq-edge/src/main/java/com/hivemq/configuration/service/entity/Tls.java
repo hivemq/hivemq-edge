@@ -15,13 +15,12 @@
  */
 package com.hivemq.configuration.service.entity;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.hivemq.extension.sdk.api.annotations.Immutable;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * The TLS configuration
@@ -65,18 +64,19 @@ public class Tls {
      * @param preferServerCipherSuites if the server cipher suites are preferred over the client cipher suites
      * @since 3.3
      */
-    protected Tls(final @NotNull String keystorePath,
-                  final @NotNull String keystorePassword,
-                  final @NotNull String keystoreType,
-                  final @NotNull String privateKeyPassword,
-                  final @Nullable String truststorePath,
-                  final @Nullable String truststorePassword,
-                  final @Nullable String truststoreType,
-                  final int handshakeTimeout,
-                  final @NotNull ClientAuthMode clientAuthMode,
-                  final @NotNull List<String> protocols,
-                  final @NotNull List<String> cipherSuites,
-                  final @Nullable Boolean preferServerCipherSuites) {
+    protected Tls(
+            final @NotNull String keystorePath,
+            final @NotNull String keystorePassword,
+            final @NotNull String keystoreType,
+            final @NotNull String privateKeyPassword,
+            final @Nullable String truststorePath,
+            final @Nullable String truststorePassword,
+            final @Nullable String truststoreType,
+            final int handshakeTimeout,
+            final @NotNull ClientAuthMode clientAuthMode,
+            final @NotNull List<String> protocols,
+            final @NotNull List<String> cipherSuites,
+            final @Nullable Boolean preferServerCipherSuites) {
 
         checkNotNull(clientAuthMode, "clientAuthMode must not be null");
         checkNotNull(protocols, "protocols must not be null");
@@ -192,16 +192,17 @@ public class Tls {
         if (!privateKeyPassword.equals(tls.privateKeyPassword)) return false;
         if (truststorePath != null ? !truststorePath.equals(tls.truststorePath) : tls.truststorePath != null)
             return false;
-        if (truststorePassword != null ? !truststorePassword.equals(tls.truststorePassword) : tls.truststorePassword != null)
-            return false;
+        if (truststorePassword != null
+                ? !truststorePassword.equals(tls.truststorePassword)
+                : tls.truststorePassword != null) return false;
         if (truststoreType != null ? !truststoreType.equals(tls.truststoreType) : tls.truststoreType != null)
             return false;
-        if (handshakeTimeout != tls.handshakeTimeout)
-            return false;
+        if (handshakeTimeout != tls.handshakeTimeout) return false;
         if (clientAuthMode != tls.clientAuthMode) return false;
         if (!protocols.equals(tls.protocols)) return false;
-        if (preferServerCipherSuites != null ? !preferServerCipherSuites.equals(tls.preferServerCipherSuites) : tls.preferServerCipherSuites != null)
-            return false;
+        if (preferServerCipherSuites != null
+                ? !preferServerCipherSuites.equals(tls.preferServerCipherSuites)
+                : tls.preferServerCipherSuites != null) return false;
         return cipherSuites.equals(tls.cipherSuites);
     }
 
@@ -338,7 +339,8 @@ public class Tls {
             checkNotNull(protocols, "protocols must not be null");
             checkNotNull(cipherSuites, "cipher suites must not be null");
 
-            return new Tls(keystorePath,
+            return new Tls(
+                    keystorePath,
                     keystorePassword,
                     keystoreType,
                     privateKeyPassword,
@@ -349,8 +351,7 @@ public class Tls {
                     clientAuthMode,
                     protocols,
                     cipherSuites,
-                    preferServerCipherSuites) {
-            };
+                    preferServerCipherSuites) {};
         }
     }
 }

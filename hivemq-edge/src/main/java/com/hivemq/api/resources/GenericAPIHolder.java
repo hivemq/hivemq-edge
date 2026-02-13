@@ -15,15 +15,13 @@
  */
 package com.hivemq.api.resources;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 public class GenericAPIHolder {
 
     private final @NotNull List<Object> components = new ArrayList<>();
-
 
     public void addComponent(final @NotNull Object component) {
         components.add(component);

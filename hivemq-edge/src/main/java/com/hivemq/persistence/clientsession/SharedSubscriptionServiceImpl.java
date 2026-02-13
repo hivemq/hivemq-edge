@@ -15,29 +15,28 @@
  */
 package com.hivemq.persistence.clientsession;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableSet;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import com.hivemq.mqtt.message.subscribe.Topic;
-import com.hivemq.mqtt.topic.SubscriberWithQoS;
-import com.hivemq.mqtt.topic.SubscriptionFlag;
-import com.hivemq.mqtt.topic.tree.LocalTopicTree;
-
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import static com.hivemq.configuration.service.InternalConfigurations.SHARED_SUBSCRIBER_CACHE_CONCURRENCY_LEVEL;
 import static com.hivemq.configuration.service.InternalConfigurations.SHARED_SUBSCRIBER_CACHE_MAX_SIZE_SUBSCRIBERS;
 import static com.hivemq.configuration.service.InternalConfigurations.SHARED_SUBSCRIBER_CACHE_TIME_TO_LIVE_MSEC;
 import static com.hivemq.configuration.service.InternalConfigurations.SHARED_SUBSCRIPTION_CACHE_CONCURRENCY_LEVEL;
 import static com.hivemq.configuration.service.InternalConfigurations.SHARED_SUBSCRIPTION_CACHE_MAX_SIZE_SUBSCRIPTIONS;
 import static com.hivemq.configuration.service.InternalConfigurations.SHARED_SUBSCRIPTION_CACHE_TIME_TO_LIVE_MSEC;
+
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableSet;
+import com.hivemq.mqtt.message.subscribe.Topic;
+import com.hivemq.mqtt.topic.SubscriberWithQoS;
+import com.hivemq.mqtt.topic.SubscriptionFlag;
+import com.hivemq.mqtt.topic.tree.LocalTopicTree;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -77,7 +76,7 @@ public class SharedSubscriptionServiceImpl implements SharedSubscriptionService 
         return SHARED_SUBSCRIPTION_PATTERN.matcher(topic);
     }
 
-    @Inject //method injection, this gets called once after instantiation
+    @Inject // method injection, this gets called once after instantiation
     void postConstruct() {
 
         sharedSubscriberCache = CacheBuilder.newBuilder()
@@ -123,10 +122,21 @@ public class SharedSubscriptionServiceImpl implements SharedSubscriptionService 
 
         final SharedSubscription sharedSubscription = checkForSharedSubscription(topic.getTopic());
         if (sharedSubscription == null) {
-            return new Subscription(topic, SubscriptionFlag.getDefaultFlags(false, topic.isRetainAsPublished(), topic.isNoLocal()), null);
+            return new Subscription(
+                    topic,
+                    SubscriptionFlag.getDefaultFlags(false, topic.isRetainAsPublished(), topic.isNoLocal()),
+                    null);
         } else {
-            return new Subscription(new Topic(sharedSubscription.getTopicFilter(), topic.getQoS(), topic.isNoLocal(), topic.isRetainAsPublished(), topic.getRetainHandling(), topic.getSubscriptionIdentifier()),
-                    SubscriptionFlag.getDefaultFlags(true, topic.isRetainAsPublished(), topic.isNoLocal()), sharedSubscription.getShareName());
+            return new Subscription(
+                    new Topic(
+                            sharedSubscription.getTopicFilter(),
+                            topic.getQoS(),
+                            topic.isNoLocal(),
+                            topic.isRetainAsPublished(),
+                            topic.getRetainHandling(),
+                            topic.getSubscriptionIdentifier()),
+                    SubscriptionFlag.getDefaultFlags(true, topic.isRetainAsPublished(), topic.isNoLocal()),
+                    sharedSubscription.getShareName());
         }
     }
 
@@ -138,7 +148,7 @@ public class SharedSubscriptionServiceImpl implements SharedSubscriptionService 
      */
     @NotNull
     public ImmutableSet<SubscriberWithQoS> getSharedSubscriber(final @NotNull String sharedSubscription) {
-        //calling this method before post construct will return an empty set
+        // calling this method before post construct will return an empty set
         if (sharedSubscriberCache == null) {
             return ImmutableSet.of();
         }
@@ -160,7 +170,7 @@ public class SharedSubscriptionServiceImpl implements SharedSubscriptionService 
      */
     @NotNull
     public ImmutableSet<Topic> getSharedSubscriptions(final @NotNull String client) throws ExecutionException {
-        //calling this method before post construct will return an empty set
+        // calling this method before post construct will return an empty set
         if (sharedSubscriptionCache == null) {
             return ImmutableSet.of();
         }
@@ -209,7 +219,6 @@ public class SharedSubscriptionServiceImpl implements SharedSubscriptionService 
         return topic;
     }
 
-
     public static class SharedSubscription {
 
         private final @NotNull String topicFilter;
@@ -230,5 +239,4 @@ public class SharedSubscriptionServiceImpl implements SharedSubscriptionService 
             return shareName;
         }
     }
-
 }

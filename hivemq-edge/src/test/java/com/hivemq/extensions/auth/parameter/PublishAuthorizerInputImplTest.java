@@ -15,6 +15,10 @@
  */
 package com.hivemq.extensions.auth.parameter;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.connect.CONNECT;
@@ -23,12 +27,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import util.TestMessageUtil;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author Christoph Schäbel
@@ -37,6 +36,7 @@ public class PublishAuthorizerInputImplTest {
 
     private Channel channel;
     private ClientConnection clientConnection;
+
     @BeforeEach
     public void before() {
         channel = new EmbeddedChannel();
@@ -45,13 +45,12 @@ public class PublishAuthorizerInputImplTest {
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
     }
 
-
     @Test
     public void test_publish_null() {
-    
-        assertThrows(NullPointerException.class, () -> new PublishAuthorizerInputImpl((PUBLISH) null, channel, "client"));
-    }
 
+        assertThrows(
+                NullPointerException.class, () -> new PublishAuthorizerInputImpl((PUBLISH) null, channel, "client"));
+    }
 
     @Test
     public void test_channel_null() {
@@ -80,11 +79,11 @@ public class PublishAuthorizerInputImplTest {
     @Test
     public void test_will_publish() {
         final CONNECT connect = TestMessageUtil.createMqtt5ConnectWithWill();
-        final PublishAuthorizerInputImpl input = new PublishAuthorizerInputImpl(connect.getWillPublish(), channel, "client");
+        final PublishAuthorizerInputImpl input =
+                new PublishAuthorizerInputImpl(connect.getWillPublish(), channel, "client");
 
         assertNotNull(input.getClientInformation());
         assertNotNull(input.getConnectionInformation());
         assertNotNull(input.getPublishPacket());
     }
-
 }

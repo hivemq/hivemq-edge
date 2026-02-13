@@ -21,11 +21,6 @@ import com.hivemq.edge.modules.adapters.impl.IsolatedModuleClassloader;
 import com.hivemq.extensions.loader.ClassServiceLoader;
 import com.hivemq.http.handlers.AlternativeClassloadingStaticFileHandler;
 import jakarta.inject.Inject;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -38,6 +33,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ModuleLoader {
     protected static final @NotNull Comparator<File> fileComparator = (o1, o2) -> {
@@ -59,7 +58,8 @@ public class ModuleLoader {
     }
 
     private static void logException(final @NotNull File file, final @NotNull IOException ioException) {
-        log.warn("Exception with reason {} while reading module file {}",
+        log.warn(
+                "Exception with reason {} while reading module file {}",
                 ioException.getMessage(),
                 file.getAbsolutePath());
         log.debug("Original exception", ioException);
@@ -71,7 +71,7 @@ public class ModuleLoader {
             if (Boolean.getBoolean(HiveMQEdgeConstants.DEVELOPMENT_MODE)) {
                 log.info(String.format("Welcome '%s' is starting...", "48 69 76 65 4D 51  45 64 67 65"));
                 log.warn("""
-                        
+
                         ################################################################################################################
                         # You are running HiveMQ Edge in Development Mode and Modules will be loaded from your workspace NOT your      #
                         # HIVEMQ_HOME/modules directory. To load runtime modules from your HOME directory please remove                #
@@ -93,14 +93,16 @@ public class ModuleLoader {
         final File userDir = new File(System.getProperty("user.dir"));
         final File commercialModulesRepoRootFolder = new File(userDir, "../hivemq-edge-commercial-modules");
         if (!commercialModulesRepoRootFolder.exists()) {
-            log.error("Can not load commercial modules from workspace as the assumed root folder '{}' does not exist.",
+            log.error(
+                    "Can not load commercial modules from workspace as the assumed root folder '{}' does not exist.",
                     commercialModulesRepoRootFolder.getAbsolutePath());
             return;
         }
 
         final File libs = new File(commercialModulesRepoRootFolder, "hivemq-edge-commercial-modules-loader/build/libs");
         if (!libs.exists()) {
-            log.error("Could not load commercial module loader as the assumed lib folder '{}' does not exist.",
+            log.error(
+                    "Could not load commercial module loader as the assumed lib folder '{}' does not exist.",
                     libs.getAbsolutePath());
             return;
         }
@@ -110,7 +112,8 @@ public class ModuleLoader {
             return;
         }
 
-        final List<File> jars = new ArrayList<>(Arrays.stream(tmp).sorted(fileComparator).toList());
+        final List<File> jars =
+                new ArrayList<>(Arrays.stream(tmp).sorted(fileComparator).toList());
         final String absolutePathJar = jars.get(0).getAbsolutePath();
         if (jars.size() > 1) {
             log.debug(
@@ -131,9 +134,8 @@ public class ModuleLoader {
             log.error("", e);
         }
         log.info("Loading commercial module loader from {}", jarFile.getAbsoluteFile());
-        modules.add(new ModuleLoader.EdgeModule(jarFile,
-                new IsolatedModuleClassloader(urls.toArray(new URL[0]), parentClassloader),
-                false));
+        modules.add(new ModuleLoader.EdgeModule(
+                jarFile, new IsolatedModuleClassloader(urls.toArray(new URL[0]), parentClassloader), false));
     }
 
     protected void loadFromWorkspace(final @NotNull ClassLoader parentClassloader) {
@@ -167,9 +169,8 @@ public class ModuleLoader {
 
     protected void discoverWorkspaceModule(final @NotNull File dir, final @NotNull ClassLoader parentClassloader) {
         if (dir.exists()) {
-            final File[] files = dir.listFiles(pathname -> pathname.isDirectory() &&
-                    pathname.canRead() &&
-                    new File(pathname, "build").exists());
+            final File[] files = dir.listFiles(
+                    pathname -> pathname.isDirectory() && pathname.canRead() && new File(pathname, "build").exists());
             if (files == null) {
                 log.warn("No potential files discovered in dir '{}'", dir);
                 return;
@@ -183,14 +184,14 @@ public class ModuleLoader {
                     urls.add(new File(file, "build/resources/main").toURI().toURL());
                     final File deps = new File(file, "build/deps/libs");
                     if (deps.exists()) {
-                        final File[] jars = deps.listFiles(pathname -> pathname.getName().endsWith(".jar"));
+                        final File[] jars =
+                                deps.listFiles(pathname -> pathname.getName().endsWith(".jar"));
                         for (final File jar : jars) {
                             urls.add(jar.toURI().toURL());
                         }
                     }
-                    modules.add(new EdgeModule(file,
-                            new IsolatedModuleClassloader(urls.toArray(new URL[0]), parentClassloader),
-                            true));
+                    modules.add(new EdgeModule(
+                            file, new IsolatedModuleClassloader(urls.toArray(new URL[0]), parentClassloader), true));
                 } catch (final IOException ioException) {
                     logException(file, ioException);
                 }
@@ -207,8 +208,8 @@ public class ModuleLoader {
                 try {
                     if (lib.getName().endsWith(".jar")) {
                         log.debug("Found module jar in modules lib {}.", lib.getAbsolutePath());
-                        final IsolatedModuleClassloader isolatedClassloader =
-                                new IsolatedModuleClassloader(new URL[]{lib.toURI().toURL()}, parentClassloader);
+                        final IsolatedModuleClassloader isolatedClassloader = new IsolatedModuleClassloader(
+                                new URL[] {lib.toURI().toURL()}, parentClassloader);
                         modules.add(new EdgeModule(lib, isolatedClassloader, true));
                     } else {
                         log.debug("Ignoring non jar file in module folder {}.", lib.getAbsolutePath());
@@ -229,7 +230,8 @@ public class ModuleLoader {
                 final Iterable<Class<? extends T>> loaded = classServiceLoader.load(serviceClazz, module.classloader);
                 for (final Class<? extends T> foundClass : loaded) {
                     classes.add(foundClass);
-                    log.trace("Found implementation '{}' of class '{}' in module '{}'",
+                    log.trace(
+                            "Found implementation '{}' of class '{}' in module '{}'",
                             foundClass,
                             serviceClazz,
                             module.root);

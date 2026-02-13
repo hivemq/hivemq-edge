@@ -15,10 +15,9 @@
  */
 package com.hivemq.mqtt.topic;
 
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
 
 public class TopicFilter {
 
@@ -43,8 +42,7 @@ public class TopicFilter {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final TopicFilter that = (TopicFilter) o;
-        return topic.equals(that.topic) &&
-                Objects.equals(sharedName, that.sharedName);
+        return topic.equals(that.topic) && Objects.equals(sharedName, that.sharedName);
     }
 
     @Override

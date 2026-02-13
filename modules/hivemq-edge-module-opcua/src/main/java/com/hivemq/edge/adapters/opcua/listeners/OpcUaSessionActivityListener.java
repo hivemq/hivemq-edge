@@ -15,6 +15,9 @@
  */
 package com.hivemq.edge.adapters.opcua.listeners;
 
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
+import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
+
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
@@ -25,9 +28,6 @@ import org.eclipse.milo.opcua.sdk.client.UaSession;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
-import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
 
 public class OpcUaSessionActivityListener implements SessionActivityListener {
 
@@ -52,7 +52,8 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
     @Override
     public void onSessionInactive(final @NotNull UaSession session) {
         protocolAdapterMetricsService.increment(Constants.METRIC_SESSION_INACTIVE_COUNT);
-        eventService.createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+        eventService
+                .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
                 .withSeverity(Event.SEVERITY.WARN)
                 .withPayload(session.getSessionName() + '/' + session.getSessionId())
                 .withMessage("Adapter '" + adapterId + "' session has been disconnected.")

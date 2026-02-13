@@ -17,12 +17,11 @@ package com.hivemq.api.auth.handler.impl;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.api.auth.handler.AuthenticationResult;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.HttpConstants;
-
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -34,26 +33,26 @@ public abstract class AbstractHeaderAuthenticationHandler extends AbstractAuthen
         Preconditions.checkNotNull(requestContext);
         final @NotNull MultivaluedMap<String, String> headers = requestContext.getHeaders();
         String value = headers.getFirst(HttpConstants.AUTH_HEADER);
-        if(value != null){
+        if (value != null) {
             Optional<String> authValue = extractAuthValue(getMethod(), value);
-            if(authValue.isPresent()){
+            if (authValue.isPresent()) {
                 return authenticateInternal(requestContext, authValue.get());
             }
         }
         return AuthenticationResult.noinfo(this);
     }
 
-    protected static Optional<String> extractAuthValue(String expectedMethod, String headerValue){
+    protected static Optional<String> extractAuthValue(String expectedMethod, String headerValue) {
         headerValue = headerValue.trim();
         String[] val = headerValue.split(" ");
-        if(val.length == 2){
-            if(expectedMethod.equals(val[0])){
+        if (val.length == 2) {
+            if (expectedMethod.equals(val[0])) {
                 return Optional.of(val[1]);
             }
         }
         return Optional.empty();
     }
 
-
-    protected abstract AuthenticationResult authenticateInternal(final @NotNull ContainerRequestContext requestContext, String authHeaderValue);
+    protected abstract AuthenticationResult authenticateInternal(
+            final @NotNull ContainerRequestContext requestContext, String authHeaderValue);
 }

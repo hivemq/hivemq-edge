@@ -17,12 +17,11 @@ package com.hivemq.extensions.core;
 
 import com.hivemq.bootstrap.factories.HandlerFactory;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandlingFactory;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class HandlerService {
 
@@ -34,27 +33,23 @@ public class HandlerService {
         this.handlerFactory = handlerFactory;
     }
 
-
     /**
      * @param prio                               lower prio is executed first, same prio will throw exception
      * @param prePublishProcessorHandlingFactory the HandlerFactory will only get called once when the first message
      *                                           is processed
      */
     public void supplyPrePublishProcessorHandlingFactory(
-            final int prio,
-            final @NotNull PrePublishProcessorHandlingFactory prePublishProcessorHandlingFactory) {
+            final int prio, final @NotNull PrePublishProcessorHandlingFactory prePublishProcessorHandlingFactory) {
         final PrePublishProcessorHandlingFactory prev =
                 prePublishProcessorHandlingFactories.putIfAbsent(prio, prePublishProcessorHandlingFactory);
         if (prev != null) {
-            throw new IllegalStateException("PrePublishProcessorHandlingFactory with same priority " +
-                    prio +
-                    "already set. existing:  " +
-                    prev.getClass().getCanonicalName() +
-                    ", new: " +
-                    prePublishProcessorHandlingFactory.getClass().getCanonicalName());
+            throw new IllegalStateException("PrePublishProcessorHandlingFactory with same priority " + prio
+                    + "already set. existing:  "
+                    + prev.getClass().getCanonicalName()
+                    + ", new: "
+                    + prePublishProcessorHandlingFactory.getClass().getCanonicalName());
         }
     }
-
 
     public @Nullable HandlerFactory getHandlerFactory() {
         return handlerFactory;

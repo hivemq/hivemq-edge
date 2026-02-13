@@ -15,6 +15,18 @@
  */
 package com.hivemq.bridge.mqtt;
 
+import static com.hivemq.mqtt.message.publish.PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -29,26 +41,13 @@ import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperty;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5PayloadFormatIndicator;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
 import com.hivemq.configuration.HivemqId;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
+import java.util.List;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-
-import java.util.List;
-
-import static com.hivemq.mqtt.message.publish.PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 class RemotePublishConsumerTest {
 
@@ -72,9 +71,16 @@ class RemotePublishConsumerTest {
         final PUBLISH publish = captor.getValue();
 
         verifyFullPublish(publish, "test/topic");
-        assertEquals(1,
-                metricRegistry.counter("com.hivemq.edge.bridge.testbridge.remote.publish.received.count").getCount());
-        assertEquals(1, metricRegistry.counter("com.hivemq.edge.bridge.testbridge.local.publish.count").getCount());
+        assertEquals(
+                1,
+                metricRegistry
+                        .counter("com.hivemq.edge.bridge.testbridge.remote.publish.received.count")
+                        .getCount());
+        assertEquals(
+                1,
+                metricRegistry
+                        .counter("com.hivemq.edge.bridge.testbridge.local.publish.count")
+                        .getCount());
     }
 
     @Test
@@ -89,9 +95,16 @@ class RemotePublishConsumerTest {
         final PUBLISH publish = captor.getValue();
 
         verifyFullPublish(publish, "prefix/topic/suffix");
-        assertEquals(1,
-                metricRegistry.counter("com.hivemq.edge.bridge.testbridge.remote.publish.received.count").getCount());
-        assertEquals(1, metricRegistry.counter("com.hivemq.edge.bridge.testbridge.local.publish.count").getCount());
+        assertEquals(
+                1,
+                metricRegistry
+                        .counter("com.hivemq.edge.bridge.testbridge.remote.publish.received.count")
+                        .getCount());
+        assertEquals(
+                1,
+                metricRegistry
+                        .counter("com.hivemq.edge.bridge.testbridge.local.publish.count")
+                        .getCount());
     }
 
     @Test
@@ -110,7 +123,8 @@ class RemotePublishConsumerTest {
     @Test
     public void whenHopCountExceeded_ThenNotPublish() {
         final RemotePublishConsumer consumer = setupConsumer(false, "{#}", List.of(), 2, PublishReturnCode.DELIVERED);
-        final Mqtt5Publish originalPublish = createPublish().extend()
+        final Mqtt5Publish originalPublish = createPublish()
+                .extend()
                 .userProperties()
                 .add("hmq-bridge-hop-count", "1")
                 .applyUserProperties()
@@ -119,17 +133,27 @@ class RemotePublishConsumerTest {
 
         verify(bridgeInterceptorHandler, never()).interceptOrDelegateInbound(any(), any(), any());
 
-        assertEquals(1,
-                metricRegistry.counter("com.hivemq.edge.bridge.testbridge.remote.publish.received.count").getCount());
-        assertEquals(0, metricRegistry.counter("com.hivemq.edge.bridge.testbridge.local.publish.count").getCount());
-        assertEquals(1,
-                metricRegistry.counter("com.hivemq.edge.bridge.testbridge.remote.publish.loop-hops-exceeded.count")
+        assertEquals(
+                1,
+                metricRegistry
+                        .counter("com.hivemq.edge.bridge.testbridge.remote.publish.received.count")
+                        .getCount());
+        assertEquals(
+                0,
+                metricRegistry
+                        .counter("com.hivemq.edge.bridge.testbridge.local.publish.count")
+                        .getCount());
+        assertEquals(
+                1,
+                metricRegistry
+                        .counter("com.hivemq.edge.bridge.testbridge.remote.publish.loop-hops-exceeded.count")
                         .getCount());
     }
 
     @Test
     public void whenCustomProps_ThenCustomPropsArePresentPub() {
-        final RemotePublishConsumer consumer = setupConsumer(false,
+        final RemotePublishConsumer consumer = setupConsumer(
+                false,
                 "{#}",
                 List.of(CustomUserProperty.of("customk1", "customv1"), CustomUserProperty.of("customk2", "customv2")),
                 2,
@@ -148,14 +172,14 @@ class RemotePublishConsumerTest {
         final MqttUserProperty prop2 = publish.getUserProperties().asList().get(1);
         assertEquals("testk2", prop2.getName());
         assertEquals("testv2", prop2.getValue());
-        //custom
+        // custom
         final MqttUserProperty prop3 = publish.getUserProperties().asList().get(2);
         assertEquals("customk1", prop3.getName());
         assertEquals("customv1", prop3.getValue());
         final MqttUserProperty prop4 = publish.getUserProperties().asList().get(3);
         assertEquals("customk2", prop4.getName());
         assertEquals("customv2", prop4.getValue());
-        //also hop count
+        // also hop count
         final MqttUserProperty prop5 = publish.getUserProperties().asList().get(4);
         assertEquals("hmq-bridge-hop-count", prop5.getName());
         assertEquals("1", prop5.getValue());
@@ -164,7 +188,10 @@ class RemotePublishConsumerTest {
     @Test
     public void whenNoProps_ThenOnlyHopCountPresent() {
         final RemotePublishConsumer consumer = setupConsumer(false, "{#}", List.of(), 2, PublishReturnCode.DELIVERED);
-        final Mqtt5Publish originalPublish = createPublish().extend().userProperties(Mqtt5UserProperties.of()).build();
+        final Mqtt5Publish originalPublish = createPublish()
+                .extend()
+                .userProperties(Mqtt5UserProperties.of())
+                .build();
         consumer.accept(originalPublish);
 
         final ArgumentCaptor<PUBLISH> captor = ArgumentCaptor.forClass(PUBLISH.class);
@@ -190,7 +217,6 @@ class RemotePublishConsumerTest {
         assertEquals(1, publish.getQoS().getQosNumber());
         assertEquals(1, publish.getOnwardQoS().getQosNumber());
     }
-
 
     @Test
     public void whenMinimalPub_ThenAllFieldsSetCorrectly() {
@@ -224,7 +250,8 @@ class RemotePublishConsumerTest {
     @Test
     public void whenHopPropIsNaN_ThenResetHop() {
         final RemotePublishConsumer consumer = setupConsumer(false, "{#}", List.of(), 2, PublishReturnCode.DELIVERED);
-        final Mqtt5Publish originalPublish = createPublish().extend()
+        final Mqtt5Publish originalPublish = createPublish()
+                .extend()
                 .userProperties(Mqtt5UserProperties.of(Mqtt5UserProperty.of("hmq-bridge-hop-count", "not-a-number")))
                 .build();
         consumer.accept(originalPublish);
@@ -251,11 +278,20 @@ class RemotePublishConsumerTest {
         final PUBLISH publish = captor.getValue();
 
         verifyFullPublish(publish, "test/topic");
-        assertEquals(1,
-                metricRegistry.counter("com.hivemq.edge.bridge.testbridge.remote.publish.received.count").getCount());
-        assertEquals(1, metricRegistry.counter("com.hivemq.edge.bridge.testbridge.local.publish.count").getCount());
-        assertEquals(1,
-                metricRegistry.counter("com.hivemq.edge.bridge.testbridge.local.publish.no-subscriber-present.count")
+        assertEquals(
+                1,
+                metricRegistry
+                        .counter("com.hivemq.edge.bridge.testbridge.remote.publish.received.count")
+                        .getCount());
+        assertEquals(
+                1,
+                metricRegistry
+                        .counter("com.hivemq.edge.bridge.testbridge.local.publish.count")
+                        .getCount());
+        assertEquals(
+                1,
+                metricRegistry
+                        .counter("com.hivemq.edge.bridge.testbridge.local.publish.no-subscriber-present.count")
                         .getCount());
     }
 
@@ -270,10 +306,21 @@ class RemotePublishConsumerTest {
         final PUBLISH publish = captor.getValue();
 
         verifyFullPublish(publish, "test/topic");
-        assertEquals(1,
-                metricRegistry.counter("com.hivemq.edge.bridge.testbridge.remote.publish.received.count").getCount());
-        assertEquals(0, metricRegistry.counter("com.hivemq.edge.bridge.testbridge.local.publish.count").getCount());
-        assertEquals(1, metricRegistry.counter("com.hivemq.edge.bridge.testbridge.local.publish.failed.count").getCount());
+        assertEquals(
+                1,
+                metricRegistry
+                        .counter("com.hivemq.edge.bridge.testbridge.remote.publish.received.count")
+                        .getCount());
+        assertEquals(
+                0,
+                metricRegistry
+                        .counter("com.hivemq.edge.bridge.testbridge.local.publish.count")
+                        .getCount());
+        assertEquals(
+                1,
+                metricRegistry
+                        .counter("com.hivemq.edge.bridge.testbridge.local.publish.failed.count")
+                        .getCount());
     }
 
     private @NotNull RemotePublishConsumer setupConsumer(
@@ -282,16 +329,19 @@ class RemotePublishConsumerTest {
             final @NotNull List<CustomUserProperty> customProps,
             final int maxQoS,
             final @NotNull PublishReturnCode publishReturnCode) {
-        when(bridgeInterceptorHandler.interceptOrDelegateInbound(any(), any(), any())).thenReturn(Futures.immediateFuture(publishReturnCode));
+        when(bridgeInterceptorHandler.interceptOrDelegateInbound(any(), any(), any()))
+                .thenReturn(Futures.immediateFuture(publishReturnCode));
         final RemoteSubscription remoteSubscription =
                 new RemoteSubscription(List.of("#"), destination, customProps, preserveRetain, maxQoS);
-        final MqttBridge bridge = new MqttBridge.Builder().withId("testbridge")
+        final MqttBridge bridge = new MqttBridge.Builder()
+                .withId("testbridge")
                 .withHost("1")
                 .withClientId("testcid")
                 .withRemoteSubscriptions(List.of(remoteSubscription))
                 .build();
 
-        return new RemotePublishConsumer(remoteSubscription,
+        return new RemotePublishConsumer(
+                remoteSubscription,
                 bridgeInterceptorHandler,
                 bridge,
                 MoreExecutors.newDirectExecutorService(),
@@ -324,8 +374,8 @@ class RemotePublishConsumerTest {
         assertEquals(2, publish.getOnwardQoS().getQosNumber());
         assertFalse(publish.isRetain());
         assertEquals(123, publish.getMessageExpiryInterval());
-        assertEquals(com.hivemq.codec.encoder.mqtt5.Mqtt5PayloadFormatIndicator.UTF_8,
-                publish.getPayloadFormatIndicator());
+        assertEquals(
+                com.hivemq.codec.encoder.mqtt5.Mqtt5PayloadFormatIndicator.UTF_8, publish.getPayloadFormatIndicator());
         assertEquals("content-type", publish.getContentType());
         assertEquals("resp/topic", publish.getResponseTopic());
         assertEquals("corrdata", new String(publish.getCorrelationData()));
@@ -336,7 +386,7 @@ class RemotePublishConsumerTest {
         final MqttUserProperty prop2 = publish.getUserProperties().asList().get(1);
         assertEquals("testk2", prop2.getName());
         assertEquals("testv2", prop2.getValue());
-        //also hop count
+        // also hop count
         final MqttUserProperty prop3 = publish.getUserProperties().asList().get(2);
         assertEquals("hmq-bridge-hop-count", prop3.getName());
         assertEquals("1", prop3.getValue());

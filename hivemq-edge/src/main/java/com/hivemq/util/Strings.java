@@ -15,14 +15,13 @@
  */
 package com.hivemq.util;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.jetbrains.annotations.NotNull;
-import io.netty.buffer.ByteBuf;
-
-import java.util.Locale;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.nio.charset.StandardCharsets.UTF_8;
+
+import com.google.common.annotations.VisibleForTesting;
+import io.netty.buffer.ByteBuf;
+import java.util.Locale;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Dominik Obermaier
@@ -30,7 +29,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class Strings {
 
     private Strings() {
-        //This is a utility class, don't instantiate it!
+        // This is a utility class, don't instantiate it!
     }
 
     /**
@@ -65,12 +64,13 @@ public class Strings {
     public static String getPrefixedString(final ByteBuf buf, final int utf8StringLength) {
         checkNotNull(buf);
         final String string = buf.toString(buf.readerIndex(), utf8StringLength, UTF_8);
-        //The ByteBuf.toString method, doesn't move the read index, therefor we have to do this manually.
+        // The ByteBuf.toString method, doesn't move the read index, therefor we have to do this manually.
         buf.skipBytes(utf8StringLength);
         return string;
     }
 
-    public static String getValidatedPrefixedString(final @NotNull ByteBuf buf, final int utf8StringLength, final boolean validateShouldNotCharacters) {
+    public static String getValidatedPrefixedString(
+            final @NotNull ByteBuf buf, final int utf8StringLength, final boolean validateShouldNotCharacters) {
         checkNotNull(buf);
 
         if (buf.readableBytes() < utf8StringLength) {
@@ -88,7 +88,7 @@ public class Strings {
         if (validateShouldNotCharacters && Utf8Utils.hasControlOrNonCharacter(bytes)) {
             return null;
         }
-        //The ByteBuf.getBytes method, doesn't move the read index, therefor we have to do this manually.
+        // The ByteBuf.getBytes method, doesn't move the read index, therefor we have to do this manually.
         buf.skipBytes(utf8StringLength);
         return new String(bytes, UTF_8);
     }
@@ -118,7 +118,6 @@ public class Strings {
             buffer.writeShort(bytes.length);
             buffer.writeBytes(bytes);
         }
-
 
         return buffer;
     }

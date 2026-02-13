@@ -16,42 +16,44 @@
 package com.hivemq.api.auth;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
  */
 public class ApiPermissionUtils {
 
-    public static <T extends Annotation> boolean isAnnotationPresent(final @NotNull Class<T> t, final @NotNull Method method) {
+    public static <T extends Annotation> boolean isAnnotationPresent(
+            final @NotNull Class<T> t, final @NotNull Method method) {
         return getAnnotationIfExists(t, method).isPresent();
     }
 
-    public static <T extends Annotation> boolean isAnnotationPresent(final @NotNull Class<T> t, final @NotNull Class<?> clz) {
+    public static <T extends Annotation> boolean isAnnotationPresent(
+            final @NotNull Class<T> t, final @NotNull Class<?> clz) {
         return getAnnotationIfExists(t, clz).isPresent();
     }
 
-    public static <T extends Annotation> Optional<T> getAnnotationIfExists(final @NotNull Class<T> t, final @NotNull Class<?> clz) {
+    public static <T extends Annotation> Optional<T> getAnnotationIfExists(
+            final @NotNull Class<T> t, final @NotNull Class<?> clz) {
         Preconditions.checkNotNull(t);
         Preconditions.checkNotNull(clz);
         try {
             T a = clz.getAnnotation(t);
-            if(a != null){
+            if (a != null) {
                 return Optional.of(a);
             }
             Class<?>[] interfaces = clz.getInterfaces();
-            for (Class<?> c : interfaces){
+            for (Class<?> c : interfaces) {
                 a = c.getAnnotation(t);
-                if(a != null){
+                if (a != null) {
                     return Optional.of(a);
                 }
             }
             return Optional.empty();
-        } catch(Exception e){
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -59,28 +61,29 @@ public class ApiPermissionUtils {
     /**
      * Read interfaces for Annotation declarations
      */
-    public static <T extends Annotation> Optional<T> getAnnotationIfExists(final @NotNull Class<T> t, final @NotNull Method method) {
+    public static <T extends Annotation> Optional<T> getAnnotationIfExists(
+            final @NotNull Class<T> t, final @NotNull Method method) {
         Preconditions.checkNotNull(t);
         Preconditions.checkNotNull(method);
         try {
             T a = method.getAnnotation(t);
-            if(a != null){
+            if (a != null) {
                 return Optional.of(a);
             }
             Class<?> searchClass = method.getDeclaringClass();
             Class<?>[] interfaces = searchClass.getInterfaces();
-            for (Class c : interfaces){
+            for (Class c : interfaces) {
                 try {
                     Method m = c.getMethod(method.getName(), method.getParameterTypes());
                     T annotation = m.getAnnotation(t);
-                    if(annotation != null){
+                    if (annotation != null) {
                         return Optional.of(annotation);
                     }
-                } catch(NoSuchMethodException e){
+                } catch (NoSuchMethodException e) {
                 }
             }
             return Optional.empty();
-        } catch(Exception e){
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

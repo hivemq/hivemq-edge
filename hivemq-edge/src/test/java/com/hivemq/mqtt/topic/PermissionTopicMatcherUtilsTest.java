@@ -15,12 +15,12 @@
  */
 package com.hivemq.mqtt.topic;
 
-import org.jetbrains.annotations.NotNull;
-import org.apache.commons.lang3.StringUtils;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("NullabilityAnnotations")
 public class PermissionTopicMatcherUtilsTest {
@@ -60,7 +60,6 @@ public class PermissionTopicMatcherUtilsTest {
 
         assertFalse(matches("my/test/topic/for/the/unit/t+", actual));
         assertFalse(matches("my/test/topic/for/the/unit/+t", actual));
-
     }
 
     @Test
@@ -96,7 +95,6 @@ public class PermissionTopicMatcherUtilsTest {
         assertTrue(matches("my/test/topic/for/the/unit/test/#", actual));
 
         assertFalse(matches("my/#/test/topic", "my/test/topic"));
-
     }
 
     @Test
@@ -112,9 +110,8 @@ public class PermissionTopicMatcherUtilsTest {
         assertFalse(matches("my/t+t", "my/ttt"));
     }
 
-    private boolean matches(
-            final @NotNull String permissionTopic,
-            final @NotNull String actualTopic) throws InvalidTopicException {
+    private boolean matches(final @NotNull String permissionTopic, final @NotNull String actualTopic)
+            throws InvalidTopicException {
 
         final String stripedPermissionTopic = StringUtils.stripEnd(permissionTopic, "/");
         final String[] splitPermissionTopic = StringUtils.splitPreserveAllTokens(stripedPermissionTopic, "/");
@@ -124,7 +121,13 @@ public class PermissionTopicMatcherUtilsTest {
 
         final String stripedActualTopic = StringUtils.stripEnd(actualTopic, "/");
         final String[] splitActualTopic = StringUtils.splitPreserveAllTokens(stripedActualTopic, "/");
-        return PermissionTopicMatcherUtils.matches(stripedPermissionTopic, splitPermissionTopic, nonWildCard,
-                endsWithWildCard, rootWildCard, stripedActualTopic, splitActualTopic);
+        return PermissionTopicMatcherUtils.matches(
+                stripedPermissionTopic,
+                splitPermissionTopic,
+                nonWildCard,
+                endsWithWildCard,
+                rootWildCard,
+                stripedActualTopic,
+                splitActualTopic);
     }
 }

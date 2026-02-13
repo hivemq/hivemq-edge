@@ -15,31 +15,6 @@
  */
 package com.hivemq.bridge;
 
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.SettableFuture;
-import com.hivemq.bridge.config.MqttBridge;
-import com.hivemq.bridge.mqtt.BridgeMqttClient;
-import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
-import com.hivemq.common.shutdown.ShutdownHooks;
-import com.hivemq.configuration.reader.BridgeExtractor;
-import com.hivemq.edge.HiveMQEdgeRemoteService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -50,6 +25,30 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.SettableFuture;
+import com.hivemq.bridge.config.MqttBridge;
+import com.hivemq.bridge.mqtt.BridgeMqttClient;
+import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
+import com.hivemq.common.shutdown.ShutdownHooks;
+import com.hivemq.configuration.reader.BridgeExtractor;
+import com.hivemq.edge.HiveMQEdgeRemoteService;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 class BridgeServiceConcurrentOperationsTest {
 
@@ -88,7 +87,8 @@ class BridgeServiceConcurrentOperationsTest {
     }
 
     private static @NotNull MqttBridge createTestBridge(final @NotNull String bridgeId, final int port) {
-        return new MqttBridge.Builder().withId(bridgeId)
+        return new MqttBridge.Builder()
+                .withId(bridgeId)
                 .withHost("test.example.com")
                 .withPort(port)
                 .withClientId(bridgeId + "-client")
@@ -106,7 +106,8 @@ class BridgeServiceConcurrentOperationsTest {
         final MetricRegistry metricRegistry = new MetricRegistry();
         final BridgeExtractor bridgeExtractor = mock(BridgeExtractor.class);
         final ShutdownHooks shutdownHooks = new ShutdownHooks();
-        bridgeService = new BridgeService(bridgeExtractor,
+        bridgeService = new BridgeService(
+                bridgeExtractor,
                 messageForwarder,
                 requireNonNull(clientFactory),
                 executorService,
@@ -211,7 +212,8 @@ class BridgeServiceConcurrentOperationsTest {
                             final String bridgeId = "bridge-" + bridgeIndex;
                             final MqttBridge bridge = createTestBridge(bridgeId);
                             final BridgeMqttClient mockClient = createMockClient(bridge, new AtomicInteger(0), false);
-                            when(requireNonNull(clientFactory).createRemoteClient(any())).thenReturn(mockClient);
+                            when(requireNonNull(clientFactory).createRemoteClient(any()))
+                                    .thenReturn(mockClient);
 
                             // Add
                             requireNonNull(bridgeService).updateBridges(List.of(bridge));
@@ -387,9 +389,8 @@ class BridgeServiceConcurrentOperationsTest {
 
         // Start update in background (will block on stop)
         final ExecutorService executor = Executors.newSingleThreadExecutor();
-        final CompletableFuture<Void> updateFuture =
-                CompletableFuture.runAsync(() -> requireNonNull(bridgeService).updateBridges(List.of(bridge2)),
-                        executor);
+        final CompletableFuture<Void> updateFuture = CompletableFuture.runAsync(
+                () -> requireNonNull(bridgeService).updateBridges(List.of(bridge2)), executor);
 
         // Wait a bit to let update start
         Thread.sleep(500);
@@ -455,7 +456,8 @@ class BridgeServiceConcurrentOperationsTest {
 
                         final MqttBridge bridge = createTestBridge(bridgeId, port);
                         final BridgeMqttClient mockClient = createMockClient(bridge, new AtomicInteger(0), false);
-                        when(requireNonNull(clientFactory).createRemoteClient(any())).thenReturn(mockClient);
+                        when(requireNonNull(clientFactory).createRemoteClient(any()))
+                                .thenReturn(mockClient);
 
                         // Add bridge
                         requireNonNull(bridgeService).updateBridges(List.of(bridge));
@@ -464,7 +466,8 @@ class BridgeServiceConcurrentOperationsTest {
                         final MqttBridge updatedBridge = createTestBridge(bridgeId, port + 100);
                         final BridgeMqttClient updatedClient =
                                 createMockClient(updatedBridge, new AtomicInteger(0), false);
-                        when(requireNonNull(clientFactory).createRemoteClient(any())).thenReturn(updatedClient);
+                        when(requireNonNull(clientFactory).createRemoteClient(any()))
+                                .thenReturn(updatedClient);
                         requireNonNull(bridgeService).updateBridges(List.of(updatedBridge));
 
                         // Remove bridge
@@ -480,8 +483,8 @@ class BridgeServiceConcurrentOperationsTest {
 
             startLatch.countDown();
             assertTrue(completionLatch.await(30, TimeUnit.SECONDS), "All concurrent operations should complete");
-            assertFalse(errorOccurred.get(),
-                    "No errors should occur during concurrent operations on different bridges");
+            assertFalse(
+                    errorOccurred.get(), "No errors should occur during concurrent operations on different bridges");
         }
     }
 
@@ -495,7 +498,8 @@ class BridgeServiceConcurrentOperationsTest {
         final String bridgeId = "replacement-bridge";
 
         // Original bridge
-        final MqttBridge.Builder builder1 = new MqttBridge.Builder().withId(bridgeId)
+        final MqttBridge.Builder builder1 = new MqttBridge.Builder()
+                .withId(bridgeId)
                 .withHost("original.example.com")
                 .withPort(1883)
                 .withClientId("original-client")
@@ -509,7 +513,8 @@ class BridgeServiceConcurrentOperationsTest {
         requireNonNull(bridgeService).updateBridges(List.of(bridge1));
 
         // Completely different bridge with same ID
-        final MqttBridge.Builder builder2 = new MqttBridge.Builder().withId(bridgeId)
+        final MqttBridge.Builder builder2 = new MqttBridge.Builder()
+                .withId(bridgeId)
                 .withHost("replacement.example.com")
                 .withPort(8883)
                 .withClientId("replacement-client")
@@ -589,13 +594,14 @@ class BridgeServiceConcurrentOperationsTest {
 
         // Complete the stop future after 25 seconds in a background thread
         new Thread(() -> {
-            try {
-                Thread.sleep(25000);
-                stopFuture.set(null);
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }).start();
+                    try {
+                        Thread.sleep(25000);
+                        stopFuture.set(null);
+                    } catch (final InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                })
+                .start();
 
         // Remove bridge (should wait up to 30 seconds)
         requireNonNull(bridgeService).updateBridges(List.of());

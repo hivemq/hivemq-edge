@@ -17,13 +17,12 @@ package util.encoder;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.encoder.mqtt3.AbstractVariableHeaderLengthEncoder;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.unsubscribe.UNSUBSCRIBE;
 import com.hivemq.util.Strings;
 import com.hivemq.util.Utf8Utils;
 import io.netty.buffer.ByteBuf;
-
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Lukas Brandl

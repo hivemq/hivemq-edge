@@ -15,6 +15,10 @@
  */
 package com.hivemq.embedded.internal;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.hivemq.configuration.service.entity.Listener;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
 import com.hivemq.extension.sdk.api.ExtensionMain;
@@ -24,6 +28,13 @@ import com.hivemq.extension.sdk.api.parameter.ExtensionStopInput;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStopOutput;
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensions;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,18 +43,6 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 import util.RandomPortGenerator;
 import util.TestExtensionUtil;
-
-import java.io.File;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class EmbeddedHiveMQImplTest {
 
@@ -57,6 +56,7 @@ public class EmbeddedHiveMQImplTest {
     private File conf;
     private int randomPort;
     private int randomApiPort;
+
     @BeforeEach
     public void setUp() throws Exception {
         data = new File(tmp, "data");
@@ -70,22 +70,21 @@ public class EmbeddedHiveMQImplTest {
         randomPort = RandomPortGenerator.get();
         randomApiPort = RandomPortGenerator.get();
 
-        final String noListenerConfig = "" +
-                "<hivemq>\n" +
-                "    <mqtt-listeners>\n" +
-                "        <tcp-listener>\n" +
-                "            <port>"+randomPort+"</port>\n" +
-                "            <bind-address>0.0.0.0</bind-address>\n" +
-                "        </tcp-listener>\n" +
-                "    </mqtt-listeners>\n" +
-                "    <admin-api>\n" +
-                "        <listeners>\n" +
-                "            <http-listener>\n" +
-                "                <port>"+randomApiPort+"</port>\n" +
-                "            </http-listener>\n" +
-                "        </listeners>\n" +
-                "    </admin-api>\n" +
-                "</hivemq>";
+        final String noListenerConfig = "" + "<hivemq>\n"
+                + "    <mqtt-listeners>\n"
+                + "        <tcp-listener>\n"
+                + "            <port>"
+                + randomPort + "</port>\n" + "            <bind-address>0.0.0.0</bind-address>\n"
+                + "        </tcp-listener>\n"
+                + "    </mqtt-listeners>\n"
+                + "    <admin-api>\n"
+                + "        <listeners>\n"
+                + "            <http-listener>\n"
+                + "                <port>"
+                + randomApiPort + "</port>\n" + "            </http-listener>\n"
+                + "        </listeners>\n"
+                + "    </admin-api>\n"
+                + "</hivemq>";
         FileUtils.write(new File(conf, "config.xml"), noListenerConfig, StandardCharsets.UTF_8);
 
         TestExtensionUtil.shrinkwrapExtension(extensions, extensionName, Main.class, true);
@@ -113,7 +112,8 @@ public class EmbeddedHiveMQImplTest {
         final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions, license);
         embeddedHiveMQ.start().join();
 
-        final HiveMQExtensions hiveMQExtensions = embeddedHiveMQ.getInjector().extensions().hivemqExtensions();
+        final HiveMQExtensions hiveMQExtensions =
+                embeddedHiveMQ.getInjector().extensions().hivemqExtensions();
 
         final HiveMQExtension extension = hiveMQExtensions.getExtension(extensionName);
         assertNotNull(extension);
@@ -237,20 +237,22 @@ public class EmbeddedHiveMQImplTest {
         });
 
         new Thread(() -> {
-            try {
-                embeddedHiveMQ.close();
-            } catch (final Exception e) {
-                e.printStackTrace();
-            }
-        }).start();
+                    try {
+                        embeddedHiveMQ.close();
+                    } catch (final Exception e) {
+                        e.printStackTrace();
+                    }
+                })
+                .start();
 
         new Thread(() -> {
-            try {
-                embeddedHiveMQ.close();
-            } catch (final Exception e) {
-                e.printStackTrace();
-            }
-        }).start();
+                    try {
+                        embeddedHiveMQ.close();
+                    } catch (final Exception e) {
+                        e.printStackTrace();
+                    }
+                })
+                .start();
 
         Thread.sleep(100);
 
@@ -275,7 +277,8 @@ public class EmbeddedHiveMQImplTest {
 
         assertTrue(embeddedMain.running.get());
 
-        final HiveMQExtensions hiveMQExtensions = embeddedHiveMQ.getInjector().extensions().hivemqExtensions();
+        final HiveMQExtensions hiveMQExtensions =
+                embeddedHiveMQ.getInjector().extensions().hivemqExtensions();
 
         final HiveMQExtension extension1 = hiveMQExtensions.getExtension(extensionName);
         final HiveMQExtension extension2 = hiveMQExtensions.getExtension("id");
@@ -283,7 +286,6 @@ public class EmbeddedHiveMQImplTest {
         assertNotNull(extension2);
 
         embeddedHiveMQ.stop().get();
-
     }
 
     public static class Main implements ExtensionMain {
@@ -291,14 +293,12 @@ public class EmbeddedHiveMQImplTest {
         @Override
         public void extensionStart(
                 final @NotNull ExtensionStartInput extensionStartInput,
-                final @NotNull ExtensionStartOutput extensionStartOutput) {
-        }
+                final @NotNull ExtensionStartOutput extensionStartOutput) {}
 
         @Override
         public void extensionStop(
                 final @NotNull ExtensionStopInput extensionStopInput,
-                final @NotNull ExtensionStopOutput extensionStopOutput) {
-        }
+                final @NotNull ExtensionStopOutput extensionStopOutput) {}
     }
 
     public static class EmbeddedMain implements ExtensionMain {

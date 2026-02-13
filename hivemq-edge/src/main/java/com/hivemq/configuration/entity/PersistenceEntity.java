@@ -15,10 +15,9 @@
  */
 package com.hivemq.configuration.entity;
 
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.xml.bind.annotation.*;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Lukas Brandl
@@ -31,9 +30,12 @@ public class PersistenceEntity {
     @XmlEnum
     @XmlType(name = "mode")
     public enum PersistenceMode {
-        @XmlEnumValue("file-native") FILE_NATIVE("file-native"),
-        @XmlEnumValue("file") FILE("file"),
-        @XmlEnumValue("in-memory") IN_MEMORY("in-memory");
+        @XmlEnumValue("file-native")
+        FILE_NATIVE("file-native"),
+        @XmlEnumValue("file")
+        FILE("file"),
+        @XmlEnumValue("in-memory")
+        IN_MEMORY("in-memory");
 
         private final @NotNull String configRepresentation;
 

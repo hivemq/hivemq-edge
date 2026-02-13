@@ -15,13 +15,29 @@
  */
 package com.hivemq.bootstrap.netty.initializer;
 
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.HTTP_OBJECT_AGGREGATOR;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.HTTP_SERVER_CODEC;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MQTT_WEBSOCKET_ENCODER;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.NEW_CONNECTION_IDLE_HANDLER;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.NO_TLS_HANDSHAKE_IDLE_EVENT_HANDLER;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.SSL_EXCEPTION_HANDLER;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.SSL_HANDLER;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.SSL_PARAMETER_HANDLER;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.WEBSOCKET_BINARY_FRAME_HANDLER;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.WEBSOCKET_CONTINUATION_FRAME_HANDLER;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.WEBSOCKET_SERVER_PROTOCOL_HANDLER;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.WEBSOCKET_TEXT_FRAME_HANDLER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.bootstrap.netty.ChannelDependencies;
 import com.hivemq.bootstrap.netty.FakeChannelPipeline;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.entity.Listener;
-import com.hivemq.configuration.service.entity.Tls;
 import com.hivemq.configuration.service.entity.MqttTlsWebsocketListener;
+import com.hivemq.configuration.service.entity.Tls;
 import com.hivemq.logging.EventLog;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnectorImpl;
@@ -39,22 +55,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TlsTestUtil;
-
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.HTTP_OBJECT_AGGREGATOR;
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.HTTP_SERVER_CODEC;
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MQTT_WEBSOCKET_ENCODER;
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.NEW_CONNECTION_IDLE_HANDLER;
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.NO_TLS_HANDSHAKE_IDLE_EVENT_HANDLER;
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.SSL_EXCEPTION_HANDLER;
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.SSL_HANDLER;
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.SSL_PARAMETER_HANDLER;
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.WEBSOCKET_BINARY_FRAME_HANDLER;
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.WEBSOCKET_CONTINUATION_FRAME_HANDLER;
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.WEBSOCKET_SERVER_PROTOCOL_HANDLER;
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.WEBSOCKET_TEXT_FRAME_HANDLER;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 
 public class TlsWebsocketChannelInitializerTest {
 
@@ -95,6 +95,7 @@ public class TlsWebsocketChannelInitializerTest {
     private Tls tls;
 
     private ChannelPipeline pipeline;
+
     @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
@@ -106,7 +107,8 @@ public class TlsWebsocketChannelInitializerTest {
         when(socketChannel.isActive()).thenReturn(true);
         when(sslHandler.handshakeFuture()).thenReturn(future);
         when(sslFactory.getSslContext(any(Tls.class))).thenReturn(sslContext);
-        when(sslFactory.getSslHandler(any(SocketChannel.class), any(Tls.class), any(SslContext.class))).thenReturn(sslHandler);
+        when(sslFactory.getSslHandler(any(SocketChannel.class), any(Tls.class), any(SslContext.class)))
+                .thenReturn(sslHandler);
         when(channelDependencies.getConfigurationService()).thenReturn(fullConfigurationService);
         when(mockListener.getTls()).thenReturn(tls);
         when(channelDependencies.getConfigurationService()).thenReturn(fullConfigurationService);
@@ -124,11 +126,13 @@ public class TlsWebsocketChannelInitializerTest {
         final MqttTlsWebsocketListener mqttTlsWebsocketListener = new MqttTlsWebsocketListener.Builder()
                 .bindAddress("")
                 .port(0)
-                .tls(TlsTestUtil.createDefaultTLSBuilder().withHandshakeTimeout(0).build())
+                .tls(TlsTestUtil.createDefaultTLSBuilder()
+                        .withHandshakeTimeout(0)
+                        .build())
                 .build();
 
-        final TlsWebsocketChannelInitializer tlsWebsocketChannelInitializer = new TlsWebsocketChannelInitializer(channelDependencies, mqttTlsWebsocketListener, sslFactory);
-
+        final TlsWebsocketChannelInitializer tlsWebsocketChannelInitializer =
+                new TlsWebsocketChannelInitializer(channelDependencies, mqttTlsWebsocketListener, sslFactory);
 
         tlsWebsocketChannelInitializer.addSpecialHandlers(socketChannel);
 
@@ -151,11 +155,13 @@ public class TlsWebsocketChannelInitializerTest {
         final MqttTlsWebsocketListener mqttTlsWebsocketListener = new MqttTlsWebsocketListener.Builder()
                 .bindAddress("")
                 .port(0)
-                .tls(TlsTestUtil.createDefaultTLSBuilder().withHandshakeTimeout(10).build())
+                .tls(TlsTestUtil.createDefaultTLSBuilder()
+                        .withHandshakeTimeout(10)
+                        .build())
                 .build();
 
-        final TlsWebsocketChannelInitializer tlsWebsocketChannelInitializer = new TlsWebsocketChannelInitializer(channelDependencies, mqttTlsWebsocketListener, sslFactory);
-
+        final TlsWebsocketChannelInitializer tlsWebsocketChannelInitializer =
+                new TlsWebsocketChannelInitializer(channelDependencies, mqttTlsWebsocketListener, sslFactory);
 
         tlsWebsocketChannelInitializer.addSpecialHandlers(socketChannel);
 
@@ -170,8 +176,11 @@ public class TlsWebsocketChannelInitializerTest {
         assertEquals(WEBSOCKET_TEXT_FRAME_HANDLER, pipeline.names().get(7));
         assertEquals(MQTT_WEBSOCKET_ENCODER, pipeline.names().get(8));
         assertEquals(WEBSOCKET_CONTINUATION_FRAME_HANDLER, pipeline.names().get(9));
-        assertEquals(NEW_CONNECTION_IDLE_HANDLER, pipeline.names().get(pipeline.names().size() - 2));
-        assertEquals(NO_TLS_HANDSHAKE_IDLE_EVENT_HANDLER, pipeline.names().get(pipeline.names().size() - 1));
+        assertEquals(
+                NEW_CONNECTION_IDLE_HANDLER,
+                pipeline.names().get(pipeline.names().size() - 2));
+        assertEquals(
+                NO_TLS_HANDSHAKE_IDLE_EVENT_HANDLER,
+                pipeline.names().get(pipeline.names().size() - 1));
     }
-
 }

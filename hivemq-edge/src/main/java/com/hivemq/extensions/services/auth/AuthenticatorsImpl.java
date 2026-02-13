@@ -19,13 +19,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.common.annotations.GuardedBy;
 import com.hivemq.configuration.service.InternalConfigurations;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.ExtensionPriorityComparator;
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Map;
@@ -33,6 +29,9 @@ import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Singleton
 @VisibleForTesting
@@ -41,8 +40,10 @@ public class AuthenticatorsImpl implements Authenticators {
     private static final Logger log = LoggerFactory.getLogger(AuthenticatorsImpl.class);
 
     private final @NotNull ReadWriteLock authenticatorsLock = new ReentrantReadWriteLock();
+
     @GuardedBy("authenticatorsLock")
     private final @NotNull TreeMap<String, WrappedAuthenticatorProvider> authenticatorPluginMap;
+
     private final @NotNull HiveMQExtensions hiveMQExtensions;
 
     @Inject
@@ -92,9 +93,9 @@ public class AuthenticatorsImpl implements Authenticators {
         if (InternalConfigurations.AUTH_DENY_UNAUTHENTICATED_CONNECTIONS.get()) {
             // Check lifeness
             if (getAuthenticatorProviderMap().isEmpty()) {
-                log.warn("\n###############################################################################" +
-                        "\n# No security extension present, MQTT clients can not connect to this broker. #" +
-                        "\n###############################################################################");
+                log.warn("\n###############################################################################"
+                        + "\n# No security extension present, MQTT clients can not connect to this broker. #"
+                        + "\n###############################################################################");
             }
         }
     }

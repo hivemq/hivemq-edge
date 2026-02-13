@@ -57,33 +57,34 @@ import com.hivemq.throttling.ioc.ThrottlingModule;
 import com.hivemq.uns.ioc.UnsServiceModule;
 import dagger.BindsInstance;
 import dagger.Component;
-
 import jakarta.inject.Singleton;
 import java.util.Set;
 
 @SuppressWarnings({"NullabilityAnnotations", "UnusedReturnValue"})
-@Component(modules = {
-        ConfigurationModule.class,
-        NettyModule.class,
-        MQTTHandlerModule.class,
-        PersistenceModule.class,
-        MetricsModule.class,
-        ThrottlingModule.class,
-        MQTTServiceModule.class,
-        SecurityModule.class,
-        MqttsnServiceModule.class,
-        ExecutorsModule.class,
-        ExtensionModule.class,
-        BridgeModule.class,
-        ApiModule.class,
-        ModulesModule.class,
-        UnsServiceModule.class,
-        DataGovernanceModule.class,
-        RemoteServiceModule.class,
-        BootstrapServicesModule.class,
-        AdapterModule.class,
-        CombiningModule.class,
-        PulseModule.class})
+@Component(
+        modules = {
+            ConfigurationModule.class,
+            NettyModule.class,
+            MQTTHandlerModule.class,
+            PersistenceModule.class,
+            MetricsModule.class,
+            ThrottlingModule.class,
+            MQTTServiceModule.class,
+            SecurityModule.class,
+            MqttsnServiceModule.class,
+            ExecutorsModule.class,
+            ExtensionModule.class,
+            BridgeModule.class,
+            ApiModule.class,
+            ModulesModule.class,
+            UnsServiceModule.class,
+            DataGovernanceModule.class,
+            RemoteServiceModule.class,
+            BootstrapServicesModule.class,
+            AdapterModule.class,
+            CombiningModule.class,
+            PulseModule.class
+        })
 @Singleton
 public interface Injector {
 
@@ -95,7 +96,7 @@ public interface Injector {
 
     ShutdownHooks shutdownHooks();
 
-    Set<Boolean> initEagerSingletons(); //workaround to do eager initializations
+    Set<Boolean> initEagerSingletons(); // workaround to do eager initializations
 
     Persistences persistences();
 
@@ -119,9 +120,9 @@ public interface Injector {
 
     ProtocolAdapterManager protocolAdapterManager();
 
-//    UnsServiceModule uns();
+    //    UnsServiceModule uns();
 
-//    ExecutorsModule executors();
+    //    ExecutorsModule executors();
 
     @Component.Builder
     interface Builder {
@@ -176,5 +177,4 @@ public interface Injector {
 
         Injector build();
     }
-
 }

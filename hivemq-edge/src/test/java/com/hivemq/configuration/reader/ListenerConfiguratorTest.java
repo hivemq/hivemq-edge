@@ -15,56 +15,54 @@
  */
 package com.hivemq.configuration.reader;
 
-import com.google.common.io.Files;
-import com.hivemq.configuration.service.entity.*;
-import com.hivemq.exceptions.UnrecoverableException;
-import org.junit.jupiter.api.Test;
-
-import java.io.File;
-
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ListenerConfiguratorTest extends AbstractConfigurationTest {
+import com.google.common.io.Files;
+import com.hivemq.configuration.service.entity.*;
+import com.hivemq.exceptions.UnrecoverableException;
+import java.io.File;
+import org.junit.jupiter.api.Test;
 
+public class ListenerConfiguratorTest extends AbstractConfigurationTest {
 
     @Test
     public void test_read_tls_listener() throws Exception {
 
-        final String contents = "" +
-                "<hivemq>" +
-                "    <mqtt-listeners>" +
-                "        <tls-tcp-listener>" +
-                "            <port>8883</port>" +
-                "            <bind-address>0.0.0.0</bind-address>" +
-                "            <name>my-tls-tcp-listener</name>" +
-                "            <tls>" +
-                "               <cipher-suites>" +
-                "                   <cipher-suite>TLS_RSA_WITH_AES_128_CBC_SHA</cipher-suite>" +
-                "               </cipher-suites>" +
-                "                <protocols>" +
-                "                    <protocol>TLSv1.2</protocol>" +
-                "                </protocols>" +
-                "                <keystore>" +
-                "                    <path>/absolute/path.jks</path>" +
-                "                    <password>password-keystore</password>" +
-                "                    <private-key-password>password-key</private-key-password>" +
-                "                </keystore>" +
-                "                <truststore>" +
-                "                    <path>no_absolute_path.jks</path>" +
-                "                    <password>password-truststore</password>" +
-                "                </truststore>" +
-                "                <client-authentication-mode>NONE</client-authentication-mode>" +
-                "            </tls>" +
-                "        </tls-tcp-listener>" +
-                "    </mqtt-listeners>" +
-                "</hivemq>";
+        final String contents = "" + "<hivemq>"
+                + "    <mqtt-listeners>"
+                + "        <tls-tcp-listener>"
+                + "            <port>8883</port>"
+                + "            <bind-address>0.0.0.0</bind-address>"
+                + "            <name>my-tls-tcp-listener</name>"
+                + "            <tls>"
+                + "               <cipher-suites>"
+                + "                   <cipher-suite>TLS_RSA_WITH_AES_128_CBC_SHA</cipher-suite>"
+                + "               </cipher-suites>"
+                + "                <protocols>"
+                + "                    <protocol>TLSv1.2</protocol>"
+                + "                </protocols>"
+                + "                <keystore>"
+                + "                    <path>/absolute/path.jks</path>"
+                + "                    <password>password-keystore</password>"
+                + "                    <private-key-password>password-key</private-key-password>"
+                + "                </keystore>"
+                + "                <truststore>"
+                + "                    <path>no_absolute_path.jks</path>"
+                + "                    <password>password-truststore</password>"
+                + "                </truststore>"
+                + "                <client-authentication-mode>NONE</client-authentication-mode>"
+                + "            </tls>"
+                + "        </tls-tcp-listener>"
+                + "    </mqtt-listeners>"
+                + "</hivemq>";
 
         Files.write(contents.getBytes(UTF_8), xmlFile);
 
         reader.applyConfig();
 
-        final MqttTlsTcpListener mqttTlsTcpListener = listenerConfigurationService.getTlsTcpListeners().get(0);
+        final MqttTlsTcpListener mqttTlsTcpListener =
+                listenerConfigurationService.getTlsTcpListeners().get(0);
 
         assertEquals(8883, mqttTlsTcpListener.getPort());
         assertEquals("0.0.0.0", mqttTlsTcpListener.getBindAddress());
@@ -76,7 +74,7 @@ public class ListenerConfiguratorTest extends AbstractConfigurationTest {
         assertEquals(1, mqttTlsTcpListener.getTls().getCipherSuites().size());
         assertEquals(Tls.ClientAuthMode.NONE, mqttTlsTcpListener.getTls().getClientAuthMode());
 
-        //Check if the relative path was made absolute
+        // Check if the relative path was made absolute
         assertTrue(new File(mqttTlsTcpListener.getTls().getTruststorePath()).isAbsolute());
         assertEquals("password-truststore", mqttTlsTcpListener.getTls().getTruststorePassword());
         assertEquals("my-tls-tcp-listener", mqttTlsTcpListener.getName());
@@ -87,32 +85,32 @@ public class ListenerConfiguratorTest extends AbstractConfigurationTest {
     @Test
     public void test_read_tls_listener_without_trust_store() throws Exception {
 
-        final String contents = "" +
-                "<hivemq>" +
-                "    <mqtt-listeners>" +
-                "        <tls-tcp-listener>" +
-                "            <port>8883</port>" +
-                "            <bind-address>0.0.0.0</bind-address>" +
-                "            <tls>" +
-                "                <protocols>" +
-                "                    <protocol>TLSv1.2</protocol>" +
-                "                </protocols>" +
-                "                <keystore>" +
-                "                    <path>/absolute/path.jks</path>" +
-                "                    <password>password-keystore</password>" +
-                "                    <private-key-password>password-key</private-key-password>" +
-                "                </keystore>" +
-                "                <prefer-server-cipher-suites>true</prefer-server-cipher-suites>" +
-                "            </tls>" +
-                "        </tls-tcp-listener>" +
-                "    </mqtt-listeners>" +
-                "</hivemq>";
+        final String contents = "" + "<hivemq>"
+                + "    <mqtt-listeners>"
+                + "        <tls-tcp-listener>"
+                + "            <port>8883</port>"
+                + "            <bind-address>0.0.0.0</bind-address>"
+                + "            <tls>"
+                + "                <protocols>"
+                + "                    <protocol>TLSv1.2</protocol>"
+                + "                </protocols>"
+                + "                <keystore>"
+                + "                    <path>/absolute/path.jks</path>"
+                + "                    <password>password-keystore</password>"
+                + "                    <private-key-password>password-key</private-key-password>"
+                + "                </keystore>"
+                + "                <prefer-server-cipher-suites>true</prefer-server-cipher-suites>"
+                + "            </tls>"
+                + "        </tls-tcp-listener>"
+                + "    </mqtt-listeners>"
+                + "</hivemq>";
 
         Files.write(contents.getBytes(UTF_8), xmlFile);
 
         reader.applyConfig();
 
-        final MqttTlsTcpListener mqttTlsTcpListener = listenerConfigurationService.getTlsTcpListeners().get(0);
+        final MqttTlsTcpListener mqttTlsTcpListener =
+                listenerConfigurationService.getTlsTcpListeners().get(0);
 
         assertEquals(8883, mqttTlsTcpListener.getPort());
         assertEquals("0.0.0.0", mqttTlsTcpListener.getBindAddress());
@@ -121,7 +119,7 @@ public class ListenerConfiguratorTest extends AbstractConfigurationTest {
         assertEquals("/absolute/path.jks", mqttTlsTcpListener.getTls().getKeystorePath());
         assertEquals("password-key", mqttTlsTcpListener.getTls().getPrivateKeyPassword());
 
-        //Check if the relative path was made absolute
+        // Check if the relative path was made absolute
         assertNull(mqttTlsTcpListener.getTls().getTruststorePath());
 
         assertTrue(mqttTlsTcpListener.getTls().isPreferServerCipherSuites());
@@ -130,34 +128,36 @@ public class ListenerConfiguratorTest extends AbstractConfigurationTest {
     @Test
     public void test_read_multiple_tcp_listeners() throws Exception {
 
-        final String contents = "" +
-                "<hivemq>" +
-                "    <mqtt-listeners>" +
-                "       <tcp-listener>" +
-                "           <port>1883</port>" +
-                "           <bind-address>0.0.0.0</bind-address>" +
-                "            <name>my-tcp-listener</name>" +
-                "       </tcp-listener>" +
-                "       <tcp-listener>" +
-                "           <port>1884</port>" +
-                "           <bind-address>0.0.0.0</bind-address>" +
-                "            <name>my-tcp-listener</name>" +
-                "       </tcp-listener>" +
-                "       <tcp-listener>" +
-                "           <port>1885</port>" +
-                "           <bind-address>0.0.0.0</bind-address>" +
-                "            <name>my-tcp-listener</name>" +
-                "       </tcp-listener>" +
-                "    </mqtt-listeners>" +
-                "</hivemq>";
+        final String contents = "" + "<hivemq>"
+                + "    <mqtt-listeners>"
+                + "       <tcp-listener>"
+                + "           <port>1883</port>"
+                + "           <bind-address>0.0.0.0</bind-address>"
+                + "            <name>my-tcp-listener</name>"
+                + "       </tcp-listener>"
+                + "       <tcp-listener>"
+                + "           <port>1884</port>"
+                + "           <bind-address>0.0.0.0</bind-address>"
+                + "            <name>my-tcp-listener</name>"
+                + "       </tcp-listener>"
+                + "       <tcp-listener>"
+                + "           <port>1885</port>"
+                + "           <bind-address>0.0.0.0</bind-address>"
+                + "            <name>my-tcp-listener</name>"
+                + "       </tcp-listener>"
+                + "    </mqtt-listeners>"
+                + "</hivemq>";
 
         Files.write(contents.getBytes(UTF_8), xmlFile);
 
         reader.applyConfig();
 
-        final MqttTcpListener mqttTcpListener1 = listenerConfigurationService.getTcpListeners().get(0);
-        final MqttTcpListener mqttTcpListener2 = listenerConfigurationService.getTcpListeners().get(1);
-        final MqttTcpListener mqttTcpListener3 = listenerConfigurationService.getTcpListeners().get(2);
+        final MqttTcpListener mqttTcpListener1 =
+                listenerConfigurationService.getTcpListeners().get(0);
+        final MqttTcpListener mqttTcpListener2 =
+                listenerConfigurationService.getTcpListeners().get(1);
+        final MqttTcpListener mqttTcpListener3 =
+                listenerConfigurationService.getTcpListeners().get(2);
 
         assertEquals("my-tcp-listener", mqttTcpListener1.getName());
         assertEquals("my-tcp-listener-1", mqttTcpListener2.getName());
@@ -167,16 +167,15 @@ public class ListenerConfiguratorTest extends AbstractConfigurationTest {
     @Test
     public void test_read_tcp_listener_white_space_name() throws Exception {
 
-        final String contents = "" +
-                "<hivemq>" +
-                "    <mqtt-listeners>" +
-                "       <tcp-listener>" +
-                "           <port>1883</port>" +
-                "           <bind-address>0.0.0.0</bind-address>" +
-                "           <name>     </name>" +
-                "       </tcp-listener>" +
-                "    </mqtt-listeners>" +
-                "</hivemq>";
+        final String contents = "" + "<hivemq>"
+                + "    <mqtt-listeners>"
+                + "       <tcp-listener>"
+                + "           <port>1883</port>"
+                + "           <bind-address>0.0.0.0</bind-address>"
+                + "           <name>     </name>"
+                + "       </tcp-listener>"
+                + "    </mqtt-listeners>"
+                + "</hivemq>";
 
         Files.write(contents.getBytes(UTF_8), xmlFile);
 
@@ -186,21 +185,21 @@ public class ListenerConfiguratorTest extends AbstractConfigurationTest {
     @Test
     public void test_read_tcp_listener() throws Exception {
 
-        final String contents = "" +
-                "<hivemq>" +
-                "    <mqtt-listeners>" +
-                "       <tcp-listener>" +
-                "           <port>1883</port>" +
-                "           <bind-address>0.0.0.0</bind-address>" +
-                "       </tcp-listener>" +
-                "    </mqtt-listeners>" +
-                "</hivemq>";
+        final String contents = "" + "<hivemq>"
+                + "    <mqtt-listeners>"
+                + "       <tcp-listener>"
+                + "           <port>1883</port>"
+                + "           <bind-address>0.0.0.0</bind-address>"
+                + "       </tcp-listener>"
+                + "    </mqtt-listeners>"
+                + "</hivemq>";
 
         Files.write(contents.getBytes(UTF_8), xmlFile);
 
         reader.applyConfig();
 
-        final MqttTcpListener mqttTcpListener = listenerConfigurationService.getTcpListeners().get(0);
+        final MqttTcpListener mqttTcpListener =
+                listenerConfigurationService.getTcpListeners().get(0);
 
         assertEquals(1883, mqttTcpListener.getPort());
         assertEquals("0.0.0.0", mqttTcpListener.getBindAddress());
@@ -209,26 +208,26 @@ public class ListenerConfiguratorTest extends AbstractConfigurationTest {
     @Test
     public void test_read_websocket_listener() throws Exception {
 
-        final String contents = "" +
-                "<hivemq>" +
-                "    <mqtt-listeners>" +
-                "        <websocket-listener>\n" +
-                "            <port>8000</port>\n" +
-                "            <bind-address>0.0.0.0</bind-address>\n" +
-                "            <path>/mqtt</path>\n" +
-                "            <subprotocols>\n" +
-                "                <subprotocol>mqttv3.1</subprotocol>\n" +
-                "            </subprotocols>\n" +
-                "            <allow-extensions>false</allow-extensions>\n" +
-                "        </websocket-listener>" +
-                "    </mqtt-listeners>" +
-                "</hivemq>";
+        final String contents = "" + "<hivemq>"
+                + "    <mqtt-listeners>"
+                + "        <websocket-listener>\n"
+                + "            <port>8000</port>\n"
+                + "            <bind-address>0.0.0.0</bind-address>\n"
+                + "            <path>/mqtt</path>\n"
+                + "            <subprotocols>\n"
+                + "                <subprotocol>mqttv3.1</subprotocol>\n"
+                + "            </subprotocols>\n"
+                + "            <allow-extensions>false</allow-extensions>\n"
+                + "        </websocket-listener>"
+                + "    </mqtt-listeners>"
+                + "</hivemq>";
 
         Files.write(contents.getBytes(UTF_8), xmlFile);
 
         reader.applyConfig();
 
-        final MqttWebsocketListener mqttWebsocketListener = listenerConfigurationService.getWebsocketListeners().get(0);
+        final MqttWebsocketListener mqttWebsocketListener =
+                listenerConfigurationService.getWebsocketListeners().get(0);
         assertEquals(8000, mqttWebsocketListener.getPort());
         assertEquals("0.0.0.0", mqttWebsocketListener.getBindAddress());
         assertEquals("/mqtt", mqttWebsocketListener.getPath());
@@ -239,39 +238,39 @@ public class ListenerConfiguratorTest extends AbstractConfigurationTest {
     @Test
     public void test_read_tls_websocket_listener() throws Exception {
 
-        final String contents = "" +
-                "<hivemq>" +
-                "    <mqtt-listeners>" +
-                "       <tls-websocket-listener>" +
-                "           <port>8000</port>" +
-                "           <bind-address>0.0.0.0</bind-address>" +
-                "           <path>/mqtt</path>" +
-                "           <subprotocols>" +
-                "               <subprotocol>mqttv3.1</subprotocol>" +
-                "           </subprotocols>" +
-                "           <allow-extensions>false</allow-extensions>" +
-                "           <tls>" +
-                "              <keystore>" +
-                "                  <path>/path/to/the/key/store.jks</path>" +
-                "                  <password>password-keystore</password>" +
-                "                  <private-key-password>password-key</private-key-password>" +
-                "              </keystore>" +
-                "              <truststore>" +
-                "                  <path>/path/to/the/trust/store.jks</path>" +
-                "                  <password>password-truststore</password>" +
-                "              </truststore>" +
-                "              <client-authentication-mode>NONE</client-authentication-mode>" +
-                "              <prefer-server-cipher-suites>false</prefer-server-cipher-suites>" +
-                "           </tls>" +
-                "       </tls-websocket-listener>" +
-                "    </mqtt-listeners>" +
-                "</hivemq>";
+        final String contents = "" + "<hivemq>"
+                + "    <mqtt-listeners>"
+                + "       <tls-websocket-listener>"
+                + "           <port>8000</port>"
+                + "           <bind-address>0.0.0.0</bind-address>"
+                + "           <path>/mqtt</path>"
+                + "           <subprotocols>"
+                + "               <subprotocol>mqttv3.1</subprotocol>"
+                + "           </subprotocols>"
+                + "           <allow-extensions>false</allow-extensions>"
+                + "           <tls>"
+                + "              <keystore>"
+                + "                  <path>/path/to/the/key/store.jks</path>"
+                + "                  <password>password-keystore</password>"
+                + "                  <private-key-password>password-key</private-key-password>"
+                + "              </keystore>"
+                + "              <truststore>"
+                + "                  <path>/path/to/the/trust/store.jks</path>"
+                + "                  <password>password-truststore</password>"
+                + "              </truststore>"
+                + "              <client-authentication-mode>NONE</client-authentication-mode>"
+                + "              <prefer-server-cipher-suites>false</prefer-server-cipher-suites>"
+                + "           </tls>"
+                + "       </tls-websocket-listener>"
+                + "    </mqtt-listeners>"
+                + "</hivemq>";
 
         Files.write(contents.getBytes(UTF_8), xmlFile);
 
         reader.applyConfig();
 
-        final MqttTlsWebsocketListener websocketListener = listenerConfigurationService.getTlsWebsocketListeners().get(0);
+        final MqttTlsWebsocketListener websocketListener =
+                listenerConfigurationService.getTlsWebsocketListeners().get(0);
         assertEquals(8000, websocketListener.getPort());
         assertEquals("0.0.0.0", websocketListener.getBindAddress());
         assertEquals("/mqtt", websocketListener.getPath());
@@ -287,5 +286,4 @@ public class ListenerConfiguratorTest extends AbstractConfigurationTest {
 
         assertFalse(websocketListener.getTls().isPreferServerCipherSuites());
     }
-
 }

@@ -15,7 +15,8 @@
  */
 package com.hivemq.mqtt.handler;
 
-import org.jetbrains.annotations.NotNull;
+import static org.mockito.Mockito.*;
+
 import com.hivemq.extensions.handler.*;
 import com.hivemq.mqtt.message.PINGREQ;
 import com.hivemq.mqtt.message.PINGRESP;
@@ -33,12 +34,11 @@ import com.hivemq.mqtt.message.unsuback.UNSUBACK;
 import com.hivemq.mqtt.message.unsubscribe.UNSUBSCRIBE;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import static org.mockito.Mockito.*;
 
 /**
  * @author Daniel Krüger
@@ -47,34 +47,48 @@ public class InterceptorHandlerTest {
 
     @Mock
     private @NotNull ConnectInboundInterceptorHandler connectInboundInterceptorHandler;
+
     @Mock
     private @NotNull ConnackOutboundInterceptorHandler connackOutboundInterceptorHandler;
+
     @Mock
     private @NotNull PublishOutboundInterceptorHandler publishOutboundInterceptorHandler;
+
     @Mock
     private @NotNull PubackInterceptorHandler pubackInterceptorHandler;
+
     @Mock
     private @NotNull PubrecInterceptorHandler pubrecInterceptorHandler;
+
     @Mock
     private @NotNull PubrelInterceptorHandler pubrelInterceptorHandler;
+
     @Mock
     private @NotNull PubcompInterceptorHandler pubcompInterceptorHandler;
+
     @Mock
     private @NotNull SubackOutboundInterceptorHandler subackOutboundInterceptorHandler;
+
     @Mock
     private @NotNull UnsubscribeInboundInterceptorHandler unsubscribeInboundInterceptorHandler;
+
     @Mock
     private @NotNull UnsubackOutboundInterceptorHandler unsubackOutboundInterceptorHandler;
+
     @Mock
     private @NotNull PingInterceptorHandler pingInterceptorHandler;
+
     @Mock
     private @NotNull DisconnectInterceptorHandler disconnectInterceptorHandler;
+
     @Mock
     private @NotNull ChannelHandlerContext channelHandlerContext;
+
     @Mock
     private @NotNull ChannelPromise channelPromise;
 
     private @NotNull InterceptorHandler interceptorHandler;
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);

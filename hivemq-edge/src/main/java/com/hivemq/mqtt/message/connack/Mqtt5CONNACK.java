@@ -17,12 +17,12 @@ package com.hivemq.mqtt.message.connack;
 
 import com.hivemq.codec.encoder.mqtt5.MqttVariableByteInteger;
 import com.hivemq.codec.encoder.mqtt5.UnsignedDataTypes;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.Message;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.reason.Mqtt5ConnAckReasonCode;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -183,5 +183,4 @@ public interface Mqtt5CONNACK extends Message {
      */
     @NotNull
     Mqtt5UserProperties getUserProperties();
-
 }

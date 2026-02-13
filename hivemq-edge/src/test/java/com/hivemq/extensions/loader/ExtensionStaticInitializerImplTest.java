@@ -13,8 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.loader;
+
+import static org.assertj.core.api.Java6Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableMap;
@@ -58,6 +67,10 @@ import com.hivemq.extensions.services.executor.GlobalManagedExtensionExecutorSer
 import com.hivemq.extensions.services.executor.ManagedExecutorServicePerExtension;
 import com.hivemq.extensions.services.initializer.InitializerRegistryImpl;
 import com.hivemq.extensions.services.initializer.InitializersImpl;
+import java.io.File;
+import java.lang.reflect.Field;
+import java.net.URL;
+import java.util.function.Supplier;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
@@ -67,21 +80,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 import util.TestConfigurationBootstrap;
-
-import java.io.File;
-import java.lang.reflect.Field;
-import java.net.URL;
-import java.util.function.Supplier;
-
-import static org.assertj.core.api.Java6Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class ExtensionStaticInitializerImplTest {
 
@@ -113,6 +111,7 @@ public class ExtensionStaticInitializerImplTest {
     private @NotNull TopicPermissionBuilder topicPermissionBuilder;
     private @NotNull PublishBuilder publishBuilder;
     private @NotNull WillPublishBuilder willPublishBuilder;
+
     @BeforeEach
     public void before() {
         final ConfigurationService fullConfigurationService =
@@ -124,10 +123,10 @@ public class ExtensionStaticInitializerImplTest {
         topicPermissionBuilder = new TopicPermissionBuilderImpl(fullConfigurationService);
         publishBuilder = new PublishBuilderImpl(fullConfigurationService);
         willPublishBuilder = new WillPublishBuilderImpl(fullConfigurationService);
-        securityRegistry = new SecurityRegistryImpl(new AuthenticatorsImpl(hiveMQExtensions),
-                new AuthorizersImpl(hiveMQExtensions),
-                hiveMQExtensions);
-        servicesDependencies = Mockito.spy(new ExtensionServicesDependenciesImpl(metricRegistry,
+        securityRegistry = new SecurityRegistryImpl(
+                new AuthenticatorsImpl(hiveMQExtensions), new AuthorizersImpl(hiveMQExtensions), hiveMQExtensions);
+        servicesDependencies = Mockito.spy(new ExtensionServicesDependenciesImpl(
+                metricRegistry,
                 initializerRegistry,
                 retainedMessageStore,
                 clientService,
@@ -139,8 +138,10 @@ public class ExtensionStaticInitializerImplTest {
                 eventRegistry,
                 clusterService,
                 interceptorRegistry,
-                adminService, edgeInterceptorRegistry));
-        builderDependencies = Mockito.spy(new ExtensionBuilderDependenciesImpl(() -> retainedPublishBuilder,
+                adminService,
+                edgeInterceptorRegistry));
+        builderDependencies = Mockito.spy(new ExtensionBuilderDependenciesImpl(
+                () -> retainedPublishBuilder,
                 () -> topicSubscriptionBuilder,
                 () -> topicPermissionBuilder,
                 () -> publishBuilder,
@@ -358,17 +359,15 @@ public class ExtensionStaticInitializerImplTest {
 
     @Test
     public void test_exception_at_static_initialization() throws Exception {
-        when(servicesDependencies.getDependenciesMap(any(IsolatedExtensionClassloader.class))).thenThrow(new RuntimeException(
-                "Test-Exception"));
-        assertThatThrownBy(() -> createAndLoadExtension())
-                .isInstanceOf(ExtensionLoadingException.class);
+        when(servicesDependencies.getDependenciesMap(any(IsolatedExtensionClassloader.class)))
+                .thenThrow(new RuntimeException("Test-Exception"));
+        assertThatThrownBy(() -> createAndLoadExtension()).isInstanceOf(ExtensionLoadingException.class);
     }
 
     @Test
     public void test_exception_at_static_builders_initialization() throws Exception {
         when(builderDependencies.getDependenciesMap()).thenThrow(new RuntimeException("Test-Exception"));
-        assertThatThrownBy(() -> createAndLoadExtension())
-                .isInstanceOf(ExtensionLoadingException.class);
+        assertThatThrownBy(() -> createAndLoadExtension()).isInstanceOf(ExtensionLoadingException.class);
     }
 
     @NotNull
@@ -389,7 +388,8 @@ public class ExtensionStaticInitializerImplTest {
     }
 
     @NotNull
-    private ImmutableMap<String, Supplier<Object>> getBuildersMap(final Class<? extends ExtensionMain> extensionMainClass)
+    private ImmutableMap<String, Supplier<Object>> getBuildersMap(
+            final Class<? extends ExtensionMain> extensionMainClass)
             throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
         final Class<?> buildersClass =
                 extensionMainClass.getClassLoader().loadClass("com.hivemq.extension.sdk.api.services.builder.Builders");
@@ -414,8 +414,8 @@ public class ExtensionStaticInitializerImplTest {
         javaArchive.as(ZipExporter.class).exportTo(jarFile, true);
 
         // this classloader contains the classes from the JAR file
-        final IsolatedExtensionClassloader cl =
-                new IsolatedExtensionClassloader(new URL[]{jarFile.toURI().toURL()}, getClass().getClassLoader());
+        final IsolatedExtensionClassloader cl = new IsolatedExtensionClassloader(
+                new URL[] {jarFile.toURI().toURL()}, getClass().getClassLoader());
         cl.loadClassesWithStaticContext();
         staticInitializer.initialize("extensionid", cl);
 
@@ -445,12 +445,9 @@ public class ExtensionStaticInitializerImplTest {
 
         @Override
         public void extensionStart(
-                final @NotNull ExtensionStartInput input,
-                final @NotNull ExtensionStartOutput output) {
-        }
+                final @NotNull ExtensionStartInput input, final @NotNull ExtensionStartOutput output) {}
 
         @Override
-        public void extensionStop(final @NotNull ExtensionStopInput input, final @NotNull ExtensionStopOutput output) {
-        }
+        public void extensionStop(final @NotNull ExtensionStopInput input, final @NotNull ExtensionStopOutput output) {}
     }
 }

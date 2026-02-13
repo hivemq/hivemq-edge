@@ -23,8 +23,7 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.etherip.config.EipSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 
-public class EipProtocolAdapterFactory
-        implements ProtocolAdapterFactory<EipSpecificAdapterConfig> {
+public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipSpecificAdapterConfig> {
 
     final boolean writingEnabled;
 

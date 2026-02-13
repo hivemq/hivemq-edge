@@ -17,7 +17,6 @@ package com.hivemq.common.executors.ioc;
 
 import dagger.Module;
 import dagger.Provides;
-
 import jakarta.inject.Singleton;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -38,8 +37,7 @@ public abstract class ExecutorsModule {
     @Provides
     @Singleton
     static ScheduledExecutorService scheduledExecutor() {
-        return Executors.newScheduledThreadPool(4,
-                new HiveMQEdgeThreadFactory(SCHEDULED_WORKER_GROUP_NAME));
+        return Executors.newScheduledThreadPool(4, new HiveMQEdgeThreadFactory(SCHEDULED_WORKER_GROUP_NAME));
     }
 
     @Provides
@@ -55,7 +53,7 @@ public abstract class ExecutorsModule {
 
         public HiveMQEdgeThreadFactory(final String factoryName) {
             this.factoryName = factoryName;
-            this.group = new ThreadGroup(coreGroup,  factoryName);
+            this.group = new ThreadGroup(coreGroup, factoryName);
         }
 
         @Override

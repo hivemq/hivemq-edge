@@ -15,11 +15,11 @@
  */
 package com.hivemq.mqtt.message.disconnect;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -56,5 +56,4 @@ public interface Mqtt5DISCONNECT {
     Mqtt5UserProperties getUserProperties();
 
     MessageType getType();
-
 }

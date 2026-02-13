@@ -15,12 +15,12 @@
  */
 package com.hivemq.extensions.auth;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.parameter.AuthenticatorProviderInput;
 import com.hivemq.extensions.executor.task.PluginInOutTask;
 import com.hivemq.extensions.executor.task.PluginTaskInput;
 import com.hivemq.extensions.services.auth.WrappedAuthenticatorProvider;
 import com.hivemq.util.Exceptions;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,8 +57,10 @@ abstract class AbstractAuthTask<I extends PluginTaskInput, O extends AuthOutput<
             output.failByThrowable(throwable);
             Exceptions.rethrowError(throwable);
             log.warn(
-                    "Uncaught exception was thrown from extension with id \"{}\" in authenticator. " +
-                            "Extensions are responsible for their own exception handling.", extensionId, throwable);
+                    "Uncaught exception was thrown from extension with id \"{}\" in authenticator. "
+                            + "Extensions are responsible for their own exception handling.",
+                    extensionId,
+                    throwable);
         }
         return output;
     }

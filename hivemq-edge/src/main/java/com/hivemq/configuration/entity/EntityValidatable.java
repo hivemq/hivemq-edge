@@ -15,14 +15,13 @@
  */
 package com.hivemq.configuration.entity;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.helpers.ValidationEventImpl;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public interface EntityValidatable {
     static boolean notMatch(
@@ -30,9 +29,8 @@ public interface EntityValidatable {
             final @NotNull BooleanSupplier assertionSupplier,
             final @NotNull Supplier<String> errorMessageSupplier) {
         if (!assertionSupplier.getAsBoolean()) {
-            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR,
-                    errorMessageSupplier.get(),
-                    null));
+            validationEvents.add(
+                    new ValidationEventImpl(ValidationEvent.FATAL_ERROR, errorMessageSupplier.get(), null));
             return false;
         }
         return true;
@@ -43,9 +41,8 @@ public interface EntityValidatable {
             final @Nullable String value,
             final @NotNull String propertyName) {
         if (value == null || value.isEmpty()) {
-            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR,
-                    propertyName + " is missing",
-                    null));
+            validationEvents.add(
+                    new ValidationEventImpl(ValidationEvent.FATAL_ERROR, propertyName + " is missing", null));
             return false;
         }
         return true;
@@ -56,9 +53,8 @@ public interface EntityValidatable {
             final @Nullable List<T> value,
             final @NotNull String propertyName) {
         if (value == null || value.isEmpty()) {
-            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR,
-                    propertyName + " is missing",
-                    null));
+            validationEvents.add(
+                    new ValidationEventImpl(ValidationEvent.FATAL_ERROR, propertyName + " is missing", null));
             return false;
         }
         return true;
@@ -69,9 +65,8 @@ public interface EntityValidatable {
             final @Nullable T value,
             final @NotNull String propertyName) {
         if (value == null) {
-            validationEvents.add(new ValidationEventImpl(ValidationEvent.FATAL_ERROR,
-                    propertyName + " is invalid",
-                    null));
+            validationEvents.add(
+                    new ValidationEventImpl(ValidationEvent.FATAL_ERROR, propertyName + " is invalid", null));
             return false;
         }
         return true;

@@ -23,16 +23,15 @@ import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSSpecificAdapterConfig;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.EnumSet;
+import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.EnumSet;
-import java.util.List;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -44,9 +43,7 @@ public class ADSProtocolAdapterInformation implements ProtocolAdapterInformation
     private static final @NotNull Logger log = LoggerFactory.getLogger(ADSProtocolAdapterInformation.class);
     private static final int CURRENT_CONFIG_VERSION = 1;
 
-
-    protected ADSProtocolAdapterInformation() {
-    }
+    protected ADSProtocolAdapterInformation() {}
 
     @Override
     public @NotNull String getProtocolName() {
@@ -95,7 +92,8 @@ public class ADSProtocolAdapterInformation implements ProtocolAdapterInformation
 
     @Override
     public List<ProtocolAdapterTag> getTags() {
-        return List.of(ProtocolAdapterTag.TCP,
+        return List.of(
+                ProtocolAdapterTag.TCP,
                 ProtocolAdapterTag.AUTOMATION,
                 ProtocolAdapterTag.IIOT,
                 ProtocolAdapterTag.FACTORY);
@@ -108,9 +106,8 @@ public class ADSProtocolAdapterInformation implements ProtocolAdapterInformation
 
     @Override
     public @Nullable String getUiSchema() {
-        try (final InputStream is = this.getClass()
-                .getClassLoader()
-                .getResourceAsStream("ads-adapter-ui-schema.json")) {
+        try (final InputStream is =
+                this.getClass().getClassLoader().getResourceAsStream("ads-adapter-ui-schema.json")) {
             if (is == null) {
                 log.warn("The UISchema for the ADS Adapter could not be loaded from resources: Not found.");
                 return null;

@@ -15,18 +15,6 @@
  */
 package util;
 
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.BasicConstraints;
-import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.GeneralNames;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
-import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.math.BigInteger;
@@ -41,6 +29,17 @@ import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class KeyChain {
 
@@ -79,8 +78,8 @@ public class KeyChain {
         final GeneratedCert issuer = createCertificate(CN_ISSUER, null, rootCA, true);
         final Map<String, GeneratedCert> leafCerts = new HashMap<>();
         for (final String leafCertDomain : leafCertDomains) {
-            leafCerts.put(leafCertDomain,
-                    createCertificate(leafCertDomain, DOMAIN_PREFIX + leafCertDomain, rootCA, false));
+            leafCerts.put(
+                    leafCertDomain, createCertificate(leafCertDomain, DOMAIN_PREFIX + leafCertDomain, rootCA, false));
         }
         return new KeyChain(rootCA, issuer, leafCerts);
     }
@@ -96,7 +95,8 @@ public class KeyChain {
             final @NotNull String cnName,
             final @Nullable String domain,
             final @Nullable GeneratedCert issuer,
-            final boolean isCA) throws Exception {
+            final boolean isCA)
+            throws Exception {
 
         // Generate the key-pair with the official Java API's
         final KeyPairGenerator keyGen = KeyPairGenerator.getInstance(KEYPAIR_GEN_ALGO);
@@ -116,17 +116,14 @@ public class KeyChain {
             issuerKey = certKeyPair.getPrivate();
         } else {
             // Get issuer's subject DN directly from its certificate
-            issuerName = new X500Name(issuer.certificate().getSubjectX500Principal().getName());
+            issuerName =
+                    new X500Name(issuer.certificate().getSubjectX500Principal().getName());
             issuerKey = issuer.keyPair().getPrivate();
         }
 
         // The cert builder to build up our certificate information
-        final JcaX509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(issuerName,
-                serialNumber,
-                Date.from(validFrom),
-                Date.from(validUntil),
-                name,
-                certKeyPair.getPublic());
+        final JcaX509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
+                issuerName, serialNumber, Date.from(validFrom), Date.from(validUntil), name, certKeyPair.getPublic());
 
         if (isCA) {
             // Make the cert to a Cert Authority to sign more certs when needed
@@ -135,9 +132,10 @@ public class KeyChain {
 
         // Subject Alternative Names (SANs) - Combine DNS and URI
         if (domain != null) {
-            builder.addExtension(Extension.subjectAlternativeName, false, new GeneralNames(new GeneralName[]{
-                    new GeneralName(GeneralName.dNSName, domain),
-                    new GeneralName(GeneralName.uniformResourceIdentifier, domain)}));
+            builder.addExtension(Extension.subjectAlternativeName, false, new GeneralNames(new GeneralName[] {
+                new GeneralName(GeneralName.dNSName, domain),
+                new GeneralName(GeneralName.uniformResourceIdentifier, domain)
+            }));
         }
 
         // Finally, sign the certificate:
@@ -150,7 +148,8 @@ public class KeyChain {
             final @NotNull String filename,
             final @NotNull String cnName,
             final @NotNull String keyStorePassword,
-            final @NotNull String privateKeyPassword) throws Exception {
+            final @NotNull String privateKeyPassword)
+            throws Exception {
         final KeyStore keyStore = KeyStore.getInstance(KEYSTORE_TYPE);
         keyStore.load(null, null);
 
@@ -162,8 +161,7 @@ public class KeyChain {
 
         final GeneratedCert generatedLeafCert = leafCerts.get(cnName);
 
-        final Certificate[] chain = {
-                generatedLeafCert.certificate(), issuer.certificate(), root.certificate()};
+        final Certificate[] chain = {generatedLeafCert.certificate(), issuer.certificate(), root.certificate()};
         keyStore.setKeyEntry(cnName, generatedLeafCert.keyPair().getPrivate(), privateKeyPassword.toCharArray(), chain);
 
         final File keyStoreFile = File.createTempFile(filename + KEYSTORE_FILE_EXT, null);
@@ -174,7 +172,7 @@ public class KeyChain {
         return keyStoreFile;
     }
 
-    // To create a certificate chain we need the issuers' certificate and private key. Keep these together to pass around
-    public record GeneratedCert(X509Certificate certificate, KeyPair keyPair) {
-    }
+    // To create a certificate chain we need the issuers' certificate and private key. Keep these together to pass
+    // around
+    public record GeneratedCert(X509Certificate certificate, KeyPair keyPair) {}
 }

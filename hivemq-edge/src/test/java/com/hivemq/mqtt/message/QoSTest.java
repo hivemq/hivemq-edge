@@ -15,11 +15,11 @@
  */
 package com.hivemq.mqtt.message;
 
-import org.junit.jupiter.api.Test;
-import util.EnumTestUtil;
-
 import static com.hivemq.mqtt.message.QoS.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Test;
+import util.EnumTestUtil;
 
 public class QoSTest {
 

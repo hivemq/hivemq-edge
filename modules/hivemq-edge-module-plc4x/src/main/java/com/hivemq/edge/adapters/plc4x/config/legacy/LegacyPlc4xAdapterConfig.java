@@ -20,11 +20,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class LegacyPlc4xAdapterConfig {
 
@@ -32,8 +31,8 @@ public class LegacyPlc4xAdapterConfig {
     protected @NotNull String id;
 
     @JsonProperty("pollingIntervalMillis")
-    @JsonAlias(value = "publishingInterval") //-- Ensure we cater for properties created with legacy configuration
-    private int pollingIntervalMillis = 1000; //1 second
+    @JsonAlias(value = "publishingInterval") // -- Ensure we cater for properties created with legacy configuration
+    private int pollingIntervalMillis = 1000; // 1 second
 
     @JsonProperty("maxPollingErrorsBeforeRemoval")
     private int maxPollingErrorsBeforeRemoval = 10;
@@ -50,8 +49,7 @@ public class LegacyPlc4xAdapterConfig {
     @JsonProperty("subscriptions")
     private @NotNull List<? extends PollingContextImpl> subscriptions = new ArrayList<>();
 
-    public LegacyPlc4xAdapterConfig() {
-    }
+    public LegacyPlc4xAdapterConfig() {}
 
     public @NotNull String getId() {
         return id;
@@ -113,7 +111,6 @@ public class LegacyPlc4xAdapterConfig {
 
         @JsonProperty(value = "userProperties")
         private @NotNull List<MqttUserProperty> userProperties = new ArrayList<>();
-
 
         public @NotNull String getTagName() {
             return tagName;

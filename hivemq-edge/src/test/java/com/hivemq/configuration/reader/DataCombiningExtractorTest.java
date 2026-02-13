@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.configuration.reader;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 import ch.qos.logback.classic.Logger;
 import com.hivemq.combining.model.DataIdentifierReference;
@@ -24,6 +25,10 @@ import com.hivemq.configuration.entity.combining.DataCombinerEntity;
 import com.hivemq.configuration.entity.combining.DataCombiningEntity;
 import com.hivemq.configuration.entity.combining.DataCombiningSourcesEntity;
 import com.hivemq.configuration.info.SystemInformation;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
@@ -35,13 +40,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 import util.LogbackCapturingAppender;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(MockitoExtension.class)
 public class DataCombiningExtractorTest {
@@ -75,9 +73,12 @@ public class DataCombiningExtractorTest {
                 </data-combiners>
             </hivemq>
             """;
+
     @Mock
     protected @NotNull SystemInformation systemInformation;
+
     protected @NotNull LogbackCapturingAppender logCapture;
+
     @TempDir
     protected @NotNull File tempDir;
 
@@ -584,13 +585,18 @@ public class DataCombiningExtractorTest {
                 """;
 
         final HiveMQConfigEntity config = getConfigFileReaderWriter(xml).applyConfig();
-        final List<DataCombiningEntity> combinings = extractFirstCombiner(config).getDataCombiningEntities();
+        final List<DataCombiningEntity> combinings =
+                extractFirstCombiner(config).getDataCombiningEntities();
         assertThat(combinings).hasSize(2);
 
-        assertThat(combinings.get(0).getSources().getPrimaryIdentifier().getId()).isEqualTo("temp");
-        assertThat(combinings.get(0).getSources().getPrimaryIdentifier().getScope()).isEqualTo("adapter-1");
-        assertThat(combinings.get(1).getSources().getPrimaryIdentifier().getId()).isEqualTo("temp");
-        assertThat(combinings.get(1).getSources().getPrimaryIdentifier().getScope()).isEqualTo("adapter-2");
+        assertThat(combinings.get(0).getSources().getPrimaryIdentifier().getId())
+                .isEqualTo("temp");
+        assertThat(combinings.get(0).getSources().getPrimaryIdentifier().getScope())
+                .isEqualTo("adapter-1");
+        assertThat(combinings.get(1).getSources().getPrimaryIdentifier().getId())
+                .isEqualTo("temp");
+        assertThat(combinings.get(1).getSources().getPrimaryIdentifier().getScope())
+                .isEqualTo("adapter-2");
     }
 
     // --- Write-back round-trip: scope survives serialization and re-read ---

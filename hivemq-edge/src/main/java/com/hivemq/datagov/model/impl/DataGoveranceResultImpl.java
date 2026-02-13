@@ -19,12 +19,11 @@ import com.google.common.base.Preconditions;
 import com.hivemq.datagov.model.DataGovernanceData;
 import com.hivemq.datagov.model.DataGovernanceError;
 import com.hivemq.datagov.model.DataGovernanceResult;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -48,10 +47,10 @@ public class DataGoveranceResultImpl implements DataGovernanceResult {
 
     public void addError(final DataGovernanceError error, boolean fatal) {
         Preconditions.checkNotNull(error);
-        if(fatal){
+        if (fatal) {
             status = STATUS.FAILURE;
         }
-        if(errors == null){
+        if (errors == null) {
             errors = new ArrayList<>();
         }
         errors.add(error);

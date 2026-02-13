@@ -15,6 +15,8 @@
  */
 package com.hivemq.bootstrap.netty.initializer;
 
+import static org.mockito.Mockito.*;
+
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
@@ -23,8 +25,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import static org.mockito.Mockito.*;
 
 public class ChannelGroupHandlerTest {
 
@@ -41,6 +41,7 @@ public class ChannelGroupHandlerTest {
     ChannelPipeline channelPipeline;
 
     private ChannelGroupHandler channelGroupHandler;
+
     @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
@@ -57,5 +58,4 @@ public class ChannelGroupHandlerTest {
         verify(channelGroup, times(1)).add(any(Channel.class));
         verify(channelPipeline).remove(any(ChannelGroupHandler.class));
     }
-
 }

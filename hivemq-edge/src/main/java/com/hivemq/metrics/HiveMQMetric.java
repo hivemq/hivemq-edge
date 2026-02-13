@@ -15,10 +15,10 @@
  */
 package com.hivemq.metrics;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Metric;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * A convenience class to specify constant names and types of the internal HiveMQ metrics
@@ -29,7 +29,6 @@ public class HiveMQMetric<T extends Metric> {
 
     private final String name;
     private final Class<? extends Metric> clazz;
-
 
     private HiveMQMetric(final String name, final Class<? extends Metric> clazz) {
         this.name = name;

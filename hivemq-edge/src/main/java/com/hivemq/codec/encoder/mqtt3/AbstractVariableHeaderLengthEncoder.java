@@ -18,9 +18,9 @@ package com.hivemq.codec.encoder.mqtt3;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.encoder.MqttEncoder;
 import com.hivemq.codec.encoder.mqtt5.MqttMessageEncoderUtil;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.Message;
 import io.netty.buffer.ByteBuf;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * An abstract encoder for MQTT messages which have a variable payload length and

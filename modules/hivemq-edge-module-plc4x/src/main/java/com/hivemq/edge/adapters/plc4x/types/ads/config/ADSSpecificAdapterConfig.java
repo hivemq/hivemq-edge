@@ -19,11 +19,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
-
 
 public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMqttConfig> {
 
@@ -31,56 +29,63 @@ public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMq
     private static final int PORT_MAX = 65535;
 
     @JsonProperty(value = "port", required = true)
-    @ModuleConfigField(title = "Port",
-                       description = "The port number on the device to connect to",
-                       required = true,
-                       numberMin = PORT_MIN,
-                       numberMax = PORT_MAX,
-                       defaultValue = "48898")
+    @ModuleConfigField(
+            title = "Port",
+            description = "The port number on the device to connect to",
+            required = true,
+            numberMin = PORT_MIN,
+            numberMax = PORT_MAX,
+            defaultValue = "48898")
     private final int port;
 
     @JsonProperty(value = "targetAmsPort", required = true)
-    @ModuleConfigField(title = "Target AMS Port",
-                       description = "The AMS port number on the device to connect to",
-                       required = true,
-                       numberMin = PORT_MIN,
-                       numberMax = PORT_MAX,
-                       defaultValue = "851")
+    @ModuleConfigField(
+            title = "Target AMS Port",
+            description = "The AMS port number on the device to connect to",
+            required = true,
+            numberMin = PORT_MIN,
+            numberMax = PORT_MAX,
+            defaultValue = "851")
     private final int targetAmsPort;
 
     @JsonProperty(value = "sourceAmsPort", required = true)
-    @ModuleConfigField(title = "Source AMS Port",
-                       description = "The local AMS port number used by HiveMQ Edge",
-                       required = true,
-                       numberMin = PORT_MIN,
-                       numberMax = PORT_MAX,
-                       defaultValue = "48898")
+    @ModuleConfigField(
+            title = "Source AMS Port",
+            description = "The local AMS port number used by HiveMQ Edge",
+            required = true,
+            numberMin = PORT_MIN,
+            numberMax = PORT_MAX,
+            defaultValue = "48898")
     private final int sourceAmsPort;
 
     @JsonProperty(value = "sourceAmsNetId", required = true)
-    @ModuleConfigField(title = "Source Ams Net Id",
-                       required = true,
-                       stringPattern = "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}",
-                       description = "The AMS Net ID used by HiveMQ Edge")
+    @ModuleConfigField(
+            title = "Source Ams Net Id",
+            required = true,
+            stringPattern = "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}",
+            description = "The AMS Net ID used by HiveMQ Edge")
     private final @NotNull String sourceAmsNetId;
 
     @JsonProperty(value = "targetAmsNetId", required = true)
-    @ModuleConfigField(title = "Target Ams Net Id",
-                       required = true,
-                       stringPattern = "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}",
-                       description = "The AMS Net ID of the device to connect to")
+    @ModuleConfigField(
+            title = "Target Ams Net Id",
+            required = true,
+            stringPattern = "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}",
+            description = "The AMS Net ID of the device to connect to")
     private final @NotNull String targetAmsNetId;
 
     @JsonProperty("keepAlive")
-    @ModuleConfigField(title = "Keep-Alive",
-                       description = "Enable TCP keep-alive to maintain the connection during periods of inactivity.",
-                       defaultValue = "false")
+    @ModuleConfigField(
+            title = "Keep-Alive",
+            description = "Enable TCP keep-alive to maintain the connection during periods of inactivity.",
+            defaultValue = "false")
     private final boolean keepAlive;
 
     @JsonProperty(value = "adsToMqtt", required = true)
-    @ModuleConfigField(title = "ADS To MQTT Config",
-                       description = "The configuration for a data stream from ADS to MQTT",
-                       required = true)
+    @ModuleConfigField(
+            title = "ADS To MQTT Config",
+            description = "The configuration for a data stream from ADS to MQTT",
+            required = true)
     private final @Nullable ADSToMqttConfig adsToMqttConfig;
 
     @JsonCreator
@@ -105,7 +110,6 @@ public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMq
         } else {
             this.adsToMqttConfig = adsToMqttConfig;
         }
-
     }
 
     @Override
@@ -141,18 +145,19 @@ public class ADSSpecificAdapterConfig extends Plc4XSpecificAdapterConfig<ADSToMq
     @Override
     public boolean equals(final Object o) {
         if (!(o instanceof ADSSpecificAdapterConfig that)) return false;
-        return getPort() == that.getPort() &&
-                getTargetAmsPort() == that.getTargetAmsPort() &&
-                getSourceAmsPort() == that.getSourceAmsPort() &&
-                isKeepAlive() == that.isKeepAlive() &&
-                Objects.equals(getSourceAmsNetId(), that.getSourceAmsNetId()) &&
-                Objects.equals(getTargetAmsNetId(), that.getTargetAmsNetId()) &&
-                Objects.equals(adsToMqttConfig, that.adsToMqttConfig);
+        return getPort() == that.getPort()
+                && getTargetAmsPort() == that.getTargetAmsPort()
+                && getSourceAmsPort() == that.getSourceAmsPort()
+                && isKeepAlive() == that.isKeepAlive()
+                && Objects.equals(getSourceAmsNetId(), that.getSourceAmsNetId())
+                && Objects.equals(getTargetAmsNetId(), that.getTargetAmsNetId())
+                && Objects.equals(adsToMqttConfig, that.adsToMqttConfig);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getPort(),
+        return Objects.hash(
+                getPort(),
                 getTargetAmsPort(),
                 getSourceAmsPort(),
                 getSourceAmsNetId(),

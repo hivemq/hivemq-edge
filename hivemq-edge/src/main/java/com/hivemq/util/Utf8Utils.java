@@ -17,8 +17,8 @@ package com.hivemq.util;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Utf8;
-import org.jetbrains.annotations.NotNull;
 import io.netty.buffer.ByteBuf;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Lukas Brandl
@@ -80,7 +80,7 @@ public class Utf8Utils {
 
             final byte byte1 = bytes[i];
 
-            //control byte1s
+            // control byte1s
             if (byte1 >= 1 && byte1 <= 31 || byte1 == (byte) 0x7F) {
                 return true;
             }
@@ -105,13 +105,17 @@ public class Utf8Utils {
                     continue;
                 }
 
-//              '\uFDD0' - '\uFDEF'
-                if (byte1 == (byte) 0xEF && bytes[i + 1] == (byte) 0xB7 && (bytes[i + 2] >= (byte) 0x90 || bytes[i + 2] <= (byte) 0xAF)) {
+                //              '\uFDD0' - '\uFDEF'
+                if (byte1 == (byte) 0xEF
+                        && bytes[i + 1] == (byte) 0xB7
+                        && (bytes[i + 2] >= (byte) 0x90 || bytes[i + 2] <= (byte) 0xAF)) {
                     return true;
                 }
 
-//              '\uFFFE' | '\uFFFF'
-                if (byte1 == (byte) 0xEF && bytes[i + 1] == (byte) 0xBF && (bytes[i + 2] == (byte) 0xBE || bytes[i + 2] == (byte) 0xBF)) {
+                //              '\uFFFE' | '\uFFFF'
+                if (byte1 == (byte) 0xEF
+                        && bytes[i + 1] == (byte) 0xBF
+                        && (bytes[i + 2] == (byte) 0xBE || bytes[i + 2] == (byte) 0xBF)) {
                     return true;
                 }
             } else {
@@ -132,7 +136,7 @@ public class Utf8Utils {
                     continue;
                 }
 
-//              U+1FFFE|F - U10FFFE|F
+                //              U+1FFFE|F - U10FFFE|F
                 if (byte1 == (byte) 0xF0) {
                     if (byte2 == (byte) 0x9F || byte2 == (byte) 0xAF || byte2 == (byte) 0xBF) {
                         return true;
@@ -142,9 +146,7 @@ public class Utf8Utils {
                         return true;
                     }
                 }
-
             }
-
         }
 
         return false;
@@ -163,12 +165,12 @@ public class Utf8Utils {
 
             final char character = text.charAt(i);
 
-            //control characters
+            // control characters
             if (character >= '\u0001' && character <= '\u001F' || character >= '\u007F' && character <= '\u009F') {
                 return true;
             }
 
-            //non characters
+            // non characters
             if (character >= '\uFDD0' && character <= '\uFDEF' || character == '\uFFFE' || character == '\uFFFF') {
                 return true;
             }
@@ -227,7 +229,6 @@ public class Utf8Utils {
             if (character == '\uDBFF' && (next == '\uDFFE' || next == '\uDFFF')) {
                 return true;
             }
-
         }
 
         return false;
@@ -242,12 +243,12 @@ public class Utf8Utils {
 
         byteBuf.markReaderIndex();
 
-        final boolean wellFormed = isSliceWellFormed(byteBuf.slice(byteBuf.readerIndex(), utf8StringLength), utf8StringLength);
+        final boolean wellFormed =
+                isSliceWellFormed(byteBuf.slice(byteBuf.readerIndex(), utf8StringLength), utf8StringLength);
 
         byteBuf.resetReaderIndex();
 
         return wellFormed;
-
     }
 
     private static boolean isSliceWellFormed(final ByteBuf byteBuf, final int len) {
@@ -262,7 +263,6 @@ public class Utf8Utils {
         }
 
         return true;
-
     }
 
     private static boolean isWellFormedSlowPath(final ByteBuf byteBuf) {
@@ -291,7 +291,10 @@ public class Utf8Utils {
                     }
 
                     byte2 = byteBuf.readByte();
-                    if (byte2 > -65 || byte1 == -32 && byte2 < -96 || byte1 == -19 && -96 <= byte2 || byteBuf.readByte() > -65) {
+                    if (byte2 > -65
+                            || byte1 == -32 && byte2 < -96
+                            || byte1 == -19 && -96 <= byte2
+                            || byteBuf.readByte() > -65) {
                         return false;
                     }
                 } else {
@@ -300,7 +303,10 @@ public class Utf8Utils {
                     }
 
                     byte2 = byteBuf.readByte();
-                    if (byte2 > -65 || (byte1 << 28) + (byte2 - -112) >> 30 != 0 || byteBuf.readByte() > -65 || byteBuf.readByte() > -65) {
+                    if (byte2 > -65
+                            || (byte1 << 28) + (byte2 - -112) >> 30 != 0
+                            || byteBuf.readByte() > -65
+                            || byteBuf.readByte() > -65) {
                         return false;
                     }
                 }

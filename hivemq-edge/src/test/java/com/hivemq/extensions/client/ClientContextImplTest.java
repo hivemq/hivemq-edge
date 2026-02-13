@@ -13,8 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.client;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.hivemq.extension.sdk.api.interceptor.Interceptor;
 import com.hivemq.extension.sdk.api.interceptor.pingreq.PingReqInboundInterceptor;
@@ -37,18 +41,12 @@ import com.hivemq.extension.sdk.api.interceptor.subscribe.SubscribeInboundInterc
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensions;
 import com.hivemq.extensions.packets.general.ModifiableDefaultPermissionsImpl;
+import java.io.File;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import util.TestInterceptorUtil;
-
-import java.io.File;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @since 4.0.0
@@ -65,12 +63,9 @@ public class ClientContextImplTest {
 
     @Test
     public void test_get_interceptors_return_correct_instances() {
-        clientContext.addPublishInboundInterceptor((input, output) -> {
-        });
-        clientContext.addPublishOutboundInterceptor((input, output) -> {
-        });
-        clientContext.addSubscribeInboundInterceptor((input, output) -> {
-        });
+        clientContext.addPublishInboundInterceptor((input, output) -> {});
+        clientContext.addPublishOutboundInterceptor((input, output) -> {});
+        clientContext.addSubscribeInboundInterceptor((input, output) -> {});
 
         assertEquals(3, clientContext.getAllInterceptors().size());
         assertEquals(1, clientContext.getPublishInboundInterceptors().size());
@@ -80,12 +75,9 @@ public class ClientContextImplTest {
 
     @Test
     public void test_add_remove_specific() {
-        final PublishInboundInterceptor publishInboundInterceptor = (input, output) -> {
-        };
-        final PublishOutboundInterceptor publishOutboundInterceptor = (input, output) -> {
-        };
-        final PingReqInboundInterceptor pingReqInboundInterceptor = (input, output) -> {
-        };
+        final PublishInboundInterceptor publishInboundInterceptor = (input, output) -> {};
+        final PublishOutboundInterceptor publishOutboundInterceptor = (input, output) -> {};
+        final PingReqInboundInterceptor pingReqInboundInterceptor = (input, output) -> {};
 
         clientContext.addPublishInboundInterceptor(publishInboundInterceptor);
         clientContext.addPublishOutboundInterceptor(publishOutboundInterceptor);
@@ -106,11 +98,9 @@ public class ClientContextImplTest {
 
     @Test
     public void test_add_remove_specific_subscribe() {
-        final SubscribeInboundInterceptor subscribeInboundInterceptor = (input, output) -> {
-        };
+        final SubscribeInboundInterceptor subscribeInboundInterceptor = (input, output) -> {};
 
-        clientContext.addPublishInboundInterceptor((input, output) -> {
-        });
+        clientContext.addPublishInboundInterceptor((input, output) -> {});
         clientContext.addSubscribeInboundInterceptor(subscribeInboundInterceptor);
         clientContext.removeSubscribeInboundInterceptor(subscribeInboundInterceptor);
 
@@ -121,18 +111,20 @@ public class ClientContextImplTest {
 
     @Test
     public void test_add_remove_puback_interceptors() {
-        final PubackOutboundInterceptor pubackOutboundInterceptor = (pubackOutboundInput, pubackOutboundOutput) -> {
-        };
-        final PubackInboundInterceptor pubackInboundInterceptor = (pubackInboundInput, pubackInboundOutput) -> {
-        };
+        final PubackOutboundInterceptor pubackOutboundInterceptor = (pubackOutboundInput, pubackOutboundOutput) -> {};
+        final PubackInboundInterceptor pubackInboundInterceptor = (pubackInboundInput, pubackInboundOutput) -> {};
 
         clientContext.addPubackInboundInterceptor(pubackInboundInterceptor);
         assertEquals(1, clientContext.getPubackInboundInterceptors().size());
-        assertSame(pubackInboundInterceptor, clientContext.getPubackInboundInterceptors().get(0));
+        assertSame(
+                pubackInboundInterceptor,
+                clientContext.getPubackInboundInterceptors().get(0));
 
         clientContext.addPubackOutboundInterceptor(pubackOutboundInterceptor);
         assertEquals(1, clientContext.getPubackOutboundInterceptors().size());
-        assertSame(pubackOutboundInterceptor, clientContext.getPubackOutboundInterceptors().get(0));
+        assertSame(
+                pubackOutboundInterceptor,
+                clientContext.getPubackOutboundInterceptors().get(0));
 
         assertEquals(2, clientContext.getAllInterceptors().size());
 
@@ -144,18 +136,20 @@ public class ClientContextImplTest {
 
     @Test
     public void test_add_remove_pubrec_interceptors() {
-        final PubrecOutboundInterceptor pubrecOutboundInterceptor = (pubrecOutboundInput, pubrecOutboundOutput) -> {
-        };
-        final PubrecInboundInterceptor pubrecInboundInterceptor = (pubrecInboundInput, pubrecInboundOutput) -> {
-        };
+        final PubrecOutboundInterceptor pubrecOutboundInterceptor = (pubrecOutboundInput, pubrecOutboundOutput) -> {};
+        final PubrecInboundInterceptor pubrecInboundInterceptor = (pubrecInboundInput, pubrecInboundOutput) -> {};
 
         clientContext.addPubrecInboundInterceptor(pubrecInboundInterceptor);
         assertEquals(1, clientContext.getPubrecInboundInterceptors().size());
-        assertSame(pubrecInboundInterceptor, clientContext.getPubrecInboundInterceptors().get(0));
+        assertSame(
+                pubrecInboundInterceptor,
+                clientContext.getPubrecInboundInterceptors().get(0));
 
         clientContext.addPubrecOutboundInterceptor(pubrecOutboundInterceptor);
         assertEquals(1, clientContext.getPubrecOutboundInterceptors().size());
-        assertSame(pubrecOutboundInterceptor, clientContext.getPubrecOutboundInterceptors().get(0));
+        assertSame(
+                pubrecOutboundInterceptor,
+                clientContext.getPubrecOutboundInterceptors().get(0));
 
         assertEquals(2, clientContext.getAllInterceptors().size());
 
@@ -167,18 +161,20 @@ public class ClientContextImplTest {
 
     @Test
     public void test_add_remove_pubrel_interceptors() {
-        final PubrelOutboundInterceptor pubrelOutboundInterceptor = (pubrelOutboundInput, pubrelOutboundOutput) -> {
-        };
-        final PubrelInboundInterceptor pubrelInboundInterceptor = (pubrelInboundInput, pubrelInboundOutput) -> {
-        };
+        final PubrelOutboundInterceptor pubrelOutboundInterceptor = (pubrelOutboundInput, pubrelOutboundOutput) -> {};
+        final PubrelInboundInterceptor pubrelInboundInterceptor = (pubrelInboundInput, pubrelInboundOutput) -> {};
 
         clientContext.addPubrelInboundInterceptor(pubrelInboundInterceptor);
         assertEquals(1, clientContext.getPubrelInboundInterceptors().size());
-        assertSame(pubrelInboundInterceptor, clientContext.getPubrelInboundInterceptors().get(0));
+        assertSame(
+                pubrelInboundInterceptor,
+                clientContext.getPubrelInboundInterceptors().get(0));
 
         clientContext.addPubrelOutboundInterceptor(pubrelOutboundInterceptor);
         assertEquals(1, clientContext.getPubrelOutboundInterceptors().size());
-        assertSame(pubrelOutboundInterceptor, clientContext.getPubrelOutboundInterceptors().get(0));
+        assertSame(
+                pubrelOutboundInterceptor,
+                clientContext.getPubrelOutboundInterceptors().get(0));
 
         assertEquals(2, clientContext.getAllInterceptors().size());
 
@@ -190,18 +186,21 @@ public class ClientContextImplTest {
 
     @Test
     public void test_add_remove_pubcomp_interceptors() {
-        final PubcompOutboundInterceptor pubcompOutboundInterceptor = (pubcompOutboundInput, pubcompOutboundOutput) -> {
-        };
-        final PubcompInboundInterceptor pubcompInboundInterceptor = (pubcompInboundInput, pubcompInboundOutput) -> {
-        };
+        final PubcompOutboundInterceptor pubcompOutboundInterceptor =
+                (pubcompOutboundInput, pubcompOutboundOutput) -> {};
+        final PubcompInboundInterceptor pubcompInboundInterceptor = (pubcompInboundInput, pubcompInboundOutput) -> {};
 
         clientContext.addPubcompInboundInterceptor(pubcompInboundInterceptor);
         assertEquals(1, clientContext.getPubcompInboundInterceptors().size());
-        assertSame(pubcompInboundInterceptor, clientContext.getPubcompInboundInterceptors().get(0));
+        assertSame(
+                pubcompInboundInterceptor,
+                clientContext.getPubcompInboundInterceptors().get(0));
 
         clientContext.addPubcompOutboundInterceptor(pubcompOutboundInterceptor);
         assertEquals(1, clientContext.getPubcompOutboundInterceptors().size());
-        assertSame(pubcompOutboundInterceptor, clientContext.getPubcompOutboundInterceptors().get(0));
+        assertSame(
+                pubcompOutboundInterceptor,
+                clientContext.getPubcompOutboundInterceptors().get(0));
 
         assertEquals(2, clientContext.getAllInterceptors().size());
 
@@ -213,10 +212,8 @@ public class ClientContextImplTest {
 
     @Test
     public void test_add_remove_specific_pingreq_pingresp() {
-        final PingReqInboundInterceptor pingReqInboundInterceptor = ((input, output) -> {
-        });
-        final PingRespOutboundInterceptor pingRespOutboundInterceptor = ((input, output) -> {
-        });
+        final PingReqInboundInterceptor pingReqInboundInterceptor = ((input, output) -> {});
+        final PingRespOutboundInterceptor pingRespOutboundInterceptor = ((input, output) -> {});
 
         clientContext.addPingReqInboundInterceptor(pingReqInboundInterceptor);
         clientContext.addPingRespOutboundInterceptor(pingRespOutboundInterceptor);
@@ -261,14 +258,12 @@ public class ClientContextImplTest {
         @Override
         public void onInboundPublish(
                 final @NotNull PublishInboundInput publishInboundInput,
-                final @NotNull PublishInboundOutput publishInboundOutput) {
-        }
+                final @NotNull PublishInboundOutput publishInboundOutput) {}
 
         @Override
         public void onOutboundPublish(
                 final @NotNull PublishOutboundInput publishOutboundInput,
-                final @NotNull PublishOutboundOutput publishOutboundOutput) {
-        }
+                final @NotNull PublishOutboundOutput publishOutboundOutput) {}
     }
 
     @Test
@@ -277,21 +272,20 @@ public class ClientContextImplTest {
                 TestInterceptorUtil.getIsolatedInterceptor(TestPublishInboundInterceptor.class, temporaryFolder);
         final PublishInboundInterceptor interceptor2 =
                 TestInterceptorUtil.getIsolatedInterceptor(TestPublishInboundInterceptor.class, temporaryFolder);
-        final List<? extends PublishInboundInterceptor> interceptors3And4 =
-                TestInterceptorUtil.getIsolatedInterceptors(List.of(TestPublishInboundInterceptor.class,
-                        TestPublishInboundInterceptor.class), temporaryFolder);
+        final List<? extends PublishInboundInterceptor> interceptors3And4 = TestInterceptorUtil.getIsolatedInterceptors(
+                List.of(TestPublishInboundInterceptor.class, TestPublishInboundInterceptor.class), temporaryFolder);
         final PublishInboundInterceptor interceptor3 = interceptors3And4.get(0);
         final PublishInboundInterceptor interceptor4 = interceptors3And4.get(1);
 
         final HiveMQExtension extension1 = mock(HiveMQExtension.class);
         final HiveMQExtension extension2 = mock(HiveMQExtension.class);
         final HiveMQExtension extension3 = mock(HiveMQExtension.class);
-        when(hiveMQExtensions.getExtensionForClassloader(interceptor1.getClass().getClassLoader())).thenReturn(
-                extension1);
-        when(hiveMQExtensions.getExtensionForClassloader(interceptor2.getClass().getClassLoader())).thenReturn(
-                extension2);
-        when(hiveMQExtensions.getExtensionForClassloader(interceptor3.getClass().getClassLoader())).thenReturn(
-                extension3);
+        when(hiveMQExtensions.getExtensionForClassloader(interceptor1.getClass().getClassLoader()))
+                .thenReturn(extension1);
+        when(hiveMQExtensions.getExtensionForClassloader(interceptor2.getClass().getClassLoader()))
+                .thenReturn(extension2);
+        when(hiveMQExtensions.getExtensionForClassloader(interceptor3.getClass().getClassLoader()))
+                .thenReturn(extension3);
         when(extension1.getPriority()).thenReturn(1);
         when(extension2.getPriority()).thenReturn(2);
         when(extension3.getPriority()).thenReturn(3);
@@ -321,7 +315,6 @@ public class ClientContextImplTest {
         @Override
         public void onInboundPublish(
                 final @NotNull PublishInboundInput publishInboundInput,
-                final @NotNull PublishInboundOutput publishInboundOutput) {
-        }
+                final @NotNull PublishInboundOutput publishInboundOutput) {}
     }
 }

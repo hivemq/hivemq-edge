@@ -15,14 +15,13 @@
  */
 package com.hivemq.http.sun;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.http.core.IHttpRequestResponseHandler;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-
 import java.io.IOException;
 import java.net.URI;
+import org.jetbrains.annotations.NotNull;
 
 public class SunHttpHandlerProxy implements HttpHandler {
 
@@ -39,7 +38,7 @@ public class SunHttpHandlerProxy implements HttpHandler {
         HttpConstants.METHOD method = HttpConstants.METHOD.valueOf(requestMethod);
         SunHttpRequestResponse sunHttpRequestResponse =
                 new SunHttpRequestResponse(method, requestURI, contextPath, exchange);
-//        printRequestInfo(exchange);
+        //        printRequestInfo(exchange);
         handler.handleRequest(sunHttpRequestResponse);
     }
 }

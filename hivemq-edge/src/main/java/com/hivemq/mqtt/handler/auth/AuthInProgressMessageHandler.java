@@ -17,7 +17,6 @@ package com.hivemq.mqtt.handler.auth;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.handler.connack.MqttConnacker;
 import com.hivemq.mqtt.message.auth.AUTH;
 import com.hivemq.mqtt.message.disconnect.DISCONNECT;
@@ -26,9 +25,9 @@ import com.hivemq.mqtt.message.reason.Mqtt5ConnAckReasonCode;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Georg Held
@@ -38,9 +37,9 @@ import jakarta.inject.Singleton;
 public class AuthInProgressMessageHandler extends ChannelInboundHandlerAdapter {
 
     @NotNull
-    private static final String DISCONNECT_LOG_MESSAGE = "The client with id %s and IP {} sent a message other than " +
-            "AUTH or DISCONNECT during enhanced authentication. " +
-            "This is not allowed. Disconnecting client.";
+    private static final String DISCONNECT_LOG_MESSAGE = "The client with id %s and IP {} sent a message other than "
+            + "AUTH or DISCONNECT during enhanced authentication. "
+            + "This is not allowed. Disconnecting client.";
 
     private final @NotNull MqttConnacker connacker;
 
@@ -58,8 +57,10 @@ public class AuthInProgressMessageHandler extends ChannelInboundHandlerAdapter {
             return;
         }
 
-        final String reasonString = "Client must not send a message other than AUTH or DISCONNECT during enhanced authentication";
-        final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final String reasonString =
+                "Client must not send a message other than AUTH or DISCONNECT during enhanced authentication";
+        final ClientConnection clientConnection =
+                ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         connacker.connackError(
                 ctx.channel(),
                 String.format(DISCONNECT_LOG_MESSAGE, clientConnection.getClientId()),

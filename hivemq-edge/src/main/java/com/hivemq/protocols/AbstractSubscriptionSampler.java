@@ -20,9 +20,6 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Date;
 import java.util.Objects;
 import java.util.UUID;
@@ -30,9 +27,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPollingSampler {
-
 
     private final long initialDelay;
     private final long period;
@@ -48,7 +46,6 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     protected final @NotNull AtomicBoolean closed = new AtomicBoolean(false);
     protected final @NotNull ProtocolAdapterWrapper protocolAdapter;
     protected final @NotNull EventService eventService;
-
 
     public AbstractSubscriptionSampler(
             final @NotNull ProtocolAdapterWrapper protocolAdapter, final @NotNull EventService eventService) {
@@ -84,8 +81,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
      * details of whether the sampler will continue or be removed from the scheduler along with
      * the cause of the error.
      */
-    protected void onSamplerError(
-            final @NotNull Throwable exception, final boolean continuing) {
+    protected void onSamplerError(final @NotNull Throwable exception, final boolean continuing) {
         protocolAdapter.setErrorConnectionStatus(exception, null);
         if (!continuing) {
             protocolAdapter.stopAsync(false);
@@ -173,6 +169,4 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     public int hashCode() {
         return Objects.hash(uuid);
     }
-
-
 }

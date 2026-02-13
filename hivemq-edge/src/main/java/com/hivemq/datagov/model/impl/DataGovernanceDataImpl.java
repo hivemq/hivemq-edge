@@ -16,10 +16,9 @@
 package com.hivemq.datagov.model.impl;
 
 import com.hivemq.datagov.model.DataGovernanceData;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.publish.PUBLISH;
-
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -29,8 +28,7 @@ public class DataGovernanceDataImpl implements DataGovernanceData {
     private @NotNull String clientId;
     private @NotNull PUBLISH publish;
 
-    private DataGovernanceDataImpl(
-            final @NotNull String clientId, final @NotNull PUBLISH publish) {
+    private DataGovernanceDataImpl(final @NotNull String clientId, final @NotNull PUBLISH publish) {
         this.clientId = clientId;
         this.publish = publish;
     }
@@ -86,8 +84,7 @@ public class DataGovernanceDataImpl implements DataGovernanceData {
             withPublish(data.getPublish());
         }
 
-        public Builder() {
-        }
+        public Builder() {}
 
         public Builder withClientId(final @NotNull String clientId) {
             this.clientId = clientId;

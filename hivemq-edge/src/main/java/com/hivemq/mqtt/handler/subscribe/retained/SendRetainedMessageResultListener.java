@@ -19,16 +19,15 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.pool.exception.NoMessageIdAvailableException;
 import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.util.Exceptions;
 import io.netty.channel.Channel;
+import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.TimeUnit;
 
 public class SendRetainedMessageResultListener implements FutureCallback<Void> {
 
@@ -50,7 +49,7 @@ public class SendRetainedMessageResultListener implements FutureCallback<Void> {
 
     @Override
     public void onSuccess(final @Nullable Void aVoid) {
-        //noop: everything is good
+        // noop: everything is good
     }
 
     @Override
@@ -66,20 +65,32 @@ public class SendRetainedMessageResultListener implements FutureCallback<Void> {
                 return;
             }
 
-            //retry
-            channel.eventLoop().schedule(() -> {
-                if (log.isTraceEnabled()) {
-                    log.trace("Retrying retained message for client '{}' on topic '{}'.",
-                            channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getClientId(), subscription.getTopic());
-                }
-                final ListenableFuture<Void> sentFuture =
-                        retainedMessagesSender.writeRetainedMessages(channel, subscription);
-                Futures.addCallback(sentFuture, this, channel.eventLoop());
-            }, 1, TimeUnit.SECONDS);
+            // retry
+            channel.eventLoop()
+                    .schedule(
+                            () -> {
+                                if (log.isTraceEnabled()) {
+                                    log.trace(
+                                            "Retrying retained message for client '{}' on topic '{}'.",
+                                            channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                                                    .get()
+                                                    .getClientId(),
+                                            subscription.getTopic());
+                                }
+                                final ListenableFuture<Void> sentFuture =
+                                        retainedMessagesSender.writeRetainedMessages(channel, subscription);
+                                Futures.addCallback(sentFuture, this, channel.eventLoop());
+                            },
+                            1,
+                            TimeUnit.SECONDS);
 
         } else {
-            Exceptions.rethrowError("Unable to send retained message on topic " + subscription.getTopic() +
-                    " to client " + channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getClientId() + ".", throwable);
+            Exceptions.rethrowError(
+                    "Unable to send retained message on topic " + subscription.getTopic() + " to client "
+                            + channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                                    .get()
+                                    .getClientId() + ".",
+                    throwable);
         }
     }
 }

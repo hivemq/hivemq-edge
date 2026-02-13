@@ -15,10 +15,10 @@
  */
 package com.hivemq.mqtt.message.puback;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.reason.Mqtt5PubAckReasonCode;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Waldemar Ruck
@@ -27,7 +27,6 @@ import com.hivemq.mqtt.message.reason.Mqtt5PubAckReasonCode;
 public interface Mqtt5PUBACK {
 
     Mqtt5PubAckReasonCode DEFAULT_REASON_CODE = Mqtt5PubAckReasonCode.SUCCESS;
-
 
     /**
      * @return the reason code of this PUBACK packet.

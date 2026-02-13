@@ -13,28 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions;
-
-import com.hivemq.configuration.info.SystemInformationImpl;
-import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
-import com.hivemq.extension.sdk.api.ExtensionMain;
-import com.hivemq.extension.sdk.api.parameter.ExtensionStartInput;
-import com.hivemq.extension.sdk.api.parameter.ExtensionStartOutput;
-import com.hivemq.extension.sdk.api.parameter.ExtensionStopInput;
-import com.hivemq.extension.sdk.api.parameter.ExtensionStopOutput;
-import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
-import com.hivemq.extensions.client.parameter.ServerInformationImpl;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-import org.mockito.Mockito;
-
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -53,6 +32,25 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.hivemq.configuration.info.SystemInformationImpl;
+import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
+import com.hivemq.extension.sdk.api.ExtensionMain;
+import com.hivemq.extension.sdk.api.parameter.ExtensionStartInput;
+import com.hivemq.extension.sdk.api.parameter.ExtensionStartOutput;
+import com.hivemq.extension.sdk.api.parameter.ExtensionStopInput;
+import com.hivemq.extension.sdk.api.parameter.ExtensionStopOutput;
+import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
+import com.hivemq.extensions.client.parameter.ServerInformationImpl;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.mockito.Mockito;
+
 /**
  * @author Georg Held
  */
@@ -69,6 +67,7 @@ public class HiveMQExtensionsExtensionTest extends AbstractExtensionTest {
     private @NotNull String id2;
 
     private @NotNull HiveMQExtensions hiveMQExtensions;
+
     @BeforeEach
     public void setUp() throws Exception {
         id1 = "extension1";
@@ -84,8 +83,8 @@ public class HiveMQExtensionsExtensionTest extends AbstractExtensionTest {
         when(extension1.getExtensionClassloader()).thenReturn(loader1);
         when(extension2.getExtensionClassloader()).thenReturn(loader2);
 
-        hiveMQExtensions = new HiveMQExtensions(new ServerInformationImpl(new SystemInformationImpl(),
-                listenerConfigurationService));
+        hiveMQExtensions = new HiveMQExtensions(
+                new ServerInformationImpl(new SystemInformationImpl(), listenerConfigurationService));
         hiveMQExtensions.addHiveMQExtension(extension1);
     }
 
@@ -133,7 +132,8 @@ public class HiveMQExtensionsExtensionTest extends AbstractExtensionTest {
         hiveMQExtensions.extensionStart(id1);
         assertNotNull(hiveMQExtensions.getExtensionForClassloader(loader1));
 
-        doThrow(new RuntimeException()).when(extension1)
+        doThrow(new RuntimeException())
+                .when(extension1)
                 .stop(any(ExtensionStopInput.class), any(ExtensionStopOutput.class));
 
         hiveMQExtensions.extensionStop(id1, true);
@@ -198,9 +198,11 @@ public class HiveMQExtensionsExtensionTest extends AbstractExtensionTest {
 
         final AtomicBoolean before = new AtomicBoolean(false);
         doAnswer(invocation -> {
-            before.set(extension1 == extensionStopCallback.hiveMQExtension);
-            return null;
-        }).when(extension1).stop(any(ExtensionStopInput.class), any(ExtensionStopOutput.class));
+                    before.set(extension1 == extensionStopCallback.hiveMQExtension);
+                    return null;
+                })
+                .when(extension1)
+                .stop(any(ExtensionStopInput.class), any(ExtensionStopOutput.class));
 
         hiveMQExtensions.extensionStop(id1, false);
 
@@ -220,9 +222,11 @@ public class HiveMQExtensionsExtensionTest extends AbstractExtensionTest {
 
         final AtomicBoolean before = new AtomicBoolean(false);
         doAnswer(invocation -> {
-            before.set(extension1 == extensionStopCallback.hiveMQExtension);
-            throw new IllegalStateException("test");
-        }).when(extension1).stop(any(ExtensionStopInput.class), any(ExtensionStopOutput.class));
+                    before.set(extension1 == extensionStopCallback.hiveMQExtension);
+                    throw new IllegalStateException("test");
+                })
+                .when(extension1)
+                .stop(any(ExtensionStopInput.class), any(ExtensionStopOutput.class));
 
         hiveMQExtensions.extensionStop(id1, false);
 
@@ -242,9 +246,11 @@ public class HiveMQExtensionsExtensionTest extends AbstractExtensionTest {
 
         final AtomicBoolean notBefore = new AtomicBoolean(false);
         doAnswer(invocation -> {
-            notBefore.set(extension1 != extensionStopCallback.hiveMQExtension);
-            return null;
-        }).when(extension1).stop(any(ExtensionStopInput.class), any(ExtensionStopOutput.class));
+                    notBefore.set(extension1 != extensionStopCallback.hiveMQExtension);
+                    return null;
+                })
+                .when(extension1)
+                .stop(any(ExtensionStopInput.class), any(ExtensionStopOutput.class));
 
         hiveMQExtensions.extensionStop(id1, false);
 
@@ -265,9 +271,11 @@ public class HiveMQExtensionsExtensionTest extends AbstractExtensionTest {
 
         final AtomicBoolean notBefore = new AtomicBoolean(false);
         doAnswer(invocation -> {
-            notBefore.set(extension1 != extensionStopCallback.hiveMQExtension);
-            throw new IllegalStateException("test");
-        }).when(extension1).stop(any(ExtensionStopInput.class), any(ExtensionStopOutput.class));
+                    notBefore.set(extension1 != extensionStopCallback.hiveMQExtension);
+                    throw new IllegalStateException("test");
+                })
+                .when(extension1)
+                .stop(any(ExtensionStopInput.class), any(ExtensionStopOutput.class));
 
         hiveMQExtensions.extensionStop(id1, false);
 
@@ -278,7 +286,9 @@ public class HiveMQExtensionsExtensionTest extends AbstractExtensionTest {
 
     private static class ExtensionStopCallback implements Consumer<HiveMQExtension> {
 
-        @Nullable HiveMQExtension hiveMQExtension;
+        @Nullable
+        HiveMQExtension hiveMQExtension;
+
         int count;
 
         @Override

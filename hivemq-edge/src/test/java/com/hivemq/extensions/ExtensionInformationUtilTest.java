@@ -15,26 +15,25 @@
  */
 package com.hivemq.extensions;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ClientTlsInformation;
 import com.hivemq.extension.sdk.api.client.parameter.TlsInformation;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.security.auth.SslClientCertificate;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-
 import java.math.BigInteger;
 import java.security.Principal;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 /**
  * @author Florian Limpöck
@@ -44,6 +43,7 @@ public class ExtensionInformationUtilTest {
 
     private @NotNull EmbeddedChannel channel;
     private ClientConnection clientConnection;
+
     @BeforeEach
     public void setUp() throws Exception {
         channel = new EmbeddedChannel();
@@ -72,7 +72,6 @@ public class ExtensionInformationUtilTest {
         when(clientCertificate.certificateChain()).thenReturn(chain);
 
         assertNull(ExtensionInformationUtil.getTlsInformationFromChannel(channel));
-
     }
 
     @Test
@@ -94,7 +93,6 @@ public class ExtensionInformationUtilTest {
         when(clientCertificate.certificateChain()).thenReturn(chain);
 
         assertNull(ExtensionInformationUtil.getTlsInformationFromChannel(channel));
-
     }
 
     @Test
@@ -102,7 +100,8 @@ public class ExtensionInformationUtilTest {
         clientConnection.setAuthCipherSuite("cipher");
         clientConnection.setAuthProtocol("TLSv1.2");
 
-        final ClientTlsInformation clientTlsInformation = ExtensionInformationUtil.getTlsInformationFromChannel(channel);
+        final ClientTlsInformation clientTlsInformation =
+                ExtensionInformationUtil.getTlsInformationFromChannel(channel);
         assertNotNull(clientTlsInformation);
         assertEquals("cipher", clientTlsInformation.getCipherSuite());
         assertEquals("TLSv1.2", clientTlsInformation.getProtocol());
@@ -130,7 +129,8 @@ public class ExtensionInformationUtilTest {
         when(clientCertificate.certificate()).thenReturn(testCert);
         when(clientCertificate.certificateChain()).thenReturn(chain);
 
-        final ClientTlsInformation clientTlsInformation = ExtensionInformationUtil.getTlsInformationFromChannel(channel);
+        final ClientTlsInformation clientTlsInformation =
+                ExtensionInformationUtil.getTlsInformationFromChannel(channel);
         assertNotNull(clientTlsInformation);
         assertEquals("cipher", clientTlsInformation.getCipherSuite());
         assertEquals("TLSv1.2", clientTlsInformation.getProtocol());
@@ -147,7 +147,8 @@ public class ExtensionInformationUtilTest {
         clientConnection.setAuthProtocol("TLSv1.2");
         clientConnection.setAuthSniHostname("test.hostname.domain");
 
-        final ClientTlsInformation clientTlsInformation = ExtensionInformationUtil.getTlsInformationFromChannel(channel);
+        final ClientTlsInformation clientTlsInformation =
+                ExtensionInformationUtil.getTlsInformationFromChannel(channel);
         assertNotNull(clientTlsInformation);
         assertEquals("cipher", clientTlsInformation.getCipherSuite());
         assertEquals("TLSv1.2", clientTlsInformation.getProtocol());
@@ -178,7 +179,8 @@ public class ExtensionInformationUtilTest {
         when(clientCertificate.certificate()).thenReturn(testCert);
         when(clientCertificate.certificateChain()).thenReturn(chain);
 
-        final ClientTlsInformation clientTlsInformation = ExtensionInformationUtil.getTlsInformationFromChannel(channel);
+        final ClientTlsInformation clientTlsInformation =
+                ExtensionInformationUtil.getTlsInformationFromChannel(channel);
         assertNotNull(clientTlsInformation);
         assertEquals("cipher", clientTlsInformation.getCipherSuite());
         assertEquals("TLSv1.2", clientTlsInformation.getProtocol());
@@ -189,18 +191,13 @@ public class ExtensionInformationUtilTest {
         assertNotNull(((TlsInformation) clientTlsInformation).getCertificateChain());
     }
 
-
     private class TestCert extends X509Certificate {
 
         @Override
-        public void checkValidity() {
-
-        }
+        public void checkValidity() {}
 
         @Override
-        public void checkValidity(final Date date) {
-
-        }
+        public void checkValidity(final Date date) {}
 
         @Override
         public int getVersion() {
@@ -283,14 +280,10 @@ public class ExtensionInformationUtilTest {
         }
 
         @Override
-        public void verify(final PublicKey key) {
-
-        }
+        public void verify(final PublicKey key) {}
 
         @Override
-        public void verify(final PublicKey key, final String sigProvider) {
-
-        }
+        public void verify(final PublicKey key, final String sigProvider) {}
 
         @Override
         public String toString() {
@@ -322,5 +315,4 @@ public class ExtensionInformationUtilTest {
             return new byte[0];
         }
     }
-
 }

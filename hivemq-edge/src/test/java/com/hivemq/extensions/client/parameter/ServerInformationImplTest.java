@@ -13,29 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.client.parameter;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.info.SystemInformationImpl;
 import com.hivemq.configuration.service.entity.MqttTcpListener;
-import com.hivemq.configuration.service.entity.Tls;
 import com.hivemq.configuration.service.entity.MqttTlsTcpListener;
+import com.hivemq.configuration.service.entity.Tls;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.Listener;
 import com.hivemq.extension.sdk.api.client.parameter.ListenerType;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import java.util.Iterator;
 import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @since 4.0.0
@@ -47,6 +45,7 @@ public class ServerInformationImplTest {
 
     private @NotNull ServerInformation serverInformation;
     private @NotNull SystemInformation systemInformation;
+
     @BeforeEach
     public void setUp() throws Exception {
         systemInformation = new SystemInformationImpl();
@@ -65,9 +64,10 @@ public class ServerInformationImplTest {
     @Test
     public void test_get_listeners() {
         final MqttTcpListener mqttTcpListener = new MqttTcpListener(1883, "127.0.0.1", "test", null);
-        final MqttTlsTcpListener mqttTlsTcpListener = new MqttTlsTcpListener(1883, "127.0.0.1", mock(Tls.class), "test", null);
-        when(listenerConfigurationService.getListeners()).thenReturn(ImmutableList.of(mqttTcpListener,
-                mqttTlsTcpListener));
+        final MqttTlsTcpListener mqttTlsTcpListener =
+                new MqttTlsTcpListener(1883, "127.0.0.1", mock(Tls.class), "test", null);
+        when(listenerConfigurationService.getListeners())
+                .thenReturn(ImmutableList.of(mqttTcpListener, mqttTlsTcpListener));
         final Set<Listener> listeners = serverInformation.getListener();
         final Iterator<Listener> iterator = listeners.iterator();
         final Listener first = iterator.next();

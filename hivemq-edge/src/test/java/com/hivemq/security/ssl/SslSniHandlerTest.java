@@ -15,16 +15,16 @@
  */
 package com.hivemq.security.ssl;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.Mockito.mock;
+
 import com.hivemq.bootstrap.ClientConnection;
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.mockito.Mockito.mock;
 
 /**
  * @author Christoph Schäbel
@@ -43,7 +43,9 @@ public class SslSniHandlerTest {
 
         sslSniHandler.replaceHandler(channel.pipeline().firstContext(), "abc.com", sslContext);
 
-        assertEquals("abc.com", channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getAuthSniHostname());
+        assertEquals(
+                "abc.com",
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getAuthSniHostname());
         assertSame(sslHandler, channel.pipeline().get(SslHandler.class));
     }
 }

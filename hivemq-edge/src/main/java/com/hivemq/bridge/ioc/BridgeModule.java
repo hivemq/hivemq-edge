@@ -19,17 +19,18 @@ import com.hivemq.bridge.MessageForwarder;
 import com.hivemq.bridge.MessageForwarderImpl;
 import com.hivemq.bridge.mqtt.BridgeInterceptorHandler;
 import com.hivemq.bridge.mqtt.BridgeInterceptorHandlerImpl;
-import org.jetbrains.annotations.NotNull;
 import dagger.Binds;
 import dagger.Module;
+import org.jetbrains.annotations.NotNull;
 
 @Module
 public interface BridgeModule {
 
     @Binds
-    @NotNull MessageForwarder messageForwarder(@NotNull MessageForwarderImpl messageForwarder);
+    @NotNull
+    MessageForwarder messageForwarder(@NotNull MessageForwarderImpl messageForwarder);
 
     @Binds
-    @NotNull BridgeInterceptorHandler bridgeInterceptorHandler(@NotNull BridgeInterceptorHandlerImpl bridgeInterceptorHandler);
-
+    @NotNull
+    BridgeInterceptorHandler bridgeInterceptorHandler(@NotNull BridgeInterceptorHandlerImpl bridgeInterceptorHandler);
 }

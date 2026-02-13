@@ -15,26 +15,24 @@
  */
 package com.hivemq.mqtt.message.pool;
 
-import com.google.common.collect.Lists;
-import org.jetbrains.annotations.NotNull;
-import com.hivemq.mqtt.message.pool.exception.MessageIdUnavailableException;
-import com.hivemq.mqtt.message.pool.exception.NoMessageIdAvailableException;
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.google.common.collect.Lists;
+import com.hivemq.mqtt.message.pool.exception.MessageIdUnavailableException;
+import com.hivemq.mqtt.message.pool.exception.NoMessageIdAvailableException;
+import java.util.ArrayList;
+import java.util.List;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 
 public class FreePacketIdRangesTest {
 
     @Test
-    public void takeNextId_whenTakingIdsSequentiallyAndReturning_thenSequentialIdsAreProvided() throws
-            NoMessageIdAvailableException {
+    public void takeNextId_whenTakingIdsSequentiallyAndReturning_thenSequentialIdsAreProvided()
+            throws NoMessageIdAvailableException {
 
         final List<Integer> integers = new ArrayList<>();
         final FreePacketIdRanges messageIDPool = new FreePacketIdRanges();
@@ -53,8 +51,10 @@ public class FreePacketIdRangesTest {
             integers.add(id);
         }
 
-        assertTrue(areConsecutiveMessageIds(Lists.partition(integers, FreePacketIdRanges.MAX_ALLOWED_MQTT_PACKET_ID).get(0)));
-        assertTrue(areConsecutiveMessageIds(Lists.partition(integers, FreePacketIdRanges.MAX_ALLOWED_MQTT_PACKET_ID).get(1)));
+        assertTrue(areConsecutiveMessageIds(Lists.partition(integers, FreePacketIdRanges.MAX_ALLOWED_MQTT_PACKET_ID)
+                .get(0)));
+        assertTrue(areConsecutiveMessageIds(Lists.partition(integers, FreePacketIdRanges.MAX_ALLOWED_MQTT_PACKET_ID)
+                .get(1)));
     }
 
     @Test
@@ -82,8 +82,7 @@ public class FreePacketIdRangesTest {
     }
 
     @Test
-    public void returnId_whenSingleIdIsReturned_thenOnlyThisIdIsAvailable() throws
-            NoMessageIdAvailableException {
+    public void returnId_whenSingleIdIsReturned_thenOnlyThisIdIsAvailable() throws NoMessageIdAvailableException {
 
         final FreePacketIdRanges messageIDPool = new FreePacketIdRanges();
         for (int i = 0; i < FreePacketIdRanges.MAX_ALLOWED_MQTT_PACKET_ID; i++) {
@@ -109,7 +108,7 @@ public class FreePacketIdRangesTest {
         messageIDPool.takeSpecificId(42);
         for (int i = 0; i < FreePacketIdRanges.MAX_ALLOWED_MQTT_PACKET_ID - 1; i++) {
             final int id = messageIDPool.takeNextId();
-            assertNotEquals(42, id);//since was taken directly
+            assertNotEquals(42, id); // since was taken directly
         }
     }
 
@@ -123,11 +122,11 @@ public class FreePacketIdRangesTest {
         try {
             messageIDPool.takeSpecificId(42);
         } catch (final MessageIdUnavailableException e) {
-            //ignore
+            // ignore
         }
         for (int i = 0; i < FreePacketIdRanges.MAX_ALLOWED_MQTT_PACKET_ID - 1; i++) {
             final int id = messageIDPool.takeNextId();
-            assertNotEquals(42, id);//since was taken directly
+            assertNotEquals(42, id); // since was taken directly
         }
     }
 

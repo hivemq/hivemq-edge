@@ -15,11 +15,10 @@
  */
 package com.hivemq.extensions.iteration;
 
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Christoph Schäbel
@@ -60,9 +59,9 @@ public class ResultBufferTest {
 
     @SuppressWarnings("ConstantConditions")
     private ResultBuffer<String> prepareBuffer() {
-        final Queue<ChunkResult<String>> items =
-                new ArrayDeque<>(List.of(new ChunkResult<>(List.of("1", "2"), new ChunkCursor(), false),
-                        new ChunkResult<>(List.of("3", "4"), new ChunkCursor(), true)));
+        final Queue<ChunkResult<String>> items = new ArrayDeque<>(List.of(
+                new ChunkResult<>(List.of("1", "2"), new ChunkCursor(), false),
+                new ChunkResult<>(List.of("3", "4"), new ChunkCursor(), true)));
 
         final ResultBuffer<String> resultBuffer = new ResultBuffer<>((cursor, resultBuffer1) -> {
             resultBuffer1.addChunk(items.poll());
@@ -71,5 +70,4 @@ public class ResultBufferTest {
 
         return resultBuffer;
     }
-
 }

@@ -25,9 +25,10 @@ import org.jetbrains.annotations.Nullable;
 public class OpcuaTagDefinition implements TagDefinition {
 
     @JsonProperty(value = "node", required = true)
-    @ModuleConfigField(title = "Destination Node ID",
-                       description = "identifier of the node on the OPC UA server. Example: \"ns=3;s=85/0:Temperature\"",
-                       required = true)
+    @ModuleConfigField(
+            title = "Destination Node ID",
+            description = "identifier of the node on the OPC UA server. Example: \"ns=3;s=85/0:Temperature\"",
+            required = true)
     private final @NotNull String node;
 
     @JsonCreator

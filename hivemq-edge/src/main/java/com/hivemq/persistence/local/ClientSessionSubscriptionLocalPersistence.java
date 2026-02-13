@@ -18,13 +18,12 @@ package com.hivemq.persistence.local;
 import com.google.common.collect.ImmutableSet;
 import com.hivemq.annotations.ExecuteInSingleWriter;
 import com.hivemq.annotations.ReadOnly;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extensions.iteration.BucketChunkResult;
 import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.persistence.LocalPersistence;
-
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Dominik Obermaier
@@ -52,7 +51,8 @@ public interface ClientSessionSubscriptionLocalPersistence extends LocalPersiste
      * @param bucketIndex The index of the bucket in which the subscriptions are stored.
      */
     @ExecuteInSingleWriter
-    void addSubscriptions(@NotNull String clientId, @NotNull ImmutableSet<Topic> topics, long timestamp, int bucketIndex);
+    void addSubscriptions(
+            @NotNull String clientId, @NotNull ImmutableSet<Topic> topics, long timestamp, int bucketIndex);
 
     /**
      * Remove a subscription of specific topic for a specific client from a persistence bucket.
@@ -74,7 +74,8 @@ public interface ClientSessionSubscriptionLocalPersistence extends LocalPersiste
      * @param bucketIndex The index of the bucket in which the subscriptions are stored.
      */
     @ExecuteInSingleWriter
-    void removeSubscriptions(@NotNull String clientId, @NotNull ImmutableSet<String> topics, long timestamp, int bucketIndex);
+    void removeSubscriptions(
+            @NotNull String clientId, @NotNull ImmutableSet<String> topics, long timestamp, int bucketIndex);
 
     /**
      * Remove all subscriptions for a specific client from a persistence bucket.
@@ -115,5 +116,6 @@ public interface ClientSessionSubscriptionLocalPersistence extends LocalPersiste
      * @return a {@link BucketChunkResult} with the entries and the information if more chunks are available
      */
     @NotNull
-    BucketChunkResult<Map<String, ImmutableSet<Topic>>> getAllSubscribersChunk(int bucketIndex, @Nullable String lastClientId, int maxResults);
+    BucketChunkResult<Map<String, ImmutableSet<Topic>>> getAllSubscribersChunk(
+            int bucketIndex, @Nullable String lastClientId, int maxResults);
 }

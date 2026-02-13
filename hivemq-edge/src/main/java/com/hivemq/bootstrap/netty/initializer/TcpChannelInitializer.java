@@ -15,16 +15,14 @@
  */
 package com.hivemq.bootstrap.netty.initializer;
 
-import com.hivemq.bootstrap.netty.ChannelDependencies;
-import com.hivemq.configuration.service.entity.MqttTcpListener;
-import org.jetbrains.annotations.NotNull;
-import com.hivemq.security.ssl.NonSslHandler;
-import io.netty.channel.Channel;
-
-import jakarta.inject.Provider;
-
 import static com.hivemq.bootstrap.netty.ChannelHandlerNames.NON_SSL_HANDLER;
 
+import com.hivemq.bootstrap.netty.ChannelDependencies;
+import com.hivemq.configuration.service.entity.MqttTcpListener;
+import com.hivemq.security.ssl.NonSslHandler;
+import io.netty.channel.Channel;
+import jakarta.inject.Provider;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
@@ -34,9 +32,10 @@ public class TcpChannelInitializer extends AbstractChannelInitializer<Channel> {
     @NotNull
     private final Provider<NonSslHandler> nonSslHandlerProvider;
 
-    public TcpChannelInitializer(final @NotNull ChannelDependencies channelDependencies,
-                                 final @NotNull MqttTcpListener mqttTcpListener,
-                                 final @NotNull Provider<NonSslHandler> nonSslHandlerProvider) {
+    public TcpChannelInitializer(
+            final @NotNull ChannelDependencies channelDependencies,
+            final @NotNull MqttTcpListener mqttTcpListener,
+            final @NotNull Provider<NonSslHandler> nonSslHandlerProvider) {
         super(channelDependencies, mqttTcpListener);
         this.nonSslHandlerProvider = nonSslHandlerProvider;
     }
@@ -45,5 +44,4 @@ public class TcpChannelInitializer extends AbstractChannelInitializer<Channel> {
     protected void addSpecialHandlers(final @NotNull Channel ch) {
         ch.pipeline().addFirst(NON_SSL_HANDLER, nonSslHandlerProvider.get());
     }
-
 }

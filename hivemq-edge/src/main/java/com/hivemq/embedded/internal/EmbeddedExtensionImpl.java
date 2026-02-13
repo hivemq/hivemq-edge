@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.embedded.internal;
 
 import com.hivemq.embedded.EmbeddedExtension;
@@ -85,8 +84,9 @@ class EmbeddedExtensionImpl implements EmbeddedExtension {
     @NotNull
     @Override
     public String toString() {
-        return "EmbeddedExtension{" + "id='" + id + '\'' + ", name='" + name + '\'' + ", version='" + version +
-                '\'' + ", author='" + author + '\'' + ", priority=" + priority + ", startPriority=" + startPriority +
-                ", extensionMain=" + extensionMain.getClass().getSimpleName() + '}';
+        return "EmbeddedExtension{" + "id='" + id + '\'' + ", name='" + name + '\'' + ", version='" + version + '\''
+                + ", author='" + author + '\'' + ", priority=" + priority + ", startPriority=" + startPriority
+                + ", extensionMain="
+                + extensionMain.getClass().getSimpleName() + '}';
     }
 }

@@ -17,7 +17,6 @@ package com.hivemq.extensions.handler;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
@@ -45,14 +44,14 @@ import com.hivemq.util.Exceptions;
 import com.hivemq.util.ReasonStrings;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Florian Limpöck
@@ -97,7 +96,8 @@ public class IncomingSubscribeHandler {
      */
     public void interceptOrDelegate(final @NotNull ChannelHandlerContext ctx, final @NotNull SUBSCRIBE subscribe) {
         final Channel channel = ctx.channel();
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final String clientId = clientConnection.getClientId();
         if (clientId == null) {
             return;
@@ -132,7 +132,8 @@ public class IncomingSubscribeHandler {
 
         for (final SubscribeInboundInterceptor interceptor : interceptors) {
 
-            final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(interceptor.getClass().getClassLoader());
+            final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(
+                    interceptor.getClass().getClassLoader());
             if (extension == null) { // disabled extension would be null
                 context.finishInterceptor();
                 continue;
@@ -199,19 +200,24 @@ public class IncomingSubscribeHandler {
             if (output.isPreventDelivery()) {
                 prevent(output);
             } else {
-                final SUBSCRIBE finalSubscribe = SUBSCRIBE.from(inputHolder.get().getSubscribePacket());
+                final SUBSCRIBE finalSubscribe =
+                        SUBSCRIBE.from(inputHolder.get().getSubscribePacket());
                 authorizerService.authorizeSubscriptions(ctx, finalSubscribe);
             }
         }
 
         private void prevent(final @NotNull SubscribeInboundOutputImpl output) {
             final int size = output.getSubscribePacket().getSubscriptions().size();
-            final ProtocolVersion version = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getProtocolVersion();
+            final ProtocolVersion version = ctx.channel()
+                    .attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                    .get()
+                    .getProtocolVersion();
             final List<Mqtt5SubAckReasonCode> reasonCodesBuilder = new ArrayList<>(size);
 
             // MQTT 3.1 does not support SUBACK failure codes
             if (version == ProtocolVersion.MQTTv3_1) {
-                mqttServerDisconnector.disconnect(ctx.channel(),
+                mqttServerDisconnector.disconnect(
+                        ctx.channel(),
                         null,
                         "Negative SUBSCRIBE acknowledgement for an MQTT 3.1 client is not possible; the client was disconnected instead",
                         Mqtt5DisconnectReasonCode.UNSPECIFIED_ERROR,
@@ -258,8 +264,10 @@ public class IncomingSubscribeHandler {
                 interceptor.onInboundSubscribe(input, output);
             } catch (final Throwable e) {
                 log.warn(
-                        "Uncaught exception was thrown from extension with id \"{}\" on inbound SUBSCRIBE interception. " +
-                                "Extensions are responsible for their own exception handling.", extensionId, e);
+                        "Uncaught exception was thrown from extension with id \"{}\" on inbound SUBSCRIBE interception. "
+                                + "Extensions are responsible for their own exception handling.",
+                        extensionId,
+                        e);
                 output.forciblyPreventSubscribeDelivery();
                 Exceptions.rethrowError(e);
             }

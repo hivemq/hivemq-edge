@@ -42,16 +42,6 @@ import com.hivemq.mtconnect.protocol.schemas.MtConnectSchema;
 import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.management.modelmbean.XMLParseException;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509ExtendedTrustManager;
 import java.io.StringReader;
 import java.net.Socket;
 import java.net.URI;
@@ -67,7 +57,15 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-
+import javax.management.modelmbean.XMLParseException;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509ExtendedTrustManager;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
     public static final @NotNull String NODE_SCHEMA_LOCATION = "schemaLocation";
@@ -103,7 +101,8 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
         this.adapterConfig = input.getConfig();
         this.adapterFactories = input.adapterFactories();
         this.protocolAdapterState = input.getProtocolAdapterState();
-        this.tags = input.getTags().stream().map(tag -> (MtConnectAdapterTag) tag).toList();
+        this.tags =
+                input.getTags().stream().map(tag -> (MtConnectAdapterTag) tag).toList();
         this.version = input.getVersion();
     }
 
@@ -119,8 +118,7 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
 
     @Override
     public void start(
-            final @NotNull ProtocolAdapterStartInput input,
-            final @NotNull ProtocolAdapterStartOutput output) {
+            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         try {
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.STATELESS);
             if (httpClient == null) {
@@ -150,26 +148,28 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
     @Override
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         if (httpClient == null) {
-            pollingOutput.fail(new ProtocolAdapterException(),
-                    "No response was created, because the HTTP client is null.");
+            pollingOutput.fail(
+                    new ProtocolAdapterException(), "No response was created, because the HTTP client is null.");
         } else if (tags.isEmpty()) {
             pollingOutput.fail(new ProtocolAdapterException(), "No response was created, tags are empty.");
         } else {
-            final List<CompletableFuture<MtConnectData>> pollingFutures = tags.stream().map(this::pollXml).toList();
+            final List<CompletableFuture<MtConnectData>> pollingFutures =
+                    tags.stream().map(this::pollXml).toList();
             @SuppressWarnings("unused")
-            final var unused = CompletableFuture
-                    .allOf(pollingFutures.toArray(new CompletableFuture[]{}))
+            final var unused = CompletableFuture.allOf(pollingFutures.toArray(new CompletableFuture[] {}))
                     .whenComplete((result, throwable) -> {
                         if (throwable != null) {
                             pollingOutput.fail(throwable, "Error while polling tags.");
                         } else {
-                            final List<MtConnectData> dataList = pollingFutures.stream().map(future -> {
-                                try {
-                                    return future.get();
-                                } catch (Exception e) {
-                                    return null;
-                                }
-                            }).toList();
+                            final List<MtConnectData> dataList = pollingFutures.stream()
+                                    .map(future -> {
+                                        try {
+                                            return future.get();
+                                        } catch (Exception e) {
+                                            return null;
+                                        }
+                                    })
+                                    .toList();
                             if (dataList.isEmpty()) {
                                 protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
                                 pollingOutput.fail("Polled empty list of tags.");
@@ -177,27 +177,35 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
                                 protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
                                 pollingOutput.fail("At least one completed future failed while polling tags.");
                             } else {
-                                final Optional<MtConnectData> optionalFirstFailedData =
-                                        dataList.stream().filter(data -> !data.isSuccessful()).findFirst();
-                                optionalFirstFailedData.ifPresentOrElse(data -> {
-                                    protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-                                    if (data.getErrorMessage() == null) {
-                                        data.setErrorMessage("Error while polling tag [" + data.getTagName() + "]");
-                                    }
-                                    if (data.getCause() == null) {
-                                        pollingOutput.fail(data.getErrorMessage());
-                                    } else {
-                                        pollingOutput.fail(data.getCause(), data.getErrorMessage());
-                                    }
-                                }, () -> {
-                                    final DataPointFactory dataPointFactory = adapterFactories.dataPointFactory();
-                                    dataList.stream()
-                                            .map(data -> dataPointFactory.create(data.getTagName(),
-                                                    Objects.requireNonNull(data.getJsonNode())))
-                                            .forEach(pollingOutput::addDataPoint);
-                                    protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.STATELESS);
-                                    pollingOutput.finish();
-                                });
+                                final Optional<MtConnectData> optionalFirstFailedData = dataList.stream()
+                                        .filter(data -> !data.isSuccessful())
+                                        .findFirst();
+                                optionalFirstFailedData.ifPresentOrElse(
+                                        data -> {
+                                            protocolAdapterState.setConnectionStatus(
+                                                    ProtocolAdapterState.ConnectionStatus.ERROR);
+                                            if (data.getErrorMessage() == null) {
+                                                data.setErrorMessage(
+                                                        "Error while polling tag [" + data.getTagName() + "]");
+                                            }
+                                            if (data.getCause() == null) {
+                                                pollingOutput.fail(data.getErrorMessage());
+                                            } else {
+                                                pollingOutput.fail(data.getCause(), data.getErrorMessage());
+                                            }
+                                        },
+                                        () -> {
+                                            final DataPointFactory dataPointFactory =
+                                                    adapterFactories.dataPointFactory();
+                                            dataList.stream()
+                                                    .map(data -> dataPointFactory.create(
+                                                            data.getTagName(),
+                                                            Objects.requireNonNull(data.getJsonNode())))
+                                                    .forEach(pollingOutput::addDataPoint);
+                                            protocolAdapterState.setConnectionStatus(
+                                                    ProtocolAdapterState.ConnectionStatus.STATELESS);
+                                            pollingOutput.finish();
+                                        });
                             }
                         }
                     });
@@ -211,9 +219,10 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
         builder.uri(URI.create(url));
         builder.timeout(Duration.ofSeconds(definition.getHttpConnectTimeoutSeconds()));
         builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
-        definition.getHttpHeaders()
-                .forEach(adapterHttpHeader -> builder.setHeader(adapterHttpHeader.getName(),
-                        adapterHttpHeader.getValue()));
+        definition
+                .getHttpHeaders()
+                .forEach(adapterHttpHeader ->
+                        builder.setHeader(adapterHttpHeader.getName(), adapterHttpHeader.getValue()));
         builder.GET();
         final HttpRequest httpRequest = builder.build();
         return Objects.requireNonNull(httpClient)
@@ -222,17 +231,16 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
     }
 
     protected @NotNull MtConnectData processHttpResponse(
-            final @NotNull HttpResponse<String> httpResponse,
-            final @NotNull Tag tag) {
+            final @NotNull HttpResponse<String> httpResponse, final @NotNull Tag tag) {
         final MtConnectAdapterTagDefinition definition = (MtConnectAdapterTagDefinition) tag.getDefinition();
-        final MtConnectData mtConnectData = new MtConnectData(definition.getUrl(),
-                isStatusCodeSuccessful(httpResponse.statusCode()),
-                tag.getName());
+        final MtConnectData mtConnectData = new MtConnectData(
+                definition.getUrl(), isStatusCodeSuccessful(httpResponse.statusCode()), tag.getName());
         if (mtConnectData.isSuccessful()) {
             // Let's make sure the response body is XML.
             final Optional<String> optionalContentType = httpResponse.headers().firstValue(HEADER_CONTENT_TYPE);
-            if (optionalContentType.map(value -> CONTENT_TYPE_TEXT_XML.equals(value) ||
-                    CONTENT_TYPE_APPLICATION_XML.equals(value)).orElse(false)) {
+            if (optionalContentType
+                    .map(value -> CONTENT_TYPE_TEXT_XML.equals(value) || CONTENT_TYPE_APPLICATION_XML.equals(value))
+                    .orElse(false)) {
                 try {
                     mtConnectData.setJsonNode(processXml(httpResponse.body(), definition));
                 } catch (final Exception e) {
@@ -245,17 +253,15 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
                 }
             } else {
                 mtConnectData.setSuccessful(false);
-                mtConnectData.setErrorMessage("Content type [" +
-                        optionalContentType.orElse("") +
-                        "] is not supported.");
+                mtConnectData.setErrorMessage(
+                        "Content type [" + optionalContentType.orElse("") + "] is not supported.");
             }
         }
         return mtConnectData;
     }
 
     protected @NotNull JsonNode processXml(
-            final @NotNull String body,
-            final @NotNull MtConnectAdapterTagDefinition definition)
+            final @NotNull String body, final @NotNull MtConnectAdapterTagDefinition definition)
             throws JsonProcessingException, XMLParseException, JAXBException {
         final ObjectMapper objectMapper =
                 definition.isIncludeNull() ? OBJECT_MAPPER_INCLUDE_NULL : OBJECT_MAPPER_EXCLUDE_NULL;
@@ -309,15 +315,11 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
             final X509ExtendedTrustManager trustManager = new X509ExtendedTrustManager() {
                 @Override
                 public void checkClientTrusted(
-                        final X509Certificate @NotNull [] x509Certificates,
-                        final @NotNull String s) {
-                }
+                        final X509Certificate @NotNull [] x509Certificates, final @NotNull String s) {}
 
                 @Override
                 public void checkServerTrusted(
-                        final X509Certificate @NotNull [] x509Certificates,
-                        final @NotNull String s) {
-                }
+                        final X509Certificate @NotNull [] x509Certificates, final @NotNull String s) {}
 
                 @Override
                 public X509Certificate @NotNull [] getAcceptedIssuers() {
@@ -328,31 +330,27 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
                 public void checkClientTrusted(
                         final X509Certificate @NotNull [] x509Certificates,
                         final @NotNull String s,
-                        final @NotNull Socket socket) {
-                }
+                        final @NotNull Socket socket) {}
 
                 @Override
                 public void checkServerTrusted(
                         final X509Certificate @NotNull [] x509Certificates,
                         final @NotNull String s,
-                        final @NotNull Socket socket) {
-                }
+                        final @NotNull Socket socket) {}
 
                 @Override
                 public void checkClientTrusted(
                         final X509Certificate @NotNull [] x509Certificates,
                         final @NotNull String s,
-                        final @NotNull SSLEngine sslEngine) {
-                }
+                        final @NotNull SSLEngine sslEngine) {}
 
                 @Override
                 public void checkServerTrusted(
                         final X509Certificate @NotNull [] x509Certificates,
                         final @NotNull String s,
-                        final @NotNull SSLEngine sslEngine) {
-                }
+                        final @NotNull SSLEngine sslEngine) {}
             };
-            sslContext.init(null, new TrustManager[]{trustManager}, new SecureRandom());
+            sslContext.init(null, new TrustManager[] {trustManager}, new SecureRandom());
             return sslContext;
         } catch (final NoSuchAlgorithmException | KeyManagementException e) {
             throw new RuntimeException(e);

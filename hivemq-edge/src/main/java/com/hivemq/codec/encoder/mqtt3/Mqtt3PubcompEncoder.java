@@ -17,9 +17,9 @@ package com.hivemq.codec.encoder.mqtt3;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.encoder.MqttEncoder;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.pubcomp.PUBCOMP;
 import io.netty.buffer.ByteBuf;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Dominik Obermaier
@@ -32,16 +32,14 @@ public class Mqtt3PubcompEncoder implements MqttEncoder<PUBCOMP> {
 
     @Override
     public void encode(
-            final @NotNull ClientConnection clientConnection,
-            final @NotNull PUBCOMP msg,
-            final @NotNull ByteBuf out) {
+            final @NotNull ClientConnection clientConnection, final @NotNull PUBCOMP msg, final @NotNull ByteBuf out) {
 
         if (msg.getPacketIdentifier() == 0) {
             throw new IllegalArgumentException("Message ID must not be null");
         }
 
         out.writeByte(PUBCOMP_FIXED_HEADER);
-        //The remaining length is always static for PUBCOMPs
+        // The remaining length is always static for PUBCOMPs
         out.writeByte(PUBCOMP_REMAINING_LENGTH);
 
         out.writeShort(msg.getPacketIdentifier());

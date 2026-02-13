@@ -17,6 +17,9 @@ package com.hivemq.edge.adapters.opcua.client;
 
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.SecPolicy;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
 import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
@@ -25,10 +28,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
 
 public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, Optional<EndpointDescription>> {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaEndpointFilter.class);
@@ -51,54 +50,64 @@ public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, 
 
     @Override
     public @NotNull Optional<EndpointDescription> apply(final List<EndpointDescription> endpointDescriptions) {
-        return endpointDescriptions.stream().filter(endpointDescription -> {
-            final String policyUri = endpointDescription.getSecurityPolicyUri();
+        return endpointDescriptions.stream()
+                .filter(endpointDescription -> {
+                    final String policyUri = endpointDescription.getSecurityPolicyUri();
 
-            // Filter by SecurityPolicyUri
-            if (!configPolicyUri.equals(policyUri)) {
-                return false;
-            }
-
-            // Filter by MessageSecurityMode if specified
-            if (preferredMode != null) {
-                final MessageSecurityMode endpointMode = endpointDescription.getSecurityMode();
-                if (!preferredMode.equals(endpointMode)) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Endpoint {} has mode {} but preferred mode is {}, skipping",
-                                endpointDescription.getEndpointUrl(), endpointMode, preferredMode);
+                    // Filter by SecurityPolicyUri
+                    if (!configPolicyUri.equals(policyUri)) {
+                        return false;
                     }
-                    return false;
-                }
-            }
 
-            if (policyUri.equals(SecurityPolicy.None.getUri())) {
-                return true;
-            }
-            if (adapterConfig.getTls().enabled() &&
-                    adapterConfig.getTls().keystore() != null) {
-                //if security policy is not 'None', then skip the policy if no keystore is available
-                return true;
-            }
-            log.warn("OPC UA Security policy '{}' for protocol adapter '{}' requires a keystore, cannot connect.",
-                    policyUri,
-                    adapterId);
-            return false;
-        }).min((o1, o2) -> {
-            final SecPolicy policy1 = SecPolicy.forUri(o1.getSecurityPolicyUri());
-            if (policy1 == null) {
-                return -1;
-            }
-            final SecPolicy policy2 = (o2 != null && o2.getSecurityPolicyUri() != null) ? SecPolicy.forUri(o2.getSecurityPolicyUri()) : null ;
-            if (policy2 == null) {
-                return 1;
-            }
-            return -1 * Integer.compare(policy1.getPriority(), policy2.getPriority());
-        }).map(this::endpointUpdater);
+                    // Filter by MessageSecurityMode if specified
+                    if (preferredMode != null) {
+                        final MessageSecurityMode endpointMode = endpointDescription.getSecurityMode();
+                        if (!preferredMode.equals(endpointMode)) {
+                            if (log.isDebugEnabled()) {
+                                log.debug(
+                                        "Endpoint {} has mode {} but preferred mode is {}, skipping",
+                                        endpointDescription.getEndpointUrl(),
+                                        endpointMode,
+                                        preferredMode);
+                            }
+                            return false;
+                        }
+                    }
+
+                    if (policyUri.equals(SecurityPolicy.None.getUri())) {
+                        return true;
+                    }
+                    if (adapterConfig.getTls().enabled()
+                            && adapterConfig.getTls().keystore() != null) {
+                        // if security policy is not 'None', then skip the policy if no keystore is available
+                        return true;
+                    }
+                    log.warn(
+                            "OPC UA Security policy '{}' for protocol adapter '{}' requires a keystore, cannot connect.",
+                            policyUri,
+                            adapterId);
+                    return false;
+                })
+                .min((o1, o2) -> {
+                    final SecPolicy policy1 = SecPolicy.forUri(o1.getSecurityPolicyUri());
+                    if (policy1 == null) {
+                        return -1;
+                    }
+                    final SecPolicy policy2 = (o2 != null && o2.getSecurityPolicyUri() != null)
+                            ? SecPolicy.forUri(o2.getSecurityPolicyUri())
+                            : null;
+                    if (policy2 == null) {
+                        return 1;
+                    }
+                    return -1 * Integer.compare(policy1.getPriority(), policy2.getPriority());
+                })
+                .map(this::endpointUpdater);
     }
 
     private @NotNull EndpointDescription endpointUpdater(final @NotNull EndpointDescription endpoint) {
         if (adapterConfig.getOverrideUri()) {
-            final EndpointDescription endpointDescription = EndpointUtil.updateUrl(endpoint,
+            final EndpointDescription endpointDescription = EndpointUtil.updateUrl(
+                    endpoint,
                     EndpointUtil.getHost(adapterConfig.getUri()),
                     EndpointUtil.getPort(adapterConfig.getUri()));
             log.info("Overwriting returned endpoint {} with {}", endpoint, endpointDescription);

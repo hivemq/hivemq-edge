@@ -15,13 +15,17 @@
  */
 package com.hivemq.codec.decoder.mqtt.mqtt5;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hivemq.mqtt.message.mqtt5.MessageProperties.AUTHENTICATION_DATA;
+import static com.hivemq.mqtt.message.mqtt5.MessageProperties.AUTHENTICATION_METHOD;
+import static com.hivemq.mqtt.message.mqtt5.MessageProperties.REASON_STRING;
+import static com.hivemq.mqtt.message.mqtt5.MessageProperties.USER_PROPERTY;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.decoder.mqtt.AbstractMqttDecoder;
 import com.hivemq.codec.encoder.mqtt5.MqttBinaryData;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.auth.AUTH;
@@ -31,15 +35,10 @@ import com.hivemq.mqtt.message.reason.Mqtt5AuthReasonCode;
 import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import com.hivemq.util.ReasonStrings;
 import io.netty.buffer.ByteBuf;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hivemq.mqtt.message.mqtt5.MessageProperties.AUTHENTICATION_DATA;
-import static com.hivemq.mqtt.message.mqtt5.MessageProperties.AUTHENTICATION_METHOD;
-import static com.hivemq.mqtt.message.mqtt5.MessageProperties.REASON_STRING;
-import static com.hivemq.mqtt.message.mqtt5.MessageProperties.USER_PROPERTY;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Decoder for AUTH messages.
@@ -122,7 +121,8 @@ public class Mqtt5AuthDecoder extends AbstractMqttDecoder<AUTH> {
 
             switch (propertyIdentifier) {
                 case AUTHENTICATION_METHOD:
-                    authenticationMethod = decodeAuthenticationMethod(clientConnection, buf, authenticationMethod, MessageType.AUTH);
+                    authenticationMethod =
+                            decodeAuthenticationMethod(clientConnection, buf, authenticationMethod, MessageType.AUTH);
                     if (authenticationMethod == null) {
                         return null;
                     }
@@ -140,7 +140,8 @@ public class Mqtt5AuthDecoder extends AbstractMqttDecoder<AUTH> {
                     }
                     break;
                 case USER_PROPERTY:
-                    userPropertiesBuilder = readUserProperty(clientConnection, buf, userPropertiesBuilder, MessageType.AUTH);
+                    userPropertiesBuilder =
+                            readUserProperty(clientConnection, buf, userPropertiesBuilder, MessageType.AUTH);
                     if (userPropertiesBuilder == null) {
                         return null;
                     }
@@ -184,7 +185,8 @@ public class Mqtt5AuthDecoder extends AbstractMqttDecoder<AUTH> {
         }
         authenticationData = MqttBinaryData.decode(buf);
         if (authenticationData == null) {
-            disconnector.disconnect(clientConnection.getChannel(),
+            disconnector.disconnect(
+                    clientConnection.getChannel(),
                     "A client (IP: {}) sent an AUTH with a malformed authentication data. This is not allowed. Disconnecting client.",
                     "sent an AUTH with a malformed authentication data",
                     Mqtt5DisconnectReasonCode.MALFORMED_PACKET,

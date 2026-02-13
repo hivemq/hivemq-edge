@@ -15,8 +15,9 @@
  */
 package com.hivemq.mqtt.ioc;
 
+import static com.hivemq.configuration.service.InternalConfigurations.MQTT_EVENT_EXECUTOR_THREAD_COUNT;
+
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.handler.connack.MqttConnacker;
 import com.hivemq.mqtt.handler.connack.MqttConnackerImpl;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
@@ -26,10 +27,8 @@ import dagger.Module;
 import dagger.Provides;
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import io.netty.util.concurrent.EventExecutorGroup;
-
 import jakarta.inject.Singleton;
-
-import static com.hivemq.configuration.service.InternalConfigurations.MQTT_EVENT_EXECUTOR_THREAD_COUNT;
+import org.jetbrains.annotations.NotNull;
 
 @Module
 public abstract class MQTTHandlerModule {
@@ -37,14 +36,17 @@ public abstract class MQTTHandlerModule {
     @Provides
     @Singleton
     static @NotNull EventExecutorGroup eventExecutorGroup() {
-        return new DefaultEventExecutorGroup(MQTT_EVENT_EXECUTOR_THREAD_COUNT.get(),
-                new ThreadFactoryBuilder().setNameFormat("hivemq-event-executor-%d").build());
+        return new DefaultEventExecutorGroup(
+                MQTT_EVENT_EXECUTOR_THREAD_COUNT.get(),
+                new ThreadFactoryBuilder()
+                        .setNameFormat("hivemq-event-executor-%d")
+                        .build());
     }
 
     @Binds
-    abstract @NotNull MqttServerDisconnector mqttServerDisconnector(@NotNull MqttServerDisconnectorImpl mqttServerDisconnector);
+    abstract @NotNull MqttServerDisconnector mqttServerDisconnector(
+            @NotNull MqttServerDisconnectorImpl mqttServerDisconnector);
 
     @Binds
     abstract @NotNull MqttConnacker mqttConnacker(@NotNull MqttConnackerImpl mqttConnacker);
-
 }

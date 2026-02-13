@@ -26,15 +26,12 @@ public class ApiStaticResourcePath {
     private final String uri;
     private final String path;
 
-    public ApiStaticResourcePath(
-            final @NotNull String uri,
-            final @NotNull String path) {
+    public ApiStaticResourcePath(final @NotNull String uri, final @NotNull String path) {
         Preconditions.checkNotNull(uri);
         Preconditions.checkNotNull(path);
         this.path = path;
         this.uri = uri;
     }
-
 
     public String getUri() {
         return uri;

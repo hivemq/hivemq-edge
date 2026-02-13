@@ -15,26 +15,25 @@
  */
 package com.hivemq.mqtt.handler;
 
+import static org.awaitility.Awaitility.await;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import com.hivemq.common.shutdown.ShutdownHooks;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoop;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.awaitility.Awaitility.await;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 public class KeepAliveDisconnectServiceTest {
 
@@ -44,11 +43,15 @@ public class KeepAliveDisconnectServiceTest {
     private final @NotNull MqttServerDisconnector mqttServerDisconnector = mock(MqttServerDisconnector.class);
 
     private @NotNull KeepAliveDisconnectService keepAliveDisconnectService;
+
     @BeforeEach
     public void setUp() {
         keepAliveDisconnectService = new KeepAliveDisconnectService(mqttServerDisconnector, shutdownHooks);
-        doAnswer(invocation -> null).when(mqttServerDisconnector).disconnect(channelArgumentCaptor.capture(), any(), any(), any(), any());
+        doAnswer(invocation -> null)
+                .when(mqttServerDisconnector)
+                .disconnect(channelArgumentCaptor.capture(), any(), any(), any(), any());
     }
+
     @AfterEach
     public void tearDown() {
         shutdownHooks.runShutdownHooks();
@@ -81,17 +84,20 @@ public class KeepAliveDisconnectServiceTest {
         when(channel.eventLoop()).thenReturn(eventLoop);
         final ExecutorService executorService = Executors.newFixedThreadPool(2);
         doAnswer(invocation -> {
-            final Runnable runnable = invocation.getArgument(0);
-            executorService.execute(runnable);
-            return null;
-        }).when(eventLoop).execute(any());
+                    final Runnable runnable = invocation.getArgument(0);
+                    executorService.execute(runnable);
+                    return null;
+                })
+                .when(eventLoop)
+                .execute(any());
 
         for (int i = 0; i < 10000; i++) {
             keepAliveDisconnectService.submitKeepAliveDisconnect(channel);
         }
 
         try {
-            await().pollInterval(1, TimeUnit.MILLISECONDS).timeout(30, TimeUnit.SECONDS)
+            await().pollInterval(1, TimeUnit.MILLISECONDS)
+                    .timeout(30, TimeUnit.SECONDS)
                     .until(() -> channelArgumentCaptor.getAllValues().size() == 2000);
         } finally {
             executorService.shutdown();
@@ -106,24 +112,28 @@ public class KeepAliveDisconnectServiceTest {
         when(channel.eventLoop()).thenReturn(eventLoop);
         final ExecutorService executorService = Executors.newFixedThreadPool(2);
         doAnswer(invocation -> {
-            final Runnable runnable = invocation.getArgument(0);
-            executorService.execute(runnable);
-            return null;
-        }).when(eventLoop).execute(any());
+                    final Runnable runnable = invocation.getArgument(0);
+                    executorService.execute(runnable);
+                    return null;
+                })
+                .when(eventLoop)
+                .execute(any());
 
         new Thread(() -> {
-            for (int i = 0; i < 2000; i++) {
-                keepAliveDisconnectService.submitKeepAliveDisconnect(channel);
-                try {
-                    Thread.sleep(1);
-                } catch (final InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }).start();
+                    for (int i = 0; i < 2000; i++) {
+                        keepAliveDisconnectService.submitKeepAliveDisconnect(channel);
+                        try {
+                            Thread.sleep(1);
+                        } catch (final InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                })
+                .start();
 
         try {
-            await().pollInterval(1, TimeUnit.MILLISECONDS).timeout(30, TimeUnit.SECONDS)
+            await().pollInterval(1, TimeUnit.MILLISECONDS)
+                    .timeout(30, TimeUnit.SECONDS)
                     .until(() -> channelArgumentCaptor.getAllValues().size() == 2000);
         } finally {
             executorService.shutdown();
@@ -140,30 +150,34 @@ public class KeepAliveDisconnectServiceTest {
         final AtomicInteger withoutException = new AtomicInteger(0);
         final ExecutorService executorService = Executors.newFixedThreadPool(2);
         doAnswer(invocation -> {
-            final Runnable runnable = invocation.getArgument(0);
-            if (random.nextInt(10) == 7) {
-                throw new RuntimeException();
-            } else {
-                withoutException.incrementAndGet();
-            }
+                    final Runnable runnable = invocation.getArgument(0);
+                    if (random.nextInt(10) == 7) {
+                        throw new RuntimeException();
+                    } else {
+                        withoutException.incrementAndGet();
+                    }
 
-            executorService.execute(runnable);
-            return null;
-        }).when(eventLoop).execute(any());
+                    executorService.execute(runnable);
+                    return null;
+                })
+                .when(eventLoop)
+                .execute(any());
 
         new Thread(() -> {
-            while (withoutException.get() <= 100) {
-                keepAliveDisconnectService.submitKeepAliveDisconnect(channel);
-                try {
-                    Thread.sleep(1);
-                } catch (final InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }).start();
+                    while (withoutException.get() <= 100) {
+                        keepAliveDisconnectService.submitKeepAliveDisconnect(channel);
+                        try {
+                            Thread.sleep(1);
+                        } catch (final InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                })
+                .start();
 
         try {
-            await().pollInterval(1, TimeUnit.MILLISECONDS).timeout(30, TimeUnit.SECONDS)
+            await().pollInterval(1, TimeUnit.MILLISECONDS)
+                    .timeout(30, TimeUnit.SECONDS)
                     .until(() -> channelArgumentCaptor.getAllValues().size() >= 100);
         } finally {
             executorService.shutdown();

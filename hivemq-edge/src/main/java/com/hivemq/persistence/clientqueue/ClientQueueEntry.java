@@ -15,9 +15,9 @@
  */
 package com.hivemq.persistence.clientqueue;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.MessageWithID;
 import com.hivemq.mqtt.message.publish.PUBLISH;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Lukas Brandl

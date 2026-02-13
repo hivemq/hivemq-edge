@@ -15,6 +15,8 @@
  */
 package com.hivemq.configuration.entity.adapter;
 
+import static java.util.Objects.requireNonNullElse;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,9 +28,6 @@ import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,15 +37,15 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static java.util.Objects.requireNonNullElse;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings({"FieldMayBeFinal", "unused"})
 public class ProtocolAdapterEntity implements EntityValidatable {
 
     private static final @NotNull TypeReference<Map<String, Object>> AS_MAP_TYPE_REF = new TypeReference<>() {
-        // no-op
-    };
+                // no-op
+            };
     private static final @NotNull Integer DEFAULT_CONFIG_VERSION = 1;
 
     @XmlElement(name = "adapterId", required = true)
@@ -89,9 +88,10 @@ public class ProtocolAdapterEntity implements EntityValidatable {
             final @Nullable List<TagEntity> tags) {
         this.adapterId = adapterId;
         this.protocolId = protocolId;
-        this.configVersion = configVersion != null ?
-                configVersion :
-                DEFAULT_CONFIG_VERSION; // if no config version is present, we assume it is the oldest possible version
+        this.configVersion = configVersion != null
+                ? configVersion
+                : DEFAULT_CONFIG_VERSION; // if no config version is present, we assume it is the oldest possible
+        // version
         this.config = config != null ? config : new HashMap<>();
         this.northboundMappings = northbound != null ? northbound : new ArrayList<>();
         this.southboundMappings = southbound != null ? southbound : new ArrayList<>();
@@ -99,21 +99,26 @@ public class ProtocolAdapterEntity implements EntityValidatable {
     }
 
     public static @NotNull ProtocolAdapterEntity from(
-            final @NotNull ProtocolAdapterConfig config,
-            final @NotNull ObjectMapper mapper) {
-        return new ProtocolAdapterEntity(config.getAdapterId(),
+            final @NotNull ProtocolAdapterConfig config, final @NotNull ObjectMapper mapper) {
+        return new ProtocolAdapterEntity(
+                config.getAdapterId(),
                 config.getProtocolId(),
                 config.getConfigVersion(),
                 mapper.convertValue(config.getAdapterConfig(), AS_MAP_TYPE_REF),
-                config.getNorthboundMappings().stream().map(NorthboundMappingEntity::fromPersistence).toList(),
-                config.getSouthboundMappings().stream().map(SouthboundMappingEntity::fromPersistence).toList(),
-                config.getTags().stream().map(tag -> fromAdapterTag(tag, mapper)).toList());
+                config.getNorthboundMappings().stream()
+                        .map(NorthboundMappingEntity::fromPersistence)
+                        .toList(),
+                config.getSouthboundMappings().stream()
+                        .map(SouthboundMappingEntity::fromPersistence)
+                        .toList(),
+                config.getTags().stream()
+                        .map(tag -> fromAdapterTag(tag, mapper))
+                        .toList());
     }
 
     private static TagEntity fromAdapterTag(final @NotNull Tag tag, final @NotNull ObjectMapper mapper) {
-        return new TagEntity(tag.getName(),
-                tag.getDescription(),
-                mapper.convertValue(tag.getDefinition(), AS_MAP_TYPE_REF));
+        return new TagEntity(
+                tag.getName(), tag.getDescription(), mapper.convertValue(tag.getDefinition(), AS_MAP_TYPE_REF));
     }
 
     public @NotNull String getProtocolId() {
@@ -169,17 +174,20 @@ public class ProtocolAdapterEntity implements EntityValidatable {
 
         final boolean northboundAvailable = !northboundMappings.isEmpty();
         final boolean southboundAvailable = !southboundMappings.isEmpty();
-        if ((northboundAvailable || southboundAvailable) &&
-                EntityValidatable.notEmpty(validationEvents, tags, "tags")) {
+        if ((northboundAvailable || southboundAvailable)
+                && EntityValidatable.notEmpty(validationEvents, tags, "tags")) {
 
-            final Set<String> tagNames =
-                    tags.stream().map(TagEntity::getName).filter(name -> !name.isBlank()).collect(Collectors.toSet());
+            final Set<String> tagNames = tags.stream()
+                    .map(TagEntity::getName)
+                    .filter(name -> !name.isBlank())
+                    .collect(Collectors.toSet());
 
             if (northboundAvailable) {
                 northboundMappings.forEach(from -> from.validate(validationEvents));
                 northboundMappings.stream()
                         .map(NorthboundMappingEntity::getTagName)
-                        .forEach(tagName -> EntityValidatable.notMatch(validationEvents,
+                        .forEach(tagName -> EntityValidatable.notMatch(
+                                validationEvents,
                                 () -> tagNames.contains(tagName),
                                 () -> "Tag name [" + tagName + "] in northbound mapping is not found"));
             }
@@ -188,7 +196,8 @@ public class ProtocolAdapterEntity implements EntityValidatable {
                 southboundMappings.forEach(to -> to.validate(validationEvents));
                 southboundMappings.stream()
                         .map(SouthboundMappingEntity::getTagName)
-                        .forEach(tagName -> EntityValidatable.notMatch(validationEvents,
+                        .forEach(tagName -> EntityValidatable.notMatch(
+                                validationEvents,
                                 () -> tagNames.contains(tagName),
                                 () -> "Tag name [" + tagName + "] in southbound mapping is not found"));
             }
@@ -198,13 +207,13 @@ public class ProtocolAdapterEntity implements EntityValidatable {
     @Override
     public boolean equals(final @Nullable Object o) {
         if (o instanceof final ProtocolAdapterEntity that) {
-            return Objects.equals(adapterId, that.adapterId) &&
-                    Objects.equals(protocolId, that.protocolId) &&
-                    Objects.equals(configVersion, that.configVersion) &&
-                    Objects.equals(config, that.config) &&
-                    Objects.equals(tags, that.tags) &&
-                    Objects.equals(northboundMappings, that.northboundMappings) &&
-                    Objects.equals(southboundMappings, that.southboundMappings);
+            return Objects.equals(adapterId, that.adapterId)
+                    && Objects.equals(protocolId, that.protocolId)
+                    && Objects.equals(configVersion, that.configVersion)
+                    && Objects.equals(config, that.config)
+                    && Objects.equals(tags, that.tags)
+                    && Objects.equals(northboundMappings, that.northboundMappings)
+                    && Objects.equals(southboundMappings, that.southboundMappings);
         }
         return false;
     }

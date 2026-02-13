@@ -15,10 +15,10 @@
  */
 package com.hivemq.extensions.interceptor.bridge.parameter;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 import com.hivemq.extension.sdk.api.interceptor.bridge.parameter.BridgeInboundProviderInput;
 import com.hivemq.extension.sdk.api.interceptor.bridge.parameter.BridgeInformation;
+import org.jetbrains.annotations.NotNull;
 
 public class BridgeInboundProviderInputImpl implements BridgeInboundProviderInput {
 

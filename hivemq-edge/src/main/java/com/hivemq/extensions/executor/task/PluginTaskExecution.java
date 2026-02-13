@@ -15,11 +15,10 @@
  */
 package com.hivemq.extensions.executor.task;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * This class is not thread-safe
@@ -30,10 +29,13 @@ public class PluginTaskExecution<I extends PluginTaskInput, O extends PluginTask
 
     @NotNull
     private final PluginTaskContext pluginInOutContext;
+
     @Nullable
     private final Supplier<I> pluginInputSupplier;
+
     @Nullable
     private final Supplier<O> pluginOutputSupplier;
+
     @NotNull
     private final PluginTask pluginTask;
 

@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.loader;
 
 import com.hivemq.extension.sdk.api.ExtensionMain;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStartInput;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStartOutput;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStopInput;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStopOutput;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Throws a {@link NoClassDefFoundError} when the class constructor is invoked.
@@ -33,10 +32,8 @@ public class TestConstructorThrowsErrorExtensionMain implements ExtensionMain {
     }
 
     @Override
-    public void extensionStart(final @NotNull ExtensionStartInput input, final @NotNull ExtensionStartOutput output) {
-    }
+    public void extensionStart(final @NotNull ExtensionStartInput input, final @NotNull ExtensionStartOutput output) {}
 
     @Override
-    public void extensionStop(final @NotNull ExtensionStopInput input, final @NotNull ExtensionStopOutput output) {
-    }
+    public void extensionStop(final @NotNull ExtensionStopInput input, final @NotNull ExtensionStopOutput output) {}
 }

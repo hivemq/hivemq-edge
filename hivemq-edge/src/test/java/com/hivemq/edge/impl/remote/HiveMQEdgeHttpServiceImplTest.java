@@ -15,6 +15,11 @@
  */
 package com.hivemq.edge.impl.remote;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.edge.model.HiveMQEdgeRemoteConfiguration;
@@ -22,12 +27,6 @@ import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import util.RandomPortGenerator;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -43,11 +42,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import util.RandomPortGenerator;
 
 class HiveMQEdgeHttpServiceImplTest {
 
@@ -90,7 +89,8 @@ class HiveMQEdgeHttpServiceImplTest {
         httpServer.createContext("/usage", new UsageEventHandler());
         httpServer.start();
 
-        service = new HiveMQEdgeHttpServiceImpl(EDGE_VERSION,
+        service = new HiveMQEdgeHttpServiceImpl(
+                EDGE_VERSION,
                 objectMapper,
                 "http://localhost:" + port + "/services",
                 TIMEOUT_MILLIS,
@@ -100,7 +100,8 @@ class HiveMQEdgeHttpServiceImplTest {
 
         assertTrue(waitForCondition(() -> service.isOnline(), 10000), "Service should come online");
 
-        assertTrue(waitForCondition(() -> service.getRemoteConfiguration().isPresent(), 5000),
+        assertTrue(
+                waitForCondition(() -> service.getRemoteConfiguration().isPresent(), 5000),
                 "Remote configuration should be present");
 
         final Optional<HiveMQEdgeRemoteConfiguration> config = service.getRemoteConfiguration();
@@ -119,7 +120,8 @@ class HiveMQEdgeHttpServiceImplTest {
         httpServer.createContext("/usage", new UsageEventHandler());
         httpServer.start();
 
-        service = new HiveMQEdgeHttpServiceImpl(EDGE_VERSION,
+        service = new HiveMQEdgeHttpServiceImpl(
+                EDGE_VERSION,
                 objectMapper,
                 "http://localhost:" + port + "/services",
                 TIMEOUT_MILLIS,
@@ -136,10 +138,10 @@ class HiveMQEdgeHttpServiceImplTest {
 
         assertTrue(receivedEvents.size() >= 2, "Should have received at least 2 usage events");
 
-        final boolean hasAdapterEvent =
-                receivedEvents.stream().anyMatch(e -> "ADAPTER_STARTED".equals(e.get("eventType").asText()));
-        final boolean hasBridgeEvent =
-                receivedEvents.stream().anyMatch(e -> "BRIDGE_STARTED".equals(e.get("eventType").asText()));
+        final boolean hasAdapterEvent = receivedEvents.stream()
+                .anyMatch(e -> "ADAPTER_STARTED".equals(e.get("eventType").asText()));
+        final boolean hasBridgeEvent = receivedEvents.stream()
+                .anyMatch(e -> "BRIDGE_STARTED".equals(e.get("eventType").asText()));
 
         assertTrue(hasAdapterEvent, "Should have received ADAPTER_STARTED event");
         assertTrue(hasBridgeEvent, "Should have received BRIDGE_STARTED event");
@@ -159,7 +161,8 @@ class HiveMQEdgeHttpServiceImplTest {
         httpServer.createContext("/usage", new UsageEventHandler());
         httpServer.start();
 
-        service = new HiveMQEdgeHttpServiceImpl(EDGE_VERSION,
+        service = new HiveMQEdgeHttpServiceImpl(
+                EDGE_VERSION,
                 objectMapper,
                 "http://localhost:" + port + "/services",
                 TIMEOUT_MILLIS,
@@ -186,7 +189,8 @@ class HiveMQEdgeHttpServiceImplTest {
         httpServer.createContext("/usage", new UsageEventHandler());
         httpServer.start();
 
-        service = new HiveMQEdgeHttpServiceImpl(EDGE_VERSION,
+        service = new HiveMQEdgeHttpServiceImpl(
+                EDGE_VERSION,
                 objectMapper,
                 "http://localhost:" + port + "/services",
                 TIMEOUT_MILLIS,
@@ -198,8 +202,8 @@ class HiveMQEdgeHttpServiceImplTest {
 
         assertTrue(eventLatch.await(10, TimeUnit.SECONDS), "Queued event should be sent once online");
 
-        final boolean hasAdapterEvent =
-                receivedEvents.stream().anyMatch(e -> "ADAPTER_STARTED".equals(e.get("eventType").asText()));
+        final boolean hasAdapterEvent = receivedEvents.stream()
+                .anyMatch(e -> "ADAPTER_STARTED".equals(e.get("eventType").asText()));
         assertTrue(hasAdapterEvent, "Queued ADAPTER_STARTED event should have been sent");
     }
 
@@ -213,7 +217,8 @@ class HiveMQEdgeHttpServiceImplTest {
         httpServer.createContext("/usage", new UsageEventHandler());
         httpServer.start();
 
-        service = new HiveMQEdgeHttpServiceImpl(EDGE_VERSION,
+        service = new HiveMQEdgeHttpServiceImpl(
+                EDGE_VERSION,
                 objectMapper,
                 "http://localhost:" + port + "/services",
                 TIMEOUT_MILLIS,
@@ -268,7 +273,8 @@ class HiveMQEdgeHttpServiceImplTest {
             localServer.createContext("/usage", exchange -> exchange.sendResponseHeaders(200, -1));
             localServer.start();
 
-            final HiveMQEdgeHttpServiceImpl localService = new HiveMQEdgeHttpServiceImpl(EDGE_VERSION,
+            final HiveMQEdgeHttpServiceImpl localService = new HiveMQEdgeHttpServiceImpl(
+                    EDGE_VERSION,
                     objectMapper,
                     "http://localhost:" + localPort + "/services",
                     TIMEOUT_MILLIS,
@@ -311,11 +317,11 @@ class HiveMQEdgeHttpServiceImplTest {
             }
         }
 
-        assertEquals(0,
+        assertEquals(
+                0,
                 failures.get(),
-                "Configuration should be cleared after stop in all iterations, but failed " +
-                        failures.get() +
-                        " times");
+                "Configuration should be cleared after stop in all iterations, but failed " + failures.get()
+                        + " times");
     }
 
     @Test
@@ -329,7 +335,8 @@ class HiveMQEdgeHttpServiceImplTest {
         httpServer.createContext("/usage", new UsageEventHandler());
         httpServer.start();
 
-        service = new HiveMQEdgeHttpServiceImpl(EDGE_VERSION,
+        service = new HiveMQEdgeHttpServiceImpl(
+                EDGE_VERSION,
                 objectMapper,
                 "http://localhost:" + port + "/services",
                 TIMEOUT_MILLIS,
@@ -360,7 +367,8 @@ class HiveMQEdgeHttpServiceImplTest {
         httpServer.createContext("/usage", new UsageEventHandler());
         httpServer.start();
 
-        service = new HiveMQEdgeHttpServiceImpl(EDGE_VERSION,
+        service = new HiveMQEdgeHttpServiceImpl(
+                EDGE_VERSION,
                 objectMapper,
                 "http://localhost:" + port + "/services",
                 TIMEOUT_MILLIS,

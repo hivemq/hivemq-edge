@@ -15,11 +15,12 @@
  */
 package com.hivemq.extensions.packets.publish;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.ImmutableIntArray;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.annotations.ThreadSafe;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.packets.publish.ModifiablePublishPacket;
@@ -28,14 +29,12 @@ import com.hivemq.extensions.packets.general.ModifiableUserPropertiesImpl;
 import com.hivemq.extensions.services.builder.PluginBuilderUtil;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.util.Topics;
-
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -45,18 +44,36 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @ThreadSafe
 public class ModifiablePublishPacketImpl implements ModifiablePublishPacket {
 
-    @NotNull String topic;
-    @NotNull Qos qos;
-    @NotNull Qos onwardQos;
+    @NotNull
+    String topic;
+
+    @NotNull
+    Qos qos;
+
+    @NotNull
+    Qos onwardQos;
+
     final int packetId;
     final boolean dupFlag;
-    @Nullable ByteBuffer payload;
+
+    @Nullable
+    ByteBuffer payload;
+
     boolean retain;
     long messageExpiryInterval;
-    @Nullable PayloadFormatIndicator payloadFormatIndicator;
-    @Nullable String contentType;
-    @Nullable String responseTopic;
-    @Nullable ByteBuffer correlationData;
+
+    @Nullable
+    PayloadFormatIndicator payloadFormatIndicator;
+
+    @Nullable
+    String contentType;
+
+    @Nullable
+    String responseTopic;
+
+    @Nullable
+    ByteBuffer correlationData;
+
     final @NotNull ImmutableIntArray subscriptionIdentifiers;
     final @NotNull ModifiableUserPropertiesImpl userProperties;
     final long timestamp;
@@ -65,8 +82,7 @@ public class ModifiablePublishPacketImpl implements ModifiablePublishPacket {
     boolean modified = false;
 
     public ModifiablePublishPacketImpl(
-            final @NotNull PublishPacketImpl packet,
-            final @NotNull ConfigurationService configurationService) {
+            final @NotNull PublishPacketImpl packet, final @NotNull ConfigurationService configurationService) {
 
         this.topic = packet.topic;
         this.qos = packet.qos;
@@ -82,7 +98,8 @@ public class ModifiablePublishPacketImpl implements ModifiablePublishPacket {
         this.correlationData = packet.correlationData;
         this.subscriptionIdentifiers = packet.subscriptionIdentifiers;
         this.userProperties = new ModifiableUserPropertiesImpl(
-                packet.userProperties.asInternalList(), configurationService.securityConfiguration().validateUTF8());
+                packet.userProperties.asInternalList(),
+                configurationService.securityConfiguration().validateUTF8());
         this.timestamp = packet.timestamp;
 
         this.configurationService = configurationService;
@@ -97,16 +114,19 @@ public class ModifiablePublishPacketImpl implements ModifiablePublishPacket {
     public void setTopic(final @NotNull String topic) {
         checkNotNull(topic, "Topic must not be null");
         checkArgument(
-                topic.length() <= configurationService.restrictionsConfiguration().maxTopicLength(),
-                "Topic filter length must not exceed '" +
-                        configurationService.restrictionsConfiguration().maxTopicLength() + "' characters, but has '" +
-                        topic.length() + "' characters");
+                topic.length()
+                        <= configurationService.restrictionsConfiguration().maxTopicLength(),
+                "Topic filter length must not exceed '"
+                        + configurationService.restrictionsConfiguration().maxTopicLength()
+                        + "' characters, but has '" + topic.length()
+                        + "' characters");
 
         if (!Topics.isValidTopicToPublish(topic)) {
             throw new IllegalArgumentException("The topic (" + topic + ") is invalid for PUBLISH messages");
         }
 
-        if (!PluginBuilderUtil.isValidUtf8String(topic, configurationService.securityConfiguration().validateUTF8())) {
+        if (!PluginBuilderUtil.isValidUtf8String(
+                topic, configurationService.securityConfiguration().validateUTF8())) {
             throw new IllegalArgumentException("The topic (" + topic + ") is UTF-8 malformed");
         }
 
@@ -124,7 +144,8 @@ public class ModifiablePublishPacketImpl implements ModifiablePublishPacket {
 
     @Override
     public void setQos(final @NotNull Qos qos) {
-        PluginBuilderUtil.checkQos(qos, configurationService.mqttConfiguration().maximumQos().getQosNumber());
+        PluginBuilderUtil.checkQos(
+                qos, configurationService.mqttConfiguration().maximumQos().getQosNumber());
         if (qos.getQosNumber() == this.onwardQos.getQosNumber()) {
             return;
         }
@@ -219,7 +240,8 @@ public class ModifiablePublishPacketImpl implements ModifiablePublishPacket {
 
     @Override
     public void setContentType(final @Nullable String contentType) {
-        PluginBuilderUtil.checkContentType(contentType, configurationService.securityConfiguration().validateUTF8());
+        PluginBuilderUtil.checkContentType(
+                contentType, configurationService.securityConfiguration().validateUTF8());
         if (Objects.equals(this.contentType, contentType)) {
             return;
         }
@@ -277,9 +299,22 @@ public class ModifiablePublishPacketImpl implements ModifiablePublishPacket {
     }
 
     public @NotNull PublishPacketImpl copy() {
-        return new PublishPacketImpl(topic, qos, onwardQos, packetId, dupFlag, payload, retain, messageExpiryInterval,
-                payloadFormatIndicator, contentType, responseTopic, correlationData, subscriptionIdentifiers,
-                userProperties.copy(), timestamp);
+        return new PublishPacketImpl(
+                topic,
+                qos,
+                onwardQos,
+                packetId,
+                dupFlag,
+                payload,
+                retain,
+                messageExpiryInterval,
+                payloadFormatIndicator,
+                contentType,
+                responseTopic,
+                correlationData,
+                subscriptionIdentifiers,
+                userProperties.copy(),
+                timestamp);
     }
 
     public @NotNull ModifiablePublishPacketImpl update(final @NotNull PublishPacketImpl packet) {
@@ -295,22 +330,22 @@ public class ModifiablePublishPacketImpl implements ModifiablePublishPacket {
             return false;
         }
         final ModifiablePublishPacketImpl that = (ModifiablePublishPacketImpl) o;
-        return that.canEqual(this) &&
-                topic.equals(that.topic) &&
-                (qos == that.qos) &&
-                (onwardQos == that.onwardQos) &&
-                (packetId == that.packetId) &&
-                (dupFlag == that.dupFlag) &&
-                Objects.equals(payload, that.payload) &&
-                (retain == that.retain) &&
-                (messageExpiryInterval == that.messageExpiryInterval) &&
-                (payloadFormatIndicator == that.payloadFormatIndicator) &&
-                Objects.equals(contentType, that.contentType) &&
-                Objects.equals(responseTopic, that.responseTopic) &&
-                Objects.equals(correlationData, that.correlationData) &&
-                subscriptionIdentifiers.equals(that.subscriptionIdentifiers) &&
-                userProperties.equals(that.userProperties) &&
-                timestamp == that.timestamp;
+        return that.canEqual(this)
+                && topic.equals(that.topic)
+                && (qos == that.qos)
+                && (onwardQos == that.onwardQos)
+                && (packetId == that.packetId)
+                && (dupFlag == that.dupFlag)
+                && Objects.equals(payload, that.payload)
+                && (retain == that.retain)
+                && (messageExpiryInterval == that.messageExpiryInterval)
+                && (payloadFormatIndicator == that.payloadFormatIndicator)
+                && Objects.equals(contentType, that.contentType)
+                && Objects.equals(responseTopic, that.responseTopic)
+                && Objects.equals(correlationData, that.correlationData)
+                && subscriptionIdentifiers.equals(that.subscriptionIdentifiers)
+                && userProperties.equals(that.userProperties)
+                && timestamp == that.timestamp;
     }
 
     protected boolean canEqual(final @Nullable Object o) {
@@ -319,8 +354,21 @@ public class ModifiablePublishPacketImpl implements ModifiablePublishPacket {
 
     @Override
     public int hashCode() {
-        return Objects.hash(topic, qos, onwardQos, packetId, dupFlag, payload, retain, messageExpiryInterval,
-                payloadFormatIndicator, contentType, responseTopic, correlationData, subscriptionIdentifiers,
-                userProperties, timestamp);
+        return Objects.hash(
+                topic,
+                qos,
+                onwardQos,
+                packetId,
+                dupFlag,
+                payload,
+                retain,
+                messageExpiryInterval,
+                payloadFormatIndicator,
+                contentType,
+                responseTopic,
+                correlationData,
+                subscriptionIdentifiers,
+                userProperties,
+                timestamp);
     }
 }

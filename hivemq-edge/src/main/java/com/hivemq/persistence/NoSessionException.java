@@ -29,6 +29,5 @@ public class NoSessionException extends RuntimeException {
         INSTANCE.setStackTrace(new StackTraceElement[0]);
     }
 
-    private NoSessionException() {
-    }
+    private NoSessionException() {}
 }

@@ -16,10 +16,9 @@
 package com.hivemq.configuration.service.impl;
 
 import com.hivemq.configuration.service.SecurityConfigurationService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author Florian Limpöck
@@ -29,10 +28,12 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
 
     private static final Logger log = LoggerFactory.getLogger(SecurityConfigurationServiceImpl.class);
 
-    private final AtomicBoolean allowServerAssignedClientId = new AtomicBoolean(ALLOW_SERVER_ASSIGNED_CLIENT_ID_DEFAULT);
+    private final AtomicBoolean allowServerAssignedClientId =
+            new AtomicBoolean(ALLOW_SERVER_ASSIGNED_CLIENT_ID_DEFAULT);
     private final AtomicBoolean validateUTF8 = new AtomicBoolean(VALIDATE_UTF_8_DEFAULT);
     private final AtomicBoolean payloadFormatValidation = new AtomicBoolean(PAYLOAD_FORMAT_VALIDATION_DEFAULT);
-    private final AtomicBoolean allowRequestProblemInformation = new AtomicBoolean(ALLOW_REQUEST_PROBLEM_INFORMATION_DEFAULT);
+    private final AtomicBoolean allowRequestProblemInformation =
+            new AtomicBoolean(ALLOW_REQUEST_PROBLEM_INFORMATION_DEFAULT);
 
     @Override
     public boolean allowServerAssignedClientId() {

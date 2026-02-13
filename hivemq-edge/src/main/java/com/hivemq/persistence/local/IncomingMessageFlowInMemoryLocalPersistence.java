@@ -16,14 +16,13 @@
 package com.hivemq.persistence.local;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.MessageWithID;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * This is an in-memory on-heap implementation of the
@@ -38,16 +37,13 @@ import java.util.concurrent.ConcurrentHashMap;
 @Singleton
 public class IncomingMessageFlowInMemoryLocalPersistence implements IncomingMessageFlowLocalPersistence {
 
-
     private final ConcurrentHashMap<MessageFlowKey, MessageWithID> backingMap = new ConcurrentHashMap<>();
 
     @Inject
-    public IncomingMessageFlowInMemoryLocalPersistence() {
-    }
+    public IncomingMessageFlowInMemoryLocalPersistence() {}
 
     @Override
-    public void closeDB() {
-    }
+    public void closeDB() {}
 
     @Override
     @Nullable
@@ -88,14 +84,13 @@ public class IncomingMessageFlowInMemoryLocalPersistence implements IncomingMess
         }
     }
 
-
     @Immutable
     static class MessageFlowKey {
 
         private final String clientId;
 
-        //We only need the message ID for hashing, so we don't provide
-        //any access to it
+        // We only need the message ID for hashing, so we don't provide
+        // any access to it
         private final int messageId;
 
         public MessageFlowKey(final @NotNull String clientId, final int messageId) {
@@ -107,7 +102,6 @@ public class IncomingMessageFlowInMemoryLocalPersistence implements IncomingMess
             return clientId;
         }
 
-
         @Override
         public boolean equals(final Object o) {
             if (this == o) return true;
@@ -117,7 +111,6 @@ public class IncomingMessageFlowInMemoryLocalPersistence implements IncomingMess
 
             if (messageId != that.messageId) return false;
             return clientId.equals(that.clientId);
-
         }
 
         @Override

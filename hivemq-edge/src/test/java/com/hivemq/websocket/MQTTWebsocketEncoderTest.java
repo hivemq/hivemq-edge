@@ -15,15 +15,14 @@
  */
 package com.hivemq.websocket;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.jupiter.api.Test;
-
 import java.util.ArrayList;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Florian Limpöck
@@ -40,13 +39,11 @@ public class MQTTWebsocketEncoderTest {
         final ChannelHandlerContext channelHandlerContext = channel.pipeline().context(mqttWebsocketEncoder);
 
         final ByteBuf buffer = Unpooled.buffer();
-        buffer.writeBytes(new byte[]{1, 2, 3, 4, 5});
+        buffer.writeBytes(new byte[] {1, 2, 3, 4, 5});
 
         final ArrayList<Object> out = new ArrayList<>();
         mqttWebsocketEncoder.encode(channelHandlerContext, buffer, out);
 
         assertEquals(1, out.size());
-
-
     }
 }

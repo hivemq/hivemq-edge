@@ -15,6 +15,20 @@
  */
 package util;
 
+import java.math.BigInteger;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.Security;
+import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.RSAPrivateCrtKeySpec;
+import java.security.spec.RSAPublicKeySpec;
+import java.util.Date;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
@@ -61,36 +75,22 @@ import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.math.BigInteger;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.Security;
-import java.security.cert.X509Certificate;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.RSAPrivateCrtKeySpec;
-import java.security.spec.RSAPublicKeySpec;
-import java.util.Date;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-
 public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEachCallback {
 
     public static final @NotNull String NS_URI = "urn:hivemq:edge:opcua:test";
 
-    private static final @NotNull GeneralNames SUBJECT_ALTERNATIVE_NAME = new GeneralNames(new GeneralName[]{
-            new GeneralName(GeneralName.uniformResourceIdentifier, EmbeddedOpcUaServerExtension.NS_URI)});
+    private static final @NotNull GeneralNames SUBJECT_ALTERNATIVE_NAME = new GeneralNames(new GeneralName[] {
+        new GeneralName(GeneralName.uniformResourceIdentifier, EmbeddedOpcUaServerExtension.NS_URI)
+    });
     private static final @NotNull String SERVER_PATH = "/opcua/test";
     private static final @NotNull String BIND_ADDRESS = "127.0.0.1";
     private static final @NotNull String USERNAME = "testuser";
     private static final @NotNull String PASSWORD = "testpass";
-    private static final @NotNull IdentityValidator IDENTITY_VALIDATOR =
-            new CompositeValidator(new AnonymousIdentityValidator(),
-                    new UsernameIdentityValidator(auth -> USERNAME.equals(auth.getUsername()) &&
-                            PASSWORD.equals(auth.getPassword())),
-                    new X509IdentityValidator(cert -> true));
+    private static final @NotNull IdentityValidator IDENTITY_VALIDATOR = new CompositeValidator(
+            new AnonymousIdentityValidator(),
+            new UsernameIdentityValidator(
+                    auth -> USERNAME.equals(auth.getUsername()) && PASSWORD.equals(auth.getPassword())),
+            new X509IdentityValidator(cert -> true));
     private static final @NotNull List<SecurityPolicy> SECURITY_POLICIES =
             List.of(SecurityPolicy.None, SecurityPolicy.Basic256Sha256, SecurityPolicy.Aes256_Sha256_RsaPss);
 
@@ -104,8 +104,9 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
     private @Nullable TestNamespace testNamespace;
 
     private static @NotNull X509Certificate generateServerCertificate(final KeyPair keyPair) throws Exception {
-        final JcaX509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(new X500Name(
-                "CN=Test commonName, C=DE, O=Test organization, OU=Test Unit, T=Test Title, L=Test locality, ST=Test state"),
+        final JcaX509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(
+                new X500Name(
+                        "CN=Test commonName, C=DE, O=Test organization, OU=Test Unit, T=Test Title, L=Test locality, ST=Test state"),
                 BigInteger.valueOf(123456789),
                 new Date(System.currentTimeMillis() - 10000),
                 new Date(System.currentTimeMillis() + 10000),
@@ -113,10 +114,11 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
                         "CN=Test commonName, C=DE, O=Test organization, OU=Test Unit, T=Test Title, L=Test locality, ST=Test state"),
                 keyPair.getPublic());
         certificateBuilder.addExtension(Extension.subjectAlternativeName, false, SUBJECT_ALTERNATIVE_NAME);
-        final ContentSigner contentSigner =
-                new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BouncyCastleProvider.PROVIDER_NAME)
-                        .build(keyPair.getPrivate());
-        return new JcaX509CertificateConverter().setProvider(BouncyCastleProvider.PROVIDER_NAME)
+        final ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256WithRSAEncryption")
+                .setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                .build(keyPair.getPrivate());
+        return new JcaX509CertificateConverter()
+                .setProvider(BouncyCastleProvider.PROVIDER_NAME)
                 .getCertificate(certificateBuilder.build(contentSigner));
     }
 
@@ -127,9 +129,10 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
         final RSAKeyParameters publicKey = (RSAKeyParameters) keypair.getPublic();
         final RSAPrivateCrtKeyParameters privateKey = (RSAPrivateCrtKeyParameters) keypair.getPrivate();
         final KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-        return new KeyPair(keyFactory.generatePublic(new RSAPublicKeySpec(publicKey.getModulus(),
-                publicKey.getExponent())),
-                keyFactory.generatePrivate(new RSAPrivateCrtKeySpec(publicKey.getModulus(),
+        return new KeyPair(
+                keyFactory.generatePublic(new RSAPublicKeySpec(publicKey.getModulus(), publicKey.getExponent())),
+                keyFactory.generatePrivate(new RSAPrivateCrtKeySpec(
+                        publicKey.getModulus(),
                         publicKey.getExponent(),
                         privateKey.getExponent(),
                         privateKey.getP(),
@@ -153,17 +156,20 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
                 .setIdentityValidator(IDENTITY_VALIDATOR)
                 .setApplicationName(LocalizedText.english("HiveMQ OPC UA Test Server"))
                 .setProductUri(NS_URI)
-                .setBuildInfo(new BuildInfo(NS_URI,
+                .setBuildInfo(new BuildInfo(
+                        NS_URI,
                         "HiveMQ",
                         EmbeddedOpcUaServerExtension.class.getSimpleName(),
                         OpcUaServer.SDK_VERSION,
                         "",
                         DateTime.now()))
                 .setApplicationUri(CertificateUtil.getSanUri(certificate)
-                        .orElseThrow(() -> new UaRuntimeException(StatusCodes.Bad_ConfigurationError,
-                                "certificate is missing the application URI")))
-                .setCertificateManager(new DefaultCertificateManager(quarantine,
-                        DefaultApplicationGroup.createAndInitialize(trustManager,
+                        .orElseThrow(() -> new UaRuntimeException(
+                                StatusCodes.Bad_ConfigurationError, "certificate is missing the application URI")))
+                .setCertificateManager(new DefaultCertificateManager(
+                        quarantine,
+                        DefaultApplicationGroup.createAndInitialize(
+                                trustManager,
                                 new MemoryCertificateStore(),
                                 new RsaSha256CertificateFactory() {
                                     @Override
@@ -172,9 +178,11 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
                                     }
 
                                     @Override
-                                    protected @NotNull X509Certificate @NotNull [] createRsaSha256CertificateChain(final @NotNull KeyPair keyPair) {
-                                        // For a self-signed certificate, the chain consists of just the certificate itself
-                                        return new X509Certificate[]{certificate};
+                                    protected @NotNull X509Certificate @NotNull [] createRsaSha256CertificateChain(
+                                            final @NotNull KeyPair keyPair) {
+                                        // For a self-signed certificate, the chain consists of just the certificate
+                                        // itself
+                                        return new X509Certificate[] {certificate};
                                     }
                                 },
                                 new DefaultServerCertificateValidator(trustManager, quarantine))))
@@ -184,7 +192,8 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
             if (transport != TransportProfile.TCP_UASC_UABINARY) {
                 throw new RuntimeException("unexpected TransportProfile: " + transport);
             }
-            return new OpcTcpServerTransport(OpcTcpServerTransportConfig.newBuilder().build());
+            return new OpcTcpServerTransport(
+                    OpcTcpServerTransportConfig.newBuilder().build());
         });
         testNamespace = new TestNamespace(opcUaServer);
         testNamespace.startup();
@@ -196,12 +205,10 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
         if (testNamespace != null) {
             testNamespace.shutdown();
             testNamespace = null;
-
         }
         if (opcUaServer != null) {
             opcUaServer.shutdown().get();
             opcUaServer = null;
-
         }
     }
 
@@ -221,7 +228,8 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
                 .setHostname(BIND_ADDRESS)
                 .setPath(SERVER_PATH)
                 .setCertificate(certificate)
-                .addTokenPolicies(OpcUaServerConfig.USER_TOKEN_POLICY_ANONYMOUS,
+                .addTokenPolicies(
+                        OpcUaServerConfig.USER_TOKEN_POLICY_ANONYMOUS,
                         OpcUaServerConfig.USER_TOKEN_POLICY_USERNAME,
                         OpcUaServerConfig.USER_TOKEN_POLICY_X509);
 

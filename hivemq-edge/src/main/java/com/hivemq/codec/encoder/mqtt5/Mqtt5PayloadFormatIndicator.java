@@ -15,9 +15,9 @@
  */
 package com.hivemq.codec.encoder.mqtt5;
 
+import com.hivemq.extension.sdk.api.packets.publish.PayloadFormatIndicator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.extension.sdk.api.packets.publish.PayloadFormatIndicator;
 
 /**
  * Payload Format Indicator according to the MQTT 5 specification.
@@ -25,7 +25,6 @@ import com.hivemq.extension.sdk.api.packets.publish.PayloadFormatIndicator;
  * @author Silvio Giebl
  */
 public enum Mqtt5PayloadFormatIndicator {
-
     UNSPECIFIED,
     UTF_8;
 

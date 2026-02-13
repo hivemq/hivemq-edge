@@ -15,7 +15,6 @@
  */
 package com.hivemq.mqtt.message.suback;
 
-
 import com.google.common.collect.ImmutableList;
 import com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode;
 

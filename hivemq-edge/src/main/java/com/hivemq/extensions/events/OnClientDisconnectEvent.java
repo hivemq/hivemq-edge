@@ -15,9 +15,9 @@
  */
 package com.hivemq.extensions.events;
 
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.general.DisconnectedReasonCode;
 import com.hivemq.extension.sdk.api.packets.general.UserProperties;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The event to fire when a client disconnects gracefully or ungracefully.

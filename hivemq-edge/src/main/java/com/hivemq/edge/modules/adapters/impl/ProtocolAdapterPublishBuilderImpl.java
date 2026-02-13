@@ -15,6 +15,8 @@
  */
 package com.hivemq.edge.modules.adapters.impl;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
@@ -22,17 +24,14 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
 import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.mqtt.handler.publish.PublishingResult;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
-
 import java.util.concurrent.CompletableFuture;
-
-import static java.util.Objects.requireNonNull;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ProtocolAdapterPublishBuilderImpl implements ProtocolAdapterPublishBuilder {
 
@@ -44,8 +43,7 @@ public class ProtocolAdapterPublishBuilderImpl implements ProtocolAdapterPublish
     private final ImmutableMap.Builder<String, String> dynamicContext = ImmutableMap.builder();
     private @Nullable ProtocolAdapter adapter;
 
-    public ProtocolAdapterPublishBuilderImpl(
-            final @NotNull String hivemqId, final @NotNull SendCallback sendCallback) {
+    public ProtocolAdapterPublishBuilderImpl(final @NotNull String hivemqId, final @NotNull SendCallback sendCallback) {
         this.hivemqId = hivemqId;
         this.sendCallback = sendCallback;
     }
@@ -120,7 +118,8 @@ public class ProtocolAdapterPublishBuilderImpl implements ProtocolAdapterPublish
     }
 
     public interface SendCallback {
-        @NotNull CompletableFuture<PublishingResult> onPublishSend(
+        @NotNull
+        CompletableFuture<PublishingResult> onPublishSend(
                 final @NotNull PUBLISH publish,
                 final @NotNull ProtocolAdapter protocolAdapter,
                 final @NotNull ImmutableMap<String, String> dynamicContext);

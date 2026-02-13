@@ -45,19 +45,8 @@ import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
 import com.hivemq.edge.adapters.opcua.southbound.JsonSchemaGenerator;
 import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverter;
 import com.hivemq.edge.adapters.opcua.southbound.OpcUaPayload;
-import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
-import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
-import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
-import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.VisibleForTesting;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -70,6 +59,15 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
+import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
@@ -116,7 +114,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         this.protocolAdapterMetricsService = input.getProtocolAdapterMetricsHelper();
         this.config = input.getConfig();
         this.opcUaClientConnection = new AtomicReference<>();
-        this.opcUaServiceFaultListener = new OpcUaServiceFaultListener(protocolAdapterMetricsService,
+        this.opcUaServiceFaultListener = new OpcUaServiceFaultListener(
+                protocolAdapterMetricsService,
                 input.moduleServices().eventService(),
                 adapterId,
                 this::reconnect,
@@ -144,8 +143,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
         // Array is 0-indexed, attemptCount is 1-indexed, so we need attemptCount - 1
         final int index = Math.min(Math.max(0, attemptCount - 1), backoffDelays.length - 1);
-        final double backoffDelay =
-                backoffDelays[index] * (1 + ThreadLocalRandom.current().nextDouble(ConnectionOptions.DEFAULT_RETRY_JITTER));
+        final double backoffDelay = backoffDelays[index]
+                * (1 + ThreadLocalRandom.current().nextDouble(ConnectionOptions.DEFAULT_RETRY_JITTER));
         return (long) backoffDelay;
     }
 
@@ -160,8 +159,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
     @Override
     public synchronized void start(
-            final @NotNull ProtocolAdapterStartInput input,
-            final @NotNull ProtocolAdapterStartOutput output) {
+            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         log.info("Starting OPC UA protocol adapter {}", adapterId);
 
         // Reset stopped flag
@@ -181,14 +179,18 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             this.parsedConfig = successfullyParsedConfig;
             this.moduleServices = input.moduleServices();
         } else {
-            output.failStart(new IllegalStateException("Unexpected result type: " + result.getClass().getName()),
+            output.failStart(
+                    new IllegalStateException(
+                            "Unexpected result type: " + result.getClass().getName()),
                     "Failed to parse configuration for OPC UA client");
             return;
         }
 
         final OpcUaClientConnection conn;
-        if (opcUaClientConnection.compareAndSet(null,
-                conn = new OpcUaClientConnection(adapterId,
+        if (opcUaClientConnection.compareAndSet(
+                null,
+                conn = new OpcUaClientConnection(
+                        adapterId,
                         tagList,
                         protocolAdapterState,
                         input.moduleServices().protocolAdapterTagStreamingService(),
@@ -208,15 +210,15 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             output.startedSuccessfully();
         } else {
             log.error("Cannot start OPC UA protocol adapter '{}' - adapter is already started", adapterId);
-            output.failStart(new IllegalStateException("Adapter already started"),
+            output.failStart(
+                    new IllegalStateException("Adapter already started"),
                     "Cannot start already started adapter. Please stop the adapter first.");
         }
     }
 
     @Override
     public synchronized void stop(
-            final @NotNull ProtocolAdapterStopInput input,
-            final @NotNull ProtocolAdapterStopOutput output) {
+            final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
         log.info("Stopping OPC UA protocol adapter {}", adapterId);
 
         // Set stopped flag to prevent new scheduling
@@ -273,14 +275,15 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             if (reconnectAttempts.get() > 0) {
                 long backoffDelayMs;
                 try {
-                    backoffDelayMs = calculateBackoffDelayMs(config.getConnectionOptions().retryIntervalMs(),
-                            (int) reconnectAttempts.get());
+                    backoffDelayMs = calculateBackoffDelayMs(
+                            config.getConnectionOptions().retryIntervalMs(), (int) reconnectAttempts.get());
                 } catch (final Exception e) {
-                    backoffDelayMs = calculateBackoffDelayMs(ConnectionOptions.DEFAULT_RETRY_INTERVALS,
-                            (int) reconnectAttempts.get());
+                    backoffDelayMs = calculateBackoffDelayMs(
+                            ConnectionOptions.DEFAULT_RETRY_INTERVALS, (int) reconnectAttempts.get());
                 }
                 if (currentTime - lastReconnectTime < backoffDelayMs) {
-                    log.debug("Reconnection for adapter '{}' attempted too soon after last reconnect - skipping",
+                    log.debug(
+                            "Reconnection for adapter '{}' attempted too soon after last reconnect - skipping",
                             adapterId);
                     return;
                 }
@@ -311,7 +314,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             }
 
             // Create new connection
-            final OpcUaClientConnection newConn = new OpcUaClientConnection(adapterId,
+            final OpcUaClientConnection newConn = new OpcUaClientConnection(
+                    adapterId,
                     tagList,
                     protocolAdapterState,
                     moduleServices.protocolAdapterTagStreamingService(),
@@ -333,7 +337,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 };
                 attemptConnection(newConn, parsedConfig, input);
             } else {
-                log.warn("OPC UA adapter '{}' reconnect failed - another connection was created concurrently",
+                log.warn(
+                        "OPC UA adapter '{}' reconnect failed - another connection was created concurrently",
                         adapterId);
             }
         } finally {
@@ -352,31 +357,39 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         }
 
         final long healthCheckIntervalMs = config.getConnectionOptions().healthCheckIntervalMs();
-        final ScheduledFuture<?> future = healthCheckScheduler.scheduleAtFixedRate(() -> {
-            // Check if adapter was stopped before health check executes
-            if (stopped) {
-                log.debug("Health check skipped for adapter '{}' - adapter was stopped", adapterId);
-                return;
-            }
+        final ScheduledFuture<?> future = healthCheckScheduler.scheduleAtFixedRate(
+                () -> {
+                    // Check if adapter was stopped before health check executes
+                    if (stopped) {
+                        log.debug("Health check skipped for adapter '{}' - adapter was stopped", adapterId);
+                        return;
+                    }
 
-            final OpcUaClientConnection conn = opcUaClientConnection.get();
-            if (conn == null) {
-                log.debug("Health check skipped - no active connection for adapter '{}'", adapterId);
-                return;
-            }
+                    final OpcUaClientConnection conn = opcUaClientConnection.get();
+                    if (conn == null) {
+                        log.debug("Health check skipped - no active connection for adapter '{}'", adapterId);
+                        return;
+                    }
 
-            if (!conn.isHealthy()) {
-                if (config.getConnectionOptions().autoReconnect()) {
-                    log.warn("Health check failed for adapter '{}' - triggering automatic reconnection", adapterId);
-                    reconnect();
-                } else {
-                    log.warn("Health check failed for adapter '{}' - automatic reconnection is disabled", adapterId);
-                    protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-                }
-            } else {
-                log.debug("Health check passed for adapter '{}'", adapterId);
-            }
-        }, healthCheckIntervalMs, healthCheckIntervalMs, TimeUnit.MILLISECONDS);
+                    if (!conn.isHealthy()) {
+                        if (config.getConnectionOptions().autoReconnect()) {
+                            log.warn(
+                                    "Health check failed for adapter '{}' - triggering automatic reconnection",
+                                    adapterId);
+                            reconnect();
+                        } else {
+                            log.warn(
+                                    "Health check failed for adapter '{}' - automatic reconnection is disabled",
+                                    adapterId);
+                            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+                        }
+                    } else {
+                        log.debug("Health check passed for adapter '{}'", adapterId);
+                    }
+                },
+                healthCheckIntervalMs,
+                healthCheckIntervalMs,
+                TimeUnit.MILLISECONDS);
 
         // Store future so it can be cancelled if needed
         final ScheduledFuture<?> oldFuture = healthCheckFuture.getAndSet(future);
@@ -384,7 +397,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             oldFuture.cancel(false);
         }
 
-        log.debug("Scheduled connection health check every {} milliseconds for adapter '{}'",
+        log.debug(
+                "Scheduled connection health check every {} milliseconds for adapter '{}'",
                 healthCheckIntervalMs,
                 adapterId);
     }
@@ -453,13 +467,14 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         if (conn != null) {
             @SuppressWarnings("unused")
             final var unused = CompletableFuture.runAsync(() -> {
-                    conn.destroy();
-                    log.info("Destroyed OPC UA protocol adapter {}", adapterId);
-                }).whenComplete((ignored, error) -> {
-                    if(error != null) {
-                        log.warn("Problem closing the connection for adapter {}", adapterId, error);
-                    }
-                });
+                        conn.destroy();
+                        log.info("Destroyed OPC UA protocol adapter {}", adapterId);
+                    })
+                    .whenComplete((ignored, error) -> {
+                        if (error != null) {
+                            log.warn("Problem closing the connection for adapter {}", adapterId, error);
+                        }
+                    });
         } else {
             log.info("Tried destroying stopped OPC UA protocol adapter {}", adapterId);
         }
@@ -467,8 +482,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
     @Override
     public void discoverValues(
-            final @NotNull ProtocolAdapterDiscoveryInput input,
-            final @NotNull ProtocolAdapterDiscoveryOutput output) {
+            final @NotNull ProtocolAdapterDiscoveryInput input, final @NotNull ProtocolAdapterDiscoveryOutput output) {
         if (stopped) {
             log.debug("Discovery operation skipped for adapter '{}' - adapter has been stopped", adapterId);
             output.fail("Discovery failed: Adapter has been stopped");
@@ -485,27 +499,30 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             return;
         }
         conn.client()
-                .ifPresentOrElse(client -> {
-                    @SuppressWarnings("unused")
-                    final var unused = OpcUaNodeDiscovery
-                            .discoverValues(client, input.getRootNode(), input.getDepth())
-                            .whenComplete((collectedNodes, throwable) -> {
-                                if (throwable == null) {
-                                    final NodeTree nodeTree = output.getNodeTree();
-                                    collectedNodes.forEach(node -> nodeTree.addNode(node.id(),
-                                            node.name(),
-                                            node.value(),
-                                            node.description(),
-                                            node.parentId(),
-                                            node.nodeType(),
-                                            node.selectable()));
-                                    output.finish();
-                                } else {
-                                    log.error("Unable to discover the OPC UA server", throwable);
-                                    output.fail(throwable, "Unable to discover values");
-                                }
-                            });
-                        }, () -> output.fail("Discovery failed: Client not connected or not initialized"));
+                .ifPresentOrElse(
+                        client -> {
+                            @SuppressWarnings("unused")
+                            final var unused = OpcUaNodeDiscovery.discoverValues(
+                                            client, input.getRootNode(), input.getDepth())
+                                    .whenComplete((collectedNodes, throwable) -> {
+                                        if (throwable == null) {
+                                            final NodeTree nodeTree = output.getNodeTree();
+                                            collectedNodes.forEach(node -> nodeTree.addNode(
+                                                    node.id(),
+                                                    node.name(),
+                                                    node.value(),
+                                                    node.description(),
+                                                    node.parentId(),
+                                                    node.nodeType(),
+                                                    node.selectable()));
+                                            output.finish();
+                                        } else {
+                                            log.error("Unable to discover the OPC UA server", throwable);
+                                            output.fail(throwable, "Unable to discover values");
+                                        }
+                                    });
+                        },
+                        () -> output.fail("Discovery failed: Client not connected or not initialized"));
     }
 
     @Override
@@ -531,39 +548,47 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             return;
         }
 
-        conn.client().ifPresentOrElse(client -> {
-            final JsonToOpcUAConverter converter = new JsonToOpcUAConverter(client);
-            if (log.isDebugEnabled()) {
-                log.debug("Write invoked with payload '{}' for tag '{}'", opcUAWritePayload, opcuaTag.getName());
-            }
+        conn.client()
+                .ifPresentOrElse(
+                        client -> {
+                            final JsonToOpcUAConverter converter = new JsonToOpcUAConverter(client);
+                            if (log.isDebugEnabled()) {
+                                log.debug(
+                                        "Write invoked with payload '{}' for tag '{}'",
+                                        opcUAWritePayload,
+                                        opcuaTag.getName());
+                            }
 
-            final NodeId nodeId = NodeId.parse(opcuaTag.getDefinition().getNode());
-            final Object opcuaObject = converter.convertToOpcUAValue(opcUAWritePayload.value(), nodeId);
+                            final NodeId nodeId =
+                                    NodeId.parse(opcuaTag.getDefinition().getNode());
+                            final Object opcuaObject = converter.convertToOpcUAValue(opcUAWritePayload.value(), nodeId);
 
-            @SuppressWarnings("unused")
-            final var unused = client
-                    .writeValuesAsync(List.of(nodeId),
-                            List.of(new DataValue(Variant.of(opcuaObject), StatusCode.GOOD, null)))
-                    .whenComplete((statusCodes, throwable) -> {
-                        final var badStatus = statusCodes.stream().filter(StatusCode::isBad).findFirst();
-                        if (badStatus.isPresent()) {
-                            log.error("Failed to write tag '{}': {}", tagName, badStatus.get());
-                            output.fail("Failed to write tag '" + tagName + "': " + badStatus.get());
-                        } else if (throwable == null) {
-                            log.debug("Successfully wrote tag '{}'", opcuaTag.getName());
-                            output.finish();
-                        } else {
-                            log.error("Exception while writing tag '{}'", tagName, throwable);
-                            output.fail(throwable, null);
-                        }
-                    });
-        }, () -> output.fail("Discovery failed: Client not connected or not initialized"));
+                            @SuppressWarnings("unused")
+                            final var unused = client.writeValuesAsync(
+                                            List.of(nodeId),
+                                            List.of(new DataValue(Variant.of(opcuaObject), StatusCode.GOOD, null)))
+                                    .whenComplete((statusCodes, throwable) -> {
+                                        final var badStatus = statusCodes.stream()
+                                                .filter(StatusCode::isBad)
+                                                .findFirst();
+                                        if (badStatus.isPresent()) {
+                                            log.error("Failed to write tag '{}': {}", tagName, badStatus.get());
+                                            output.fail("Failed to write tag '" + tagName + "': " + badStatus.get());
+                                        } else if (throwable == null) {
+                                            log.debug("Successfully wrote tag '{}'", opcuaTag.getName());
+                                            output.finish();
+                                        } else {
+                                            log.error("Exception while writing tag '{}'", tagName, throwable);
+                                            output.fail(throwable, null);
+                                        }
+                                    });
+                        },
+                        () -> output.fail("Discovery failed: Client not connected or not initialized"));
     }
 
     @Override
     public void createTagSchema(
-            final @NotNull TagSchemaCreationInput input,
-            final @NotNull TagSchemaCreationOutput output) {
+            final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
         if (stopped) {
             log.debug("Create tag schema operation skipped for adapter '{}' - adapter has been stopped", adapterId);
             output.fail("Create tag schema failed: Adapter has been stopped");
@@ -583,28 +608,33 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             return;
         }
         conn.client()
-                .ifPresentOrElse(client -> {
-                    @SuppressWarnings("unused")
-                    final var unused = new JsonSchemaGenerator(client)
-                            .createMqttPayloadJsonSchema(tag)
-                            .whenComplete((result, throwable) -> {
-                                if (throwable == null) {
-                                    result.ifPresentOrElse(schema -> {
-                                        log.debug("Schema inferred for tag='{}'", tagName);
-                                        output.finish(schema);
-                                    }, () -> {
-                                        log.error("No schema inferred for tag='{}'", tagName);
-                                        output.fail("No schema inferred for tag='" + tagName + "'");
+                .ifPresentOrElse(
+                        client -> {
+                            @SuppressWarnings("unused")
+                            final var unused = new JsonSchemaGenerator(client)
+                                    .createMqttPayloadJsonSchema(tag)
+                                    .whenComplete((result, throwable) -> {
+                                        if (throwable == null) {
+                                            result.ifPresentOrElse(
+                                                    schema -> {
+                                                        log.debug("Schema inferred for tag='{}'", tagName);
+                                                        output.finish(schema);
+                                                    },
+                                                    () -> {
+                                                        log.error("No schema inferred for tag='{}'", tagName);
+                                                        output.fail("No schema inferred for tag='" + tagName + "'");
+                                                    });
+                                        } else {
+                                            log.error(
+                                                    "Exception while creating tag schema for '{}'", tagName, throwable);
+                                            output.fail(throwable, null);
+                                        }
                                     });
-                                } else {
-                                    log.error("Exception while creating tag schema for '{}'", tagName, throwable);
-                                    output.fail(throwable, null);
-                                }
-                            });
-                }, () -> {
-                    log.error("Discovery failed: Client not connected or not initialized");
-                    output.fail("Discovery failed: Client not connected or not initialized");
-                });
+                        },
+                        () -> {
+                            log.error("Discovery failed: Client not connected or not initialized");
+                            output.fail("Discovery failed: Client not connected or not initialized");
+                        });
     }
 
     @Override
@@ -632,40 +662,42 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             final @NotNull ProtocolAdapterStartInput input) {
 
         @SuppressWarnings("unused")
-        final var unused = CompletableFuture
-                    .supplyAsync(() -> conn.start(parsedConfig))
-                    .whenComplete((success, throwable) -> {
-                        if (stopped) {
-                            log.debug("Connection attempt completed after adapter '{}' was stopped, ignoring result",
-                                    adapterId);
-                            return;
-                        }
-                        lastReconnectTimestamp.set(System.currentTimeMillis());
-                        if (success && throwable == null) {
-                            reconnectAttempts.set(0);
-                            // Connection succeeded - cancel any pending retries and start health check
-                            cancelRetry();
-                            scheduleHealthCheck();
-                            log.info("OPC UA adapter '{}' connected successfully", adapterId);
+        final var unused = CompletableFuture.supplyAsync(() -> conn.start(parsedConfig))
+                .whenComplete((success, throwable) -> {
+                    if (stopped) {
+                        log.debug(
+                                "Connection attempt completed after adapter '{}' was stopped, ignoring result",
+                                adapterId);
+                        return;
+                    }
+                    lastReconnectTimestamp.set(System.currentTimeMillis());
+                    if (success && throwable == null) {
+                        reconnectAttempts.set(0);
+                        // Connection succeeded - cancel any pending retries and start health check
+                        cancelRetry();
+                        scheduleHealthCheck();
+                        log.info("OPC UA adapter '{}' connected successfully", adapterId);
+                    } else {
+                        // Connection failed - clean up and schedule retry with exponential backoff
+                        this.opcUaClientConnection.set(null);
+                        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+
+                        if (throwable != null) {
+                            log.warn(
+                                    "OPC UA adapter '{}' connection failed, scheduling retry with exponential backoff",
+                                    adapterId,
+                                    throwable);
                         } else {
-                            // Connection failed - clean up and schedule retry with exponential backoff
-                            this.opcUaClientConnection.set(null);
-                            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-
-                            if (throwable != null) {
-                                log.warn("OPC UA adapter '{}' connection failed, scheduling retry with exponential backoff",
-                                        adapterId,
-                                        throwable);
-                            } else {
-                                log.warn("OPC UA adapter '{}' connection returned false, scheduling retry with exponential backoff",
-                                        adapterId);
-                            }
-
-                            cancelHealthCheck();
-                            // Schedule retry attempt with exponential backoff
-                            scheduleRetry(input);
+                            log.warn(
+                                    "OPC UA adapter '{}' connection returned false, scheduling retry with exponential backoff",
+                                    adapterId);
                         }
-                    });
+
+                        cancelHealthCheck();
+                        // Schedule retry attempt with exponential backoff
+                        scheduleRetry(input);
+                    }
+                });
     }
 
     /**
@@ -684,48 +716,55 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         final int attemptCount = consecutiveRetryAttempts.incrementAndGet();
         long backoffDelayMs;
         try {
-            backoffDelayMs = calculateBackoffDelayMs(config.getConnectionOptions().retryIntervalMs(), attemptCount);
+            backoffDelayMs =
+                    calculateBackoffDelayMs(config.getConnectionOptions().retryIntervalMs(), attemptCount);
         } catch (final Exception e) {
-            log.warn("Failed to calculate backoff delay for adapter '{}' from retryIntervalMs {}",
+            log.warn(
+                    "Failed to calculate backoff delay for adapter '{}' from retryIntervalMs {}",
                     adapterId,
                     config.getConnectionOptions().retryIntervalMs(),
                     e);
             backoffDelayMs = calculateBackoffDelayMs(ConnectionOptions.DEFAULT_RETRY_INTERVALS, attemptCount);
         }
 
-        log.info("Scheduling retry attempt #{} for OPC UA adapter '{}' with backoff delay of {} ms",
+        log.info(
+                "Scheduling retry attempt #{} for OPC UA adapter '{}' with backoff delay of {} ms",
                 attemptCount,
                 adapterId,
                 backoffDelayMs);
 
-        final ScheduledFuture<?> future = retryScheduler.schedule(() -> {
-            // Check if adapter was stopped before retry executes
-            if (stopped || this.parsedConfig == null || this.moduleServices == null) {
-                log.debug("OPC UA adapter '{}' retry cancelled - adapter was stopped", adapterId);
-                return;
-            }
+        final ScheduledFuture<?> future = retryScheduler.schedule(
+                () -> {
+                    // Check if adapter was stopped before retry executes
+                    if (stopped || this.parsedConfig == null || this.moduleServices == null) {
+                        log.debug("OPC UA adapter '{}' retry cancelled - adapter was stopped", adapterId);
+                        return;
+                    }
 
-            log.info("Executing retry attempt #{} for OPC UA adapter '{}'", attemptCount, adapterId);
+                    log.info("Executing retry attempt #{} for OPC UA adapter '{}'", attemptCount, adapterId);
 
-            // Create new connection object for retry
-            final OpcUaClientConnection newConn = new OpcUaClientConnection(adapterId,
-                    tagList,
-                    protocolAdapterState,
-                    this.moduleServices.protocolAdapterTagStreamingService(),
-                    dataPointFactory,
-                    this.moduleServices.eventService(),
-                    protocolAdapterMetricsService,
-                    config,
-                    opcUaServiceFaultListener);
+                    // Create new connection object for retry
+                    final OpcUaClientConnection newConn = new OpcUaClientConnection(
+                            adapterId,
+                            tagList,
+                            protocolAdapterState,
+                            this.moduleServices.protocolAdapterTagStreamingService(),
+                            dataPointFactory,
+                            this.moduleServices.eventService(),
+                            protocolAdapterMetricsService,
+                            config,
+                            opcUaServiceFaultListener);
 
-            // Set as current connection and attempt
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
-            if (opcUaClientConnection.compareAndSet(null, newConn)) {
-                attemptConnection(newConn, this.parsedConfig, input);
-            } else {
-                log.debug("OPC UA adapter '{}' retry skipped - connection already exists", adapterId);
-            }
-        }, backoffDelayMs, TimeUnit.MILLISECONDS);
+                    // Set as current connection and attempt
+                    protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+                    if (opcUaClientConnection.compareAndSet(null, newConn)) {
+                        attemptConnection(newConn, this.parsedConfig, input);
+                    } else {
+                        log.debug("OPC UA adapter '{}' retry skipped - connection already exists", adapterId);
+                    }
+                },
+                backoffDelayMs,
+                TimeUnit.MILLISECONDS);
 
         // Store future so it can be cancelled if needed
         final ScheduledFuture<?> oldFuture = retryFuture.getAndSet(future);

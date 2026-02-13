@@ -18,8 +18,8 @@ package com.hivemq.api.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Bean to pass error messages back through the API in a meaningful way.
@@ -41,12 +41,12 @@ public class ApiErrorMessage {
     @Schema(description = "Application Error Code associate with this field")
     private String fieldName;
 
-    public ApiErrorMessage() {
-    }
+    public ApiErrorMessage() {}
 
-    public ApiErrorMessage(final @JsonProperty("fieldName") @NotNull String fieldName,
-                           final @JsonProperty("title") @NotNull String title,
-                           final @JsonProperty("detail") @NotNull String detail) {
+    public ApiErrorMessage(
+            final @JsonProperty("fieldName") @NotNull String fieldName,
+            final @JsonProperty("title") @NotNull String title,
+            final @JsonProperty("detail") @NotNull String detail) {
         this.fieldName = fieldName;
         this.title = title;
         this.detail = detail;
@@ -76,9 +76,8 @@ public class ApiErrorMessage {
         return fieldName;
     }
 
-    public static ApiErrorMessage from(final @NotNull String message){
+    public static ApiErrorMessage from(final @NotNull String message) {
         Preconditions.checkNotNull(message);
         return new ApiErrorMessage(null, message, null);
     }
-
 }

@@ -13,28 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.services.auth;
 
-import org.jetbrains.annotations.NotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.extension.sdk.api.auth.SimpleAuthenticator;
 import com.hivemq.extension.sdk.api.auth.parameter.AuthenticatorProviderInput;
 import com.hivemq.extension.sdk.api.services.auth.provider.AuthenticatorProvider;
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensions;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
+import java.util.Iterator;
+import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import util.IsolatedExtensionClassloaderUtil;
-
-import java.util.Iterator;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class AuthenticatorsImplTest {
 
@@ -45,6 +43,7 @@ public class AuthenticatorsImplTest {
     private final @NotNull HiveMQExtension extension2 = mock(HiveMQExtension.class);
 
     private @NotNull AuthenticatorsImpl authenticators;
+
     @BeforeEach
     public void setUp() {
         final IsolatedExtensionClassloader isolatedExtensionClassloader1 =
@@ -52,8 +51,10 @@ public class AuthenticatorsImplTest {
         final IsolatedExtensionClassloader isolatedExtensionClassloader2 =
                 IsolatedExtensionClassloaderUtil.buildClassLoader();
 
-        when(hiveMQExtensions.getExtensionForClassloader(isolatedExtensionClassloader1)).thenReturn(extension1);
-        when(hiveMQExtensions.getExtensionForClassloader(isolatedExtensionClassloader2)).thenReturn(extension2);
+        when(hiveMQExtensions.getExtensionForClassloader(isolatedExtensionClassloader1))
+                .thenReturn(extension1);
+        when(hiveMQExtensions.getExtensionForClassloader(isolatedExtensionClassloader2))
+                .thenReturn(extension2);
 
         when(hiveMQExtensions.getExtension("extension1")).thenReturn(extension1);
         when(hiveMQExtensions.getExtension("extension2")).thenReturn(extension2);
@@ -64,12 +65,10 @@ public class AuthenticatorsImplTest {
         when(extension1.getId()).thenReturn("extension1");
         when(extension2.getId()).thenReturn("extension2");
 
-        final WrappedAuthenticatorProvider simpleProvider1 =
-                new WrappedAuthenticatorProvider((AuthenticatorProvider) i -> simpleAuthenticator1,
-                        isolatedExtensionClassloader1);
-        final WrappedAuthenticatorProvider simpleProvider2 =
-                new WrappedAuthenticatorProvider((AuthenticatorProvider) i -> simpleAuthenticator2,
-                        isolatedExtensionClassloader2);
+        final WrappedAuthenticatorProvider simpleProvider1 = new WrappedAuthenticatorProvider(
+                (AuthenticatorProvider) i -> simpleAuthenticator1, isolatedExtensionClassloader1);
+        final WrappedAuthenticatorProvider simpleProvider2 = new WrappedAuthenticatorProvider(
+                (AuthenticatorProvider) i -> simpleAuthenticator2, isolatedExtensionClassloader2);
 
         authenticators = new AuthenticatorsImpl(hiveMQExtensions);
         authenticators.registerAuthenticatorProvider(simpleProvider1);
@@ -84,7 +83,8 @@ public class AuthenticatorsImplTest {
 
         assertEquals(2, registeredAuthenticators.size());
 
-        final Iterator<WrappedAuthenticatorProvider> iterator = registeredAuthenticators.values().iterator();
+        final Iterator<WrappedAuthenticatorProvider> iterator =
+                registeredAuthenticators.values().iterator();
 
         assertSame(simpleAuthenticator1, iterator.next().getAuthenticator(mock(AuthenticatorProviderInput.class)));
         assertSame(simpleAuthenticator2, iterator.next().getAuthenticator(mock(AuthenticatorProviderInput.class)));

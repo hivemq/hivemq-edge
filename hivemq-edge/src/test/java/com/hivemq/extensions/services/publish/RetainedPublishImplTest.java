@@ -15,6 +15,9 @@
  */
 package com.hivemq.extensions.services.publish;
 
+import static com.hivemq.codec.encoder.mqtt5.Mqtt5PayloadFormatIndicator.UTF_8;
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.packets.publish.PayloadFormatIndicator;
@@ -24,12 +27,8 @@ import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.persistence.RetainedMessage;
-import org.junit.jupiter.api.Test;
-
 import java.nio.ByteBuffer;
-
-import static com.hivemq.codec.encoder.mqtt5.Mqtt5PayloadFormatIndicator.UTF_8;
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Florian Limpöck
@@ -40,9 +39,16 @@ public class RetainedPublishImplTest {
     @Test
     public void test_convert_all_nullable_null() {
 
-        final RetainedPublishImpl retainedPublish =
-                new RetainedPublishImpl(Qos.AT_LEAST_ONCE, "topic", null, null, null, null, null, null,
-                        UserPropertiesImpl.of(ImmutableList.of()));
+        final RetainedPublishImpl retainedPublish = new RetainedPublishImpl(
+                Qos.AT_LEAST_ONCE,
+                "topic",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                UserPropertiesImpl.of(ImmutableList.of()));
 
         final RetainedMessage convert = RetainedPublishImpl.convert(retainedPublish);
 
@@ -54,7 +60,6 @@ public class RetainedPublishImplTest {
         assertNull(convert.getResponseTopic());
         assertEquals(Mqtt5UserProperties.NO_USER_PROPERTIES, convert.getUserProperties());
         assertEquals(QoS.AT_LEAST_ONCE, convert.getQos());
-
     }
 
     @Test
@@ -65,9 +70,16 @@ public class RetainedPublishImplTest {
                 new MqttUserProperty("name", "value2"),
                 new MqttUserProperty("name2", "val")));
 
-        final RetainedPublishImpl retainedPublish = new RetainedPublishImpl(Qos.AT_MOST_ONCE, "topic",
-                PayloadFormatIndicator.UTF_8, 12345L, "response_topic", ByteBuffer.wrap("correlation_data".getBytes()),
-                "content_type", ByteBuffer.wrap("test3".getBytes()), userProperties);
+        final RetainedPublishImpl retainedPublish = new RetainedPublishImpl(
+                Qos.AT_MOST_ONCE,
+                "topic",
+                PayloadFormatIndicator.UTF_8,
+                12345L,
+                "response_topic",
+                ByteBuffer.wrap("correlation_data".getBytes()),
+                "content_type",
+                ByteBuffer.wrap("test3".getBytes()),
+                userProperties);
 
         final RetainedMessage convert = RetainedPublishImpl.convert(retainedPublish);
 
@@ -79,6 +91,5 @@ public class RetainedPublishImplTest {
         assertEquals("response_topic", convert.getResponseTopic());
         assertEquals(3, convert.getUserProperties().asList().size());
         assertEquals(QoS.AT_MOST_ONCE, convert.getQos());
-
     }
 }

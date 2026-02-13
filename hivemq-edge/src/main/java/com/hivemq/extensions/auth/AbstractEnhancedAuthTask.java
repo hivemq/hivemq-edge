@@ -15,13 +15,13 @@
  */
 package com.hivemq.extensions.auth;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.auth.EnhancedAuthenticator;
 import com.hivemq.extension.sdk.api.auth.parameter.AuthenticatorProviderInput;
 import com.hivemq.extensions.client.ClientAuthenticators;
 import com.hivemq.extensions.executor.task.PluginTaskInput;
 import com.hivemq.extensions.services.auth.WrappedAuthenticatorProvider;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Silvio Giebl
@@ -52,10 +52,12 @@ abstract class AbstractEnhancedAuthTask<I extends PluginTaskInput, O extends Aut
 
     abstract void call(@NotNull EnhancedAuthenticator authenticator, @NotNull I input, @NotNull O output);
 
-    @Nullable EnhancedAuthenticator updateAndGetAuthenticator() {
-        final EnhancedAuthenticator authenticator = clientAuthenticators.getAuthenticatorMap().get(extensionId);
-        if ((authenticator != null) &&
-                authenticator.getClass().getClassLoader().equals(wrappedAuthenticatorProvider.getClassLoader())) {
+    @Nullable
+    EnhancedAuthenticator updateAndGetAuthenticator() {
+        final EnhancedAuthenticator authenticator =
+                clientAuthenticators.getAuthenticatorMap().get(extensionId);
+        if ((authenticator != null)
+                && authenticator.getClass().getClassLoader().equals(wrappedAuthenticatorProvider.getClassLoader())) {
             return authenticator;
         }
         final EnhancedAuthenticator newAuthenticator =

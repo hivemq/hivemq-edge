@@ -32,43 +32,47 @@ import com.hivemq.configuration.service.PersistenceConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.IntoSet;
-
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 @Module
 public class ConfigurationModule {
 
     @Provides
     @Singleton
-    static @NotNull ListenerConfigurationService listenerConfiguration(final @NotNull ConfigurationService configurationService) {
+    static @NotNull ListenerConfigurationService listenerConfiguration(
+            final @NotNull ConfigurationService configurationService) {
         return configurationService.listenerConfiguration();
     }
 
     @Provides
     @Singleton
-    static @NotNull MqttConfigurationService mqttConfigurationService(final @NotNull ConfigurationService configurationService) {
+    static @NotNull MqttConfigurationService mqttConfigurationService(
+            final @NotNull ConfigurationService configurationService) {
         return configurationService.mqttConfiguration();
     }
 
     @Provides
     @Singleton
-    static @NotNull MqttsnConfigurationService mqttsnConfigurationService(final @NotNull ConfigurationService configurationService) {
+    static @NotNull MqttsnConfigurationService mqttsnConfigurationService(
+            final @NotNull ConfigurationService configurationService) {
         return configurationService.mqttsnConfiguration();
     }
 
     @Provides
     @Singleton
-    static @NotNull RestrictionsConfigurationService restrictionsConfigurationService(final @NotNull ConfigurationService configurationService) {
+    static @NotNull RestrictionsConfigurationService restrictionsConfigurationService(
+            final @NotNull ConfigurationService configurationService) {
         return configurationService.restrictionsConfiguration();
     }
 
     @Provides
     @Singleton
-    static @NotNull SecurityConfigurationService securityConfigurationService(final @NotNull ConfigurationService configurationService) {
+    static @NotNull SecurityConfigurationService securityConfigurationService(
+            final @NotNull ConfigurationService configurationService) {
         return configurationService.securityConfiguration();
     }
 
@@ -86,19 +90,22 @@ public class ConfigurationModule {
 
     @Provides
     @Singleton
-    static @NotNull ProtocolAdapterExtractor protocolAdapterExtractor(final @NotNull ConfigurationService configurationService) {
+    static @NotNull ProtocolAdapterExtractor protocolAdapterExtractor(
+            final @NotNull ConfigurationService configurationService) {
         return configurationService.protocolAdapterExtractor();
     }
 
     @Provides
     @Singleton
-    static @NotNull DataCombiningExtractor dataCombiningExtractor(final @NotNull ConfigurationService configurationService) {
+    static @NotNull DataCombiningExtractor dataCombiningExtractor(
+            final @NotNull ConfigurationService configurationService) {
         return configurationService.dataCombiningExtractor();
     }
 
     @Provides
     @Singleton
-    static @NotNull AssetMappingExtractor assetMappingExtractor(final @NotNull ConfigurationService configurationService) {
+    static @NotNull AssetMappingExtractor assetMappingExtractor(
+            final @NotNull ConfigurationService configurationService) {
         return configurationService.assetMappingExtractor();
     }
 
@@ -110,25 +117,29 @@ public class ConfigurationModule {
 
     @Provides
     @Singleton
-    static @NotNull ApiConfigurationService apiConfigurationService(final @NotNull ConfigurationService configurationService) {
+    static @NotNull ApiConfigurationService apiConfigurationService(
+            final @NotNull ConfigurationService configurationService) {
         return configurationService.apiConfiguration();
     }
 
     @Provides
     @Singleton
-    static @NotNull DynamicConfigurationService gatewayConfigurationService(final @NotNull ConfigurationService configurationService) {
+    static @NotNull DynamicConfigurationService gatewayConfigurationService(
+            final @NotNull ConfigurationService configurationService) {
         return configurationService.gatewayConfiguration();
     }
 
     @Provides
     @Singleton
-    static @NotNull PersistenceConfigurationService persistenceConfigurationService(final @NotNull ConfigurationService configurationService) {
+    static @NotNull PersistenceConfigurationService persistenceConfigurationService(
+            final @NotNull ConfigurationService configurationService) {
         return configurationService.persistenceConfigurationService();
     }
 
     @Provides
     @Singleton
-    static @NotNull InternalConfigurationService internalConfigurationService(final @NotNull ConfigurationService configurationService) {
+    static @NotNull InternalConfigurationService internalConfigurationService(
+            final @NotNull ConfigurationService configurationService) {
         return configurationService.internalConfigurationService();
     }
 
@@ -142,5 +153,4 @@ public class ConfigurationModule {
         // ConfigMigrationService runs migrations in its constructor
         return Boolean.TRUE;
     }
-
 }

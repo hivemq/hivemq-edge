@@ -16,21 +16,21 @@
 package com.hivemq.extensions.events.client.parameters;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
 import com.hivemq.extension.sdk.api.events.client.parameters.AuthenticationSuccessfulInput;
 import com.hivemq.extensions.ExtensionInformationUtil;
 import com.hivemq.extensions.executor.task.PluginTaskInput;
 import io.netty.channel.Channel;
-
 import java.util.function.Supplier;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
  * @since 4.0.0
  */
-public class AuthenticationSuccessfulInputImpl implements AuthenticationSuccessfulInput, PluginTaskInput, Supplier<AuthenticationSuccessfulInputImpl> {
+public class AuthenticationSuccessfulInputImpl
+        implements AuthenticationSuccessfulInput, PluginTaskInput, Supplier<AuthenticationSuccessfulInputImpl> {
 
     private final @NotNull ClientInformation clientInformation;
     private final @NotNull ConnectionInformation connectionInformation;

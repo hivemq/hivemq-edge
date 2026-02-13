@@ -16,9 +16,6 @@
 package com.hivemq.util;
 
 import com.google.common.annotations.VisibleForTesting;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -26,6 +23,8 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ManifestUtils {
 
@@ -48,7 +47,6 @@ public class ManifestUtils {
             } else {
                 return value;
             }
-
 
         } catch (final IOException e) {
             return null;

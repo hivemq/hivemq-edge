@@ -15,9 +15,9 @@
  */
 package com.hivemq.mqtt.message.reason;
 
+import com.hivemq.extension.sdk.api.packets.subscribe.SubackReasonCode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.extension.sdk.api.packets.subscribe.SubackReasonCode;
 
 /**
  * MQTT Reason Codes that can be used in SUBACK packets according to the MQTT 5 specification.
@@ -25,7 +25,6 @@ import com.hivemq.extension.sdk.api.packets.subscribe.SubackReasonCode;
  * @author Silvio Giebl
  */
 public enum Mqtt5SubAckReasonCode implements Mqtt5ReasonCode {
-
     GRANTED_QOS_0(0x00),
     GRANTED_QOS_1(0x01),
     GRANTED_QOS_2(0x02),

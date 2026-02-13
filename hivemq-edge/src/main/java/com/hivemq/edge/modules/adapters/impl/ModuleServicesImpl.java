@@ -32,7 +32,6 @@ public class ModuleServicesImpl implements ModuleServices {
     private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService;
     private final @NotNull TagManager tagManager;
 
-
     @Inject
     public ModuleServicesImpl(
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
@@ -65,4 +64,3 @@ public class ModuleServicesImpl implements ModuleServices {
         return protocolAdapterWritingService;
     }
 }
-

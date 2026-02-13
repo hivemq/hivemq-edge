@@ -19,14 +19,14 @@ import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.uns.ISA95Entity;
 import com.hivemq.configuration.entity.uns.UnsConfigEntity;
 import com.hivemq.uns.config.ISA95;
+import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.function.Consumer;
-
 public class UnsExtractor implements ReloadableExtractor<UnsConfigEntity, ISA95> {
 
-    private volatile @Nullable ISA95 config = null;;
+    private volatile @Nullable ISA95 config = null;
+    ;
     private volatile @Nullable Consumer<ISA95> consumer = cfg -> log.debug("No consumer registered yet");
     private final @NotNull ConfigFileReaderWriter configFileReaderWriter;
 
@@ -44,20 +44,21 @@ public class UnsExtractor implements ReloadableExtractor<UnsConfigEntity, ISA95>
         final var config = hmqConfig.getUns().getIsa95();
 
         final ISA95.Builder builderIsa95 = new ISA95.Builder();
-        builderIsa95.withArea(config.getArea()).
-                withEnterprise(config.getEnterprise()).
-                withProductionLine(config.getProductionLine()).
-                withWorkCell(config.getWorkCell()).
-                withSite(config.getSite()).
-                withPrefixAllTopics(config.isPrefixAllTopics()).
-                withEnabled(config.isEnabled());
+        builderIsa95
+                .withArea(config.getArea())
+                .withEnterprise(config.getEnterprise())
+                .withProductionLine(config.getProductionLine())
+                .withWorkCell(config.getWorkCell())
+                .withSite(config.getSite())
+                .withPrefixAllTopics(config.isPrefixAllTopics())
+                .withEnabled(config.isEnabled());
 
         this.config = builderIsa95.build();
         return Configurator.ConfigResult.SUCCESS;
     }
 
     @Override
-    public synchronized void sync(final @NotNull HiveMQConfigEntity entity){
+    public synchronized void sync(final @NotNull HiveMQConfigEntity entity) {
         final ISA95 isa95 = config;
         final ISA95Entity isa95Entity = entity.getUns().getIsa95();
         isa95Entity.setEnabled(isa95.isEnabled());
@@ -68,7 +69,6 @@ public class UnsExtractor implements ReloadableExtractor<UnsConfigEntity, ISA95>
         isa95Entity.setWorkCell(isa95.getWorkCell());
         isa95Entity.setProductionLine(isa95.getProductionLine());
     }
-
 
     public void setISA95(final ISA95 isa95) {
         replaceConfigsAndTriggerWrite(isa95);
@@ -82,7 +82,7 @@ public class UnsExtractor implements ReloadableExtractor<UnsConfigEntity, ISA95>
 
     private void notifyConsumer() {
         final var consumer = this.consumer;
-        if(consumer != null) {
+        if (consumer != null) {
             consumer.accept(config);
         }
     }
