@@ -175,7 +175,8 @@ public class ProtocolAdapterExtractor
                             .map(tag -> new AdapterTag(adapterId, tag.getName()))
                             .forEach(adapterTagSet::remove);
                     return true;
-                }).orElse(false);
+                })
+                .orElse(false);
 
         if (deleted) {
             replaceConfigsAndTriggerWrite(List.copyOf(newConfigs));
