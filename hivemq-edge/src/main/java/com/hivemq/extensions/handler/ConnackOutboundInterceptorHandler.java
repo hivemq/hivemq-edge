@@ -19,7 +19,6 @@ import com.google.common.collect.ImmutableMap;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.bootstrap.ClientState;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
@@ -45,13 +44,13 @@ import com.hivemq.util.Exceptions;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Florian Limpöck
@@ -96,7 +95,8 @@ public class ConnackOutboundInterceptorHandler {
             final @NotNull ChannelPromise promise) {
 
         final Channel channel = ctx.channel();
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final String clientId = clientConnection.getClientId();
         if (clientId == null) {
             ctx.write(connack, promise);
@@ -198,7 +198,9 @@ public class ConnackOutboundInterceptorHandler {
         @Override
         public void run() {
             if (outputHolder.get().isPrevent()) {
-                final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+                final ClientConnection clientConnection = ctx.channel()
+                        .attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                        .get();
                 clientConnection.proposeClientState(ClientState.DISCONNECTING);
 
                 eventLog.clientWasDisconnected(
@@ -243,8 +245,10 @@ public class ConnackOutboundInterceptorHandler {
                 }
             } catch (final Throwable e) {
                 log.warn(
-                        "Uncaught exception was thrown from extension with id \"{}\" on outbound CONNACK interception. " +
-                                "Extensions are responsible for their own exception handling.", extensionId, e);
+                        "Uncaught exception was thrown from extension with id \"{}\" on outbound CONNACK interception. "
+                                + "Extensions are responsible for their own exception handling.",
+                        extensionId,
+                        e);
                 output.prevent();
                 Exceptions.rethrowError(e);
             }

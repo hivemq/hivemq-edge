@@ -24,18 +24,17 @@ import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.read.ListAppender;
 import ch.qos.logback.core.util.StatusPrinter;
-import org.jetbrains.annotations.NotNull;
-import com.hivemq.logging.modifier.MiscLogLevelModifier;
 import com.hivemq.logging.LogLevelModifierTurboFilter;
+import com.hivemq.logging.modifier.MiscLogLevelModifier;
 import com.hivemq.logging.modifier.NettyLogLevelModifier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.bridge.SLF4JBridgeHandler;
-
 import java.io.File;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 
 /**
  * This class is responsible for all logging bootstrapping. This is only
@@ -62,12 +61,12 @@ public class LoggingBootstrap {
         final Iterator<Appender<ILoggingEvent>> iterator = logger.iteratorForAppenders();
         while (iterator.hasNext()) {
             final Appender<ILoggingEvent> next = iterator.next();
-            //We remove the appender for the moment
+            // We remove the appender for the moment
             logger.detachAppender(next);
             defaultAppenders.add(next);
         }
 
-        //This appender just adds entries to an Array List so we can queue the log statements for later
+        // This appender just adds entries to an Array List so we can queue the log statements for later
         listAppender = new ListAppender<>();
         listAppender.start();
         logger.addAppender(listAppender);
@@ -120,7 +119,7 @@ public class LoggingBootstrap {
         final ch.qos.logback.classic.Logger logger = getRootLogger();
 
         listAppender.stop();
-        //Now we need to detach the appender (if needed) so it isn't used anymore
+        // Now we need to detach the appender (if needed) so it isn't used anymore
         logger.detachAppender(listAppender);
         for (final ILoggingEvent loggingEvent : listAppender.list) {
             logger.callAppenders(loggingEvent);
@@ -201,7 +200,7 @@ public class LoggingBootstrap {
 
         @Override
         public void onStart(final @NotNull LoggerContext context) {
-            //noop
+            // noop
         }
 
         /**
@@ -220,12 +219,12 @@ public class LoggingBootstrap {
 
         @Override
         public void onStop(final @NotNull LoggerContext context) {
-            //noop
+            // noop
         }
 
         @Override
         public void onLevelChange(final @NotNull ch.qos.logback.classic.Logger logger, final @NotNull Level level) {
-            //noop
+            // noop
         }
     }
 }

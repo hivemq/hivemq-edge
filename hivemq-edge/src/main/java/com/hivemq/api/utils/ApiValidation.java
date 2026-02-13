@@ -29,31 +29,30 @@ public class ApiValidation {
     static Pattern alphaNumSpacesPattern = Pattern.compile(ALPHA_NUM_SPACES);
     static Pattern alphaNumSpacesAndDashesPattern = Pattern.compile(ALPHA_NUM_SPACES_AND_DASHES);
 
-    public static boolean validAlphaNumericSpacesAndDashes(final String value, final boolean allowEmptyOrNull){
-        if(allowEmptyOrNull){
-            if(value == null || "".equals(value)) return true;
+    public static boolean validAlphaNumericSpacesAndDashes(final String value, final boolean allowEmptyOrNull) {
+        if (allowEmptyOrNull) {
+            if (value == null || "".equals(value)) return true;
         } else {
-            if(value == null || "".equals(value)) return false;
+            if (value == null || "".equals(value)) return false;
         }
         return alphaNumSpacesAndDashesPattern.matcher(value).matches();
     }
 
-    public static boolean validAlphaNumericSpaces(final String value, final boolean allowEmptyOrNull){
-        if(allowEmptyOrNull){
-            if(value == null || "".equals(value)) return true;
+    public static boolean validAlphaNumericSpaces(final String value, final boolean allowEmptyOrNull) {
+        if (allowEmptyOrNull) {
+            if (value == null || "".equals(value)) return true;
         } else {
-            if(value == null || "".equals(value)) return false;
+            if (value == null || "".equals(value)) return false;
         }
         return alphaNumSpacesPattern.matcher(value).matches();
     }
 
-    public static boolean validAlphaNumeric(final String value, final boolean allowEmptyOrNull){
-        if(allowEmptyOrNull){
-            if(value == null || "".equals(value)) return true;
+    public static boolean validAlphaNumeric(final String value, final boolean allowEmptyOrNull) {
+        if (allowEmptyOrNull) {
+            if (value == null || "".equals(value)) return true;
         } else {
-            if(value == null || "".equals(value)) return false;
+            if (value == null || "".equals(value)) return false;
         }
         return alphaNumPattern.matcher(value).matches();
     }
-
 }

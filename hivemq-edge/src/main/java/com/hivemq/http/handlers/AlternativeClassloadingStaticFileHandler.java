@@ -18,13 +18,11 @@ package com.hivemq.http.handlers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
-import org.jetbrains.annotations.NotNull;
-
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Allow static consribution of dynamic classloaders to the HTTPD engine,
@@ -33,7 +31,8 @@ import java.util.Set;
 public class AlternativeClassloadingStaticFileHandler extends StaticFileHandler {
     protected static final @NotNull Set<ClassLoader> classLoaders = new HashSet<>();
 
-    public AlternativeClassloadingStaticFileHandler(final ObjectMapper mapper, final String resourceRoot, final ShutdownHooks shutdownHooks) {
+    public AlternativeClassloadingStaticFileHandler(
+            final ObjectMapper mapper, final String resourceRoot, final ShutdownHooks shutdownHooks) {
         super(mapper, resourceRoot);
         shutdownHooks.add(new HiveMQShutdownHook() {
             @Override
@@ -48,7 +47,7 @@ public class AlternativeClassloadingStaticFileHandler extends StaticFileHandler 
         });
     }
 
-    public static void addClassLoader(final ClassLoader classLoader){
+    public static void addClassLoader(final ClassLoader classLoader) {
         classLoaders.add(classLoader);
     }
 
@@ -56,7 +55,7 @@ public class AlternativeClassloadingStaticFileHandler extends StaticFileHandler 
     protected InputStream loadClasspathResource(final String resource) {
         InputStream inputStream = null;
         final Iterator<ClassLoader> loaderIterator = classLoaders.iterator();
-        while(loaderIterator.hasNext() && inputStream == null){
+        while (loaderIterator.hasNext() && inputStream == null) {
             final ClassLoader classLoader = loaderIterator.next();
             inputStream = loadClasspathResourceInternal(classLoader, resource);
         }

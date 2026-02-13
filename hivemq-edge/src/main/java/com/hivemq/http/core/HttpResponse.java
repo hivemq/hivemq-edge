@@ -76,7 +76,7 @@ public class HttpResponse {
         this.contentType = contentType;
     }
 
-    public boolean isError(){
+    public boolean isError() {
         return getStatusCode() < 200 || getStatusCode() > 299;
     }
 
@@ -98,13 +98,12 @@ public class HttpResponse {
 
     @Override
     public String toString() {
-        return "HttpResponse{" +
-                "requestUrl='" + requestUrl + '\'' +
-                ", statusMessage='" + statusMessage + '\'' +
-                ", contentEncoding='" + contentEncoding + '\'' +
-                ", statusCode=" + statusCode +
-                ", contentLength=" + contentLength +
-                ", contentType='" + contentType + '\'' +
-                '}';
+        return "HttpResponse{" + "requestUrl='"
+                + requestUrl + '\'' + ", statusMessage='"
+                + statusMessage + '\'' + ", contentEncoding='"
+                + contentEncoding + '\'' + ", statusCode="
+                + statusCode + ", contentLength="
+                + contentLength + ", contentType='"
+                + contentType + '\'' + '}';
     }
 }

@@ -17,15 +17,14 @@ package com.hivemq.extensions.packets.unsuback;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.unsuback.UnsubackPacket;
 import com.hivemq.extension.sdk.api.packets.unsuback.UnsubackReasonCode;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.unsuback.UNSUBACK;
-
 import java.util.Objects;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Robin Atherton
@@ -89,10 +88,10 @@ public class UnsubackPacketImpl implements UnsubackPacket {
             return false;
         }
         final UnsubackPacketImpl that = (UnsubackPacketImpl) o;
-        return reasonCodes.equals(that.reasonCodes) &&
-                Objects.equals(reasonString, that.reasonString) &&
-                (packetIdentifier == that.packetIdentifier) &&
-                userProperties.equals(that.userProperties);
+        return reasonCodes.equals(that.reasonCodes)
+                && Objects.equals(reasonString, that.reasonString)
+                && (packetIdentifier == that.packetIdentifier)
+                && userProperties.equals(that.userProperties);
     }
 
     @Override

@@ -17,13 +17,12 @@ package com.hivemq.extensions.iteration;
 
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.util.ThreadFactoryUtil;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
@@ -31,16 +30,14 @@ import java.util.concurrent.Executors;
 @Singleton
 public class AsyncIteratorFactory {
 
-    private final @NotNull
-    ExecutorService executorService;
+    private final @NotNull ExecutorService executorService;
 
     @Inject
     public AsyncIteratorFactory(final @NotNull ShutdownHooks shutdownHooks) {
         executorService = Executors.newFixedThreadPool(4, ThreadFactoryUtil.create("async-iterator-executor-%d"));
         shutdownHooks.add(new HiveMQShutdownHook() {
             @Override
-            public @NotNull
-            String name() {
+            public @NotNull String name() {
                 return "Async Iterator Executor Shutdown";
             }
 
@@ -63,5 +60,4 @@ public class AsyncIteratorFactory {
 
         return new AsyncLocalChunkIterator<V>(fetchCallback, iterationCallback, executorService);
     }
-
 }

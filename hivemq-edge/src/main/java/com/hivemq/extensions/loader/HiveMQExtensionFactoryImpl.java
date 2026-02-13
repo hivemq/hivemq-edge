@@ -13,31 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.loader;
 
 import com.hivemq.extension.sdk.api.ExtensionMain;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensionEntity;
 import com.hivemq.extensions.HiveMQExtensionImpl;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.nio.file.Path;
+import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class HiveMQExtensionFactoryImpl implements HiveMQExtensionFactory {
 
     @Inject
-    public HiveMQExtensionFactoryImpl() {
-    }
+    public HiveMQExtensionFactoryImpl() {}
 
     @Override
-    public @NotNull HiveMQExtension createHiveMQExtension(final @NotNull ExtensionMain extensionMainInstance,
-                                                          final @NotNull Path extensionFolder,
-                                                          final @NotNull HiveMQExtensionEntity extensionConfig,
-                                                          final boolean enabled) {
+    public @NotNull HiveMQExtension createHiveMQExtension(
+            final @NotNull ExtensionMain extensionMainInstance,
+            final @NotNull Path extensionFolder,
+            final @NotNull HiveMQExtensionEntity extensionConfig,
+            final boolean enabled) {
         return new HiveMQExtensionImpl(extensionConfig, extensionFolder, extensionMainInstance, enabled);
     }
 }

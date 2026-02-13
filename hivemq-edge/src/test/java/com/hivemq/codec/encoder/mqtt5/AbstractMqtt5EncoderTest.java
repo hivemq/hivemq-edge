@@ -15,6 +15,9 @@
  */
 package com.hivemq.codec.encoder.mqtt5;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.mqtt.message.MessageWithID;
@@ -24,13 +27,9 @@ import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.util.Arrays;
 import org.jetbrains.annotations.NotNull;
 import util.encoder.TestMessageEncoder;
-
-import java.util.Arrays;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * @author Florian Limpöck
@@ -53,7 +52,6 @@ public class AbstractMqtt5EncoderTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setRequestProblemInformation(true);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientId("clientId");
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv5);
-
     }
 
     void encodeTestBufferSize(final byte @NotNull [] expected, final @NotNull MessageWithID message) {
@@ -81,7 +79,8 @@ public class AbstractMqtt5EncoderTest {
 
     private final @NotNull MqttUserProperty userProperty = new MqttUserProperty(user, property);
 
-    @NotNull Mqtt5UserProperties getUserProperties(final int totalCount) {
+    @NotNull
+    Mqtt5UserProperties getUserProperties(final int totalCount) {
         final ImmutableList.Builder<MqttUserProperty> builder = new ImmutableList.Builder<>();
         for (int i = 0; i < totalCount; i++) {
             builder.add(userProperty);
@@ -96,11 +95,12 @@ public class AbstractMqtt5EncoderTest {
     }
 
     private static int getMaxPropertyLength(final int maxPacketSize) {
-        return maxPacketSize - 1  // type, reserved
-                - 3  // remaining length
-                - 1  // session present
-                - 1  // reason code
-                - 1;  // property length
+        return maxPacketSize
+                - 1 // type, reserved
+                - 3 // remaining length
+                - 1 // session present
+                - 1 // reason code
+                - 1; // property length
     }
 
     class MaximumPacketBuilder {
@@ -108,7 +108,8 @@ public class AbstractMqtt5EncoderTest {
         int maxUserPropertyCount;
         int remainingPropertyBytes;
 
-        @NotNull MaximumPacketBuilder build(final int maxPacketSize) {
+        @NotNull
+        MaximumPacketBuilder build(final int maxPacketSize) {
             // MQTT v5.0 Spec §3.4.11
             final int maxPropertyLength = getMaxPropertyLength(maxPacketSize);
 

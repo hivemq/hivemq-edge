@@ -21,8 +21,6 @@ import com.google.common.primitives.ImmutableIntArray;
 import com.hivemq.codec.encoder.mqtt5.Mqtt5PayloadFormatIndicator;
 import com.hivemq.codec.encoder.mqtt5.UnsignedDataTypes;
 import com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
@@ -30,10 +28,11 @@ import com.hivemq.mqtt.message.mqtt5.MqttMessageWithUserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.util.MemoryEstimator;
-
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A MQTT PUBLISH message
@@ -76,7 +75,7 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
 
     private int sizeInMemory = SIZE_NOT_CALCULATED;
 
-    //MQTT 5
+    // MQTT 5
     PUBLISH(
             final @NotNull String hivemqId,
             final @NotNull String topic,
@@ -137,7 +136,7 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
         this.persistence = persistence;
     }
 
-    //MQTT 3
+    // MQTT 3
     PUBLISH(
             final @NotNull String hivemqId,
             final @NotNull String topic,
@@ -183,7 +182,7 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
 
         setPacketIdentifier(packetIdentifier);
 
-        //MQTT 5 Only
+        // MQTT 5 Only
         this.isNewTopicAlias = false;
         this.subscriptionIdentifiers = null;
         this.payloadFormatIndicator = null;
@@ -192,11 +191,10 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
         this.correlationData = null;
     }
 
-    public PUBLISH(
-            final @NotNull PUBLISH publish,
-            final @Nullable PublishPayloadPersistence persistence) {
+    public PUBLISH(final @NotNull PUBLISH publish, final @Nullable PublishPayloadPersistence persistence) {
 
-        this(publish.getHivemqId(),
+        this(
+                publish.getHivemqId(),
                 publish.getTopic(),
                 publish.getPayload(),
                 publish.getQoS(),
@@ -331,8 +329,8 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
     }
 
     public boolean isExpiryDisabled() {
-        return (messageExpiryInterval == MqttConfigurationDefaults.TTL_DISABLED) ||
-                (messageExpiryInterval == PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET);
+        return (messageExpiryInterval == MqttConfigurationDefaults.TTL_DISABLED)
+                || (messageExpiryInterval == PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET);
     }
 
     public boolean isExpired() {
@@ -353,23 +351,30 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
             return false;
         }
         final PUBLISH publish = (PUBLISH) o;
-        return timestamp == publish.timestamp && duplicateDelivery == publish.duplicateDelivery &&
-                retain == publish.retain && messageExpiryInterval == publish.messageExpiryInterval &&
-                publishId == publish.publishId && isNewTopicAlias == publish.isNewTopicAlias &&
-                Arrays.equals(payload, publish.payload) && Objects.equals(topic, publish.topic) && qoS == publish.qoS &&
-                Objects.equals(hivemqId, publish.hivemqId) && Objects.equals(uniqueId, publish.uniqueId) &&
-                payloadFormatIndicator == publish.payloadFormatIndicator &&
-                Objects.equals(contentType, publish.contentType) &&
-                Objects.equals(responseTopic, publish.responseTopic) &&
-                Arrays.equals(correlationData, publish.correlationData) &&
-                Objects.equals(subscriptionIdentifiers, publish.subscriptionIdentifiers) &&
-                Objects.equals(persistence, publish.persistence);
+        return timestamp == publish.timestamp
+                && duplicateDelivery == publish.duplicateDelivery
+                && retain == publish.retain
+                && messageExpiryInterval == publish.messageExpiryInterval
+                && publishId == publish.publishId
+                && isNewTopicAlias == publish.isNewTopicAlias
+                && Arrays.equals(payload, publish.payload)
+                && Objects.equals(topic, publish.topic)
+                && qoS == publish.qoS
+                && Objects.equals(hivemqId, publish.hivemqId)
+                && Objects.equals(uniqueId, publish.uniqueId)
+                && payloadFormatIndicator == publish.payloadFormatIndicator
+                && Objects.equals(contentType, publish.contentType)
+                && Objects.equals(responseTopic, publish.responseTopic)
+                && Arrays.equals(correlationData, publish.correlationData)
+                && Objects.equals(subscriptionIdentifiers, publish.subscriptionIdentifiers)
+                && Objects.equals(persistence, publish.persistence);
     }
 
     @Override
     public int hashCode() {
 
-        int result = Objects.hash(timestamp,
+        int result = Objects.hash(
+                timestamp,
                 topic,
                 duplicateDelivery,
                 retain,
@@ -426,11 +431,12 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
         size += MemoryEstimator.stringSize(hivemqId);
         size += MemoryEstimator.stringSize(contentType);
 
-        size += 24; //User Properties Overhead
-        final ImmutableList<MqttUserProperty> userProperties = getUserProperties().asList();
+        size += 24; // User Properties Overhead
+        final ImmutableList<MqttUserProperty> userProperties =
+                getUserProperties().asList();
         for (int i = 0; i < userProperties.size(); i++) {
             final MqttUserProperty userProperty = userProperties.get(i);
-            size += 24; //UserProperty Object Overhead
+            size += 24; // UserProperty Object Overhead
             size += MemoryEstimator.stringSize(userProperty.getName());
             size += MemoryEstimator.stringSize(userProperty.getValue());
         }

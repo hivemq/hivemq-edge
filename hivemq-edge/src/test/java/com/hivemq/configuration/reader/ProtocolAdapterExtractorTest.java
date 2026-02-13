@@ -15,6 +15,10 @@
  */
 package com.hivemq.configuration.reader;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
@@ -24,23 +28,18 @@ import com.hivemq.configuration.entity.adapter.TagEntity;
 import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.exceptions.UnrecoverableException;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 public class ProtocolAdapterExtractorTest {
     @TempDir
@@ -112,7 +111,8 @@ public class ProtocolAdapterExtractorTest {
         assertThat(configFileReader.applyConfig()).isNotNull();
         final ProtocolAdapterExtractor protocolAdapterExtractor = configFileReader.getProtocolAdapterExtractor();
         assertThat(protocolAdapterExtractor.getAllConfigs()).hasSize(1);
-        final ProtocolAdapterEntity protocolAdapterEntity = protocolAdapterExtractor.getAllConfigs().getFirst();
+        final ProtocolAdapterEntity protocolAdapterEntity =
+                protocolAdapterExtractor.getAllConfigs().getFirst();
         assertThat(protocolAdapterEntity.getAdapterId()).isEqualTo("simInvalid");
         assertThat(protocolAdapterEntity.getProtocolId()).isEqualTo("simulation");
         assertThat(protocolAdapterEntity.getNorthboundMappings()).hasSize(1);
@@ -120,10 +120,13 @@ public class ProtocolAdapterExtractorTest {
                 protocolAdapterEntity.getNorthboundMappings().getFirst();
         assertThat(northboundMappingEntity.getTopic()).isEqualTo("MTConnect/my-steams");
         assertThat(northboundMappingEntity.getTagName()).isEqualTo("tag1");
-        assertThat(northboundMappingEntity.getMessageHandlingOptions()).isEqualTo(MessageHandlingOptions.MQTTMessagePerTag);
+        assertThat(northboundMappingEntity.getMessageHandlingOptions())
+                .isEqualTo(MessageHandlingOptions.MQTTMessagePerTag);
         protocolAdapterEntity.getNorthboundMappings().clear();
-        protocolAdapterEntity.getNorthboundMappings()
-                .add(new NorthboundMappingEntity(northboundMappingEntity.getTagName(),
+        protocolAdapterEntity
+                .getNorthboundMappings()
+                .add(new NorthboundMappingEntity(
+                        northboundMappingEntity.getTagName(),
                         northboundMappingEntity.getTopic(),
                         northboundMappingEntity.getMaxQoS(),
                         null,
@@ -140,16 +143,15 @@ public class ProtocolAdapterExtractorTest {
         // This is a bug that can cause the config to be invalid.
         // @XmlElement(name = "messageHandlingOptions", defaultValue = "MQTTMessagePerTag", nillable = true)
         // private final @Nullable MessageHandlingOptions messageHandlingOptions;
-        assertThat(newConfigString).as("<messageHandlingOptions/> shouldn't contain xsi:nil=\"true\"")
+        assertThat(newConfigString)
+                .as("<messageHandlingOptions/> shouldn't contain xsi:nil=\"true\"")
                 .doesNotContain("<messageHandlingOptions xsi:nil=\"true\"/>");
     }
 
     @ParameterizedTest
     @CsvSource({"true,0", "true,1", "true,2", "false,-1", "false,3", "false,abc"})
     public void whenNorthboundMappingQoSIsProvided_thenApplyConfigShouldWorkAsExpected(
-            final boolean valid,
-            final @NotNull String maxQoS)
-            throws IOException {
+            final boolean valid, final @NotNull String maxQoS) throws IOException {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter("""
                 <hivemq>
                   <protocol-adapters>
@@ -190,10 +192,9 @@ public class ProtocolAdapterExtractorTest {
     @ParameterizedTest
     @CsvSource({"true,true", "true,false", "false,abc"})
     public void whenNorthboundMappingIncludeTagNamesIsProvided_thenApplyConfigShouldWorkAsExpected(
-            final boolean valid,
-            final @NotNull String includeTagNames)
-            throws IOException {
-        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter("""
+            final boolean valid, final @NotNull String includeTagNames) throws IOException {
+        final ConfigFileReaderWriter configFileReader =
+                getConfigFileReaderWriter("""
                 <hivemq>
                   <protocol-adapters>
                     <protocol-adapter>
@@ -233,10 +234,9 @@ public class ProtocolAdapterExtractorTest {
     @ParameterizedTest
     @CsvSource({"true,true", "true,false", "false,abc"})
     public void whenNorthboundMappingIncludeTimestampIsProvided_thenApplyConfigShouldWorkAsExpected(
-            final boolean valid,
-            final @NotNull String includeTimestamp)
-            throws IOException {
-        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter("""
+            final boolean valid, final @NotNull String includeTimestamp) throws IOException {
+        final ConfigFileReaderWriter configFileReader =
+                getConfigFileReaderWriter("""
                 <hivemq>
                   <protocol-adapters>
                     <protocol-adapter>
@@ -276,10 +276,9 @@ public class ProtocolAdapterExtractorTest {
     @ParameterizedTest
     @CsvSource({"true,1", "true,123", "false,0", "false,-1", "false,abc"})
     public void whenNorthboundMappingMessageExpiryIntervalIsProvided_thenApplyConfigShouldWorkAsExpected(
-            final boolean valid,
-            final @NotNull String messageExpiryInterval)
-            throws IOException {
-        final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter("""
+            final boolean valid, final @NotNull String messageExpiryInterval) throws IOException {
+        final ConfigFileReaderWriter configFileReader =
+                getConfigFileReaderWriter("""
                 <hivemq>
                   <protocol-adapters>
                     <protocol-adapter>
@@ -420,7 +419,8 @@ public class ProtocolAdapterExtractorTest {
                 </hivemq>
                 """);
         // XML schema violation in line '16' and column '51' caused by:
-        // "The prefix "xsi" for attribute "xsi:nil" associated with an element type "messageHandlingOptions" is not bound."
+        // "The prefix "xsi" for attribute "xsi:nil" associated with an element type "messageHandlingOptions" is not
+        // bound."
         assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
     }
 
@@ -458,7 +458,8 @@ public class ProtocolAdapterExtractorTest {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final HiveMQConfigEntity entity = configFileReader.applyConfig();
         assertThat(entity).isNotNull();
-        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
+        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity(
+                "adapterId",
                 "protocolId",
                 1,
                 Map.of(),
@@ -476,13 +477,8 @@ public class ProtocolAdapterExtractorTest {
         assertThat(entity).isNotNull();
         final NorthboundMappingEntity northboundMappingEntity =
                 new NorthboundMappingEntity("tagName", "topic", 1, null, false, true, List.of(), 100L);
-        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(northboundMappingEntity),
-                List.of(),
-                List.of());
+        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity(
+                "adapterId", "protocolId", 1, Map.of(), List.of(northboundMappingEntity), List.of(), List.of());
         entity.getProtocolAdapterConfig().add(protocolAdapterEntity);
         assertThat(configFileReader.internalApplyConfig(entity)).isFalse();
     }
@@ -492,15 +488,10 @@ public class ProtocolAdapterExtractorTest {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final HiveMQConfigEntity entity = configFileReader.applyConfig();
         assertThat(entity).isNotNull();
-        final NorthboundMappingEntity northboundMappingEntity = new NorthboundMappingEntity("tagName",
-                "topic",
-                1,
-                MessageHandlingOptions.MQTTMessagePerSubscription,
-                false,
-                true,
-                List.of(),
-                100L);
-        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
+        final NorthboundMappingEntity northboundMappingEntity = new NorthboundMappingEntity(
+                "tagName", "topic", 1, MessageHandlingOptions.MQTTMessagePerSubscription, false, true, List.of(), 100L);
+        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity(
+                "adapterId",
                 "protocolId",
                 1,
                 Map.of(),
@@ -514,27 +505,14 @@ public class ProtocolAdapterExtractorTest {
     @ParameterizedTest
     @CsvSource({",topic", "tagName,"})
     public void whenNorthboundMappingTagNameOrTopicIsEmpty_setConfigurationShouldReturnFalse(
-            final @NotNull String tagName,
-            final @NotNull String topic)
-            throws IOException {
+            final @NotNull String tagName, final @NotNull String topic) throws IOException {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final HiveMQConfigEntity entity = configFileReader.applyConfig();
         assertThat(entity).isNotNull();
-        final NorthboundMappingEntity northboundMappingEntity = new NorthboundMappingEntity(tagName,
-                topic,
-                1,
-                MessageHandlingOptions.MQTTMessagePerSubscription,
-                false,
-                true,
-                List.of(),
-                100L);
-        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(northboundMappingEntity),
-                List.of(),
-                List.of());
+        final NorthboundMappingEntity northboundMappingEntity = new NorthboundMappingEntity(
+                tagName, topic, 1, MessageHandlingOptions.MQTTMessagePerSubscription, false, true, List.of(), 100L);
+        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity(
+                "adapterId", "protocolId", 1, Map.of(), List.of(northboundMappingEntity), List.of(), List.of());
         entity.getProtocolAdapterConfig().add(protocolAdapterEntity);
         assertThat(configFileReader.internalApplyConfig(entity)).isFalse();
     }
@@ -546,7 +524,8 @@ public class ProtocolAdapterExtractorTest {
         assertThat(entity).isNotNull();
         final SouthboundMappingEntity southboundMappingEntity =
                 new SouthboundMappingEntity("tagName", "topicFilter", new FieldMappingEntity(), "schema");
-        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
+        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity(
+                "adapterId",
                 "protocolId",
                 1,
                 Map.of(),
@@ -560,22 +539,15 @@ public class ProtocolAdapterExtractorTest {
     @ParameterizedTest
     @CsvSource({",topicFilter,schema", "tagName,,schema", "tagName,topicFilter,"})
     public void whenSouthboundMappingTagNameOrTopicFilterOrSchemaIsEmpty_setConfigurationShouldReturnFalse(
-            final @NotNull String tagName,
-            final @NotNull String topicFilter,
-            final @NotNull String schema)
+            final @NotNull String tagName, final @NotNull String topicFilter, final @NotNull String schema)
             throws IOException {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final HiveMQConfigEntity entity = configFileReader.applyConfig();
         assertThat(entity).isNotNull();
         final SouthboundMappingEntity southboundMappingEntity =
                 new SouthboundMappingEntity(tagName, topicFilter, new FieldMappingEntity(), schema);
-        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity("adapterId",
-                "protocolId",
-                1,
-                Map.of(),
-                List.of(),
-                List.of(southboundMappingEntity),
-                List.of());
+        final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity(
+                "adapterId", "protocolId", 1, Map.of(), List.of(), List.of(southboundMappingEntity), List.of());
         entity.getProtocolAdapterConfig().add(protocolAdapterEntity);
         assertThat(configFileReader.internalApplyConfig(entity)).isFalse();
     }

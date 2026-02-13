@@ -21,15 +21,19 @@ import org.jetbrains.annotations.NotNull;
 
 public class TopicFilterMapper {
 
-    public static @NotNull TopicFilterPojo topicFilterFromDomainTagEntity(final @NotNull TopicFilterXmlEntity topicFilterXmlEntity) {
+    public static @NotNull TopicFilterPojo topicFilterFromDomainTagEntity(
+            final @NotNull TopicFilterXmlEntity topicFilterXmlEntity) {
         final String schema = topicFilterXmlEntity.getSchema();
-        return new TopicFilterPojo(topicFilterXmlEntity.getTopicFilter(),
+        return new TopicFilterPojo(
+                topicFilterXmlEntity.getTopicFilter(),
                 topicFilterXmlEntity.getDescription(),
                 schema != null && !schema.isBlank() ? DataUrl.create(schema) : null);
     }
 
-    public static @NotNull TopicFilterXmlEntity topicFilterEntityFromDomainTag(final @NotNull TopicFilterPojo topicFilter) {
-        return new TopicFilterXmlEntity(topicFilter.getTopicFilter(),
+    public static @NotNull TopicFilterXmlEntity topicFilterEntityFromDomainTag(
+            final @NotNull TopicFilterPojo topicFilter) {
+        return new TopicFilterXmlEntity(
+                topicFilter.getTopicFilter(),
                 topicFilter.getDescription(),
                 topicFilter.getSchema() != null ? topicFilter.getSchema().toString() : null);
     }

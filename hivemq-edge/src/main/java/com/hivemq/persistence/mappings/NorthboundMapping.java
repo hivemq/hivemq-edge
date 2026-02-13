@@ -20,12 +20,11 @@ import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.api.model.JavaScriptConstants;
 import com.hivemq.mqtt.message.QoS;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class NorthboundMapping implements PollingContext {
 
@@ -61,15 +60,19 @@ public class NorthboundMapping implements PollingContext {
         return new MqttUserProperty(u.getName(), u.getValue());
     }
 
-    public static @NotNull NorthboundMapping fromModel(final @NotNull com.hivemq.edge.api.model.NorthboundMapping model) {
-        return new NorthboundMapping(model.getTagName(),
+    public static @NotNull NorthboundMapping fromModel(
+            final @NotNull com.hivemq.edge.api.model.NorthboundMapping model) {
+        return new NorthboundMapping(
+                model.getTagName(),
                 model.getTopic(),
                 model.getMaxQoS() == null ? DEFAULT_QOS : model.getMaxQoS().ordinal(),
                 model.getIncludeTagNames() != null && model.getIncludeTagNames(),
                 model.getIncludeTimestamp() == null || model.getIncludeTimestamp(),
-                model.getUserProperties() != null ?
-                        model.getUserProperties().stream().map(NorthboundMapping::userProp).toList() :
-                        List.of(),
+                model.getUserProperties() != null
+                        ? model.getUserProperties().stream()
+                                .map(NorthboundMapping::userProp)
+                                .toList()
+                        : List.of(),
                 model.getMessageExpiryInterval() != null ? model.getMessageExpiryInterval() : DEFAULT_MESSAGE_EXPIRY);
     }
 
@@ -116,47 +119,40 @@ public class NorthboundMapping implements PollingContext {
     @Override
     public boolean equals(final @Nullable Object o) {
         if (o instanceof final NorthboundMapping that) {
-            return Objects.equals(tagName, that.tagName) &&
-                    Objects.equals(topic, that.topic) &&
-                    maxQoS == that.maxQoS &&
-                    Objects.equals(includeTagNames, that.includeTagNames) &&
-                    Objects.equals(includeTimestamp, that.includeTimestamp) &&
-                    Objects.equals(userProperties, that.userProperties) &&
-                    Objects.equals(messageExpiryInterval, that.messageExpiryInterval);
+            return Objects.equals(tagName, that.tagName)
+                    && Objects.equals(topic, that.topic)
+                    && maxQoS == that.maxQoS
+                    && Objects.equals(includeTagNames, that.includeTagNames)
+                    && Objects.equals(includeTimestamp, that.includeTimestamp)
+                    && Objects.equals(userProperties, that.userProperties)
+                    && Objects.equals(messageExpiryInterval, that.messageExpiryInterval);
         }
         return false;
-
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tagName,
-                topic,
-                maxQoS,
-                includeTagNames,
-                includeTimestamp,
-                userProperties,
-                messageExpiryInterval);
+        return Objects.hash(
+                tagName, topic, maxQoS, includeTagNames, includeTimestamp, userProperties, messageExpiryInterval);
     }
 
     @Override
     public @NotNull String toString() {
-        return "NorthboundMapping{" +
-                "topic='" +
-                topic +
-                '\'' +
-                ", tagName='" +
-                tagName +
-                "', includeTagNames=" +
-                includeTagNames +
-                ", includeTimestamp=" +
-                includeTimestamp +
-                ", userProperties=" +
-                userProperties +
-                ", maxQoS=" +
-                maxQoS +
-                ", messageExpiryInterval=" +
-                messageExpiryInterval +
-                '}';
+        return "NorthboundMapping{" + "topic='"
+                + topic
+                + '\''
+                + ", tagName='"
+                + tagName
+                + "', includeTagNames="
+                + includeTagNames
+                + ", includeTimestamp="
+                + includeTimestamp
+                + ", userProperties="
+                + userProperties
+                + ", maxQoS="
+                + maxQoS
+                + ", messageExpiryInterval="
+                + messageExpiryInterval
+                + '}';
     }
 }

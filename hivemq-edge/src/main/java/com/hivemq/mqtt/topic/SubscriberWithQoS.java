@@ -15,15 +15,14 @@
  */
 package com.hivemq.mqtt.topic;
 
-import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import com.hivemq.util.Bytes;
-
-import java.util.Objects;
-
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+
+import com.hivemq.extension.sdk.api.annotations.Immutable;
+import com.hivemq.util.Bytes;
+import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * This represents a subscriber (client ID) with a Quality of Service Level
@@ -125,12 +124,12 @@ public class SubscriberWithQoS implements Comparable<SubscriberWithQoS> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final SubscriberWithQoS that = (SubscriberWithQoS) o;
-        return qos == that.qos &&
-                flags == that.flags &&
-                Objects.equals(subscriber, that.subscriber) &&
-                Objects.equals(sharedName, that.sharedName) &&
-                Objects.equals(subscriptionIdentifier, that.subscriptionIdentifier) &&
-                Objects.equals(topicFilter, that.topicFilter);
+        return qos == that.qos
+                && flags == that.flags
+                && Objects.equals(subscriber, that.subscriber)
+                && Objects.equals(sharedName, that.sharedName)
+                && Objects.equals(subscriptionIdentifier, that.subscriptionIdentifier)
+                && Objects.equals(topicFilter, that.topicFilter);
     }
 
     @Override
@@ -159,9 +158,6 @@ public class SubscriberWithQoS implements Comparable<SubscriberWithQoS> {
     @NotNull
     @Override
     public String toString() {
-        return "SubscriberWithQoS{" +
-                "subscriber='" + subscriber + '\'' +
-                ", qos=" + qos +
-                '}';
+        return "SubscriberWithQoS{" + "subscriber='" + subscriber + '\'' + ", qos=" + qos + '}';
     }
 }

@@ -18,11 +18,10 @@ package com.hivemq.embedded;
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.embedded.internal.EmbeddedHiveMQBuilderImpl;
 import com.hivemq.extension.sdk.api.annotations.DoNotImplement;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.ThreadSafe;
-
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import org.jetbrains.annotations.NotNull;
 
 @DoNotImplement
 @ThreadSafe
@@ -34,18 +33,19 @@ public interface EmbeddedHiveMQ extends AutoCloseable {
     static @NotNull EmbeddedHiveMQBuilder builder() {
         return new EmbeddedHiveMQBuilderImpl();
     }
-    
+
     /**
      * Start an EmbeddedHiveMQ.
      * <p>
      * This method is idempotent. Calling start again on an already started EmbeddedHiveMQ has no effect.
      * <p>
-     * A {@link #stop()}ed EmbeddedHiveMQ can be restarted with this method. If no enduring persistence type such as 
+     * A {@link #stop()}ed EmbeddedHiveMQ can be restarted with this method. If no enduring persistence type such as
      * file persistence, is configured, the restarted EmbeddedHiveMQ does not retain its state.
      *
      * @return a {@link CompletableFuture} that completes when HiveMQ is started and ready
      */
-    @NotNull CompletableFuture<Void> start();
+    @NotNull
+    CompletableFuture<Void> start();
 
     /**
      * Stop an EmbeddedHiveMQ. Calling stop clears the metric registry returned by {@link #getMetricRegistry()}.
@@ -57,14 +57,16 @@ public interface EmbeddedHiveMQ extends AutoCloseable {
      *
      * @return a {@link CompletableFuture} that completes when HiveMQ is stopped
      */
-    @NotNull CompletableFuture<Void> stop();
+    @NotNull
+    CompletableFuture<Void> stop();
 
     /**
      * Access the metric registry of HiveMQ. The metric registry can be accessed before EmbeddedHiveMQ is started.
      *
      * @return the {@link MetricRegistry} that contains all HiveMQ metrics
      */
-    @NotNull MetricRegistry getMetricRegistry();
+    @NotNull
+    MetricRegistry getMetricRegistry();
 
     /**
      * {@inheritDoc}

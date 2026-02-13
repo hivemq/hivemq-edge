@@ -16,15 +16,14 @@
 package com.hivemq.extensions.services.publish;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.packets.publish.PayloadFormatIndicator;
 import com.hivemq.extension.sdk.api.services.publish.Publish;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
-
 import java.nio.ByteBuffer;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -61,16 +60,17 @@ public class PublishImpl implements Publish {
     @NotNull
     private final UserPropertiesImpl userProperties;
 
-    public PublishImpl(final @NotNull Qos qos,
-                       final boolean retained,
-                       final @NotNull String topic,
-                       final @Nullable PayloadFormatIndicator payloadFormatIndicator,
-                       final @Nullable Long messageExpiryInterval,
-                       final @Nullable String responseTopic,
-                       final @Nullable ByteBuffer correlationData,
-                       final @Nullable String contentType,
-                       final @Nullable ByteBuffer payload,
-                       final @NotNull UserPropertiesImpl userProperties) {
+    public PublishImpl(
+            final @NotNull Qos qos,
+            final boolean retained,
+            final @NotNull String topic,
+            final @Nullable PayloadFormatIndicator payloadFormatIndicator,
+            final @Nullable Long messageExpiryInterval,
+            final @Nullable String responseTopic,
+            final @Nullable ByteBuffer correlationData,
+            final @Nullable String contentType,
+            final @Nullable ByteBuffer payload,
+            final @NotNull UserPropertiesImpl userProperties) {
 
         Preconditions.checkNotNull(qos, "QoS must never be null");
         Preconditions.checkNotNull(topic, "Topic must never be null");

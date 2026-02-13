@@ -16,11 +16,10 @@
 package com.hivemq.limitation;
 
 import com.hivemq.configuration.service.InternalConfigurations;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.concurrent.atomic.AtomicLong;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -55,7 +54,7 @@ public class TopicAliasLimiterImpl implements TopicAliasLimiter {
 
     @Override
     public void initUsage(final int size) {
-        //4 bytes per topic as index
+        // 4 bytes per topic as index
         this.memoryUsage.addAndGet(size * 4);
     }
 
@@ -77,7 +76,7 @@ public class TopicAliasLimiterImpl implements TopicAliasLimiter {
 
     @Override
     public void finishUsage(final @NotNull String... topics) {
-        //4 bytes per topic as index
+        // 4 bytes per topic as index
         this.memoryUsage.addAndGet(topics.length * -4);
         this.removeUsage(topics);
     }
@@ -92,5 +91,4 @@ public class TopicAliasLimiterImpl implements TopicAliasLimiter {
     private int getEstimatedSize(final @NotNull String topic) {
         return 38 + (topic.length() * 2);
     }
-
 }

@@ -16,7 +16,6 @@
 package com.hivemq.configuration.reader;
 
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
-import com.hivemq.configuration.entity.MqttConfigEntity;
 import com.hivemq.configuration.entity.PersistenceEntity;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
 import com.hivemq.configuration.service.PersistenceMode;
@@ -25,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * @author Lukas Brandl
  */
-public class PersistenceConfigurator implements Configurator<PersistenceEntity>{
+public class PersistenceConfigurator implements Configurator<PersistenceEntity> {
 
     @NotNull
     private final PersistenceConfigurationService persistenceConfigurationService;
@@ -39,7 +38,7 @@ public class PersistenceConfigurator implements Configurator<PersistenceEntity>{
 
     @Override
     public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
-        if(initialized && hasChanged(this.configEntity, config.getPersistenceConfig())) {
+        if (initialized && hasChanged(this.configEntity, config.getPersistenceConfig())) {
             return true;
         }
         return false;
@@ -50,8 +49,8 @@ public class PersistenceConfigurator implements Configurator<PersistenceEntity>{
         this.configEntity = config.getPersistenceConfig();
         this.initialized = true;
 
-        persistenceConfigurationService.setMode(PersistenceMode.valueOf(
-                configEntity.getMode().name()));
+        persistenceConfigurationService.setMode(
+                PersistenceMode.valueOf(configEntity.getMode().name()));
 
         return ConfigResult.SUCCESS;
     }

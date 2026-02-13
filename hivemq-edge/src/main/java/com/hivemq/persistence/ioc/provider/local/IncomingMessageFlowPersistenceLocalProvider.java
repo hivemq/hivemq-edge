@@ -15,15 +15,13 @@
  */
 package com.hivemq.persistence.ioc.provider.local;
 
-
 import com.hivemq.persistence.local.IncomingMessageFlowInMemoryLocalPersistence;
 import com.hivemq.persistence.local.IncomingMessageFlowLocalPersistence;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The provider which is responsible for creating and providing the
@@ -39,7 +37,8 @@ public class IncomingMessageFlowPersistenceLocalProvider implements Provider<Inc
     private final Provider<IncomingMessageFlowInMemoryLocalPersistence> memoryLocalPersistenceProvider;
 
     @Inject
-    IncomingMessageFlowPersistenceLocalProvider(final Provider<IncomingMessageFlowInMemoryLocalPersistence> memoryLocalPersistenceProvider) {
+    IncomingMessageFlowPersistenceLocalProvider(
+            final Provider<IncomingMessageFlowInMemoryLocalPersistence> memoryLocalPersistenceProvider) {
         this.memoryLocalPersistenceProvider = memoryLocalPersistenceProvider;
     }
 

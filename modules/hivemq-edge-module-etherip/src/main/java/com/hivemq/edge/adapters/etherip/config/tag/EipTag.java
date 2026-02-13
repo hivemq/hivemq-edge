@@ -18,18 +18,18 @@ package com.hivemq.edge.adapters.etherip.config.tag;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.Tag;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
 
 public class EipTag implements Tag {
 
     @JsonProperty(value = "name", required = true)
-    @ModuleConfigField(title = "name",
-                       description = "name of the tag to be used in mappings",
-                       format = ModuleConfigField.FieldType.MQTT_TAG,
-                       required = true)
+    @ModuleConfigField(
+            title = "name",
+            description = "name of the tag to be used in mappings",
+            format = ModuleConfigField.FieldType.MQTT_TAG,
+            required = true)
     private final @NotNull String name;
 
     @JsonProperty(value = "description")
@@ -48,7 +48,6 @@ public class EipTag implements Tag {
         this.description = Objects.requireNonNullElse(description, "no description present.");
         this.definition = definiton;
     }
-
 
     @Override
     public @NotNull EipTagDefinition getDefinition() {

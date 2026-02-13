@@ -20,16 +20,24 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import org.jetbrains.annotations.NotNull;
 
-public record Keystore(@JsonProperty(value = "path") @ModuleConfigField(title = "Keystore path",
-                                                                        description = "Path on the local file system to the keystore.") @NotNull String path,
-                       @JsonProperty(value = "password") @ModuleConfigField(title = "Keystore password",
-                                                                            description = "Password to open the keystore.") @NotNull String password,
-                       @JsonProperty(value = "privateKeyPassword") @ModuleConfigField(title = "Private key password",
-                                                                                      description = "Password to access the private key.") @NotNull String privateKeyPassword) {
+public record Keystore(
+        @JsonProperty(value = "path")
+        @ModuleConfigField(title = "Keystore path", description = "Path on the local file system to the keystore.")
+        @NotNull
+        String path,
+
+        @JsonProperty(value = "password")
+        @ModuleConfigField(title = "Keystore password", description = "Password to open the keystore.")
+        @NotNull
+        String password,
+
+        @JsonProperty(value = "privateKeyPassword")
+        @ModuleConfigField(title = "Private key password", description = "Password to access the private key.")
+        @NotNull
+        String privateKeyPassword) {
 
     @JsonCreator
-    public Keystore {
-    }
+    public Keystore {}
 
     @Override
     public @NotNull String path() {

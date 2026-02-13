@@ -18,31 +18,29 @@ package com.hivemq.edge.adapters.file.config;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.edge.adapters.file.convertion.MappingException;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.function.Function;
-
 @SuppressWarnings("unused")
 public enum ContentType {
-
     BINARY(ContentType::mapBinary, "application/octet-stream"),
     TEXT_PLAIN(ContentType::mapPlainText, "text/plain"),
     TEXT_JSON(ContentType::mapJson, "application/json"),
     TEXT_XML(ContentType::mapPlainText, "application/xml"),
     TEXT_CSV(ContentType::mapPlainText, "text/csv");
 
-    private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper().enable(JsonParser.Feature.INCLUDE_SOURCE_IN_LOCATION);
+    private static final @NotNull ObjectMapper OBJECT_MAPPER =
+            new ObjectMapper().enable(JsonParser.Feature.INCLUDE_SOURCE_IN_LOCATION);
     private static final @NotNull Logger log = LoggerFactory.getLogger(ContentType.class);
 
     private final @NotNull Function<byte[], Object> mapperFunction;
     private final @NotNull String mimeTypeRepresentation;
-
 
     ContentType(final @NotNull Function<byte[], Object> mapperFunction, final @NotNull String mimeTypeRepresentation) {
         this.mapperFunction = mapperFunction;
@@ -73,5 +71,3 @@ public enum ContentType {
         }
     }
 }
-
-

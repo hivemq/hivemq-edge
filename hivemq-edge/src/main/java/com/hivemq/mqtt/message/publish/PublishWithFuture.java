@@ -16,10 +16,10 @@
 package com.hivemq.mqtt.message.publish;
 
 import com.google.common.util.concurrent.SettableFuture;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.handler.publish.PublishStatus;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Christoph Schäbel
@@ -28,18 +28,19 @@ public class PublishWithFuture extends PUBLISH {
 
     @NotNull
     private final SettableFuture<PublishStatus> future;
+
     private final boolean shared;
 
-    public PublishWithFuture(final @NotNull PUBLISH publish,
-                             final @NotNull SettableFuture<PublishStatus> future,
-                             final boolean shared) {
+    public PublishWithFuture(
+            final @NotNull PUBLISH publish, final @NotNull SettableFuture<PublishStatus> future, final boolean shared) {
         this(publish, future, shared, null);
     }
 
-    public PublishWithFuture(final @NotNull PUBLISH publish,
-                             final @NotNull SettableFuture<PublishStatus> future,
-                             final boolean shared,
-                             final @Nullable PublishPayloadPersistence persistence) {
+    public PublishWithFuture(
+            final @NotNull PUBLISH publish,
+            final @NotNull SettableFuture<PublishStatus> future,
+            final boolean shared,
+            final @Nullable PublishPayloadPersistence persistence) {
         super(publish, persistence);
         this.future = future;
         this.shared = shared;

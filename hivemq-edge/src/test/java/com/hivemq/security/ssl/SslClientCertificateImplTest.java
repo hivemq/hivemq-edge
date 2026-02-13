@@ -15,7 +15,19 @@
  */
 package com.hivemq.security.ssl;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.hivemq.security.auth.SslClientCertificate;
+import java.math.BigInteger;
+import java.security.*;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.RSAPrivateCrtKeySpec;
+import java.security.spec.RSAPublicKeySpec;
+import java.util.Date;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
@@ -33,24 +45,11 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.math.BigInteger;
-import java.security.*;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.RSAPrivateCrtKeySpec;
-import java.security.spec.RSAPublicKeySpec;
-import java.util.Date;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-
 public class SslClientCertificateImplTest {
 
     private Certificate certificate;
     private SslClientCertificate clientCertificate;
+
     @BeforeEach
     public void before() throws Exception {
 
@@ -61,7 +60,6 @@ public class SslClientCertificateImplTest {
 
         clientCertificate = new SslClientCertificateImpl(certificates);
     }
-
 
     @Test
     public void test_certificate() {
@@ -129,7 +127,7 @@ public class SslClientCertificateImplTest {
 
     @Test
     public void test_certs_not_null() {
-    
+
         assertThrows(NullPointerException.class, () -> new SslClientCertificateImpl(null));
     }
 
@@ -151,7 +149,6 @@ public class SslClientCertificateImplTest {
         assertEquals("DE", clientCertificate.country());
         assertEquals("Test locality", clientCertificate.locality());
         assertEquals("Test state", clientCertificate.state());
-
     }
 
     private void createBadCert() throws Exception {
@@ -172,8 +169,7 @@ public class SslClientCertificateImplTest {
                 new Date(System.currentTimeMillis() - 10000),
                 new Date(System.currentTimeMillis() + 10000),
                 new X500Name("CN="),
-                keyPair.getPublic()
-        );
+                keyPair.getPublic());
 
         return getCertificate(keyPair, certificateBuilder);
     }
@@ -182,13 +178,14 @@ public class SslClientCertificateImplTest {
         final KeyPair keyPair = createKeyPair();
 
         final JcaX509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(
-                new X500Name("CN=Test commonName, C=DE, O=Test organization, OU=Test Unit, T=Test Title, L=Test locality, ST=Test state"),
+                new X500Name(
+                        "CN=Test commonName, C=DE, O=Test organization, OU=Test Unit, T=Test Title, L=Test locality, ST=Test state"),
                 BigInteger.valueOf(123456789),
                 new Date(System.currentTimeMillis() - 10000),
                 new Date(System.currentTimeMillis() + 10000),
-                new X500Name("CN=Test commonName, C=DE, O=Test organization, OU=Test Unit, T=Test Title, L=Test locality, ST=Test state"),
-                keyPair.getPublic()
-        );
+                new X500Name(
+                        "CN=Test commonName, C=DE, O=Test organization, OU=Test Unit, T=Test Title, L=Test locality, ST=Test state"),
+                keyPair.getPublic());
 
         return getCertificate(keyPair, certificateBuilder);
     }
@@ -202,8 +199,7 @@ public class SslClientCertificateImplTest {
                 new Date(System.currentTimeMillis() - 10000),
                 new Date(System.currentTimeMillis() + 10000),
                 new X500Name("CN=Test commonName"),
-                keyPair.getPublic()
-        );
+                keyPair.getPublic());
 
         certificateBuilder.addExtension(BCStyle.C, false, new DERUTF8String("DE"));
         certificateBuilder.addExtension(BCStyle.O, false, new DERUTF8String("Test organization"));
@@ -215,7 +211,8 @@ public class SslClientCertificateImplTest {
         return getCertificate(keyPair, certificateBuilder);
     }
 
-    private Certificate getCertificate(final KeyPair keyPair, final JcaX509v3CertificateBuilder certificateBuilder) throws OperatorCreationException, CertificateException {
+    private Certificate getCertificate(final KeyPair keyPair, final JcaX509v3CertificateBuilder certificateBuilder)
+            throws OperatorCreationException, CertificateException {
 
         Security.addProvider(new BouncyCastleProvider());
 
@@ -240,15 +237,20 @@ public class SslClientCertificateImplTest {
         final RSAKeyParameters publicKey = (RSAKeyParameters) keypair.getPublic();
         final RSAPrivateCrtKeyParameters privateKey = (RSAPrivateCrtKeyParameters) keypair.getPrivate();
 
-        final PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(
-                new RSAPublicKeySpec(publicKey.getModulus(), publicKey.getExponent()));
+        final PublicKey pubKey = KeyFactory.getInstance("RSA")
+                .generatePublic(new RSAPublicKeySpec(publicKey.getModulus(), publicKey.getExponent()));
 
-        final PrivateKey privKey = KeyFactory.getInstance("RSA").generatePrivate(
-                new RSAPrivateCrtKeySpec(publicKey.getModulus(), publicKey.getExponent(),
-                        privateKey.getExponent(), privateKey.getP(), privateKey.getQ(),
-                        privateKey.getDP(), privateKey.getDQ(), privateKey.getQInv()));
+        final PrivateKey privKey = KeyFactory.getInstance("RSA")
+                .generatePrivate(new RSAPrivateCrtKeySpec(
+                        publicKey.getModulus(),
+                        publicKey.getExponent(),
+                        privateKey.getExponent(),
+                        privateKey.getP(),
+                        privateKey.getQ(),
+                        privateKey.getDP(),
+                        privateKey.getDQ(),
+                        privateKey.getQInv()));
 
         return new KeyPair(pubKey, privKey);
     }
-
 }

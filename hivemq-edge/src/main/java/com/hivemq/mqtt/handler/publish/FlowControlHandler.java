@@ -28,7 +28,6 @@ import com.hivemq.util.ReasonStrings;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-
 import jakarta.inject.Inject;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -56,7 +55,8 @@ public class FlowControlHandler extends ChannelDuplexHandler {
     private final MqttServerDisconnector serverDisconnector;
 
     @Inject
-    public FlowControlHandler(final MqttConfigurationService mqttConfigurationService, final MqttServerDisconnector serverDisconnector) {
+    public FlowControlHandler(
+            final MqttConfigurationService mqttConfigurationService, final MqttServerDisconnector serverDisconnector) {
         this.serverReceiveMaximum = mqttConfigurationService.serverReceiveMaximum();
         this.serverDisconnector = serverDisconnector;
         this.serverSendQuota = new AtomicInteger(serverReceiveMaximum);
@@ -65,17 +65,17 @@ public class FlowControlHandler extends ChannelDuplexHandler {
     @Override
     public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
 
-
         if (msg instanceof PUBLISH) {
-            //client already disconnected. No need to read more publishes.
+            // client already disconnected. No need to read more publishes.
             if (serverSendQuota.get() < 0) {
                 return;
             }
             final PUBLISH publish = (PUBLISH) msg;
 
-            //decrement sendQuota for qos > 0 publish messages and disconnect client when quota gets negative
+            // decrement sendQuota for qos > 0 publish messages and disconnect client when quota gets negative
             if (QoS.AT_MOST_ONCE != publish.getQoS() && serverSendQuota.getAndDecrement() == 0) {
-                serverDisconnector.disconnect(ctx.channel(),
+                serverDisconnector.disconnect(
+                        ctx.channel(),
                         "A client (IP: {}) sent too many concurrent PUBLISH messages. Disconnecting client.",
                         "Sent too many concurrent PUBLISH messages",
                         Mqtt5DisconnectReasonCode.RECEIVE_MAXIMUM_EXCEEDED,
@@ -88,9 +88,10 @@ public class FlowControlHandler extends ChannelDuplexHandler {
     }
 
     @Override
-    public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelPromise promise) throws Exception {
+    public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelPromise promise)
+            throws Exception {
 
-        //do not check msg instance and increment quota if its already at maximum
+        // do not check msg instance and increment quota if its already at maximum
         if (serverSendQuota.get() == serverReceiveMaximum) {
             super.write(ctx, msg, promise);
             return;
@@ -109,7 +110,6 @@ public class FlowControlHandler extends ChannelDuplexHandler {
             if (pubrec.getReasonCode().getCode() >= 0x80) {
                 serverSendQuota.incrementAndGet();
             }
-
         }
 
         super.write(ctx, msg, promise);

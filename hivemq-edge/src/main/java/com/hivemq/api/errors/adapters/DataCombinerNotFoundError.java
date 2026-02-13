@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.api.errors.adapters;
 
 import com.hivemq.http.HttpStatus;
 import com.hivemq.http.error.Error;
 import com.hivemq.http.error.ProblemDetails;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 public class DataCombinerNotFoundError extends ProblemDetails {
     public DataCombinerNotFoundError(final @NotNull String error) {
-        super("DataCombinerNotFound",
+        super(
+                "DataCombinerNotFound",
                 "No data combiner found with the provided id",
                 "No data combiner found with the provided id",
                 HttpStatus.NOT_FOUND_404,

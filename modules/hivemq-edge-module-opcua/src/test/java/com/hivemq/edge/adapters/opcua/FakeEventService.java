@@ -21,12 +21,11 @@ import com.hivemq.adapter.sdk.api.events.model.EventBuilder;
 import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
 import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class FakeEventService implements EventService {
     private final @NotNull List<Event> eventStore;
@@ -41,20 +40,23 @@ public class FakeEventService implements EventService {
 
     @Override
     public @NotNull EventBuilder createAdapterEvent(final @NotNull String adapterId, final @NotNull String protocolId) {
-        return new EventBuilderImpl(this::fireEvent).withTimestamp(System.currentTimeMillis())
+        return new EventBuilderImpl(this::fireEvent)
+                .withTimestamp(System.currentTimeMillis())
                 .withSource(TypeIdentifierImpl.create(TypeIdentifier.Type.ADAPTER, adapterId))
                 .withAssociatedObject(TypeIdentifierImpl.create(TypeIdentifier.Type.ADAPTER_TYPE, protocolId));
     }
 
     @Override
     public @NotNull EventBuilder createDataCombiningEvent(@NotNull final UUID uuid) {
-        return new EventBuilderImpl(this::fireEvent).withTimestamp(System.currentTimeMillis())
+        return new EventBuilderImpl(this::fireEvent)
+                .withTimestamp(System.currentTimeMillis())
                 .withSource(TypeIdentifierImpl.create(TypeIdentifier.Type.DATA_COMBINING, uuid.toString()));
     }
 
     @Override
     public @NotNull EventBuilder createCombinerEvent(@NotNull final UUID uuid) {
-        return new EventBuilderImpl(this::fireEvent).withTimestamp(System.currentTimeMillis())
+        return new EventBuilderImpl(this::fireEvent)
+                .withTimestamp(System.currentTimeMillis())
                 .withSource(TypeIdentifierImpl.create(TypeIdentifier.Type.COMBINER, uuid.toString()));
     }
 

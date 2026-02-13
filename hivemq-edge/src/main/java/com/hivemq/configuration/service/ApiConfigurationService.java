@@ -21,17 +21,17 @@ import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.config.ApiStaticResourcePath;
 import com.hivemq.api.model.components.PreLoginNotice;
 import com.hivemq.http.core.UsernamePasswordRoles;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
 
 /**
  * A Configuration service which allows access to API Configuration properties
  */
 public interface ApiConfigurationService {
 
-    @NotNull List<ApiListener> getListeners();
+    @NotNull
+    List<ApiListener> getListeners();
 
     void setListeners(final @NotNull List<ApiListener> listeners);
 
@@ -39,23 +39,28 @@ public interface ApiConfigurationService {
 
     void setEnabled(boolean enabled);
 
-    @NotNull List<ApiStaticResourcePath> getResourcePaths();
+    @NotNull
+    List<ApiStaticResourcePath> getResourcePaths();
 
     void setResourcePaths(final @NotNull List<ApiStaticResourcePath> resourcePaths);
 
-    @Nullable ApiJwtConfiguration getApiJwtConfiguration();
+    @Nullable
+    ApiJwtConfiguration getApiJwtConfiguration();
 
     void setApiJwtConfiguration(final @NotNull ApiJwtConfiguration apiJwtConfiguration);
 
-    @NotNull List<UsernamePasswordRoles> getUserList();
+    @NotNull
+    List<UsernamePasswordRoles> getUserList();
 
     void setUserList(final @NotNull List<UsernamePasswordRoles> userList);
 
     void setLdapConnectionProperties(final @NotNull LdapConnectionProperties connectionProperties);
 
-    @Nullable LdapConnectionProperties getLdapConnectionProperties();
+    @Nullable
+    LdapConnectionProperties getLdapConnectionProperties();
 
-    @NotNull PreLoginNotice getPreLoginNotice();
+    @NotNull
+    PreLoginNotice getPreLoginNotice();
 
     void setPreLoginNotice(final @NotNull PreLoginNotice preLoginNotice);
 

@@ -13,8 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.configuration.writer;
+
+import static java.util.Objects.requireNonNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.ApiConfigurator;
@@ -32,20 +36,14 @@ import com.hivemq.configuration.reader.RestrictionConfigurator;
 import com.hivemq.configuration.reader.SecurityConfigurator;
 import com.hivemq.configuration.reader.UsageTrackingConfigurator;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.apache.commons.io.FileUtils;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import util.TestConfigurationBootstrap;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-
-import static java.util.Objects.requireNonNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import util.TestConfigurationBootstrap;
 
 public abstract class AbstractConfigWriterTest {
 
@@ -77,9 +75,11 @@ public abstract class AbstractConfigWriterTest {
         when(apiConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
 
         final ConfigurationFile configurationFile = new ConfigurationFile(file);
-        final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(mock(SystemInformation.class),
+        final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(
+                mock(SystemInformation.class),
                 configurationFile,
-                List.of(restrictionConfigurator,
+                List.of(
+                        restrictionConfigurator,
                         securityConfigurator,
                         mqttConfigurator,
                         listenerConfigurator,
@@ -95,7 +95,8 @@ public abstract class AbstractConfigWriterTest {
     }
 
     protected @NotNull File loadTestConfigFile() throws IOException {
-        try (final InputStream is = requireNonNull(AbstractConfigWriterTest.class.getResourceAsStream("/test-config.xml"))) {
+        try (final InputStream is =
+                requireNonNull(AbstractConfigWriterTest.class.getResourceAsStream("/test-config.xml"))) {
             final File tempFile = new File(System.getProperty("java.io.tmpdir"), "original-config.xml");
             tempFile.deleteOnExit();
             FileUtils.copyInputStreamToFile(is, tempFile);

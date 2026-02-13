@@ -15,6 +15,15 @@
  */
 package com.hivemq.mqtt.services;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -34,6 +43,10 @@ import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.clientsession.ClientSession;
 import com.hivemq.persistence.clientsession.ClientSessionPersistence;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,20 +54,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import util.TestMessageUtil;
 import util.TestSingleWriterFactory;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Lukas Brandl
@@ -72,17 +71,23 @@ public class PublishDistributorImplTest {
     private @NotNull PublishDistributorImpl publishDistributor;
     private @NotNull SingleWriterService singleWriterService;
 
-    private final @NotNull InternalConfigurationService
-            internalConfigurationService = new InternalConfigurationServiceImpl();
+    private final @NotNull InternalConfigurationService internalConfigurationService =
+            new InternalConfigurationServiceImpl();
+
     @BeforeEach
     public void setUp() throws Exception {
         when(configurationService.mqttConfiguration()).thenReturn(mqttConfigurationService);
         when(configurationService.bridgeExtractor()).thenReturn(bridgeConfiguration);
         singleWriterService = TestSingleWriterFactory.defaultSingleWriter(internalConfigurationService);
-        publishDistributor = new PublishDistributorImpl(payloadPersistence, clientQueuePersistence, ()->clientSessionPersistence,
-                singleWriterService, configurationService);
+        publishDistributor = new PublishDistributorImpl(
+                payloadPersistence,
+                clientQueuePersistence,
+                () -> clientSessionPersistence,
+                singleWriterService,
+                configurationService);
         when(bridgeConfiguration.getBridges()).thenReturn(List.of(bridge));
     }
+
     @AfterEach
     public void tearDown() throws Exception {
         singleWriterService.stop();
@@ -93,11 +98,12 @@ public class PublishDistributorImplTest {
     public void test_not_connected() throws ExecutionException, InterruptedException {
         when(clientSessionPersistence.getSession("client", false)).thenReturn(new ClientSession(false, 1000L));
 
-        final PublishStatus status = publishDistributor.sendMessageToSubscriber(createPublish(QoS.AT_LEAST_ONCE), "client",
-                0, false, false, ImmutableIntArray.of(1)).get();
+        final PublishStatus status = publishDistributor
+                .sendMessageToSubscriber(
+                        createPublish(QoS.AT_LEAST_ONCE), "client", 0, false, false, ImmutableIntArray.of(1))
+                .get();
 
         assertEquals(PublishStatus.NOT_CONNECTED, status);
-
     }
 
     @Test
@@ -105,8 +111,10 @@ public class PublishDistributorImplTest {
     public void test_session_expired() throws ExecutionException, InterruptedException {
         when(clientSessionPersistence.getSession("client", false)).thenReturn(null);
 
-        final PublishStatus status = publishDistributor.sendMessageToSubscriber(createPublish(QoS.AT_LEAST_ONCE), "client",
-                0, false, false, ImmutableIntArray.of(1)).get();
+        final PublishStatus status = publishDistributor
+                .sendMessageToSubscriber(
+                        createPublish(QoS.AT_LEAST_ONCE), "client", 0, false, false, ImmutableIntArray.of(1))
+                .get();
 
         assertEquals(PublishStatus.NOT_CONNECTED, status);
     }
@@ -115,11 +123,13 @@ public class PublishDistributorImplTest {
     @Timeout(5)
     public void test_success() throws ExecutionException, InterruptedException {
         when(clientSessionPersistence.getSession("client", false)).thenReturn(new ClientSession(true, 1000L));
-        when(clientQueuePersistence.add(eq("client"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong())).thenReturn(Futures.immediateFuture(null));
+        when(clientQueuePersistence.add(eq("client"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong()))
+                .thenReturn(Futures.immediateFuture(null));
 
-
-        final PublishStatus status = publishDistributor.sendMessageToSubscriber(createPublish(QoS.AT_LEAST_ONCE), "client",
-                0, false, false, ImmutableIntArray.of(1)).get();
+        final PublishStatus status = publishDistributor
+                .sendMessageToSubscriber(
+                        createPublish(QoS.AT_LEAST_ONCE), "client", 0, false, false, ImmutableIntArray.of(1))
+                .get();
 
         verify(clientQueuePersistence).add(eq("client"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong());
         assertEquals(PublishStatus.DELIVERED, status);
@@ -129,11 +139,13 @@ public class PublishDistributorImplTest {
     @Timeout(5)
     public void test_failed() throws ExecutionException, InterruptedException {
         when(clientSessionPersistence.getSession("client", false)).thenReturn(new ClientSession(true, 1000L));
-        when(clientQueuePersistence.add(eq("client"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong())).thenReturn(Futures.immediateFailedFuture(new RuntimeException("test")));
+        when(clientQueuePersistence.add(eq("client"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong()))
+                .thenReturn(Futures.immediateFailedFuture(new RuntimeException("test")));
 
-
-        final PublishStatus status = publishDistributor.sendMessageToSubscriber(createPublish(QoS.AT_LEAST_ONCE), "client",
-                0, false, false, ImmutableIntArray.of(1)).get();
+        final PublishStatus status = publishDistributor
+                .sendMessageToSubscriber(
+                        createPublish(QoS.AT_LEAST_ONCE), "client", 0, false, false, ImmutableIntArray.of(1))
+                .get();
 
         verify(clientQueuePersistence).add(eq("client"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong());
         assertEquals(PublishStatus.FAILED, status);
@@ -142,11 +154,13 @@ public class PublishDistributorImplTest {
     @Test
     @Timeout(5)
     public void test_success_shared() throws ExecutionException, InterruptedException {
-        when(clientQueuePersistence.add(eq("group/topic"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong())).thenReturn(Futures.immediateFuture(null));
+        when(clientQueuePersistence.add(eq("group/topic"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong()))
+                .thenReturn(Futures.immediateFuture(null));
 
-
-        final PublishStatus status = publishDistributor.sendMessageToSubscriber(createPublish(QoS.AT_LEAST_ONCE), "group/topic",
-                0, true, false, ImmutableIntArray.of(1)).get();
+        final PublishStatus status = publishDistributor
+                .sendMessageToSubscriber(
+                        createPublish(QoS.AT_LEAST_ONCE), "group/topic", 0, true, false, ImmutableIntArray.of(1))
+                .get();
 
         verify(clientQueuePersistence).add(eq("group/topic"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong());
         assertEquals(PublishStatus.DELIVERED, status);
@@ -156,15 +170,17 @@ public class PublishDistributorImplTest {
     public void test_distribute_to_non_shared() {
         when(clientSessionPersistence.getSession("client1", false)).thenReturn(new ClientSession(true, 1000L));
         when(clientSessionPersistence.getSession("client2", false)).thenReturn(new ClientSession(true, 1000L));
-        when(clientQueuePersistence.add(eq("client1"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong())).thenReturn(Futures.immediateFuture(null));
-        when(clientQueuePersistence.add(eq("client2"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong())).thenReturn(Futures.immediateFuture(null));
+        when(clientQueuePersistence.add(eq("client1"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong()))
+                .thenReturn(Futures.immediateFuture(null));
+        when(clientQueuePersistence.add(eq("client2"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong()))
+                .thenReturn(Futures.immediateFuture(null));
 
         final Map<String, SubscriberWithIdentifiers> subscribers = Map.of(
                 "client1", new SubscriberWithIdentifiers("client1", 1, (byte) 0, null),
-                "client2", new SubscriberWithIdentifiers("client2", 1, (byte) 0, null)
-        );
+                "client2", new SubscriberWithIdentifiers("client2", 1, (byte) 0, null));
 
-        publishDistributor.distributeToNonSharedSubscribers(subscribers, TestMessageUtil.createMqtt5Publish(), MoreExecutors.newDirectExecutorService());
+        publishDistributor.distributeToNonSharedSubscribers(
+                subscribers, TestMessageUtil.createMqtt5Publish(), MoreExecutors.newDirectExecutorService());
 
         verify(clientQueuePersistence).add(eq("client1"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong());
         verify(clientQueuePersistence).add(eq("client2"), eq(false), any(PUBLISH.class), anyBoolean(), anyLong());
@@ -172,19 +188,23 @@ public class PublishDistributorImplTest {
 
     @Test
     public void test_distribute_to_shared_subs() {
-        when(clientQueuePersistence.add(eq("name/topic1"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong())).thenReturn(Futures.immediateFuture(null));
-        when(clientQueuePersistence.add(eq("name/topic2"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong())).thenReturn(Futures.immediateFuture(null));
+        when(clientQueuePersistence.add(eq("name/topic1"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong()))
+                .thenReturn(Futures.immediateFuture(null));
+        when(clientQueuePersistence.add(eq("name/topic2"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong()))
+                .thenReturn(Futures.immediateFuture(null));
 
         final Set<String> subscribers = Set.of("name/topic1", "name/topic2");
 
-        publishDistributor.distributeToSharedSubscribers(subscribers, TestMessageUtil.createMqtt5Publish("topic"), MoreExecutors.newDirectExecutorService());
+        publishDistributor.distributeToSharedSubscribers(
+                subscribers, TestMessageUtil.createMqtt5Publish("topic"), MoreExecutors.newDirectExecutorService());
 
         verify(clientQueuePersistence).add(eq("name/topic1"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong());
         verify(clientQueuePersistence).add(eq("name/topic2"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong());
     }
 
     private PUBLISH createPublish(final @NotNull QoS qos) {
-        return new PUBLISHFactory.Mqtt5Builder().withPacketIdentifier(0)
+        return new PUBLISHFactory.Mqtt5Builder()
+                .withPacketIdentifier(0)
                 .withQoS(qos)
                 .withOnwardQos(qos)
                 .withPayload("message".getBytes())
@@ -192,5 +212,4 @@ public class PublishDistributorImplTest {
                 .withHivemqId("hivemqId")
                 .build();
     }
-
 }

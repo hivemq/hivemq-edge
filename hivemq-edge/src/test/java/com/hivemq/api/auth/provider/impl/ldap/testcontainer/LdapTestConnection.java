@@ -1,4 +1,21 @@
+/*
+ * Copyright 2019-present HiveMQ GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.hivemq.api.auth.provider.impl.ldap.testcontainer;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.hivemq.api.auth.provider.impl.ldap.LdapConnectionProperties;
 import com.hivemq.api.auth.provider.impl.ldap.TlsMode;
@@ -19,12 +36,9 @@ import com.unboundid.ldap.sdk.extensions.StartTLSExtendedRequest;
 import com.unboundid.util.ssl.SSLUtil;
 import com.unboundid.util.ssl.TrustAllTrustManager;
 import com.unboundid.util.ssl.TrustStoreTrustManager;
-import org.jetbrains.annotations.NotNull;
-
-import javax.net.ssl.SSLContext;
 import java.security.GeneralSecurityException;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import javax.net.ssl.SSLContext;
+import org.jetbrains.annotations.NotNull;
 
 public class LdapTestConnection {
     public static final String TEST_USERNAME = "test";
@@ -56,7 +70,8 @@ public class LdapTestConnection {
      */
     public @NotNull SSLContext createSSLContext() throws GeneralSecurityException {
         if (ldapConnectionProperties.tlsMode().equals(TlsMode.NONE)) {
-            throw new IllegalStateException("SSLContext is not needed for TLS mode: " + ldapConnectionProperties.tlsMode());
+            throw new IllegalStateException(
+                    "SSLContext is not needed for TLS mode: " + ldapConnectionProperties.tlsMode());
         }
 
         // TEST ONLY: Accept any certificate without validation
@@ -77,7 +92,12 @@ public class LdapTestConnection {
         // Use custom truststore for self-signed certificates or internal CAs
         final SSLUtil sslUtil = new SSLUtil(new TrustStoreTrustManager(
                 ldapConnectionProperties.trustStore().trustStorePath(),
-                ldapConnectionProperties.trustStore().trustStorePassword() != null ? ldapConnectionProperties.trustStore().trustStorePassword().toCharArray() : null,
+                ldapConnectionProperties.trustStore().trustStorePassword() != null
+                        ? ldapConnectionProperties
+                                .trustStore()
+                                .trustStorePassword()
+                                .toCharArray()
+                        : null,
                 ldapConnectionProperties.trustStore().trustStoreType(),
                 true));
         return sslUtil.createSSLContext();
@@ -131,7 +151,10 @@ public class LdapTestConnection {
      */
     private @NotNull LDAPConnection createPlainConnection(final @NotNull LDAPConnectionOptions options)
             throws LDAPException {
-        return new LDAPConnection(options, ldapConnectionProperties.servers().hosts()[0], ldapConnectionProperties.servers().ports()[0]);
+        return new LDAPConnection(
+                options,
+                ldapConnectionProperties.servers().hosts()[0],
+                ldapConnectionProperties.servers().ports()[0]);
     }
 
     /**
@@ -140,7 +163,11 @@ public class LdapTestConnection {
     private @NotNull LDAPConnection createLdapsConnection(final @NotNull LDAPConnectionOptions options)
             throws LDAPException, GeneralSecurityException {
         final SSLContext sslContext = createSSLContext();
-        return new LDAPConnection(sslContext.getSocketFactory(), options, ldapConnectionProperties.servers().hosts()[0], ldapConnectionProperties.servers().ports()[0]);
+        return new LDAPConnection(
+                sslContext.getSocketFactory(),
+                options,
+                ldapConnectionProperties.servers().hosts()[0],
+                ldapConnectionProperties.servers().ports()[0]);
     }
 
     /**
@@ -149,7 +176,10 @@ public class LdapTestConnection {
     private @NotNull LDAPConnection createStartTlsConnection(final @NotNull LDAPConnectionOptions options)
             throws LDAPException, GeneralSecurityException {
         // First create plain connection
-        final LDAPConnection connection = new LDAPConnection(options, ldapConnectionProperties.servers().hosts()[0], ldapConnectionProperties.servers().ports()[0]);
+        final LDAPConnection connection = new LDAPConnection(
+                options,
+                ldapConnectionProperties.servers().hosts()[0],
+                ldapConnectionProperties.servers().ports()[0]);
 
         try {
             // Upgrade to TLS using StartTLS extended operation
@@ -158,8 +188,8 @@ public class LdapTestConnection {
             final ExtendedResult startTLSResult = connection.processExtendedOperation(startTLSRequest);
 
             if (startTLSResult.getResultCode() != ResultCode.SUCCESS) {
-                throw new LDAPException(startTLSResult.getResultCode(),
-                        "StartTLS failed: " + startTLSResult.getDiagnosticMessage());
+                throw new LDAPException(
+                        startTLSResult.getResultCode(), "StartTLS failed: " + startTLSResult.getDiagnosticMessage());
             }
 
             return connection;
@@ -169,7 +199,6 @@ public class LdapTestConnection {
             throw e;
         }
     }
-
 
     /**
      * Creates a test user in LLDAP using the admin account.
@@ -182,13 +211,13 @@ public class LdapTestConnection {
      * Note: This method uses the low-level connection API directly since it performs
      * administrative operations (adding users) that are not part of the normal client API.
      */
-    public void createTestUser(@NotNull final String adminDn, @NotNull final String adminPassword, @NotNull final String baseDn) throws LDAPException, GeneralSecurityException {
+    public void createTestUser(
+            @NotNull final String adminDn, @NotNull final String adminPassword, @NotNull final String baseDn)
+            throws LDAPException, GeneralSecurityException {
         final var testconnection = new LdapTestConnection(ldapConnectionProperties);
         try (final var adminConnection = testconnection.createConnection()) {
             // Bind as admin using LldapContainer's convenience methods
-            final BindRequest bindRequest = new SimpleBindRequest(
-                    adminDn,
-                    adminPassword);
+            final BindRequest bindRequest = new SimpleBindRequest(adminDn, adminPassword);
             final BindResult bindResult = adminConnection.bind(bindRequest);
 
             assertThat(bindResult.getResultCode()).isEqualTo(ResultCode.SUCCESS);
@@ -196,7 +225,8 @@ public class LdapTestConnection {
             // Add test user using proper Attribute objects
             final String testUserDnString = "uid=" + TEST_USERNAME + ",ou=people," + baseDn;
 
-            final AddRequest addRequest = new AddRequest(testUserDnString,
+            final AddRequest addRequest = new AddRequest(
+                    testUserDnString,
                     new Attribute("objectClass", "inetOrgPerson", "posixAccount"),
                     new Attribute("uid", TEST_USERNAME),
                     new Attribute("cn", TEST_USERNAME),
@@ -204,20 +234,15 @@ public class LdapTestConnection {
                     new Attribute("mail", TEST_USERNAME + "@example.com"), // Required by LLDAP
                     new Attribute("uidNumber", "1000"),
                     new Attribute("gidNumber", "1000"),
-                    new Attribute("homeDirectory", "/home/" + TEST_USERNAME)
-            );
+                    new Attribute("homeDirectory", "/home/" + TEST_USERNAME));
 
             adminConnection.add(addRequest);
 
             // Set the password using a ModifyRequest (this ensures proper password hashing)
-            final ModifyRequest modifyRequest = new ModifyRequest(testUserDnString,
-                    new Modification(ModificationType.REPLACE,
-                            "userPassword",
-                            TEST_PASSWORD));
+            final ModifyRequest modifyRequest = new ModifyRequest(
+                    testUserDnString, new Modification(ModificationType.REPLACE, "userPassword", TEST_PASSWORD));
 
             adminConnection.modify(modifyRequest);
         }
     }
-
 }
-

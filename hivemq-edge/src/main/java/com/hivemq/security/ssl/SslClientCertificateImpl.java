@@ -16,10 +16,11 @@
 package com.hivemq.security.ssl;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.security.auth.SslClientCertificate;
 import com.hivemq.security.exception.PropertyNotFoundException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -27,10 +28,8 @@ import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x500.style.IETFUtils;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
-
-import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.X509Certificate;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Christoph Schäbel
@@ -99,7 +98,7 @@ public class SslClientCertificateImpl implements SslClientCertificate {
         try {
             final X509Certificate cert = (X509Certificate) certificate();
 
-            //x500 name values may be here or in extension
+            // x500 name values may be here or in extension
             final String subjectProperty = subjectProperty(objectIdentifier, cert);
 
             if (subjectProperty != null) {
@@ -110,7 +109,7 @@ public class SslClientCertificateImpl implements SslClientCertificate {
                 return cert.getSerialNumber().toString();
             }
 
-            //x500 name values may be here or in subject
+            // x500 name values may be here or in subject
             final Extension extension = new JcaX509CertificateHolder(cert).getExtension(objectIdentifier);
             if (extension == null) {
                 return null;
@@ -123,7 +122,8 @@ public class SslClientCertificateImpl implements SslClientCertificate {
     }
 
     @Nullable
-    private String subjectProperty(final ASN1ObjectIdentifier objectIdentifier, final X509Certificate cert) throws CertificateEncodingException {
+    private String subjectProperty(final ASN1ObjectIdentifier objectIdentifier, final X509Certificate cert)
+            throws CertificateEncodingException {
         final X500Name x500name = new JcaX509CertificateHolder(cert).getSubject();
         final RDN[] rdNs = x500name.getRDNs(objectIdentifier);
         if (rdNs.length < 1) {
@@ -132,5 +132,4 @@ public class SslClientCertificateImpl implements SslClientCertificate {
         final RDN cn = rdNs[0];
         return IETFUtils.valueToString(cn.getFirst().getValue());
     }
-
 }

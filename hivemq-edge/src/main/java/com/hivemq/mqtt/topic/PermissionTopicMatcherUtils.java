@@ -15,14 +15,13 @@
  */
 package com.hivemq.mqtt.topic;
 
-import org.jetbrains.annotations.NotNull;
-
 import static java.lang.Math.min;
+
+import org.jetbrains.annotations.NotNull;
 
 public final class PermissionTopicMatcherUtils {
 
-    private PermissionTopicMatcherUtils() {
-    }
+    private PermissionTopicMatcherUtils() {}
 
     public static boolean matches(
             final @NotNull String permissionTopic,
@@ -31,12 +30,14 @@ public final class PermissionTopicMatcherUtils {
             final boolean endsWithWildCard,
             final boolean rootWildCard,
             final @NotNull String actualTopic,
-            final @NotNull String[] splitActualTopic) throws InvalidTopicException {
+            final @NotNull String[] splitActualTopic)
+            throws InvalidTopicException {
 
         if (nonWildCard) {
             return permissionTopic.equals(actualTopic);
         }
-        return matchesWildcards(permissionTopic, splitPermissionTopic, endsWithWildCard, rootWildCard, splitActualTopic);
+        return matchesWildcards(
+                permissionTopic, splitPermissionTopic, endsWithWildCard, rootWildCard, splitActualTopic);
     }
 
     private static boolean matchesWildcards(
@@ -63,18 +64,19 @@ public final class PermissionTopicMatcherUtils {
                     case "#":
                         return true;
                     case "+":
-                        //Matches Topic Level wildcard, so we can just ignore
+                        // Matches Topic Level wildcard, so we can just ignore
                         break;
                     default:
-                        //Does not match a wildcard and is not equal to the topic token
+                        // Does not match a wildcard and is not equal to the topic token
                         return false;
                 }
             }
         }
-        //If the length is equal or the subscription token with the number x+1 (where x is the topic length) is a wildcard,
-        //everything is alright.
-        return splitPermissionTopic.length == splitActualTopic.length ||
-                (splitPermissionTopic.length - splitActualTopic.length == 1 &&
-                        ("#".equals(splitPermissionTopic[splitPermissionTopic.length - 1])));
+        // If the length is equal or the subscription token with the number x+1 (where x is the topic length) is a
+        // wildcard,
+        // everything is alright.
+        return splitPermissionTopic.length == splitActualTopic.length
+                || (splitPermissionTopic.length - splitActualTopic.length == 1
+                        && ("#".equals(splitPermissionTopic[splitPermissionTopic.length - 1])));
     }
 }

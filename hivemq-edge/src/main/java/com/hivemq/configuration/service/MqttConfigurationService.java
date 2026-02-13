@@ -15,8 +15,8 @@
  */
 package com.hivemq.configuration.service;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.QoS;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A Configuration service which allows to get information about the current MQTT configuration
@@ -135,7 +135,6 @@ public interface MqttConfigurationService {
      * @return the maximum keep alive a client may have. Default 65535
      */
     int keepAliveMax();
-
 
     void setQueuedMessagesStrategy(@NotNull QueuedMessagesStrategy strategy);
 

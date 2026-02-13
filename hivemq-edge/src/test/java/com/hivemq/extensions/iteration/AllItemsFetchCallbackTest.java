@@ -15,19 +15,18 @@
  */
 package com.hivemq.extensions.iteration;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Test;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 
 public class AllItemsFetchCallbackTest {
 
@@ -36,7 +35,8 @@ public class AllItemsFetchCallbackTest {
         final AllItemsFetchCallback<Object, Object> allItemsFetchCallback = new AllItemsFetchCallback<>() {
 
             @Override
-            protected @NotNull ListenableFuture<MultipleChunkResult<Object>> persistenceCall(final @NotNull ChunkCursor chunkCursor) {
+            protected @NotNull ListenableFuture<MultipleChunkResult<Object>> persistenceCall(
+                    final @NotNull ChunkCursor chunkCursor) {
 
                 assertNotNull(chunkCursor);
                 return SettableFuture.create();
@@ -56,7 +56,8 @@ public class AllItemsFetchCallbackTest {
 
         final AllItemsFetchCallback<String, String> allItemsFetchCallback = new AllItemsFetchCallback<>() {
             @Override
-            protected @NotNull ListenableFuture<MultipleChunkResult<String>> persistenceCall(final @NotNull ChunkCursor chunkCursor) {
+            protected @NotNull ListenableFuture<MultipleChunkResult<String>> persistenceCall(
+                    final @NotNull ChunkCursor chunkCursor) {
 
                 final BucketChunkResult<String> one = new BucketChunkResult<>("1", true, "last", 1);
                 final BucketChunkResult<String> two = new BucketChunkResult<>("2", false, "two", 2);
@@ -70,7 +71,8 @@ public class AllItemsFetchCallbackTest {
             }
         };
 
-        final ChunkResult<String> result = allItemsFetchCallback.fetchNextResults(new ChunkCursor()).get();
+        final ChunkResult<String> result =
+                allItemsFetchCallback.fetchNextResults(new ChunkCursor()).get();
         assertFalse(result.isFinished());
         assertTrue(result.getCursor().getFinishedBuckets().contains(1));
         assertEquals(1, result.getCursor().getFinishedBuckets().size());
@@ -83,7 +85,8 @@ public class AllItemsFetchCallbackTest {
 
         final AllItemsFetchCallback<String, String> allItemsFetchCallback = new AllItemsFetchCallback<>() {
             @Override
-            protected @NotNull ListenableFuture<MultipleChunkResult<String>> persistenceCall(final @NotNull ChunkCursor chunkCursor) {
+            protected @NotNull ListenableFuture<MultipleChunkResult<String>> persistenceCall(
+                    final @NotNull ChunkCursor chunkCursor) {
 
                 final BucketChunkResult<String> one = new BucketChunkResult<>("1", false, "last", 1);
                 final BucketChunkResult<String> two = new BucketChunkResult<>("2", false, "two", 2);
@@ -97,7 +100,8 @@ public class AllItemsFetchCallbackTest {
             }
         };
 
-        final ChunkResult<String> result = allItemsFetchCallback.fetchNextResults(new ChunkCursor()).get();
+        final ChunkResult<String> result =
+                allItemsFetchCallback.fetchNextResults(new ChunkCursor()).get();
         assertFalse(result.isFinished());
         assertTrue(result.getCursor().getFinishedBuckets().isEmpty());
         assertEquals("last", result.getCursor().getLastKeys().get(1));
@@ -109,7 +113,8 @@ public class AllItemsFetchCallbackTest {
 
         final AllItemsFetchCallback<String, String> allItemsFetchCallback = new AllItemsFetchCallback<>() {
             @Override
-            protected @NotNull ListenableFuture<MultipleChunkResult<String>> persistenceCall(final @NotNull ChunkCursor chunkCursor) {
+            protected @NotNull ListenableFuture<MultipleChunkResult<String>> persistenceCall(
+                    final @NotNull ChunkCursor chunkCursor) {
 
                 final BucketChunkResult<String> one = new BucketChunkResult<>("1", true, "last", 1);
                 final BucketChunkResult<String> two = new BucketChunkResult<>("2", true, "two", 2);
@@ -123,7 +128,8 @@ public class AllItemsFetchCallbackTest {
             }
         };
 
-        final ChunkResult<String> result = allItemsFetchCallback.fetchNextResults(new ChunkCursor()).get();
+        final ChunkResult<String> result =
+                allItemsFetchCallback.fetchNextResults(new ChunkCursor()).get();
         assertTrue(result.isFinished());
         assertTrue(result.getCursor().getFinishedBuckets().contains(1));
         assertTrue(result.getCursor().getFinishedBuckets().contains(2));

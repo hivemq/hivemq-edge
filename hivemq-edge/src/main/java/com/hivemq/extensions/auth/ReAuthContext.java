@@ -16,7 +16,6 @@
 package com.hivemq.extensions.auth;
 
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.auth.parameter.ModifiableClientSettingsImpl;
 import com.hivemq.extensions.events.OnAuthSuccessEvent;
 import com.hivemq.extensions.handler.PluginAuthenticatorServiceImpl;
@@ -30,6 +29,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Silvio Giebl
@@ -51,7 +51,8 @@ public class ReAuthContext extends AuthContext<ReAuthOutput> {
     }
 
     @Override
-    @NotNull ReAuthOutput createNextOutput(final @NotNull ReAuthOutput prevOutput) {
+    @NotNull
+    ReAuthOutput createNextOutput(final @NotNull ReAuthOutput prevOutput) {
         return new ReAuthOutput(prevOutput);
     }
 
@@ -130,10 +131,10 @@ public class ReAuthContext extends AuthContext<ReAuthOutput> {
     }
 
     private void applyClientSettings(
-            final @NotNull ModifiableClientSettingsImpl clientSettings,
-            final @NotNull Channel channel) {
+            final @NotNull ModifiableClientSettingsImpl clientSettings, final @NotNull Channel channel) {
 
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         clientConnection.setClientReceiveMaximum(clientSettings.getClientReceiveMaximum());
         clientConnection.setQueueSizeMaximum(clientSettings.getQueueSizeMaximum());
     }

@@ -15,44 +15,96 @@
  */
 package com.hivemq.http;
 
-import com.hivemq.http.error.ErrorType;
 import jakarta.ws.rs.core.MediaType;
-import org.jetbrains.annotations.NotNull;
-
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 public interface HttpConstants {
 
     enum METHOD {
-        GET, POST, HEAD, PUT, DELETE, OPTIONS, CONNECT, TRACE, PATCH
+        GET,
+        POST,
+        HEAD,
+        PUT,
+        DELETE,
+        OPTIONS,
+        CONNECT,
+        TRACE,
+        PATCH
     }
 
-    @NotNull String SLASH = "/";
-    @NotNull String HTTP = "http";
-    @NotNull String HTTPS = "https";
-    @NotNull String PROTOCOL_SEP = "://";
-    @NotNull String DEFAULT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
-    @NotNull String HTTP_URL_REGEX = "https?:\\/\\/(?:w{1,3}\\.)?[^\\s.]+(?:\\.[a-z]+)*(?::\\d+)?((?:\\/\\w+)|(?:-\\w+))*\\/?(?![^<]*(?:<\\/\\w+>|\\/?>))";
-    @NotNull Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
-    @NotNull String CONTENT_TYPE_HEADER = "Content-Type";
-    @NotNull String USER_AGENT_HEADER = "User-Agent";
-    @NotNull String CONTENT_ENCODING_HEADER = "Content-Encoding";
-    @NotNull String LOCATION_HEADER = "Location";
-    @NotNull String AUTH_HEADER = "Authorization";
-    @NotNull String BASIC_AUTH_CHALLENGE_HEADER = "WWW-Authenticate";
-    @NotNull String BEARER_TOKEN_HEADER = "Bearer %s";
-    @NotNull String BASIC_AUTH_HEADER = "Basic %s";
-    @NotNull String BASIC_AUTH_REALM = "Basic realm=\"%s\"";
-    @NotNull String HTML_MIME_TYPE = "text/html";
-    @NotNull String PLAIN_MIME_TYPE = "text/plain";
-    @NotNull String JSON_MIME_TYPE = "application/json";
-    @NotNull String BASE64_ENCODED_VALUE = "data:%s;base64,%s";
-    @NotNull String DEFAULT_MIME_TYPE = HTML_MIME_TYPE;
-    @NotNull String APPLICATION_PROBLEM_JSON_CHARSET_UTF_8 = "application/problem+json;charset=utf-8";
-    @NotNull MediaType APPLICATION_PROBLEM_JSON_TYPE = new MediaType("application", "problem+json", "utf-8");
+    @NotNull
+    String SLASH = "/";
+
+    @NotNull
+    String HTTP = "http";
+
+    @NotNull
+    String HTTPS = "https";
+
+    @NotNull
+    String PROTOCOL_SEP = "://";
+
+    @NotNull
+    String DEFAULT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
+    @NotNull
+    String HTTP_URL_REGEX =
+            "https?:\\/\\/(?:w{1,3}\\.)?[^\\s.]+(?:\\.[a-z]+)*(?::\\d+)?((?:\\/\\w+)|(?:-\\w+))*\\/?(?![^<]*(?:<\\/\\w+>|\\/?>))";
+
+    @NotNull
+    Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
+
+    @NotNull
+    String CONTENT_TYPE_HEADER = "Content-Type";
+
+    @NotNull
+    String USER_AGENT_HEADER = "User-Agent";
+
+    @NotNull
+    String CONTENT_ENCODING_HEADER = "Content-Encoding";
+
+    @NotNull
+    String LOCATION_HEADER = "Location";
+
+    @NotNull
+    String AUTH_HEADER = "Authorization";
+
+    @NotNull
+    String BASIC_AUTH_CHALLENGE_HEADER = "WWW-Authenticate";
+
+    @NotNull
+    String BEARER_TOKEN_HEADER = "Bearer %s";
+
+    @NotNull
+    String BASIC_AUTH_HEADER = "Basic %s";
+
+    @NotNull
+    String BASIC_AUTH_REALM = "Basic realm=\"%s\"";
+
+    @NotNull
+    String HTML_MIME_TYPE = "text/html";
+
+    @NotNull
+    String PLAIN_MIME_TYPE = "text/plain";
+
+    @NotNull
+    String JSON_MIME_TYPE = "application/json";
+
+    @NotNull
+    String BASE64_ENCODED_VALUE = "data:%s;base64,%s";
+
+    @NotNull
+    String DEFAULT_MIME_TYPE = HTML_MIME_TYPE;
+
+    @NotNull
+    String APPLICATION_PROBLEM_JSON_CHARSET_UTF_8 = "application/problem+json;charset=utf-8";
+
+    @NotNull
+    MediaType APPLICATION_PROBLEM_JSON_TYPE = new MediaType("application", "problem+json", "utf-8");
 
     int SC_CONTINUE = 100;
     int SC_SWITCHING_PROTOCOLS = 101;
@@ -96,30 +148,32 @@ public interface HttpConstants {
     int SC_GATEWAY_TIMEOUT = 504;
     int SC_HTTP_VERSION_NOT_SUPPORTED = 505;
 
-    @NotNull Map<String,String> MIME_MAP = new HashMap<>(){{
-        put("appcache", "text/cache-manifest");
-        put("css", "text/css");
-        put("woff", "font/woff");
-        put("woff2", "font/woff2");
-        put("ttf", "font/ttf");
-        put("gif", "image/gif");
-        put("htm", "text/html");
-        put("html", "text/html");
-        put("ico", "image/vnd.microsoft.icon");
-        put("js", "application/javascript");
-        put("json", "application/json");
-        put("jpg", "image/jpeg");
-        put("jpeg", "image/jpeg");
-        put("mp4", "video/mp4");
-        put("pdf", "application/pdf");
-        put("png", "image/png");
-        put("svg", "image/svg+xml");
-        put("xml", "application/xml");
-        put("zip", "application/zip");
-        put("md", "text/plain");
-        put("txt", "text/plain");
-        put("webp", "image/webp");
-        put("webmanifest", "application/manifest+json");
-    }};
-
+    @NotNull
+    Map<String, String> MIME_MAP = new HashMap<>() {
+        {
+            put("appcache", "text/cache-manifest");
+            put("css", "text/css");
+            put("woff", "font/woff");
+            put("woff2", "font/woff2");
+            put("ttf", "font/ttf");
+            put("gif", "image/gif");
+            put("htm", "text/html");
+            put("html", "text/html");
+            put("ico", "image/vnd.microsoft.icon");
+            put("js", "application/javascript");
+            put("json", "application/json");
+            put("jpg", "image/jpeg");
+            put("jpeg", "image/jpeg");
+            put("mp4", "video/mp4");
+            put("pdf", "application/pdf");
+            put("png", "image/png");
+            put("svg", "image/svg+xml");
+            put("xml", "application/xml");
+            put("zip", "application/zip");
+            put("md", "text/plain");
+            put("txt", "text/plain");
+            put("webp", "image/webp");
+            put("webmanifest", "application/manifest+json");
+        }
+    };
 }

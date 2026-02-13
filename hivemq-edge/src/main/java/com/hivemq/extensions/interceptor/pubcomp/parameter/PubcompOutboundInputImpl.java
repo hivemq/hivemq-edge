@@ -16,12 +16,12 @@
 package com.hivemq.extensions.interceptor.pubcomp.parameter;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
 import com.hivemq.extension.sdk.api.interceptor.pubcomp.parameter.PubcompOutboundInput;
 import com.hivemq.extensions.executor.task.PluginTaskInput;
 import com.hivemq.extensions.packets.pubcomp.PubcompPacketImpl;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Yannick Weber
@@ -60,6 +60,9 @@ public class PubcompOutboundInputImpl implements PubcompOutboundInput, PluginTas
     }
 
     public @NotNull PubcompOutboundInputImpl update(final @NotNull PubcompOutboundOutputImpl output) {
-        return new PubcompOutboundInputImpl(clientInformation, connectionInformation, output.getPubcompPacket().copy());
+        return new PubcompOutboundInputImpl(
+                clientInformation,
+                connectionInformation,
+                output.getPubcompPacket().copy());
     }
 }

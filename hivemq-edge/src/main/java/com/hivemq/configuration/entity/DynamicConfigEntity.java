@@ -48,8 +48,8 @@ public class DynamicConfigEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final DynamicConfigEntity that = (DynamicConfigEntity) o;
-        return isConfigurationExportEnabled() == that.isConfigurationExportEnabled() &&
-                isMutableConfigurationEnabled() == that.isMutableConfigurationEnabled();
+        return isConfigurationExportEnabled() == that.isConfigurationExportEnabled()
+                && isMutableConfigurationEnabled() == that.isMutableConfigurationEnabled();
     }
 
     @Override

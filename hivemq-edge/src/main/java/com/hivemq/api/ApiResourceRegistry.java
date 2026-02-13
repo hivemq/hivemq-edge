@@ -15,6 +15,8 @@
  */
 package com.hivemq.api;
 
+import static com.hivemq.http.JaxrsHttpServer.MAX_BINDING_PRIORITY;
+
 import com.hivemq.api.auth.ApiAuthenticationFeature;
 import com.hivemq.api.auth.handler.IAuthenticationHandler;
 import com.hivemq.api.auth.provider.ITokenGenerator;
@@ -39,22 +41,18 @@ import com.hivemq.edge.api.ProtocolAdaptersApi;
 import com.hivemq.edge.api.PulseApi;
 import com.hivemq.edge.api.TopicFiltersApi;
 import com.hivemq.edge.api.UnsApi;
-import io.swagger.annotations.Api;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.error.DefaultExceptionMapper;
 import dagger.Lazy;
-import org.glassfish.jersey.logging.LoggingFeature;
-import org.glassfish.jersey.server.ResourceConfig;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-
-import static com.hivemq.http.JaxrsHttpServer.MAX_BINDING_PRIORITY;
+import org.glassfish.jersey.logging.LoggingFeature;
+import org.glassfish.jersey.server.ResourceConfig;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.LoggerFactory;
 
 /**
  * Define a Resource Config that passes managed objects into the JAX-RS context. NOTE: Using instances mean the objects
@@ -136,7 +134,7 @@ public class ApiResourceRegistry extends ResourceConfig {
         this.apiConfigurationService = apiConfigurationService;
     }
 
-    @Inject //method injection, this gets called once after instantiation
+    @Inject // method injection, this gets called once after instantiation
     public void postConstruct() {
         logger.trace("Initializing API resources");
         final long start = System.currentTimeMillis();
@@ -186,12 +184,16 @@ public class ApiResourceRegistry extends ResourceConfig {
         register(new ApiExceptionMapper(), MAX_BINDING_PRIORITY);
         register(new DefaultExceptionMapper(), MAX_BINDING_PRIORITY);
         if (Boolean.getBoolean("api.wire.logging.enabled")) {
-            register(new LoggingFeature(new Logger(getClass().getName(), null) {
-                @Override
-                public void log(final @NotNull LogRecord record) {
-                    logger.info(record.getMessage());
-                }
-            }, Level.INFO, LoggingFeature.Verbosity.PAYLOAD_ANY, 10000));
+            register(new LoggingFeature(
+                    new Logger(getClass().getName(), null) {
+                        @Override
+                        public void log(final @NotNull LogRecord record) {
+                            logger.info(record.getMessage());
+                        }
+                    },
+                    Level.INFO,
+                    LoggingFeature.Verbosity.PAYLOAD_ANY,
+                    10000));
         }
     }
 

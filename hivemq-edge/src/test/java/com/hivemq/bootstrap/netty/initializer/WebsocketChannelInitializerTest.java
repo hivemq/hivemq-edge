@@ -15,6 +15,11 @@
  */
 package com.hivemq.bootstrap.netty.initializer;
 
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.HTTP_SERVER_CODEC;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.NON_SSL_HANDLER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.bootstrap.netty.ChannelDependencies;
 import com.hivemq.bootstrap.netty.FakeChannelPipeline;
 import com.hivemq.configuration.service.ConfigurationService;
@@ -24,17 +29,11 @@ import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.security.ssl.NonSslHandler;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
+import jakarta.inject.Provider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import jakarta.inject.Provider;
-
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.HTTP_SERVER_CODEC;
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.NON_SSL_HANDLER;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.when;
 
 public class WebsocketChannelInitializerTest {
 
@@ -43,7 +42,6 @@ public class WebsocketChannelInitializerTest {
 
     @Mock
     private ChannelDependencies channelDependencies;
-
 
     @Mock
     private Provider<NonSslHandler> nonSslHandlerProvider;
@@ -58,6 +56,7 @@ public class WebsocketChannelInitializerTest {
     private RestrictionsConfigurationService restrictionsConfigurationService;
 
     private ChannelPipeline pipeline;
+
     @BeforeEach
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -74,17 +73,15 @@ public class WebsocketChannelInitializerTest {
     @Test
     public void test_add_special_handlers() throws Exception {
 
-        final MqttWebsocketListener mqttWebsocketListener = new MqttWebsocketListener.Builder()
-                .bindAddress("")
-                .port(0)
-                .build();
+        final MqttWebsocketListener mqttWebsocketListener =
+                new MqttWebsocketListener.Builder().bindAddress("").port(0).build();
 
-        final WebsocketChannelInitializer websocketChannelInitializer = new WebsocketChannelInitializer(channelDependencies, mqttWebsocketListener, nonSslHandlerProvider);
+        final WebsocketChannelInitializer websocketChannelInitializer =
+                new WebsocketChannelInitializer(channelDependencies, mqttWebsocketListener, nonSslHandlerProvider);
 
         websocketChannelInitializer.addSpecialHandlers(socketChannel);
 
         assertEquals(NON_SSL_HANDLER, pipeline.names().get(0));
         assertEquals(HTTP_SERVER_CODEC, pipeline.names().get(1));
     }
-
 }

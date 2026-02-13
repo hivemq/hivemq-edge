@@ -15,13 +15,13 @@
  */
 package com.hivemq.persistence.clientsession;
 
+import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRE_ON_DISCONNECT;
+
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.persistence.Sizable;
 import com.hivemq.util.MemoryEstimator;
-
-import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRE_ON_DISCONNECT;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ClientSession implements Sizable {
 
@@ -81,10 +81,7 @@ public class ClientSession implements Sizable {
 
     public @NotNull ClientSession deepCopy() {
         return new ClientSession(
-                connected,
-                sessionExpiryIntervalSec,
-                willPublish != null ? willPublish.deepCopy() : null,
-                queueLimit);
+                connected, sessionExpiryIntervalSec, willPublish != null ? willPublish.deepCopy() : null, queueLimit);
     }
 
     public @NotNull ClientSession copyWithoutWill() {
@@ -126,17 +123,16 @@ public class ClientSession implements Sizable {
 
     @Override
     public String toString() {
-        return "ClientSession{" +
-                "queueLimit=" +
-                queueLimit +
-                ", connected=" +
-                connected +
-                ", sessionExpiryIntervalSec=" +
-                sessionExpiryIntervalSec +
-                ", inMemorySize=" +
-                inMemorySize +
-                ", willPublish=" +
-                willPublish +
-                '}';
+        return "ClientSession{" + "queueLimit="
+                + queueLimit
+                + ", connected="
+                + connected
+                + ", sessionExpiryIntervalSec="
+                + sessionExpiryIntervalSec
+                + ", inMemorySize="
+                + inMemorySize
+                + ", willPublish="
+                + willPublish
+                + '}';
     }
 }

@@ -18,17 +18,16 @@ package com.hivemq.extensions.packets.suback;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.suback.ModifiableSubackPacket;
 import com.hivemq.extension.sdk.api.packets.subscribe.SubackReasonCode;
 import com.hivemq.extensions.packets.general.ModifiableUserPropertiesImpl;
 import com.hivemq.extensions.services.builder.PluginBuilderUtil;
 import com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Robin Atherton
@@ -45,14 +44,14 @@ public class ModifiableSubackPacketImpl implements ModifiableSubackPacket {
     private boolean modified = false;
 
     public ModifiableSubackPacketImpl(
-            final @NotNull SubackPacketImpl packet,
-            final @NotNull ConfigurationService configurationService) {
+            final @NotNull SubackPacketImpl packet, final @NotNull ConfigurationService configurationService) {
 
         reasonCodes = packet.reasonCodes;
         reasonString = packet.reasonString;
         packetIdentifier = packet.packetIdentifier;
         userProperties = new ModifiableUserPropertiesImpl(
-                packet.userProperties.asInternalList(), configurationService.securityConfiguration().validateUTF8());
+                packet.userProperties.asInternalList(),
+                configurationService.securityConfiguration().validateUTF8());
 
         this.configurationService = configurationService;
     }
@@ -72,8 +71,10 @@ public class ModifiableSubackPacketImpl implements ModifiableSubackPacket {
             Preconditions.checkNotNull(reasonCodes.get(i), "Reason code (at index %s) must never be null.", i);
             final Mqtt5SubAckReasonCode oldReasonCode = Mqtt5SubAckReasonCode.from(this.reasonCodes.get(i));
             final Mqtt5SubAckReasonCode newReasonCode = Mqtt5SubAckReasonCode.from(reasonCodes.get(i));
-            Preconditions.checkState(newReasonCode.isError() == oldReasonCode.isError(),
-                    "Reason code (at index %s) must not switch from successful to unsuccessful or vice versa.", i);
+            Preconditions.checkState(
+                    newReasonCode.isError() == oldReasonCode.isError(),
+                    "Reason code (at index %s) must not switch from successful to unsuccessful or vice versa.",
+                    i);
         }
         if (Objects.equals(this.reasonCodes, reasonCodes)) {
             return;
@@ -89,7 +90,8 @@ public class ModifiableSubackPacketImpl implements ModifiableSubackPacket {
 
     @Override
     public void setReasonString(final @Nullable String reasonString) {
-        PluginBuilderUtil.checkReasonString(reasonString, configurationService.securityConfiguration().validateUTF8());
+        PluginBuilderUtil.checkReasonString(
+                reasonString, configurationService.securityConfiguration().validateUTF8());
         if (Objects.equals(this.reasonString, reasonString)) {
             return;
         }

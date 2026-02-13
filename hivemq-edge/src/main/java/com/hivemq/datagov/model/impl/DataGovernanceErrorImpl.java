@@ -16,9 +16,8 @@
 package com.hivemq.datagov.model.impl;
 
 import com.hivemq.datagov.model.DataGovernanceError;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -76,22 +75,21 @@ public class DataGovernanceErrorImpl implements DataGovernanceError {
         this.message = Optional.ofNullable(message);
     }
 
-    public static DataGovernanceError ofPipelineAndFunction(final @NotNull Throwable t,
-                                                            final @NotNull String pipelineId,
-                                                            final @NotNull String functionId){
+    public static DataGovernanceError ofPipelineAndFunction(
+            final @NotNull Throwable t, final @NotNull String pipelineId, final @NotNull String functionId) {
         DataGovernanceErrorImpl impl = new DataGovernanceErrorImpl(t);
         impl.setFunctionId(functionId);
         impl.setPipelineId(pipelineId);
         return impl;
     }
 
-    public static DataGovernanceError ofPipeline(final @NotNull Throwable t, final @NotNull String pipelineId){
+    public static DataGovernanceError ofPipeline(final @NotNull Throwable t, final @NotNull String pipelineId) {
         DataGovernanceErrorImpl impl = new DataGovernanceErrorImpl(t);
         impl.setPipelineId(pipelineId);
         return impl;
     }
 
-    public static DataGovernanceError ofValidator(final @NotNull String message, final @NotNull String validatorId){
+    public static DataGovernanceError ofValidator(final @NotNull String message, final @NotNull String validatorId) {
         DataGovernanceErrorImpl impl = new DataGovernanceErrorImpl(message);
         impl.setValidatorId(validatorId);
         return impl;

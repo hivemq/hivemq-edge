@@ -18,17 +18,16 @@ package com.hivemq.bootstrap.factories;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.mqtt.message.publish.PUBLISH;
+import java.util.concurrent.ExecutorService;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.concurrent.ExecutorService;
-
 public interface PrePublishProcessorHandling {
 
-    @NotNull ListenableFuture<HandlerResult> apply(
+    @NotNull
+    ListenableFuture<HandlerResult> apply(
             final @NotNull PUBLISH originalPublish,
             final @Nullable String sender,
             final @NotNull ExecutorService executorService,
             final @NotNull MessageDroppedService messageDroppedService);
-
 }

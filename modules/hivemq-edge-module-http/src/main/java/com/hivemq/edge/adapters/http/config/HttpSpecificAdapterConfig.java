@@ -15,19 +15,18 @@
  */
 package com.hivemq.edge.adapters.http.config;
 
+import static com.hivemq.edge.adapters.http.HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS;
+import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MAX_TIMEOUT_SECONDS;
+import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MIN_TIMEOUT_SECONDS;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
-
-import static com.hivemq.edge.adapters.http.HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS;
-import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MAX_TIMEOUT_SECONDS;
-import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MIN_TIMEOUT_SECONDS;
 
 public class HttpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
@@ -40,33 +39,37 @@ public class HttpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
     @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
-    @ModuleConfigField(title = "Identifier",
-                       description = "Unique identifier for this protocol adapter",
-                       format = ModuleConfigField.FieldType.IDENTIFIER,
-                       required = true,
-                       stringPattern = ID_REGEX,
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
+    @ModuleConfigField(
+            title = "Identifier",
+            description = "Unique identifier for this protocol adapter",
+            format = ModuleConfigField.FieldType.IDENTIFIER,
+            required = true,
+            stringPattern = ID_REGEX,
+            stringMinLength = 1,
+            stringMaxLength = 1024)
     private @Nullable String id;
 
     @JsonProperty("httpConnectTimeoutSeconds")
-    @ModuleConfigField(title = "HTTP Connection Timeout",
-                       description = "Timeout (in seconds) to allow the underlying HTTP connection to be established",
-                       defaultValue = DEFAULT_TIMEOUT_SECONDS + "",
-                       numberMin = MIN_TIMEOUT_SECONDS,
-                       numberMax = MAX_TIMEOUT_SECONDS)
+    @ModuleConfigField(
+            title = "HTTP Connection Timeout",
+            description = "Timeout (in seconds) to allow the underlying HTTP connection to be established",
+            defaultValue = DEFAULT_TIMEOUT_SECONDS + "",
+            numberMin = MIN_TIMEOUT_SECONDS,
+            numberMax = MAX_TIMEOUT_SECONDS)
     private final int httpConnectTimeoutSeconds;
 
     @JsonProperty("allowUntrustedCertificates")
-    @ModuleConfigField(title = "Allow Untrusted Certificates",
-                       description = "Allow the adapter to connect to untrusted SSL sources (for example expired certificates).",
-                       defaultValue = "false",
-                       format = ModuleConfigField.FieldType.BOOLEAN)
+    @ModuleConfigField(
+            title = "Allow Untrusted Certificates",
+            description = "Allow the adapter to connect to untrusted SSL sources (for example expired certificates).",
+            defaultValue = "false",
+            format = ModuleConfigField.FieldType.BOOLEAN)
     private final boolean allowUntrustedCertificates;
 
     @JsonProperty(value = "httpToMqtt")
-    @ModuleConfigField(title = "HTTP To MQTT Config",
-                       description = "The configuration for a data stream from HTTP to MQTT")
+    @ModuleConfigField(
+            title = "HTTP To MQTT Config",
+            description = "The configuration for a data stream from HTTP to MQTT")
     private final @NotNull HttpToMqttConfig httpToMqttConfig;
 
     @JsonCreator
@@ -75,7 +78,7 @@ public class HttpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
             @JsonProperty(value = "httpToMqtt") final @Nullable HttpToMqttConfig httpToMqttConfig,
             @JsonProperty(value = "allowUntrustedCertificates") final @Nullable Boolean allowUntrustedCertificates) {
         if (httpConnectTimeoutSeconds != null) {
-            //-- Ensure we apply a reasonable timeout, so we don't hang threads
+            // -- Ensure we apply a reasonable timeout, so we don't hang threads
             this.httpConnectTimeoutSeconds = Math.min(httpConnectTimeoutSeconds, MAX_TIMEOUT_SECONDS);
         } else {
             this.httpConnectTimeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
@@ -150,10 +153,10 @@ public class HttpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
     @Override
     public boolean equals(final Object o) {
         if (!(o instanceof HttpSpecificAdapterConfig that)) return false;
-        return getHttpConnectTimeoutSeconds() == that.getHttpConnectTimeoutSeconds() &&
-                isAllowUntrustedCertificates() == that.isAllowUntrustedCertificates() &&
-                Objects.equals(id, that.id) &&
-                Objects.equals(getHttpToMqttConfig(), that.getHttpToMqttConfig());
+        return getHttpConnectTimeoutSeconds() == that.getHttpConnectTimeoutSeconds()
+                && isAllowUntrustedCertificates() == that.isAllowUntrustedCertificates()
+                && Objects.equals(id, that.id)
+                && Objects.equals(getHttpToMqttConfig(), that.getHttpToMqttConfig());
     }
 
     @Override

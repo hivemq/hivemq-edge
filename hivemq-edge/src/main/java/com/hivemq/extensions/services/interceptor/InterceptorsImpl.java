@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.services.interceptor;
 
 import com.google.common.collect.ImmutableMap;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.bridge.BridgePublishInboundInterceptorProvider;
 import com.hivemq.extension.sdk.api.interceptor.bridge.BridgePublishOutboundInterceptorProvider;
 import com.hivemq.extension.sdk.api.interceptor.connack.ConnackOutboundInterceptorProvider;
@@ -26,7 +24,6 @@ import com.hivemq.extension.sdk.api.interceptor.protocoladapter.ProtocolAdapterP
 import com.hivemq.extensions.ExtensionPriorityComparator;
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensions;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Map;
@@ -34,6 +31,7 @@ import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Lukas Brandl
@@ -61,7 +59,6 @@ public class InterceptorsImpl implements Interceptors {
     private final Map<@NotNull String, @NotNull ProtocolAdapterPublishInboundInterceptorProvider>
             protocolAdapterInboundInterceptorProviderMap;
 
-
     @NotNull
     private final HiveMQExtensions hiveMQExtensions;
 
@@ -85,7 +82,6 @@ public class InterceptorsImpl implements Interceptors {
                 removeInterceptors(hiveMQExtension.getId());
             }
         });
-
     }
 
     @Override
@@ -197,7 +193,8 @@ public class InterceptorsImpl implements Interceptors {
     }
 
     @Override
-    public @NotNull ImmutableMap<String, BridgePublishOutboundInterceptorProvider> bridgeOutboundInterceptorProviders() {
+    public @NotNull ImmutableMap<String, BridgePublishOutboundInterceptorProvider>
+            bridgeOutboundInterceptorProviders() {
         final Lock readLock = readWriteLock.readLock();
         readLock.lock();
         try {
@@ -208,7 +205,8 @@ public class InterceptorsImpl implements Interceptors {
     }
 
     @Override
-    public void addProtocolAdapterInboundInterceptorProvider(final @NotNull ProtocolAdapterPublishInboundInterceptorProvider provider) {
+    public void addProtocolAdapterInboundInterceptorProvider(
+            final @NotNull ProtocolAdapterPublishInboundInterceptorProvider provider) {
         final Lock writeLock = readWriteLock.writeLock();
         writeLock.lock();
         try {
@@ -223,7 +221,8 @@ public class InterceptorsImpl implements Interceptors {
     }
 
     @Override
-    public @NotNull ImmutableMap<String, ProtocolAdapterPublishInboundInterceptorProvider> protocolAdapterOutboundInterceptorProviders() {
+    public @NotNull ImmutableMap<String, ProtocolAdapterPublishInboundInterceptorProvider>
+            protocolAdapterOutboundInterceptorProviders() {
         final Lock readLock = readWriteLock.readLock();
         readLock.lock();
         try {

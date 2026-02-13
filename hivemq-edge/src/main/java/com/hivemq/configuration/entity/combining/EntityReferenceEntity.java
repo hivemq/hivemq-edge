@@ -17,11 +17,10 @@ package com.hivemq.configuration.entity.combining;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.combining.model.EntityType;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.xml.bind.annotation.XmlElement;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class EntityReferenceEntity {
 
@@ -34,8 +33,7 @@ public class EntityReferenceEntity {
     private @NotNull String id;
 
     // no-arg for jaxb
-    public EntityReferenceEntity() {
-    }
+    public EntityReferenceEntity() {}
 
     public EntityReferenceEntity(@NotNull final EntityType type, @NotNull final String id) {
         Objects.requireNonNull(type, "type must not be null");
@@ -76,7 +74,4 @@ public class EntityReferenceEntity {
         result = 31 * result + id.hashCode();
         return result;
     }
-
-
-
 }

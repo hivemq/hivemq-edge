@@ -15,6 +15,8 @@
  */
 package com.hivemq.metrics.handler;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricFilter;
@@ -22,7 +24,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.metrics.HiveMQMetrics;
 import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.mqtt.message.PINGREQ;
@@ -41,19 +42,18 @@ import com.hivemq.mqtt.message.suback.SUBACK;
 import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;
 import com.hivemq.mqtt.message.unsuback.UNSUBACK;
 import com.hivemq.mqtt.message.unsubscribe.UNSUBSCRIBE;
+import java.util.Map;
+import java.util.Set;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import util.TestMessageUtil;
-
-import java.util.Map;
-import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class GlobalMQTTMessageCounterTest {
 
     private @NotNull MetricRegistry metricRegistry;
     private @NotNull GlobalMQTTMessageCounter globalMQTTMessageCounter;
+
     @BeforeEach
     public void setUp() throws Exception {
         metricRegistry = new MetricRegistry();
@@ -63,7 +63,10 @@ public class GlobalMQTTMessageCounterTest {
 
     @Test
     public void test_incoming_connects() {
-        globalMQTTMessageCounter.countInbound(new CONNECT.Mqtt3Builder().withProtocolVersion(ProtocolVersion.MQTTv3_1_1).withClientIdentifier("clientID").build());
+        globalMQTTMessageCounter.countInbound(new CONNECT.Mqtt3Builder()
+                .withProtocolVersion(ProtocolVersion.MQTTv3_1_1)
+                .withClientIdentifier("clientID")
+                .build());
 
         final Counter totalIncoming = getCounter(HiveMQMetrics.INCOMING_CONNECT_COUNT.name());
         final Counter totalIncomingMessages = getCounter(HiveMQMetrics.INCOMING_MESSAGE_COUNT.name());
@@ -76,10 +79,18 @@ public class GlobalMQTTMessageCounterTest {
 
     @Test
     public void test_incoming_versioned_connects() {
-        globalMQTTMessageCounter.countInbound(new CONNECT.Mqtt3Builder().withProtocolVersion(ProtocolVersion.MQTTv3_1_1).withClientIdentifier("clientID1").build());
-        globalMQTTMessageCounter.countInbound(new CONNECT.Mqtt3Builder().withProtocolVersion(ProtocolVersion.MQTTv3_1).withClientIdentifier("clientID2").build());
-        globalMQTTMessageCounter.countInbound(new CONNECT.Mqtt5Builder().withClientIdentifier("clientID3").build());
-        globalMQTTMessageCounter.countInbound(new CONNECT.Mqtt5Builder().withClientIdentifier("clientID4").build());
+        globalMQTTMessageCounter.countInbound(new CONNECT.Mqtt3Builder()
+                .withProtocolVersion(ProtocolVersion.MQTTv3_1_1)
+                .withClientIdentifier("clientID1")
+                .build());
+        globalMQTTMessageCounter.countInbound(new CONNECT.Mqtt3Builder()
+                .withProtocolVersion(ProtocolVersion.MQTTv3_1)
+                .withClientIdentifier("clientID2")
+                .build());
+        globalMQTTMessageCounter.countInbound(
+                new CONNECT.Mqtt5Builder().withClientIdentifier("clientID3").build());
+        globalMQTTMessageCounter.countInbound(
+                new CONNECT.Mqtt5Builder().withClientIdentifier("clientID4").build());
 
         final Counter totalIncoming = getCounter(HiveMQMetrics.INCOMING_CONNECT_COUNT.name());
 
@@ -116,7 +127,6 @@ public class GlobalMQTTMessageCounterTest {
 
         assertEquals(0, getCounter(HiveMQMetrics.OUTGOING_MESSAGE_COUNT.name()).getCount());
     }
-
 
     @Test
     public void test_incoming_pubacks() {
@@ -221,7 +231,6 @@ public class GlobalMQTTMessageCounterTest {
         assertEquals(1, totalIncomingPublishes.getCount());
         assertEquals(2, totalIncomingMessages.getCount());
     }
-
 
     @Test
     public void test_count_outgoing_connacks() throws Exception {
@@ -338,12 +347,14 @@ public class GlobalMQTTMessageCounterTest {
     }
 
     public Counter getCounter(final String meterName) {
-        final Set<Map.Entry<String, Counter>> entries = metricRegistry.getCounters(new MetricFilter() {
-            @Override
-            public boolean matches(final String name, final Metric metric) {
-                return name.equals(meterName);
-            }
-        }).entrySet();
+        final Set<Map.Entry<String, Counter>> entries = metricRegistry
+                .getCounters(new MetricFilter() {
+                    @Override
+                    public boolean matches(final String name, final Metric metric) {
+                        return name.equals(meterName);
+                    }
+                })
+                .entrySet();
         Preconditions.checkState(entries.size() == 1);
         return entries.iterator().next().getValue();
     }

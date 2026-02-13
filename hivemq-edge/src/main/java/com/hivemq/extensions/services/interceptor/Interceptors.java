@@ -16,12 +16,12 @@
 package com.hivemq.extensions.services.interceptor;
 
 import com.google.common.collect.ImmutableMap;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.bridge.BridgePublishInboundInterceptorProvider;
 import com.hivemq.extension.sdk.api.interceptor.bridge.BridgePublishOutboundInterceptorProvider;
 import com.hivemq.extension.sdk.api.interceptor.connack.ConnackOutboundInterceptorProvider;
 import com.hivemq.extension.sdk.api.interceptor.connect.ConnectInboundInterceptorProvider;
 import com.hivemq.extension.sdk.api.interceptor.protocoladapter.ProtocolAdapterPublishInboundInterceptorProvider;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Lukas Brandl
@@ -43,7 +43,8 @@ public interface Interceptors {
      *
      * @return An immutable copy of the connect interceptor providers
      */
-    @NotNull ImmutableMap<String, ConnectInboundInterceptorProvider> connectInboundInterceptorProviders();
+    @NotNull
+    ImmutableMap<String, ConnectInboundInterceptorProvider> connectInboundInterceptorProviders();
 
     /**
      * Add an connack outbound interceptor provider to the connack outbound interceptor provider map
@@ -58,9 +59,11 @@ public interface Interceptors {
      *
      * @return An immutable copy of the connack outbound interceptor providers
      */
-    @NotNull ImmutableMap<String, ConnackOutboundInterceptorProvider> connackOutboundInterceptorProviders();
+    @NotNull
+    ImmutableMap<String, ConnackOutboundInterceptorProvider> connackOutboundInterceptorProviders();
 
-    void addBridgeInboundInterceptorProvider(@NotNull BridgePublishInboundInterceptorProvider bridgeInboundInterceptorProvider);
+    void addBridgeInboundInterceptorProvider(
+            @NotNull BridgePublishInboundInterceptorProvider bridgeInboundInterceptorProvider);
 
     /**
      * Get a map of bridge inbound interceptor providers (value) mapped by the id of the plugin which added the
@@ -69,9 +72,11 @@ public interface Interceptors {
      *
      * @return An immutable copy of the bridge inbound interceptor providers
      */
-    @NotNull ImmutableMap<String, BridgePublishInboundInterceptorProvider> bridgeInboundInterceptorProviders();
+    @NotNull
+    ImmutableMap<String, BridgePublishInboundInterceptorProvider> bridgeInboundInterceptorProviders();
 
-    void addBridgeOutboundInterceptorProvider(@NotNull BridgePublishOutboundInterceptorProvider bridgeOutboundInterceptorProvider);
+    void addBridgeOutboundInterceptorProvider(
+            @NotNull BridgePublishOutboundInterceptorProvider bridgeOutboundInterceptorProvider);
 
     /**
      * Get a map of bridge outbound interceptor providers (value) mapped by the id of the plugin which added the
@@ -80,9 +85,11 @@ public interface Interceptors {
      *
      * @return An immutable copy of the bridge outbound interceptor providers
      */
-    @NotNull ImmutableMap<String, BridgePublishOutboundInterceptorProvider> bridgeOutboundInterceptorProviders();
+    @NotNull
+    ImmutableMap<String, BridgePublishOutboundInterceptorProvider> bridgeOutboundInterceptorProviders();
 
-    void addProtocolAdapterInboundInterceptorProvider(@NotNull ProtocolAdapterPublishInboundInterceptorProvider protocolAdapterInboundInterceptorProvider);
+    void addProtocolAdapterInboundInterceptorProvider(
+            @NotNull ProtocolAdapterPublishInboundInterceptorProvider protocolAdapterInboundInterceptorProvider);
 
     /**
      * Get a map of protocol adapter outbound interceptor providers (value) mapped by the id of the plugin which added
@@ -91,6 +98,7 @@ public interface Interceptors {
      *
      * @return An immutable copy of the protocol adapter outbound interceptor providers
      */
-    @NotNull ImmutableMap<String, ProtocolAdapterPublishInboundInterceptorProvider> protocolAdapterOutboundInterceptorProviders();
-
+    @NotNull
+    ImmutableMap<String, ProtocolAdapterPublishInboundInterceptorProvider>
+            protocolAdapterOutboundInterceptorProviders();
 }

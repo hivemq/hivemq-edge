@@ -20,8 +20,7 @@ package com.hivemq.edge.model;
  */
 public class HiveMQEdgeRemoteConnectivityException extends Exception {
 
-    public HiveMQEdgeRemoteConnectivityException() {
-    }
+    public HiveMQEdgeRemoteConnectivityException() {}
 
     public HiveMQEdgeRemoteConnectivityException(final String message) {
         super(message);

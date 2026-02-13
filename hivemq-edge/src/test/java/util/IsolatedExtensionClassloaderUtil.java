@@ -13,21 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package util;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
-import javassist.ClassPool;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.exporter.ZipExporter;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
+import javassist.ClassPool;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.exporter.ZipExporter;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Creates JAR files for a given class on the fly and loads them via the {@link IsolatedExtensionClassloader}.
@@ -44,13 +42,17 @@ public class IsolatedExtensionClassloaderUtil {
      * @param <T>             the type of the loaded class
      * @return the loaded class
      */
-    public static <T> @NotNull Class<T> loadClass(final @NotNull Path temporaryFolder,
-            final @NotNull Class<T> mainClass) throws Exception {
+    public static <T> @NotNull Class<T> loadClass(
+            final @NotNull Path temporaryFolder, final @NotNull Class<T> mainClass) throws Exception {
         final String mainClassName = mainClass.getName();
 
         // get referenced classes from same package
         final Set<String> referencedClasses = new HashSet<>();
-        for (final String referencedClassName : ClassPool.getDefault().get(mainClassName).getClassFile().getConstPool().getClassNames()) {
+        for (final String referencedClassName : ClassPool.getDefault()
+                .get(mainClassName)
+                .getClassFile()
+                .getConstPool()
+                .getClassNames()) {
             final String className = referencedClassName.replace("/", ".");
             if (!className.equals(mainClassName) && className.startsWith(mainClass.getPackageName())) {
                 referencedClasses.add(className);
@@ -64,7 +66,8 @@ public class IsolatedExtensionClassloaderUtil {
         }
         final File jarFile = createJarFile(temporaryFolder, mainClass, javaArchive);
 
-        try (final IsolatedExtensionClassloader cl = buildClassLoader(new URL[]{jarFile.toURI().toURL()})) {
+        try (final IsolatedExtensionClassloader cl =
+                buildClassLoader(new URL[] {jarFile.toURI().toURL()})) {
             for (final String clazz : referencedClasses) {
                 cl.loadClass(clazz);
             }
@@ -81,9 +84,9 @@ public class IsolatedExtensionClassloaderUtil {
      * @param <T>             the type of the loaded class
      * @return an instance of the given class (using the default constructor)
      */
-    public static <T> @NotNull T loadInstance(final @NotNull Path temporaryFolder,
-            final @NotNull Class<T> clazz) throws Exception {
-        try (final IsolatedExtensionClassloader cl = buildClassLoader(temporaryFolder, new Class[]{clazz})) {
+    public static <T> @NotNull T loadInstance(final @NotNull Path temporaryFolder, final @NotNull Class<T> clazz)
+            throws Exception {
+        try (final IsolatedExtensionClassloader cl = buildClassLoader(temporaryFolder, new Class[] {clazz})) {
             return loadInstance(cl, clazz);
         }
     }
@@ -96,8 +99,8 @@ public class IsolatedExtensionClassloaderUtil {
      * @param <T>         the type of the loaded class
      * @return an instance of the given class (using the default constructor)
      */
-    public static <T> @NotNull T loadInstance(final @NotNull IsolatedExtensionClassloader classLoader,
-            final @NotNull Class<T> clazz) throws Exception {
+    public static <T> @NotNull T loadInstance(
+            final @NotNull IsolatedExtensionClassloader classLoader, final @NotNull Class<T> clazz) throws Exception {
         //noinspection unchecked
         final Class<T> isolatedClazz = (Class<T>) classLoader.loadClass(clazz.getName());
         return isolatedClazz.getDeclaredConstructor().newInstance();
@@ -109,7 +112,7 @@ public class IsolatedExtensionClassloaderUtil {
      * @return a default instance of {@link IsolatedExtensionClassloader}
      */
     public static @NotNull IsolatedExtensionClassloader buildClassLoader() {
-        return buildClassLoader(new URL[]{});
+        return buildClassLoader(new URL[] {});
     }
 
     /**
@@ -119,18 +122,20 @@ public class IsolatedExtensionClassloaderUtil {
      * @param classes         the classes to be compiled into the JAR file
      * @return an {@link IsolatedExtensionClassloader} for the given classes
      */
-    public static @NotNull IsolatedExtensionClassloader buildClassLoader(final @NotNull Path temporaryFolder,
-            final @NotNull Class<?> @NotNull [] classes) throws Exception {
+    public static @NotNull IsolatedExtensionClassloader buildClassLoader(
+            final @NotNull Path temporaryFolder, final @NotNull Class<?> @NotNull [] classes) throws Exception {
         final JavaArchive javaArchive = ShrinkWrap.create(JavaArchive.class).addClasses(classes);
         final File jarFile = createJarFile(temporaryFolder, classes[0], javaArchive);
-        return buildClassLoader(new URL[]{jarFile.toURI().toURL()});
+        return buildClassLoader(new URL[] {jarFile.toURI().toURL()});
     }
 
     private static @NotNull IsolatedExtensionClassloader buildClassLoader(final @NotNull URL @NotNull [] classpath) {
-        return new IsolatedExtensionClassloader(classpath, Thread.currentThread().getContextClassLoader());
+        return new IsolatedExtensionClassloader(
+                classpath, Thread.currentThread().getContextClassLoader());
     }
 
-    private static @NotNull File createJarFile(final @NotNull Path temporaryFolder, final @NotNull Class<?> mainClass, final JavaArchive javaArchive) {
+    private static @NotNull File createJarFile(
+            final @NotNull Path temporaryFolder, final @NotNull Class<?> mainClass, final JavaArchive javaArchive) {
         // just in case someone uses this with an inner class like TestClass$1
         final String jarFileName = mainClass.getSimpleName().replace("$", "_") + ".jar";
         final File jarFile = temporaryFolder.resolve(jarFileName).toFile();

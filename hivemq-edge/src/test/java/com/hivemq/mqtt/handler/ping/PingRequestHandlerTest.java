@@ -15,6 +15,8 @@
  */
 package com.hivemq.mqtt.handler.ping;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.mqtt.message.PINGREQ;
 import com.hivemq.mqtt.message.PINGRESP;
@@ -25,8 +27,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 /**
  * @author Christoph Schäbel
  * @author Dominik Obermaier
@@ -35,6 +35,7 @@ public class PingRequestHandlerTest {
 
     @Mock
     ChannelHandlerContext ctx;
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);

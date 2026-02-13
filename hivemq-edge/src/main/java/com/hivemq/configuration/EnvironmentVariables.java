@@ -81,5 +81,4 @@ public class EnvironmentVariables {
      * Name of the environment variable for configuring the modules folder.
      */
     public static final String MODULES_FOLDER = "HIVEMQ_MODULES_FOLDER";
-
 }

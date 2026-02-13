@@ -15,23 +15,24 @@
  */
 package com.hivemq.codec.decoder;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.pubrel.PUBREL;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import util.TestMqttDecoder;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 public class Mqtt3PubrelDecoderTest {
 
     private @NotNull EmbeddedChannel channel;
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -67,15 +68,14 @@ public class Mqtt3PubrelDecoderTest {
         buf.writeShort(55555);
         channel.writeInbound(buf);
 
-
-        //The client needs to get disconnected
+        // The client needs to get disconnected
         assertFalse(channel.isActive());
     }
 
     @Test
     public void test_pubrel_invalid_header_mqtt_31() {
 
-        //In this test we check that additional headers are ignored in MQTT 3.1 if they're invalid
+        // In this test we check that additional headers are ignored in MQTT 3.1 if they're invalid
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(new ClientConnection(channel, null));
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv3_1);
         final ByteBuf buf = Unpooled.buffer();
@@ -90,5 +90,4 @@ public class Mqtt3PubrelDecoderTest {
 
         assertTrue(channel.isActive());
     }
-
 }

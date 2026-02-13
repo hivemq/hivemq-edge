@@ -15,6 +15,9 @@
  */
 package com.hivemq.api;
 
+import static com.hivemq.api.auth.ApiRoles.ADMIN;
+import static com.hivemq.api.auth.ApiRoles.USER;
+
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -30,9 +33,6 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
-import static com.hivemq.api.auth.ApiRoles.ADMIN;
-import static com.hivemq.api.auth.ApiRoles.USER;
 
 /**
  * @author Simon L Johnson
@@ -50,49 +50,49 @@ public class TestApiResource extends AbstractApi {
     @Path("/post/entity")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response testPost(TestEntity entity){
+    public Response testPost(TestEntity entity) {
         return Response.ok(entity).build();
     }
 
     @POST
     @Path("/post/formData")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response testFormPost(@FormParam("param1") String value, Form form){
+    public Response testFormPost(@FormParam("param1") String value, Form form) {
         System.err.println(value);
         return Response.ok(form.asMap()).build();
     }
 
-//    @POST
-//    @Path("/post/upload")
-//    @Consumes({MediaType.MULTIPART_FORM_DATA})
-//    public Response uploadFileWithData(
-//            @FormDataParam("file") InputStream fileInputStream,
-//            @FormDataParam("file") FormDataContentDisposition cdh,
-//            @FormDataParam("emp") TestEntity entity) throws Exception {
-//
-//        System.out.println(cdh.getName());
-//        System.out.println(cdh.getFileName());
-//        System.out.println(cdh.getSize());
-//        System.out.println(cdh.getType());
-//
-//        return Response.ok(entity).build();
-//    }
+    //    @POST
+    //    @Path("/post/upload")
+    //    @Consumes({MediaType.MULTIPART_FORM_DATA})
+    //    public Response uploadFileWithData(
+    //            @FormDataParam("file") InputStream fileInputStream,
+    //            @FormDataParam("file") FormDataContentDisposition cdh,
+    //            @FormDataParam("emp") TestEntity entity) throws Exception {
+    //
+    //        System.out.println(cdh.getName());
+    //        System.out.println(cdh.getFileName());
+    //        System.out.println(cdh.getSize());
+    //        System.out.println(cdh.getType());
+    //
+    //        return Response.ok(entity).build();
+    //    }
 
     @HEAD
     @Path("/head")
-    public Response testHead(){
+    public Response testHead() {
         return Response.ok().build();
     }
 
     @PUT
     @Path("/put")
-    public Response testPut(TestEntity entity){
+    public Response testPut(TestEntity entity) {
         return Response.ok(entity).build();
     }
 
     @DELETE
     @Path("/delete")
-    public Response testDelete(TestEntity entity){
+    public Response testDelete(TestEntity entity) {
         return Response.ok(entity).build();
     }
 

@@ -17,14 +17,13 @@ package com.hivemq.persistence.retained;
 
 import com.hivemq.annotations.ExecuteInSingleWriter;
 import com.hivemq.annotations.ReadOnly;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extensions.iteration.BucketChunkResult;
 import com.hivemq.persistence.LocalPersistence;
 import com.hivemq.persistence.RetainedMessage;
-
 import java.util.Map;
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Dominik Obermaier
@@ -63,7 +62,8 @@ public interface RetainedMessageLocalPersistence extends LocalPersistence {
      * @param bucketIndex The index of the bucket in which the retained messages are stored.
      * @return the {@link RetainedMessage} or <null> if no retained message found.
      */
-    @Nullable RetainedMessage get(@NotNull String topic, int bucketIndex);
+    @Nullable
+    RetainedMessage get(@NotNull String topic, int bucketIndex);
 
     /**
      * Set a retained message for a given topic to the local persistence
@@ -103,8 +103,9 @@ public interface RetainedMessageLocalPersistence extends LocalPersistence {
      * @since 4.4.0
      */
     @ExecuteInSingleWriter
-    @NotNull BucketChunkResult<Map<String, @NotNull RetainedMessage>> getAllRetainedMessagesChunk(int bucketIndex, @Nullable String lastTopic, int maxMemory);
-
+    @NotNull
+    BucketChunkResult<Map<String, @NotNull RetainedMessage>> getAllRetainedMessagesChunk(
+            int bucketIndex, @Nullable String lastTopic, int maxMemory);
 
     void iterate(@NotNull ItemCallback callback);
 
@@ -113,5 +114,4 @@ public interface RetainedMessageLocalPersistence extends LocalPersistence {
     interface ItemCallback {
         void onItem(@NotNull String topic, @NotNull RetainedMessage message);
     }
-
 }

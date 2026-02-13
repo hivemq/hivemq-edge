@@ -17,19 +17,18 @@ package com.hivemq.logging;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.entity.Listener;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.reason.Mqtt5AuthReasonCode;
 import io.netty.channel.Channel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The EventLog class is used to log certain events that could be important for customers to separate files.
@@ -48,8 +47,8 @@ public class EventLog {
     /**
      * Events are logged to DEBUG, in case customers are using a custom logback.xml
      */
-
     private static final Logger logClientConnected = LoggerFactory.getLogger(EVENT_CLIENT_CONNECTED);
+
     private static final Logger logClientDisconnected = LoggerFactory.getLogger(EVENT_CLIENT_DISCONNECTED);
     private static final Logger logMessageDropped = LoggerFactory.getLogger(EVENT_MESSAGE_DROPPED);
     private static final Logger logClientSessionExpired = LoggerFactory.getLogger(EVENT_CLIENT_SESSION_EXPIRED);
@@ -59,8 +58,7 @@ public class EventLog {
     public static final ZoneId ZONE = ZoneId.of("UTC");
 
     @Inject
-    public EventLog() {
-    }
+    public EventLog() {}
 
     /**
      * Log that a outgoing publish message was dropped.
@@ -113,7 +111,8 @@ public class EventLog {
      */
     public void mqttMessageDropped(
             final @Nullable String client, final @Nullable String messageType, final @NotNull String reason) {
-        logMessageDropped.debug("Outgoing MQTT packet was dropped. Receiving client: {}, messageType: {}, reason: {}.",
+        logMessageDropped.debug(
+                "Outgoing MQTT packet was dropped. Receiving client: {}, messageType: {}, reason: {}.",
                 valueOrUnknown(client),
                 valueOrUnknown(messageType),
                 reason);
@@ -125,13 +124,15 @@ public class EventLog {
      * @param channel of the client connection
      */
     public void clientConnected(final @NotNull Channel channel) {
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final String clientId = clientConnection.getClientId();
         final String ip = clientConnection.getChannelIP().orElse(null);
         final Boolean cleanStart = clientConnection.isCleanStart();
         final Long sessionExpiry = clientConnection.getClientSessionExpiryInterval();
 
-        logClientConnected.debug("Client ID: {}, IP: {}, Clean Start: {}, Session Expiry: {} connected.",
+        logClientConnected.debug(
+                "Client ID: {}, IP: {}, Clean Start: {}, Session Expiry: {} connected.",
                 valueOrUnknown(clientId),
                 valueOrUnknown(ip),
                 valueOrUnknown(cleanStart),
@@ -155,14 +156,14 @@ public class EventLog {
             log.trace("Client {} disconnected gracefully.", clientId);
         }
         if (reason != null) {
-            logClientDisconnected.debug("Client ID: {}, IP: {} disconnected gracefully. Reason given by client: {}",
+            logClientDisconnected.debug(
+                    "Client ID: {}, IP: {} disconnected gracefully. Reason given by client: {}",
                     valueOrUnknown(clientId),
                     valueOrUnknown(ip),
                     reason);
         } else {
-            logClientDisconnected.debug("Client ID: {}, IP: {} disconnected gracefully.",
-                    valueOrUnknown(clientId),
-                    valueOrUnknown(ip));
+            logClientDisconnected.debug(
+                    "Client ID: {}, IP: {} disconnected gracefully.", valueOrUnknown(clientId), valueOrUnknown(ip));
         }
     }
 
@@ -179,16 +180,15 @@ public class EventLog {
         if (listener != null) {
             final String listenerName = listener.getReadableName();
             final int listenerPort = listener.getPort();
-            logClientDisconnected.debug("Client ID: {}, IP: {} disconnected ungracefully from {} on port: {}.",
+            logClientDisconnected.debug(
+                    "Client ID: {}, IP: {} disconnected ungracefully from {} on port: {}.",
                     valueOrUnknown(clientId),
                     valueOrUnknown(ip),
                     listenerName,
                     listenerPort);
         } else {
-            logClientDisconnected.debug("Client ID: {}, IP: {} disconnected ungracefully.",
-                    valueOrUnknown(clientId),
-                    valueOrUnknown(ip));
-
+            logClientDisconnected.debug(
+                    "Client ID: {}, IP: {} disconnected ungracefully.", valueOrUnknown(clientId), valueOrUnknown(ip));
         }
 
         if (log.isTraceEnabled()) {
@@ -203,13 +203,15 @@ public class EventLog {
      * @param reason  why the connection was closed
      */
     public void clientWasDisconnected(final @NotNull Channel channel, final @NotNull String reason) {
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final String clientId = clientConnection.getClientId();
         final String ip = clientConnection.getChannelIP().orElse(null);
         if (log.isTraceEnabled()) {
             log.trace("Client {} was disconnected.", clientId);
         }
-        logClientDisconnected.debug("Client ID: {}, IP: {} was disconnected. reason: {}.",
+        logClientDisconnected.debug(
+                "Client ID: {}, IP: {} was disconnected. reason: {}.",
                 valueOrUnknown(clientId),
                 valueOrUnknown(ip),
                 reason);
@@ -223,16 +225,19 @@ public class EventLog {
      */
     public void clientAuthentication(
             final @NotNull Channel channel, final @NotNull Mqtt5AuthReasonCode reasonCode, final boolean received) {
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final String clientId = clientConnection.getClientId();
         final String ip = clientConnection.getChannelIP().orElse(null);
         if (received) {
-            logAuthentication.debug("Received AUTH from Client ID: {}, IP: {}, reason code: {}.",
+            logAuthentication.debug(
+                    "Received AUTH from Client ID: {}, IP: {}, reason code: {}.",
                     valueOrUnknown(clientId),
                     valueOrUnknown(ip),
                     reasonCode.name());
         } else {
-            logAuthentication.debug("Sent AUTH to Client ID: {}, IP: {}, reason code: {}.",
+            logAuthentication.debug(
+                    "Sent AUTH to Client ID: {}, IP: {}, reason code: {}.",
                     valueOrUnknown(clientId),
                     valueOrUnknown(ip),
                     reasonCode.name());

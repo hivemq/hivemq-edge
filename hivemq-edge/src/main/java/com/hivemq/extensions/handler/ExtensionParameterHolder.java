@@ -15,9 +15,8 @@
  */
 package com.hivemq.extensions.handler;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.function.Supplier;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Robin Atherton

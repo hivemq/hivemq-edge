@@ -15,9 +15,12 @@
  */
 package com.hivemq.extensions.services.builder;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.packets.general.UserProperties;
 import com.hivemq.extension.sdk.api.packets.publish.PayloadFormatIndicator;
@@ -31,20 +34,15 @@ import com.hivemq.extensions.packets.publish.PublishPacketImpl;
 import com.hivemq.extensions.services.publish.RetainedPublishImpl;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import util.TestConfigurationBootstrap;
-import util.TestMessageUtil;
-
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import util.TestConfigurationBootstrap;
+import util.TestMessageUtil;
 
 /**
  * @author Florian Limpöck
@@ -55,6 +53,7 @@ public class RetainedPublishBuilderImplTest {
 
     private RetainedPublishBuilder retainedPublishBuilder;
     private ConfigurationService configurationService;
+
     @BeforeEach
     public void setUp() throws Exception {
         configurationService = new TestConfigurationBootstrap().getConfigurationService();
@@ -70,19 +69,19 @@ public class RetainedPublishBuilderImplTest {
 
     @Test
     public void test_topic_validation() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.topic("#"));
     }
 
     @Test
     public void test_topic_validation_utf_8_should_not() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.topic("topic" + '\u0001'));
     }
 
     @Test
     public void test_topic_validation_utf_8_must_not() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.topic("topic" + '\uD800'));
     }
 
@@ -95,110 +94,124 @@ public class RetainedPublishBuilderImplTest {
 
     @Test
     public void test_message_expiry_less_than_zero() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.messageExpiryInterval(-1));
     }
 
     @Test
     public void test_null_qos() {
-    
+
         assertThrows(NullPointerException.class, () -> retainedPublishBuilder.qos(null));
     }
 
     @Test
     public void test_null_topic() {
-    
+
         assertThrows(NullPointerException.class, () -> retainedPublishBuilder.topic(null));
     }
 
     @Test
     public void test_null_user_property_key() {
-    
+
         assertThrows(NullPointerException.class, () -> retainedPublishBuilder.userProperty(null, "value"));
     }
 
     @Test
     public void test_null_user_property_value() {
-    
+
         assertThrows(NullPointerException.class, () -> retainedPublishBuilder.userProperty("key", null));
     }
 
     @Test
     public void test_from_invalid_publish_implementation() {
-    
-        assertThrows(DoNotImplementException.class, () -> retainedPublishBuilder.fromPublish(new TestPublish()).build());
+
+        assertThrows(
+                DoNotImplementException.class,
+                () -> retainedPublishBuilder.fromPublish(new TestPublish()).build());
     }
 
     @Test
     public void test_response_topic_validation_utf_8_should_not() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.responseTopic("topic" + '\u0001'));
     }
 
     @Test
     public void test_response_topic_validation_utf_8_must_not() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.responseTopic("topic" + '\uD800'));
     }
 
     @Test
     public void test_content_type_validation_utf_8_should_not() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.contentType("topic" + '\u0001'));
     }
 
     @Test
     public void test_content_type_validation_utf_8_must_not() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.contentType("topic" + '\uD800'));
     }
 
     @Test
     public void test_user_property_name_validation_utf_8_should_not() {
-    
-        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.userProperty("topic" + '\u0001', "val"));
+
+        assertThrows(
+                IllegalArgumentException.class, () -> retainedPublishBuilder.userProperty("topic" + '\u0001', "val"));
     }
 
     @Test
     public void test_user_property_name_validation_utf_8_must_not() {
-    
-        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.userProperty("topic" + '\uD800', "val"));
+
+        assertThrows(
+                IllegalArgumentException.class, () -> retainedPublishBuilder.userProperty("topic" + '\uD800', "val"));
     }
 
     @Test
     public void test_user_property_value_validation_utf_8_should_not() {
-    
-        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.userProperty("key", "val" + '\u0001'));
+
+        assertThrows(
+                IllegalArgumentException.class, () -> retainedPublishBuilder.userProperty("key", "val" + '\u0001'));
     }
 
     @Test
     public void test_user_property_value_validation_utf_8_must_not() {
-    
-        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.userProperty("key", "val" + '\uD800'));
+
+        assertThrows(
+                IllegalArgumentException.class, () -> retainedPublishBuilder.userProperty("key", "val" + '\uD800'));
     }
 
     @Test
     public void test_user_property_name_too_long() {
-    
-        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.userProperty(RandomStringUtils.randomAlphanumeric(65536), "val"));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> retainedPublishBuilder.userProperty(RandomStringUtils.randomAlphanumeric(65536), "val"));
     }
 
     @Test
     public void test_user_property_value_too_long() {
-    
-        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.userProperty("name", RandomStringUtils.randomAlphanumeric(65536)));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> retainedPublishBuilder.userProperty("name", RandomStringUtils.randomAlphanumeric(65536)));
     }
 
     @Test
     public void test_response_topic_too_long() {
-    
-        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.responseTopic(RandomStringUtils.randomAlphanumeric(65536)));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> retainedPublishBuilder.responseTopic(RandomStringUtils.randomAlphanumeric(65536)));
     }
 
     @Test
     public void test_content_type_too_long() {
-    
-        assertThrows(IllegalArgumentException.class, () -> retainedPublishBuilder.contentType(RandomStringUtils.randomAlphanumeric(65536)));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> retainedPublishBuilder.contentType(RandomStringUtils.randomAlphanumeric(65536)));
     }
 
     @Test
@@ -218,10 +231,10 @@ public class RetainedPublishBuilderImplTest {
                 ByteBuffer.wrap("correlation_data".getBytes()),
                 "content_type",
                 ByteBuffer.wrap("test3".getBytes()),
-                userProperties
-        );
+                userProperties);
 
-        final RetainedPublish built = retainedPublishBuilder.fromPublish(retainedPublish).build();
+        final RetainedPublish built =
+                retainedPublishBuilder.fromPublish(retainedPublish).build();
 
         assertEquals(retainedPublish.getQos(), built.getQos());
         assertEquals(retainedPublish.getRetain(), built.getRetain());
@@ -232,32 +245,39 @@ public class RetainedPublishBuilderImplTest {
         assertEquals(retainedPublish.getCorrelationData(), built.getCorrelationData());
         assertEquals(retainedPublish.getContentType(), built.getContentType());
         assertEquals(retainedPublish.getPayload(), built.getPayload());
-        assertEquals(retainedPublish.getUserProperties().asList().size(), built.getUserProperties().asList().size());
+        assertEquals(
+                retainedPublish.getUserProperties().asList().size(),
+                built.getUserProperties().asList().size());
 
         assertEquals(Qos.AT_MOST_ONCE, built.getQos());
         assertTrue(built.getRetain());
         assertEquals("topic", built.getTopic());
         assertTrue(built.getPayloadFormatIndicator().isPresent());
-        assertEquals(PayloadFormatIndicator.UTF_8, built.getPayloadFormatIndicator().get());
+        assertEquals(
+                PayloadFormatIndicator.UTF_8, built.getPayloadFormatIndicator().get());
         assertTrue(built.getMessageExpiryInterval().isPresent());
         assertEquals(12345L, built.getMessageExpiryInterval().get().longValue());
         assertTrue(built.getResponseTopic().isPresent());
         assertEquals("response_topic", built.getResponseTopic().get());
         assertTrue(built.getCorrelationData().isPresent());
-        assertEquals(ByteBuffer.wrap("correlation_data".getBytes()), built.getCorrelationData().get());
+        assertEquals(
+                ByteBuffer.wrap("correlation_data".getBytes()),
+                built.getCorrelationData().get());
         assertTrue(built.getContentType().isPresent());
         assertEquals("content_type", built.getContentType().get());
         assertTrue(built.getPayload().isPresent());
         assertEquals(ByteBuffer.wrap("test3".getBytes()), built.getPayload().get());
-        assertEquals(userProperties.asList().size(), built.getUserProperties().asList().size());
-
+        assertEquals(
+                userProperties.asList().size(),
+                built.getUserProperties().asList().size());
     }
 
     @Test
     public void test_from_publish_packet() {
 
         final PublishPacket publishPacket = new PublishPacketImpl(TestMessageUtil.createFullMqtt5Publish());
-        final RetainedPublish built = retainedPublishBuilder.fromPublish(publishPacket).build();
+        final RetainedPublish built =
+                retainedPublishBuilder.fromPublish(publishPacket).build();
 
         assertEquals(publishPacket.getQos(), built.getQos());
         assertEquals(publishPacket.getRetain(), built.getRetain());
@@ -268,50 +288,57 @@ public class RetainedPublishBuilderImplTest {
         assertEquals(publishPacket.getCorrelationData(), built.getCorrelationData());
         assertEquals(publishPacket.getContentType(), built.getContentType());
         assertEquals(publishPacket.getPayload(), built.getPayload());
-        assertEquals(publishPacket.getUserProperties().asList().size(), built.getUserProperties().asList().size());
+        assertEquals(
+                publishPacket.getUserProperties().asList().size(),
+                built.getUserProperties().asList().size());
 
         assertEquals(Qos.EXACTLY_ONCE, built.getQos());
         assertTrue(built.getRetain());
         assertEquals("topic", built.getTopic());
         assertTrue(built.getPayloadFormatIndicator().isPresent());
-        assertEquals(PayloadFormatIndicator.UTF_8, built.getPayloadFormatIndicator().get());
+        assertEquals(
+                PayloadFormatIndicator.UTF_8, built.getPayloadFormatIndicator().get());
         assertTrue(built.getMessageExpiryInterval().isPresent());
         assertEquals(360L, built.getMessageExpiryInterval().get().longValue());
         assertTrue(built.getResponseTopic().isPresent());
         assertEquals("response topic", built.getResponseTopic().get());
         assertTrue(built.getCorrelationData().isPresent());
-        assertEquals(ByteBuffer.wrap("correlation data".getBytes()), built.getCorrelationData().get());
+        assertEquals(
+                ByteBuffer.wrap("correlation data".getBytes()),
+                built.getCorrelationData().get());
         assertTrue(built.getContentType().isPresent());
         assertEquals("content type", built.getContentType().get());
         assertTrue(built.getPayload().isPresent());
         assertEquals(ByteBuffer.wrap("payload".getBytes()), built.getPayload().get());
         assertEquals(2, built.getUserProperties().asList().size());
-
     }
 
     @Test
     public void test_from_publish_packet_implemented() {
 
         final PublishPacket publishPacket = new TestPublishPacket();
-        assertThatThrownBy(() -> retainedPublishBuilder.fromPublish(publishPacket).build())
+        assertThatThrownBy(
+                        () -> retainedPublishBuilder.fromPublish(publishPacket).build())
                 .isInstanceOf(DoNotImplementException.class);
-
     }
 
     @Test
     public void test_precondition_topic() {
-    
+
         assertThrows(NullPointerException.class, () -> retainedPublishBuilder.build());
     }
 
     @Test
     public void test_minimum() {
-        final RetainedPublish retainedPublish =
-                retainedPublishBuilder.topic("topic").payload(ByteBuffer.wrap("payload".getBytes())).build();
+        final RetainedPublish retainedPublish = retainedPublishBuilder
+                .topic("topic")
+                .payload(ByteBuffer.wrap("payload".getBytes()))
+                .build();
 
         assertEquals(Qos.AT_MOST_ONCE, retainedPublish.getQos());
         assertEquals("topic", retainedPublish.getTopic());
-        assertArrayEquals("payload".getBytes(), retainedPublish.getPayload().get().array());
+        assertArrayEquals(
+                "payload".getBytes(), retainedPublish.getPayload().get().array());
         assertEquals(Optional.empty(), retainedPublish.getPayloadFormatIndicator());
         assertTrue(retainedPublish.getMessageExpiryInterval().isPresent());
         assertEquals(

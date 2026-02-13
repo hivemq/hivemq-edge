@@ -16,13 +16,12 @@
 package com.hivemq.bootstrap.netty.ioc;
 
 import com.hivemq.bootstrap.netty.NettyTcpConfiguration;
-import org.jetbrains.annotations.NotNull;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This Provider creates the configuration for Netty.
@@ -34,8 +33,7 @@ public class NettyTcpConfigurationProvider extends AbstractNettyConfigurationPro
         implements Provider<NettyTcpConfiguration> {
 
     @Inject
-    public NettyTcpConfigurationProvider() {
-    }
+    public NettyTcpConfigurationProvider() {}
 
     @NotNull
     @Override

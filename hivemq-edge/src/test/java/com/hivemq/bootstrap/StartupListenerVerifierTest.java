@@ -15,33 +15,34 @@
  */
 package com.hivemq.bootstrap;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.google.common.collect.Lists;
 import com.hivemq.configuration.service.entity.MqttTcpListener;
 import com.hivemq.exceptions.UnrecoverableException;
-import org.junit.jupiter.api.Test;
-
 import java.util.ArrayList;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Dominik Obermaier
  */
 public class StartupListenerVerifierTest {
 
-
     @Test
-    public void test_verifier_verify_only_listener_failed(){
-        final ListenerStartupInformation failed = ListenerStartupInformation.failedListenerStartup(2000, new MqttTcpListener(2000, "0.0.0.0"), new RuntimeException("reason"));
+    public void test_verifier_verify_only_listener_failed() {
+        final ListenerStartupInformation failed = ListenerStartupInformation.failedListenerStartup(
+                2000, new MqttTcpListener(2000, "0.0.0.0"), new RuntimeException("reason"));
         assertThatThrownBy(() -> new StartupListenerVerifier(Lists.newArrayList(failed)).verifyAndPrint())
                 .isInstanceOf(UnrecoverableException.class);
     }
 
     @Test
     public void test_verifier_verify_all_listeners_failed() throws Exception {
-        final ListenerStartupInformation failed = ListenerStartupInformation.failedListenerStartup(2000, new MqttTcpListener(2000, "0.0.0.0"), new RuntimeException("reason"));
-        final ListenerStartupInformation failed2 = ListenerStartupInformation.failedListenerStartup(1234, new MqttTcpListener(1234, "0.0.0.0"), new RuntimeException("anotherreason"));
+        final ListenerStartupInformation failed = ListenerStartupInformation.failedListenerStartup(
+                2000, new MqttTcpListener(2000, "0.0.0.0"), new RuntimeException("reason"));
+        final ListenerStartupInformation failed2 = ListenerStartupInformation.failedListenerStartup(
+                1234, new MqttTcpListener(1234, "0.0.0.0"), new RuntimeException("anotherreason"));
 
         assertThatThrownBy(() -> new StartupListenerVerifier(Lists.newArrayList(failed, failed2)).verifyAndPrint())
                 .isInstanceOf(UnrecoverableException.class);
@@ -49,24 +50,27 @@ public class StartupListenerVerifierTest {
 
     @Test
     public void test_verifier_verify_some_listeners_failed() throws Exception {
-        final ListenerStartupInformation failed = ListenerStartupInformation.failedListenerStartup(2000, new MqttTcpListener(2000, "0.0.0.0"), new RuntimeException("reason"));
-        final ListenerStartupInformation success = ListenerStartupInformation.successfulListenerStartup(1234, new MqttTcpListener(1234, "0.0.0.0"));
+        final ListenerStartupInformation failed = ListenerStartupInformation.failedListenerStartup(
+                2000, new MqttTcpListener(2000, "0.0.0.0"), new RuntimeException("reason"));
+        final ListenerStartupInformation success =
+                ListenerStartupInformation.successfulListenerStartup(1234, new MqttTcpListener(1234, "0.0.0.0"));
 
         new StartupListenerVerifier(Lists.newArrayList(failed, success)).verifyAndPrint();
 
-        //We don't receive an exception so everything is good
+        // We don't receive an exception so everything is good
     }
 
     @Test
     public void test_verifier_verify_empty_listeners() {
-    
-        assertThrows(UnrecoverableException.class, () -> new StartupListenerVerifier(new ArrayList<ListenerStartupInformation>()).verifyAndPrint());
+
+        assertThrows(
+                UnrecoverableException.class,
+                () -> new StartupListenerVerifier(new ArrayList<ListenerStartupInformation>()).verifyAndPrint());
     }
 
     @Test
     public void test_verifier_doesnt_accept_null() {
-    
+
         assertThrows(NullPointerException.class, () -> new StartupListenerVerifier(null));
     }
-
 }

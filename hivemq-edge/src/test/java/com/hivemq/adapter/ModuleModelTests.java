@@ -15,13 +15,13 @@
  */
 package com.hivemq.adapter;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.hivemq.api.model.components.Link;
 import com.hivemq.api.model.components.Module;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Simon L Johnson
@@ -42,7 +42,6 @@ public class ModuleModelTests {
     static String LINK_IMAGE_URL = "imageUrl";
     static String LINK_URL = "url";
 
-
     @Test
     void testModuleModel() {
         final Module module = createTestModule();
@@ -55,9 +54,9 @@ public class ModuleModelTests {
         assertEquals(MODULE_TYPE, module.getModuleType(), "Module type should match");
 
         assertEquals(createTestLink("logoUrl"), module.getLogoUrl(), "Logo url should match");
-        assertEquals(createTestLink("documentationLink"), module.getDocumentationLink(), "documentation url should match");
+        assertEquals(
+                createTestLink("documentationLink"), module.getDocumentationLink(), "documentation url should match");
         assertEquals(createTestLink("provisioningLink"), module.getProvisioningLink(), "Provisioning url should match");
-
     }
 
     @Test
@@ -70,43 +69,64 @@ public class ModuleModelTests {
         assertEquals(LINK_IMAGE_URL, link.getImageUrl(), "Link image url should match");
     }
 
-    protected static @NotNull Link createTestLink(){
+    protected static @NotNull Link createTestLink() {
         return createTestLink(LINK_DISPLAY);
     }
 
-    protected static @NotNull Link createTestLink(final String name){
+    protected static @NotNull Link createTestLink(final String name) {
         return createLink(name, LINK_URL, LINK_DESC, LINK_TARGET, LINK_IMAGE_URL, false);
     }
 
-    protected static @NotNull Module createTestModule(){
-        return createModule(MODULE_ID, MODULE_VERSION, MODULE_NAME, createTestLink("logoUrl"),
+    protected static @NotNull Module createTestModule() {
+        return createModule(
+                MODULE_ID,
+                MODULE_VERSION,
+                MODULE_NAME,
+                createTestLink("logoUrl"),
                 MODULE_DESCRIPTION,
                 MODULE_AUTHOR,
-                MODULE_PRIORITY, true,
+                MODULE_PRIORITY,
+                true,
                 MODULE_TYPE,
                 createTestLink("documentationLink"),
                 createTestLink("provisioningLink"));
     }
 
-    protected static Link createLink(final @NotNull String displayText, final @NotNull String url,
-                                     final @NotNull String description, final @NotNull String target,
-                                     final @NotNull String imageUrl, final boolean external){
+    protected static Link createLink(
+            final @NotNull String displayText,
+            final @NotNull String url,
+            final @NotNull String description,
+            final @NotNull String target,
+            final @NotNull String imageUrl,
+            final boolean external) {
         final Link link = new Link(displayText, url, description, target, imageUrl, external);
         return link;
     }
 
-    protected static @NotNull Module createModule(final @NotNull String id,
-                                          final @NotNull String version,
-                                          final @NotNull String name,
-                                          final @Nullable Link logoUrl,
-                                          final @Nullable String description,
-                                          final @NotNull String author,
-                                          final @NotNull Integer priority,
-                                          final @NotNull Boolean installed,
-                                          final @Nullable String moduleType,
-                                          final @Nullable Link documentationLink,
-                                          final @Nullable Link provisioningLink){
-        final Module module = new Module(id, version, name, logoUrl, description, author, priority, installed, moduleType, documentationLink, provisioningLink);
+    protected static @NotNull Module createModule(
+            final @NotNull String id,
+            final @NotNull String version,
+            final @NotNull String name,
+            final @Nullable Link logoUrl,
+            final @Nullable String description,
+            final @NotNull String author,
+            final @NotNull Integer priority,
+            final @NotNull Boolean installed,
+            final @Nullable String moduleType,
+            final @Nullable Link documentationLink,
+            final @Nullable Link provisioningLink) {
+        final Module module = new Module(
+                id,
+                version,
+                name,
+                logoUrl,
+                description,
+                author,
+                priority,
+                installed,
+                moduleType,
+                documentationLink,
+                provisioningLink);
         return module;
     }
 }

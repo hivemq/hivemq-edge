@@ -16,10 +16,10 @@
 package com.hivemq.extensions.client.parameter;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.Listener;
 import com.hivemq.extension.sdk.api.client.parameter.ListenerType;
 import com.hivemq.extensions.ExtensionInformationUtil;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck

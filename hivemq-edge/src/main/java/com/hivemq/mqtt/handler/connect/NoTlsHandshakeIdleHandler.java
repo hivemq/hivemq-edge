@@ -15,16 +15,15 @@
  */
 package com.hivemq.mqtt.handler.connect;
 
-import org.jetbrains.annotations.NotNull;
+import static com.hivemq.logging.LoggingUtils.appendListenerToMessage;
+
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
-
 import jakarta.inject.Inject;
-
-import static com.hivemq.logging.LoggingUtils.appendListenerToMessage;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
@@ -39,12 +38,15 @@ public class NoTlsHandshakeIdleHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void userEventTriggered(final @NotNull ChannelHandlerContext ctx, final @NotNull Object evt) throws Exception {
+    public void userEventTriggered(final @NotNull ChannelHandlerContext ctx, final @NotNull Object evt)
+            throws Exception {
 
         if (evt instanceof IdleStateEvent) {
             if (((IdleStateEvent) evt).state() == IdleState.READER_IDLE) {
-                final String eventLogMessage = appendListenerToMessage(ctx.channel(), "TLS handshake not finished in time");
-                mqttServerDisconnector.logAndClose(ctx.channel(),
+                final String eventLogMessage =
+                        appendListenerToMessage(ctx.channel(), "TLS handshake not finished in time");
+                mqttServerDisconnector.logAndClose(
+                        ctx.channel(),
                         "Client with IP {} disconnected. The client was idle for too long without finishing the TLS handshake.",
                         eventLogMessage);
                 return;

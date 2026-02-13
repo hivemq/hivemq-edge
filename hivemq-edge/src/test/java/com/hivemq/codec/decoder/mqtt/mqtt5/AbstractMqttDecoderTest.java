@@ -16,10 +16,10 @@
 package com.hivemq.codec.decoder.mqtt.mqtt5;
 
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnectorImpl;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import io.netty.channel.embedded.EmbeddedChannel;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.LoggerFactory;
@@ -32,14 +32,17 @@ public class AbstractMqttDecoderTest {
     protected @NotNull EmbeddedChannel channel;
     protected @NotNull ClientConnection clientConnection;
     protected @NotNull LogbackCapturingAppender logCapture;
+
     @BeforeEach
     public void setUp() {
-        logCapture = LogbackCapturingAppender.Factory.weaveInto(LoggerFactory.getLogger(MqttServerDisconnectorImpl.class));
+        logCapture =
+                LogbackCapturingAppender.Factory.weaveInto(LoggerFactory.getLogger(MqttServerDisconnectorImpl.class));
         channel = new EmbeddedChannel(TestMqttDecoder.create());
         clientConnection = new ClientConnection(channel, null);
         clientConnection.setProtocolVersion(protocolVersion);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
     }
+
     @AfterEach
     public void tearDown() {
         LogbackCapturingAppender.Factory.cleanUp();

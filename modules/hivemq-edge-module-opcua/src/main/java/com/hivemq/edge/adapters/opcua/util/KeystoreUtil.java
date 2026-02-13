@@ -15,12 +15,6 @@
  */
 package com.hivemq.edge.adapters.opcua.util;
 
-import org.eclipse.milo.opcua.stack.core.util.CertificateUtil;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -39,6 +33,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.Stream;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
+import org.eclipse.milo.opcua.stack.core.util.CertificateUtil;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class KeystoreUtil {
 
@@ -47,7 +46,7 @@ public class KeystoreUtil {
             final @NotNull String keyStorePath,
             final @NotNull String keyStorePassword) {
         try (final FileInputStream fileInputStream = new FileInputStream(keyStorePath)) {
-            //load keystore from TLS config
+            // load keystore from TLS config
             final KeyStore keyStore = KeyStore.getInstance(keyStoreType);
             keyStore.load(fileInputStream, keyStorePassword.toCharArray());
             final List<X509Certificate> certificates = new ArrayList<>();
@@ -60,9 +59,9 @@ public class KeystoreUtil {
         } catch (final FileNotFoundException e) {
             throw new SslException("Cannot find KeyStore at path '" + keyStorePath + "'");
         } catch (final KeyStoreException | IOException e) {
-            throw new SslException(String.format("Not able to open or read KeyStore '%s' with type '%s'",
-                    keyStorePath,
-                    keyStoreType), e);
+            throw new SslException(
+                    String.format("Not able to open or read KeyStore '%s' with type '%s'", keyStorePath, keyStoreType),
+                    e);
         } catch (final NoSuchAlgorithmException | CertificateException e) {
             throw new SslException("Not able to read the certificate from KeyStore '" + keyStorePath + "'", e);
         } catch (final NoSuchElementException e) {
@@ -71,18 +70,20 @@ public class KeystoreUtil {
     }
 
     public static @NotNull List<X509Certificate> getCertificatesFromDefaultTruststore() {
-        //if no truststore is set use java default
+        // if no truststore is set use java default
         try {
             // Loads default Root CA certificates (generally, from JAVA_HOME/lib/cacerts)
             final TrustManagerFactory trustManagerFactory =
                     TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             trustManagerFactory.init((KeyStore) null);
-            return Arrays.stream(trustManagerFactory.getTrustManagers()).flatMap(trustManager -> {
-                if (trustManager instanceof X509TrustManager x509TrustManager) {
-                    return Arrays.stream(x509TrustManager.getAcceptedIssuers());
-                }
-                return Stream.empty();
-            }).toList();
+            return Arrays.stream(trustManagerFactory.getTrustManagers())
+                    .flatMap(trustManager -> {
+                        if (trustManager instanceof X509TrustManager x509TrustManager) {
+                            return Arrays.stream(x509TrustManager.getAcceptedIssuers());
+                        }
+                        return Stream.empty();
+                    })
+                    .toList();
         } catch (final NoSuchAlgorithmException | KeyStoreException e) {
             throw new SslException("Not able to load system default truststore", e);
         }
@@ -94,7 +95,7 @@ public class KeystoreUtil {
             final @NotNull String keyStorePassword,
             final @NotNull String privateKeyPassword) {
         try (final FileInputStream fileInputStream = new FileInputStream(keyStorePath)) {
-            //load keystore from TLS config
+            // load keystore from TLS config
             final KeyStore keyStore = KeyStore.getInstance(keyStoreType);
             keyStore.load(fileInputStream, keyStorePassword.toCharArray());
 
@@ -124,7 +125,8 @@ public class KeystoreUtil {
             }
 
             // Extract Application URI from certificate SAN extension
-            final String applicationUri = CertificateUtil.getSanUri(certificateX509).orElse(null);
+            final String applicationUri =
+                    CertificateUtil.getSanUri(certificateX509).orElse(null);
 
             return new KeyPairWithChain(privateKey, certificateX509, certificateChainX509, applicationUri);
         } catch (final UnrecoverableKeyException e1) {
@@ -134,9 +136,9 @@ public class KeystoreUtil {
         } catch (final FileNotFoundException e) {
             throw new SslException("Cannot find KeyStore at path '" + keyStorePath + "'");
         } catch (final KeyStoreException | IOException e) {
-            throw new SslException(String.format("Not able to open or read KeyStore '%s' with type '%s'",
-                    keyStorePath,
-                    keyStoreType), e);
+            throw new SslException(
+                    String.format("Not able to open or read KeyStore '%s' with type '%s'", keyStorePath, keyStoreType),
+                    e);
         } catch (final NoSuchAlgorithmException | CertificateException e) {
             throw new SslException("Not able to read the certificate from KeyStore '" + keyStorePath + "'", e);
         } catch (final NoSuchElementException e) {
@@ -144,8 +146,9 @@ public class KeystoreUtil {
         }
     }
 
-    public record KeyPairWithChain(@NotNull PrivateKey privateKey, @NotNull X509Certificate publicKey,
-                                   @NotNull X509Certificate[] certificateChain,
-                                   @Nullable String applicationUri) {
-    }
+    public record KeyPairWithChain(
+            @NotNull PrivateKey privateKey,
+            @NotNull X509Certificate publicKey,
+            @NotNull X509Certificate[] certificateChain,
+            @Nullable String applicationUri) {}
 }

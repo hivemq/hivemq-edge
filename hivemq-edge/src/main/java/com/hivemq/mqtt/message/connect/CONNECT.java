@@ -16,8 +16,6 @@
 package com.hivemq.mqtt.message.connect;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extensions.packets.connect.ConnectPacketImpl;
 import com.hivemq.extensions.packets.general.MqttVersionUtil;
 import com.hivemq.mqtt.message.MessageType;
@@ -25,8 +23,9 @@ import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttMessageWithUserProperties;
 import com.hivemq.util.Bytes;
-
 import java.nio.charset.StandardCharsets;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -408,7 +407,8 @@ public class CONNECT extends MqttMessageWithUserProperties implements Mqtt5CONNE
                 Bytes.getBytesFromReadOnlyBuffer(packet.getPassword()),
                 packet.getAuthenticationMethod().orElse(null),
                 Bytes.getBytesFromReadOnlyBuffer(packet.getAuthenticationData()),
-                MqttWillPublish.fromWillPacket(clusterId, packet.getWillPublish().orElse(null)),
+                MqttWillPublish.fromWillPacket(
+                        clusterId, packet.getWillPublish().orElse(null)),
                 Mqtt5UserProperties.of(packet.getUserProperties().asInternalList()));
     }
 }

@@ -16,13 +16,13 @@
 package com.hivemq.edge.modules.api.events;
 
 import com.hivemq.adapter.sdk.api.events.model.Event;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 public interface EventStore {
 
     void storeEvent(@NotNull Event event);
 
-    @NotNull List<Event> readEvents(@NotNull Long since, @NotNull Integer limit);
+    @NotNull
+    List<Event> readEvents(@NotNull Long since, @NotNull Integer limit);
 }

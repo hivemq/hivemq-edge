@@ -15,8 +15,10 @@
  */
 package com.hivemq.mqtt.topic.tree;
 
+import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRE_ON_DISCONNECT;
+import static com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl.SharedSubscription;
+
 import com.google.common.util.concurrent.ListenableFuture;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.topic.SubscriptionFlag;
 import com.hivemq.persistence.clientsession.ClientSession;
@@ -24,15 +26,12 @@ import com.hivemq.persistence.clientsession.ClientSessionPersistence;
 import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence;
 import com.hivemq.persistence.clientsession.SharedSubscriptionService;
 import dagger.Lazy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Set;
-
-import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRE_ON_DISCONNECT;
-import static com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl.SharedSubscription;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class is responsible for adding all topic information to the topic tree on application startup.
@@ -61,7 +60,7 @@ public class TopicTreeStartup {
         this.sharedSubscriptionService = sharedSubscriptionService;
     }
 
-    @Inject //method injection, this gets called once after instantiation
+    @Inject // method injection, this gets called once after instantiation
     void postConstruct() {
         log.debug("Building initial topic tree");
         populateTopicTree();
@@ -71,7 +70,8 @@ public class TopicTreeStartup {
      * Populates the topic tree with all information from the ClientSessionPersistence
      */
     private void populateTopicTree() {
-        final ListenableFuture<Set<String>> clientsFuture = clientSessionPersistence.get().getAllClients();
+        final ListenableFuture<Set<String>> clientsFuture =
+                clientSessionPersistence.get().getAllClients();
         // Blocking. The TopicTreeStartup needs to be done before new connections are allowed.
         try {
             final Set<String> clients = clientsFuture.get();
@@ -79,7 +79,8 @@ public class TopicTreeStartup {
                 final Set<Topic> clientSubscriptions = clientSessionSubscriptionPersistence.getSubscriptions(client);
                 final ClientSession session = clientSessionPersistence.get().getSession(client, false);
                 if (session == null || session.getSessionExpiryIntervalSec() == SESSION_EXPIRE_ON_DISCONNECT) {
-                    // We don't have to remove the subscription from the topic tree, since it is not added to the topic tree yet.
+                    // We don't have to remove the subscription from the topic tree, since it is not added to the topic
+                    // tree yet.
                     clientSessionSubscriptionPersistence.removeAllLocally(client);
                     continue;
                 }
@@ -89,16 +90,19 @@ public class TopicTreeStartup {
                             sharedSubscriptionService.checkForSharedSubscription(topic.getTopic());
 
                     if (sharedSubscription == null) {
-                        final byte flags = SubscriptionFlag.getDefaultFlags(false, topic.isRetainAsPublished(),
-                                topic.isNoLocal());
+                        final byte flags =
+                                SubscriptionFlag.getDefaultFlags(false, topic.isRetainAsPublished(), topic.isNoLocal());
 
                         topicTree.addTopic(client, topic, flags, null);
                     } else {
-                        final byte flags = SubscriptionFlag.getDefaultFlags(true, topic.isRetainAsPublished(),
-                                topic.isNoLocal());
+                        final byte flags =
+                                SubscriptionFlag.getDefaultFlags(true, topic.isRetainAsPublished(), topic.isNoLocal());
 
-                        final Topic sharedTopic = new Topic(sharedSubscription.getTopicFilter(), topic.getQoS(),
-                                topic.isNoLocal(), topic.isRetainAsPublished());
+                        final Topic sharedTopic = new Topic(
+                                sharedSubscription.getTopicFilter(),
+                                topic.getQoS(),
+                                topic.isNoLocal(),
+                                topic.isRetainAsPublished());
 
                         topicTree.addTopic(client, sharedTopic, flags, sharedSubscription.getShareName());
                     }

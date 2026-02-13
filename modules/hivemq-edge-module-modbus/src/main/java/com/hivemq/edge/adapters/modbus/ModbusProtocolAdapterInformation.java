@@ -22,15 +22,14 @@ import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 public class ModbusProtocolAdapterInformation implements ProtocolAdapterInformation {
 
@@ -39,8 +38,7 @@ public class ModbusProtocolAdapterInformation implements ProtocolAdapterInformat
     public static final @NotNull String PROTOCOL_ID = "modbus";
     private static final int CURRENT_CONFIG_VERSION = 1;
 
-    protected ModbusProtocolAdapterInformation() {
-    }
+    protected ModbusProtocolAdapterInformation() {}
 
     @Override
     public @NotNull String getProtocolName() {
@@ -94,9 +92,8 @@ public class ModbusProtocolAdapterInformation implements ProtocolAdapterInformat
 
     @Override
     public @Nullable String getUiSchema() {
-        try (final InputStream is = this.getClass()
-                .getClassLoader()
-                .getResourceAsStream("modbus-adapter-ui-schema.json")) {
+        try (final InputStream is =
+                this.getClass().getClassLoader().getResourceAsStream("modbus-adapter-ui-schema.json")) {
             if (is == null) {
                 log.warn("The UISchema for the Modbus Adapter could not be loaded from resources: Not found.");
                 return null;

@@ -17,11 +17,10 @@ package com.hivemq.api.model.components;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import io.swagger.v3.oas.annotations.media.Schema;
-
-import java.util.Objects;
 
 /**
  * Bean to transport Link details across the API
@@ -50,7 +49,9 @@ public class Link {
     private final @Nullable String imageUrl;
 
     @JsonProperty("external")
-    @Schema(description = "A mandatory Boolean indicating if the link is internal to the context or an external webLink")
+    @Schema(
+            description =
+                    "A mandatory Boolean indicating if the link is internal to the context or an external webLink")
     private final @NotNull Boolean external;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
@@ -111,12 +112,12 @@ public class Link {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final Link link = (Link) o;
-        return url.equals(link.url) &&
-                Objects.equals(displayText, link.displayText) &&
-                Objects.equals(description, link.description) &&
-                Objects.equals(target, link.target) &&
-                Objects.equals(imageUrl, link.imageUrl) &&
-                Objects.equals(external, link.external);
+        return url.equals(link.url)
+                && Objects.equals(displayText, link.displayText)
+                && Objects.equals(description, link.description)
+                && Objects.equals(target, link.target)
+                && Objects.equals(imageUrl, link.imageUrl)
+                && Objects.equals(external, link.external);
     }
 
     @Override

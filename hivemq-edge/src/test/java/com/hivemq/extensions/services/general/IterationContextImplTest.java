@@ -15,10 +15,10 @@
  */
 package com.hivemq.extensions.services.general;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Christoph Schäbel
@@ -36,5 +36,4 @@ public class IterationContextImplTest {
 
         assertTrue(iterationContext.isAborted());
     }
-
 }

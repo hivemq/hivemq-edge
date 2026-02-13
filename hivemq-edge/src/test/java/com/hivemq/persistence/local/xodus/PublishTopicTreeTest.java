@@ -15,12 +15,11 @@
  */
 package com.hivemq.persistence.local.xodus;
 
-import org.junit.jupiter.api.Test;
-
-import java.util.Set;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.Set;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Lukas Brandl
@@ -66,7 +65,6 @@ public class PublishTopicTreeTest {
         result = tree.get("topic/a");
         assertEquals(1, result.size());
         assertTrue(result.contains("topic/a"));
-
 
         result = tree.get("topic/+");
         assertEquals(2, result.size());
@@ -145,7 +143,6 @@ public class PublishTopicTreeTest {
 
         result = tree.get("topic/#");
         assertEquals(6, result.size());
-
     }
 
     @Test
@@ -205,7 +202,6 @@ public class PublishTopicTreeTest {
         tree.remove("topic/a/b");
         assertEquals(1, tree.get("topic/a/a").size());
         assertEquals(1, tree.get("topic/a/c").size());
-
     }
 
     @Test
@@ -237,7 +233,6 @@ public class PublishTopicTreeTest {
         assertTrue(result.contains("topic/a"));
         assertTrue(result.contains("topic/a/b"));
         assertTrue(result.contains("topic/a/b/c"));
-
     }
 
     @Test

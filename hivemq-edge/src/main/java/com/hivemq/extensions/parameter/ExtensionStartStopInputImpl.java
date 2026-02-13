@@ -16,15 +16,14 @@
 package com.hivemq.extensions.parameter;
 
 import com.google.common.collect.ImmutableMap;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 import com.hivemq.extension.sdk.api.parameter.ExtensionInformation;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStartInput;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStopInput;
 import com.hivemq.extensions.HiveMQExtension;
-
 import java.util.Map;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Georg Held
@@ -57,9 +56,9 @@ public class ExtensionStartStopInputImpl implements ExtensionStartInput, Extensi
 
     @Override
     public @NotNull Map<String, @NotNull ExtensionInformation> getEnabledExtensions() {
-        return enabledExtensions.entrySet()
-                .stream()
-                .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, e -> new ExtensionInformationImpl(e.getValue())));
+        return enabledExtensions.entrySet().stream()
+                .collect(ImmutableMap.toImmutableMap(
+                        Map.Entry::getKey, e -> new ExtensionInformationImpl(e.getValue())));
     }
 
     @Override

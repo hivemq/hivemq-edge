@@ -15,10 +15,10 @@
  */
 package com.hivemq.extensions.packets.connect;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.hivemq.codec.encoder.mqtt5.UnsignedDataTypes;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.annotations.ThreadSafe;
 import com.hivemq.extension.sdk.api.packets.connect.WillPublishPacket;
 import com.hivemq.extension.sdk.api.packets.general.MqttVersion;
@@ -29,12 +29,11 @@ import com.hivemq.extensions.packets.general.ModifiableUserPropertiesImpl;
 import com.hivemq.extensions.packets.publish.ModifiableWillPublishImpl;
 import com.hivemq.extensions.packets.publish.WillPublishPacketImpl;
 import com.hivemq.util.Utf8Utils;
-
 import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.Optional;
-
-import static com.google.common.base.Preconditions.checkArgument;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Lukas Brandl
@@ -86,10 +85,12 @@ public class ModifiableConnectPacketImpl implements ModifiableConnectPacket {
         authenticationMethod = packet.authenticationMethod;
         authenticationData = packet.authenticationData;
 
-        willPublish = (packet.willPublish == null) ? null :
-                new ModifiableWillPublishImpl(packet.willPublish, configurationService);
+        willPublish = (packet.willPublish == null)
+                ? null
+                : new ModifiableWillPublishImpl(packet.willPublish, configurationService);
         userProperties = new ModifiableUserPropertiesImpl(
-                packet.userProperties.asInternalList(), configurationService.securityConfiguration().validateUTF8());
+                packet.userProperties.asInternalList(),
+                configurationService.securityConfiguration().validateUTF8());
 
         this.configurationService = configurationService;
     }
@@ -106,7 +107,8 @@ public class ModifiableConnectPacketImpl implements ModifiableConnectPacket {
 
     @Override
     public void setClientId(final @NotNull String clientId) {
-        final int clientIdLength = configurationService.restrictionsConfiguration().maxClientIdLength();
+        final int clientIdLength =
+                configurationService.restrictionsConfiguration().maxClientIdLength();
         checkArgument(!Utf8Utils.containsMustNotCharacters(clientId), clientId + " is not a valid client id");
         checkArgument(!Utf8Utils.hasControlOrNonCharacter(clientId), clientId + " is not a valid client id");
         checkArgument(clientId.length() < clientIdLength, "client ID exceeds the maximum client ID length");
@@ -365,10 +367,23 @@ public class ModifiableConnectPacketImpl implements ModifiableConnectPacket {
     }
 
     public @NotNull ConnectPacketImpl copy() {
-        return new ConnectPacketImpl(mqttVersion, clientId, cleanStart, sessionExpiryInterval, keepAlive,
-                receiveMaximum, maximumPacketSize, topicAliasMaximum, requestProblemInformation,
-                requestResponseInformation, userName, password, authenticationMethod, authenticationData,
-                (willPublish == null) ? null : willPublish.copy(), userProperties.copy());
+        return new ConnectPacketImpl(
+                mqttVersion,
+                clientId,
+                cleanStart,
+                sessionExpiryInterval,
+                keepAlive,
+                receiveMaximum,
+                maximumPacketSize,
+                topicAliasMaximum,
+                requestProblemInformation,
+                requestResponseInformation,
+                userName,
+                password,
+                authenticationMethod,
+                authenticationData,
+                (willPublish == null) ? null : willPublish.copy(),
+                userProperties.copy());
     }
 
     public @NotNull ModifiableConnectPacketImpl update(final @NotNull ConnectPacketImpl packet) {

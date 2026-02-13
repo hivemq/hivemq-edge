@@ -15,17 +15,16 @@
  */
 package com.hivemq.persistence.util;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-
-import java.util.concurrent.CountDownLatch;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
+import java.util.concurrent.CountDownLatch;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * @author Lukas Brandl
@@ -38,7 +37,6 @@ public class FutureUtilsTest {
         final SettableFuture<Void> future2 = SettableFuture.create();
 
         final ImmutableList.Builder<ListenableFuture<Void>> builder = ImmutableList.builder();
-
 
         builder.add(future1).add(future2);
         final ListenableFuture<Void> resultFuture = FutureUtils.voidFutureFromList(builder.build());
@@ -59,17 +57,17 @@ public class FutureUtilsTest {
             final SettableFuture<Void> future = SettableFuture.create();
             builder.add(future);
             new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        latch.await();
-                        future.set(null);
-                    } catch (final InterruptedException e) {
-                        e.printStackTrace();
-                    }
-
-                }
-            }).start();
+                        @Override
+                        public void run() {
+                            try {
+                                latch.await();
+                                future.set(null);
+                            } catch (final InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    })
+                    .start();
         }
 
         final ListenableFuture<Void> resultFuture = FutureUtils.voidFutureFromList(builder.build());
@@ -101,8 +99,7 @@ public class FutureUtilsTest {
             expected = ex;
         }
 
-        assertThat(expected.getCause())
-                .isInstanceOf(NullPointerException.class);
+        assertThat(expected.getCause()).isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -128,7 +125,6 @@ public class FutureUtilsTest {
             expected = ex;
         }
 
-        assertThat(expected.getCause())
-                .isInstanceOf(BatchedException.class);
+        assertThat(expected.getCause()).isInstanceOf(BatchedException.class);
     }
 }

@@ -13,25 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.throttling.ioc;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.when;
 
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.throttling.GlobalTrafficShaperExecutorShutdownHook;
+import java.util.Collection;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import java.util.Collection;
-import java.util.stream.Collectors;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.when;
 
 public class GlobalTrafficShapingProviderTest {
 
@@ -41,6 +39,7 @@ public class GlobalTrafficShapingProviderTest {
     private RestrictionsConfigurationService configurationService;
 
     private ShutdownHooks shutdownHooks;
+
     @BeforeEach
     public void setUp() throws Exception {
         closeableMock = MockitoAnnotations.openMocks(this);
@@ -48,6 +47,7 @@ public class GlobalTrafficShapingProviderTest {
 
         shutdownHooks = new ShutdownHooks();
     }
+
     @AfterEach
     public void tearDown() throws Exception {
         for (final HiveMQShutdownHook hook : shutdownHooks.getShutdownHooks().values()) {
@@ -64,9 +64,7 @@ public class GlobalTrafficShapingProviderTest {
 
         globalTrafficShapingProvider.get();
 
-        final Collection<HiveMQShutdownHook> hooks = shutdownHooks.getShutdownHooks()
-                .values()
-                .stream()
+        final Collection<HiveMQShutdownHook> hooks = shutdownHooks.getShutdownHooks().values().stream()
                 .filter(x -> x instanceof GlobalTrafficShaperExecutorShutdownHook)
                 .collect(Collectors.toList());
 

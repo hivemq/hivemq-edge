@@ -15,8 +15,9 @@
  */
 package com.hivemq.combining.runtime;
 
+import static com.hivemq.configuration.service.InternalConfigurations.PUBLISH_POLL_BATCH_SIZE_BYTES;
+
 import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -28,8 +29,6 @@ import com.hivemq.persistence.util.FutureUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.hivemq.configuration.service.InternalConfigurations.PUBLISH_POLL_BATCH_SIZE_BYTES;
 
 public abstract class QueueConsumer {
 
@@ -78,17 +77,21 @@ public abstract class QueueConsumer {
             final ListenableFuture<ImmutableList<PUBLISH>> publishesFuture =
                     clientQueuePersistence.readShared(queueId, READ_LIMIT, PUBLISH_POLL_BATCH_SIZE_BYTES);
 
-            Futures.transform(publishesFuture, publishes -> {
-                if (publishes.isEmpty()) {
-                    return null;
-                }
-                //we know it's 1 message as READ_LIMIT = 1
-                final PUBLISH publish = publishes.get(0);
-                processPublish(publish);
-                return null;
-            }, MoreExecutors.directExecutor());
+            Futures.transform(
+                    publishesFuture,
+                    publishes -> {
+                        if (publishes.isEmpty()) {
+                            return null;
+                        }
+                        // we know it's 1 message as READ_LIMIT = 1
+                        final PUBLISH publish = publishes.get(0);
+                        processPublish(publish);
+                        return null;
+                    },
+                    MoreExecutors.directExecutor());
         } catch (final Throwable t) {
-            // the writer shouldn't throw an exception, but better safe than sorry as we might to miss rescheduling the task otherwise.
+            // the writer shouldn't throw an exception, but better safe than sorry as we might to miss rescheduling the
+            // task otherwise.
             handleExceptionDuringPolling(t);
         }
     }
@@ -124,7 +127,7 @@ public abstract class QueueConsumer {
 
     private void removeMessage(final @NotNull String queueId, final @NotNull String uniqueId, final @NotNull QoS qos) {
         if (qos != QoS.AT_MOST_ONCE) {
-            //-- 15665 - > QoS 0 causes republishing
+            // -- 15665 - > QoS 0 causes republishing
             FutureUtils.addExceptionLogger(clientQueuePersistence.removeShared(queueId, uniqueId));
         }
     }

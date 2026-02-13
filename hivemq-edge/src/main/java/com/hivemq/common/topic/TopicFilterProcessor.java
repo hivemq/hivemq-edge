@@ -15,21 +15,20 @@
  */
 package com.hivemq.common.topic;
 
+import static com.hivemq.bridge.mqtt.RemoteMqttForwarder.DEFAULT_DESTINATION_PATTERN;
+
 import com.hivemq.client.annotations.Immutable;
 import com.hivemq.client.mqtt.datatypes.MqttTopic;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static com.hivemq.bridge.mqtt.RemoteMqttForwarder.DEFAULT_DESTINATION_PATTERN;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Generates the destination topic for in and outgoing publishes.
@@ -45,7 +44,6 @@ public class TopicFilterProcessor {
     private static final @NotNull Pattern REGEX_VAR = Pattern.compile("\\{.*}");
     private static final @NotNull Pattern REGEX_NUM = Pattern.compile("[0-9]+");
 
-
     public static @NotNull MqttTopic modifyTopic(
             final @Nullable String destination,
             final @NotNull MqttTopic topic,
@@ -57,7 +55,6 @@ public class TopicFilterProcessor {
 
         return TopicFilterProcessor.applyDestinationModifier(topic, destination, tokensAndValues);
     }
-
 
     /**
      * Applies all the destination modifiers.getQosForPubMode
@@ -73,14 +70,14 @@ public class TopicFilterProcessor {
         if (destinationModifier.isEmpty()) {
             return inTopic;
         }
-        //We split the destinationModifier in order to retrieve the topics levels. The split limit is set to
-        //-1 in order to also include a trailing (empty) /-level as the split will add a trailing empty string.
+        // We split the destinationModifier in order to retrieve the topics levels. The split limit is set to
+        // -1 in order to also include a trailing (empty) /-level as the split will add a trailing empty string.
         final List<String> outTopicWithPlaceholders = List.of(destinationModifier.split("/", -1));
         final List<String> outTopic = new ArrayList<>();
 
         for (String level : outTopicWithPlaceholders) {
 
-            //-- Parse the intial topicLevel for arbitrary matches before the deferred replacement logic
+            // -- Parse the intial topicLevel for arbitrary matches before the deferred replacement logic
             if (!tokensAndValues.isEmpty()) {
                 level = replaceTokens(level, tokensAndValues);
             }
@@ -96,14 +93,12 @@ public class TopicFilterProcessor {
                 final String levelInsert = level.substring(replacementInformationStart, replacementInformationEnd);
 
                 if (levelInsert.contains("#") && levelInsert.length() == "#".length()) {
-                    replaceMultiWildcard(level,
-                            outTopic,
-                            inTopic,
-                            replacementInformationStart,
-                            replacementInformationEnd);
+                    replaceMultiWildcard(
+                            level, outTopic, inTopic, replacementInformationStart, replacementInformationEnd);
 
                 } else if (levelInsert.contains("-#")) {
-                    replaceMultiWildcardWithStart(level,
+                    replaceMultiWildcardWithStart(
+                            level,
                             outTopic,
                             inTopic,
                             levelInsert,
@@ -111,7 +106,8 @@ public class TopicFilterProcessor {
                             replacementInformationEnd);
 
                 } else if (levelInsert.contains("-")) {
-                    replaceMultilevel(level,
+                    replaceMultilevel(
+                            level,
                             outTopic,
                             inTopic,
                             levelInsert,
@@ -140,8 +136,8 @@ public class TopicFilterProcessor {
         if (envValue != null) {
             outTopic.add(level.replace("$ENV{" + envVar + "}", envValue));
         } else {
-            log.warn("Topic-Modifier: Found environment variable definition {} but no Value was set! Ignoring.",
-                    envVar);
+            log.warn(
+                    "Topic-Modifier: Found environment variable definition {} but no Value was set! Ignoring.", envVar);
             final String emptyReplace = level.replace("$ENV{" + envVar + "}", "");
             if (!emptyReplace.isEmpty()) {
                 outTopic.add(emptyReplace);
@@ -215,7 +211,8 @@ public class TopicFilterProcessor {
                     startLevel,
                     endLevel);
         } else if (startLevel > replacedLevels.size()) {
-            log.warn("Topic-Modifier: Start level from {{}-{}} is bigger than the original topic \"{}\"! Skipping.",
+            log.warn(
+                    "Topic-Modifier: Start level from {{}-{}} is bigger than the original topic \"{}\"! Skipping.",
                     startLevel,
                     endLevel,
                     inTopic);
@@ -229,21 +226,23 @@ public class TopicFilterProcessor {
                     replacedLevels.stream().skip(startLevel - 1).collect(Collectors.joining("/"));
             outTopic.add(replacedTopicLevelsExisting);
         } else if (startLevel <= replacedLevels.size()) {
-            //String.join() is currently buggy with MqttClient library
+            // String.join() is currently buggy with MqttClient library
             //noinspection SimplifyStreamApiCallChains
             final String replacedTopicLevelsRange =
                     replacedLevels.subList(startLevel - 1, endLevel).stream().collect(Collectors.joining("/"));
             outTopic.add(replacedTopicLevelsRange);
         } else {
             log.warn("Topic-Modifier: Unknown {{}-{}} from topic \"{}\".", startLevel, endLevel, inTopic);
-            //Did I forget something?
+            // Did I forget something?
         }
         if (replacementInformationStart != "{".length()) {
-            log.warn("Topic-Modifier: Leading content \"{}\" in MultiLevel replacement is not allowed! Ignoring.",
+            log.warn(
+                    "Topic-Modifier: Leading content \"{}\" in MultiLevel replacement is not allowed! Ignoring.",
                     level.substring(0, replacementInformationStart - 1));
         }
         if (replacementInformationEnd != level.length() - "{".length()) {
-            log.warn("Topic-Modifier: Following content \"{}\" in MultiLevel replacement is not allowed! Ignoring.",
+            log.warn(
+                    "Topic-Modifier: Following content \"{}\" in MultiLevel replacement is not allowed! Ignoring.",
                     level.substring(replacementInformationEnd + 1));
         }
     }

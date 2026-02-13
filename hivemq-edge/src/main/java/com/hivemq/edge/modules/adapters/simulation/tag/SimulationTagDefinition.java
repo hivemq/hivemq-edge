@@ -21,8 +21,7 @@ import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 public class SimulationTagDefinition implements TagDefinition {
 
     @JsonCreator
-    public SimulationTagDefinition() {
-    }
+    public SimulationTagDefinition() {}
 
     @Override
     public int hashCode() {

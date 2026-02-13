@@ -13,28 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.client;
-
-import com.hivemq.extension.sdk.api.auth.SubscriptionAuthorizer;
-import com.hivemq.extension.sdk.api.auth.parameter.SubscriptionAuthorizerInput;
-import com.hivemq.extension.sdk.api.auth.parameter.SubscriptionAuthorizerOutput;
-import com.hivemq.extensions.ExtensionPriorityComparator;
-import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import util.IsolatedExtensionClassloaderUtil;
-
-import java.io.File;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import com.hivemq.extension.sdk.api.auth.SubscriptionAuthorizer;
+import com.hivemq.extension.sdk.api.auth.parameter.SubscriptionAuthorizerInput;
+import com.hivemq.extension.sdk.api.auth.parameter.SubscriptionAuthorizerOutput;
+import com.hivemq.extensions.ExtensionPriorityComparator;
+import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
+import java.io.File;
+import java.util.Map;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import util.IsolatedExtensionClassloaderUtil;
 
 public class ClientAuthorizersImplTest {
 
@@ -45,22 +43,21 @@ public class ClientAuthorizersImplTest {
             mock(ExtensionPriorityComparator.class);
 
     private @NotNull ClientAuthorizersImpl authorizers;
+
     @BeforeEach
     public void before() {
-        when(extensionPriorityComparator.compare(any(),
-                any())).thenAnswer(invocation -> Integer.compare(invocation.getArguments()[0].hashCode(),
-                invocation.getArguments()[1].hashCode()));
+        when(extensionPriorityComparator.compare(any(), any()))
+                .thenAnswer(invocation -> Integer.compare(
+                        invocation.getArguments()[0].hashCode(), invocation.getArguments()[1].hashCode()));
         authorizers = new ClientAuthorizersImpl(extensionPriorityComparator);
     }
 
     @Test
     public void test_put_get_authorizers() throws Exception {
         final SubscriptionAuthorizer authorizer1 = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                TestSubscriptionAuthorizer.class);
+                temporaryFolder.toPath(), TestSubscriptionAuthorizer.class);
         final SubscriptionAuthorizer authorizer2 = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                TestSubscriptionAuthorizer.class);
+                temporaryFolder.toPath(), TestSubscriptionAuthorizer.class);
 
         authorizers.put("extension-1", authorizer1);
         authorizers.put("extension-2", authorizer2);
@@ -74,11 +71,9 @@ public class ClientAuthorizersImplTest {
     @Test
     public void test_remove_authorizers() throws Exception {
         final SubscriptionAuthorizer authorizer1 = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                TestSubscriptionAuthorizer.class);
+                temporaryFolder.toPath(), TestSubscriptionAuthorizer.class);
         final SubscriptionAuthorizer authorizer2 = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                TestSubscriptionAuthorizer.class);
+                temporaryFolder.toPath(), TestSubscriptionAuthorizer.class);
 
         authorizers.put("extension-1", authorizer1);
         authorizers.put("extension-2", authorizer2);
@@ -98,7 +93,6 @@ public class ClientAuthorizersImplTest {
         @Override
         public void authorizeSubscribe(
                 final @NotNull SubscriptionAuthorizerInput subscriptionAuthorizerInput,
-                final @NotNull SubscriptionAuthorizerOutput subscriptionAuthorizerOutput) {
-        }
+                final @NotNull SubscriptionAuthorizerOutput subscriptionAuthorizerOutput) {}
     }
 }

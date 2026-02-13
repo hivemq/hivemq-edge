@@ -16,12 +16,9 @@
 package com.hivemq.api;
 
 import com.hivemq.api.auth.ApiRoles;
-
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.Form;
-import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 /**

@@ -15,15 +15,14 @@
  */
 package com.hivemq.util;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.hivemq.util.ThreadPreConditions.ThreadPreConditionException;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
-
-import java.util.concurrent.atomic.AtomicReference;
-
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.hivemq.util.ThreadPreConditions.ThreadPreConditionException;
+import java.util.concurrent.atomic.AtomicReference;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Lukas Brandl
@@ -38,16 +37,19 @@ public class ThreadPreConditionsTest {
     public void test_starts_with_success() throws InterruptedException {
         final AtomicReference<Exception> result = new AtomicReference<>();
         ThreadPreConditions.enable();
-        final Thread thread = new ThreadFactoryBuilder().setNameFormat("prefix-test").build().newThread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    ThreadPreConditions.startsWith("prefix");
-                } catch (final Exception e) {
-                    result.set(e);
-                }
-            }
-        });
+        final Thread thread = new ThreadFactoryBuilder()
+                .setNameFormat("prefix-test")
+                .build()
+                .newThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            ThreadPreConditions.startsWith("prefix");
+                        } catch (final Exception e) {
+                            result.set(e);
+                        }
+                    }
+                });
 
         thread.start();
         thread.join();
@@ -58,16 +60,19 @@ public class ThreadPreConditionsTest {
     public void test_starts_with_failed() throws InterruptedException {
         final AtomicReference<Exception> result = new AtomicReference<>();
         ThreadPreConditions.enable();
-        final Thread thread = new ThreadFactoryBuilder().setNameFormat("false-test").build().newThread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    ThreadPreConditions.startsWith("prefix");
-                } catch (final ThreadPreConditionException e) {
-                    result.set(e);
-                }
-            }
-        });
+        final Thread thread = new ThreadFactoryBuilder()
+                .setNameFormat("false-test")
+                .build()
+                .newThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            ThreadPreConditions.startsWith("prefix");
+                        } catch (final ThreadPreConditionException e) {
+                            result.set(e);
+                        }
+                    }
+                });
 
         thread.start();
         thread.join();
@@ -78,16 +83,19 @@ public class ThreadPreConditionsTest {
     public void test_starts_with_disabled() throws InterruptedException {
         final AtomicReference<Exception> result = new AtomicReference<>();
         ThreadPreConditions.disable();
-        final Thread thread = new ThreadFactoryBuilder().setNameFormat("false-test").build().newThread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    ThreadPreConditions.startsWith("prefix");
-                } catch (final Exception e) {
-                    result.set(e);
-                }
-            }
-        });
+        final Thread thread = new ThreadFactoryBuilder()
+                .setNameFormat("false-test")
+                .build()
+                .newThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            ThreadPreConditions.startsWith("prefix");
+                        } catch (final Exception e) {
+                            result.set(e);
+                        }
+                    }
+                });
 
         thread.start();
         thread.join();

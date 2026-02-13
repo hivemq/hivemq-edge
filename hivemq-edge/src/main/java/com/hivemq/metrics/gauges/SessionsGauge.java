@@ -33,5 +33,4 @@ public class SessionsGauge implements Gauge<Integer> {
     public Integer getValue() {
         return clientSessionPersistence.getSessionsCount();
     }
-
 }

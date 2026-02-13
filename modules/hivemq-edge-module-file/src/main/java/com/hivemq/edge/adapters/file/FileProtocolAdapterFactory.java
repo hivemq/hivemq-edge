@@ -22,8 +22,8 @@ import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.file.config.FileSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
-public class FileProtocolAdapterFactory
-        implements ProtocolAdapterFactory<FileSpecificAdapterConfig> {
+
+public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileSpecificAdapterConfig> {
 
     final boolean writingEnabled;
 
@@ -42,5 +42,4 @@ public class FileProtocolAdapterFactory
             final @NotNull ProtocolAdapterInput<FileSpecificAdapterConfig> input) {
         return new FilePollingProtocolAdapter(input.getAdapterId(), adapterInformation, input);
     }
-
 }

@@ -15,13 +15,18 @@
  */
 package com.hivemq.bootstrap.netty.initializer;
 
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.bootstrap.netty.ChannelDependencies;
 import com.hivemq.bootstrap.netty.FakeChannelPipeline;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.entity.Listener;
-import com.hivemq.configuration.service.entity.Tls;
 import com.hivemq.configuration.service.entity.MqttTlsTcpListener;
+import com.hivemq.configuration.service.entity.Tls;
 import com.hivemq.logging.EventLog;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnectorImpl;
@@ -38,11 +43,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 
 public class TlsTcpChannelInitializerTest {
 
@@ -85,6 +85,7 @@ public class TlsTcpChannelInitializerTest {
     private ChannelPipeline pipeline;
 
     private TlsTcpChannelInitializer tlstcpChannelInitializer;
+
     @BeforeEach
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -93,7 +94,8 @@ public class TlsTcpChannelInitializerTest {
 
         when(mqttTlsTcpListener.getTls()).thenReturn(tls);
         when(sslFactory.getSslContext(any(Tls.class))).thenReturn(sslContext);
-        when(sslFactory.getSslHandler(any(SocketChannel.class), any(Tls.class), any(SslContext.class))).thenReturn(sslHandler);
+        when(sslFactory.getSslHandler(any(SocketChannel.class), any(Tls.class), any(SslContext.class)))
+                .thenReturn(sslHandler);
         when(sslHandler.handshakeFuture()).thenReturn(future);
         when(socketChannel.pipeline()).thenReturn(pipeline);
         when(socketChannel.attr(any(AttributeKey.class))).thenReturn(attribute);
@@ -102,12 +104,10 @@ public class TlsTcpChannelInitializerTest {
         when(channelDependencies.getRestrictionsConfigurationService()).thenReturn(restrictionsConfigurationService);
         when(restrictionsConfigurationService.incomingLimit()).thenReturn(0L);
 
-
         final MqttServerDisconnector mqttServerDisconnector = new MqttServerDisconnectorImpl(eventLog);
         when(channelDependencies.getMqttServerDisconnector()).thenReturn(mqttServerDisconnector);
 
         tlstcpChannelInitializer = new TlsTcpChannelInitializer(channelDependencies, mqttTlsTcpListener, sslFactory);
-
     }
 
     @Test
@@ -137,13 +137,16 @@ public class TlsTcpChannelInitializerTest {
         assertEquals(SSL_EXCEPTION_HANDLER, pipeline.names().get(1));
         assertEquals(SSL_PARAMETER_HANDLER, pipeline.names().get(2));
         assertEquals(SSL_CLIENT_CERTIFICATE_HANDLER, pipeline.names().get(3));
-        assertEquals(NEW_CONNECTION_IDLE_HANDLER, pipeline.names().get(pipeline.names().size() - 2));
-        assertEquals(NO_TLS_HANDSHAKE_IDLE_EVENT_HANDLER, pipeline.names().get(pipeline.names().size() - 1));
+        assertEquals(
+                NEW_CONNECTION_IDLE_HANDLER,
+                pipeline.names().get(pipeline.names().size() - 2));
+        assertEquals(
+                NO_TLS_HANDSHAKE_IDLE_EVENT_HANDLER,
+                pipeline.names().get(pipeline.names().size() - 1));
     }
 
     @Test
     public void test_add_special_handlers_no_cert() throws Exception {
-
 
         when(tls.getClientAuthMode()).thenReturn(Tls.ClientAuthMode.NONE);
 
@@ -154,6 +157,4 @@ public class TlsTcpChannelInitializerTest {
         assertEquals(SSL_EXCEPTION_HANDLER, pipeline.names().get(1));
         assertEquals(SSL_PARAMETER_HANDLER, pipeline.names().get(2));
     }
-
-
 }

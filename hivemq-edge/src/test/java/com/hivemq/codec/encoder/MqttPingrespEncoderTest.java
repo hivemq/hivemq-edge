@@ -15,6 +15,9 @@
  */
 package com.hivemq.codec.encoder;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.mqtt.message.PINGRESP;
 import io.netty.buffer.ByteBuf;
@@ -23,9 +26,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import util.encoder.TestMessageEncoder;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-
 /**
  * @author Florian Limpöck
  */
@@ -33,6 +33,7 @@ public class MqttPingrespEncoderTest {
 
     private EmbeddedChannel channel;
     private ClientConnection clientConnection;
+
     @BeforeEach
     public void setUp() throws Exception {
         channel = new EmbeddedChannel(new TestMessageEncoder());

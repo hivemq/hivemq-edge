@@ -15,30 +15,28 @@
  */
 package com.hivemq.common.shutdown;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.hivemq.common.shutdown.HiveMQShutdownHook.Priority;
+import java.util.ArrayList;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ShutdownHooksTest {
 
     private ShutdownHooks shutdownHooks;
     private List<String> executions;
+
     @BeforeEach
     public void setUp() throws Exception {
         executions = new ArrayList<>();
         shutdownHooks = new ShutdownHooks();
     }
-
 
     @Test
     public void hookWhenAddedThenWillRun() {
@@ -133,13 +131,13 @@ public class ShutdownHooksTest {
 
     @Test
     public void hookAddWhenNullThenNpe() {
-    
+
         assertThrows(NullPointerException.class, () -> shutdownHooks.add(null));
     }
 
     @Test
     public void hookRemoveWhenNullThenNpe() {
-    
+
         assertThrows(NullPointerException.class, () -> shutdownHooks.remove(null));
     }
 

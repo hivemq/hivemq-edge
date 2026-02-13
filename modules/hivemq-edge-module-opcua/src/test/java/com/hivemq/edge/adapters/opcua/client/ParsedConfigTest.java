@@ -15,6 +15,8 @@
  */
 package com.hivemq.edge.adapters.opcua.client;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.hivemq.edge.adapters.opcua.config.Keystore;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.SecPolicy;
@@ -23,15 +25,12 @@ import com.hivemq.edge.adapters.opcua.config.Tls;
 import com.hivemq.edge.adapters.opcua.config.TlsChecks;
 import com.hivemq.edge.adapters.opcua.config.Truststore;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
+import java.io.File;
+import java.nio.file.Path;
 import org.eclipse.milo.opcua.sdk.client.identity.AnonymousProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import util.KeyChain;
-
-import java.io.File;
-import java.nio.file.Path;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class ParsedConfigTest {
 
@@ -50,17 +49,13 @@ class ParsedConfigTest {
 
         final KeyChain keyChain = KeyChain.createKeyChain(domain);
         final File keystoreFile = keyChain.wrapInKeyStoreWithPrivateKey(
-                tempDir.resolve("test-keystore").toString(),
-                domain,
-                KEYSTORE_PASSWORD,
-                PRIVATE_KEY_PASSWORD
-        );
+                tempDir.resolve("test-keystore").toString(), domain, KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD);
 
         final OpcUaSpecificAdapterConfig adapterConfig = createAdapterConfig(
-                true,  // TLS enabled
+                true, // TLS enabled
                 keystoreFile.getAbsolutePath(),
-                null   // No truststore, will use default
-        );
+                null // No truststore, will use default
+                );
 
         // When
         final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
@@ -82,10 +77,8 @@ class ParsedConfigTest {
     void testFromConfig_noKeystore_applicationUriIsNull() {
         // Given
         final OpcUaSpecificAdapterConfig adapterConfig = createAdapterConfig(
-                true,  // TLS enabled but no keystore
-                null,
-                null
-        );
+                true, // TLS enabled but no keystore
+                null, null);
 
         // When
         final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
@@ -104,10 +97,8 @@ class ParsedConfigTest {
     void testFromConfig_tlsDisabled_applicationUriIsNull() {
         // Given
         final OpcUaSpecificAdapterConfig adapterConfig = createAdapterConfig(
-                false,  // TLS disabled
-                null,
-                null
-        );
+                false, // TLS disabled
+                null, null);
 
         // When
         final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
@@ -133,16 +124,12 @@ class ParsedConfigTest {
         final KeyChain keyChain = KeyChain.createKeyChain(domain1, domain2);
         final File keystoreFile = keyChain.wrapInKeyStoreWithPrivateKey(
                 tempDir.resolve("test-keystore-multi").toString(),
-                domain1,  // First domain is used for key entry
+                domain1, // First domain is used for key entry
                 KEYSTORE_PASSWORD,
-                PRIVATE_KEY_PASSWORD
-        );
+                PRIVATE_KEY_PASSWORD);
 
-        final OpcUaSpecificAdapterConfig adapterConfig = createAdapterConfig(
-                true,
-                keystoreFile.getAbsolutePath(),
-                null
-        );
+        final OpcUaSpecificAdapterConfig adapterConfig =
+                createAdapterConfig(true, keystoreFile.getAbsolutePath(), null);
 
         // When
         final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
@@ -160,11 +147,8 @@ class ParsedConfigTest {
     @Test
     void testFromConfig_invalidKeystorePath_failsGracefully() {
         // Given
-        final OpcUaSpecificAdapterConfig adapterConfig = createAdapterConfig(
-                true,
-                "/path/that/does/not/exist/keystore.jks",
-                null
-        );
+        final OpcUaSpecificAdapterConfig adapterConfig =
+                createAdapterConfig(true, "/path/that/does/not/exist/keystore.jks", null);
 
         // When
         final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
@@ -172,8 +156,7 @@ class ParsedConfigTest {
         // Then
         assertThat(result).isInstanceOf(Failure.class);
         final String errorMessage = ((Failure<ParsedConfig, String>) result).failure();
-        assertThat(errorMessage)
-                .contains("Failed to load keypair with chain from keystore");
+        assertThat(errorMessage).contains("Failed to load keypair with chain from keystore");
     }
 
     @Test
@@ -184,18 +167,11 @@ class ParsedConfigTest {
 
         final KeyChain keyChain = KeyChain.createKeyChain(domain);
         final File keystoreFile = keyChain.wrapInKeyStoreWithPrivateKey(
-                tempDir.resolve("test-keystore").toString(),
-                domain,
-                KEYSTORE_PASSWORD,
-                PRIVATE_KEY_PASSWORD
-        );
+                tempDir.resolve("test-keystore").toString(), domain, KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD);
 
         final OpcUaSpecificAdapterConfig adapterConfig = createAdapterConfig(
-                true,
-                keystoreFile.getAbsolutePath(),
-                null,
-                configuredUri  // Configured override URI
-        );
+                true, keystoreFile.getAbsolutePath(), null, configuredUri // Configured override URI
+                );
 
         // When
         final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
@@ -219,18 +195,11 @@ class ParsedConfigTest {
 
         final KeyChain keyChain = KeyChain.createKeyChain(domain);
         final File keystoreFile = keyChain.wrapInKeyStoreWithPrivateKey(
-                tempDir.resolve("test-keystore-both").toString(),
-                domain,
-                KEYSTORE_PASSWORD,
-                PRIVATE_KEY_PASSWORD
-        );
+                tempDir.resolve("test-keystore-both").toString(), domain, KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD);
 
         final OpcUaSpecificAdapterConfig adapterConfig = createAdapterConfig(
-                true,
-                keystoreFile.getAbsolutePath(),
-                null,
-                configuredUri  // This should take precedence
-        );
+                true, keystoreFile.getAbsolutePath(), null, configuredUri // This should take precedence
+                );
 
         // When
         final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
@@ -249,24 +218,17 @@ class ParsedConfigTest {
     @Test
     void testFromConfig_withBlankConfiguredUri_usesCertificateUri() throws Exception {
         // Given
-        final String blankUri = "   ";  // Blank string
+        final String blankUri = "   "; // Blank string
         final String domain = "certclient";
         final String expectedUri = "urn:hivemq:edge:" + domain;
 
         final KeyChain keyChain = KeyChain.createKeyChain(domain);
         final File keystoreFile = keyChain.wrapInKeyStoreWithPrivateKey(
-                tempDir.resolve("test-keystore-blank").toString(),
-                domain,
-                KEYSTORE_PASSWORD,
-                PRIVATE_KEY_PASSWORD
-        );
+                tempDir.resolve("test-keystore-blank").toString(), domain, KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD);
 
         final OpcUaSpecificAdapterConfig adapterConfig = createAdapterConfig(
-                true,
-                keystoreFile.getAbsolutePath(),
-                null,
-                blankUri  // Blank should be treated as not configured
-        );
+                true, keystoreFile.getAbsolutePath(), null, blankUri // Blank should be treated as not configured
+                );
 
         // When
         final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
@@ -289,18 +251,10 @@ class ParsedConfigTest {
 
         final KeyChain keyChain = KeyChain.createKeyChain(domain);
         final File keystoreFile = keyChain.wrapInKeyStoreWithPrivateKey(
-                tempDir.resolve("test-priority").toString(),
-                domain,
-                KEYSTORE_PASSWORD,
-                PRIVATE_KEY_PASSWORD
-        );
+                tempDir.resolve("test-priority").toString(), domain, KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD);
 
-        final OpcUaSpecificAdapterConfig configWithAll = createAdapterConfig(
-                true,
-                keystoreFile.getAbsolutePath(),
-                null,
-                configuredUri
-        );
+        final OpcUaSpecificAdapterConfig configWithAll =
+                createAdapterConfig(true, keystoreFile.getAbsolutePath(), null, configuredUri);
 
         final Result<ParsedConfig, String> resultWithAll = ParsedConfig.fromConfig(configWithAll);
         assertThat(resultWithAll).isInstanceOf(Success.class);
@@ -310,11 +264,8 @@ class ParsedConfigTest {
 
         // Test Priority 2: Certificate URI is used when no configured URI
         final OpcUaSpecificAdapterConfig configWithCert = createAdapterConfig(
-                true,
-                keystoreFile.getAbsolutePath(),
-                null,
-                null  // No configured URI
-        );
+                true, keystoreFile.getAbsolutePath(), null, null // No configured URI
+                );
 
         final Result<ParsedConfig, String> resultWithCert = ParsedConfig.fromConfig(configWithCert);
         assertThat(resultWithCert).isInstanceOf(Success.class);
@@ -324,11 +275,8 @@ class ParsedConfigTest {
 
         // Test Priority 3: Default will be used when neither configured nor in certificate
         final OpcUaSpecificAdapterConfig configWithNone = createAdapterConfig(
-                true,  // TLS enabled but no keystore
-                null,
-                null,
-                null
-        );
+                true, // TLS enabled but no keystore
+                null, null, null);
 
         final Result<ParsedConfig, String> resultWithNone = ParsedConfig.fromConfig(configWithNone);
         assertThat(resultWithNone).isInstanceOf(Success.class);
@@ -338,9 +286,7 @@ class ParsedConfigTest {
     }
 
     private OpcUaSpecificAdapterConfig createAdapterConfig(
-            final boolean tlsEnabled,
-            final String keystorePath,
-            final String truststorePath) {
+            final boolean tlsEnabled, final String keystorePath, final String truststorePath) {
         return createAdapterConfig(tlsEnabled, keystorePath, truststorePath, null);
     }
 
@@ -350,13 +296,10 @@ class ParsedConfigTest {
             final String truststorePath,
             final String applicationUri) {
 
-        final Keystore keystore = keystorePath != null
-                ? new Keystore(keystorePath, KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD)
-                : null;
+        final Keystore keystore =
+                keystorePath != null ? new Keystore(keystorePath, KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD) : null;
 
-        final Truststore truststore = truststorePath != null
-                ? new Truststore(truststorePath, KEYSTORE_PASSWORD)
-                : null;
+        final Truststore truststore = truststorePath != null ? new Truststore(truststorePath, KEYSTORE_PASSWORD) : null;
 
         final Tls tls = new Tls(tlsEnabled, TlsChecks.NONE, keystore, truststore);
         final Security security = new Security(SecPolicy.NONE);
@@ -366,7 +309,7 @@ class ParsedConfigTest {
                 TEST_URI,
                 false,
                 applicationUri,
-                null,  // no auth
+                null, // no auth
                 tls,
                 opcUaToMqttConfig,
                 security,

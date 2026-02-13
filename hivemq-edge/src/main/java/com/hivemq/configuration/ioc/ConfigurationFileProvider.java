@@ -18,10 +18,9 @@ package com.hivemq.configuration.ioc;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.HiveMQEdgeConstants;
+import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
 
 /**
  * The Guice provider which creates a {@link ConfigurationFile}
@@ -39,8 +38,8 @@ public class ConfigurationFileProvider {
         final boolean configFolderOk = checkConfigFolder(configFileFolder);
 
         String configFilename = DEFAULT_CONFIG_FILENAME;
-        //-- allow a custom config filename to be used when running in development mode
-        if(System.getProperty(HiveMQEdgeConstants.CONFIG_FILE_NAME) != null){
+        // -- allow a custom config filename to be used when running in development mode
+        if (System.getProperty(HiveMQEdgeConstants.CONFIG_FILE_NAME) != null) {
             configFilename = System.getProperty(HiveMQEdgeConstants.CONFIG_FILE_NAME);
         }
 
@@ -62,15 +61,22 @@ public class ConfigurationFileProvider {
     private static boolean configFileOk(final File configFile) {
         boolean configFileOk = false;
         if (!configFile.exists()) {
-            log.error("The configuration file {} does not exist. Using HiveMQ default config", configFile.getAbsolutePath());
+            log.error(
+                    "The configuration file {} does not exist. Using HiveMQ default config",
+                    configFile.getAbsolutePath());
         } else if (!configFile.isFile()) {
-            log.error("The configuration file {} is not file. Using HiveMQ default config", configFile.getAbsolutePath());
+            log.error(
+                    "The configuration file {} is not file. Using HiveMQ default config", configFile.getAbsolutePath());
         } else if (!configFile.canRead()) {
-            log.error("The configuration file {} cannot be read by HiveMQ. Using HiveMQ default config", configFile.getAbsolutePath());
+            log.error(
+                    "The configuration file {} cannot be read by HiveMQ. Using HiveMQ default config",
+                    configFile.getAbsolutePath());
         } else {
             configFileOk = true;
             if (!configFile.canWrite()) {
-                log.warn("The configuration file {} is read only and cannot be written by HiveMQ.", configFile.getAbsolutePath());
+                log.warn(
+                        "The configuration file {} is read only and cannot be written by HiveMQ.",
+                        configFile.getAbsolutePath());
             }
         }
 
@@ -80,11 +86,17 @@ public class ConfigurationFileProvider {
     private static boolean checkConfigFolder(final File configFileFolder) {
         boolean configFolderOk = false;
         if (!configFileFolder.exists()) {
-            log.error("The configuration file folder {} does not exist. Using HiveMQ default config", configFileFolder.getAbsolutePath());
+            log.error(
+                    "The configuration file folder {} does not exist. Using HiveMQ default config",
+                    configFileFolder.getAbsolutePath());
         } else if (!configFileFolder.isDirectory()) {
-            log.error("The configuration file folder {} is not a folder. Using HiveMQ default config", configFileFolder.getAbsolutePath());
+            log.error(
+                    "The configuration file folder {} is not a folder. Using HiveMQ default config",
+                    configFileFolder.getAbsolutePath());
         } else if (!configFileFolder.canRead()) {
-            log.error("The configuration file folder {} cannot be read by HiveMQ. Using HiveMQ default config", configFileFolder.getAbsolutePath());
+            log.error(
+                    "The configuration file folder {} cannot be read by HiveMQ. Using HiveMQ default config",
+                    configFileFolder.getAbsolutePath());
         } else {
             configFolderOk = true;
         }

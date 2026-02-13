@@ -16,15 +16,14 @@
 package com.hivemq.extensions.packets.pubcomp;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.pubcomp.PubcompPacket;
 import com.hivemq.extension.sdk.api.packets.pubcomp.PubcompReasonCode;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.pubcomp.PUBCOMP;
-
 import java.util.Objects;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Yannick Weber
@@ -87,10 +86,10 @@ public class PubcompPacketImpl implements PubcompPacket {
             return false;
         }
         final PubcompPacketImpl that = (PubcompPacketImpl) o;
-        return (packetIdentifier == that.packetIdentifier) &&
-                (reasonCode == that.reasonCode) &&
-                Objects.equals(reasonString, that.reasonString) &&
-                userProperties.equals(that.userProperties);
+        return (packetIdentifier == that.packetIdentifier)
+                && (reasonCode == that.reasonCode)
+                && Objects.equals(reasonString, that.reasonString)
+                && userProperties.equals(that.userProperties);
     }
 
     @Override

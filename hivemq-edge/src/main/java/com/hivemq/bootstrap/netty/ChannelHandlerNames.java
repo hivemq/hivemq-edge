@@ -22,7 +22,6 @@ package com.hivemq.bootstrap.netty;
  */
 public class ChannelHandlerNames {
 
-
     /* *************
      *   Ingoing   *
      ***************/
@@ -39,7 +38,6 @@ public class ChannelHandlerNames {
     public static final String NO_TLS_HANDSHAKE_IDLE_EVENT_HANDLER = "no_tls_handshake_idle_event_handler";
 
     public static final String MQTT_5_FLOW_CONTROL_HANDLER = "mqtt_5_flow_control_handler";
-
 
     public static final String MQTTSN_REGACK_HANDLER = "mqttsn_regack_handler";
     public static final String MQTTSN_REGISTER_HANDLER = "mqttsn_register_handler";
@@ -108,8 +106,4 @@ public class ChannelHandlerNames {
     public static final String EXCEPTION_HANDLER = "exception_handler";
     public static final String CONNECTION_LIMITER = "connection_limiter";
     public static final String INTERCEPTOR_HANDLER = "interceptor_handler";
-
-
 }
-
-

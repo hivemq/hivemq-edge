@@ -42,5 +42,4 @@ public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUa
             final @NotNull ProtocolAdapterInput<OpcUaSpecificAdapterConfig> input) {
         return new OpcUaProtocolAdapter(adapterInformation, input);
     }
-
 }

@@ -21,7 +21,6 @@ package com.hivemq.persistence;
  */
 public interface FilePersistence {
 
-
     void postConstruct();
 
     /**

@@ -16,11 +16,10 @@
 package com.hivemq.persistence.payload;
 
 import com.google.common.collect.ImmutableMap;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Daniel Krüger
@@ -29,16 +28,14 @@ import jakarta.inject.Singleton;
 public class PublishPayloadNoopPersistenceImpl implements PublishPayloadPersistence {
 
     @Inject
-    public PublishPayloadNoopPersistenceImpl() {
-    }
+    public PublishPayloadNoopPersistenceImpl() {}
 
     @Override
-    public void init() {
-    }
+    public void init() {}
 
     @Override
     public void add(final byte @NotNull [] payload, final long id) {
-        //NOOP
+        // NOOP
     }
 
     @Override
@@ -48,17 +45,17 @@ public class PublishPayloadNoopPersistenceImpl implements PublishPayloadPersiste
 
     @Override
     public void incrementReferenceCounterOnBootstrap(final long payloadId) {
-        //NOOP
+        // NOOP
     }
 
     @Override
     public void decrementReferenceCounter(final long id) {
-        //NOOP
+        // NOOP
     }
 
     @Override
     public void closeDB() {
-        //NOOP
+        // NOOP
     }
 
     @Override

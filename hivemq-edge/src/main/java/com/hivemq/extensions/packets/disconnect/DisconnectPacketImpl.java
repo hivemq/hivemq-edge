@@ -16,15 +16,14 @@
 package com.hivemq.extensions.packets.disconnect;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.disconnect.DisconnectPacket;
 import com.hivemq.extension.sdk.api.packets.disconnect.DisconnectReasonCode;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.disconnect.DISCONNECT;
-
 import java.util.Objects;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Robin Atherton
@@ -74,8 +73,9 @@ public class DisconnectPacketImpl implements DisconnectPacket {
 
     @Override
     public @NotNull Optional<Long> getSessionExpiryInterval() {
-        return (sessionExpiryInterval == DISCONNECT.SESSION_EXPIRY_NOT_SET) ? Optional.empty() :
-                Optional.of(sessionExpiryInterval);
+        return (sessionExpiryInterval == DISCONNECT.SESSION_EXPIRY_NOT_SET)
+                ? Optional.empty()
+                : Optional.of(sessionExpiryInterval);
     }
 
     @Override
@@ -97,11 +97,11 @@ public class DisconnectPacketImpl implements DisconnectPacket {
             return false;
         }
         final DisconnectPacketImpl that = (DisconnectPacketImpl) o;
-        return (reasonCode == that.reasonCode) &&
-                Objects.equals(reasonString, that.reasonString) &&
-                (sessionExpiryInterval == that.sessionExpiryInterval) &&
-                Objects.equals(serverReference, that.serverReference) &&
-                userProperties.equals(that.userProperties);
+        return (reasonCode == that.reasonCode)
+                && Objects.equals(reasonString, that.reasonString)
+                && (sessionExpiryInterval == that.sessionExpiryInterval)
+                && Objects.equals(serverReference, that.serverReference)
+                && userProperties.equals(that.userProperties);
     }
 
     @Override

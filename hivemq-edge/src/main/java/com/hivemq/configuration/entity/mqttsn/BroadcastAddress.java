@@ -16,7 +16,6 @@
 package com.hivemq.configuration.entity.mqttsn;
 
 import com.hivemq.configuration.entity.listener.ListenerEntity;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlRootElement;
@@ -27,6 +26,4 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 @XmlRootElement(name = "address")
 @XmlAccessorType(XmlAccessType.NONE)
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
-public class BroadcastAddress extends ListenerEntity {
-
-}
+public class BroadcastAddress extends ListenerEntity {}

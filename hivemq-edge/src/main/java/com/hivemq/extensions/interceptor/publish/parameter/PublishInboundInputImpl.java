@@ -16,12 +16,12 @@
 package com.hivemq.extensions.interceptor.publish.parameter;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
 import com.hivemq.extension.sdk.api.interceptor.publish.parameter.PublishInboundInput;
 import com.hivemq.extensions.executor.task.PluginTaskInput;
 import com.hivemq.extensions.packets.publish.PublishPacketImpl;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -61,6 +61,9 @@ public class PublishInboundInputImpl implements PublishInboundInput, PluginTaskI
     }
 
     public @NotNull PublishInboundInputImpl update(final @NotNull PublishInboundOutputImpl output) {
-        return new PublishInboundInputImpl(clientInformation, connectionInformation, output.getPublishPacket().copy());
+        return new PublishInboundInputImpl(
+                clientInformation,
+                connectionInformation,
+                output.getPublishPacket().copy());
     }
 }

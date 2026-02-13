@@ -15,15 +15,15 @@
  */
 package com.hivemq.extensions.services.builder;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.util.Topics;
 import com.hivemq.util.Utf8Utils;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * This class is tested by the Builder Impl unit tests.
@@ -42,10 +42,14 @@ public class PluginBuilderUtil {
         return !validateUTF8 || !Utf8Utils.hasControlOrNonCharacter(stringToValidate);
     }
 
-    public static void checkMessageExpiryInterval(final long messageExpiryInterval, final long maxMessageExpiryInterval) {
-        checkArgument(messageExpiryInterval <= maxMessageExpiryInterval,
-                "Message expiry interval " + messageExpiryInterval + " not allowed. Maximum = " + maxMessageExpiryInterval);
-        checkArgument(messageExpiryInterval > 0,
+    public static void checkMessageExpiryInterval(
+            final long messageExpiryInterval, final long maxMessageExpiryInterval) {
+        checkArgument(
+                messageExpiryInterval <= maxMessageExpiryInterval,
+                "Message expiry interval " + messageExpiryInterval + " not allowed. Maximum = "
+                        + maxMessageExpiryInterval);
+        checkArgument(
+                messageExpiryInterval > 0,
                 "Message expiry interval must be bigger than 0 was " + messageExpiryInterval + ".");
     }
 
@@ -73,19 +77,24 @@ public class PluginBuilderUtil {
         }
     }
 
-    public static void checkResponseInformation(final @Nullable String responseInformation, final boolean requestResponseInformation, final boolean validateUTF8) {
+    public static void checkResponseInformation(
+            final @Nullable String responseInformation,
+            final boolean requestResponseInformation,
+            final boolean validateUTF8) {
         if (responseInformation == null) {
             return;
         }
 
         if (!requestResponseInformation) {
-            throw new IllegalStateException("Response information must not be set if it was not requested in the CONNECT message");
+            throw new IllegalStateException(
+                    "Response information must not be set if it was not requested in the CONNECT message");
         }
 
         checkUtf8StringLength(responseInformation, "Response information");
 
         if (!isValidUtf8String(responseInformation, validateUTF8)) {
-            throw new IllegalArgumentException("The response information (" + responseInformation + ") is UTF-8 malformed");
+            throw new IllegalArgumentException(
+                    "The response information (" + responseInformation + ") is UTF-8 malformed");
         }
     }
 
@@ -113,7 +122,8 @@ public class PluginBuilderUtil {
         }
     }
 
-    public static void checkUserProperty(final @NotNull String name, final @NotNull String value, final boolean validateUTF8) {
+    public static void checkUserProperty(
+            final @NotNull String name, final @NotNull String value, final boolean validateUTF8) {
         checkUserPropertyName(name, validateUTF8);
         checkUserPropertyValue(value, validateUTF8);
     }
@@ -141,8 +151,7 @@ public class PluginBuilderUtil {
     public static void checkQos(final @NotNull Qos qos, final int maxQos) {
         checkNotNull(qos, "QoS must not be null");
         if (qos.getQosNumber() > maxQos) {
-            throw new IllegalArgumentException("QoS " + qos.getQosNumber() + " not allowed. Maximum = " +
-                    maxQos);
+            throw new IllegalArgumentException("QoS " + qos.getQosNumber() + " not allowed. Maximum = " + maxQos);
         }
     }
 
@@ -150,8 +159,8 @@ public class PluginBuilderUtil {
         checkNotNull(topic, "Topic must not be null");
         checkArgument(
                 topic.length() <= maxTopicLength,
-                "Topic length must not exceed '" + maxTopicLength + "' characters, but has '" + topic.length() +
-                        "' characters");
+                "Topic length must not exceed '" + maxTopicLength + "' characters, but has '" + topic.length()
+                        + "' characters");
 
         if (!Topics.isValidTopicToPublish(topic)) {
             throw new IllegalArgumentException("The topic (" + topic + ") is invalid for retained PUBLISH messages");
@@ -160,7 +169,6 @@ public class PluginBuilderUtil {
         if (!isValidUtf8String(topic, validateUtf8)) {
             throw new IllegalArgumentException("The topic (" + topic + ") is UTF-8 malformed");
         }
-
     }
 
     public static void checkClientIdentifier(final @Nullable String clientIdentifier, final boolean validateUtf8) {
@@ -181,9 +189,8 @@ public class PluginBuilderUtil {
     private static void checkUtf8StringLength(final @NotNull String utf8String, final @NotNull String type) {
 
         if (utf8String.length() > UTF_8_STRING_MAX_LENGTH) {
-            throw new IllegalArgumentException(type + " length must not exceed '" + UTF_8_STRING_MAX_LENGTH + "' characters, but has '" + utf8String.length() + "' characters");
+            throw new IllegalArgumentException(type + " length must not exceed '" + UTF_8_STRING_MAX_LENGTH
+                    + "' characters, but has '" + utf8String.length() + "' characters");
         }
-
     }
-
 }

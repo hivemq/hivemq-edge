@@ -16,8 +16,8 @@
 package com.hivemq.persistence;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.util.Exceptions;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,8 +30,7 @@ public abstract class AbstractPersistence {
 
     @NotNull
     protected ListenableFuture<Void> closeDB(
-            final @NotNull LocalPersistence localPersistence,
-            final @NotNull ProducerQueues singleWriter) {
+            final @NotNull LocalPersistence localPersistence, final @NotNull ProducerQueues singleWriter) {
         return singleWriter.shutdown((bucketIndex) -> {
             try {
                 localPersistence.closeDB(bucketIndex);

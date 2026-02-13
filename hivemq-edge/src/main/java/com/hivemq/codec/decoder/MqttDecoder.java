@@ -16,10 +16,10 @@
 package com.hivemq.codec.decoder;
 
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.Message;
 import io.netty.buffer.ByteBuf;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +37,7 @@ public abstract class MqttDecoder<T extends Message> {
      */
     protected boolean validateHeader(final byte header) {
 
-        //This checks if the last 4 bits are actually zeroed
+        // This checks if the last 4 bits are actually zeroed
 
         return (header & 0b0000_1111) == 0;
     }
@@ -53,7 +53,8 @@ public abstract class MqttDecoder<T extends Message> {
 
         if (topic == null || topic.isEmpty()) {
             if (log.isDebugEnabled()) {
-                log.debug("A client (IP: {}) sent an empty topic. This is not allowed. Disconnecting client.",
+                log.debug(
+                        "A client (IP: {}) sent an empty topic. This is not allowed. Disconnecting client.",
                         clientConnection.getChannelIP().orElse("UNKNOWN"));
             }
             return true;
@@ -61,8 +62,9 @@ public abstract class MqttDecoder<T extends Message> {
 
         if (topic.contains("\u0000")) {
             if (log.isDebugEnabled()) {
-                log.debug("A client (IP: {}) sent a topic which contained the Unicode null character (U+0000). " +
-                                "This is not allowed. Disconnecting client.",
+                log.debug(
+                        "A client (IP: {}) sent a topic which contained the Unicode null character (U+0000). "
+                                + "This is not allowed. Disconnecting client.",
                         clientConnection.getChannelIP().orElse("UNKNOWN"));
             }
             return true;

@@ -21,9 +21,6 @@ import com.hivemq.edge.modules.api.events.EventStore;
 import com.hivemq.util.RollingList;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -31,6 +28,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Stream;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Simple rolling list implementation optimized for fast writes but slow reads as requires sort on read. (Handled
@@ -43,7 +42,7 @@ public class InMemoryEventImpl implements EventStore {
 
     @Inject
     public InMemoryEventImpl() {
-        //optimize for quick write slow read (sort)
+        // optimize for quick write slow read (sort)
         this(InternalConfigurations.EDGE_RUNTIME_MAX_EVENTS_IN_INMEMORY_LIST.get());
     }
 
@@ -72,7 +71,8 @@ public class InMemoryEventImpl implements EventStore {
         } finally {
             readLock.unlock();
         }
-        Stream<Event> stream = events.stream().sorted(Comparator.comparing(Event::getTimestamp).reversed());
+        Stream<Event> stream =
+                events.stream().sorted(Comparator.comparing(Event::getTimestamp).reversed());
         if (since != null) {
             stream = stream.filter(event -> since < event.getTimestamp());
         }

@@ -25,5 +25,4 @@ import java.util.function.Function;
  *
  * @author Georg Held
  */
-public interface PluginOutTask<O extends PluginTaskOutput> extends Function<O, O>, PluginTask {
-}
+public interface PluginOutTask<O extends PluginTaskOutput> extends Function<O, O>, PluginTask {}

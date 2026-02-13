@@ -26,9 +26,8 @@ import org.jetbrains.annotations.NotNull;
 public abstract class DataGovernancePolicyImpl extends AbstractDataGovernanceEntity implements DataGovernancePolicy {
 
     @JsonCreator
-    public DataGovernancePolicyImpl(@JsonProperty("id") final @NotNull String id,
-                                    @JsonProperty("name") final @NotNull String name) {
+    public DataGovernancePolicyImpl(
+            @JsonProperty("id") final @NotNull String id, @JsonProperty("name") final @NotNull String name) {
         super(id, name);
     }
-
 }

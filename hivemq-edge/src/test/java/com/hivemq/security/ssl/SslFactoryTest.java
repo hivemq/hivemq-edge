@@ -15,46 +15,43 @@
  */
 package com.hivemq.security.ssl;
 
-import ch.qos.logback.classic.Logger;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.ListeningScheduledExecutorService;
-import com.hivemq.configuration.service.entity.Tls;
-import com.hivemq.configuration.service.entity.MqttTlsTcpListener;
-import org.jetbrains.annotations.NotNull;
-import com.hivemq.security.exception.SslException;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslHandler;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.slf4j.LoggerFactory;
-import util.LogbackCapturingAppender;
-import util.TestKeyStoreGenerator;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLParameters;
-import java.io.File;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
+
+import ch.qos.logback.classic.Logger;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.ListeningScheduledExecutorService;
+import com.hivemq.configuration.service.entity.MqttTlsTcpListener;
+import com.hivemq.configuration.service.entity.Tls;
+import com.hivemq.security.exception.SslException;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslHandler;
+import java.io.File;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.slf4j.LoggerFactory;
+import util.LogbackCapturingAppender;
+import util.TestKeyStoreGenerator;
 
 public class SslFactoryTest {
 
@@ -74,6 +71,7 @@ public class SslFactoryTest {
     private @NotNull LogbackCapturingAppender logCapture;
 
     private @NotNull AutoCloseable openMocks;
+
     @BeforeEach
     public void before() {
         openMocks = MockitoAnnotations.openMocks(this);
@@ -88,6 +86,7 @@ public class SslFactoryTest {
 
         testKeyStoreGenerator = new TestKeyStoreGenerator();
     }
+
     @AfterEach
     public void tearDown() throws Exception {
         openMocks.close();
@@ -115,7 +114,6 @@ public class SslFactoryTest {
                 .withHandshakeTimeout(12345)
                 .build();
 
-
         final SslContext sslContext = sslFactory.getSslContext(tls);
         final SslHandler sslHandler = sslFactory.getSslHandler(socketChannel, tls, sslContext);
 
@@ -126,7 +124,6 @@ public class SslFactoryTest {
 
     @Test
     public void test_invalid_keystore() {
-
 
         final Tls tls = new Tls.Builder()
                 .withKeystorePath(RandomStringUtils.randomAlphabetic(32))
@@ -142,11 +139,9 @@ public class SslFactoryTest {
                 .withHandshakeTimeout(10)
                 .build();
 
-
-        //Only check if the exception is really thrown and not caught somewhere by accident
+        // Only check if the exception is really thrown and not caught somewhere by accident
         //noinspection unused
-        assertThatThrownBy(() ->  sslFactory.getSslContext(tls))
-                .isInstanceOf(SslException.class);
+        assertThatThrownBy(() -> sslFactory.getSslContext(tls)).isInstanceOf(SslException.class);
     }
 
     @Test
@@ -168,11 +163,9 @@ public class SslFactoryTest {
                 .withHandshakeTimeout(12345)
                 .build();
 
-
-        //Only check if the exception is really thrown and not caught somewhere by accident
+        // Only check if the exception is really thrown and not caught somewhere by accident
         //noinspection unused
-        assertThatThrownBy(() -> sslFactory.getSslContext(tls))
-                .isInstanceOf(SslException.class);
+        assertThatThrownBy(() -> sslFactory.getSslContext(tls)).isInstanceOf(SslException.class);
     }
 
     @Test
@@ -202,7 +195,6 @@ public class SslFactoryTest {
                 .withCipherSuites(cipherSuites)
                 .withHandshakeTimeout(12345)
                 .build();
-
 
         final SslContext sslContext = sslFactory.getSslContext(tls);
         final SslHandler sslHandler = sslFactory.getSslHandler(socketChannel, tls, sslContext);
@@ -331,7 +323,6 @@ public class SslFactoryTest {
         final File file = testKeyStoreGenerator.generateKeyStore("teststore", "JKS", "passwd1", "passwd2");
         final String keystorePath = file.getAbsolutePath();
 
-
         final Tls tls = new Tls.Builder()
                 .withKeystorePath(keystorePath)
                 .withKeystoreType("JKS")
@@ -346,7 +337,6 @@ public class SslFactoryTest {
                 .withHandshakeTimeout(10000)
                 .build();
 
-
         final SslContext sslContext = sslFactory.getSslContext(tls);
         final SslHandler sslHandler = sslFactory.getSslHandler(socketChannel, tls, sslContext);
 
@@ -354,12 +344,10 @@ public class SslFactoryTest {
         assertFalse(sslHandler.engine().getWantClientAuth());
     }
 
-
     @Test
     public void test_ssl_context_store_same() throws Exception {
         final File file = testKeyStoreGenerator.generateKeyStore("teststore", "JKS", "passwd1", "passwd2");
         final String keystorePath = file.getAbsolutePath();
-
 
         final Tls tls = new Tls.Builder()
                 .withKeystorePath(keystorePath)
@@ -375,19 +363,16 @@ public class SslFactoryTest {
                 .withHandshakeTimeout(10000)
                 .build();
 
-
         final SslContext sslContext1 = sslFactory.getSslContext(tls);
         final SslContext sslContext2 = sslFactory.getSslContext(tls);
 
         assertEquals(sslContext1, sslContext2);
     }
 
-
     @Test
     public void test_ssl_context_store_different() throws Exception {
         final File file1 = testKeyStoreGenerator.generateKeyStore("teststore", "JKS", "passwd1", "passwd2");
         final String keystorePath1 = file1.getAbsolutePath();
-
 
         final Tls tls1 = new Tls.Builder()
                 .withKeystorePath(keystorePath1)
@@ -405,7 +390,6 @@ public class SslFactoryTest {
 
         final File file2 = testKeyStoreGenerator.generateKeyStore("teststore", "JKS", "passwd1", "passwd2");
         final String keystorePath2 = file2.getAbsolutePath();
-
 
         final Tls tls2 = new Tls.Builder()
                 .withKeystorePath(keystorePath2)
@@ -438,7 +422,6 @@ public class SslFactoryTest {
         final File file = testKeyStoreGenerator.generateKeyStore("teststore", "JKS", "passwd1", "passwd2");
         final String keystorePath = file.getAbsolutePath();
 
-
         final Tls tls = new Tls.Builder()
                 .withKeystorePath(keystorePath)
                 .withKeystoreType("JKS")
@@ -449,7 +432,8 @@ public class SslFactoryTest {
                 .withTruststoreType("JKS")
                 .withTruststorePassword("passwd1")
                 .withClientAuthMode(Tls.ClientAuthMode.OPTIONAL)
-                .withCipherSuites(Lists.newArrayList("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"))
+                .withCipherSuites(Lists.newArrayList(
+                        "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"))
                 .withHandshakeTimeout(10000)
                 .build();
 
@@ -460,8 +444,9 @@ public class SslFactoryTest {
 
         final String message = logCapture.getLastCapturedLog().getFormattedMessage();
 
-        assertEquals("Enabled cipher suites for MQTT TCP Listener with TLS at address 0 and port 0: [TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256]", message);
-
+        assertEquals(
+                "Enabled cipher suites for MQTT TCP Listener with TLS at address 0 and port 0: [TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256]",
+                message);
     }
 
     @Test
@@ -469,7 +454,6 @@ public class SslFactoryTest {
 
         final File file = testKeyStoreGenerator.generateKeyStore("teststore", "JKS", "passwd1", "passwd2");
         final String keystorePath = file.getAbsolutePath();
-
 
         final Tls tls = new Tls.Builder()
                 .withKeystorePath(keystorePath)
@@ -492,8 +476,9 @@ public class SslFactoryTest {
 
         final String message = logCapture.getLastCapturedLog().getFormattedMessage();
 
-        assertEquals("Unknown cipher suites for MQTT TCP Listener with TLS at address 0 and port 0: [UNKNOWN_CIPHER]", message);
-
+        assertEquals(
+                "Unknown cipher suites for MQTT TCP Listener with TLS at address 0 and port 0: [UNKNOWN_CIPHER]",
+                message);
     }
 
     /**
@@ -542,7 +527,7 @@ public class SslFactoryTest {
                 .withTruststorePassword("passwd1")
                 .withClientAuthMode(Tls.ClientAuthMode.OPTIONAL)
                 .withCipherSuites(new ArrayList<>())
-                //use the opposite of the engine default
+                // use the opposite of the engine default
                 .withPreferServerCipherSuites(!engineDefaultPreferServerCipherSuites)
                 .withHandshakeTimeout(10000)
                 .build();
@@ -555,7 +540,7 @@ public class SslFactoryTest {
         assertNotEquals(sslContext1, sslContext2);
         assertNotEquals(sslParameters1, sslParameters2);
 
-        //compare all values only useLocalCipherSuites should differ
+        // compare all values only useLocalCipherSuites should differ
         assertArrayEquals(sslParameters1.getCipherSuites(), sslParameters2.getCipherSuites());
         assertArrayEquals(sslParameters1.getApplicationProtocols(), sslParameters2.getApplicationProtocols());
         assertArrayEquals(sslParameters1.getProtocols(), sslParameters2.getProtocols());
@@ -564,10 +549,12 @@ public class SslFactoryTest {
         assertEquals(sslParameters1.getWantClientAuth(), sslParameters2.getWantClientAuth());
         assertEquals(sslParameters1.getEnableRetransmissions(), sslParameters2.getEnableRetransmissions());
         assertEquals(sslParameters1.getMaximumPacketSize(), sslParameters2.getMaximumPacketSize());
-        assertEquals(sslParameters1.getEndpointIdentificationAlgorithm(), sslParameters2.getEndpointIdentificationAlgorithm());
+        assertEquals(
+                sslParameters1.getEndpointIdentificationAlgorithm(),
+                sslParameters2.getEndpointIdentificationAlgorithm());
         assertEquals(sslParameters1.getSNIMatchers(), sslParameters2.getSNIMatchers());
 
-        //NOTE: The constraints seem to be the same object despite parameters coming from different ssl context
+        // NOTE: The constraints seem to be the same object despite parameters coming from different ssl context
         assertEquals(sslParameters1.getAlgorithmConstraints(), sslParameters2.getAlgorithmConstraints());
 
         assertEquals(engineDefaultPreferServerCipherSuites, sslParameters1.getUseCipherSuitesOrder());

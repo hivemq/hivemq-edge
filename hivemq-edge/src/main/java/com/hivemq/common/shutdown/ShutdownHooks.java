@@ -15,23 +15,22 @@
  */
 package com.hivemq.common.shutdown;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.Ordering;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.util.ThreadFactoryUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MarkerFactory;
-
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
 
 /**
  * A implementation for all shutdown hooks.
@@ -46,13 +45,13 @@ public class ShutdownHooks {
     private static final Logger log = LoggerFactory.getLogger(ShutdownHooks.class);
 
     private final @NotNull AtomicBoolean shuttingDown;
-    private final @NotNull Multimap</* Priority */Integer, HiveMQShutdownHook> synchronousHooks;
+    private final @NotNull Multimap</* Priority */ Integer, HiveMQShutdownHook> synchronousHooks;
 
     public ShutdownHooks() {
         shuttingDown = new AtomicBoolean(false);
 
-        synchronousHooks = MultimapBuilder.SortedSetMultimapBuilder
-                .treeKeys(Ordering.natural().reverse()) //High priorities first
+        synchronousHooks = MultimapBuilder.SortedSetMultimapBuilder.treeKeys(
+                        Ordering.natural().reverse()) // High priorities first
                 .arrayListValues()
                 .build();
     }
@@ -71,8 +70,7 @@ public class ShutdownHooks {
             return;
         }
         checkNotNull(hiveMQShutdownHook, "A shutdown hook must not be null");
-        log.trace("Adding shutdown hook {} with priority {}", hiveMQShutdownHook.name(),
-                hiveMQShutdownHook.priority());
+        log.trace("Adding shutdown hook {} with priority {}", hiveMQShutdownHook.name(), hiveMQShutdownHook.priority());
         synchronousHooks.put(hiveMQShutdownHook.priority().getValue(), hiveMQShutdownHook);
     }
 
@@ -87,8 +85,8 @@ public class ShutdownHooks {
         }
         checkNotNull(hiveMQShutdownHook, "A shutdown hook must not be null");
 
-        log.trace("Removing shutdown hook {} with priority {}", hiveMQShutdownHook.name(),
-                hiveMQShutdownHook.priority());
+        log.trace(
+                "Removing shutdown hook {} with priority {}", hiveMQShutdownHook.name(), hiveMQShutdownHook.priority());
         synchronousHooks.values().remove(hiveMQShutdownHook);
     }
 
@@ -105,11 +103,16 @@ public class ShutdownHooks {
         final ScheduledExecutorService executorService =
                 Executors.newSingleThreadScheduledExecutor(ThreadFactoryUtil.create("shutdown-log-executor"));
         final AtomicReference<HiveMQShutdownHook> currentRunnable = new AtomicReference<>();
-        executorService.scheduleAtFixedRate(() -> {
-            log.info("Still shutting down HiveMQ. Waiting for remaining tasks to be executed. Do not shutdown HiveMQ.");
-            Optional.ofNullable(currentRunnable.get())
-                    .ifPresent(hook -> log.info("Job '{}' is shutting down.", hook.name()));
-        }, 10, 10, TimeUnit.SECONDS);
+        executorService.scheduleAtFixedRate(
+                () -> {
+                    log.info(
+                            "Still shutting down HiveMQ. Waiting for remaining tasks to be executed. Do not shutdown HiveMQ.");
+                    Optional.ofNullable(currentRunnable.get())
+                            .ifPresent(hook -> log.info("Job '{}' is shutting down.", hook.name()));
+                },
+                10,
+                10,
+                TimeUnit.SECONDS);
         for (final HiveMQShutdownHook runnable : synchronousHooks.values()) {
             log.trace(MarkerFactory.getMarker("SHUTDOWN_HOOK"), "Running shutdown hook {}", runnable.name());
             currentRunnable.set(runnable);

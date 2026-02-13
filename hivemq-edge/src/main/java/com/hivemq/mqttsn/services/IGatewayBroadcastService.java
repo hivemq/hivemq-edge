@@ -15,15 +15,15 @@
  */
 package com.hivemq.mqttsn.services;
 
-import org.jetbrains.annotations.NotNull;
 import io.netty.channel.Channel;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
  */
 public interface IGatewayBroadcastService {
 
-    void startBroadcast(final @NotNull Channel channel) ;
+    void startBroadcast(final @NotNull Channel channel);
 
     void stopBroadcast();
 

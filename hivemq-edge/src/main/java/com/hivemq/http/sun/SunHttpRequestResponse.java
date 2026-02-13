@@ -16,12 +16,10 @@
 package com.hivemq.http.sun;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.http.core.HttpRequestResponse;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -31,17 +29,22 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
 
 public class SunHttpRequestResponse extends HttpRequestResponse {
 
     public HttpExchange exchange;
 
-    public SunHttpRequestResponse(final @NotNull HttpConstants.METHOD method, final @NotNull URI httpRequestUri, final @NotNull String contextPath, final @NotNull HttpExchange exchange) {
+    public SunHttpRequestResponse(
+            final @NotNull HttpConstants.METHOD method,
+            final @NotNull URI httpRequestUri,
+            final @NotNull String contextPath,
+            final @NotNull HttpExchange exchange) {
         super(method, httpRequestUri, contextPath);
         this.exchange = exchange;
     }
 
-    public OutputStream getResponseBody(){
+    public OutputStream getResponseBody() {
         return exchange.getResponseBody();
     }
 
@@ -50,11 +53,10 @@ public class SunHttpRequestResponse extends HttpRequestResponse {
         return exchange.getRequestBody();
     }
 
-    public void addResponseHeader(final @NotNull String headerKey, final @NotNull String headerValue){
+    public void addResponseHeader(final @NotNull String headerKey, final @NotNull String headerValue) {
         Preconditions.checkNotNull(headerKey);
         Preconditions.checkNotNull(headerValue);
-        exchange.getResponseHeaders().add(headerKey,
-                headerValue);
+        exchange.getResponseHeaders().add(headerKey, headerValue);
     }
 
     protected void sendResponseHeadersInternal(int httpCode, int size) throws IOException {
@@ -72,7 +74,7 @@ public class SunHttpRequestResponse extends HttpRequestResponse {
         Set<String> s = headers.keySet();
         Iterator<String> itr = s.iterator();
         HashMap<String, String> map = new HashMap<>();
-        while(itr.hasNext()){
+        while (itr.hasNext()) {
             String key = itr.next();
             String value = headers.getFirst(key);
             map.put(key, value);
@@ -84,8 +86,8 @@ public class SunHttpRequestResponse extends HttpRequestResponse {
     public void commit() {
         try {
             exchange.close();
-        } catch(Exception e){
-//            e.printStackTrace();
+        } catch (Exception e) {
+            //            e.printStackTrace();
         }
     }
 }

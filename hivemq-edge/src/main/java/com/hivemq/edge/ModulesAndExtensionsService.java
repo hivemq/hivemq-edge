@@ -17,7 +17,6 @@ package com.hivemq.edge;
 
 import com.hivemq.api.model.components.Extension;
 import com.hivemq.api.model.components.Module;
-
 import java.util.List;
 
 /**

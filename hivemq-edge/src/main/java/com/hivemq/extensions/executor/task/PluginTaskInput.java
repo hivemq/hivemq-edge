@@ -18,5 +18,4 @@ package com.hivemq.extensions.executor.task;
 /**
  * @author Georg Held
  */
-public interface PluginTaskInput {
-}
+public interface PluginTaskInput {}

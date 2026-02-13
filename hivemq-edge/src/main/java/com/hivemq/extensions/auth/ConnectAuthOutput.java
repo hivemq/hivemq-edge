@@ -15,9 +15,10 @@
  */
 package com.hivemq.extensions.auth;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.async.Async;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extension.sdk.api.auth.parameter.EnhancedAuthOutput;
@@ -28,12 +29,10 @@ import com.hivemq.extensions.auth.parameter.ModifiableClientSettingsImpl;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
 import com.hivemq.mqtt.message.reason.Mqtt5ConnAckReasonCode;
 import com.hivemq.util.ReasonStrings;
-
 import java.nio.ByteBuffer;
 import java.time.Duration;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Silvio Giebl
@@ -120,8 +119,7 @@ public class ConnectAuthOutput extends AuthOutput<EnhancedAuthOutput> implements
 
     @Override
     public void failAuthentication(
-            final @NotNull DisconnectedReasonCode reasonCode,
-            final @Nullable String reasonString) {
+            final @NotNull DisconnectedReasonCode reasonCode, final @Nullable String reasonString) {
 
         final Mqtt5ConnAckReasonCode connAckReasonCode = checkReasonCode(reasonCode);
         failAuthentication(reasonString);
@@ -196,7 +194,8 @@ public class ConnectAuthOutput extends AuthOutput<EnhancedAuthOutput> implements
         reasonString = ReasonStrings.AUTH_FAILED_EXCEPTION;
     }
 
-    @NotNull Mqtt5ConnAckReasonCode getReasonCode() {
+    @NotNull
+    Mqtt5ConnAckReasonCode getReasonCode() {
         return reasonCode;
     }
 
@@ -217,9 +216,10 @@ public class ConnectAuthOutput extends AuthOutput<EnhancedAuthOutput> implements
 
         Preconditions.checkNotNull(disconnectedReasonCode, "Disconnected reason code must never be null");
         final Mqtt5ConnAckReasonCode connackReasonCode = Mqtt5ConnAckReasonCode.from(disconnectedReasonCode);
-        Preconditions.checkArgument(connackReasonCode != null,
-                "The disconnected reason code " + disconnectedReasonCode.name() +
-                        " is not a CONNACK reason code and therefore must not be used during connect authentication.");
+        Preconditions.checkArgument(
+                connackReasonCode != null,
+                "The disconnected reason code " + disconnectedReasonCode.name()
+                        + " is not a CONNACK reason code and therefore must not be used during connect authentication.");
         return connackReasonCode;
     }
 }

@@ -32,5 +32,4 @@ public interface Mqtt5UNSUBACK {
     Mqtt5UserProperties getUserProperties();
 
     String getReasonString();
-
 }

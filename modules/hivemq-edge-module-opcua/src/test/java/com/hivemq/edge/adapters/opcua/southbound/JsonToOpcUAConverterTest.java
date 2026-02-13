@@ -15,6 +15,9 @@
  */
 package com.hivemq.edge.adapters.opcua.southbound;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.fasterxml.jackson.databind.node.DoubleNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.LongNode;
@@ -23,9 +26,6 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JsonToOpcUAConverterTest {
 
@@ -37,13 +37,15 @@ class JsonToOpcUAConverterTest {
 
     @Test
     void extractUShort_overflow() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> JsonToOpcUAConverterUtil.extractUShort(IntNode.valueOf(Integer.MAX_VALUE)));
     }
 
     @Test
     void extractUShort_underflow() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> JsonToOpcUAConverterUtil.extractUShort(IntNode.valueOf(Integer.MIN_VALUE)));
     }
 
@@ -55,13 +57,15 @@ class JsonToOpcUAConverterTest {
 
     @Test
     void extractSignedShort_overflow() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> JsonToOpcUAConverterUtil.extractSignedShort(IntNode.valueOf(Integer.MAX_VALUE)));
     }
 
     @Test
     void extractSignedShort_underflow() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> JsonToOpcUAConverterUtil.extractSignedShort(IntNode.valueOf(Integer.MIN_VALUE)));
     }
 
@@ -73,16 +77,17 @@ class JsonToOpcUAConverterTest {
 
     @Test
     void extractUInteger_overflow() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> JsonToOpcUAConverterUtil.extractUInteger(LongNode.valueOf(Long.MAX_VALUE)));
     }
 
     @Test
     void extractUInteger_underflow() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> JsonToOpcUAConverterUtil.extractUInteger(LongNode.valueOf(Long.MIN_VALUE)));
     }
-
 
     @Test
     void extractSignedInteger() {
@@ -92,10 +97,10 @@ class JsonToOpcUAConverterTest {
 
     @Test
     void extractSignedInteger_overflow() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> JsonToOpcUAConverterUtil.extractSignedInteger(LongNode.valueOf(Integer.MAX_VALUE + 1000L)));
     }
-
 
     @Test
     void extractSByte() {

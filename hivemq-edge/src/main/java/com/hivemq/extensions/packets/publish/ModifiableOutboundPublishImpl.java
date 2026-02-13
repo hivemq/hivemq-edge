@@ -15,11 +15,12 @@
  */
 package com.hivemq.extensions.packets.publish;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.ImmutableIntArray;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.annotations.ThreadSafe;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.packets.publish.ModifiableOutboundPublish;
@@ -27,14 +28,12 @@ import com.hivemq.extension.sdk.api.packets.publish.PayloadFormatIndicator;
 import com.hivemq.extensions.packets.general.ModifiableUserPropertiesImpl;
 import com.hivemq.extensions.services.builder.PluginBuilderUtil;
 import com.hivemq.util.Topics;
-
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Lukas Brandl
@@ -64,8 +63,7 @@ public class ModifiableOutboundPublishImpl implements ModifiableOutboundPublish 
     private boolean modified = false;
 
     public ModifiableOutboundPublishImpl(
-            final @NotNull PublishPacketImpl packet,
-            final @NotNull ConfigurationService configurationService) {
+            final @NotNull PublishPacketImpl packet, final @NotNull ConfigurationService configurationService) {
 
         topic = packet.topic;
         qos = packet.qos;
@@ -81,7 +79,8 @@ public class ModifiableOutboundPublishImpl implements ModifiableOutboundPublish 
         correlationData = packet.correlationData;
         subscriptionIdentifiers = packet.subscriptionIdentifiers;
         userProperties = new ModifiableUserPropertiesImpl(
-                packet.userProperties.asInternalList(), configurationService.securityConfiguration().validateUTF8());
+                packet.userProperties.asInternalList(),
+                configurationService.securityConfiguration().validateUTF8());
         timestamp = packet.timestamp;
 
         this.configurationService = configurationService;
@@ -96,16 +95,19 @@ public class ModifiableOutboundPublishImpl implements ModifiableOutboundPublish 
     public void setTopic(final @NotNull String topic) {
         checkNotNull(topic, "Topic must not be null");
         checkArgument(
-                topic.length() <= configurationService.restrictionsConfiguration().maxTopicLength(),
-                "Topic filter length must not exceed '" +
-                        configurationService.restrictionsConfiguration().maxTopicLength() + "' characters, but has '" +
-                        topic.length() + "' characters");
+                topic.length()
+                        <= configurationService.restrictionsConfiguration().maxTopicLength(),
+                "Topic filter length must not exceed '"
+                        + configurationService.restrictionsConfiguration().maxTopicLength()
+                        + "' characters, but has '" + topic.length()
+                        + "' characters");
 
         if (!Topics.isValidTopicToPublish(topic)) {
             throw new IllegalArgumentException("The topic (" + topic + ") is invalid for PUBLISH messages");
         }
 
-        if (!PluginBuilderUtil.isValidUtf8String(topic, configurationService.securityConfiguration().validateUTF8())) {
+        if (!PluginBuilderUtil.isValidUtf8String(
+                topic, configurationService.securityConfiguration().validateUTF8())) {
             throw new IllegalArgumentException("The topic (" + topic + ") is UTF-8 malformed");
         }
 
@@ -197,7 +199,8 @@ public class ModifiableOutboundPublishImpl implements ModifiableOutboundPublish 
 
     @Override
     public void setContentType(final @Nullable String contentType) {
-        PluginBuilderUtil.checkContentType(contentType, configurationService.securityConfiguration().validateUTF8());
+        PluginBuilderUtil.checkContentType(
+                contentType, configurationService.securityConfiguration().validateUTF8());
         if (Objects.equals(this.contentType, contentType)) {
             return;
         }
@@ -269,9 +272,22 @@ public class ModifiableOutboundPublishImpl implements ModifiableOutboundPublish 
     }
 
     public @NotNull PublishPacketImpl copy() {
-        return new PublishPacketImpl(topic, qos, onwardQos, packetId, dupFlag, payload, retain, messageExpiryInterval,
-                payloadFormatIndicator, contentType, responseTopic, correlationData, subscriptionIdentifiers,
-                userProperties.copy(), timestamp);
+        return new PublishPacketImpl(
+                topic,
+                qos,
+                onwardQos,
+                packetId,
+                dupFlag,
+                payload,
+                retain,
+                messageExpiryInterval,
+                payloadFormatIndicator,
+                contentType,
+                responseTopic,
+                correlationData,
+                subscriptionIdentifiers,
+                userProperties.copy(),
+                timestamp);
     }
 
     public @NotNull ModifiableOutboundPublishImpl update(final @NotNull PublishPacketImpl packet) {

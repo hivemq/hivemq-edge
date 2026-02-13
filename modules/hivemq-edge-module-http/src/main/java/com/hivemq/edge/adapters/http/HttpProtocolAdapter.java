@@ -15,6 +15,11 @@
  */
 package com.hivemq.edge.adapters.http;
 
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
+import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.JSON_MIME_TYPE;
+import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.PLAIN_MIME_TYPE;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.events.model.Event;
@@ -37,15 +42,6 @@ import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.adapters.http.mqtt2http.JsonSchema;
 import com.hivemq.edge.adapters.http.tag.HttpTag;
 import com.hivemq.edge.adapters.http.tag.HttpTagDefinition;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509ExtendedTrustManager;
 import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -61,11 +57,14 @@ import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
-import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.JSON_MIME_TYPE;
-import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.PLAIN_MIME_TYPE;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509ExtendedTrustManager;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Protocol adapter for HTTP-based data polling and publishing to MQTT.
@@ -95,7 +94,7 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
         this.adapterId = input.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
-        this.tags = input.getTags().stream().map(tag -> (HttpTag)tag).toList();
+        this.tags = input.getTags().stream().map(tag -> (HttpTag) tag).toList();
         this.version = input.getVersion();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.moduleServices = input.moduleServices();
@@ -110,8 +109,7 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
 
     @Override
     public void start(
-            final @NotNull ProtocolAdapterStartInput input,
-            final @NotNull ProtocolAdapterStartOutput output) {
+            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         try {
             protocolAdapterState.setConnectionStatus(STATELESS);
             if (httpClient == null) {
@@ -142,8 +140,7 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
     }
 
     @Override
-    public void poll(
-            final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
+    public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
 
         final HttpClient httpClient = this.httpClient;
         if (httpClient == null) {
@@ -155,24 +152,23 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
                 tags.stream().map(tag -> pollHttp(httpClient, tag)).toList();
 
         @SuppressWarnings("unused")
-        final var unused = CompletableFuture
-                .allOf(pollingFutures.toArray(new CompletableFuture[]{}))
+        final var unused = CompletableFuture.allOf(pollingFutures.toArray(new CompletableFuture[] {}))
                 .whenComplete((result, throwable) -> {
-                    if(throwable != null) {
+                    if (throwable != null) {
                         pollingOutput.fail(throwable, "Error while polling tags.");
                     } else {
                         try {
                             for (final CompletableFuture<HttpData> future : pollingFutures) {
-                                    final var data = future.get();
-                                    if (data.isSuccessStatusCode()) {
-                                        protocolAdapterState.setConnectionStatus(STATELESS);
-                                    } else {
-                                        protocolAdapterState.setConnectionStatus(ERROR);
-                                    }
-                                    if (data.isSuccessStatusCode() ||
-                                            !adapterConfig.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()) {
-                                        data.getDataPoints().forEach(pollingOutput::addDataPoint);
-                                    }
+                                final var data = future.get();
+                                if (data.isSuccessStatusCode()) {
+                                    protocolAdapterState.setConnectionStatus(STATELESS);
+                                } else {
+                                    protocolAdapterState.setConnectionStatus(ERROR);
+                                }
+                                if (data.isSuccessStatusCode()
+                                        || !adapterConfig.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()) {
+                                    data.getDataPoints().forEach(pollingOutput::addDataPoint);
+                                }
                             }
                             pollingOutput.finish();
                         } catch (final InterruptedException | ExecutionException e) {
@@ -182,9 +178,7 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
                 });
     }
 
-    private CompletableFuture<HttpData> pollHttp(
-            final @NotNull HttpClient httpClient,
-            final @NotNull HttpTag httpTag) {
+    private CompletableFuture<HttpData> pollHttp(final @NotNull HttpClient httpClient, final @NotNull HttpTag httpTag) {
 
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
         final String url = httpTag.getDefinition().getUrl();
@@ -204,7 +198,9 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
                 } else {
                     builder.POST(HttpRequest.BodyPublishers.ofString(""));
                 }
-                builder.header(CONTENT_TYPE_HEADER, tagDef.getHttpRequestBodyContentType().getMimeType());
+                builder.header(
+                        CONTENT_TYPE_HEADER,
+                        tagDef.getHttpRequestBodyContentType().getMimeType());
             }
             case PUT -> {
                 if (tagDef.getHttpRequestBody() != null) {
@@ -212,34 +208,37 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
                 } else {
                     builder.PUT(HttpRequest.BodyPublishers.ofString(""));
                 }
-                builder.header(CONTENT_TYPE_HEADER, tagDef.getHttpRequestBodyContentType().getMimeType());
+                builder.header(
+                        CONTENT_TYPE_HEADER,
+                        tagDef.getHttpRequestBodyContentType().getMimeType());
             }
             default -> {
-                return CompletableFuture
-                            .failedFuture(
-                                new IllegalStateException("There was an unexpected value present in the request config: " + tagDef.getHttpRequestMethod()));
+                return CompletableFuture.failedFuture(
+                        new IllegalStateException("There was an unexpected value present in the request config: "
+                                + tagDef.getHttpRequestMethod()));
             }
         }
 
         return httpClient
-                    .sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString())
-                    .thenApply(httpResponse -> getHttpData(httpResponse, url, httpTag.getName()));
+                .sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString())
+                .thenApply(httpResponse -> getHttpData(httpResponse, url, httpTag.getName()));
     }
 
-    private @NotNull HttpData getHttpData(final HttpResponse<String> httpResponse, final String url,
-                                          final @NotNull String tagName) {
+    private @NotNull HttpData getHttpData(
+            final HttpResponse<String> httpResponse, final String url, final @NotNull String tagName) {
         Object payloadData = null;
         String responseContentType = null;
 
         if (isSuccessStatusCode(httpResponse.statusCode())) {
             final String bodyData = httpResponse.body();
-            //-- if the content type is json, then apply the JSON to the output data,
-            //-- else encode using base64 (as we dont know what the content is).
+            // -- if the content type is json, then apply the JSON to the output data,
+            // -- else encode using base64 (as we dont know what the content is).
             if (bodyData != null) {
-                responseContentType = httpResponse.headers().firstValue(CONTENT_TYPE_HEADER).orElse(null);
-                responseContentType = adapterConfig.getHttpToMqttConfig().isAssertResponseIsJson() ?
-                        JSON_MIME_TYPE :
-                        responseContentType;
+                responseContentType =
+                        httpResponse.headers().firstValue(CONTENT_TYPE_HEADER).orElse(null);
+                responseContentType = adapterConfig.getHttpToMqttConfig().isAssertResponseIsJson()
+                        ? JSON_MIME_TYPE
+                        : responseContentType;
                 if (JSON_MIME_TYPE.equals(responseContentType)) {
                     try {
                         payloadData = objectMapper.readTree(bodyData);
@@ -247,12 +246,12 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
                         if (log.isDebugEnabled()) {
                             log.debug("Invalid JSON data was [{}]", bodyData);
                         }
-                        moduleServices.eventService()
+                        moduleServices
+                                .eventService()
                                 .createAdapterEvent(adapterId, adapterInformation.getProtocolId())
                                 .withSeverity(Event.SEVERITY.WARN)
                                 .withMessage(String.format(
-                                        "Http response on adapter '%s' could not be parsed as JSON data.",
-                                        adapterId))
+                                        "Http response on adapter '%s' could not be parsed as JSON data.", adapterId))
                                 .fire();
                         throw new RuntimeException("unable to parse JSON data from HTTP response");
                     }
@@ -260,18 +259,15 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
                     if (responseContentType == null) {
                         responseContentType = PLAIN_MIME_TYPE;
                     }
-                    final String base64 =
-                            Base64.getEncoder().encodeToString(bodyData.getBytes(StandardCharsets.UTF_8));
+                    final String base64 = Base64.getEncoder().encodeToString(bodyData.getBytes(StandardCharsets.UTF_8));
                     payloadData = String.format("data:%s;base64,%s", responseContentType, base64);
                 }
             }
         }
 
-        final HttpData data = new HttpData(url,
-                httpResponse.statusCode(),
-                responseContentType,
-                adapterFactories.dataPointFactory());
-        //When the body is empty, just include the metadata
+        final HttpData data =
+                new HttpData(url, httpResponse.statusCode(), responseContentType, adapterFactories.dataPointFactory());
+        // When the body is empty, just include the metadata
         if (payloadData != null) {
             data.addDataPoint(tagName, payloadData);
         }
@@ -304,13 +300,11 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
             final X509ExtendedTrustManager trustManager = new X509ExtendedTrustManager() {
                 @Override
                 public void checkClientTrusted(
-                        final X509Certificate @NotNull [] x509Certificates, final @NotNull String s) {
-                }
+                        final X509Certificate @NotNull [] x509Certificates, final @NotNull String s) {}
 
                 @Override
                 public void checkServerTrusted(
-                        final X509Certificate @NotNull [] x509Certificates, final @NotNull String s) {
-                }
+                        final X509Certificate @NotNull [] x509Certificates, final @NotNull String s) {}
 
                 @Override
                 public X509Certificate @NotNull [] getAcceptedIssuers() {
@@ -321,35 +315,30 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
                 public void checkClientTrusted(
                         final X509Certificate @NotNull [] x509Certificates,
                         final @NotNull String s,
-                        final @NotNull Socket socket) {
-                }
+                        final @NotNull Socket socket) {}
 
                 @Override
                 public void checkServerTrusted(
                         final X509Certificate @NotNull [] x509Certificates,
                         final @NotNull String s,
-                        final @NotNull Socket socket) {
-                }
+                        final @NotNull Socket socket) {}
 
                 @Override
                 public void checkClientTrusted(
                         final X509Certificate @NotNull [] x509Certificates,
                         final @NotNull String s,
-                        final @NotNull SSLEngine sslEngine) {
-                }
+                        final @NotNull SSLEngine sslEngine) {}
 
                 @Override
                 public void checkServerTrusted(
                         final X509Certificate @NotNull [] x509Certificates,
                         final @NotNull String s,
-                        final @NotNull SSLEngine sslEngine) {
-                }
+                        final @NotNull SSLEngine sslEngine) {}
             };
-            sslContext.init(null, new TrustManager[]{trustManager}, new SecureRandom());
+            sslContext.init(null, new TrustManager[] {trustManager}, new SecureRandom());
             return sslContext;
         } catch (final NoSuchAlgorithmException | KeyManagementException e) {
             throw new RuntimeException(e);
         }
     }
-
 }

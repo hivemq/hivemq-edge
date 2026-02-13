@@ -15,20 +15,20 @@
  */
 package com.hivemq.codec.decoder;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.PINGREQ;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import util.TestMqttDecoder;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Florian Limpöck
@@ -36,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class MqttPingreqDecoderTest {
 
     private @NotNull EmbeddedChannel channel;
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -88,8 +89,7 @@ public class MqttPingreqDecoderTest {
         buf.writeByte(0b0000_0000);
         channel.writeInbound(buf);
 
-
-        //The client needs to get disconnected
+        // The client needs to get disconnected
         assertFalse(channel.isActive());
     }
 
@@ -104,8 +104,7 @@ public class MqttPingreqDecoderTest {
         buf.writeByte(0b0000_0000);
         channel.writeInbound(buf);
 
-
-        //The client needs to get disconnected
+        // The client needs to get disconnected
         assertFalse(channel.isActive());
     }
 
@@ -114,7 +113,7 @@ public class MqttPingreqDecoderTest {
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(new ClientConnection(channel, null));
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv3_1);
-        //In this test we check that additional headers are ignored in MQTT 3.1 if they're invalid
+        // In this test we check that additional headers are ignored in MQTT 3.1 if they're invalid
 
         final ByteBuf buf = Unpooled.buffer();
         buf.writeByte(0b1100_0001);
@@ -127,5 +126,4 @@ public class MqttPingreqDecoderTest {
 
         assertTrue(channel.isActive());
     }
-
 }

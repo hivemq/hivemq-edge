@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.handler;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
 import com.hivemq.extension.sdk.api.interceptor.disconnect.DisconnectInboundInterceptor;
@@ -44,13 +42,13 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPromise;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Robin Atherton
@@ -83,7 +81,8 @@ public class DisconnectInterceptorHandler {
             final @NotNull ChannelHandlerContext ctx, final @NotNull DISCONNECT disconnect) {
 
         final Channel channel = ctx.channel();
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final String clientId = clientConnection.getClientId();
         if (clientId == null) {
             return;
@@ -121,8 +120,8 @@ public class DisconnectInterceptorHandler {
 
         for (final DisconnectInboundInterceptor interceptor : interceptors) {
 
-            final HiveMQExtension extension =
-                    hiveMQExtensions.getExtensionForClassloader(interceptor.getClass().getClassLoader());
+            final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(
+                    interceptor.getClass().getClassLoader());
             if (extension == null) {
                 context.finishInterceptor();
                 continue;
@@ -140,7 +139,8 @@ public class DisconnectInterceptorHandler {
             final @NotNull ChannelPromise promise) {
 
         final Channel channel = ctx.channel();
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final String clientId = clientConnection.getClientId();
         if (clientId == null) {
             return;
@@ -170,17 +170,13 @@ public class DisconnectInterceptorHandler {
         final ExtensionParameterHolder<DisconnectOutboundOutputImpl> outputHolder =
                 new ExtensionParameterHolder<>(output);
 
-        final DisconnectOutboundInterceptorContext context = new DisconnectOutboundInterceptorContext(clientId,
-                interceptors.size(),
-                ctx,
-                promise,
-                inputHolder,
-                outputHolder);
+        final DisconnectOutboundInterceptorContext context = new DisconnectOutboundInterceptorContext(
+                clientId, interceptors.size(), ctx, promise, inputHolder, outputHolder);
 
         for (final DisconnectOutboundInterceptor interceptor : interceptors) {
 
-            final HiveMQExtension extension =
-                    hiveMQExtensions.getExtensionForClassloader(interceptor.getClass().getClassLoader());
+            final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(
+                    interceptor.getClass().getClassLoader());
             if (extension == null) {
                 context.finishInterceptor();
                 continue;
@@ -269,8 +265,8 @@ public class DisconnectInterceptorHandler {
                 interceptor.onOutboundDisconnect(input, output);
             } catch (final Throwable e) {
                 log.warn(
-                        "Uncaught exception was thrown from extension with id \"{}\" on outbound DISCONNECT interception. " +
-                                "Extensions are responsible for their own exception handling.",
+                        "Uncaught exception was thrown from extension with id \"{}\" on outbound DISCONNECT interception. "
+                                + "Extensions are responsible for their own exception handling.",
                         extensionId,
                         e);
                 output.markAsFailed();
@@ -359,8 +355,8 @@ public class DisconnectInterceptorHandler {
                 interceptor.onInboundDisconnect(input, output);
             } catch (final Throwable e) {
                 log.warn(
-                        "Uncaught exception was thrown from extension with id \"{}\" on inbound DISCONNECT interception. " +
-                                "Extensions are responsible for their own exception handling.",
+                        "Uncaught exception was thrown from extension with id \"{}\" on inbound DISCONNECT interception. "
+                                + "Extensions are responsible for their own exception handling.",
                         extensionId,
                         e);
                 output.markAsFailed();

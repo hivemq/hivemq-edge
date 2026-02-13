@@ -20,10 +20,9 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Optional;
 
 /**
  * A Websocket frame handler for text frames. MQTT does not allow any text frames, so clients
@@ -40,13 +39,15 @@ public class WebSocketTextFrameHandler extends SimpleChannelInboundHandler<TextW
         final Channel channel = ctx.channel();
         channel.disconnect();
         if (log.isDebugEnabled()) {
-            final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
-            final Optional<String> channelIP = (clientConnection == null)
-                    ? Optional.empty()
-                    : clientConnection.getChannelIP();
+            final ClientConnection clientConnection =
+                    channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+            final Optional<String> channelIP =
+                    (clientConnection == null) ? Optional.empty() : clientConnection.getChannelIP();
 
-            log.debug("Sending websocket text frames is illegal, only binary frames are allowed for MQTT over websockets. " +
-                    "Disconnecting client with IP{}.", channelIP);
+            log.debug(
+                    "Sending websocket text frames is illegal, only binary frames are allowed for MQTT over websockets. "
+                            + "Disconnecting client with IP{}.",
+                    channelIP);
         }
     }
 }

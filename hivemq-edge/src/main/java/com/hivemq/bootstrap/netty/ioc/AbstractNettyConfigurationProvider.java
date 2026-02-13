@@ -15,14 +15,13 @@
  */
 package com.hivemq.bootstrap.netty.ioc;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.jetbrains.annotations.NotNull;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-
 import java.util.concurrent.ThreadFactory;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.jetbrains.annotations.NotNull;
 
 public abstract class AbstractNettyConfigurationProvider {
 
@@ -45,7 +44,7 @@ public abstract class AbstractNettyConfigurationProvider {
      */
     @NotNull
     protected EventLoopGroup createChildEventLoop() {
-        //Default Netty Threads.
+        // Default Netty Threads.
         return new NioEventLoopGroup(0, createThreadFactory("hivemq-eventloop-child-%d"));
     }
 
@@ -58,8 +57,6 @@ public abstract class AbstractNettyConfigurationProvider {
     private ThreadFactory createThreadFactory(final @NotNull String nameFormat) {
 
         checkNotNull(nameFormat, "Thread Factory Name Format must not be null");
-        return new ThreadFactoryBuilder().
-                setNameFormat(nameFormat).
-                build();
+        return new ThreadFactoryBuilder().setNameFormat(nameFormat).build();
     }
 }

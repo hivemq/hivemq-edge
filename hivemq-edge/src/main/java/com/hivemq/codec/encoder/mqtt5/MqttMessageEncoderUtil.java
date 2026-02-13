@@ -22,8 +22,7 @@ package com.hivemq.codec.encoder.mqtt5;
  */
 public final class MqttMessageEncoderUtil {
 
-    private MqttMessageEncoderUtil() {
-    }
+    private MqttMessageEncoderUtil() {}
 
     /**
      * Calculates the encoded length of a MQTT message with the given remaining length.

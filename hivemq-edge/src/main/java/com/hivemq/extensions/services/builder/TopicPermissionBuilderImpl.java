@@ -15,12 +15,12 @@
  */
 package com.hivemq.extensions.services.builder;
 
+import static com.hivemq.extension.sdk.api.auth.parameter.TopicPermission.SharedSubscription;
+
 import com.google.common.base.Preconditions;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.auth.parameter.TopicPermission;
 import com.hivemq.extension.sdk.api.auth.parameter.TopicPermission.MqttActivity;
 import com.hivemq.extension.sdk.api.auth.parameter.TopicPermission.PermissionType;
@@ -29,10 +29,9 @@ import com.hivemq.extension.sdk.api.auth.parameter.TopicPermission.Retain;
 import com.hivemq.extension.sdk.api.services.builder.TopicPermissionBuilder;
 import com.hivemq.extensions.auth.parameter.TopicPermissionImpl;
 import com.hivemq.util.Topics;
-
 import jakarta.inject.Inject;
-
-import static com.hivemq.extension.sdk.api.auth.parameter.TopicPermission.SharedSubscription;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Christoph Schäbel
@@ -61,12 +60,16 @@ public class TopicPermissionBuilderImpl implements TopicPermissionBuilder {
     public TopicPermissionBuilder topicFilter(final @NotNull String topicFilter) {
         Preconditions.checkNotNull(topicFilter, "Topic filter cannot be null");
         Preconditions.checkArgument(!topicFilter.isEmpty(), "Topic filter cannot be empty");
-        Preconditions.checkArgument(topicFilter.length() <= restrictionsConfig.maxTopicLength(), "Topic filter length must not exceed '" + restrictionsConfig.maxTopicLength() + "' characters, but has '" + topicFilter.length() + "' characters");
+        Preconditions.checkArgument(
+                topicFilter.length() <= restrictionsConfig.maxTopicLength(),
+                "Topic filter length must not exceed '" + restrictionsConfig.maxTopicLength()
+                        + "' characters, but has '" + topicFilter.length() + "' characters");
         Preconditions.checkArgument(Topics.isValidToSubscribe(topicFilter), "Topic filter is invalid");
 
         if (Topics.isSharedSubscriptionTopic(topicFilter)) {
-            throw new IllegalArgumentException("Shared subscription topics are invalid," +
-                    " please use methods sharedSubscription and sharedGroup to apply permissions for shared subscriptions");
+            throw new IllegalArgumentException(
+                    "Shared subscription topics are invalid,"
+                            + " please use methods sharedSubscription and sharedGroup to apply permissions for shared subscriptions");
         }
 
         if (!PluginBuilderUtil.isValidUtf8String(topicFilter, securityConfigurationService.validateUTF8())) {
@@ -127,10 +130,14 @@ public class TopicPermissionBuilderImpl implements TopicPermissionBuilder {
     public TopicPermissionBuilder sharedGroup(final @NotNull String sharedGroup) {
         Preconditions.checkNotNull(sharedGroup, "Shared group cannot be null");
         Preconditions.checkArgument(!sharedGroup.isEmpty(), "Shared group cannot be empty");
-        Preconditions.checkArgument(!(sharedGroup.length() > 1 && sharedGroup.contains("#")), "Shared group cannot contain wildcard character '#' inside the name");
+        Preconditions.checkArgument(
+                !(sharedGroup.length() > 1 && sharedGroup.contains("#")),
+                "Shared group cannot contain wildcard character '#' inside the name");
         Preconditions.checkArgument(!(sharedGroup.contains("+")), "Shared group cannot contain wildcard character '+'");
         Preconditions.checkArgument(!(sharedGroup.contains("/")), "Shared group cannot contain character '/'");
-        Preconditions.checkArgument(PluginBuilderUtil.isValidUtf8String(sharedGroup, securityConfigurationService.validateUTF8()), "Shared group contains invalid UTF-8 character");
+        Preconditions.checkArgument(
+                PluginBuilderUtil.isValidUtf8String(sharedGroup, securityConfigurationService.validateUTF8()),
+                "Shared group contains invalid UTF-8 character");
 
         this.sharedGroup = sharedGroup;
         return this;

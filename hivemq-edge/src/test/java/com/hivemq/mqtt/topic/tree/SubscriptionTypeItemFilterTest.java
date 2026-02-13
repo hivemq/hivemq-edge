@@ -15,13 +15,13 @@
  */
 package com.hivemq.mqtt.topic.tree;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.hivemq.extension.sdk.api.services.subscription.SubscriptionType;
 import com.hivemq.mqtt.topic.SubscriberWithQoS;
 import com.hivemq.mqtt.topic.SubscriptionFlag;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SubscriptionTypeItemFilterTest {
 
@@ -60,5 +60,4 @@ public class SubscriptionTypeItemFilterTest {
         assertFalse(itemFilter.test(new SubscriberWithQoS("client", 0, individualFlag, 0)));
         assertTrue(itemFilter.test(new SubscriberWithQoS("client", 0, sharedFlag, 0)));
     }
-
 }

@@ -15,9 +15,8 @@
  */
 package com.hivemq.util;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.concurrent.TimeoutException;
+import org.jetbrains.annotations.NotNull;
 
 public class ExceptionUtils {
 
@@ -31,5 +30,4 @@ public class ExceptionUtils {
         } while (t != null);
         return false;
     }
-
 }

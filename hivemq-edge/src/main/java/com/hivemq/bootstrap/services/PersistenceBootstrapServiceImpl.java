@@ -47,7 +47,6 @@ public class PersistenceBootstrapServiceImpl implements PersistenceBootstrapServ
         this.connectionPersistence = connectionPersistence;
     }
 
-
     @Override
     public @NotNull MetricRegistry metricRegistry() {
         return delegate.metricRegistry();

@@ -15,12 +15,14 @@
  */
 package com.hivemq.mqtt.handler.subscribe.retained;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hivemq.mqtt.message.mqtt5.Mqtt5RetainHandling.DO_NOT_SEND;
+import static com.hivemq.mqtt.message.mqtt5.Mqtt5RetainHandling.SEND_IF_SUBSCRIPTION_DOES_NOT_EXIST;
+
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.persistence.clientsession.callback.SubscriptionResult;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
@@ -28,16 +30,13 @@ import com.hivemq.util.Exceptions;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hivemq.mqtt.message.mqtt5.Mqtt5RetainHandling.DO_NOT_SEND;
-import static com.hivemq.mqtt.message.mqtt5.Mqtt5RetainHandling.SEND_IF_SUBSCRIPTION_DOES_NOT_EXIST;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A {@link ChannelFutureListener} which sends out all retained messages for the client. This listener
@@ -79,7 +78,7 @@ public class SendRetainedMessagesListener implements ChannelFutureListener {
 
             final List<Topic> topicsWithWildcards = sendExactMatches(channel);
 
-            //When there's no exact match, we try to match the wildcard filters
+            // When there's no exact match, we try to match the wildcard filters
             if (!topicsWithWildcards.isEmpty()) {
                 sendMatchingWildcardSubscriptions(topicsWithWildcards, channel);
             }
@@ -108,14 +107,14 @@ public class SendRetainedMessagesListener implements ChannelFutureListener {
                 continue;
             }
 
-            if (subscriptionTopic.getRetainHandling() == SEND_IF_SUBSCRIPTION_DOES_NOT_EXIST &&
-                    subscription.subscriptionAlreadyExisted()) {
-                //do not send retained messages if the subscription already existed before
+            if (subscriptionTopic.getRetainHandling() == SEND_IF_SUBSCRIPTION_DOES_NOT_EXIST
+                    && subscription.subscriptionAlreadyExisted()) {
+                // do not send retained messages if the subscription already existed before
                 continue;
             }
 
             if (subscription.getShareName() != null) {
-                //do not send retained messages for shared subscriptions
+                // do not send retained messages for shared subscriptions
                 continue;
             }
 
@@ -131,7 +130,6 @@ public class SendRetainedMessagesListener implements ChannelFutureListener {
                             writeFuture,
                             new SendRetainedMessageResultListener(channel, subscriptionTopic, retainedMessagesSender),
                             channel.eventLoop());
-
                 }
             }
         }
@@ -182,40 +180,50 @@ public class SendRetainedMessagesListener implements ChannelFutureListener {
         @Override
         public void onSuccess(final @Nullable Set<String> retainedMessageTopics) {
             if (retainedMessageTopics == null || retainedMessageTopics.size() == 0) {
-                //Do nothing, we don't have retained messages
+                // Do nothing, we don't have retained messages
                 return;
             }
 
-            //Attention, this set is immutable, so we need a fresh mutable collection
+            // Attention, this set is immutable, so we need a fresh mutable collection
             final Queue<String> topics = new ConcurrentLinkedQueue<>(retainedMessageTopics);
 
-            final Integer clientReceiveMaximum = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getClientReceiveMaximum();
+            final Integer clientReceiveMaximum =
+                    channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getClientReceiveMaximum();
 
-            int concurrentMessages = clientReceiveMaximum == null ? CONCURRENT_MESSAGES :
-                    Math.min(clientReceiveMaximum, CONCURRENT_MESSAGES);
+            int concurrentMessages = clientReceiveMaximum == null
+                    ? CONCURRENT_MESSAGES
+                    : Math.min(clientReceiveMaximum, CONCURRENT_MESSAGES);
             concurrentMessages = Math.min(concurrentMessages, retainedMessageTopics.size());
 
             final Topic[] topicBatch = new Topic[concurrentMessages];
             for (int i = 0; i < concurrentMessages; i++) {
                 final String nextTopic = topics.poll();
-                topicBatch[i] = new Topic(nextTopic, subscription.getQoS(), subscription.isNoLocal(),
-                        subscription.isRetainAsPublished(), subscription.getRetainHandling(),
+                topicBatch[i] = new Topic(
+                        nextTopic,
+                        subscription.getQoS(),
+                        subscription.isNoLocal(),
+                        subscription.isRetainAsPublished(),
+                        subscription.getRetainHandling(),
                         subscription.getSubscriptionIdentifier());
             }
-
 
             final ListenableFuture<Void> sentFuture = retainedMessagesSender.writeRetainedMessages(channel, topicBatch);
 
             Futures.addCallback(
-                    sentFuture, new SendRetainedMessageListenerAndScheduleNext(subscription, topics, channel,
-                            retainedMessagesSender, concurrentMessages), channel.eventLoop());
+                    sentFuture,
+                    new SendRetainedMessageListenerAndScheduleNext(
+                            subscription, topics, channel, retainedMessagesSender, concurrentMessages),
+                    channel.eventLoop());
         }
 
         @Override
         public void onFailure(final @NotNull Throwable throwable) {
-            final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
-            Exceptions.rethrowError("Unable to send retained messages on topic " + subscription.getTopic() +
-                    " to client " + clientConnection.getClientId() + ".", throwable);
+            final ClientConnection clientConnection =
+                    channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+            Exceptions.rethrowError(
+                    "Unable to send retained messages on topic " + subscription.getTopic() + " to client "
+                            + clientConnection.getClientId() + ".",
+                    throwable);
             channel.disconnect();
         }
     }

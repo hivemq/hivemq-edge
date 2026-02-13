@@ -19,8 +19,7 @@ package com.hivemq.datagov;
  * @author Simon L Johnson
  */
 public class DataGovernanceException extends Exception {
-    public DataGovernanceException() {
-    }
+    public DataGovernanceException() {}
 
     public DataGovernanceException(final String message) {
         super(message);

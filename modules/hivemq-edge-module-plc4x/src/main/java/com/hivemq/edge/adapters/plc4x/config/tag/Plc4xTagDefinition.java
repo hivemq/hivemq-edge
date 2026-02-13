@@ -20,50 +20,54 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 public class Plc4xTagDefinition implements TagDefinition {
 
     @JsonProperty(value = "tagAddress", required = true)
-    @ModuleConfigField(title = "Tag Address",
-                       description = "The well formed address of the tag to read",
-                       required = true)
+    @ModuleConfigField(
+            title = "Tag Address",
+            description = "The well formed address of the tag to read",
+            required = true)
     private final @NotNull String tagAddress;
 
     @JsonProperty(value = "dataType", required = true)
-    @ModuleConfigField(title = "Data Type", description = "The expected data type of the tag", enumDisplayValues = {
-            "Null",
-            "Boolean",
-            "Byte",
-            "Word (unit 16)",
-            "DWord (uint 32)",
-            "LWord (uint 64)",
-            "USint (uint 8)",
-            "Uint (uint 16)",
-            "UDint (uint 32)",
-            "ULint (uint 64)",
-            "Sint (int 8)",
-            "Int (int 16)",
-            "Dint (int 32)",
-            "Lint (int 64)",
-            "Real (float 32)",
-            "LReal (double 64)",
-            "Char (1 byte char)",
-            "WChar (2 byte char)",
-            "String",
-            "WString",
-            "Timing (Duration ms)",
-            "Long Timing (Duration ns)",
-            "Date (DateStamp)",
-            "Long Date (DateStamp)",
-            "Time Of Day (TimeStamp)",
-            "Long Time Of Day (TimeStamp)",
-            "Date Time (DateTimeStamp)",
-            "Long Date Time (DateTimeStamp)",
-            "Raw Byte Array"}, required = true)
+    @ModuleConfigField(
+            title = "Data Type",
+            description = "The expected data type of the tag",
+            enumDisplayValues = {
+                "Null",
+                "Boolean",
+                "Byte",
+                "Word (unit 16)",
+                "DWord (uint 32)",
+                "LWord (uint 64)",
+                "USint (uint 8)",
+                "Uint (uint 16)",
+                "UDint (uint 32)",
+                "ULint (uint 64)",
+                "Sint (int 8)",
+                "Int (int 16)",
+                "Dint (int 32)",
+                "Lint (int 64)",
+                "Real (float 32)",
+                "LReal (double 64)",
+                "Char (1 byte char)",
+                "WChar (2 byte char)",
+                "String",
+                "WString",
+                "Timing (Duration ms)",
+                "Long Timing (Duration ns)",
+                "Date (DateStamp)",
+                "Long Date (DateStamp)",
+                "Time Of Day (TimeStamp)",
+                "Long Time Of Day (TimeStamp)",
+                "Date Time (DateTimeStamp)",
+                "Long Date Time (DateTimeStamp)",
+                "Raw Byte Array"
+            },
+            required = true)
     private final @NotNull Plc4xDataType.DATA_TYPE dataType;
 
     @JsonCreator

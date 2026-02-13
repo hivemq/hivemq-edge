@@ -16,10 +16,9 @@
 package com.hivemq.util;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-
-import javax.annotation.concurrent.NotThreadSafe;
 import java.util.Arrays;
 import java.util.Iterator;
+import javax.annotation.concurrent.NotThreadSafe;
 
 /**
  * This int to int map designed for minimal memory overhead for instaces with very few entries.
@@ -34,8 +33,7 @@ public class IntMap implements Iterable<IntMap.IntMapEntry> {
 
     private int[] backingArray = null;
 
-    public IntMap() {
-    }
+    public IntMap() {}
 
     /**
      * Fill the array with keys from 0 to initialSize mapped to 0.
@@ -89,7 +87,7 @@ public class IntMap implements Iterable<IntMap.IntMapEntry> {
         if (value == 0) {
             return remove(key);
         }
-        //shortcut
+        // shortcut
         if (backingArray == null) {
             backingArray = new int[2];
             backingArray[0] = key;
@@ -148,7 +146,6 @@ public class IntMap implements Iterable<IntMap.IntMapEntry> {
         backingArray[keyIndex] = key;
         backingArray[keyIndex + 1] = value;
     }
-
 
     /**
      * Sets a value for a given key to zero

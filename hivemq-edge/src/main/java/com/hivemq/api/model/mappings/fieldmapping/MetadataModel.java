@@ -36,7 +36,7 @@ public class MetadataModel {
     @JsonCreator
     public MetadataModel(
             @JsonProperty(value = "destination", required = true) final @NotNull JsonNode destinationJsonSchema,
-            @JsonProperty(value = "source", required = true)final @NotNull JsonNode sourceJsonSchema) {
+            @JsonProperty(value = "source", required = true) final @NotNull JsonNode sourceJsonSchema) {
         this.destinationJsonSchema = destinationJsonSchema;
         this.sourceJsonSchema = sourceJsonSchema;
     }
@@ -50,8 +50,6 @@ public class MetadataModel {
     }
 
     public static MetadataModel from(Metadata metadata) {
-        return new MetadataModel(
-                metadata.getDestinationJsonSchema(),
-                metadata.getSourceJsonSchema());
+        return new MetadataModel(metadata.getDestinationJsonSchema(), metadata.getSourceJsonSchema());
     }
 }

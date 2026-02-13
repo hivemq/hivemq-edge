@@ -15,9 +15,9 @@
  */
 package com.hivemq.persistence.local.xodus.bucket;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Dominik Obermaier
@@ -30,17 +30,15 @@ public class BucketUtilsTest {
             final int bucket = BucketUtils.getBucket("" + i, 3);
             assertTrue(bucket >= 0);
             assertTrue(bucket < 3);
-
         }
     }
 
     @Test
     public void test_integer_min_value() throws Exception {
 
-        //DESIGNING WORKHOUSES generates Integer.MIN_VALUE :)
+        // DESIGNING WORKHOUSES generates Integer.MIN_VALUE :)
         final int bucket = BucketUtils.getBucket("DESIGNING WORKHOUSES", 5);
 
         assertTrue(bucket >= 0);
     }
-
 }

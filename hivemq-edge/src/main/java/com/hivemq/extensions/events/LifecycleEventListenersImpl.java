@@ -16,12 +16,10 @@
 package com.hivemq.extensions.events;
 
 import com.google.common.collect.ImmutableMap;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.events.client.ClientLifecycleEventListenerProvider;
 import com.hivemq.extensions.ExtensionPriorityComparator;
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensions;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Map;
@@ -29,6 +27,7 @@ import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @since 4.0.0
@@ -37,7 +36,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class LifecycleEventListenersImpl implements LifecycleEventListeners {
 
     @NotNull
-    private final Map<@NotNull String, @NotNull ClientLifecycleEventListenerProvider> clientLifecycleEventListenerProviderMap;
+    private final Map<@NotNull String, @NotNull ClientLifecycleEventListenerProvider>
+            clientLifecycleEventListenerProviderMap;
 
     @NotNull
     private final HiveMQExtensions hiveMQExtensions;
@@ -68,17 +68,16 @@ public class LifecycleEventListenersImpl implements LifecycleEventListeners {
             if (plugin != null) {
 
                 clientLifecycleEventListenerProviderMap.put(plugin.getId(), provider);
-
             }
 
         } finally {
             writeLock.unlock();
         }
-
     }
 
     @Override
-    public @NotNull Map<@NotNull String, @NotNull ClientLifecycleEventListenerProvider> getClientLifecycleEventListenerProviderMap() {
+    public @NotNull Map<@NotNull String, @NotNull ClientLifecycleEventListenerProvider>
+            getClientLifecycleEventListenerProviderMap() {
         final Lock lock = readWriteLock.readLock();
         lock.lock();
         try {

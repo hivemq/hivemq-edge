@@ -16,11 +16,9 @@
 package com.hivemq.configuration.entity.adapter;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.xml.bind.annotation.XmlElement;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 public class MqttUserPropertyEntity {
 

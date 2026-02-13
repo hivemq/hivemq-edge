@@ -18,9 +18,8 @@ package com.hivemq.api.model.components;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.api.model.ItemsResponse;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Bean to transport listener details across the API
@@ -30,8 +29,7 @@ import java.util.List;
 public class ListenerList extends ItemsResponse<Listener> {
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public ListenerList(
-            @JsonProperty("items") final @NotNull List<@NotNull Listener> listeners) {
+    public ListenerList(@JsonProperty("items") final @NotNull List<@NotNull Listener> listeners) {
         super(listeners);
     }
 }

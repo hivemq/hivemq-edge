@@ -18,9 +18,8 @@ package com.hivemq.api.model.client;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.api.model.ItemsResponse;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -28,8 +27,7 @@ import java.util.List;
 public class ClientList extends ItemsResponse<Client> {
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public ClientList(
-            @JsonProperty("items") final @NotNull List<@NotNull Client> items) {
+    public ClientList(@JsonProperty("items") final @NotNull List<@NotNull Client> items) {
         super(items);
     }
 }

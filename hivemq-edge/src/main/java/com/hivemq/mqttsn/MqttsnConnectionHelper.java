@@ -17,10 +17,10 @@ package com.hivemq.mqttsn;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.AttributeKey;
+import org.jetbrains.annotations.NotNull;
 import org.slj.mqtt.sn.codec.MqttsnCodecs;
 import org.slj.mqtt.sn.spi.IMqttsnCodec;
 import org.slj.mqtt.sn.spi.IMqttsnMessageFactory;
@@ -33,29 +33,30 @@ import org.slj.mqtt.sn.spi.IMqttsnMessageFactory;
  */
 public class MqttsnConnectionHelper {
 
-    public static final AttributeKey<PUBLISH> PUBLISH_TOPIC_ID_ATTRIBUTE_NAME = AttributeKey.valueOf("Sn.PublishTopicMapContext");
+    public static final AttributeKey<PUBLISH> PUBLISH_TOPIC_ID_ATTRIBUTE_NAME =
+            AttributeKey.valueOf("Sn.PublishTopicMapContext");
 
-    public static IMqttsnCodec getCodecForConnection(final @NotNull ClientConnection connection){
+    public static IMqttsnCodec getCodecForConnection(final @NotNull ClientConnection connection) {
         IMqttsnCodec codec = MqttsnCodecs.MQTTSN_CODEC_VERSION_1_2;
-        if(connection instanceof MqttsnClientConnection){
-            MqttsnProtocolVersion version =
-                    ((MqttsnClientConnection) connection).getMqttsnProtocolVersion();
-            if(version == MqttsnProtocolVersion.MQTTSNv20){
+        if (connection instanceof MqttsnClientConnection) {
+            MqttsnProtocolVersion version = ((MqttsnClientConnection) connection).getMqttsnProtocolVersion();
+            if (version == MqttsnProtocolVersion.MQTTSNv20) {
                 codec = MqttsnCodecs.MQTTSN_CODEC_VERSION_2_0;
             }
         }
         return codec;
     }
 
-    public static IMqttsnMessageFactory getMessageFactoryForConnection(final @NotNull ClientConnection connection){
+    public static IMqttsnMessageFactory getMessageFactoryForConnection(final @NotNull ClientConnection connection) {
         IMqttsnCodec codec = getCodecForConnection(connection);
         return codec.createMessageFactory();
     }
 
-    public static MqttsnClientConnection getConnection(final @NotNull ChannelHandlerContext ctx){
+    public static MqttsnClientConnection getConnection(final @NotNull ChannelHandlerContext ctx) {
         final ClientConnection clientConnection =
                 ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
-        Preconditions.checkState(clientConnection instanceof MqttsnClientConnection, "Client Connection should be of SN type");
+        Preconditions.checkState(
+                clientConnection instanceof MqttsnClientConnection, "Client Connection should be of SN type");
         return (MqttsnClientConnection) clientConnection;
     }
 }

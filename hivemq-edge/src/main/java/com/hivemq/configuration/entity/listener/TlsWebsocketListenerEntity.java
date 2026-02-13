@@ -15,12 +15,11 @@
  */
 package com.hivemq.configuration.entity.listener;
 
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.xml.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Dominik Obermaier
@@ -73,10 +72,10 @@ public class TlsWebsocketListenerEntity extends ListenerEntity {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         final TlsWebsocketListenerEntity that = (TlsWebsocketListenerEntity) o;
-        return isAllowExtensions() == that.isAllowExtensions() &&
-                Objects.equals(getPath(), that.getPath()) &&
-                Objects.equals(getSubprotocols(), that.getSubprotocols()) &&
-                Objects.equals(getTls(), that.getTls());
+        return isAllowExtensions() == that.isAllowExtensions()
+                && Objects.equals(getPath(), that.getPath())
+                && Objects.equals(getSubprotocols(), that.getSubprotocols())
+                && Objects.equals(getTls(), that.getTls());
     }
 
     @Override

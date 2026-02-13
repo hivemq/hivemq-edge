@@ -21,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 
 public class HandlerResult {
 
-
     private final boolean publishAlreadyHandled;
     private final boolean preventPublish;
     private final @Nullable PUBLISH modifiedPublish;

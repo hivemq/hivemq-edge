@@ -21,13 +21,12 @@ import com.hivemq.configuration.entity.mqttsn.AllowWakingPingToHijackSessionEnti
 import com.hivemq.configuration.entity.mqttsn.DiscoveryEntity;
 import com.hivemq.configuration.entity.mqttsn.MqttsnPredefinedTopicAliasEntity;
 import com.hivemq.configuration.entity.mqttsn.TopicRegistrationsHeldDuringSleepEntity;
-import org.jetbrains.annotations.NotNull;
-import org.slj.mqtt.sn.MqttsnConstants;
-
 import jakarta.xml.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.slj.mqtt.sn.MqttsnConstants;
 
 /**
  * @author Simon L Johnson
@@ -42,23 +41,23 @@ public class MqttSnConfigEntity {
     private @NotNull List<MqttsnPredefinedTopicAliasEntity> predefinedTopicAliases = new ArrayList<>();
 
     @XmlElementRef(required = false)
-    private @NotNull AllowEmptyClientIdentifierEntity
-            allowEmptyClientIdentifierEntity = new AllowEmptyClientIdentifierEntity();
+    private @NotNull AllowEmptyClientIdentifierEntity allowEmptyClientIdentifierEntity =
+            new AllowEmptyClientIdentifierEntity();
 
     @XmlElementRef(required = false)
     private @NotNull DiscoveryEntity discoveryEntity = new DiscoveryEntity();
 
     @XmlElementRef(required = false)
-    private @NotNull AllowAnonymousPublishMinus1Entity
-            allowAnonymousPublishMinus1Entity = new AllowAnonymousPublishMinus1Entity();
+    private @NotNull AllowAnonymousPublishMinus1Entity allowAnonymousPublishMinus1Entity =
+            new AllowAnonymousPublishMinus1Entity();
 
     @XmlElementRef(required = false)
-    private @NotNull AllowWakingPingToHijackSessionEntity
-            allowWakingPingToHijackSessionEntity = new AllowWakingPingToHijackSessionEntity();
+    private @NotNull AllowWakingPingToHijackSessionEntity allowWakingPingToHijackSessionEntity =
+            new AllowWakingPingToHijackSessionEntity();
 
     @XmlElementRef(required = false)
-    private @NotNull TopicRegistrationsHeldDuringSleepEntity
-            topicRegistrationsHeldDuringSleepEntity = new TopicRegistrationsHeldDuringSleepEntity();
+    private @NotNull TopicRegistrationsHeldDuringSleepEntity topicRegistrationsHeldDuringSleepEntity =
+            new TopicRegistrationsHeldDuringSleepEntity();
 
     @XmlElement(name = "max-client-identifier-length", defaultValue = "23")
     private int maxClientIdentifierLength = MqttsnConstants.MAX_CLIENT_ID_LENGTH_v12;
@@ -74,23 +73,28 @@ public class MqttSnConfigEntity {
         return maxClientIdentifierLength;
     }
 
-    @NotNull public List<MqttsnPredefinedTopicAliasEntity> getPredefinedTopicAliases() {
+    @NotNull
+    public List<MqttsnPredefinedTopicAliasEntity> getPredefinedTopicAliases() {
         return predefinedTopicAliases;
     }
 
-    @NotNull public AllowAnonymousPublishMinus1Entity getAllowAnonymousPublishMinus1Entity() {
+    @NotNull
+    public AllowAnonymousPublishMinus1Entity getAllowAnonymousPublishMinus1Entity() {
         return allowAnonymousPublishMinus1Entity;
     }
 
-    @NotNull public AllowWakingPingToHijackSessionEntity getAllowWakingPingToHijackSessionEntity() {
+    @NotNull
+    public AllowWakingPingToHijackSessionEntity getAllowWakingPingToHijackSessionEntity() {
         return allowWakingPingToHijackSessionEntity;
     }
 
-    @NotNull public TopicRegistrationsHeldDuringSleepEntity getTopicRegistrationsHeldDuringSleepEntity() {
+    @NotNull
+    public TopicRegistrationsHeldDuringSleepEntity getTopicRegistrationsHeldDuringSleepEntity() {
         return topicRegistrationsHeldDuringSleepEntity;
     }
 
-    @NotNull public DiscoveryEntity getDiscoveryEntity() {
+    @NotNull
+    public DiscoveryEntity getDiscoveryEntity() {
         return discoveryEntity;
     }
 
@@ -103,21 +107,23 @@ public class MqttSnConfigEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final MqttSnConfigEntity that = (MqttSnConfigEntity) o;
-        return getMaxClientIdentifierLength() == that.getMaxClientIdentifierLength() &&
-                getGatewayId() == that.getGatewayId() &&
-                Objects.equals(getPredefinedTopicAliases(), that.getPredefinedTopicAliases()) &&
-                Objects.equals(getAllowEmptyClientIdentifierEntity(), that.getAllowEmptyClientIdentifierEntity()) &&
-                Objects.equals(getDiscoveryEntity(), that.getDiscoveryEntity()) &&
-                Objects.equals(getAllowAnonymousPublishMinus1Entity(), that.getAllowAnonymousPublishMinus1Entity()) &&
-                Objects.equals(getAllowWakingPingToHijackSessionEntity(),
-                        that.getAllowWakingPingToHijackSessionEntity()) &&
-                Objects.equals(getTopicRegistrationsHeldDuringSleepEntity(),
+        return getMaxClientIdentifierLength() == that.getMaxClientIdentifierLength()
+                && getGatewayId() == that.getGatewayId()
+                && Objects.equals(getPredefinedTopicAliases(), that.getPredefinedTopicAliases())
+                && Objects.equals(getAllowEmptyClientIdentifierEntity(), that.getAllowEmptyClientIdentifierEntity())
+                && Objects.equals(getDiscoveryEntity(), that.getDiscoveryEntity())
+                && Objects.equals(getAllowAnonymousPublishMinus1Entity(), that.getAllowAnonymousPublishMinus1Entity())
+                && Objects.equals(
+                        getAllowWakingPingToHijackSessionEntity(), that.getAllowWakingPingToHijackSessionEntity())
+                && Objects.equals(
+                        getTopicRegistrationsHeldDuringSleepEntity(),
                         that.getTopicRegistrationsHeldDuringSleepEntity());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getPredefinedTopicAliases(),
+        return Objects.hash(
+                getPredefinedTopicAliases(),
                 getAllowEmptyClientIdentifierEntity(),
                 getDiscoveryEntity(),
                 getAllowAnonymousPublishMinus1Entity(),

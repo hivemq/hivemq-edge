@@ -15,6 +15,11 @@
  */
 package com.hivemq.mqtt.handler.publish;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.impl.MqttConfigurationServiceImpl;
 import com.hivemq.logging.EventLog;
@@ -28,20 +33,12 @@ import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.mqtt.message.pubrec.PUBREC;
 import com.hivemq.mqtt.message.reason.Mqtt5PubRecReasonCode;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.nio.channels.ClosedChannelException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestMqttDecoder;
-
-import java.nio.channels.ClosedChannelException;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 
 /**
  * @author Florian Limpöck
@@ -55,6 +52,7 @@ public class FlowControlHandlerTest {
 
     @Mock
     EventLog eventLog;
+
     @BeforeEach
     public void setUp() throws Exception {
 
@@ -66,7 +64,6 @@ public class FlowControlHandlerTest {
         final MqttServerDisconnector serverDisconnector = new MqttServerDisconnectorImpl(eventLog);
 
         flowControlHandler = new FlowControlHandler(mqttConfigurationService, serverDisconnector);
-
     }
 
     @Test
@@ -75,8 +72,12 @@ public class FlowControlHandlerTest {
         final EmbeddedChannel channel = new EmbeddedChannel(TestMqttDecoder.create(), flowControlHandler);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(new ClientConnection(channel, null));
         final PUBLISHFactory.Mqtt5Builder builder = new PUBLISHFactory.Mqtt5Builder();
-        builder.withTopic("topic").withQoS(QoS.AT_LEAST_ONCE).withOnwardQos(QoS.AT_LEAST_ONCE).withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
-                .withPayload(new byte[0]).withHivemqId("hivemqId1");
+        builder.withTopic("topic")
+                .withQoS(QoS.AT_LEAST_ONCE)
+                .withOnwardQos(QoS.AT_LEAST_ONCE)
+                .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
+                .withPayload(new byte[0])
+                .withHivemqId("hivemqId1");
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientReceiveMaximum(10);
 
@@ -87,7 +88,6 @@ public class FlowControlHandlerTest {
         verify(eventLog).clientWasDisconnected(channel, "Sent too many concurrent PUBLISH messages");
         assertFalse(channel.isOpen());
         assertFalse(channel.isActive());
-
     }
 
     @Test
@@ -97,17 +97,21 @@ public class FlowControlHandlerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(new ClientConnection(channel, null));
 
         final PUBLISHFactory.Mqtt5Builder builder = new PUBLISHFactory.Mqtt5Builder();
-        builder.withTopic("topic").withQoS(QoS.AT_LEAST_ONCE).withOnwardQos(QoS.AT_LEAST_ONCE).withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
-                .withPayload(new byte[0]).withHivemqId("hivemqId1");
+        builder.withTopic("topic")
+                .withQoS(QoS.AT_LEAST_ONCE)
+                .withOnwardQos(QoS.AT_LEAST_ONCE)
+                .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
+                .withPayload(new byte[0])
+                .withHivemqId("hivemqId1");
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientReceiveMaximum(10);
 
         assertThatThrownBy(() -> {
-            for (int i = 0; i < 12; i++) {
-                channel.writeInbound(builder.build());
-            }
-        }).isInstanceOf(ClosedChannelException.class);
-
+                    for (int i = 0; i < 12; i++) {
+                        channel.writeInbound(builder.build());
+                    }
+                })
+                .isInstanceOf(ClosedChannelException.class);
     }
 
     @Test
@@ -117,8 +121,12 @@ public class FlowControlHandlerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(new ClientConnection(channel, null));
 
         final PUBLISHFactory.Mqtt5Builder builder = new PUBLISHFactory.Mqtt5Builder();
-        builder.withTopic("topic").withQoS(QoS.AT_LEAST_ONCE).withOnwardQos(QoS.AT_LEAST_ONCE).withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
-                .withPayload(new byte[0]).withHivemqId("hivemqId1");
+        builder.withTopic("topic")
+                .withQoS(QoS.AT_LEAST_ONCE)
+                .withOnwardQos(QoS.AT_LEAST_ONCE)
+                .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
+                .withPayload(new byte[0])
+                .withHivemqId("hivemqId1");
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientReceiveMaximum(10);
 
@@ -137,7 +145,6 @@ public class FlowControlHandlerTest {
         verify(eventLog, never()).clientWasDisconnected(channel, "Sent too many concurrent PUBLISH messages");
         assertTrue(channel.isOpen());
         assertTrue(channel.isActive());
-
     }
 
     @Test
@@ -147,8 +154,12 @@ public class FlowControlHandlerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(new ClientConnection(channel, null));
 
         final PUBLISHFactory.Mqtt5Builder builder = new PUBLISHFactory.Mqtt5Builder();
-        builder.withTopic("topic").withQoS(QoS.AT_LEAST_ONCE).withOnwardQos(QoS.AT_LEAST_ONCE).withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
-                .withPayload(new byte[0]).withHivemqId("hivemqId1");
+        builder.withTopic("topic")
+                .withQoS(QoS.AT_LEAST_ONCE)
+                .withOnwardQos(QoS.AT_LEAST_ONCE)
+                .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
+                .withPayload(new byte[0])
+                .withHivemqId("hivemqId1");
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientReceiveMaximum(10);
 
@@ -164,7 +175,6 @@ public class FlowControlHandlerTest {
         assertTrue(channel.isOpen());
         assertTrue(channel.isActive());
         assertEquals(10, flowControlHandler.getServerSendQuota());
-
     }
 
     @Test
@@ -174,8 +184,12 @@ public class FlowControlHandlerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(new ClientConnection(channel, null));
 
         final PUBLISHFactory.Mqtt5Builder builder = new PUBLISHFactory.Mqtt5Builder();
-        builder.withTopic("topic").withQoS(QoS.EXACTLY_ONCE).withOnwardQos(QoS.EXACTLY_ONCE).withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
-                .withPayload(new byte[0]).withHivemqId("hivemqId1");
+        builder.withTopic("topic")
+                .withQoS(QoS.EXACTLY_ONCE)
+                .withOnwardQos(QoS.EXACTLY_ONCE)
+                .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
+                .withPayload(new byte[0])
+                .withHivemqId("hivemqId1");
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientReceiveMaximum(10);
 
@@ -194,7 +208,6 @@ public class FlowControlHandlerTest {
         verify(eventLog, never()).clientWasDisconnected(channel, "Sent too many concurrent PUBLISH messages");
         assertTrue(channel.isOpen());
         assertTrue(channel.isActive());
-
     }
 
     @Test
@@ -204,8 +217,12 @@ public class FlowControlHandlerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(new ClientConnection(channel, null));
 
         final PUBLISHFactory.Mqtt5Builder builder = new PUBLISHFactory.Mqtt5Builder();
-        builder.withTopic("topic").withQoS(QoS.EXACTLY_ONCE).withOnwardQos(QoS.EXACTLY_ONCE).withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
-                .withPayload(new byte[0]).withHivemqId("hivemqId1");
+        builder.withTopic("topic")
+                .withQoS(QoS.EXACTLY_ONCE)
+                .withOnwardQos(QoS.EXACTLY_ONCE)
+                .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
+                .withPayload(new byte[0])
+                .withHivemqId("hivemqId1");
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientReceiveMaximum(10);
 
@@ -214,7 +231,8 @@ public class FlowControlHandlerTest {
         }
 
         for (int i = 0; i < 10; i++) {
-            channel.writeOutbound(new PUBREC(i, Mqtt5PubRecReasonCode.QUOTA_EXCEEDED, null, Mqtt5UserProperties.NO_USER_PROPERTIES));
+            channel.writeOutbound(
+                    new PUBREC(i, Mqtt5PubRecReasonCode.QUOTA_EXCEEDED, null, Mqtt5UserProperties.NO_USER_PROPERTIES));
         }
 
         for (int i = 0; i < 10; i++) {
@@ -224,7 +242,6 @@ public class FlowControlHandlerTest {
         verify(eventLog, never()).clientWasDisconnected(channel, "Sent too many concurrent PUBLISH messages");
         assertTrue(channel.isOpen());
         assertTrue(channel.isActive());
-
     }
 
     @Test
@@ -234,8 +251,12 @@ public class FlowControlHandlerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(new ClientConnection(channel, null));
 
         final PUBLISHFactory.Mqtt5Builder builder = new PUBLISHFactory.Mqtt5Builder();
-        builder.withTopic("topic").withQoS(QoS.EXACTLY_ONCE).withOnwardQos(QoS.EXACTLY_ONCE).withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
-                .withPayload(new byte[0]).withHivemqId("hivemqId1");
+        builder.withTopic("topic")
+                .withQoS(QoS.EXACTLY_ONCE)
+                .withOnwardQos(QoS.EXACTLY_ONCE)
+                .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
+                .withPayload(new byte[0])
+                .withHivemqId("hivemqId1");
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientReceiveMaximum(10);
 
@@ -244,7 +265,8 @@ public class FlowControlHandlerTest {
         }
 
         for (int i = 0; i < 10; i++) {
-            channel.writeOutbound(new PUBREC(i, Mqtt5PubRecReasonCode.SUCCESS, null, Mqtt5UserProperties.NO_USER_PROPERTIES));
+            channel.writeOutbound(
+                    new PUBREC(i, Mqtt5PubRecReasonCode.SUCCESS, null, Mqtt5UserProperties.NO_USER_PROPERTIES));
         }
 
         channel.writeInbound(builder.build());
@@ -252,6 +274,5 @@ public class FlowControlHandlerTest {
         verify(eventLog).clientWasDisconnected(channel, "Sent too many concurrent PUBLISH messages");
         assertFalse(channel.isOpen());
         assertFalse(channel.isActive());
-
     }
 }

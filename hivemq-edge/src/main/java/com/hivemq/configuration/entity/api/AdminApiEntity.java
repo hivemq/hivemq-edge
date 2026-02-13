@@ -24,12 +24,11 @@ import jakarta.xml.bind.annotation.XmlElementRef;
 import jakarta.xml.bind.annotation.XmlElementRefs;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @XmlRootElement(name = "admin-api")
 @XmlAccessorType(XmlAccessType.NONE)
@@ -38,8 +37,9 @@ public class AdminApiEntity extends EnabledEntity {
 
     @XmlElementWrapper(name = "listeners")
     @XmlElementRefs({
-            @XmlElementRef(required = false, type = HttpListenerEntity.class),
-            @XmlElementRef(required = false, type = HttpsListenerEntity.class)})
+        @XmlElementRef(required = false, type = HttpListenerEntity.class),
+        @XmlElementRef(required = false, type = HttpsListenerEntity.class)
+    })
     private @NotNull List<ApiListenerEntity> listeners;
 
     @XmlElementRef(required = false)
@@ -105,26 +105,20 @@ public class AdminApiEntity extends EnabledEntity {
             if (!super.equals(o)) {
                 return false;
             }
-            return Objects.equals(listeners, that.listeners) &&
-                    Objects.equals(tls, that.tls) &&
-                    Objects.equals(jws, that.jws) &&
-                    Objects.equals(users, that.users) &&
-                    Objects.equals(ldapAuthentication, that.ldapAuthentication) &&
-                    Objects.equals(preLoginNotice, that.preLoginNotice) &&
-                    Objects.equals(enforceApiAuth, that.enforceApiAuth);
+            return Objects.equals(listeners, that.listeners)
+                    && Objects.equals(tls, that.tls)
+                    && Objects.equals(jws, that.jws)
+                    && Objects.equals(users, that.users)
+                    && Objects.equals(ldapAuthentication, that.ldapAuthentication)
+                    && Objects.equals(preLoginNotice, that.preLoginNotice)
+                    && Objects.equals(enforceApiAuth, that.enforceApiAuth);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(),
-                listeners,
-                tls,
-                jws,
-                users,
-                ldapAuthentication,
-                preLoginNotice,
-                enforceApiAuth);
+        return Objects.hash(
+                super.hashCode(), listeners, tls, jws, users, ldapAuthentication, preLoginNotice, enforceApiAuth);
     }
 }

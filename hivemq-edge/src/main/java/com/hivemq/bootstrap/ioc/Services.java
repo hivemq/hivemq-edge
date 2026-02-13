@@ -18,11 +18,10 @@ package com.hivemq.bootstrap.ioc;
 import com.hivemq.bridge.BridgeService;
 import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.ModulesAndExtensionsService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.persistence.SingleWriterService;
-
 import jakarta.inject.Inject;
+import org.jetbrains.annotations.NotNull;
 
 public class Services {
 
@@ -31,7 +30,6 @@ public class Services {
     private final @NotNull SingleWriterService singleWriterService;
     private final @NotNull HandlerService handlerService;
     private final @NotNull ModulesAndExtensionsService modulesAndExtensionsService;
-
 
     @Inject
     public Services(

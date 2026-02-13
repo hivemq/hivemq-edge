@@ -15,23 +15,22 @@
  */
 package com.hivemq.mqtt.handler.auth;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.bootstrap.ClientState;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.logging.EventLog;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.reason.Mqtt5AuthReasonCode;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.embedded.EmbeddedChannel;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 /**
  * @author Florian Limpöck
@@ -41,6 +40,7 @@ public class MqttAuthSenderTest {
 
     private @NotNull MqttAuthSender mqttAuthSender;
     private EventLog eventLog;
+
     @BeforeEach
     public void setUp() throws Exception {
         eventLog = mock(EventLog.class);
@@ -49,20 +49,29 @@ public class MqttAuthSenderTest {
 
     @Test
     public void test_send_auth_code_null() {
-    
-        assertThrows(NullPointerException.class, () -> mqttAuthSender.sendAuth(new EmbeddedChannel(), null, null, Mqtt5UserProperties.NO_USER_PROPERTIES, "reason"));
+
+        assertThrows(
+                NullPointerException.class,
+                () -> mqttAuthSender.sendAuth(
+                        new EmbeddedChannel(), null, null, Mqtt5UserProperties.NO_USER_PROPERTIES, "reason"));
     }
 
     @Test
     public void test_send_auth_props_null() {
-    
-        assertThrows(NullPointerException.class, () -> mqttAuthSender.sendAuth(new EmbeddedChannel(), null, Mqtt5AuthReasonCode.SUCCESS, null, "reason"));
+
+        assertThrows(
+                NullPointerException.class,
+                () -> mqttAuthSender.sendAuth(
+                        new EmbeddedChannel(), null, Mqtt5AuthReasonCode.SUCCESS, null, "reason"));
     }
 
     @Test
     public void test_send_auth_channel_null() {
-    
-        assertThrows(NullPointerException.class, () -> mqttAuthSender.sendAuth(null, null, Mqtt5AuthReasonCode.SUCCESS, Mqtt5UserProperties.NO_USER_PROPERTIES, "reason"));
+
+        assertThrows(
+                NullPointerException.class,
+                () -> mqttAuthSender.sendAuth(
+                        null, null, Mqtt5AuthReasonCode.SUCCESS, Mqtt5UserProperties.NO_USER_PROPERTIES, "reason"));
     }
 
     @Test
@@ -70,7 +79,8 @@ public class MqttAuthSenderTest {
         final EmbeddedChannel channel = new EmbeddedChannel();
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(new ClientConnection(channel, null));
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().proposeClientState(ClientState.RE_AUTHENTICATING);
-        assertThatThrownBy(() -> mqttAuthSender.sendAuth(channel, null, Mqtt5AuthReasonCode.SUCCESS, Mqtt5UserProperties.NO_USER_PROPERTIES, "reason"))
+        assertThatThrownBy(() -> mqttAuthSender.sendAuth(
+                        channel, null, Mqtt5AuthReasonCode.SUCCESS, Mqtt5UserProperties.NO_USER_PROPERTIES, "reason"))
                 .isInstanceOf(NullPointerException.class);
     }
 
@@ -80,10 +90,10 @@ public class MqttAuthSenderTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(new ClientConnection(channel, null));
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().proposeClientState(ClientState.RE_AUTHENTICATING);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setAuthMethod("METHOD");
-        final ChannelFuture future = mqttAuthSender.sendAuth(channel, null, Mqtt5AuthReasonCode.SUCCESS, Mqtt5UserProperties.NO_USER_PROPERTIES, "reason");
+        final ChannelFuture future = mqttAuthSender.sendAuth(
+                channel, null, Mqtt5AuthReasonCode.SUCCESS, Mqtt5UserProperties.NO_USER_PROPERTIES, "reason");
 
         assertNotNull(future);
         verify(eventLog).clientAuthentication(channel, Mqtt5AuthReasonCode.SUCCESS, false);
-
     }
 }

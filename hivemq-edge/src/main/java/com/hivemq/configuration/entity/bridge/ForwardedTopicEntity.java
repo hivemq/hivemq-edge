@@ -15,9 +15,6 @@
  */
 package com.hivemq.configuration.entity.bridge;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -27,6 +24,8 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 @XmlRootElement(name = "forwarded-topic")
@@ -57,8 +56,7 @@ public class ForwardedTopicEntity {
     @XmlElement(name = "queue-limit")
     private @Nullable Long queueLimit;
 
-    public ForwardedTopicEntity() {
-    }
+    public ForwardedTopicEntity() {}
 
     public @NotNull List<String> getFilters() {
         return filters;
@@ -117,18 +115,19 @@ public class ForwardedTopicEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final ForwardedTopicEntity that = (ForwardedTopicEntity) o;
-        return getMaxQoS() == that.getMaxQoS() &&
-                isPreserveRetain() == that.isPreserveRetain() &&
-                Objects.equals(getFilters(), that.getFilters()) &&
-                Objects.equals(getDestination(), that.getDestination()) &&
-                Objects.equals(getCustomUserProperties(), that.getCustomUserProperties()) &&
-                Objects.equals(getExcludes(), that.getExcludes()) &&
-                Objects.equals(getQueueLimit(), that.getQueueLimit());
+        return getMaxQoS() == that.getMaxQoS()
+                && isPreserveRetain() == that.isPreserveRetain()
+                && Objects.equals(getFilters(), that.getFilters())
+                && Objects.equals(getDestination(), that.getDestination())
+                && Objects.equals(getCustomUserProperties(), that.getCustomUserProperties())
+                && Objects.equals(getExcludes(), that.getExcludes())
+                && Objects.equals(getQueueLimit(), that.getQueueLimit());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getFilters(),
+        return Objects.hash(
+                getFilters(),
                 getMaxQoS(),
                 isPreserveRetain(),
                 getDestination(),

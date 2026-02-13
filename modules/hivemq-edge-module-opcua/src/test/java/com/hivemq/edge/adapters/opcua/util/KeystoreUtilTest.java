@@ -15,14 +15,13 @@
  */
 package com.hivemq.edge.adapters.opcua.util;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import util.KeyChain;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 import java.nio.file.Path;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import util.KeyChain;
 
 class KeystoreUtilTest {
 
@@ -41,19 +40,11 @@ class KeystoreUtilTest {
 
         final KeyChain keyChain = KeyChain.createKeyChain(domain);
         final File keystoreFile = keyChain.wrapInKeyStoreWithPrivateKey(
-                tempDir.resolve("test-keystore").toString(),
-                domain,
-                KEYSTORE_PASSWORD,
-                PRIVATE_KEY_PASSWORD
-        );
+                tempDir.resolve("test-keystore").toString(), domain, KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD);
 
         // When
         final KeystoreUtil.KeyPairWithChain result = KeystoreUtil.getKeysFromKeystore(
-                KEYSTORE_TYPE,
-                keystoreFile.getAbsolutePath(),
-                KEYSTORE_PASSWORD,
-                PRIVATE_KEY_PASSWORD
-        );
+                KEYSTORE_TYPE, keystoreFile.getAbsolutePath(), KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD);
 
         // Then
         assertThat(result).isNotNull();
@@ -72,22 +63,15 @@ class KeystoreUtilTest {
                 tempDir.resolve("test-keystore-all-fields").toString(),
                 domain,
                 KEYSTORE_PASSWORD,
-                PRIVATE_KEY_PASSWORD
-        );
+                PRIVATE_KEY_PASSWORD);
 
         // When
         final KeystoreUtil.KeyPairWithChain result = KeystoreUtil.getKeysFromKeystore(
-                KEYSTORE_TYPE,
-                keystoreFile.getAbsolutePath(),
-                KEYSTORE_PASSWORD,
-                PRIVATE_KEY_PASSWORD
-        );
+                KEYSTORE_TYPE, keystoreFile.getAbsolutePath(), KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD);
 
         // Then
         assertThat(result).isNotNull();
-        assertThat(result.privateKey())
-                .as("Private key should be loaded")
-                .isNotNull();
+        assertThat(result.privateKey()).as("Private key should be loaded").isNotNull();
         assertThat(result.publicKey())
                 .as("Public key (certificate) should be loaded")
                 .isNotNull();
@@ -112,18 +96,13 @@ class KeystoreUtilTest {
         final KeyChain keyChain = KeyChain.createKeyChain(primaryDomain, secondaryDomain);
         final File keystoreFile = keyChain.wrapInKeyStoreWithPrivateKey(
                 tempDir.resolve("test-keystore-multiple").toString(),
-                primaryDomain,  // This is the key entry that will be used
+                primaryDomain, // This is the key entry that will be used
                 KEYSTORE_PASSWORD,
-                PRIVATE_KEY_PASSWORD
-        );
+                PRIVATE_KEY_PASSWORD);
 
         // When
         final KeystoreUtil.KeyPairWithChain result = KeystoreUtil.getKeysFromKeystore(
-                KEYSTORE_TYPE,
-                keystoreFile.getAbsolutePath(),
-                KEYSTORE_PASSWORD,
-                PRIVATE_KEY_PASSWORD
-        );
+                KEYSTORE_TYPE, keystoreFile.getAbsolutePath(), KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD);
 
         // Then
         assertThat(result).isNotNull();

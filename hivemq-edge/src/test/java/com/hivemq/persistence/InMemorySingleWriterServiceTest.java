@@ -15,18 +15,17 @@
  */
 package com.hivemq.persistence;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
+import java.util.ArrayList;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.ArrayList;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 
 /**
  * @author Daniel Krüger
@@ -34,14 +33,16 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 public class InMemorySingleWriterServiceTest {
 
     private @NotNull InMemorySingleWriter singleWriterServiceImpl;
-    private final @NotNull InternalConfigurationService
-            internalConfigurationService = new InternalConfigurationServiceImpl();
+    private final @NotNull InternalConfigurationService internalConfigurationService =
+            new InternalConfigurationServiceImpl();
+
     @BeforeEach
     public void setUp() throws Exception {
         InternalConfigurations.PERSISTENCE_SHUTDOWN_GRACE_PERIOD_MSEC.set(200);
         internalConfigurationService.set(InternalConfigurations.PERSISTENCE_BUCKET_COUNT, "64");
         singleWriterServiceImpl = new InMemorySingleWriter(internalConfigurationService);
     }
+
     @AfterEach
     public void tearDown() {
         singleWriterServiceImpl.stop();

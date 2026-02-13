@@ -15,14 +15,14 @@
  */
 package com.hivemq.extensions.services.subscription;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5RetainHandling;
 import com.hivemq.mqtt.message.subscribe.Topic;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Florian Limpöck
@@ -33,8 +33,8 @@ public class TopicSubscriptionImplTest {
     @Test
     public void test_from_topic() {
 
-        final Topic topic = new Topic("topic", QoS.AT_LEAST_ONCE, true,
-                true, Mqtt5RetainHandling.SEND_IF_SUBSCRIPTION_DOES_NOT_EXIST, 1);
+        final Topic topic = new Topic(
+                "topic", QoS.AT_LEAST_ONCE, true, true, Mqtt5RetainHandling.SEND_IF_SUBSCRIPTION_DOES_NOT_EXIST, 1);
 
         final TopicSubscriptionImpl subscription = new TopicSubscriptionImpl(topic);
 
@@ -44,14 +44,13 @@ public class TopicSubscriptionImplTest {
         assertTrue(subscription.getRetainAsPublished());
         assertTrue(subscription.getSubscriptionIdentifier().isPresent());
         assertEquals(1, subscription.getSubscriptionIdentifier().get().intValue());
-
     }
 
     @Test
     public void test_convert_to_topic_do_not_send() {
 
-        final Topic topic = new Topic("topic", QoS.AT_LEAST_ONCE, true,
-                true, Mqtt5RetainHandling.SEND_IF_SUBSCRIPTION_DOES_NOT_EXIST, 1);
+        final Topic topic = new Topic(
+                "topic", QoS.AT_LEAST_ONCE, true, true, Mqtt5RetainHandling.SEND_IF_SUBSCRIPTION_DOES_NOT_EXIST, 1);
 
         final TopicSubscriptionImpl subscription = new TopicSubscriptionImpl(topic);
 
@@ -63,6 +62,5 @@ public class TopicSubscriptionImplTest {
         assertTrue(converted.isNoLocal());
         assertTrue(converted.isRetainAsPublished());
         assertEquals(1, converted.getSubscriptionIdentifier().intValue());
-
     }
 }

@@ -17,7 +17,6 @@ package com.hivemq.mqtt.message.dropping;
 
 import com.hivemq.logging.EventLog;
 import com.hivemq.metrics.MetricsHolder;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
@@ -31,10 +30,8 @@ public class MessageDroppedServiceProvider implements Provider<MessageDroppedSer
     private final MetricsHolder metricsHolder;
     private final EventLog eventLog;
 
-
     @Inject
-    MessageDroppedServiceProvider(final MetricsHolder metricsHolder,
-                                  final EventLog eventLog) {
+    MessageDroppedServiceProvider(final MetricsHolder metricsHolder, final EventLog eventLog) {
         this.metricsHolder = metricsHolder;
         this.eventLog = eventLog;
     }

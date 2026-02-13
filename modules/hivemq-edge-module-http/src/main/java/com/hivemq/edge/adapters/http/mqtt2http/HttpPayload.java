@@ -25,8 +25,7 @@ public class HttpPayload implements WritingPayload {
     @JsonProperty("value")
     private final @NotNull JsonNode value;
 
-    public HttpPayload(
-            final @NotNull @JsonProperty("value") JsonNode value) {
+    public HttpPayload(final @NotNull @JsonProperty("value") JsonNode value) {
         this.value = value;
     }
 

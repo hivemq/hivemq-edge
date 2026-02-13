@@ -16,21 +16,19 @@
 package com.hivemq.configuration.reader;
 
 import com.google.common.collect.Lists;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.annotation.XmlAnyElement;
+import jakarta.xml.bind.annotation.adapters.XmlAdapter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.xml.namespace.QName;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-
-import jakarta.xml.bind.JAXBElement;
-import jakarta.xml.bind.annotation.XmlAnyElement;
-import jakarta.xml.bind.annotation.adapters.XmlAdapter;
-import javax.xml.namespace.QName;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 
 /**
  * WARNING - this mapper will attempt to create assume wrapper elements where there are lists of Maps and the attribute
@@ -60,7 +58,6 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
     public static class ElementMap {
         @XmlAnyElement
         public @NotNull List<Element> elements = new ArrayList<>();
-
     }
 
     @Override
@@ -85,12 +82,12 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
             final @NotNull List<JAXBElement> currentEl,
             final String parentName) {
 
-//        System.err.println("---> currentKeyName="+ currentKeyName + ", object=" + value + ", parentName=" + parentName);
+        //        System.err.println("---> currentKeyName="+ currentKeyName + ", object=" + value + ", parentName=" +
+        // parentName);
 
         if (value instanceof Map) {
-            currentEl.add(new JAXBElement<>(new QName(currentKeyName),
-                    ElementMap.class,
-                    marshalInternal((Map) value, currentKeyName)));
+            currentEl.add(new JAXBElement<>(
+                    new QName(currentKeyName), ElementMap.class, marshalInternal((Map) value, currentKeyName)));
         } else if (value instanceof List) {
             final List list = (List) value;
             if ("mqttUserProperties".equals(currentKeyName)) {
@@ -120,7 +117,7 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
                     // add the plural
                     currentEl.add(new JAXBElement<>(new QName(currentKeyName), ElementMap.class, elementMap));
                 }
-            }else if (parentName != null && currentKeyName.endsWith("s")) {
+            } else if (parentName != null && currentKeyName.endsWith("s")) {
                 final List children = new ArrayList();
                 readChildren(shortName(currentKeyName), list, children, currentKeyName);
                 final ElementMap elementMap = new ElementMap();
@@ -131,7 +128,7 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
                 }
             } else {
                 for (final Object listElement : list) {
-                    //-- Recurse point
+                    // -- Recurse point
                     readChildren(currentKeyName, listElement, currentEl, currentKeyName);
                 }
             }
@@ -164,10 +161,11 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
                 final Node item = childNodes.item(i);
                 convertElement(childMap, item, node.getLocalName());
             }
-            if (childMap.values().size() == 1 &&
-                    childMap.keySet().stream().findFirst().get().equals(node.getLocalName())) {
-                //map only has 1 entry and the same name as the parent => collapse
-                createValueOrAddtoList(map, node, childMap.values().stream().findFirst().get(), parentName);
+            if (childMap.values().size() == 1
+                    && childMap.keySet().stream().findFirst().get().equals(node.getLocalName())) {
+                // map only has 1 entry and the same name as the parent => collapse
+                createValueOrAddtoList(
+                        map, node, childMap.values().stream().findFirst().get(), parentName);
             } else {
                 createValueOrAddtoList(map, node, childMap, parentName);
             }
@@ -183,11 +181,12 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
             final @NotNull Object value,
             final @Nullable String parentName) {
 
-        //if child name is plural of parent name, we expect the value to be a list
-        //This obviously does not cover irregular plurals, but 'userProperties' is used very often, so we specially check for it.
-        if ((node.getLocalName() + "s").equals(parentName) ||
-                "mqttUserProperties".equals(parentName) ||
-                "userProperties".equals(parentName)) {
+        // if child name is plural of parent name, we expect the value to be a list
+        // This obviously does not cover irregular plurals, but 'userProperties' is used very often, so we specially
+        // check for it.
+        if ((node.getLocalName() + "s").equals(parentName)
+                || "mqttUserProperties".equals(parentName)
+                || "userProperties".equals(parentName)) {
             replaceWithList(map, value, parentName);
             return;
         }
@@ -203,7 +202,7 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static void replaceWithList(
             final @NotNull HashMap<String, Object> map, final @NotNull Object value, final @NotNull String key) {
-        //key already present => create list of values instead
+        // key already present => create list of values instead
         final Object prevValue = map.get(key);
         if (prevValue == null) {
             map.put(key, Lists.newArrayList(value));
@@ -213,5 +212,4 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
             map.replace(key, Lists.newArrayList(prevValue, value));
         }
     }
-
 }

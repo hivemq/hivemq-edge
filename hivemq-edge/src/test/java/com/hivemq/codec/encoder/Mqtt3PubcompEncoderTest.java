@@ -15,6 +15,9 @@
  */
 package com.hivemq.codec.encoder;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.encoder.mqtt3.Mqtt3PubcompEncoder;
 import com.hivemq.mqtt.message.pubcomp.PUBCOMP;
@@ -24,13 +27,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import util.encoder.TestMessageEncoder;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-
 public class Mqtt3PubcompEncoderTest {
 
     private EmbeddedChannel channel;
     private ClientConnection clientConnection;
+
     @BeforeEach
     public void setUp() throws Exception {
         channel = new EmbeddedChannel(new TestMessageEncoder());

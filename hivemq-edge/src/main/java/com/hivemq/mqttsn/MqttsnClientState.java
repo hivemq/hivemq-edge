@@ -19,7 +19,9 @@ package com.hivemq.mqttsn;
  * @author Simon L Johnson
  */
 public enum MqttsnClientState {
-
-    ACTIVE, ASLEEP, AWAKE, DISCONNECTED, LOST
-
+    ACTIVE,
+    ASLEEP,
+    AWAKE,
+    DISCONNECTED,
+    LOST
 }

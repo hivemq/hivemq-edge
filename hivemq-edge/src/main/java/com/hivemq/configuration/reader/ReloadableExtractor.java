@@ -18,7 +18,7 @@ package com.hivemq.configuration.reader;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import org.jetbrains.annotations.NotNull;
 
-public interface ReloadableExtractor<T,V> extends Extractor<T,V> {
+public interface ReloadableExtractor<T, V> extends Extractor<T, V> {
     /**
      * This method will be incoked whenever a configuration change was discovered in storage.
      * @param config

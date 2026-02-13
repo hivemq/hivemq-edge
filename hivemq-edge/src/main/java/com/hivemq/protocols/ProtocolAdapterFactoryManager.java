@@ -21,10 +21,6 @@ import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.edge.modules.adapters.simulation.SimulationProtocolAdapterFactory;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.lang.reflect.Constructor;
@@ -36,6 +32,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Singleton
 public class ProtocolAdapterFactoryManager {
@@ -98,20 +97,21 @@ public class ProtocolAdapterFactoryManager {
                 for (final String legacyProtocolId : information.getLegacyProtocolIds()) {
                     factoryMap.put(legacyProtocolId, protocolAdapterFactory);
                 }
-            } catch (final InvocationTargetException | InstantiationException | IllegalAccessException |
-                           NoSuchMethodException e) {
+            } catch (final InvocationTargetException
+                    | InstantiationException
+                    | IllegalAccessException
+                    | NoSuchMethodException e) {
                 log.error("Not able to load module, reason: {}.", e.getMessage());
             }
         }
 
-
-        final Set<String> uniqueProtocolNames = factoryMap.values()
-                .stream()
-                .map(protocolAdapterFactory -> "'" + protocolAdapterFactory.getInformation().getProtocolName() + "'")
+        final Set<String> uniqueProtocolNames = factoryMap.values().stream()
+                .map(protocolAdapterFactory ->
+                        "'" + protocolAdapterFactory.getInformation().getProtocolName() + "'")
                 .collect(Collectors.toSet());
 
-
-        log.info("Discovered {} protocol adapter-type(s): [{}].",
+        log.info(
+                "Discovered {} protocol adapter-type(s): [{}].",
                 uniqueProtocolNames.size(),
                 String.join(", ", uniqueProtocolNames));
         return factoryMap;
@@ -131,11 +131,13 @@ public class ProtocolAdapterFactoryManager {
                 return factoryClass.getDeclaredConstructor().newInstance();
             }
 
-            // current format: ProtocolAdapterFactoryInput expandable interface that will be backwards co patible if methods get added.
+            // current format: ProtocolAdapterFactoryInput expandable interface that will be backwards co patible if
+            // methods get added.
             if (parameters.length == 1 && parameters[0].getType().equals(ProtocolAdapterFactoryInput.class)) {
                 final ProtocolAdapterFactoryInput protocolAdapterFactoryInput =
                         new ProtocolAdapterFactoryInputImpl(writingEnabled, eventService);
-                return factoryClass.getDeclaredConstructor(ProtocolAdapterFactoryInput.class)
+                return factoryClass
+                        .getDeclaredConstructor(ProtocolAdapterFactoryInput.class)
                         .newInstance(protocolAdapterFactoryInput);
             }
 

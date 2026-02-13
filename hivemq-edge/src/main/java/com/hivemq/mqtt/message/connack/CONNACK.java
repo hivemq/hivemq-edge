@@ -15,10 +15,11 @@
  */
 package com.hivemq.mqtt.message.connack;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.hivemq.codec.encoder.mqtt5.UnsignedDataTypes;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extensions.packets.connack.ConnackPacketImpl;
 import com.hivemq.mqtt.message.MessageType;
@@ -28,11 +29,9 @@ import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttMessageWithUserProperties.MqttMessageWithReasonCode;
 import com.hivemq.mqtt.message.reason.Mqtt5ConnAckReasonCode;
 import com.hivemq.util.Bytes;
-
 import java.nio.charset.StandardCharsets;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The MQTT CONNACK message
@@ -49,16 +48,16 @@ public class CONNACK extends MqttMessageWithReasonCode<Mqtt5ConnAckReasonCode> i
 
     private final boolean sessionPresent;
 
-    //Mqtt 5
+    // Mqtt 5
     private final long sessionExpiryInterval;
     private final int serverKeepAlive;
     private final @Nullable String assignedClientIdentifier;
 
-    //Auth
+    // Auth
     private final @Nullable String authMethod;
     private final @Nullable byte[] authData;
 
-    //Restrictions from Server
+    // Restrictions from Server
     private final int receiveMaximum;
     private final int topicAliasMaximum;
     private final int maximumPacketSize;
@@ -94,30 +93,40 @@ public class CONNACK extends MqttMessageWithReasonCode<Mqtt5ConnAckReasonCode> i
     }
 
     // MQTT 5
-    private CONNACK(final @NotNull Mqtt5ConnAckReasonCode reasonCode,
-                    final @Nullable String reasonString,
-                    final @NotNull Mqtt5UserProperties userProperties,
-                    final boolean sessionPresent,
-                    final long sessionExpiryInterval,
-                    final int serverKeepAlive,
-                    final @Nullable String assignedClientIdentifier,
-                    final @Nullable String authMethod,
-                    final @Nullable byte[] authData,
-                    final int receiveMaximum,
-                    final int topicAliasMaximum,
-                    final int maximumPacketSize,
-                    final @Nullable QoS maximumQoS,
-                    final boolean isRetainAvailable,
-                    final boolean isWildcardSubscriptionAvailable,
-                    final boolean isSubscriptionIdentifierAvailable,
-                    final boolean isSharedSubscriptionAvailable,
-                    final @Nullable String responseInformation,
-                    final @Nullable String serverReference) {
+    private CONNACK(
+            final @NotNull Mqtt5ConnAckReasonCode reasonCode,
+            final @Nullable String reasonString,
+            final @NotNull Mqtt5UserProperties userProperties,
+            final boolean sessionPresent,
+            final long sessionExpiryInterval,
+            final int serverKeepAlive,
+            final @Nullable String assignedClientIdentifier,
+            final @Nullable String authMethod,
+            final @Nullable byte[] authData,
+            final int receiveMaximum,
+            final int topicAliasMaximum,
+            final int maximumPacketSize,
+            final @Nullable QoS maximumQoS,
+            final boolean isRetainAvailable,
+            final boolean isWildcardSubscriptionAvailable,
+            final boolean isSubscriptionIdentifierAvailable,
+            final boolean isSharedSubscriptionAvailable,
+            final @Nullable String responseInformation,
+            final @Nullable String serverReference) {
 
         super(reasonCode, reasonString, userProperties);
 
-        checkPreconditions(sessionExpiryInterval, serverKeepAlive, assignedClientIdentifier,
-                authMethod, authData, receiveMaximum, topicAliasMaximum, maximumPacketSize, responseInformation, serverReference);
+        checkPreconditions(
+                sessionExpiryInterval,
+                serverKeepAlive,
+                assignedClientIdentifier,
+                authMethod,
+                authData,
+                receiveMaximum,
+                topicAliasMaximum,
+                maximumPacketSize,
+                responseInformation,
+                serverReference);
 
         this.sessionPresent = sessionPresent;
         this.sessionExpiryInterval = sessionExpiryInterval;
@@ -147,7 +156,8 @@ public class CONNACK extends MqttMessageWithReasonCode<Mqtt5ConnAckReasonCode> i
                 .withSessionPresent(packet.getSessionPresent())
                 .withSessionExpiryInterval(packet.getSessionExpiryInterval().orElse(SESSION_EXPIRY_NOT_SET))
                 .withServerKeepAlive(packet.getServerKeepAlive().orElse(KEEP_ALIVE_NOT_SET))
-                .withAssignedClientIdentifier(packet.getAssignedClientIdentifier().orElse(null))
+                .withAssignedClientIdentifier(
+                        packet.getAssignedClientIdentifier().orElse(null))
                 .withAuthMethod(packet.getAuthenticationMethod().orElse(null))
                 .withAuthData(Bytes.getBytesFromReadOnlyBuffer(packet.getAuthenticationData()))
                 .withReceiveMaximum(packet.getReceiveMaximum())
@@ -161,28 +171,29 @@ public class CONNACK extends MqttMessageWithReasonCode<Mqtt5ConnAckReasonCode> i
                 .withResponseInformation(packet.getResponseInformation().orElse(null))
                 .withServerReference(packet.getServerReference().orElse(null))
                 .withReasonString(packet.getReasonString().orElse(null))
-                .withUserProperties(Mqtt5UserProperties.of(packet.getUserProperties().asInternalList()))
+                .withUserProperties(
+                        Mqtt5UserProperties.of(packet.getUserProperties().asInternalList()))
                 .build();
     }
 
-    //MQTT 3.1
+    // MQTT 3.1
     public CONNACK(final @NotNull Mqtt3ConnAckReturnCode returnCode) {
         this(returnCode, false);
     }
 
-    //MQTT 3.1.1
+    // MQTT 3.1.1
     public CONNACK(final @NotNull Mqtt3ConnAckReturnCode returnCode, final boolean sessionPresent) {
 
         super(Mqtt5ConnAckReasonCode.fromReturnCode(returnCode), null, Mqtt5UserProperties.NO_USER_PROPERTIES);
 
         if (returnCode != Mqtt3ConnAckReturnCode.ACCEPTED && sessionPresent) {
-            throw new IllegalArgumentException("The sessionPresent flag is only allowed for return code " + Mqtt3ConnAckReturnCode.ACCEPTED);
+            throw new IllegalArgumentException(
+                    "The sessionPresent flag is only allowed for return code " + Mqtt3ConnAckReturnCode.ACCEPTED);
         }
 
         this.sessionPresent = sessionPresent;
 
-
-        //MQTT 5 only
+        // MQTT 5 only
         this.sessionExpiryInterval = SESSION_EXPIRY_NOT_SET;
         this.serverKeepAlive = KEEP_ALIVE_NOT_SET;
         this.assignedClientIdentifier = null;
@@ -200,53 +211,62 @@ public class CONNACK extends MqttMessageWithReasonCode<Mqtt5ConnAckReasonCode> i
         this.serverReference = null;
     }
 
-    private void checkPreconditions(final long sessionExpiryInterval,
-                                    final int serverKeepAlive,
-                                    final @Nullable String assignedClientIdentifier,
-                                    final @Nullable String authMethod,
-                                    final @Nullable byte[] authData,
-                                    final int receiveMaximum,
-                                    final int topicAliasMaximum,
-                                    final int maximumPacketSize,
-                                    final @Nullable String responseInformation,
-                                    final @Nullable String serverReference) {
+    private void checkPreconditions(
+            final long sessionExpiryInterval,
+            final int serverKeepAlive,
+            final @Nullable String assignedClientIdentifier,
+            final @Nullable String authMethod,
+            final @Nullable byte[] authData,
+            final int receiveMaximum,
+            final int topicAliasMaximum,
+            final int maximumPacketSize,
+            final @Nullable String responseInformation,
+            final @Nullable String serverReference) {
 
         checkArgument(receiveMaximum != 0, "Receive maximum must never be zero");
 
         if (assignedClientIdentifier != null) {
-            checkArgument(UnsignedDataTypes.isUnsignedShort(assignedClientIdentifier.getBytes(StandardCharsets.UTF_8).length),
+            checkArgument(
+                    UnsignedDataTypes.isUnsignedShort(assignedClientIdentifier.getBytes(StandardCharsets.UTF_8).length),
                     "A client Id must never exceed 65.535 bytes");
         }
         if (authMethod != null) {
-            checkArgument(UnsignedDataTypes.isUnsignedShort(authMethod.getBytes(StandardCharsets.UTF_8).length),
+            checkArgument(
+                    UnsignedDataTypes.isUnsignedShort(authMethod.getBytes(StandardCharsets.UTF_8).length),
                     "An auth method must never exceed 65.535 bytes");
         }
         if (authData != null) {
             checkNotNull(authMethod, "Auth method must be set if auth data is set");
-            checkArgument(UnsignedDataTypes.isUnsignedShort(authData.length),
-                    "An auth data must never exceed 65.535 bytes");
+            checkArgument(
+                    UnsignedDataTypes.isUnsignedShort(authData.length), "An auth data must never exceed 65.535 bytes");
         }
         if (responseInformation != null) {
-            checkArgument(UnsignedDataTypes.isUnsignedShort(responseInformation.getBytes(StandardCharsets.UTF_8).length),
+            checkArgument(
+                    UnsignedDataTypes.isUnsignedShort(responseInformation.getBytes(StandardCharsets.UTF_8).length),
                     "A response information must never exceed 65.535 bytes");
         }
         if (serverReference != null) {
-            checkArgument(UnsignedDataTypes.isUnsignedShort(serverReference.getBytes(StandardCharsets.UTF_8).length),
+            checkArgument(
+                    UnsignedDataTypes.isUnsignedShort(serverReference.getBytes(StandardCharsets.UTF_8).length),
                     "A server reference must never exceed 65.535 bytes");
         }
         if (sessionExpiryInterval != SESSION_EXPIRY_NOT_SET) {
-            checkArgument(UnsignedDataTypes.isUnsignedInt(sessionExpiryInterval),
+            checkArgument(
+                    UnsignedDataTypes.isUnsignedInt(sessionExpiryInterval),
                     "A session expiry interval must never be larger than 4.294.967.296");
         }
 
-        checkArgument(maximumPacketSize <= CONNECT.DEFAULT_MAXIMUM_PACKET_SIZE_NO_LIMIT,
+        checkArgument(
+                maximumPacketSize <= CONNECT.DEFAULT_MAXIMUM_PACKET_SIZE_NO_LIMIT,
                 "A maximum packet size must never be larger than 268.435.460");
 
-        checkArgument(UnsignedDataTypes.isUnsignedShort(topicAliasMaximum),
+        checkArgument(
+                UnsignedDataTypes.isUnsignedShort(topicAliasMaximum),
                 "A topic alias maximum must never be larger than 65.535");
 
         if (serverKeepAlive != KEEP_ALIVE_NOT_SET) {
-            checkArgument(UnsignedDataTypes.isUnsignedShort(serverKeepAlive),
+            checkArgument(
+                    UnsignedDataTypes.isUnsignedShort(serverKeepAlive),
                     "A server keep alive must never be larger than 65.535");
         }
     }
@@ -259,16 +279,16 @@ public class CONNACK extends MqttMessageWithReasonCode<Mqtt5ConnAckReasonCode> i
 
         private boolean sessionPresent;
 
-        //Mqtt 5
+        // Mqtt 5
         private long sessionExpiryInterval = SESSION_EXPIRY_NOT_SET;
         private int serverKeepAlive = KEEP_ALIVE_NOT_SET;
         private String assignedClientIdentifier;
 
-        //Auth
+        // Auth
         private String authMethod;
         private byte[] authData;
 
-        //Restrictions from Server
+        // Restrictions from Server
         private int receiveMaximum = DEFAULT_RECEIVE_MAXIMUM;
         private int topicAliasMaximum = DEFAULT_TOPIC_ALIAS_MAXIMUM;
         private int maximumPacketSize = DEFAULT_MAXIMUM_PACKET_SIZE_NO_LIMIT;
@@ -282,7 +302,8 @@ public class CONNACK extends MqttMessageWithReasonCode<Mqtt5ConnAckReasonCode> i
         private String serverReference;
 
         public CONNACK build() {
-            return new CONNACK(reasonCode,
+            return new CONNACK(
+                    reasonCode,
                     reasonString,
                     userProperties,
                     sessionPresent,
@@ -494,5 +515,4 @@ public class CONNACK extends MqttMessageWithReasonCode<Mqtt5ConnAckReasonCode> i
     public String getServerReference() {
         return serverReference;
     }
-
 }

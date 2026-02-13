@@ -20,24 +20,23 @@ import com.google.common.collect.Sets;
 import com.hivemq.configuration.service.entity.Listener;
 import com.hivemq.configuration.service.entity.Tls;
 import com.hivemq.exceptions.UnrecoverableException;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.security.exception.SslException;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.handler.ssl.OpenSslServerContext;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLParameters;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Singleton
 public class SslFactory {
@@ -77,13 +76,15 @@ public class SslFactory {
         try {
             sslContextStore.createAndInitIfAbsent(tls, sslContext -> {
                 final SSLEngine sslEngine = sslContext.newEngine(new PooledByteBufAllocator());
-                log.info("Enabled protocols for {} at address {} and port {}: {}",
+                log.info(
+                        "Enabled protocols for {} at address {} and port {}: {}",
                         listener.getReadableName(),
                         listener.getBindAddress(),
                         listener.getPort(),
                         Arrays.toString(sslEngine.getEnabledProtocols()));
                 final String[] enabledCipherSuites = sslEngine.getEnabledCipherSuites();
-                log.info("Enabled cipher suites for {} at address {} and port {}: {}",
+                log.info(
+                        "Enabled cipher suites for {} at address {} and port {}: {}",
                         listener.getReadableName(),
                         listener.getBindAddress(),
                         listener.getPort(),
@@ -111,12 +112,13 @@ public class SslFactory {
                             }
                         }
                     } else {
-                        unknownCipherSuitesSet = Sets.difference(ImmutableSet.copyOf(cipherSuites),
-                                ImmutableSet.copyOf(enabledCipherSuites));
+                        unknownCipherSuitesSet = Sets.difference(
+                                ImmutableSet.copyOf(cipherSuites), ImmutableSet.copyOf(enabledCipherSuites));
                     }
 
                     if (!unknownCipherSuitesSet.isEmpty()) {
-                        log.warn("Unknown cipher suites for {} at address {} and port {}: {}",
+                        log.warn(
+                                "Unknown cipher suites for {} at address {} and port {}: {}",
                                 listener.getReadableName(),
                                 listener.getBindAddress(),
                                 listener.getPort(),

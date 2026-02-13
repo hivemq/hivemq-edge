@@ -17,14 +17,11 @@ package com.hivemq.edge.adapters.http.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -37,7 +34,7 @@ public class HttpData {
     private final int httpStatusCode;
     private final @NotNull DataPointFactory dataPointFactory;
 
-    //-- Handle multiple tags in the same sample
+    // -- Handle multiple tags in the same sample
     protected @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
     private final @NotNull Long timestamp = System.currentTimeMillis();
 
@@ -51,7 +48,6 @@ public class HttpData {
         this.httpStatusCode = httpStatusCode;
         this.dataPointFactory = dataPointFactory;
     }
-
 
     public @NotNull String getRequestUrl() {
         return requestUrl;
@@ -78,5 +74,4 @@ public class HttpData {
     public @NotNull List<DataPoint> getDataPoints() {
         return dataPoints;
     }
-
 }
