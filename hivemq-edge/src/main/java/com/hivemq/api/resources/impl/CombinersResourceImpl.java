@@ -195,8 +195,9 @@ public class CombinersResourceImpl implements CombinersApi {
         for (final DataCombining dataCombining : dataCombiner.dataCombinings()) {
             final DataIdentifierReference primaryRef = dataCombining.sources().primaryReference();
             if (primaryRef.type() == DataIdentifierReference.Type.PULSE_ASSET) {
-                return Optional.of(ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForCombinerError(
-                        DataIdentifierReference.Type.PULSE_ASSET)));
+                return Optional.of(
+                        ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForCombinerError(
+                                DataIdentifierReference.Type.PULSE_ASSET)));
             }
             // Validate primary TAG reference has scope
             if (primaryRef.type() == DataIdentifierReference.Type.TAG) {
@@ -204,8 +205,7 @@ public class CombinersResourceImpl implements CombinersApi {
                     return Optional.of(ErrorResponseUtil.errorResponse(new MissingScopeForTagError(primaryRef.id())));
                 }
             }
-            if (dataCombining.instructions()
-                    .stream()
+            if (dataCombining.instructions().stream()
                     .filter(instruction -> Objects.nonNull(instruction.dataIdentifierReference()))
                     .anyMatch(instruction ->
                             instruction.dataIdentifierReference().type() == DataIdentifierReference.Type.PULSE_ASSET)) {

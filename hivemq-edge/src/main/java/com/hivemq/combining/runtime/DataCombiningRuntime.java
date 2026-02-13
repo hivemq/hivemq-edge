@@ -17,7 +17,6 @@ package com.hivemq.combining.runtime;
 
 import static com.hivemq.combining.model.DataIdentifierReference.Type.TAG;
 import static com.hivemq.combining.model.DataIdentifierReference.Type.TOPIC_FILTER;
-import static com.hivemq.combining.runtime.SourceSanitizer.sanitize;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -42,9 +41,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static com.hivemq.combining.model.DataIdentifierReference.Type.TAG;
-import static com.hivemq.combining.model.DataIdentifierReference.Type.TOPIC_FILTER;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DataCombiningRuntime {
 
@@ -99,9 +98,16 @@ public class DataCombiningRuntime {
                 .distinct()
                 .map(ref -> {
                     log.debug("Starting tag consumer for tag {} with scope {}", ref.id(), ref.scope());
-                    final boolean isPrimary = TAG.equals(combining.sources().primaryReference().type()) &&
-                            ref.id().equals(combining.sources().primaryReference().id()) &&
-                            Objects.equals(ref.scope(), combining.sources().primaryReference().scope());
+                    final boolean isPrimary = TAG.equals(
+                                    combining.sources().primaryReference().type())
+                            && ref.id()
+                                    .equals(combining
+                                            .sources()
+                                            .primaryReference()
+                                            .id())
+                            && Objects.equals(
+                                    ref.scope(),
+                                    combining.sources().primaryReference().scope());
                     return new InternalTagConsumer(ref.id(), ref.scope(), combining, isPrimary);
                 })
                 .forEach(consumer -> {
@@ -119,10 +125,17 @@ public class DataCombiningRuntime {
                 .distinct()
                 .forEach(topicFilter -> {
                     log.debug("Starting mqtt consumer for filter {}", topicFilter);
-                    internalSubscriptions.add(subscribeTopicFilter(combining,
+                    internalSubscriptions.add(subscribeTopicFilter(
+                            combining,
                             topicFilter,
-                            TOPIC_FILTER.equals(combining.sources().primaryReference().type()) &&
-                                    topicFilter.equals(combining.sources().primaryReference().id())));
+                            TOPIC_FILTER.equals(combining
+                                            .sources()
+                                            .primaryReference()
+                                            .type())
+                                    && topicFilter.equals(combining
+                                            .sources()
+                                            .primaryReference()
+                                            .id())));
                 });
 
         internalSubscriptions.forEach(
@@ -175,7 +188,8 @@ public class DataCombiningRuntime {
         final ObjectNode rootNode = mapper.createObjectNode();
         topicFilterResults.forEach((topicFilter, publish) -> {
             try {
-                rootNode.set(new DataIdentifierReference(topicFilter, TOPIC_FILTER).toFullyQualifiedName(),
+                rootNode.set(
+                        new DataIdentifierReference(topicFilter, TOPIC_FILTER).toFullyQualifiedName(),
                         mapper.readTree(publish.getPayload()));
             } catch (final IOException e) {
                 log.warn("Exception during json parsing of payload '{}'", publish.getPayload());
@@ -185,7 +199,8 @@ public class DataCombiningRuntime {
 
         tagsToDataPoints.forEach((tagRef, dataPoints) -> dataPoints.forEach(dataPoint -> {
             try {
-                rootNode.set(tagRef.toFullyQualifiedName(),
+                rootNode.set(
+                        tagRef.toFullyQualifiedName(),
                         mapper.readTree(dataPoint.getTagValue().toString()));
             } catch (final IOException e) {
                 log.warn("Exception during json parsing of datapoint '{}'", dataPoint.getTagValue());

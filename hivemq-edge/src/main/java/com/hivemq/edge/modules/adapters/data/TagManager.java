@@ -43,7 +43,8 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
     // TODO this is basically a memory leak. The problem is when shall we remove the last value?
     // We would need to add a callback/logic to the lifecycle of tags
     // is it intended that we might send very old data?
-    // perhaps it is good enough if we ensure that northbound mappings are created before tags as adapters are restarted on config change anyway
+    // perhaps it is good enough if we ensure that northbound mappings are created before tags as adapters are restarted
+    // on config change anyway
     private final Map<AdapterTag, List<DataPoint>> lastValueForTag = new ConcurrentHashMap<>();
     private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
@@ -56,9 +57,7 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
 
     @Override
     public void feed(
-            final @NotNull String adapterId,
-            final @NotNull String tagName,
-            final @NotNull List<DataPoint> dataPoints) {
+            final @NotNull String adapterId, final @NotNull String tagName, final @NotNull List<DataPoint> dataPoints) {
         final AdapterTag adapterTag = new AdapterTag(adapterId, tagName);
         lastValueForTag.put(adapterTag, dataPoints);
         try {
@@ -79,9 +78,8 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
     }
 
     public void addConsumer(final @NotNull TagConsumer consumer) {
-        final AdapterTag adapterTag = new AdapterTag(
-                Objects.requireNonNullElse(consumer.getScope(), ""),
-                consumer.getTagName());
+        final AdapterTag adapterTag =
+                new AdapterTag(Objects.requireNonNullElse(consumer.getScope(), ""), consumer.getTagName());
         try {
             readWriteLock.writeLock().lock();
             consumers.compute(adapterTag, (tag, current) -> {
@@ -106,9 +104,8 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
     }
 
     public void removeConsumer(final @NotNull TagConsumer consumer) {
-        final AdapterTag adapterTag = new AdapterTag(
-                Objects.requireNonNullElse(consumer.getScope(), ""),
-                consumer.getTagName());
+        final AdapterTag adapterTag =
+                new AdapterTag(Objects.requireNonNullElse(consumer.getScope(), ""), consumer.getTagName());
         try {
             readWriteLock.writeLock().lock();
             consumers.computeIfPresent(adapterTag, (tag, current) -> {
