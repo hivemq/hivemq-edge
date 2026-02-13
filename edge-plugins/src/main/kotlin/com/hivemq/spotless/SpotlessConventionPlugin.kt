@@ -6,8 +6,7 @@ import com.diffplug.gradle.spotless.SpotlessExtension
 import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.Task
-import org.gradle.api.plugins.JavaBasePlugin
+import org.gradle.api.tasks.TaskProvider
 import java.io.File
 
 /**
@@ -19,7 +18,7 @@ import java.io.File
  * - License header enforcement
  * - Kotlin formatting with ktlint (for Gradle build scripts)
  *
- * The spotlessCheck task is automatically run as part of the check task.
+ * The spotlessCheck task is NOT run as part of the check task and must be invoked explicitly.
  */
 class SpotlessConventionPlugin : Plugin<Project> {
     override fun apply(project: Project) {
@@ -70,14 +69,16 @@ class SpotlessConventionPlugin : Plugin<Project> {
             endWithNewline()
         })
 
-        // Hook spotlessCheck into the check task
-
-        //TODO deactivated for now until spotlessApply has been run at least once to avoid breaking the build for everyone
-//        project.plugins.withType(JavaBasePlugin::class.java, Action<JavaBasePlugin> {
-//            project.tasks.named("check", Task::class.java, Action<Task> {
-//                dependsOn("spotlessCheck")
-//            })
-//        })
+        // Remove the automatic spotlessCheck -> check dependency that the Spotless plugin creates.
+        // spotlessCheck can still be run explicitly; it just won't run as part of `check`.
+        // TODO re-enable once spotlessApply has been run across the codebase
+        project.afterEvaluate {
+            project.tasks.findByName("check")?.let { checkTask ->
+                checkTask.setDependsOn(checkTask.dependsOn.filterNot { dep ->
+                    dep is TaskProvider<*> && dep.name == "spotlessCheck"
+                })
+            }
+        }
     }
 
     /**
