@@ -15,13 +15,13 @@
  */
 package com.hivemq.combining.model;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.hivemq.combining.model.DataIdentifierReference.Type;
 import com.hivemq.configuration.entity.combining.DataIdentifierReferenceEntity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class DataIdentifierReferenceTest {
 
@@ -100,14 +100,18 @@ class DataIdentifierReferenceTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = Type.class, names = {"TOPIC_FILTER", "PULSE_ASSET"})
+    @EnumSource(
+            value = Type.class,
+            names = {"TOPIC_FILTER", "PULSE_ASSET"})
     void isScopeValid_nonTagTypesWithNullScope_true(final Type type) {
         final DataIdentifierReference ref = new DataIdentifierReference("id", type, null);
         assertThat(ref.isScopeValid()).isTrue();
     }
 
     @ParameterizedTest
-    @EnumSource(value = Type.class, names = {"TOPIC_FILTER", "PULSE_ASSET"})
+    @EnumSource(
+            value = Type.class,
+            names = {"TOPIC_FILTER", "PULSE_ASSET"})
     void isScopeValid_nonTagTypesWithScope_false(final Type type) {
         final DataIdentifierReference ref = new DataIdentifierReference("id", type, "some-adapter");
         assertThat(ref.isScopeValid()).isFalse();
@@ -238,8 +242,7 @@ class DataIdentifierReferenceTest {
         final com.hivemq.edge.api.model.DataIdentifierReference apiModel = original.to();
 
         assertThat(apiModel.getId()).isEqualTo("tag1");
-        assertThat(apiModel.getType()).isEqualTo(
-                com.hivemq.edge.api.model.DataIdentifierReference.TypeEnum.TAG);
+        assertThat(apiModel.getType()).isEqualTo(com.hivemq.edge.api.model.DataIdentifierReference.TypeEnum.TAG);
         assertThat(apiModel.getScope()).isEqualTo("adapter-1");
 
         final DataIdentifierReference restored = DataIdentifierReference.from(apiModel);
@@ -295,8 +298,7 @@ class DataIdentifierReferenceTest {
 
     @Test
     void typeTo_tag() {
-        assertThat(Type.TAG.to())
-                .isEqualTo(com.hivemq.edge.api.model.DataIdentifierReference.TypeEnum.TAG);
+        assertThat(Type.TAG.to()).isEqualTo(com.hivemq.edge.api.model.DataIdentifierReference.TypeEnum.TAG);
     }
 
     @Test
