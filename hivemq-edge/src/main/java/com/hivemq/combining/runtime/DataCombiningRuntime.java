@@ -91,11 +91,11 @@ public class DataCombiningRuntime {
         dataCombiningTransformationService.addScriptForDataCombining(dataCombining);
 
         DataIdentifierReference primary = dataCombining.sources().primaryReference();
-        boolean isValue = dataCombining.instructions()
+        boolean providesValue = dataCombining.instructions()
                 .stream()
                 .map(Instruction::dataIdentifierReference)
                 .anyMatch(ref -> ref.equals(primary));
-        subscribe(dataCombining, primary, true, isValue);
+        subscribe(dataCombining, primary, true, providesValue);
 
         dataCombining.instructions()
                 .stream()
@@ -117,14 +117,14 @@ public class DataCombiningRuntime {
             final @NotNull DataCombining dataCombining,
             final @NotNull DataIdentifierReference ref,
             final boolean isTrigger,
-            final boolean isValue) {
+            final boolean providesValue) {
         log.debug("Starting {} consumer for {}", ref.type(), ref.id());
         switch (ref.type()) {
             case TAG:
-                subscriptions.add(new InternalTagSubscription(dataCombining, ref.id(), isTrigger, isValue));
+                subscriptions.add(new InternalTagSubscription(dataCombining, ref.id(), isTrigger, providesValue));
                 break;
             case TOPIC_FILTER:
-                subscriptions.add(new InternalTopicFilterSubscription(dataCombining, ref.id(), isTrigger, isValue));
+                subscriptions.add(new InternalTopicFilterSubscription(dataCombining, ref.id(), isTrigger, providesValue));
                 break;
             default:
                 // what should happen with PULSE_ASSET???
@@ -175,7 +175,7 @@ public class DataCombiningRuntime {
                 final @NotNull DataCombining dataCombining,
                 final @NotNull String tagName,
                 final boolean isTrigger,
-                final boolean isValue) {
+                final boolean providesValue) {
 
             this.consumer = new TagConsumer() {
                 @Override
@@ -185,7 +185,7 @@ public class DataCombiningRuntime {
 
                 @Override
                 public void accept(final @NotNull List<DataPoint> dataPoints) {
-                    if (isValue) {
+                    if (providesValue) {
                         tagValues.put(tagName, dataPoints);
                     }
                     if (isTrigger) {
@@ -212,7 +212,7 @@ public class DataCombiningRuntime {
                 final @NotNull DataCombining dataCombining,
                 final @NotNull String topicFilter,
                 final boolean isTrigger,
-                final boolean isValue) {
+                final boolean providesValue) {
             this.subscriber = dataCombining.id().toString() + "#";
             this.topicFilter = topicFilter;
             this.sharedName = dataCombining.id().toString();
@@ -226,7 +226,7 @@ public class DataCombiningRuntime {
             this.consumer = new QueueConsumer(clientQueuePersistence, queueId, singleWriterService) {
                 @Override
                 public void process(final @NotNull PUBLISH message) {
-                    if (isValue) {
+                    if (providesValue) {
                         topicFilterValues.put(topicFilter, message);
                     }
                     if (isTrigger) {
