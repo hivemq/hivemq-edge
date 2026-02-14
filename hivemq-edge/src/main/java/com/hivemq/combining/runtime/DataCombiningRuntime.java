@@ -91,14 +91,18 @@ public class DataCombiningRuntime {
         dataCombiningTransformationService.addScriptForDataCombining(dataCombining);
 
         DataIdentifierReference primary = dataCombining.sources().primaryReference();
-        subscribe(dataCombining, primary, true);
+        boolean isValue = dataCombining.instructions()
+                .stream()
+                .map(Instruction::dataIdentifierReference)
+                .anyMatch(ref -> ref.equals(primary));
+        subscribe(dataCombining, primary, true, isValue);
 
         dataCombining.instructions()
                 .stream()
                 .map(Instruction::dataIdentifierReference)
                 .filter(ref -> !ref.equals(primary))
                 .distinct()
-                .forEach(ref -> subscribe(dataCombining, ref, false));
+                .forEach(ref -> subscribe(dataCombining, ref, false, true));
     }
 
     public void stop() {
@@ -112,14 +116,15 @@ public class DataCombiningRuntime {
     public void subscribe(
             final @NotNull DataCombining dataCombining,
             final @NotNull DataIdentifierReference ref,
-            final boolean isPrimary) {
-        log.debug("Starting {} consumer for tag {} {}", ref.type(), ref.id(), isPrimary ? "as primary" : "");
+            final boolean isTrigger,
+            final boolean isValue) {
+        log.debug("Starting {} consumer for {}", ref.type(), ref.id());
         switch (ref.type()) {
             case TAG:
-                subscriptions.add(new InternalTagSubscription(dataCombining, ref.id(), isPrimary));
+                subscriptions.add(new InternalTagSubscription(dataCombining, ref.id(), isTrigger, isValue));
                 break;
             case TOPIC_FILTER:
-                subscriptions.add(new InternalTopicFilterSubscription(dataCombining, ref.id(), isPrimary));
+                subscriptions.add(new InternalTopicFilterSubscription(dataCombining, ref.id(), isTrigger, isValue));
                 break;
             default:
                 // what should happen with PULSE_ASSET???
@@ -134,8 +139,9 @@ public class DataCombiningRuntime {
 
         tagVals.forEach((tagName, dataPoints) -> dataPoints.forEach(dataPoint -> {
             try {
-                rootNode.set(sanitize(new DataIdentifierReference(tagName, TAG)),
-                        mapper.readTree(dataPoint.getTagValue().toString()));
+                String propertyName = sanitize(new DataIdentifierReference(tagName, TAG));
+                var propertyValue = dataPoint.getTagValue().toString();
+                rootNode.set(propertyName, mapper.readTree(propertyValue));
             } catch (final IOException e) {
                 log.warn("Exception during json parsing of datapoint '{}'", dataPoint.getTagValue());
                 throw new RuntimeException(e);
@@ -144,8 +150,9 @@ public class DataCombiningRuntime {
 
         topicFilterVals.forEach((topicFilter, publish) -> {
             try {
-                rootNode.set(sanitize(new DataIdentifierReference(topicFilter, TOPIC_FILTER)),
-                        mapper.readTree(publish.getPayload()));
+                String propertyName = sanitize(new DataIdentifierReference(topicFilter, TOPIC_FILTER));
+                var propertyValue = publish.getPayload();
+                rootNode.set(propertyName, mapper.readTree(propertyValue));
             } catch (final IOException e) {
                 log.warn("Exception during json parsing of payload '{}'", publish.getPayload());
                 throw new RuntimeException(e);
@@ -167,7 +174,8 @@ public class DataCombiningRuntime {
         public InternalTagSubscription(
                 final @NotNull DataCombining dataCombining,
                 final @NotNull String tagName,
-                final boolean isPrimary) {
+                final boolean isTrigger,
+                final boolean isValue) {
 
             this.consumer = new TagConsumer() {
                 @Override
@@ -177,13 +185,11 @@ public class DataCombiningRuntime {
 
                 @Override
                 public void accept(final @NotNull List<DataPoint> dataPoints) {
-                    tagValues.put(tagName, dataPoints);
-                    if (isPrimary) {
-                        try {
-                            triggerPublish(dataCombining);
-                        } catch (final Exception e) {
-                            log.warn("Unable to process data points '{}'", dataPoints, e);
-                        }
+                    if (isValue) {
+                        tagValues.put(tagName, dataPoints);
+                    }
+                    if (isTrigger) {
+                        triggerPublish(dataCombining);
                     }
                 }
             };
@@ -205,21 +211,25 @@ public class DataCombiningRuntime {
         InternalTopicFilterSubscription(
                 final @NotNull DataCombining dataCombining,
                 final @NotNull String topicFilter,
-                boolean isPrimary) {
+                final boolean isTrigger,
+                final boolean isValue) {
             this.subscriber = dataCombining.id().toString() + "#";
             this.topicFilter = topicFilter;
-            this.sharedName = dataCombining.id().toString() + "/" + topicFilter;
+            this.sharedName = dataCombining.id().toString();
+            String queueId = dataCombining.id().toString() + "/" + topicFilter;
 
             localTopicTree.addTopic(subscriber,
                     new Topic(topicFilter, QoS.EXACTLY_ONCE, false, true),
                     SubscriptionFlag.getDefaultFlags(true, true, false),
                     sharedName);
 
-            this.consumer = new QueueConsumer(clientQueuePersistence, sharedName, singleWriterService) {
+            this.consumer = new QueueConsumer(clientQueuePersistence, queueId, singleWriterService) {
                 @Override
                 public void process(final @NotNull PUBLISH message) {
-                    topicFilterValues.put(topicFilter, message);
-                    if (isPrimary) {
+                    if (isValue) {
+                        topicFilterValues.put(topicFilter, message);
+                    }
+                    if (isTrigger) {
                         triggerPublish(dataCombining);
                     }
                 }
