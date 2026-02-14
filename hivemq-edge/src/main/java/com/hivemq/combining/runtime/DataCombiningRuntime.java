@@ -34,12 +34,14 @@ import com.hivemq.protocols.northbound.TagConsumer;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
 import static com.hivemq.combining.model.DataIdentifierReference.Type.TAG;
 import static com.hivemq.combining.model.DataIdentifierReference.Type.TOPIC_FILTER;
 import static com.hivemq.combining.runtime.SourceSanitizer.sanitize;
@@ -57,8 +59,7 @@ public class DataCombiningRuntime {
     private final @NotNull DataCombiningTransformationService dataCombiningTransformationService;
 
     private final @NotNull ObjectMapper mapper;
-    private final @NotNull List<InternalTagSubscription> tagSubscriptions;
-    private final @NotNull List<InternalTopicFilterSubscription> topicFilterSubscriptions;
+    private final @NotNull List<InternalSubscription> subscriptions;
     private final @NotNull ConcurrentHashMap<String, List<DataPoint>> tagValues;
     private final @NotNull ConcurrentHashMap<String, PUBLISH> topicFilterValues;
 
@@ -79,8 +80,7 @@ public class DataCombiningRuntime {
         this.dataCombiningTransformationService = dataCombiningTransformationService;
 
         this.mapper = new ObjectMapper();
-        this.tagSubscriptions = new ArrayList<>();
-        this.topicFilterSubscriptions = new ArrayList<>();
+        this.subscriptions = new ArrayList<>();
         this.tagValues = new ConcurrentHashMap<>();
         this.topicFilterValues = new ConcurrentHashMap<>();
     }
@@ -88,33 +88,24 @@ public class DataCombiningRuntime {
     public void start() {
         log.debug("Starting data combining {}", dataCombining.id());
 
-        // add the dataCombining as the "script"
         dataCombiningTransformationService.addScriptForDataCombining(dataCombining);
 
-        // subscribe to the primary data-ref (which need not be referenced in one of the instructions)
         DataIdentifierReference primary = dataCombining.sources().primaryReference();
         subscribe(dataCombining, primary, true);
 
-        // subscribe to all the distinct data-refs from the instructions
         dataCombining.instructions()
                 .stream()
                 .map(Instruction::dataIdentifierReference)
                 .filter(ref -> !ref.equals(primary))
                 .distinct()
-                .forEach(ref -> {
-                    subscribe(dataCombining, ref, false);
-                });
-
-        // and start all the subscription consumers (should that be done in subscribe?)
-        // topicFilterSubscriptions.forEach(InternalTopicFilterSubscription::startConsumer);
+                .forEach(ref -> subscribe(dataCombining, ref, false));
     }
 
     public void stop() {
         log.debug("Stoping data combining {}", dataCombining.id());
-        // and close all the subscription consumers (should that be done in unSubscribe?)
-        // topicFilterSubscriptions.forEach(InternalTopicFilterSubscription::closeConsumer);
-        topicFilterSubscriptions.forEach(InternalTopicFilterSubscription::unSubscribeTopicFilter);
-        tagSubscriptions.forEach(InternalTagSubscription::unSubscribeTag);
+
+        subscriptions.forEach(InternalSubscription::unSubscribe);
+
         dataCombiningTransformationService.removeScriptForDataCombining(dataCombining);
     }
 
@@ -122,14 +113,17 @@ public class DataCombiningRuntime {
             final @NotNull DataCombining dataCombining,
             final @NotNull DataIdentifierReference ref,
             final boolean isPrimary) {
-        if (ref.type().equals(TAG)) {
-            log.debug("Starting tag consumer for tag {} {}", ref.id(), isPrimary ? "as primary" : "");
-            tagSubscriptions.add(new InternalTagSubscription(dataCombining, ref.id(), isPrimary));
-        } else if (ref.type().equals(TOPIC_FILTER)) {
-            log.debug("Starting mqtt consumer for filter {} {}", ref.id(), isPrimary ? "as primary" : "");
-            topicFilterSubscriptions.add(new InternalTopicFilterSubscription(dataCombining, ref.id(), isPrimary));
+        log.debug("Starting {} consumer for tag {} {}", ref.type(), ref.id(), isPrimary ? "as primary" : "");
+        switch (ref.type()) {
+            case TAG:
+                subscriptions.add(new InternalTagSubscription(dataCombining, ref.id(), isPrimary));
+                break;
+            case TOPIC_FILTER:
+                subscriptions.add(new InternalTopicFilterSubscription(dataCombining, ref.id(), isPrimary));
+                break;
+            default:
+                // what should happen with PULSE_ASSET???
         }
-        // what should happen with PULSE_ASSET???
     }
 
     public void triggerPublish(final @NotNull DataCombining dataCombining) {
@@ -163,7 +157,11 @@ public class DataCombiningRuntime {
                 dataCombining);
     }
 
-    public final class InternalTagSubscription {
+    public interface InternalSubscription {
+        void unSubscribe();
+    }
+
+    public final class InternalTagSubscription implements InternalSubscription {
         private final TagConsumer consumer;
 
         public InternalTagSubscription(
@@ -193,12 +191,12 @@ public class DataCombiningRuntime {
             tagManager.addConsumer(consumer);
         }
 
-        public void unSubscribeTag () {
+        public void unSubscribe() {
             tagManager.removeConsumer(consumer);
         }
     }
 
-    public final class InternalTopicFilterSubscription {
+    public final class InternalTopicFilterSubscription implements InternalSubscription {
         private final @NotNull String subscriber;
         private final @NotNull String topicFilter;
         private final @NotNull String sharedName;
@@ -230,17 +228,9 @@ public class DataCombiningRuntime {
             consumer.start();
         }
 
-        public void unSubscribeTopicFilter() {
+        public void unSubscribe() {
             consumer.close();
             localTopicTree.removeSubscriber(subscriber, topicFilter, sharedName);
         }
-
-        // public void startConsumer() {
-        //     consumer.start();
-        // }
-
-        // public void closeConsumer() {
-        //     consumer.close();
-        // }
     }
 }
