@@ -113,7 +113,7 @@ public class DataCombiningRuntime {
         dataCombiningTransformationService.removeScriptForDataCombining(dataCombining);
     }
 
-    public void triggerPublish() {
+    public void publish() {
         log.debug("Triggering data combining {}", dataCombining.id());
         final ObjectNode rootNode = mapper.createObjectNode();
         final var valuesSnapshot = Map.copyOf(values);
@@ -175,7 +175,7 @@ public class DataCombiningRuntime {
                         values.put(propertyName, propertyValue);
                     }
                     if (isTrigger) {
-                        triggerPublish();
+                        publish();
                     }
                 }
             };
@@ -217,7 +217,7 @@ public class DataCombiningRuntime {
                         values.put(propertyName, propertyValue);
                     }
                     if (isTrigger) {
-                        triggerPublish();
+                        publish();
                     }
                 }
             };
