@@ -113,23 +113,6 @@ public class DataCombiningRuntime {
         dataCombiningTransformationService.removeScriptForDataCombining(dataCombining);
     }
 
-    public void subscribe(
-            final @NotNull DataIdentifierReference ref,
-            final boolean isTrigger,
-            final boolean providesValue) {
-        log.debug("Starting {} consumer for {}", ref.type(), ref.id());
-        switch (ref.type()) {
-            case TAG:
-                subscriptions.add(new InternalTagSubscription(ref.id(), isTrigger, providesValue));
-                break;
-            case TOPIC_FILTER:
-                subscriptions.add(new InternalTopicFilterSubscription(ref.id(), isTrigger, providesValue));
-                break;
-            default:
-                // what should happen with PULSE_ASSET???
-        }
-    }
-
     public void triggerPublish() {
         log.debug("Triggering data combining {}", dataCombining.id());
         final ObjectNode rootNode = mapper.createObjectNode();
@@ -147,6 +130,23 @@ public class DataCombiningRuntime {
         dataCombiningPublishService.publish(dataCombining.destination(),
                 rootNode.toString().getBytes(StandardCharsets.UTF_8),
                 dataCombining);
+    }
+
+    public void subscribe(
+            final @NotNull DataIdentifierReference ref,
+            final boolean isTrigger,
+            final boolean providesValue) {
+        log.debug("Starting {} consumer for {}", ref.type(), ref.id());
+        switch (ref.type()) {
+            case TAG:
+                subscriptions.add(new InternalTagSubscription(ref.id(), isTrigger, providesValue));
+                break;
+            case TOPIC_FILTER:
+                subscriptions.add(new InternalTopicFilterSubscription(ref.id(), isTrigger, providesValue));
+                break;
+            default:
+                // what should happen with PULSE_ASSET???
+        }
     }
 
     public interface InternalSubscription {
