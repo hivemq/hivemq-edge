@@ -113,7 +113,7 @@ public class DataCombiningRuntime {
         dataCombiningTransformationService.removeScriptForDataCombining(dataCombining);
     }
 
-    public void publish() {
+    public void assembleAndPublish() {
         log.debug("Triggering data combining {}", dataCombining.id());
         final ObjectNode rootNode = mapper.createObjectNode();
         final var valuesSnapshot = Map.copyOf(values);
@@ -144,8 +144,9 @@ public class DataCombiningRuntime {
             case TOPIC_FILTER:
                 subscriptions.add(new InternalTopicFilterSubscription(ref.id(), isTrigger, providesValue));
                 break;
-            default:
-                // what should happen with PULSE_ASSET???
+            case PULSE_ASSET:
+                // log.error("Pulse Assets shouldn't be input to data combining {}", ref.id());
+                // throw new RuntimeException();
         }
     }
 
@@ -175,7 +176,7 @@ public class DataCombiningRuntime {
                         values.put(propertyName, propertyValue);
                     }
                     if (isTrigger) {
-                        publish();
+                        assembleAndPublish();
                     }
                 }
             };
@@ -217,7 +218,7 @@ public class DataCombiningRuntime {
                         values.put(propertyName, propertyValue);
                     }
                     if (isTrigger) {
-                        publish();
+                        assembleAndPublish();
                     }
                 }
             };
