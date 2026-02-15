@@ -60,7 +60,7 @@ public class DataCombiningRuntime {
 
     private final @NotNull ObjectMapper mapper;
     private final @NotNull List<InternalSubscription> subscriptions;
-    private final @NotNull ConcurrentHashMap<String, List<DataPoint>> tagValues;
+    private final @NotNull ConcurrentHashMap<String, DataPoint> tagValues;
     private final @NotNull ConcurrentHashMap<String, PUBLISH> topicFilterValues;
 
     public DataCombiningRuntime(
@@ -137,7 +137,7 @@ public class DataCombiningRuntime {
         final var tagVals = Map.copyOf(tagValues);
         final var topicFilterVals = Map.copyOf(topicFilterValues);
 
-        tagVals.forEach((tagName, dataPoints) -> dataPoints.forEach(dataPoint -> {
+        tagVals.forEach((tagName, dataPoint) -> {
             try {
                 String propertyName = sanitize(new DataIdentifierReference(tagName, TAG));
                 var propertyValue = dataPoint.getTagValue().toString();
@@ -146,7 +146,7 @@ public class DataCombiningRuntime {
                 log.warn("Exception during json parsing of datapoint '{}'", dataPoint.getTagValue());
                 throw new RuntimeException(e);
             }
-        }));
+        });
 
         topicFilterVals.forEach((topicFilter, publish) -> {
             try {
@@ -185,8 +185,8 @@ public class DataCombiningRuntime {
 
                 @Override
                 public void accept(final @NotNull List<DataPoint> dataPoints) {
-                    if (providesValue) {
-                        tagValues.put(tagName, dataPoints);
+                    if (providesValue && !dataPoints.isEmpty()) {
+                        tagValues.put(tagName, dataPoints.getLast());
                     }
                     if (isTrigger) {
                         triggerPublish(dataCombining);
