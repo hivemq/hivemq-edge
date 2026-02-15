@@ -60,8 +60,7 @@ public class DataCombiningRuntime {
 
     private final @NotNull ObjectMapper mapper;
     private final @NotNull List<InternalSubscription> subscriptions;
-    private final @NotNull ConcurrentHashMap<String, DataPoint> tagValues;
-    private final @NotNull ConcurrentHashMap<String, PUBLISH> topicFilterValues;
+    private final @NotNull ConcurrentHashMap<String, String> values;
 
     public DataCombiningRuntime(
             final @NotNull DataCombining dataCombining,
@@ -81,8 +80,7 @@ public class DataCombiningRuntime {
 
         this.mapper = new ObjectMapper();
         this.subscriptions = new ArrayList<>();
-        this.tagValues = new ConcurrentHashMap<>();
-        this.topicFilterValues = new ConcurrentHashMap<>();
+        this.values = new ConcurrentHashMap<>();
     }
 
     public void start() {
@@ -90,19 +88,19 @@ public class DataCombiningRuntime {
 
         dataCombiningTransformationService.addScriptForDataCombining(dataCombining);
 
-        DataIdentifierReference primary = dataCombining.sources().primaryReference();
+        DataIdentifierReference trigger = dataCombining.sources().primaryReference();
         boolean providesValue = dataCombining.instructions()
                 .stream()
                 .map(Instruction::dataIdentifierReference)
-                .anyMatch(ref -> ref.equals(primary));
-        subscribe(dataCombining, primary, true, providesValue);
+                .anyMatch(ref -> ref.equals(trigger));
+        subscribe(trigger, true, providesValue);
 
         dataCombining.instructions()
                 .stream()
                 .map(Instruction::dataIdentifierReference)
-                .filter(ref -> !ref.equals(primary))
+                .filter(ref -> !ref.equals(trigger))
                 .distinct()
-                .forEach(ref -> subscribe(dataCombining, ref, false, true));
+                .forEach(ref -> subscribe(ref, false, true));
     }
 
     public void stop() {
@@ -114,52 +112,37 @@ public class DataCombiningRuntime {
     }
 
     public void subscribe(
-            final @NotNull DataCombining dataCombining,
             final @NotNull DataIdentifierReference ref,
             final boolean isTrigger,
             final boolean providesValue) {
         log.debug("Starting {} consumer for {}", ref.type(), ref.id());
         switch (ref.type()) {
             case TAG:
-                subscriptions.add(new InternalTagSubscription(dataCombining, ref.id(), isTrigger, providesValue));
+                subscriptions.add(new InternalTagSubscription(ref.id(), isTrigger, providesValue));
                 break;
             case TOPIC_FILTER:
-                subscriptions.add(new InternalTopicFilterSubscription(dataCombining, ref.id(), isTrigger, providesValue));
+                subscriptions.add(new InternalTopicFilterSubscription(ref.id(), isTrigger, providesValue));
                 break;
             default:
                 // what should happen with PULSE_ASSET???
         }
     }
 
-    public void triggerPublish(final @NotNull DataCombining dataCombining) {
+    public void triggerPublish() {
         log.debug("Triggering data combining {}", dataCombining.id());
         final ObjectNode rootNode = mapper.createObjectNode();
-        final var tagVals = Map.copyOf(tagValues);
-        final var topicFilterVals = Map.copyOf(topicFilterValues);
+        final var valuesSnapshot = Map.copyOf(values);
 
-        tagVals.forEach((tagName, dataPoint) -> {
+        valuesSnapshot.forEach((propertyName, propertyValue) -> {
             try {
-                String propertyName = sanitize(new DataIdentifierReference(tagName, TAG));
-                var propertyValue = dataPoint.getTagValue().toString();
                 rootNode.set(propertyName, mapper.readTree(propertyValue));
             } catch (final IOException e) {
-                log.warn("Exception during json parsing of datapoint '{}'", dataPoint.getTagValue());
+                log.warn("Exception during json parsing of datapoint {} : '{}'", propertyName, propertyValue);
                 throw new RuntimeException(e);
             }
         });
 
-        topicFilterVals.forEach((topicFilter, publish) -> {
-            try {
-                String propertyName = sanitize(new DataIdentifierReference(topicFilter, TOPIC_FILTER));
-                var propertyValue = publish.getPayload();
-                rootNode.set(propertyName, mapper.readTree(propertyValue));
-            } catch (final IOException e) {
-                log.warn("Exception during json parsing of payload '{}'", publish.getPayload());
-                throw new RuntimeException(e);
-            }
-        });
-
-        dataCombiningPublishService.publish(this.dataCombining.destination(),
+        dataCombiningPublishService.publish(dataCombining.destination(),
                 rootNode.toString().getBytes(StandardCharsets.UTF_8),
                 dataCombining);
     }
@@ -172,7 +155,6 @@ public class DataCombiningRuntime {
         private final TagConsumer consumer;
 
         public InternalTagSubscription(
-                final @NotNull DataCombining dataCombining,
                 final @NotNull String tagName,
                 final boolean isTrigger,
                 final boolean providesValue) {
@@ -186,10 +168,12 @@ public class DataCombiningRuntime {
                 @Override
                 public void accept(final @NotNull List<DataPoint> dataPoints) {
                     if (providesValue && !dataPoints.isEmpty()) {
-                        tagValues.put(tagName, dataPoints.getLast());
+                        String propertyName = sanitize(new DataIdentifierReference(tagName, TAG));
+                        String propertyValue = dataPoints.getLast().getTagValue().toString();
+                        values.put(propertyName, propertyValue);
                     }
                     if (isTrigger) {
-                        triggerPublish(dataCombining);
+                        triggerPublish();
                     }
                 }
             };
@@ -209,7 +193,6 @@ public class DataCombiningRuntime {
         private final @NotNull QueueConsumer consumer;
 
         InternalTopicFilterSubscription(
-                final @NotNull DataCombining dataCombining,
                 final @NotNull String topicFilter,
                 final boolean isTrigger,
                 final boolean providesValue) {
@@ -227,10 +210,12 @@ public class DataCombiningRuntime {
                 @Override
                 public void process(final @NotNull PUBLISH message) {
                     if (providesValue) {
-                        topicFilterValues.put(topicFilter, message);
+                        String propertyName = sanitize(new DataIdentifierReference(topicFilter, TOPIC_FILTER));
+                        String propertyValue = new String(message.getPayload(), StandardCharsets.UTF_8);
+                        values.put(propertyName, propertyValue);
                     }
                     if (isTrigger) {
-                        triggerPublish(dataCombining);
+                        triggerPublish();
                     }
                 }
             };
