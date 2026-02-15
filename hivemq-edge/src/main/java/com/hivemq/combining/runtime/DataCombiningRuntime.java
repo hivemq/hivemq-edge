@@ -46,6 +46,23 @@ import static com.hivemq.combining.model.DataIdentifierReference.Type.TAG;
 import static com.hivemq.combining.model.DataIdentifierReference.Type.TOPIC_FILTER;
 import static com.hivemq.combining.runtime.SourceSanitizer.sanitize;
 
+/// `DataCombiningRuntime` manages a **datacombing**, i.e. a mapping, which is part of a **combiner**,
+/// that assembles inputs (which can be tags or topic-filters) into a destination message.
+/// `start()` subscribes to all the inputs (tags and topic-filters), including the primary/trigger.
+/// This is done with `subscribe()`, which creates an `InternalTagSubscription` or `InternalTopicFilterSubscription`.
+/// Tags are subscribed to the `TagManager` with a `TagConsumer` and its `accept()` method.
+/// `TopicFilters` are subscribed to the `TopicTree` with a `QueueConsumer` and its `process()` method.
+/// These methods (`accept()` and `process()`) store the value in the `values` hash-map.
+/// When the trigger arrives, the `assembleAndPublish()` method is called which assembles all inputs into an object
+/// and calls the `dataCombiningPublishingService` to turn that into a message and publish that to the target topic.
+///
+/// Questions:
+/// Why are we not directly setting the values into a inputValuesAsDictObject when they arrive?
+/// What is the purpose of the transformationService?
+/// What is the purpose of the clientQueuePersistence?
+/// What is the purpose of the singleWriterService?
+/// How does the subscription of topicFilters actually work?
+
 public class DataCombiningRuntime {
 
     private static final Logger log = LoggerFactory.getLogger(DataCombiningRuntime.class);
@@ -90,6 +107,7 @@ public class DataCombiningRuntime {
 
         DataIdentifierReference trigger = dataCombining.sources().primaryReference();
 
+        // subscribe to all inputs, except for the trigger; subscribe to each input only once
         dataCombining.instructions()
                 .stream()
                 .map(Instruction::dataIdentifierReference)
@@ -115,12 +133,12 @@ public class DataCombiningRuntime {
 
     public void assembleAndPublish() {
         log.debug("Triggering data combining {}", dataCombining.id());
-        final ObjectNode rootNode = mapper.createObjectNode();
+        final ObjectNode inputValuesAsDictObject = mapper.createObjectNode();
         final var valuesSnapshot = Map.copyOf(values);
 
         valuesSnapshot.forEach((propertyName, propertyValue) -> {
             try {
-                rootNode.set(propertyName, mapper.readTree(propertyValue));
+                inputValuesAsDictObject.set(propertyName, mapper.readTree(propertyValue));
             } catch (final IOException e) {
                 log.warn("Exception during json parsing of datapoint {} : '{}'", propertyName, propertyValue);
                 throw new RuntimeException(e);
@@ -128,7 +146,7 @@ public class DataCombiningRuntime {
         });
 
         dataCombiningPublishService.publish(dataCombining.destination(),
-                rootNode.toString().getBytes(StandardCharsets.UTF_8),
+                inputValuesAsDictObject.toString().getBytes(StandardCharsets.UTF_8),
                 dataCombining);
     }
 
@@ -145,8 +163,8 @@ public class DataCombiningRuntime {
                 subscriptions.add(new InternalTopicFilterSubscription(ref.id(), isTrigger, providesValue));
                 break;
             case PULSE_ASSET:
-                // log.error("Pulse Assets shouldn't be input to data combining {}", ref.id());
-                // throw new RuntimeException();
+                log.error("Pulse Assets shouldn't be input to data combining in Edge {}", ref.id());
+                throw new RuntimeException();
         }
     }
 

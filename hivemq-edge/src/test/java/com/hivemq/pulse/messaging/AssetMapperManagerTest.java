@@ -92,7 +92,7 @@ public class AssetMapperManagerTest {
 
     private static @NotNull DataCombiner createDataCombiner() {
         return createDataCombiner(List.of(EntityType.PULSE_AGENT),
-                List.of(List.of(DataIdentifierReference.Type.PULSE_ASSET)));
+                List.of(List.of(DataIdentifierReference.Type.TAG)));
     }
 
     private static @NotNull DataCombiner createDataCombiner(
