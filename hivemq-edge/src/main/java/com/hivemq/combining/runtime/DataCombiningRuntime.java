@@ -89,11 +89,6 @@ public class DataCombiningRuntime {
         dataCombiningTransformationService.addScriptForDataCombining(dataCombining);
 
         DataIdentifierReference trigger = dataCombining.sources().primaryReference();
-        boolean providesValue = dataCombining.instructions()
-                .stream()
-                .map(Instruction::dataIdentifierReference)
-                .anyMatch(ref -> ref.equals(trigger));
-        subscribe(trigger, true, providesValue);
 
         dataCombining.instructions()
                 .stream()
@@ -101,6 +96,13 @@ public class DataCombiningRuntime {
                 .filter(ref -> !ref.equals(trigger))
                 .distinct()
                 .forEach(ref -> subscribe(ref, false, true));
+
+        // subscribe to the trigger last, gives the other subscriptions a little bit more time to receive a value
+        boolean providesValue = dataCombining.instructions()
+                .stream()
+                .map(Instruction::dataIdentifierReference)
+                .anyMatch(ref -> ref.equals(trigger));
+        subscribe(trigger, true, providesValue);
     }
 
     public void stop() {
