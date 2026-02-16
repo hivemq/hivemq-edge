@@ -41,7 +41,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,68 +88,31 @@ public class DataCombiningRuntime {
         log.debug("Starting data combining {}", combining.id());
         // prepare the script for the data combining
         dataCombiningTransformationService.addScriptForDataCombining(combining);
-
         final DataIdentifierReference primaryRef = combining.sources().primaryReference();
-        final AtomicBoolean primaryFound = new AtomicBoolean(false);
-
-        // Derive tag subscriptions from instructions (which carry DataIdentifierReference with scope)
-        // instead of from sources().tags()
         combining.instructions().stream()
                 .map(Instruction::dataIdentifierReference)
                 .filter(Objects::nonNull)
-                .filter(ref -> ref.type() == TAG)
+                .filter(ref -> !ref.equals(primaryRef))
                 .distinct()
-                .forEach(ref -> {
-                    final boolean isPrimary = ref.equals(primaryRef);
-                    if (isPrimary) {
-                        log.debug("Starting tag consumer for primary tag {} with scope {}", ref.id(), ref.scope());
-                        primaryFound.set(true);
-                    } else {
-                        log.debug("Starting tag consumer for tag {} with scope {}", ref.id(), ref.scope());
-                    }
-                    final InternalTagConsumer consumer =
-                            new InternalTagConsumer(ref.id(), ref.scope(), combining, isPrimary);
-                    tagManager.addConsumer(consumer);
-                    consumers.add(consumer);
-                });
+                .forEach(this::subscribe);
+        subscribe(primaryRef);
+        internalSubscriptions.stream().map(InternalSubscription::queueConsumer).forEach(QueueConsumer::start);
+    }
 
-        // Topic filter subscriptions - derive from instructions()
-        // instead of from sources().topicFilters()
-        combining.instructions().stream()
-                .map(Instruction::dataIdentifierReference)
-                .filter(Objects::nonNull)
-                .filter(ref -> ref.type() == TOPIC_FILTER)
-                .distinct()
-                .forEach(ref -> {
-                    final boolean isPrimary = ref.equals(primaryRef);
-                    if (isPrimary) {
-                        log.debug("Starting mqtt consumer for primary filter {}", ref.id());
-                        primaryFound.set(true);
-                    } else {
-                        log.debug("Starting mqtt consumer for filter {}", ref.id());
-                    }
-                    internalSubscriptions.add(subscribeTopicFilter(combining, ref.id(), isPrimary));
-                });
-
-        // Subscribe to primary if not found in instructions
-        if (!primaryFound.get()) {
-            if (TAG.equals(primaryRef.type())) {
-                log.debug(
-                        "Starting tag consumer for primary tag {} with scope {} (not in instructions)",
-                        primaryRef.id(),
-                        primaryRef.scope());
-                final InternalTagConsumer consumer =
-                        new InternalTagConsumer(primaryRef.id(), primaryRef.scope(), combining, true);
+    private void subscribe(final DataIdentifierReference ref) {
+        switch (ref.type()) {
+            case TAG -> {
+                log.debug("Starting tag consumer for tag {} with scope {}", ref.id(), ref.scope());
+                final InternalTagConsumer consumer = new InternalTagConsumer(ref.id(), ref.scope(), combining, false);
                 tagManager.addConsumer(consumer);
                 consumers.add(consumer);
-            } else if (TOPIC_FILTER.equals(primaryRef.type())) {
-                log.debug("Starting mqtt consumer for primary filter {} (not in instructions)", primaryRef.id());
-                internalSubscriptions.add(subscribeTopicFilter(combining, primaryRef.id(), true));
             }
+            case TOPIC_FILTER -> {
+                log.debug("Starting mqtt consumer for filter {}", ref.id());
+                internalSubscriptions.add(subscribeTopicFilter(combining, ref.id(), false));
+            }
+            default -> log.warn("Unsupported data identifier reference type: {}", ref.type());
         }
-
-        internalSubscriptions.forEach(
-                internalSubscription -> internalSubscription.queueConsumer().start());
     }
 
     public void stop() {
@@ -162,6 +124,8 @@ public class DataCombiningRuntime {
         });
 
         dataCombiningTransformationService.removeScriptForDataCombining(combining);
+        consumers.clear();
+        internalSubscriptions.clear();
     }
 
     public @NotNull InternalSubscription subscribeTopicFilter(
