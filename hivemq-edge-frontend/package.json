@@ -36,7 +36,10 @@
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
     "bundle:size": "npx vite-bundle-visualizer",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "docs:security-scan": "./tools/scan-docs-security.sh",
+    "docs:security-scan:staged": "./tools/scan-docs-security.sh --staged",
+    "docs:security-scan:verbose": "./tools/scan-docs-security.sh --verbose"
   },
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "1.3.0",

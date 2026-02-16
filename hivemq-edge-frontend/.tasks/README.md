@@ -89,14 +89,15 @@ When a user mentions working on a task:
 ### Starting a New Task
 
 ```bash
-./tools/create-task.sh CARD-37542 code-coverage
+# Create task directory matching Linear issue
+mkdir -p .tasks/EDG-40-technical-documentation
 ```
 
 ### Resuming Work in New Conversation
 
-Just say: "We're working on task CARD-37542"
+Just say: "We're working on task EDG-40" or "Let's continue with EDG-40"
 
-The AI knows to look in `.tasks/` automatically.
+The AI knows to look in `.tasks/EDG-40-*/` automatically.
 
 See [QUICK_START.md](./QUICK_START.md) for details.
 
@@ -104,7 +105,7 @@ See [QUICK_START.md](./QUICK_START.md) for details.
 
 This task system integrates with:
 
-- ✅ **Kanbanize** - Link cards to task docs
+- ✅ **Linear** - Task tracking and issue management
 - ✅ **Figma** - Reference designs in TASK_BRIEF
 - ✅ **MIRO** - Link architecture diagrams
 - ✅ **Google Docs** - Reference detailed specs
@@ -117,4 +118,4 @@ Check [ACTIVE_TASKS.md](./ACTIVE_TASKS.md) for the list of active tasks.
 
 ---
 
-**Last Updated:** October 17, 2025
+**Last Updated:** February 16, 2026 (Linear Migration)
