@@ -18,6 +18,8 @@ package com.hivemq.combining.runtime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyByte;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -26,6 +28,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Futures;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.combining.mapping.DataCombiningTransformationService;
 import com.hivemq.combining.model.DataCombining;
@@ -34,6 +38,8 @@ import com.hivemq.combining.model.DataCombiningSources;
 import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.data.TagManager;
+import com.hivemq.mqtt.message.QoS;
+import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.ProducerQueues;
@@ -43,6 +49,7 @@ import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 import com.hivemq.protocols.northbound.TagConsumer;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -85,6 +92,7 @@ class DataCombiningRuntimeTest {
      * subscribes the primary tag via TagManager.addConsumer().
      * The transformation script should also be registered.
      * The captured consumer should have the correct tag name and scope (adapter ID).
+     * Since this is the primary, accepting data should trigger a publish.
      */
     @Test
     void start_whenNoInstructions_andPrimaryIsTag_thenSubscribesPrimaryTag() {
@@ -104,6 +112,10 @@ class DataCombiningRuntimeTest {
         verify(tagManager).addConsumer(captor.capture());
         assertThat(captor.getValue().getTagName()).isEqualTo("tag1");
         assertThat(captor.getValue().getScope()).isEqualTo("adapter1");
+
+        // The only consumer is the primary — accepting data should trigger a publish
+        captor.getValue().accept(List.of(new DataPointImpl("tag1", "{\"v\":1}")));
+        verify(dataCombiningPublishService).publish(any(), any(), eq(combining));
     }
 
     /*
@@ -135,6 +147,7 @@ class DataCombiningRuntimeTest {
      * both the instruction's tag and the primary tag are subscribed separately.
      * The instruction tag (tag2/adapter2) should be subscribed first,
      * followed by the primary tag (tag1/adapter1), resulting in 2 addConsumer calls.
+     * Only the primary (last) consumer should trigger a publish on accept.
      */
     @Test
     void start_whenInstructionHasTagRef_notPrimary_thenSubscribesBoth() {
@@ -155,11 +168,19 @@ class DataCombiningRuntimeTest {
         final ArgumentCaptor<TagConsumer> captor = ArgumentCaptor.forClass(TagConsumer.class);
         verify(tagManager, times(2)).addConsumer(captor.capture());
         final List<TagConsumer> consumers = captor.getAllValues();
-        // First is the instruction tag (non-primary), second is the primary
+        // First is the instruction tag (non-primary), second (last) is the primary
         assertThat(consumers.get(0).getTagName()).isEqualTo("tag2");
         assertThat(consumers.get(0).getScope()).isEqualTo("adapter2");
         assertThat(consumers.get(1).getTagName()).isEqualTo("tag1");
         assertThat(consumers.get(1).getScope()).isEqualTo("adapter1");
+
+        // Non-primary consumer should NOT trigger a publish
+        consumers.get(0).accept(List.of(new DataPointImpl("tag2", "{\"v\":1}")));
+        verify(dataCombiningPublishService, never()).publish(any(), any(), any());
+
+        // Primary consumer (last) should trigger a publish
+        consumers.get(1).accept(List.of(new DataPointImpl("tag1", "{\"v\":2}")));
+        verify(dataCombiningPublishService).publish(any(), any(), eq(combining));
     }
 
     /*
@@ -246,6 +267,7 @@ class DataCombiningRuntimeTest {
      * Two instructions both reference the same tag2/adapter2, but only one consumer
      * is created for it. Combined with the primary tag1/adapter1, there should be
      * exactly 2 addConsumer calls total, not 3.
+     * The primary (tag1) must be the last subscribed and the only one triggering publish.
      */
     @Test
     void start_whenDuplicateInstructionRefs_thenSubscribedOnce() {
@@ -266,7 +288,21 @@ class DataCombiningRuntimeTest {
 
         // tag2 appears twice in instructions but .distinct() deduplicates.
         // 1 for tag2 (instruction), 1 for tag1 (primary)
-        verify(tagManager, times(2)).addConsumer(any());
+        final ArgumentCaptor<TagConsumer> captor = ArgumentCaptor.forClass(TagConsumer.class);
+        verify(tagManager, times(2)).addConsumer(captor.capture());
+        final List<TagConsumer> consumers = captor.getAllValues();
+
+        // Primary (tag1) must be the last consumer
+        assertThat(consumers.get(0).getTagName()).isEqualTo("tag2");
+        assertThat(consumers.get(1).getTagName()).isEqualTo("tag1");
+
+        // Non-primary consumer should NOT trigger publish
+        consumers.get(0).accept(List.of(new DataPointImpl("tag2", "{\"v\":1}")));
+        verify(dataCombiningPublishService, never()).publish(any(), any(), any());
+
+        // Primary consumer (last) should trigger publish
+        consumers.get(1).accept(List.of(new DataPointImpl("tag1", "{\"v\":2}")));
+        verify(dataCombiningPublishService).publish(any(), any(), eq(combining));
     }
 
     /*
@@ -275,6 +311,7 @@ class DataCombiningRuntimeTest {
      * The instruction TOPIC_FILTER (other/#) and primary TOPIC_FILTER (sensor/temp) each create
      * a subscription in LocalTopicTree (2 addTopic calls).
      * The primary TOPIC_FILTER is not in the instruction stream since none match it.
+     * All tag consumers are non-primary and should NOT trigger publish on accept.
      */
     @Test
     void start_whenMultipleDistinctInstructionRefs_thenAllSubscribed() {
@@ -299,9 +336,16 @@ class DataCombiningRuntimeTest {
         runtime.start();
 
         // 2 tag consumers for instructions (tag1, tag2)
-        verify(tagManager, times(2)).addConsumer(any());
+        final ArgumentCaptor<TagConsumer> captor = ArgumentCaptor.forClass(TagConsumer.class);
+        verify(tagManager, times(2)).addConsumer(captor.capture());
         // 2 topic filter subscriptions: one for instruction (other/#), one for primary (sensor/temp)
         verify(localTopicTree, times(2)).addTopic(anyString(), any(Topic.class), anyByte(), anyString());
+
+        // Both tag consumers are non-primary (primary is a TOPIC_FILTER), so neither triggers publish
+        for (final TagConsumer consumer : captor.getAllValues()) {
+            consumer.accept(List.of(new DataPointImpl(consumer.getTagName(), "{\"v\":1}")));
+        }
+        verify(dataCombiningPublishService, never()).publish(any(), any(), any());
     }
 
     /*
@@ -460,10 +504,10 @@ class DataCombiningRuntimeTest {
 
     /*
      * Verifies that tag data fed via InternalTagConsumer.accept() is included in the
-     * published payload. After start(), we capture the registered tag consumer, feed it
-     * a JSON data point, then call triggerPublish(). The resulting payload should contain
-     * the fully qualified key "adapter1/TAG:tag1" mapping to the data point value.
-     * This tests the tag result aggregation logic in triggerPublish().
+     * published payload. After start(), we capture the registered primary tag consumer,
+     * feed it a JSON data point. Since it's the primary, accept() triggers triggerPublish()
+     * automatically. The resulting payload should contain the fully qualified key
+     * "adapter1/TAG:tag1" mapping to the data point value.
      */
     @Test
     void triggerPublish_whenTagDataPresent_thenIncludedInPayload() {
@@ -479,17 +523,14 @@ class DataCombiningRuntimeTest {
         final DataCombiningRuntime runtime = createRuntime(combining);
         runtime.start();
 
-        // Capture the tag consumer and feed data to it
+        // Capture the primary tag consumer and feed data to it
         final ArgumentCaptor<TagConsumer> consumerCaptor = ArgumentCaptor.forClass(TagConsumer.class);
         verify(tagManager).addConsumer(consumerCaptor.capture());
         final TagConsumer consumer = consumerCaptor.getValue();
 
+        // accept() on the primary consumer triggers triggerPublish() automatically
         final DataPoint dataPoint = new DataPointImpl("tag1", "{\"temperature\":25}");
         consumer.accept(List.of(dataPoint));
-
-        // triggerPublish is called by InternalTagConsumer.accept since isPrimary is false here;
-        // but we can call it directly to test the JSON assembly
-        runtime.triggerPublish(combining);
 
         final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(dataCombiningPublishService).publish(eq(destination), payloadCaptor.capture(), eq(combining));
@@ -573,5 +614,175 @@ class DataCombiningRuntimeTest {
                 runtime.subscribeTopicFilter(combining, "sensor/temp", false);
 
         assertThat(subscription.getQueueId()).isEqualTo(combiningId + "/sensor/temp");
+    }
+
+    // --- Topic filter primary tests (via start()) ---
+
+    /*
+     * Sets up mocks so that QueueConsumer polling works synchronously during start().
+     * ProducerQueues.submit() executes the task inline, readShared() returns a PUBLISH
+     * on every other call (first call per consumer) and empty on the rest.
+     * removeShared() is stubbed to avoid NPEs during message acknowledgment.
+     */
+    private void setupSynchronousPolling(final PUBLISH publishToDeliver) {
+        final ProducerQueues producerQueues = mock(ProducerQueues.class);
+        when(singleWriterService.getQueuedMessagesQueue()).thenReturn(producerQueues);
+        when(producerQueues.submit(anyString(), any(SingleWriterService.Task.class)))
+                .thenAnswer(invocation -> {
+                    final SingleWriterService.Task<?> task = invocation.getArgument(1);
+                    task.doTask(0);
+                    return Futures.immediateFuture(null);
+                });
+
+        // Each queue consumer calls readShared twice: once getting the PUBLISH, once getting empty.
+        // Use alternating pattern: odd calls return PUBLISH, even calls return empty.
+        final AtomicInteger readCount = new AtomicInteger(0);
+        when(clientQueuePersistence.readShared(anyString(), anyInt(), anyLong()))
+                .thenAnswer(invocation -> {
+                    if (readCount.getAndIncrement() % 2 == 0) {
+                        return Futures.immediateFuture(ImmutableList.of(publishToDeliver));
+                    }
+                    return Futures.immediateFuture(ImmutableList.of());
+                });
+
+        when(clientQueuePersistence.removeShared(anyString(), anyString())).thenReturn(Futures.immediateFuture(null));
+    }
+
+    private PUBLISH createMockPublish() {
+        final PUBLISH publish = mock(PUBLISH.class);
+        when(publish.getPayload()).thenReturn("{\"v\":1}".getBytes());
+        when(publish.getUniqueId()).thenReturn("unique-" + UUID.randomUUID());
+        when(publish.getQoS()).thenReturn(QoS.AT_LEAST_ONCE);
+        return publish;
+    }
+
+    /*
+     * Verifies via start() that when the primary is a TOPIC_FILTER with no instructions,
+     * the queue consumer receives a message and triggers dataCombiningPublishService.publish().
+     * The synchronous polling mock delivers a PUBLISH during start(), which flows through
+     * pollAndForward → processPublish → process (isPrimary=true) → triggerPublish.
+     */
+    @Test
+    void start_whenPrimaryIsTopicFilter_noInstructions_thenPublishTriggered() {
+        final PUBLISH mqttPublish = createMockPublish();
+        setupSynchronousPolling(mqttPublish);
+
+        final DataIdentifierReference primary =
+                new DataIdentifierReference("sensor/temp", DataIdentifierReference.Type.TOPIC_FILTER);
+        final DataCombining combining = new DataCombining(
+                UUID.randomUUID(),
+                new DataCombiningSources(primary, List.of(), List.of("sensor/temp")),
+                new DataCombiningDestination(null, "dest/topic", "{}"),
+                List.of());
+
+        final DataCombiningRuntime runtime = createRuntime(combining);
+        runtime.start();
+
+        // The primary queue consumer polled, received the PUBLISH, and triggered publish
+        verify(dataCombiningPublishService).publish(any(), any(), eq(combining));
+    }
+
+    /*
+     * Verifies via start() that when the primary is a TOPIC_FILTER and an instruction
+     * references a TAG, the TAG consumer does not trigger publish on accept(), but the
+     * primary TOPIC_FILTER does trigger publish when it receives a message via polling.
+     * This validates the full end-to-end flow through start() for mixed types.
+     */
+    @Test
+    void start_whenPrimaryIsTopicFilter_withTagInstruction_thenTagDoesNotTriggerButTopicFilterDoes() {
+        final PUBLISH mqttPublish = createMockPublish();
+        setupSynchronousPolling(mqttPublish);
+
+        final DataIdentifierReference primary =
+                new DataIdentifierReference("sensor/temp", DataIdentifierReference.Type.TOPIC_FILTER);
+        final DataIdentifierReference tagRef =
+                new DataIdentifierReference("tag1", DataIdentifierReference.Type.TAG, "adapter1");
+        final Instruction instruction = new Instruction("$.value", "output", tagRef);
+        final DataCombining combining = new DataCombining(
+                UUID.randomUUID(),
+                new DataCombiningSources(primary, List.of("tag1"), List.of("sensor/temp")),
+                new DataCombiningDestination(null, "dest/topic", "{}"),
+                List.of(instruction));
+
+        final DataCombiningRuntime runtime = createRuntime(combining);
+        runtime.start();
+
+        // The primary TOPIC_FILTER triggered publish via polling during start()
+        verify(dataCombiningPublishService).publish(any(), any(), eq(combining));
+
+        // The TAG consumer is non-primary — accepting data should NOT trigger another publish
+        final ArgumentCaptor<TagConsumer> tagCaptor = ArgumentCaptor.forClass(TagConsumer.class);
+        verify(tagManager).addConsumer(tagCaptor.capture());
+        tagCaptor.getValue().accept(List.of(new DataPointImpl("tag1", "{\"v\":2}")));
+
+        // Still only 1 publish call (from the primary TOPIC_FILTER during start)
+        verify(dataCombiningPublishService, times(1)).publish(any(), any(), any());
+    }
+
+    /*
+     * Verifies via start() that when the primary is a TOPIC_FILTER and an instruction
+     * also references a different TOPIC_FILTER, only the primary triggers publish.
+     * Both topic filters receive a message via polling, but only the primary's process()
+     * calls triggerPublish(). The non-primary's process() only stores the PUBLISH data.
+     * The non-primary is subscribed first, then the primary is subscribed last.
+     */
+    @Test
+    void start_whenPrimaryIsTopicFilter_withTopicFilterInstruction_thenOnlyPrimaryTriggersPublish() {
+        final PUBLISH mqttPublish = createMockPublish();
+        setupSynchronousPolling(mqttPublish);
+
+        final DataIdentifierReference primary =
+                new DataIdentifierReference("sensor/temp", DataIdentifierReference.Type.TOPIC_FILTER);
+        final DataIdentifierReference instructionRef =
+                new DataIdentifierReference("other/#", DataIdentifierReference.Type.TOPIC_FILTER);
+        final Instruction instruction = new Instruction("$.value", "output", instructionRef);
+        final DataCombining combining = new DataCombining(
+                UUID.randomUUID(),
+                new DataCombiningSources(primary, List.of(), List.of("sensor/temp", "other/#")),
+                new DataCombiningDestination(null, "dest/topic", "{}"),
+                List.of(instruction));
+
+        final DataCombiningRuntime runtime = createRuntime(combining);
+        runtime.start();
+
+        // 2 topic filter subscriptions created
+        verify(localTopicTree, times(2)).addTopic(anyString(), any(Topic.class), anyByte(), anyString());
+
+        // Both queue consumers polled and received a message, but only the primary triggered publish.
+        // The non-primary (other/#) stored the message without triggering.
+        // The primary (sensor/temp) stored the message AND called triggerPublish().
+        verify(dataCombiningPublishService, times(1)).publish(any(), any(), eq(combining));
+    }
+
+    /*
+     * Verifies via start() that when the primary TOPIC_FILTER is also referenced in an
+     * instruction, it is only subscribed once (deduplicated by .filter(ref -> !ref.equals(primaryRef)))
+     * and still triggers publish as the primary. The instruction ref equals the primary ref,
+     * so it's filtered out of the stream, and only subscribe(primaryRef, true) creates the subscription.
+     */
+    @Test
+    void start_whenPrimaryTopicFilterAlsoInInstruction_thenSubscribedOnceAsPrimary() {
+        final PUBLISH mqttPublish = createMockPublish();
+        setupSynchronousPolling(mqttPublish);
+
+        final DataIdentifierReference primary =
+                new DataIdentifierReference("sensor/temp", DataIdentifierReference.Type.TOPIC_FILTER);
+        final DataIdentifierReference instructionRef =
+                new DataIdentifierReference("sensor/temp", DataIdentifierReference.Type.TOPIC_FILTER);
+        final Instruction instruction = new Instruction("$.value", "output", instructionRef);
+        final DataCombining combining = new DataCombining(
+                UUID.randomUUID(),
+                new DataCombiningSources(primary, List.of(), List.of("sensor/temp")),
+                new DataCombiningDestination(null, "dest/topic", "{}"),
+                List.of(instruction));
+
+        final DataCombiningRuntime runtime = createRuntime(combining);
+        runtime.start();
+
+        // Only 1 topic filter subscription (deduplicated)
+        verify(localTopicTree, times(1)).addTopic(anyString(), any(Topic.class), anyByte(), anyString());
+
+        // The single subscription is primary and triggered publish
+        verify(dataCombiningPublishService, times(1)).publish(any(), any(), eq(combining));
     }
 }

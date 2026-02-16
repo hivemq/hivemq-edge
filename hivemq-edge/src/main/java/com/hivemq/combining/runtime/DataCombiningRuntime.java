@@ -94,22 +94,27 @@ public class DataCombiningRuntime {
                 .filter(Objects::nonNull)
                 .filter(ref -> !ref.equals(primaryRef))
                 .distinct()
-                .forEach(this::subscribe);
-        subscribe(primaryRef);
+                .forEach(this::subscribeNonPrimary);
+        subscribe(primaryRef, true);
         internalSubscriptions.stream().map(InternalSubscription::queueConsumer).forEach(QueueConsumer::start);
     }
 
-    private void subscribe(final DataIdentifierReference ref) {
+    private void subscribeNonPrimary(final @NotNull DataIdentifierReference ref) {
+        subscribe(ref, false);
+    }
+
+    private void subscribe(final @NotNull DataIdentifierReference ref, final boolean isPrimary) {
         switch (ref.type()) {
             case TAG -> {
                 log.debug("Starting tag consumer for tag {} with scope {}", ref.id(), ref.scope());
-                final InternalTagConsumer consumer = new InternalTagConsumer(ref.id(), ref.scope(), combining, false);
+                final InternalTagConsumer consumer =
+                        new InternalTagConsumer(ref.id(), ref.scope(), combining, isPrimary);
                 tagManager.addConsumer(consumer);
                 consumers.add(consumer);
             }
             case TOPIC_FILTER -> {
                 log.debug("Starting mqtt consumer for filter {}", ref.id());
-                internalSubscriptions.add(subscribeTopicFilter(combining, ref.id(), false));
+                internalSubscriptions.add(subscribeTopicFilter(combining, ref.id(), isPrimary));
             }
             default -> log.warn("Unsupported data identifier reference type: {}", ref.type());
         }
