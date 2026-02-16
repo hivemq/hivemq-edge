@@ -66,8 +66,8 @@ import static com.hivemq.combining.runtime.SourceSanitizer.sanitize;
 ///
 /// Resolved Questions:
 /// Why are we not directly setting the values into a `inputValuesAsDictObject` when they arrive?
-/// Firstly because inputValuesAsDictObject is not concurrent, values arriving at the same time would cause corruption
-/// Secondly we want to delay converting values or messages to JSON until we really need it
+/// Firstly because inputValuesAsDictObject is not concurrent, values arriving at the same time would cause corruption.
+/// Secondly we want to delay converting values or messages to JSON until we really need it (see `Values` below).
 
 public class DataCombiningRuntime {
 
@@ -154,7 +154,7 @@ public class DataCombiningRuntime {
                 dataCombining);
     }
 
-    ///  `Value` represents values to be used in the combining, as JsonNodes.
+    ///  `Value` represents values to be used in the combining (`assempleAndPublish`) as JsonNodes.
     ///  It is created holding the `RawValue` (either tag value or topic-filter payload).
     ///  It converts the raw value to a `JsonNode` when requested (lazily) and caches the result of the conversion.
     ///  That way we only convert raw values when needed,
@@ -216,7 +216,7 @@ public class DataCombiningRuntime {
         }
     }
 
-    ///  `subscribe` subscribes the input (tag or topic filter)
+    ///  `subscribe` subscribes the input (tag or topic filter).
     ///  It does this by creating either a `InternalSubscriptionTag` or `InternalSubscriptionTopicFilter`.
     ///  It remembers all subscriptions in `subscriptions`, so that we can unsubscribe them again on `close()`.
     public void subscribe(
