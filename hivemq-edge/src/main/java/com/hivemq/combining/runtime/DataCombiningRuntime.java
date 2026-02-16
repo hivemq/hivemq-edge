@@ -15,6 +15,7 @@
  */
 package com.hivemq.combining.runtime;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
@@ -32,6 +33,7 @@ import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 import com.hivemq.protocols.northbound.TagConsumer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,11 +59,15 @@ import static com.hivemq.combining.runtime.SourceSanitizer.sanitize;
 /// and calls the `dataCombiningPublishingService` to turn that into a message and publish that to the target topic.
 ///
 /// Questions:
-/// Why are we not directly setting the values into a inputValuesAsDictObject when they arrive?
-/// What is the purpose of the transformationService?
-/// What is the purpose of the clientQueuePersistence?
-/// What is the purpose of the singleWriterService?
-/// How does the subscription of topicFilters actually work?
+/// What is the purpose of the `transformationService`?
+/// What is the purpose of the `clientQueuePersistence`?
+/// What is the purpose of the `singleWriterService`?
+/// How does the subscription of topic filters actually work?
+///
+/// Resolved Questions:
+/// Why are we not directly setting the values into a `inputValuesAsDictObject` when they arrive?
+/// Firstly because inputValuesAsDictObject is not concurrent, values arriving at the same time would cause corruption
+/// Secondly we want to delay converting values or messages to JSON until we really need it
 
 public class DataCombiningRuntime {
 
@@ -77,7 +83,8 @@ public class DataCombiningRuntime {
 
     private final @NotNull ObjectMapper mapper;
     private final @NotNull List<InternalSubscription> subscriptions;
-    private final @NotNull ConcurrentHashMap<String, String> values;
+    // values must be a concurrent hash map, values may arrive anytime
+    private final @NotNull ConcurrentHashMap<String, Value> values;
 
     public DataCombiningRuntime(
             final @NotNull DataCombining dataCombining,
@@ -100,6 +107,7 @@ public class DataCombiningRuntime {
         this.values = new ConcurrentHashMap<>();
     }
 
+    ///   `starts()` subscribes to all inputs
     public void start() {
         log.debug("Starting data combining {}", dataCombining.id());
 
@@ -123,6 +131,7 @@ public class DataCombiningRuntime {
         subscribe(trigger, true, providesValue);
     }
 
+    ///   `stop()` unsubscribes all `subscriptions` again
     public void stop() {
         log.debug("Stoping data combining {}", dataCombining.id());
 
@@ -131,40 +140,101 @@ public class DataCombiningRuntime {
         dataCombiningTransformationService.removeScriptForDataCombining(dataCombining);
     }
 
+    ///   `assembleAndPublish` is what it really is all about, assembling values and publishing a new, combined message
     public void assembleAndPublish() {
         log.debug("Triggering data combining {}", dataCombining.id());
         final ObjectNode inputValuesAsDictObject = mapper.createObjectNode();
         final var valuesSnapshot = Map.copyOf(values);
 
-        valuesSnapshot.forEach((propertyName, propertyValue) -> {
-            try {
-                inputValuesAsDictObject.set(propertyName, mapper.readTree(propertyValue));
-            } catch (final IOException e) {
-                log.warn("Exception during json parsing of datapoint {} : '{}'", propertyName, propertyValue);
-                throw new RuntimeException(e);
-            }
-        });
+        valuesSnapshot.forEach((propertyName, propertyValue) ->
+                inputValuesAsDictObject.set(propertyName, propertyValue.getJsonNode()));
 
         dataCombiningPublishService.publish(dataCombining.destination(),
                 inputValuesAsDictObject.toString().getBytes(StandardCharsets.UTF_8),
                 dataCombining);
     }
 
+    ///  `Value` represents values to be used in the combining, as JsonNodes.
+    ///  It is created holding the `RawValue` (either tag value or topic-filter payload).
+    ///  It converts the raw value to a `JsonNode` when requested (lazily) and caches the result of the conversion.
+    ///  That way we only convert raw values when needed,
+    ///  so we don't convert raw values that are overwritten by other raw values before a trigger arrives.
+    ///  And we also don't convert a raw value multiple times,
+    ///  so we convert raw values that don't change while multiple triggers arrive only once.
+    ///  There are two concrete implementations for `RawValue`, for tags and for topic-filters.
+    public final class Value {
+        @Nullable RawValue value;
+        @Nullable JsonNode jsonNode;
+
+        public Value(final @NotNull RawValue value) {
+            this.value = value;
+            this.jsonNode = null;
+        }
+
+        public JsonNode getJsonNode() {
+            if (jsonNode == null) {
+                String propertyValue = value.toString();
+                try {
+                    jsonNode = mapper.readTree(value.toString());
+                } catch (final IOException e) {
+                    log.warn("Exception during json parsing of datapoint '{}'", propertyValue);
+                    throw new RuntimeException(e);
+                }
+                value = null;
+            }
+            return jsonNode;
+        }
+    }
+
+    public interface RawValue {
+        @NotNull String toString();
+    }
+
+    public static final class RawValueTag implements RawValue {
+        DataPoint dataPoint;
+
+        RawValueTag(final DataPoint dataPoint) {
+            this.dataPoint = dataPoint;
+        }
+
+        @Override
+        public @NotNull String toString() {
+            return dataPoint.toString();
+        }
+    }
+
+    public static final class RawValueTopicFilter implements RawValue {
+        byte[] payload;
+
+        RawValueTopicFilter(final byte[] payload) {
+            this.payload = payload;
+        }
+
+        @Override
+        public @NotNull String toString() {
+            return new String(payload, StandardCharsets.UTF_8);
+        }
+    }
+
+    ///  `subscribe` subscribes the input (tag or topic filter)
+    ///  It does this by creating either a `InternalSubscriptionTag` or `InternalSubscriptionTopicFilter`.
+    ///  It remembers all subscriptions in `subscriptions`, so that we can unsubscribe them again on `close()`.
     public void subscribe(
             final @NotNull DataIdentifierReference ref,
             final boolean isTrigger,
             final boolean providesValue) {
         log.debug("Starting {} consumer for {}", ref.type(), ref.id());
         switch (ref.type()) {
-            case TAG:
-                subscriptions.add(new InternalTagSubscription(ref.id(), isTrigger, providesValue));
-                break;
-            case TOPIC_FILTER:
-                subscriptions.add(new InternalTopicFilterSubscription(ref.id(), isTrigger, providesValue));
-                break;
-            case PULSE_ASSET:
+            case TAG -> {
+                    subscriptions.add(new InternalSubscriptionTag(ref.id(), isTrigger, providesValue));
+            }
+            case TOPIC_FILTER -> {
+                    subscriptions.add(new InternalSubscriptionTopicFilter(ref.id(), isTrigger, providesValue));
+            }
+            case PULSE_ASSET -> {
                 log.error("Pulse Assets shouldn't be input to data combining in Edge {}", ref.id());
                 throw new RuntimeException();
+            }
         }
     }
 
@@ -172,10 +242,10 @@ public class DataCombiningRuntime {
         void unSubscribe();
     }
 
-    public final class InternalTagSubscription implements InternalSubscription {
+    public final class InternalSubscriptionTag implements InternalSubscription {
         private final TagConsumer consumer;
 
-        public InternalTagSubscription(
+        public InternalSubscriptionTag(
                 final @NotNull String tagName,
                 final boolean isTrigger,
                 final boolean providesValue) {
@@ -190,8 +260,7 @@ public class DataCombiningRuntime {
                 public void accept(final @NotNull List<DataPoint> dataPoints) {
                     if (providesValue && !dataPoints.isEmpty()) {
                         String propertyName = sanitize(new DataIdentifierReference(tagName, TAG));
-                        String propertyValue = dataPoints.getLast().getTagValue().toString();
-                        values.put(propertyName, propertyValue);
+                        values.put(propertyName, new Value(new RawValueTag(dataPoints.getLast())));
                     }
                     if (isTrigger) {
                         assembleAndPublish();
@@ -207,13 +276,13 @@ public class DataCombiningRuntime {
         }
     }
 
-    public final class InternalTopicFilterSubscription implements InternalSubscription {
+    public final class InternalSubscriptionTopicFilter implements InternalSubscription {
         private final @NotNull String subscriber;
         private final @NotNull String topicFilter;
         private final @NotNull String sharedName;
         private final @NotNull QueueConsumer consumer;
 
-        InternalTopicFilterSubscription(
+        InternalSubscriptionTopicFilter(
                 final @NotNull String topicFilter,
                 final boolean isTrigger,
                 final boolean providesValue) {
@@ -232,8 +301,7 @@ public class DataCombiningRuntime {
                 public void process(final @NotNull PUBLISH message) {
                     if (providesValue) {
                         String propertyName = sanitize(new DataIdentifierReference(topicFilter, TOPIC_FILTER));
-                        String propertyValue = new String(message.getPayload(), StandardCharsets.UTF_8);
-                        values.put(propertyName, propertyValue);
+                        values.put(propertyName, new Value(new RawValueTopicFilter(message.getPayload())));
                     }
                     if (isTrigger) {
                         assembleAndPublish();
