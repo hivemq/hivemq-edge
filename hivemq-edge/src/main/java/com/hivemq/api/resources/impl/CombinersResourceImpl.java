@@ -199,6 +199,7 @@ public class CombinersResourceImpl implements CombinersApi {
             return Optional.of(
                     ErrorResponseUtil.errorResponse(new InvalidEntityTypeForCombinerError(EntityType.PULSE_AGENT)));
         }
+
         // Build a map of adapterId -> Set<tagName> for TAG existence validation
         final Map<String, Set<String>> adapterToTags = new HashMap<>();
         protocolAdapterExtractor.getAllConfigs().forEach(adapter -> {
@@ -206,6 +207,7 @@ public class CombinersResourceImpl implements CombinersApi {
             adapter.getTags().forEach(tag -> tagNames.add(tag.getName()));
             adapterToTags.put(adapter.getAdapterId(), tagNames);
         });
+
         for (final DataCombining dataCombining : dataCombiner.dataCombinings()) {
             final DataIdentifierReference primaryRef = dataCombining.sources().primaryReference();
             if (primaryRef.type() == DataIdentifierReference.Type.PULSE_ASSET) {
@@ -213,7 +215,7 @@ public class CombinersResourceImpl implements CombinersApi {
                         ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForCombinerError(
                                 DataIdentifierReference.Type.PULSE_ASSET)));
             }
-            // Validate primary TAG reference has scope
+            // Validate primary TAG reference has scope and exists
             if (primaryRef.type() == DataIdentifierReference.Type.TAG) {
                 if (primaryRef.scope() == null || primaryRef.scope().isBlank()) {
                     return Optional.of(ErrorResponseUtil.errorResponse(new MissingScopeForTagError(primaryRef.id())));
@@ -238,7 +240,7 @@ public class CombinersResourceImpl implements CombinersApi {
                         ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForCombinerError(
                                 DataIdentifierReference.Type.PULSE_ASSET)));
             }
-            // Validate TAG references in instructions have scope
+            // Validate TAG references in instructions have scope and exist, and TOPIC_FILTER references have no scope
             for (final Instruction instruction : dataCombining.instructions()) {
                 final DataIdentifierReference ref = instruction.dataIdentifierReference();
                 if (ref != null) {

@@ -681,7 +681,7 @@ public class PulseApiImpl implements PulseApi {
                             ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(dataCombiningId)));
                 }
             }
-            // Validate primary TAG reference has scope
+            // Validate primary TAG reference has scope and exists, and TOPIC_FILTER has no scope
             final DataIdentifierReference primaryRef = dataCombining.sources().primaryReference();
             if (primaryRef != null) {
                 if (primaryRef.type() == DataIdentifierReference.Type.TAG) {
@@ -700,7 +700,7 @@ public class PulseApiImpl implements PulseApi {
                     }
                 }
             }
-            // Validate TAG references in instructions have scope
+            // Validate TAG references in instructions have scope and exist, and TOPIC_FILTER has no scope
             for (final var instruction : dataCombining.instructions()) {
                 final DataIdentifierReference ref = instruction.dataIdentifierReference();
                 if (ref != null) {
