@@ -1,6 +1,6 @@
 # Pull Request: Duplicate Combiner Detection Enhancement
 
-**Kanban Ticket:** https://businessmap.io/c/57/33168
+**Linear Issue:** https://linear.app/hivemq/issue/EDG-33/duplicate-combiner-detection-enhancement
 
 ---
 
@@ -22,29 +22,26 @@
 
 ---
 
-## Getting the BusinessMap Ticket URL
+## Getting the Linear Issue URL
 
-**For AI Agents with BusinessMap MCP access:**
+**For AI Agents with Linear MCP access:**
 
-The full ticket URL follows the pattern: `https://hivemq.kanbanize.com/ctrl_board/{board_id}/cards/{card_id}/details/`
-
-To construct the URL:
-
-1. Use `mcp_businessmap_get_card` with the task number (card_id)
-2. Extract `board_id` from the response
-3. Construct URL: `https://hivemq.kanbanize.com/ctrl_board/{board_id}/cards/{card_id}/details/`
+Use the `mcp__linear-server__get_issue` tool with the issue identifier to get the full issue URL.
 
 **Example:**
 
-- Task number: 38111
-- Response contains: `"board_id": 57, "card_id": 38111`
-- Full URL: `https://hivemq.kanbanize.com/ctrl_board/57/cards/38111/details/`
+```bash
+# Get issue details for EDG-40
+mcp__linear-server__get_issue(id: "EDG-40")
+# Returns: { "url": "https://linear.app/hivemq/issue/EDG-40/..." }
+```
 
 **For Manual Users:**
 
-- Open the card in BusinessMap
+- Open the issue in Linear
 - Copy the URL from your browser's address bar
-- The URL format is: `https://hivemq.kanbanize.com/ctrl_board/{board_id}/cards/{card_id}/details/`
+- The URL format is: `https://linear.app/hivemq/issue/{ISSUE-ID}/...`
+- Example: `https://linear.app/hivemq/issue/EDG-40/frontend-handover-documentation`
 
 ---
 
@@ -237,7 +234,7 @@ Copy and customize this template:
 ````markdown
 # Pull Request: [Feature Name]
 
-**Kanban Ticket:** https://businessmap.io/c/57/[TICKET_ID]
+**Linear Issue:** https://linear.app/hivemq/issue/[ISSUE-ID]/[issue-title]
 
 ---
 
@@ -460,16 +457,16 @@ _Screenshot: 1400x1016 viewport showing [what's shown]_
 
 ## Section-by-Section Guide
 
-### 1. Title & Kanban Link
+### 1. Title & Linear Issue Link
 
 ```markdown
 # Pull Request: [Concise Feature Name]
 
-**Kanban Ticket:** https://businessmap.io/c/57/[TICKET_ID]
+**Linear Issue:** https://linear.app/hivemq/issue/[ISSUE-ID]/[issue-title]
 ````
 
-- Use the board number (57 is default)
-- Use the ticket ID from the task
+- Use the Linear issue identifier (e.g., `EDG-40`)
+- Include the full Linear URL for easy navigation
 - Keep title short and descriptive (not technical)
 
 ### 2. Description - Opening
@@ -763,7 +760,7 @@ configured correctly (operational) through color and animation.
 Use this checklist to ensure your PR description is complete:
 
 - [ ] Title is concise and user-focused (not technical)
-- [ ] Kanban ticket link included with correct board and ID
+- [ ] Linear issue link included with correct issue ID
 - [ ] Description starts with user value proposition
 - [ ] Benefits section explicitly states what users gain
 - [ ] Technical summary is brief (3-5 bullets)

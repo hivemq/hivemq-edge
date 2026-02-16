@@ -1,0 +1,147 @@
+scan_paths:
+  - ./docs/**/*.md
+  - ./docs/**/*.mdx
+  - ./README.md
+  - ./CLAUDE.md
+
+exclude_patterns:
+  - "**/node_modules/**"
+  - "**/.git/**"
+  - "**/dist/**"
+  - "**/.tasks/**"
+
+high_risk_patterns:
+  - name: "AWS Access Key"
+    pattern: "AKIA[0-9A-Z]{16}"
+    severity: "critical"
+    message: "AWS access key detected. Remove immediately."
+
+  - name: "GitHub Personal Access Token"
+    pattern: "ghp_[a-zA-Z0-9]{36}"
+    severity: "critical"
+    message: "GitHub personal access token detected. Revoke and remove."
+
+  - name: "GitHub OAuth Token"
+    pattern: "gho_[a-zA-Z0-9]{36}"
+    severity: "critical"
+    message: "GitHub OAuth token detected. Revoke and remove."
+
+  - name: "Private Key Header"
+    pattern: "-----BEGIN.*PRIVATE KEY-----"
+    severity: "critical"
+    message: "Private key detected. Remove immediately and rotate key."
+
+  - name: "RSA Private Key"
+    pattern: "-----BEGIN RSA PRIVATE KEY-----"
+    severity: "critical"
+    message: "RSA private key detected. Remove immediately and rotate key."
+
+  - name: "SSH Private Key"
+    pattern: "ssh-rsa\\s+AAAA[a-zA-Z0-9+/]{100,}"
+    severity: "critical"
+    message: "SSH private key detected. Remove immediately."
+
+  - name: "Generic API Key"
+    pattern: "api[_-]?key[_-]?[=:]\\s*['\"]?[a-zA-Z0-9]{32,}"
+    severity: "high"
+    message: "Potential API key detected. Verify if real and remove."
+
+  - name: "Password Field"
+    pattern: "password[_-]?[=:]\\s*['\"]?[^\\s'\"]{8,}['\"]?"
+    severity: "high"
+    message: "Potential password detected. Use placeholder instead."
+
+  - name: "Bearer Token"
+    pattern: "Bearer\\s+[a-zA-Z0-9\\-_.]{20,}"
+    severity: "high"
+    message: "Bearer token detected. Use placeholder like 'Bearer <token>'."
+
+  - name: "JWT Token"
+    pattern: "eyJ[a-zA-Z0-9_-]+\\.eyJ[a-zA-Z0-9_-]+\\.[a-zA-Z0-9_-]+"
+    severity: "high"
+    message: "JWT token detected. Use example token or placeholder."
+
+  - name: "Database Connection String with Password"
+    pattern: "://[^:]+:[^@]+@[^/]+"
+    severity: "high"
+    message: "Database connection string with credentials detected."
+
+  - name: "Slack Token"
+    pattern: "xox[baprs]-[0-9]{10,13}-[0-9]{10,13}-[a-zA-Z0-9]{24,32}"
+    severity: "critical"
+    message: "Slack token detected. Revoke and remove."
+
+  - name: "Slack Webhook"
+    pattern: "https://hooks\\.slack\\.com/services/T[a-zA-Z0-9_]+/B[a-zA-Z0-9_]+/[a-zA-Z0-9_]+"
+    severity: "high"
+    message: "Slack webhook URL detected. Remove or use placeholder."
+
+  - name: "Generic Secret"
+    pattern: "secret[_-]?[=:]\\s*['\"]?[a-zA-Z0-9]{20,}"
+    severity: "medium"
+    message: "Potential secret value detected. Verify and use placeholder if needed."
+
+  - name: "Client Secret"
+    pattern: "client[_-]?secret[_-]?[=:]\\s*['\"]?[a-zA-Z0-9]{20,}"
+    severity: "high"
+    message: "Client secret detected. Use placeholder."
+
+  - name: "Auth Token"
+    pattern: "auth[_-]?token[_-]?[=:]\\s*['\"]?[a-zA-Z0-9]{20,}"
+    severity: "high"
+    message: "Authentication token detected. Use placeholder."
+
+medium_risk_patterns:
+  - name: "Private IP Address"
+    pattern: "(10\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|192\\.168\\.)"
+    severity: "medium"
+    message: "Private IP address detected. Consider using hostname or placeholder."
+
+  - name: "Internal Hostname"
+    pattern: "\\.internal\\.|\\.(local|corp|lan)\\b"
+    severity: "medium"
+    message: "Internal hostname detected. Consider using generic hostname."
+
+  - name: "Company Email"
+    pattern: "[a-zA-Z0-9._%+-]+@hivemq\\.com"
+    severity: "low"
+    message: "Company email detected. Verify if appropriate for public docs."
+
+allowed_exceptions:
+  # Placeholders
+  - "YOUR_API_KEY_HERE"
+  - "<your-password>"
+  - "<password>"
+  - "<token>"
+  - "<your-token>"
+  - "<api-key>"
+  - "YOUR_SECRET_HERE"
+  - "Bearer <token>"
+  - "Bearer YOUR_TOKEN"
+
+  # Environment variable references
+  - "process.env."
+  - "env."
+  - "${"
+
+  # Masked values
+  - "api_key: ***"
+  - "password: ***"
+  - "secret: ***"
+
+  # Documentation patterns
+  - "example-password"
+  - "test-password"
+  - "demo-token"
+  - "sample-key"
+
+  # Code snippets (not actual secrets)
+  - "const password = ''"
+  - "password: ''"
+  - "token: ''"
+
+# Whitelist specific lines (exact matches)
+whitelist:
+  - "Example: api_key: YOUR_API_KEY"
+  - "password: <your-password-here>"
+  - "Bearer token authentication"
