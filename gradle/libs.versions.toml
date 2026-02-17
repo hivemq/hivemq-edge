@@ -64,6 +64,7 @@ zeroallocationhashing = "0.27ea1"
 
 #Plugin Versions
 plugin-cyclonedx = "1.10.0"
+plugin-spotless = "7.0.2"
 plugin-defaults = "0.2.0"
 plugin-errorprone = "4.3.0"
 plugin-forbiddenapis = "3.10"
@@ -180,4 +181,5 @@ metadata = { id = "io.github.sgtsilvio.gradle.metadata", version.ref = "plugin-m
 openapi-generator = { id = "org.openapi.generator", version.ref = "plugin-openapigenerator" }
 shadow = { id = "com.gradleup.shadow", version.ref = "plugin-shadow" }
 spotbugs = { id = "com.github.spotbugs", version.ref = "plugin-spotbugs" }
+spotless = { id = "com.diffplug.spotless", version.ref = "plugin-spotless" }
 versions = { id = "com.github.ben-manes.versions", version.ref = "plugin-versions" }

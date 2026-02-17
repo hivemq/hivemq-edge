@@ -46,6 +46,12 @@ git clone https://github.com/<your user name>/hivemq-extension-sdk.git ../hivemq
 git clone https://github.com/<your user name>/hivemq-edge-extension-sdk.git ../hivemq-edge-extension-sdk
 ```
 
+## Code formatting
+HiveMQ Edge uses Spotless to automatically format the code.
+Please make sure to run `./gradlew spotlessApply` before committing your changes.
+
+During development, you can also make use of the [Spotless IntelliJ Plugin](https://plugins.jetbrains.com/plugin/13149-spotless) to automatically format your code on save.
+
 ## 🚀 Thank you for taking the time to contribute to HiveMQ Edge! 🚀
 
 We truly appreciate and value your time and work. ❤️

@@ -18,6 +18,7 @@ repositories {
 dependencies {
     implementation(libs.jackson.dataformat.xml)
     implementation("net.ltgt.gradle:gradle-errorprone-plugin:${libs.versions.plugin.errorprone.get()}")
+    implementation("com.diffplug.spotless:spotless-plugin-gradle:7.0.2")
 }
 
 gradlePlugin {
@@ -41,6 +42,10 @@ gradlePlugin {
         create("errorprone-convention") {
             id = "$group.$name"
             implementationClass = "$group.errorprone.ErrorProneConventionPlugin"
+        }
+        create("spotless-convention") {
+            id = "$group.$name"
+            implementationClass = "$group.spotless.SpotlessConventionPlugin"
         }
     }
 }
