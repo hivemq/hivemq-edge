@@ -19,10 +19,9 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.model.events.EventList;
 import com.hivemq.edge.api.EventsApi;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -38,6 +37,7 @@ public class EventResourceImpl extends AbstractApi implements EventsApi {
 
     @Override
     public @NotNull Response getEvents(final @NotNull Integer limit, final @NotNull Long timestamp) {
-        return Response.ok(new EventList(eventService.readEvents(timestamp, limit))).build();
+        return Response.ok(new EventList(eventService.readEvents(timestamp, limit)))
+                .build();
     }
 }

@@ -16,10 +16,9 @@
 package com.hivemq.persistence;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.util.MemoryEstimator;
-
 import java.util.Collection;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -52,7 +51,7 @@ public class IterablePersistenceEntry<T extends Collection<? extends Sizable>> i
         return object.toString();
     }
 
-    public static int getFixedSize(){
+    public static int getFixedSize() {
         int size = MemoryEstimator.OBJECT_SHELL_SIZE; // object overhead
         size += MemoryEstimator.LONG_SIZE; // timestamp
         size += MemoryEstimator.INT_SIZE; // sizeInMemory
@@ -63,7 +62,7 @@ public class IterablePersistenceEntry<T extends Collection<? extends Sizable>> i
     @Override
     public int getEstimatedSize() {
 
-        if (sizeInMemory != SIZE_NOT_CALCULATED){
+        if (sizeInMemory != SIZE_NOT_CALCULATED) {
             return sizeInMemory;
         }
 

@@ -15,27 +15,32 @@
  */
 package com.hivemq.mqtt.message.connect;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.Message;
 import com.hivemq.mqtt.message.ProtocolVersion;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
  */
 public interface Mqtt3CONNECT extends Message {
 
-    @NotNull ProtocolVersion getProtocolVersion();
+    @NotNull
+    ProtocolVersion getProtocolVersion();
 
-    @NotNull String getClientIdentifier();
+    @NotNull
+    String getClientIdentifier();
 
     int getKeepAlive();
 
-    @Nullable String getUsername();
+    @Nullable
+    String getUsername();
 
     byte @Nullable [] getPassword();
 
-    @Nullable String getPasswordAsUTF8String();
+    @Nullable
+    String getPasswordAsUTF8String();
 
-    @Nullable MqttWillPublish getWillPublish();
+    @Nullable
+    MqttWillPublish getWillPublish();
 }

@@ -22,48 +22,53 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.hivemq.datagov.DataGovernanceService;
 import com.hivemq.datagov.impl.DataGovernanceServiceImpl;
-import org.jetbrains.annotations.NotNull;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
-
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 @Module
 public abstract class DataGovernanceModule {
 
     @Binds
-    abstract @NotNull DataGovernanceService dataGovernanceService(@NotNull DataGovernanceServiceImpl dataGovernanceService);
+    abstract @NotNull DataGovernanceService dataGovernanceService(
+            @NotNull DataGovernanceServiceImpl dataGovernanceService);
 
-//    @Binds
-//    abstract @NotNull DataGovernancePolicyProvider dataGovernancePolicyProvider(@NotNull DataGovernancePolicyProviderImpl dataGovernanceService);
-//
-//    @Binds
-//    abstract @NotNull DataGovernanceFunctionProvider dataGovernanceFunctionProvider(@NotNull DataGovernanceFunctionProviderImpl dataGovernanceJsonSchemaProviderImp);
-//
-//    @Binds
-//    abstract @NotNull DataGovernanceJsonSchemaProvider dataGovernanceJsonSchemaProvider(@NotNull DataGovernanceJsonSchemaProviderImpl dataGovernanceJsonSchemaProviderImpl);
-//
-//    @Binds
-//    abstract @NotNull DataGovernanceTokenProvider dataGovernanceTokenProvider(@NotNull DataGovernanceTokenProviderImpl dataGovernanceTokenProviderImpl);
-//
-//    @Binds
-//    abstract @NotNull DataGovernanceProviders dataGovernanceProviders(@NotNull DataGovernanceProvidersImpl dataGovernanceProvidersImpl);
+    //    @Binds
+    //    abstract @NotNull DataGovernancePolicyProvider dataGovernancePolicyProvider(@NotNull
+    // DataGovernancePolicyProviderImpl dataGovernanceService);
+    //
+    //    @Binds
+    //    abstract @NotNull DataGovernanceFunctionProvider dataGovernanceFunctionProvider(@NotNull
+    // DataGovernanceFunctionProviderImpl dataGovernanceJsonSchemaProviderImp);
+    //
+    //    @Binds
+    //    abstract @NotNull DataGovernanceJsonSchemaProvider dataGovernanceJsonSchemaProvider(@NotNull
+    // DataGovernanceJsonSchemaProviderImpl dataGovernanceJsonSchemaProviderImpl);
+    //
+    //    @Binds
+    //    abstract @NotNull DataGovernanceTokenProvider dataGovernanceTokenProvider(@NotNull
+    // DataGovernanceTokenProviderImpl dataGovernanceTokenProviderImpl);
+    //
+    //    @Binds
+    //    abstract @NotNull DataGovernanceProviders dataGovernanceProviders(@NotNull DataGovernanceProvidersImpl
+    // dataGovernanceProvidersImpl);
 
     @Provides
     @Singleton
-    static ObjectMapper mapper(){
+    static ObjectMapper mapper() {
         ObjectMapper mapper = new ObjectMapper();
         configureMapper(mapper);
         return mapper;
     }
 
-    public static void configureMapper(final @NotNull ObjectMapper mapper){
+    public static void configureMapper(final @NotNull ObjectMapper mapper) {
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.setSerializationInclusion(JsonInclude.Include.ALWAYS);
         mapper.configure(MapperFeature.AUTO_DETECT_GETTERS, false);
-//        mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+        //        mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
     }
 }

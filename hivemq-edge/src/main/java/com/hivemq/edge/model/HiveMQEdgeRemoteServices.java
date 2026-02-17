@@ -17,10 +17,9 @@ package com.hivemq.edge.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.InputStream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.io.InputStream;
 
 /**
  * Defines endpoints to access for various remoteable interactions
@@ -55,8 +54,7 @@ public class HiveMQEdgeRemoteServices {
     private @NotNull String usageEndpoint = DEFAULT_USAGE_ENDPOINT;
     private @NotNull String configEndpoint = DEFAULT_CONFIG_ENDPOINT;
 
-    public HiveMQEdgeRemoteServices() {
-    }
+    public HiveMQEdgeRemoteServices() {}
 
     public @NotNull String getUsageEndpoint() {
         return usageEndpoint;
@@ -76,11 +74,10 @@ public class HiveMQEdgeRemoteServices {
 
     @Override
     public @NotNull String toString() {
-        return "HiveMQEdgeRemoteServices{" +
-                "usageEndpoint='" +
-                usageEndpoint +
-                "', configEndpoint='" +
-                configEndpoint +
-                "'}";
+        return "HiveMQEdgeRemoteServices{" + "usageEndpoint='"
+                + usageEndpoint
+                + "', configEndpoint='"
+                + configEndpoint
+                + "'}";
     }
 }

@@ -18,32 +18,35 @@ package com.hivemq.edge.modules.adapters.simulation.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.List;
 import java.util.Objects;
+import org.jetbrains.annotations.Nullable;
 
 public class SimulationToMqttConfig {
 
     public static final SimulationToMqttConfig DEFAULT = new SimulationToMqttConfig(List.of(), null, null);
 
     @JsonProperty("pollingIntervalMillis")
-    @ModuleConfigField(title = "Polling Interval [ms]",
-                       description = "Time in millisecond that this endpoint will be polled",
-                       numberMin = 1,
-                       defaultValue = "1000")
+    @ModuleConfigField(
+            title = "Polling Interval [ms]",
+            description = "Time in millisecond that this endpoint will be polled",
+            numberMin = 1,
+            defaultValue = "1000")
     private final int pollingIntervalMillis;
 
     @JsonProperty("maxPollingErrorsBeforeRemoval")
-    @ModuleConfigField(title = "Max. Polling Errors",
-                       description = "Max. errors polling the endpoint before the polling daemon is stopped (-1 for unlimited retries)",
-                       numberMin = -1,
-                       defaultValue = "10")
+    @ModuleConfigField(
+            title = "Max. Polling Errors",
+            description =
+                    "Max. errors polling the endpoint before the polling daemon is stopped (-1 for unlimited retries)",
+            numberMin = -1,
+            defaultValue = "10")
     private final int maxPollingErrorsBeforeRemoval;
 
     @JsonCreator
     public SimulationToMqttConfig(
-            @JsonProperty("simulationToMqttMappings") final @Nullable List<SimulationToMqttMapping> simulationToMqttMappings,
+            @JsonProperty("simulationToMqttMappings")
+                    final @Nullable List<SimulationToMqttMapping> simulationToMqttMappings,
             @JsonProperty("pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
             @JsonProperty("maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval) {
         this.pollingIntervalMillis = Objects.requireNonNullElse(pollingIntervalMillis, 1000);
@@ -60,20 +63,19 @@ public class SimulationToMqttConfig {
 
     @Override
     public String toString() {
-        return "SimulationToMqttConfig{" +
-                "pollingIntervalMillis=" +
-                pollingIntervalMillis +
-                ", maxPollingErrorsBeforeRemoval=" +
-                maxPollingErrorsBeforeRemoval +
-                '}';
+        return "SimulationToMqttConfig{" + "pollingIntervalMillis="
+                + pollingIntervalMillis
+                + ", maxPollingErrorsBeforeRemoval="
+                + maxPollingErrorsBeforeRemoval
+                + '}';
     }
 
     @Override
     public boolean equals(final Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         final SimulationToMqttConfig that = (SimulationToMqttConfig) o;
-        return getPollingIntervalMillis() == that.getPollingIntervalMillis() &&
-                getMaxPollingErrorsBeforeRemoval() == that.getMaxPollingErrorsBeforeRemoval();
+        return getPollingIntervalMillis() == that.getPollingIntervalMillis()
+                && getMaxPollingErrorsBeforeRemoval() == that.getMaxPollingErrorsBeforeRemoval();
     }
 
     @Override

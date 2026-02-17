@@ -16,7 +16,6 @@
 package com.hivemq.extensions.services.general;
 
 import com.hivemq.extension.sdk.api.services.general.IterationContext;
-
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**

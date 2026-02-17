@@ -15,15 +15,14 @@
  */
 package com.hivemq.persistence;
 
+import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENCE_BUCKET_COUNT;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -32,18 +31,20 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENCE_BUCKET_COUNT;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Lukas Brandl
  */
 public class InFileSingleWriterTest {
 
-    private final @NotNull InternalConfigurationService internalConfigurationService = new InternalConfigurationServiceImpl();
+    private final @NotNull InternalConfigurationService internalConfigurationService =
+            new InternalConfigurationServiceImpl();
     private @NotNull InFileSingleWriter singleWriterServiceImpl;
+
     @BeforeEach
     public void setUp() throws Exception {
         internalConfigurationService.set(InternalConfigurations.MEMORY_SINGLE_WRITER_THREAD_POOL_SIZE, "4");
@@ -52,6 +53,7 @@ public class InFileSingleWriterTest {
         internalConfigurationService.set(PERSISTENCE_BUCKET_COUNT, "64");
         singleWriterServiceImpl = new InFileSingleWriter(internalConfigurationService);
     }
+
     @AfterEach
     public void tearDown() throws Exception {
         singleWriterServiceImpl.stop();
@@ -88,7 +90,6 @@ public class InFileSingleWriterTest {
     @Test
     public void test_valid_amount_of_queues() throws Exception {
 
-
         assertEquals(1, singleWriterServiceImpl.validAmountOfQueues(1, 64));
         assertEquals(2, singleWriterServiceImpl.validAmountOfQueues(2, 64));
         assertEquals(4, singleWriterServiceImpl.validAmountOfQueues(4, 64));
@@ -107,8 +108,7 @@ public class InFileSingleWriterTest {
     private static class NoOpExecutor implements ExecutorService {
 
         @Override
-        public void shutdown() {
-        }
+        public void shutdown() {}
 
         @NotNull
         @Override
@@ -161,7 +161,8 @@ public class InFileSingleWriterTest {
         public <T> List<Future<T>> invokeAll(
                 final @NotNull Collection<? extends Callable<T>> tasks,
                 final long timeout,
-                final @NotNull TimeUnit unit) throws InterruptedException {
+                final @NotNull TimeUnit unit)
+                throws InterruptedException {
             return null;
         }
 
@@ -176,13 +177,12 @@ public class InFileSingleWriterTest {
         public <T> T invokeAny(
                 final @NotNull Collection<? extends Callable<T>> tasks,
                 final long timeout,
-                final @NotNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+                final @NotNull TimeUnit unit)
+                throws InterruptedException, ExecutionException, TimeoutException {
             return null;
         }
 
         @Override
-        public void execute(final @NotNull Runnable command) {
-
-        }
+        public void execute(final @NotNull Runnable command) {}
     }
 }

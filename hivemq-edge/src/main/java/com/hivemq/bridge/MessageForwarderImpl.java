@@ -15,6 +15,9 @@
  */
 package com.hivemq.bridge;
 
+import static com.hivemq.configuration.service.InternalConfigurations.FORWARDER_POLL_THRESHOLD_MESSAGES;
+import static com.hivemq.configuration.service.InternalConfigurations.PUBLISH_POLL_BATCH_SIZE_BYTES;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.FutureCallback;
@@ -37,10 +40,6 @@ import com.hivemq.util.ThreadFactoryUtil;
 import dagger.Lazy;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,9 +52,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import static com.hivemq.configuration.service.InternalConfigurations.FORWARDER_POLL_THRESHOLD_MESSAGES;
-import static com.hivemq.configuration.service.InternalConfigurations.PUBLISH_POLL_BATCH_SIZE_BYTES;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Singleton
 public class MessageForwarderImpl implements MessageForwarder {
@@ -94,8 +93,7 @@ public class MessageForwarderImpl implements MessageForwarder {
         this.pollLock = new ReentrantLock();
         final int threadCount = InternalConfigurations.BRIDGE_MESSAGE_FORWARDER_POOL_THREADS_COUNT.get();
         this.executorService =
-                Executors.newScheduledThreadPool(threadCount,
-                        ThreadFactoryUtil.create("bridge-message-forwarder-%d"));
+                Executors.newScheduledThreadPool(threadCount, ThreadFactoryUtil.create("bridge-message-forwarder-%d"));
 
         if (log.isDebugEnabled()) {
             log.debug("MessageForwarder initialized with {} thread(s) for bridge message forwarding", threadCount);
@@ -111,7 +109,8 @@ public class MessageForwarderImpl implements MessageForwarder {
             public void run() {
                 if (!executorService.isShutdown()) {
                     if (log.isDebugEnabled()) {
-                        log.debug("Shutting down MessageForwarder executor service with {} active forwarder(s)",
+                        log.debug(
+                                "Shutting down MessageForwarder executor service with {} active forwarder(s)",
                                 forwarders.size());
                     }
                     try {
@@ -143,13 +142,17 @@ public class MessageForwarderImpl implements MessageForwarder {
         final String clientId = shareName + "#" + hivemqId.get();
 
         if (log.isDebugEnabled()) {
-            log.debug("Adding forwarder '{}' for {} topic(s): {}",
-                    forwarderId, mqttForwarder.getTopics().size(), mqttForwarder.getTopics());
+            log.debug(
+                    "Adding forwarder '{}' for {} topic(s): {}",
+                    forwarderId,
+                    mqttForwarder.getTopics().size(),
+                    mqttForwarder.getTopics());
         }
 
         final ImmutableSet.Builder<@NotNull String> queueIdsBuilder = ImmutableSet.builder();
         for (final String topic : mqttForwarder.getTopics()) {
-            topicTree.addTopic(clientId,
+            topicTree.addTopic(
+                    clientId,
                     new Topic(topic, QoS.AT_LEAST_ONCE, false, true),
                     SubscriptionFlag.getDefaultFlags(true, true, false),
                     shareName);
@@ -157,22 +160,26 @@ public class MessageForwarderImpl implements MessageForwarder {
         }
         final ImmutableSet<@NotNull String> queueIds = queueIdsBuilder.build();
         mqttForwarder.setExecutorService(executorService);
-        mqttForwarder.setAfterForwardCallback((qos, uniqueId, queueId, cancelled) -> messageProcessed(qos,
-                uniqueId,
-                forwarderId,
-                queueId));
+        mqttForwarder.setAfterForwardCallback(
+                (qos, uniqueId, queueId, cancelled) -> messageProcessed(qos, uniqueId, forwarderId, queueId));
         mqttForwarder.setResetInflightMarkerCallback((sharedSubscriptionId, uniqueId) -> {
             final var qPersistence = queuePersistence.get();
             try {
-                if(qPersistence != null) {
-                    qPersistence.removeInFlightMarker(sharedSubscriptionId, uniqueId).get();
+                if (qPersistence != null) {
+                    qPersistence
+                            .removeInFlightMarker(sharedSubscriptionId, uniqueId)
+                            .get();
                 }
             } catch (final InterruptedException | ExecutionException e) {
                 if (e instanceof InterruptedException) {
                     Thread.currentThread().interrupt();
                 }
-                log.error("Failed to remove inflight marker for forwarder '{}', queue '{}', messageId '{}'",
-                        forwarderId, sharedSubscriptionId, uniqueId, e);
+                log.error(
+                        "Failed to remove inflight marker for forwarder '{}', queue '{}', messageId '{}'",
+                        forwarderId,
+                        sharedSubscriptionId,
+                        uniqueId,
+                        e);
                 throw new RuntimeException(e);
             }
         });
@@ -188,12 +195,14 @@ public class MessageForwarderImpl implements MessageForwarder {
             final Set<String> forwarderQueueIds = queueIdsForForwarder.get(fwdId);
             if (forwarderQueueIds != null && !forwarderQueueIds.isEmpty()) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Resetting inflight markers for forwarder '{}', {} queue(s)",
-                            fwdId, forwarderQueueIds.size());
+                    log.debug(
+                            "Resetting inflight markers for forwarder '{}', {} queue(s)",
+                            fwdId,
+                            forwarderQueueIds.size());
                 }
                 final ImmutableList.Builder<ListenableFuture<Void>> futuresBuilder = ImmutableList.builder();
                 final var qPersistence = queuePersistence.get();
-                if(qPersistence != null) {
+                if (qPersistence != null) {
                     for (final String queueIdToReset : forwarderQueueIds) {
                         futuresBuilder.add(qPersistence.removeAllInFlightMarkers(queueIdToReset));
                     }
@@ -201,10 +210,13 @@ public class MessageForwarderImpl implements MessageForwarder {
                 try {
                     // Wait for all inflight markers to be reset before returning
                     // This ensures onReconnect() will see clean queues when it triggers checkBuffers()
-                    Futures.allAsList(futuresBuilder.build()).get(RESET_INFLIGHT_COUNTERS_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
+                    Futures.allAsList(futuresBuilder.build())
+                            .get(RESET_INFLIGHT_COUNTERS_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
                     if (log.isDebugEnabled()) {
-                        log.debug("Reset all inflight markers for forwarder '{}', {} queue(s)",
-                                fwdId, forwarderQueueIds.size());
+                        log.debug(
+                                "Reset all inflight markers for forwarder '{}', {} queue(s)",
+                                fwdId,
+                                forwarderQueueIds.size());
                     }
                 } catch (final InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -212,7 +224,10 @@ public class MessageForwarderImpl implements MessageForwarder {
                 } catch (final ExecutionException e) {
                     log.error("Failed to reset inflight markers for forwarder '{}'", fwdId, e);
                 } catch (final TimeoutException e) {
-                    log.warn("Timeout resetting inflight markers for forwarder '{}' - forcing reconnect to retry", fwdId, e);
+                    log.warn(
+                            "Timeout resetting inflight markers for forwarder '{}' - forcing reconnect to retry",
+                            fwdId,
+                            e);
                     final MqttForwarder forwarder = forwarders.get(fwdId);
                     if (forwarder != null) {
                         forwarder.forceReconnect();
@@ -238,8 +253,8 @@ public class MessageForwarderImpl implements MessageForwarder {
         mqttForwarder.start();
 
         if (log.isInfoEnabled()) {
-            log.info("Forwarder '{}' started successfully, total active forwarders: {}",
-                    forwarderId, forwarders.size());
+            log.info(
+                    "Forwarder '{}' started successfully, total active forwarders: {}", forwarderId, forwarders.size());
         }
 
         checkBuffers();
@@ -251,8 +266,11 @@ public class MessageForwarderImpl implements MessageForwarder {
         final String clientId = forwarderId + hivemqId.get();
 
         if (log.isDebugEnabled()) {
-            log.debug("Removing forwarder '{}' for {} topic(s), clearQueue: {}",
-                    forwarderId, mqttForwarder.getTopics().size(), clearQueue);
+            log.debug(
+                    "Removing forwarder '{}' for {} topic(s), clearQueue: {}",
+                    forwarderId,
+                    mqttForwarder.getTopics().size(),
+                    clearQueue);
         }
 
         for (final String topic : mqttForwarder.getTopics()) {
@@ -261,8 +279,8 @@ public class MessageForwarderImpl implements MessageForwarder {
             notEmptyQueues.remove(queueId);
             if (clearQueue) {
                 final var qPersistence = queuePersistence.get();
-                if(qPersistence != null) {
-                    qPersistence.clear(queueId, true); //clear up queue
+                if (qPersistence != null) {
+                    qPersistence.clear(queueId, true); // clear up queue
                     if (log.isTraceEnabled()) {
                         log.trace("Cleared queue '{}' for forwarder '{}'", queueId, forwarderId);
                     }
@@ -274,8 +292,10 @@ public class MessageForwarderImpl implements MessageForwarder {
         if (removed != null) {
             removed.stop();
             if (log.isInfoEnabled()) {
-                log.info("Forwarder '{}' removed and stopped, total active forwarders: {}",
-                        forwarderId, forwarders.size());
+                log.info(
+                        "Forwarder '{}' removed and stopped, total active forwarders: {}",
+                        forwarderId,
+                        forwarders.size());
             }
         } else {
             log.warn("Attempted to remove forwarder '{}' but it was not found in active forwarders", forwarderId);
@@ -287,11 +307,11 @@ public class MessageForwarderImpl implements MessageForwarder {
             final @NotNull String uniqueId,
             final @NotNull String forwarderId,
             final @NotNull String queueId) {
-        //QoS 0 has no inflight marker
+        // QoS 0 has no inflight marker
         if (qos != QoS.AT_MOST_ONCE) {
-            //-- 15665 - > QoS 0 causes republishing
+            // -- 15665 - > QoS 0 causes republishing
             final var qPersistence = queuePersistence.get();
-            if(qPersistence != null) {
+            if (qPersistence != null) {
                 FutureUtils.addExceptionLogger(qPersistence.removeShared(queueId, uniqueId));
             }
         }
@@ -300,25 +320,31 @@ public class MessageForwarderImpl implements MessageForwarder {
             log.trace("Message processed for forwarder '{}', queueId: '{}', QoS: {}", forwarderId, queueId, qos);
         }
 
-        FutureUtils.addExceptionLogger(singleWriterService.getQueuedMessagesQueue().submit(queueId, bucketIndex -> {
-            notEmptyQueues.add(queueId);
-            final MqttForwarder forwarder = forwarders.get(forwarderId);
-            if (forwarder != null) {
-                final int inflightCount = forwarder.getInflightCount();
-                if (inflightCount < FORWARDER_POLL_THRESHOLD_MESSAGES) {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Forwarder '{}' inflight count {} below threshold {}, triggering buffer check",
-                                forwarderId, inflightCount, FORWARDER_POLL_THRESHOLD_MESSAGES);
+        FutureUtils.addExceptionLogger(
+                singleWriterService.getQueuedMessagesQueue().submit(queueId, bucketIndex -> {
+                    notEmptyQueues.add(queueId);
+                    final MqttForwarder forwarder = forwarders.get(forwarderId);
+                    if (forwarder != null) {
+                        final int inflightCount = forwarder.getInflightCount();
+                        if (inflightCount < FORWARDER_POLL_THRESHOLD_MESSAGES) {
+                            if (log.isTraceEnabled()) {
+                                log.trace(
+                                        "Forwarder '{}' inflight count {} below threshold {}, triggering buffer check",
+                                        forwarderId,
+                                        inflightCount,
+                                        FORWARDER_POLL_THRESHOLD_MESSAGES);
+                            }
+                            checkBuffers();
+                        }
+                    } else {
+                        if (log.isTraceEnabled()) {
+                            log.trace(
+                                    "Forwarder '{}' not found during message processing, may have been removed",
+                                    forwarderId);
+                        }
                     }
-                    checkBuffers();
-                }
-            } else {
-                if (log.isTraceEnabled()) {
-                    log.trace("Forwarder '{}' not found during message processing, may have been removed", forwarderId);
-                }
-            }
-            return null;
-        }));
+                    return null;
+                }));
     }
 
     @Override
@@ -375,69 +401,79 @@ public class MessageForwarderImpl implements MessageForwarder {
         }
         final long pollingStartTime = log.isDebugEnabled() ? System.nanoTime() : 0;
 
-        Futures.addCallback(Futures.allAsList(pollFuturesBuilder.build()), new FutureCallback<>() {
-            @Override
-            public void onSuccess(final @NotNull List<Boolean> result) {
-                if (log.isDebugEnabled()) {
-                    final long durationMicros = (System.nanoTime() - pollingStartTime) / 1000;
-                    final long nonEmptyQueues = result.stream().filter(Boolean::booleanValue).count();
-                    log.debug("Poll cycle completed in {} μs, {} queue(s) had messages", durationMicros, nonEmptyQueues);
-                }
+        Futures.addCallback(
+                Futures.allAsList(pollFuturesBuilder.build()),
+                new FutureCallback<>() {
+                    @Override
+                    public void onSuccess(final @NotNull List<Boolean> result) {
+                        if (log.isDebugEnabled()) {
+                            final long durationMicros = (System.nanoTime() - pollingStartTime) / 1000;
+                            final long nonEmptyQueues = result.stream()
+                                    .filter(Boolean::booleanValue)
+                                    .count();
+                            log.debug(
+                                    "Poll cycle completed in {} μs, {} queue(s) had messages",
+                                    durationMicros,
+                                    nonEmptyQueues);
+                        }
 
-                for (final Boolean queueNotEmpty : result) {
-                    if (queueNotEmpty) {
-                        // At least one queue was not empty and not over the threshold
-                        if (log.isTraceEnabled()) {
-                            log.trace("Queues still have messages, continuing polling");
+                        for (final Boolean queueNotEmpty : result) {
+                            if (queueNotEmpty) {
+                                // At least one queue was not empty and not over the threshold
+                                if (log.isTraceEnabled()) {
+                                    log.trace("Queues still have messages, continuing polling");
+                                }
+                                checkBuffersAfterLock();
+                                return;
+                            }
+                        }
+
+                        pollLock.lock();
+                        try {
+                            // we don't need to poll again
+                            if (!pollAgain) {
+                                if (log.isTraceEnabled()) {
+                                    log.trace("All queues empty, ending polling cycle");
+                                }
+                                polling = false;
+                                return;
+                            }
+                            // we need to poll again
+                            if (log.isTraceEnabled()) {
+                                log.trace("pollAgain flag set, restarting polling cycle");
+                            }
+                            pollAgain = false;
+                        } finally {
+                            pollLock.unlock();
                         }
                         checkBuffersAfterLock();
-                        return;
                     }
-                }
 
-                pollLock.lock();
-                try {
-                    //we don't need to poll again
-                    if (!pollAgain) {
-                        if (log.isTraceEnabled()) {
-                            log.trace("All queues empty, ending polling cycle");
+                    @Override
+                    public void onFailure(final @NotNull Throwable throwable) {
+                        log.error(
+                                "Exception thrown while polling messages for bridge forwarders, will retry", throwable);
+
+                        // we need to reset the polling flag and re-schedule a poll here
+                        pollLock.lock();
+                        try {
+                            polling = false;
+                        } finally {
+                            pollLock.unlock();
                         }
-                        polling = false;
-                        return;
-                    }
-                    //we need to poll again
-                    if (log.isTraceEnabled()) {
-                        log.trace("pollAgain flag set, restarting polling cycle");
-                    }
-                    pollAgain = false;
-                } finally {
-                    pollLock.unlock();
-                }
-                checkBuffersAfterLock();
-            }
 
-            @Override
-            public void onFailure(final @NotNull Throwable throwable) {
-                log.error("Exception thrown while polling messages for bridge forwarders, will retry", throwable);
-
-                //we need to reset the polling flag and re-schedule a poll here
-                pollLock.lock();
-                try {
-                    polling = false;
-                } finally {
-                    pollLock.unlock();
-                }
-
-                //which callback executor does not matter, but it must be scheduled to prevent a stack-overflow if multiple errors occur back-to-back
-                singleWriterService.getQueuedMessagesQueue().submit("forwarder", bucketIndex -> {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Retrying buffer check after polling failure");
+                        // which callback executor does not matter, but it must be scheduled to prevent a stack-overflow
+                        // if multiple errors occur back-to-back
+                        singleWriterService.getQueuedMessagesQueue().submit("forwarder", bucketIndex -> {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Retrying buffer check after polling failure");
+                            }
+                            checkBuffers();
+                            return null;
+                        });
                     }
-                    checkBuffers();
-                    return null;
-                });
-            }
-        }, MoreExecutors.directExecutor());
+                },
+                MoreExecutors.directExecutor());
     }
 
     @NotNull
@@ -447,8 +483,11 @@ public class MessageForwarderImpl implements MessageForwarder {
         if (forwarderNonEmptyQueue != null) {
             final int inflightCount = mqttForwarder.getInflightCount();
             if (log.isTraceEnabled()) {
-                log.trace("Polling forwarder '{}' with {} inflight message(s), {} queue(s)",
-                        mqttForwarder.getId(), inflightCount, forwarderNonEmptyQueue.size());
+                log.trace(
+                        "Polling forwarder '{}' with {} inflight message(s), {} queue(s)",
+                        mqttForwarder.getId(),
+                        inflightCount,
+                        forwarderNonEmptyQueue.size());
             }
 
             for (final String queueId : forwarderNonEmptyQueue) {
@@ -456,8 +495,11 @@ public class MessageForwarderImpl implements MessageForwarder {
                     pollFuturesBuilder.add(pollForQueue(queueId, mqttForwarder));
                 } else {
                     if (log.isTraceEnabled()) {
-                        log.trace("Skipping poll for forwarder '{}', inflight count {} exceeds threshold {}",
-                                mqttForwarder.getId(), inflightCount, FORWARDER_POLL_THRESHOLD_MESSAGES);
+                        log.trace(
+                                "Skipping poll for forwarder '{}', inflight count {} exceeds threshold {}",
+                                mqttForwarder.getId(),
+                                inflightCount,
+                                FORWARDER_POLL_THRESHOLD_MESSAGES);
                     }
                 }
             }
@@ -471,35 +513,43 @@ public class MessageForwarderImpl implements MessageForwarder {
 
     @NotNull
     private ListenableFuture<Boolean> pollForQueue(
-            final @NotNull String queueId,
-            final @NotNull MqttForwarder mqttForwarder) {
+            final @NotNull String queueId, final @NotNull MqttForwarder mqttForwarder) {
         if (log.isTraceEnabled()) {
-            log.trace("Polling queue '{}' for forwarder '{}', batchSize: {}, byteLimit: {}",
-                    queueId, mqttForwarder.getId(), FORWARDER_POLL_THRESHOLD_MESSAGES, PUBLISH_POLL_BATCH_SIZE_BYTES);
+            log.trace(
+                    "Polling queue '{}' for forwarder '{}', batchSize: {}, byteLimit: {}",
+                    queueId,
+                    mqttForwarder.getId(),
+                    FORWARDER_POLL_THRESHOLD_MESSAGES,
+                    PUBLISH_POLL_BATCH_SIZE_BYTES);
         }
         final var qPersistence = queuePersistence.get();
-        if(qPersistence != null) {
-            return Futures.transformAsync(qPersistence
-                    .readShared(queueId, FORWARDER_POLL_THRESHOLD_MESSAGES, PUBLISH_POLL_BATCH_SIZE_BYTES), publishes -> {
-                if (publishes == null) {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Queue '{}' is empty, removing from non-empty queues", queueId);
-                    }
-                    notEmptyQueues.remove(queueId);
-                    return Futures.immediateFuture(false);
-                }
+        if (qPersistence != null) {
+            return Futures.transformAsync(
+                    qPersistence.readShared(queueId, FORWARDER_POLL_THRESHOLD_MESSAGES, PUBLISH_POLL_BATCH_SIZE_BYTES),
+                    publishes -> {
+                        if (publishes == null) {
+                            if (log.isTraceEnabled()) {
+                                log.trace("Queue '{}' is empty, removing from non-empty queues", queueId);
+                            }
+                            notEmptyQueues.remove(queueId);
+                            return Futures.immediateFuture(false);
+                        }
 
-                final int messageCount = publishes.size();
-                if (log.isDebugEnabled()) {
-                    log.debug("Retrieved {} message(s) from queue '{}' for forwarder '{}'",
-                            messageCount, queueId, mqttForwarder.getId());
-                }
+                        final int messageCount = publishes.size();
+                        if (log.isDebugEnabled()) {
+                            log.debug(
+                                    "Retrieved {} message(s) from queue '{}' for forwarder '{}'",
+                                    messageCount,
+                                    queueId,
+                                    mqttForwarder.getId());
+                        }
 
-                for (final PUBLISH publish : publishes) {
-                    mqttForwarder.onMessage(publish, queueId);
-                }
-                return Futures.immediateFuture(!publishes.isEmpty());
-            }, executorService);
+                        for (final PUBLISH publish : publishes) {
+                            mqttForwarder.onMessage(publish, queueId);
+                        }
+                        return Futures.immediateFuture(!publishes.isEmpty());
+                    },
+                    executorService);
         } else {
             return Futures.immediateFuture(false);
         }

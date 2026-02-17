@@ -15,6 +15,12 @@
  */
 package com.hivemq.persistence;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hivemq.configuration.service.InternalConfigurations.CLEANUP_JOB_PARALLELISM;
+import static com.hivemq.configuration.service.InternalConfigurations.CLEANUP_JOB_TASK_TIMEOUT_SEC;
+import static com.hivemq.configuration.service.InternalConfigurations.INTERVAL_BETWEEN_CLEANUP_JOBS_SEC;
+import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENCE_BUCKET_COUNT;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -23,29 +29,22 @@ import com.google.common.util.concurrent.ListenableScheduledFuture;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.hivemq.configuration.service.InternalConfigurationService;
-import java.util.concurrent.RejectedExecutionException;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.clientsession.ClientSessionPersistence;
 import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence;
 import com.hivemq.persistence.ioc.annotation.Persistence;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
 import com.hivemq.persistence.util.FutureUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hivemq.configuration.service.InternalConfigurations.CLEANUP_JOB_PARALLELISM;
-import static com.hivemq.configuration.service.InternalConfigurations.CLEANUP_JOB_TASK_TIMEOUT_SEC;
-import static com.hivemq.configuration.service.InternalConfigurations.INTERVAL_BETWEEN_CLEANUP_JOBS_SEC;
-import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENCE_BUCKET_COUNT;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This service is used to remove full remove tombstones that are older than a certain amount of time
@@ -79,7 +78,6 @@ public class ScheduledCleanUpService {
      */
     public static final int CLIENT_QUEUE_PERSISTENCE_INDEX = 3;
 
-
     private static final Logger log = LoggerFactory.getLogger(ScheduledCleanUpService.class);
 
     private final @NotNull ListeningScheduledExecutorService scheduledExecutorService;
@@ -95,12 +93,13 @@ public class ScheduledCleanUpService {
     private final int cleanUpTaskTimeoutSec;
 
     @Inject
-    public ScheduledCleanUpService(final @NotNull @Persistence ListeningScheduledExecutorService scheduledExecutorService,
-                                   final @NotNull ClientSessionPersistence clientSessionPersistence,
-                                   final @NotNull ClientSessionSubscriptionPersistence subscriptionPersistence,
-                                   final @NotNull RetainedMessagePersistence retainedMessagePersistence,
-                                   final @NotNull ClientQueuePersistence clientQueuePersistence,
-                                   final @NotNull InternalConfigurationService internalConfigurationService) {
+    public ScheduledCleanUpService(
+            final @NotNull @Persistence ListeningScheduledExecutorService scheduledExecutorService,
+            final @NotNull ClientSessionPersistence clientSessionPersistence,
+            final @NotNull ClientSessionSubscriptionPersistence subscriptionPersistence,
+            final @NotNull RetainedMessagePersistence retainedMessagePersistence,
+            final @NotNull ClientQueuePersistence clientQueuePersistence,
+            final @NotNull InternalConfigurationService internalConfigurationService) {
 
         this.scheduledExecutorService = scheduledExecutorService;
         this.clientSessionPersistence = clientSessionPersistence;
@@ -112,7 +111,7 @@ public class ScheduledCleanUpService {
         this.cleanUpTaskTimeoutSec = CLEANUP_JOB_TASK_TIMEOUT_SEC;
     }
 
-    @Inject //method injection, this gets called once after instantiation
+    @Inject // method injection, this gets called once after instantiation
     public void postConstruct() {
         for (int i = 0; i < CLEANUP_JOB_PARALLELISM; i++) {
             scheduleCleanUpTask();
@@ -125,12 +124,7 @@ public class ScheduledCleanUpService {
             return;
         }
         final ListenableScheduledFuture<Void> schedule = scheduledExecutorService.schedule(
-                new CleanUpTask(
-                        this,
-                        scheduledExecutorService,
-                        cleanUpTaskTimeoutSec,
-                        bucketIndex,
-                        persistenceIndex),
+                new CleanUpTask(this, scheduledExecutorService, cleanUpTaskTimeoutSec, bucketIndex, persistenceIndex),
                 cleanUpJobSchedule,
                 TimeUnit.SECONDS);
         persistenceIndex = (persistenceIndex + 1) % NUMBER_OF_PERSISTENCES;
@@ -138,7 +132,6 @@ public class ScheduledCleanUpService {
             bucketIndex = (bucketIndex + 1) % persistenceBucketCount;
         }
         FutureUtils.addExceptionLogger(schedule);
-
     }
 
     public ListenableFuture<Void> cleanUp(final int bucketIndex, final int persistenceIndex) {
@@ -167,11 +160,12 @@ public class ScheduledCleanUpService {
         private final int persistenceIndex;
 
         @VisibleForTesting
-        CleanUpTask(final @NotNull ScheduledCleanUpService scheduledCleanUpService,
-                    final @NotNull ListeningScheduledExecutorService scheduledExecutorService,
-                    final int cleanUpTaskTimeoutSec,
-                    final int bucketIndex,
-                    final int persistenceIndex) {
+        CleanUpTask(
+                final @NotNull ScheduledCleanUpService scheduledCleanUpService,
+                final @NotNull ListeningScheduledExecutorService scheduledExecutorService,
+                final int cleanUpTaskTimeoutSec,
+                final int bucketIndex,
+                final int persistenceIndex) {
             checkNotNull(scheduledCleanUpService, "Clean up service must not be null");
             checkNotNull(scheduledExecutorService, "Executor service must not be null");
             this.scheduledCleanUpService = scheduledCleanUpService;
@@ -185,26 +179,31 @@ public class ScheduledCleanUpService {
         public Void call() {
             try {
                 final ListenableFuture<Void> future = scheduledCleanUpService.cleanUp(bucketIndex, persistenceIndex);
-                Futures.addCallback(future, new FutureCallback<>() {
+                Futures.addCallback(
+                        future,
+                        new FutureCallback<>() {
 
-                    @Override
-                    public void onSuccess(final @Nullable Void aVoid) {
-                            scheduledCleanUpService.scheduleCleanUpTask();
-                    }
+                            @Override
+                            public void onSuccess(final @Nullable Void aVoid) {
+                                scheduledCleanUpService.scheduleCleanUpTask();
+                            }
 
-                    @Override
-                    public void onFailure(final Throwable throwable) {
-                        // We expect CancellationExceptions only for timeouts. We don't want to spam the log with
-                        // messages that suggest to a customer that something is wrong because the task is actually
-                        // still running, but we're going to schedule the next one to ensure progress.
-                        if (throwable instanceof CancellationException) {
-                            log.debug("Cleanup was cancelled (timeout).", throwable);
-                        } else {
-                            log.error("Exception during cleanup.", throwable);
-                        }
-                        scheduledCleanUpService.scheduleCleanUpTask();
-                    }
-                }, MoreExecutors.directExecutor());
+                            @Override
+                            public void onFailure(final Throwable throwable) {
+                                // We expect CancellationExceptions only for timeouts. We don't want to spam the log
+                                // with
+                                // messages that suggest to a customer that something is wrong because the task is
+                                // actually
+                                // still running, but we're going to schedule the next one to ensure progress.
+                                if (throwable instanceof CancellationException) {
+                                    log.debug("Cleanup was cancelled (timeout).", throwable);
+                                } else {
+                                    log.error("Exception during cleanup.", throwable);
+                                }
+                                scheduledCleanUpService.scheduleCleanUpTask();
+                            }
+                        },
+                        MoreExecutors.directExecutor());
                 // We don't need to add a callback to deal with the TimeoutException of the future returned here because
                 // the wrapped future will receive a call to onFailure with a CancellationException, leading to the
                 // scheduling of the next CleanUpTask.
@@ -214,7 +213,8 @@ public class ScheduledCleanUpService {
                 try {
                     Futures.withTimeout(future, cleanUpTaskTimeoutSec, TimeUnit.SECONDS, scheduledExecutorService);
                 } catch (final RejectedExecutionException rejectedExecutionException) {
-                    log.warn("Clean up job timeout scheduling rejected, executor is shutting down.",
+                    log.warn(
+                            "Clean up job timeout scheduling rejected, executor is shutting down.",
                             rejectedExecutionException);
                 }
             } catch (final Throwable throwable) {

@@ -40,5 +40,6 @@ public interface UserDnResolver {
      * @param username The username to resolve (e.g., "jdoe", "john.doe@company.com")
      * @return The full Distinguished Name (e.g., "uid=jdoe,ou=people,dc=example,dc=com")
      */
-    @NotNull String resolveDn(final @NotNull String username);
+    @NotNull
+    String resolveDn(final @NotNull String username);
 }

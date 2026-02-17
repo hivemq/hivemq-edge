@@ -15,8 +15,8 @@
  */
 package com.hivemq.extensions.services.session;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.session.SessionInformation;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -26,10 +26,12 @@ public class SessionInformationImpl implements SessionInformation {
 
     @NotNull
     private final String clientIdentifier;
+
     private final long sessionExpiryInterval;
     private final boolean connected;
 
-    public SessionInformationImpl(final @NotNull String clientIdentifier, final long sessionExpiryInterval, final boolean connected) {
+    public SessionInformationImpl(
+            final @NotNull String clientIdentifier, final long sessionExpiryInterval, final boolean connected) {
         this.clientIdentifier = clientIdentifier;
         this.sessionExpiryInterval = sessionExpiryInterval;
         this.connected = connected;

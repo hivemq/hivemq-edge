@@ -15,8 +15,11 @@
  */
 package com.hivemq.codec.encoder;
 
+import static com.google.common.collect.Lists.newArrayList;
+import static com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
@@ -24,21 +27,18 @@ import com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode;
 import com.hivemq.mqtt.message.suback.SUBACK;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.nio.channels.ClosedChannelException;
+import java.util.ArrayList;
+import java.util.List;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import util.encoder.TestMessageEncoder;
 
-import java.nio.channels.ClosedChannelException;
-import java.util.ArrayList;
-import java.util.List;
-
-import static com.google.common.collect.Lists.newArrayList;
-import static com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode.*;
-import static org.junit.jupiter.api.Assertions.*;
-
 public class Mqtt3SubackEncoderTest {
 
     private @NotNull EmbeddedChannel channel;
+
     @BeforeEach
     public void setUp() throws Exception {
         channel = new EmbeddedChannel(new TestMessageEncoder());
@@ -55,7 +55,7 @@ public class Mqtt3SubackEncoderTest {
         final ByteBuf buf = channel.readOutbound();
 
         assertEquals((byte) 0b1001_0000, buf.readByte());
-        assertEquals(5, buf.readByte());    //Two for message ID and three for the payload
+        assertEquals(5, buf.readByte()); // Two for message ID and three for the payload
 
         assertEquals(10, buf.readUnsignedShort());
         assertEquals(GRANTED_QOS_0.getCode(), buf.readByte());
@@ -64,7 +64,7 @@ public class Mqtt3SubackEncoderTest {
 
         assertFalse(buf.isReadable());
 
-        //Let's check if we stay connected
+        // Let's check if we stay connected
         assertTrue(channel.isActive());
     }
 
@@ -92,7 +92,7 @@ public class Mqtt3SubackEncoderTest {
 
         assertFalse(buf.isReadable());
 
-        //Let's check if we stay connected
+        // Let's check if we stay connected
         assertTrue(channel.isActive());
     }
 
@@ -101,12 +101,13 @@ public class Mqtt3SubackEncoderTest {
         final ClientConnection clientConnection = new ClientConnection(channel, null);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv3_1_1);
-        final SUBACK suback = new SUBACK(10, newArrayList(GRANTED_QOS_0, GRANTED_QOS_1, GRANTED_QOS_2, UNSPECIFIED_ERROR));
+        final SUBACK suback =
+                new SUBACK(10, newArrayList(GRANTED_QOS_0, GRANTED_QOS_1, GRANTED_QOS_2, UNSPECIFIED_ERROR));
         channel.writeOutbound(suback);
 
         final ByteBuf buf = channel.readOutbound();
         assertEquals((byte) 0b1001_0000, buf.readByte());
-        assertEquals(6, buf.readByte());    //Two for message ID and four for the payload
+        assertEquals(6, buf.readByte()); // Two for message ID and four for the payload
 
         assertEquals(10, buf.readUnsignedShort());
         assertEquals(GRANTED_QOS_0.getCode(), buf.readByte());
@@ -116,7 +117,7 @@ public class Mqtt3SubackEncoderTest {
 
         assertFalse(buf.isReadable());
 
-        //Let's check if we stay connected
+        // Let's check if we stay connected
         assertTrue(channel.isActive());
     }
 
@@ -125,12 +126,16 @@ public class Mqtt3SubackEncoderTest {
         final ClientConnection clientConnection = new ClientConnection(channel, null);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv3_1_1);
-        final SUBACK suback = new SUBACK(10, newArrayList(GRANTED_QOS_0, GRANTED_QOS_1, GRANTED_QOS_2, UNSPECIFIED_ERROR), "reason-string", Mqtt5UserProperties.of(MqttUserProperty.of("user", "prop")));
+        final SUBACK suback = new SUBACK(
+                10,
+                newArrayList(GRANTED_QOS_0, GRANTED_QOS_1, GRANTED_QOS_2, UNSPECIFIED_ERROR),
+                "reason-string",
+                Mqtt5UserProperties.of(MqttUserProperty.of("user", "prop")));
         channel.writeOutbound(suback);
 
         final ByteBuf buf = channel.readOutbound();
         assertEquals((byte) 0b1001_0000, buf.readByte());
-        assertEquals(6, buf.readByte());    //Two for message ID and four for the payload
+        assertEquals(6, buf.readByte()); // Two for message ID and four for the payload
 
         assertEquals(10, buf.readUnsignedShort());
         assertEquals(GRANTED_QOS_0.getCode(), buf.readByte());
@@ -140,7 +145,7 @@ public class Mqtt3SubackEncoderTest {
 
         assertFalse(buf.isReadable());
 
-        //Let's check if we stay connected
+        // Let's check if we stay connected
         assertTrue(channel.isActive());
     }
 
@@ -151,7 +156,7 @@ public class Mqtt3SubackEncoderTest {
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv3_1);
         try {
             channel.writeOutbound(new SUBACK(10, UNSPECIFIED_ERROR));
-            //This is ugly but in the meantime the channel could be closed
+            // This is ugly but in the meantime the channel could be closed
         } catch (final Exception e) {
             if (!(e instanceof ClosedChannelException)) {
                 throw e;
@@ -167,7 +172,7 @@ public class Mqtt3SubackEncoderTest {
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv3_1);
         try {
             channel.writeOutbound(new SUBACK(10, Mqtt5SubAckReasonCode.IMPLEMENTATION_SPECIFIC_ERROR));
-            //This is ugly but in the meantime the channel could be closed
+            // This is ugly but in the meantime the channel could be closed
         } catch (final Exception e) {
             if (!(e instanceof ClosedChannelException)) {
                 throw e;

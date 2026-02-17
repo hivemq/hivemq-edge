@@ -18,14 +18,10 @@ package com.hivemq.mqtt.message;
 import org.junit.jupiter.api.Test;
 import util.EnumTestUtil;
 
-
 public class MessageTypeTest {
 
     @Test
     public void test_all_value_of() {
-        EnumTestUtil.assertAllValueOf(
-                MessageType.class,
-                MessageType::getType,
-                MessageType::valueOf);
+        EnumTestUtil.assertAllValueOf(MessageType.class, MessageType::getType, MessageType::valueOf);
     }
 }

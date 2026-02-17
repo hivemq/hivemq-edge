@@ -16,12 +16,12 @@
 package com.hivemq.extensions.interceptor.disconnect.parameter;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
 import com.hivemq.extension.sdk.api.interceptor.disconnect.parameter.DisconnectOutboundInput;
 import com.hivemq.extensions.executor.task.PluginTaskInput;
 import com.hivemq.extensions.packets.disconnect.DisconnectPacketImpl;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Robin Atherton
@@ -61,6 +61,8 @@ public class DisconnectOutboundInputImpl implements DisconnectOutboundInput, Plu
 
     public @NotNull DisconnectOutboundInputImpl update(final @NotNull DisconnectOutboundOutputImpl output) {
         return new DisconnectOutboundInputImpl(
-                clientInformation, connectionInformation, output.getDisconnectPacket().copy());
+                clientInformation,
+                connectionInformation,
+                output.getDisconnectPacket().copy());
     }
 }

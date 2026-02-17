@@ -15,13 +15,15 @@
  */
 package com.hivemq.edge.modules.adapters.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.EventBuilder;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -31,11 +33,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Stress test for ProtocolAdapterStateImpl shutdown race condition.
@@ -52,7 +51,8 @@ class ProtocolAdapterStateShutdownStressTest {
     void test_massiveConcurrency_shutdownRaceCondition() throws Exception {
         final int numAdapters = 50;
         final int operationsPerAdapter = 20;
-        final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+        final ExecutorService executor =
+                Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
         final List<CompletableFuture<Void>> futures = new ArrayList<>();
         final AtomicInteger totalFailures = new AtomicInteger(0);
         final AtomicInteger blockedStateChanges = new AtomicInteger(0);
@@ -61,57 +61,60 @@ class ProtocolAdapterStateShutdownStressTest {
         for (int adapterId = 0; adapterId < numAdapters; adapterId++) {
             final int id = adapterId;
 
-            final CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-                try {
-                    final EventService eventService = mock();
-                    final EventBuilder eventBuilder = new EventBuilderImpl(mock());
-                    when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
+            final CompletableFuture<Void> future = CompletableFuture.runAsync(
+                    () -> {
+                        try {
+                            final EventService eventService = mock();
+                            final EventBuilder eventBuilder = new EventBuilderImpl(mock());
+                            when(eventService.createAdapterEvent(anyString(), anyString()))
+                                    .thenReturn(eventBuilder);
 
-                    final ProtocolAdapterStateImpl adapterState =
-                            new ProtocolAdapterStateImpl(eventService, "stress-adapter-" + id, "stress-protocol");
+                            final ProtocolAdapterStateImpl adapterState = new ProtocolAdapterStateImpl(
+                                    eventService, "stress-adapter-" + id, "stress-protocol");
 
-                    final AtomicInteger listenerCalls = new AtomicInteger(0);
-                    adapterState.setConnectionStatusListener(status -> listenerCalls.incrementAndGet());
+                            final AtomicInteger listenerCalls = new AtomicInteger(0);
+                            adapterState.setConnectionStatusListener(status -> listenerCalls.incrementAndGet());
 
-                    // Simulate normal operation
-                    for (int i = 0; i < operationsPerAdapter; i++) {
-                        final ProtocolAdapterState.ConnectionStatus newStatus = i % 3 == 0 ?
-                                ProtocolAdapterState.ConnectionStatus.CONNECTED :
-                                i % 3 == 1 ?
-                                        ProtocolAdapterState.ConnectionStatus.DISCONNECTED :
-                                        ProtocolAdapterState.ConnectionStatus.ERROR;
+                            // Simulate normal operation
+                            for (int i = 0; i < operationsPerAdapter; i++) {
+                                final ProtocolAdapterState.ConnectionStatus newStatus = i % 3 == 0
+                                        ? ProtocolAdapterState.ConnectionStatus.CONNECTED
+                                        : i % 3 == 1
+                                                ? ProtocolAdapterState.ConnectionStatus.DISCONNECTED
+                                                : ProtocolAdapterState.ConnectionStatus.ERROR;
 
-                        final boolean changed = adapterState.setConnectionStatus(newStatus);
-                        if (changed) {
-                            successfulStateChanges.incrementAndGet();
-                        }
+                                final boolean changed = adapterState.setConnectionStatus(newStatus);
+                                if (changed) {
+                                    successfulStateChanges.incrementAndGet();
+                                }
 
-                        // Small delay to simulate real work
-                        if (i % 5 == 0) {
-                            Thread.sleep(1);
-                        }
-                    }
+                                // Small delay to simulate real work
+                                if (i % 5 == 0) {
+                                    Thread.sleep(1);
+                                }
+                            }
 
-                    // Simulate shutdown being triggered while operations are ongoing
-                    adapterState.markShuttingDown();
+                            // Simulate shutdown being triggered while operations are ongoing
+                            adapterState.markShuttingDown();
 
-                    // Try more operations after shutdown (simulating async cleanup)
-                    for (int i = 0; i < 10; i++) {
-                        final boolean changed =
-                                adapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-                        if (!changed) {
-                            blockedStateChanges.incrementAndGet();
-                        } else {
-                            // This should not happen after markShuttingDown
+                            // Try more operations after shutdown (simulating async cleanup)
+                            for (int i = 0; i < 10; i++) {
+                                final boolean changed =
+                                        adapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+                                if (!changed) {
+                                    blockedStateChanges.incrementAndGet();
+                                } else {
+                                    // This should not happen after markShuttingDown
+                                    totalFailures.incrementAndGet();
+                                }
+                            }
+
+                        } catch (final Exception e) {
                             totalFailures.incrementAndGet();
+                            throw new RuntimeException(e);
                         }
-                    }
-
-                } catch (final Exception e) {
-                    totalFailures.incrementAndGet();
-                    throw new RuntimeException(e);
-                }
-            }, executor);
+                    },
+                    executor);
 
             futures.add(future);
         }
@@ -182,9 +185,10 @@ class ProtocolAdapterStateShutdownStressTest {
                             adapterState.markShuttingDown();
                         } else {
                             // Other threads try to change status
-                            adapterState.setConnectionStatus(threadId % 2 == 0 ?
-                                    ProtocolAdapterState.ConnectionStatus.CONNECTED :
-                                    ProtocolAdapterState.ConnectionStatus.ERROR);
+                            adapterState.setConnectionStatus(
+                                    threadId % 2 == 0
+                                            ? ProtocolAdapterState.ConnectionStatus.CONNECTED
+                                            : ProtocolAdapterState.ConnectionStatus.ERROR);
                         }
 
                         Thread.sleep(1); // Small delay to increase contention
@@ -236,9 +240,10 @@ class ProtocolAdapterStateShutdownStressTest {
                     final int opId = i;
                     executor.submit(() -> {
                         try {
-                            adapterState.setConnectionStatus(opId % 2 == 0 ?
-                                    ProtocolAdapterState.ConnectionStatus.CONNECTED :
-                                    ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+                            adapterState.setConnectionStatus(
+                                    opId % 2 == 0
+                                            ? ProtocolAdapterState.ConnectionStatus.CONNECTED
+                                            : ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
                         } finally {
                             operationsLatch.countDown();
                         }
@@ -251,8 +256,8 @@ class ProtocolAdapterStateShutdownStressTest {
                 adapterState.markShuttingDown();
 
                 // Verify state is consistent
-                assertThat(adapterState.getRuntimeStatus()).isIn(ProtocolAdapterState.RuntimeStatus.STARTED,
-                        ProtocolAdapterState.RuntimeStatus.STOPPED);
+                assertThat(adapterState.getRuntimeStatus())
+                        .isIn(ProtocolAdapterState.RuntimeStatus.STARTED, ProtocolAdapterState.RuntimeStatus.STOPPED);
 
                 // Try to change status - should be blocked
                 final boolean changed = adapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
@@ -290,36 +295,41 @@ class ProtocolAdapterStateShutdownStressTest {
             final CountDownLatch cleanupLatch = new CountDownLatch(1);
 
             // Thread 1: Normal shutdown
-            final CompletableFuture<Void> shutdownFuture = CompletableFuture.runAsync(() -> {
-                try {
-                    // Simulate slow shutdown
-                    Thread.sleep(50);
-                    adapterState.markShuttingDown();
-                    shutdownLatch.countDown();
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }, limitedExecutor);
+            final CompletableFuture<Void> shutdownFuture = CompletableFuture.runAsync(
+                    () -> {
+                        try {
+                            // Simulate slow shutdown
+                            Thread.sleep(50);
+                            adapterState.markShuttingDown();
+                            shutdownLatch.countDown();
+                        } catch (final InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    },
+                    limitedExecutor);
 
             // Thread 2: Async cleanup that tries to change state
-            final CompletableFuture<Void> cleanupFuture = CompletableFuture.runAsync(() -> {
-                try {
-                    // Simulate data combiner cleanup
-                    Thread.sleep(60); // Slightly longer than shutdown
-                    final boolean changed =
-                            adapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+            final CompletableFuture<Void> cleanupFuture = CompletableFuture.runAsync(
+                    () -> {
+                        try {
+                            // Simulate data combiner cleanup
+                            Thread.sleep(60); // Slightly longer than shutdown
+                            final boolean changed = adapterState.setConnectionStatus(
+                                    ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
 
-                    if (changed) {
-                        // This should not happen after markShuttingDown
-                        System.err.println("ERROR: State changed during/after shutdown in iteration " + iterationFinal);
-                        failures.incrementAndGet();
-                    }
+                            if (changed) {
+                                // This should not happen after markShuttingDown
+                                System.err.println(
+                                        "ERROR: State changed during/after shutdown in iteration " + iterationFinal);
+                                failures.incrementAndGet();
+                            }
 
-                    cleanupLatch.countDown();
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }, limitedExecutor);
+                            cleanupLatch.countDown();
+                        } catch (final InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    },
+                    limitedExecutor);
 
             CompletableFuture.allOf(shutdownFuture, cleanupFuture).get(5, TimeUnit.SECONDS);
         }

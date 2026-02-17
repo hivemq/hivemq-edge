@@ -15,6 +15,10 @@
  */
 package com.hivemq.bootstrap.netty.initializer;
 
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.NON_SSL_HANDLER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.bootstrap.netty.ChannelDependencies;
 import com.hivemq.bootstrap.netty.FakeChannelPipeline;
 import com.hivemq.configuration.service.ConfigurationService;
@@ -24,16 +28,11 @@ import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnectorImpl;
 import com.hivemq.security.ssl.NonSslHandler;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
+import jakarta.inject.Provider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import jakarta.inject.Provider;
-
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.NON_SSL_HANDLER;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.when;
 
 public class TcpChannelInitializerTest {
 
@@ -58,10 +57,10 @@ public class TcpChannelInitializerTest {
     @Mock
     private RestrictionsConfigurationService restrictionsConfigurationService;
 
-
     private ChannelPipeline pipeline;
 
     private TcpChannelInitializer tcpChannelInitializer;
+
     @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
@@ -76,7 +75,6 @@ public class TcpChannelInitializerTest {
 
         when(nonSslHandlerProvider.get()).thenReturn(new NonSslHandler(mqttServerDisconnector));
         when(socketChannel.pipeline()).thenReturn(pipeline);
-
     }
 
     @Test

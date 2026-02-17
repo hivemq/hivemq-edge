@@ -19,14 +19,12 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
-import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.mqtt.handler.publish.PublishingResult;
-import org.jetbrains.annotations.NotNull;
-import net.javacrumbs.futureconverter.java8guava.FutureConverter;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import net.javacrumbs.futureconverter.java8guava.FutureConverter;
+import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class ProtocolAdapterPublishServiceImpl implements ProtocolAdapterPublishService {
@@ -44,16 +42,10 @@ public class ProtocolAdapterPublishServiceImpl implements ProtocolAdapterPublish
     @Override
     public @NotNull ProtocolAdapterPublishBuilder createPublish() {
         return new ProtocolAdapterPublishBuilderImpl(hiveMqId.get(), (publish, protocolAdapter, dynamicContext) -> {
-
             final ListenableFuture<PublishingResult> publishFuture = interceptorHandler.interceptOrDelegateInbound(
-                    publish,
-                    MoreExecutors.newDirectExecutorService(),
-                    protocolAdapter,
-                    dynamicContext);
+                    publish, MoreExecutors.newDirectExecutorService(), protocolAdapter, dynamicContext);
 
             return FutureConverter.toCompletableFuture(publishFuture);
         });
     }
 }
-
-

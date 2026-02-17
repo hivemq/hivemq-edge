@@ -17,9 +17,9 @@ package com.hivemq.api.model.adapters;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.edge.HiveMQEdgeConstants;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * A category is a unique entity and represents a curated grouping of a protocol adapter. A protocol adapter
@@ -30,7 +30,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public class ProtocolAdapterCategory {
 
     @JsonProperty("name")
-    @Schema(name = "name",
+    @Schema(
+            name = "name",
             description = "The unique name of the category to be used in API communication.",
             format = "string",
             minLength = 1,
@@ -40,7 +41,8 @@ public class ProtocolAdapterCategory {
     private final @NotNull String name;
 
     @JsonProperty("displayName")
-    @Schema(name = "displayName",
+    @Schema(
+            name = "displayName",
             description = "The display name of the category to be used in HCIs.",
             format = "string",
             minLength = 1,
@@ -48,15 +50,11 @@ public class ProtocolAdapterCategory {
     private final @NotNull String displayName;
 
     @JsonProperty("description")
-    @Schema(name = "description",
-            description = "The description associated with the category.",
-            format = "string")
+    @Schema(name = "description", description = "The description associated with the category.", format = "string")
     private final @NotNull String description;
 
     @JsonProperty("image")
-    @Schema(name = "image",
-            description = "The image associated with the category.",
-            format = "string")
+    @Schema(name = "image", description = "The image associated with the category.", format = "string")
     private final @NotNull String image;
 
     public ProtocolAdapterCategory(

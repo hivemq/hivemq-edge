@@ -17,16 +17,17 @@ package util;
 
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.persistence.InMemorySingleWriter;
 import com.hivemq.persistence.SingleWriterService;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Lukas Brandl
  */
 public class TestSingleWriterFactory {
 
-    public static SingleWriterService defaultSingleWriter(final @NotNull InternalConfigurationService internalConfigurationService) {
+    public static SingleWriterService defaultSingleWriter(
+            final @NotNull InternalConfigurationService internalConfigurationService) {
         internalConfigurationService.set(InternalConfigurations.PERSISTENCE_BUCKET_COUNT, "4");
         internalConfigurationService.set(InternalConfigurations.MEMORY_SINGLE_WRITER_THREAD_POOL_SIZE, "1");
         InternalConfigurations.SINGLE_WRITER_CREDITS_PER_EXECUTION.set(100);

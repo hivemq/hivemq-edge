@@ -15,6 +15,9 @@
  */
 package com.hivemq.security.ssl;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.logging.EventLog;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
@@ -22,17 +25,13 @@ import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnectorImpl;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.ssl.NotSslRecordException;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestChannelAttribute;
-
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLHandshakeException;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 /**
  * @author Lukas Brandl
@@ -52,6 +51,7 @@ public class SslExceptionHandlerTest {
     EventLog eventLog;
 
     SslExceptionHandler sslExceptionHandler;
+
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.initMocks(this);
@@ -60,7 +60,8 @@ public class SslExceptionHandlerTest {
         final ClientConnection clientConnection = new ClientConnection(channel, null);
         clientConnection.setClientId("client");
 
-        when(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)).thenReturn(new TestChannelAttribute<>(clientConnection));
+        when(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME))
+                .thenReturn(new TestChannelAttribute<>(clientConnection));
         when(channel.isActive()).thenReturn(true);
 
         final MqttServerDisconnector mqttServerDisconnector = new MqttServerDisconnectorImpl(eventLog);
@@ -96,6 +97,5 @@ public class SslExceptionHandlerTest {
         sslExceptionHandler.exceptionCaught(ctx, throwable);
         verify(channel, never()).close();
         verify(ctx).fireExceptionCaught(any(Throwable.class));
-
     }
 }

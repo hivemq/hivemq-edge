@@ -19,8 +19,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.hivemq.api.json.TimestampToDateConverter;
-import org.jetbrains.annotations.NotNull;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Bean to transport process details across the API
@@ -35,10 +35,7 @@ public class Process {
     @JsonProperty("created")
     @JsonSerialize(using = TimestampToDateConverter.Serializer.class)
     @JsonDeserialize(using = TimestampToDateConverter.Deserializer.class)
-    @Schema(type = "string",
-            format = "date-time",
-            description = "Time the event was generated",
-            nullable = true)
+    @Schema(type = "string", format = "date-time", description = "Time the event was generated", nullable = true)
     private final @NotNull Long created;
 
     @JsonProperty("sourceId")
@@ -49,10 +46,11 @@ public class Process {
     @Schema(description = "Whether the process is considered in error state")
     private final @NotNull Boolean isInError;
 
-    public Process(@JsonProperty("processId") final @NotNull String processId,
-                   @JsonProperty("created") final @NotNull Long created,
-                   @JsonProperty("sourceId") final @NotNull String sourceId,
-                   @JsonProperty("isInError") final @NotNull Boolean isInError) {
+    public Process(
+            @JsonProperty("processId") final @NotNull String processId,
+            @JsonProperty("created") final @NotNull Long created,
+            @JsonProperty("sourceId") final @NotNull String sourceId,
+            @JsonProperty("isInError") final @NotNull Boolean isInError) {
         this.processId = processId;
         this.created = created;
         this.sourceId = sourceId;

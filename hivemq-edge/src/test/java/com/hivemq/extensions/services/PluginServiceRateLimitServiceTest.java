@@ -15,14 +15,13 @@
  */
 package com.hivemq.extensions.services;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.hivemq.configuration.service.InternalConfigurations;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Lukas Brandl
@@ -30,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class PluginServiceRateLimitServiceTest {
 
     private PluginServiceRateLimitService pluginServiceRateLimitService;
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -47,11 +47,11 @@ public class PluginServiceRateLimitServiceTest {
 
         pluginServiceRateLimitService = new PluginServiceRateLimitService();
 
-        //use up the current second
+        // use up the current second
         for (int i = 0; i < 10; i++) {
             assertFalse(pluginServiceRateLimitService.rateLimitExceeded());
         }
-        //use up the 10s reserve
+        // use up the 10s reserve
         for (int i = 0; i < 10; i++) {
             assertFalse(pluginServiceRateLimitService.rateLimitExceeded());
         }
@@ -64,11 +64,10 @@ public class PluginServiceRateLimitServiceTest {
 
         pluginServiceRateLimitService = new PluginServiceRateLimitService();
 
-        //use up the first second
+        // use up the first second
         assertFalse(pluginServiceRateLimitService.rateLimitExceeded());
 
-        //use up the reserve
+        // use up the reserve
         assertFalse(pluginServiceRateLimitService.rateLimitExceeded());
     }
-
 }

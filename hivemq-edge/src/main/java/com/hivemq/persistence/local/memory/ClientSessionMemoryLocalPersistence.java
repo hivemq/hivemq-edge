@@ -15,14 +15,18 @@
  */
 package com.hivemq.persistence.local.memory;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENCE_BUCKET_COUNT;
+import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRE_ON_DISCONNECT;
+import static com.hivemq.mqtt.message.disconnect.DISCONNECT.SESSION_EXPIRY_NOT_SET;
+import static com.hivemq.util.ThreadPreConditions.SINGLE_WRITER_THREAD_PREFIX;
+
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableSet;
 import com.hivemq.annotations.ExecuteInSingleWriter;
 import com.hivemq.configuration.service.InternalConfigurationService;
-import com.hivemq.configuration.service.InternalConfigurations;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extensions.iteration.BucketChunkResult;
 import com.hivemq.logging.EventLog;
 import com.hivemq.metrics.HiveMQMetrics;
@@ -38,9 +42,6 @@ import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.util.MemoryEstimator;
 import com.hivemq.util.ThreadPreConditions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.HashMap;
@@ -50,13 +51,10 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENCE_BUCKET_COUNT;
-import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRE_ON_DISCONNECT;
-import static com.hivemq.mqtt.message.disconnect.DISCONNECT.SESSION_EXPIRY_NOT_SET;
-import static com.hivemq.util.ThreadPreConditions.SINGLE_WRITER_THREAD_PREFIX;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Georg Held
@@ -88,15 +86,14 @@ public class ClientSessionMemoryLocalPersistence implements ClientSessionLocalPe
 
         bucketCount = internalConfigurationService.getInteger(PERSISTENCE_BUCKET_COUNT);
 
-
         //noinspection unchecked
         buckets = new Map[bucketCount];
         for (int i = 0; i < bucketCount; i++) {
             buckets[i] = new HashMap<>();
         }
 
-        metricRegistry.register(HiveMQMetrics.CLIENT_SESSIONS_MEMORY_PERSISTENCE_TOTAL_SIZE.name(),
-                (Gauge<Long>) currentMemorySize::get);
+        metricRegistry.register(HiveMQMetrics.CLIENT_SESSIONS_MEMORY_PERSISTENCE_TOTAL_SIZE.name(), (Gauge<Long>)
+                currentMemorySize::get);
     }
 
     private @NotNull Map<String, PersistenceEntry<ClientSession>> getBucket(final int bucketIndex) {
@@ -186,12 +183,10 @@ public class ClientSessionMemoryLocalPersistence implements ClientSessionLocalPe
         checkArgument(timestamp > 0, "Timestamp must be greater than 0");
         ThreadPreConditions.startsWith(SINGLE_WRITER_THREAD_PREFIX);
 
-
         final Map<String, PersistenceEntry<ClientSession>> sessions = getBucket(bucketIndex);
         final ClientSession usedSession = newClientSession.deepCopy();
 
         sessions.compute(clientId, (ignored, storedSession) -> {
-
             final boolean addClientIdSize;
             if (storedSession == null) {
                 sessionsCount.incrementAndGet();
@@ -240,40 +235,43 @@ public class ClientSessionMemoryLocalPersistence implements ClientSessionLocalPe
         final Map<String, PersistenceEntry<ClientSession>> bucket = getBucket(bucketIndex);
 
         final ClientSession storedSession = bucket.compute(clientId, (ignored, oldEntry) -> {
-            if (oldEntry == null) {
-                // we create a tombstone here which will be removed at next cleanup
-                final ClientSession clientSession = new ClientSession(false, SESSION_EXPIRE_ON_DISCONNECT);
-                final PersistenceEntry<ClientSession> persistenceEntry = new PersistenceEntry<>(clientSession, timestamp);
-                currentMemorySize.addAndGet(persistenceEntry.getEstimatedSize() + MemoryEstimator.stringSize(clientId));
-                return persistenceEntry;
-            }
+                    if (oldEntry == null) {
+                        // we create a tombstone here which will be removed at next cleanup
+                        final ClientSession clientSession = new ClientSession(false, SESSION_EXPIRE_ON_DISCONNECT);
+                        final PersistenceEntry<ClientSession> persistenceEntry =
+                                new PersistenceEntry<>(clientSession, timestamp);
+                        currentMemorySize.addAndGet(
+                                persistenceEntry.getEstimatedSize() + MemoryEstimator.stringSize(clientId));
+                        return persistenceEntry;
+                    }
 
-            currentMemorySize.addAndGet(-oldEntry.getEstimatedSize());
-            final ClientSession oldSession = oldEntry.getObject();
-            final ClientSession newSession;
-            if (sendWill) {
-                newSession = oldSession;
-            } else {
-                removeWillReference(oldSession);
-                newSession = oldSession.copyWithoutWill();
-            }
+                    currentMemorySize.addAndGet(-oldEntry.getEstimatedSize());
+                    final ClientSession oldSession = oldEntry.getObject();
+                    final ClientSession newSession;
+                    if (sendWill) {
+                        newSession = oldSession;
+                    } else {
+                        removeWillReference(oldSession);
+                        newSession = oldSession.copyWithoutWill();
+                    }
 
-            if (sessionExpiryInterval != SESSION_EXPIRY_NOT_SET) {
-                newSession.setSessionExpiryIntervalSec(sessionExpiryInterval);
-            }
+                    if (sessionExpiryInterval != SESSION_EXPIRY_NOT_SET) {
+                        newSession.setSessionExpiryIntervalSec(sessionExpiryInterval);
+                    }
 
-            if (newSession.isConnected() && !isPersistent(newSession)) {
-                sessionsCount.decrementAndGet();
-            }
+                    if (newSession.isConnected() && !isPersistent(newSession)) {
+                        sessionsCount.decrementAndGet();
+                    }
 
-            newSession.setConnected(false);
-            loadWillPayload(newSession, false);
+                    newSession.setConnected(false);
+                    loadWillPayload(newSession, false);
 
-            final PersistenceEntry<ClientSession> newEntry = new PersistenceEntry<>(newSession, timestamp);
-            currentMemorySize.addAndGet(newEntry.getEstimatedSize());
-            return newEntry;
-        }).getObject().deepCopy();
-
+                    final PersistenceEntry<ClientSession> newEntry = new PersistenceEntry<>(newSession, timestamp);
+                    currentMemorySize.addAndGet(newEntry.getEstimatedSize());
+                    return newEntry;
+                })
+                .getObject()
+                .deepCopy();
 
         loadWillPayload(storedSession);
         return storedSession;
@@ -311,7 +309,8 @@ public class ClientSessionMemoryLocalPersistence implements ClientSessionLocalPe
         final Map<String, PersistenceEntry<ClientSession>> bucket = getBucket(bucketIndex);
 
         final long currentTimeMillis = System.currentTimeMillis();
-        final Iterator<Map.Entry<String, PersistenceEntry<ClientSession>>> iterator = bucket.entrySet().iterator();
+        final Iterator<Map.Entry<String, PersistenceEntry<ClientSession>>> iterator =
+                bucket.entrySet().iterator();
 
         final ImmutableSet.Builder<String> expiredClientIds = ImmutableSet.builder();
 
@@ -331,7 +330,8 @@ public class ClientSessionMemoryLocalPersistence implements ClientSessionLocalPe
                 }
                 eventLog.clientSessionExpired(timestamp + sessionExpiryInterval * 1000, entry.getKey());
                 expiredClientIds.add(entry.getKey());
-                currentMemorySize.addAndGet(-(storedEntry.getEstimatedSize() + MemoryEstimator.stringSize(entry.getKey())));
+                currentMemorySize.addAndGet(
+                        -(storedEntry.getEstimatedSize() + MemoryEstimator.stringSize(entry.getKey())));
                 iterator.remove();
             }
         }
@@ -344,11 +344,12 @@ public class ClientSessionMemoryLocalPersistence implements ClientSessionLocalPe
         final Map<String, PersistenceEntry<ClientSession>> bucket = getBucket(bucketIndex);
         final long currentTimeMillis = System.currentTimeMillis();
 
-        return bucket.entrySet()
-                .stream()
+        return bucket.entrySet().stream()
                 .filter(entry -> !entry.getValue().getObject().isConnected())
                 .filter(entry -> entry.getValue().getObject().getSessionExpiryIntervalSec() > 0)
-                .filter(entry -> !entry.getValue().getObject().isExpired(currentTimeMillis - entry.getValue().getTimestamp()))
+                .filter(entry -> !entry.getValue()
+                        .getObject()
+                        .isExpired(currentTimeMillis - entry.getValue().getTimestamp()))
                 .map(Map.Entry::getKey)
                 .collect(ImmutableSet.toImmutableSet());
     }
@@ -365,7 +366,6 @@ public class ClientSessionMemoryLocalPersistence implements ClientSessionLocalPe
         checkNotNull(clientId, "Client Id must not be null");
         ThreadPreConditions.startsWith(SINGLE_WRITER_THREAD_PREFIX);
 
-
         if (sessionExpiryInterval < 0) {
             throw new InvalidSessionExpiryIntervalException("Invalid session expiry interval " + sessionExpiryInterval);
         }
@@ -373,8 +373,6 @@ public class ClientSessionMemoryLocalPersistence implements ClientSessionLocalPe
         final Map<String, PersistenceEntry<ClientSession>> bucket = getBucket(bucketIndex);
 
         bucket.compute(clientId, (ignored, storedSession) -> {
-
-
             if (storedSession == null) {
                 throw NoSessionException.INSTANCE;
             }
@@ -393,23 +391,22 @@ public class ClientSessionMemoryLocalPersistence implements ClientSessionLocalPe
     }
 
     @Override
-    public @NotNull Map<String, PendingWillMessages.PendingWill> getPendingWills(
-            final int bucketIndex) {
-
+    public @NotNull Map<String, PendingWillMessages.PendingWill> getPendingWills(final int bucketIndex) {
 
         final Map<String, PersistenceEntry<ClientSession>> bucket = getBucket(bucketIndex);
 
-        return bucket.entrySet()
-                .stream()
+        return bucket.entrySet().stream()
                 .filter(entry -> !entry.getValue().getObject().isConnected())
                 .filter(entry -> entry.getValue().getObject().getWillPublish() != null)
                 .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, entry -> {
-
                     final PersistenceEntry<ClientSession> storedSession = entry.getValue();
-                    final ClientSessionWill willPublish = storedSession.getObject().getWillPublish();
+                    final ClientSessionWill willPublish =
+                            storedSession.getObject().getWillPublish();
 
-                    return new PendingWillMessages.PendingWill(Math.min(willPublish.getDelayInterval(),
-                            storedSession.getObject().getSessionExpiryIntervalSec()),
+                    return new PendingWillMessages.PendingWill(
+                            Math.min(
+                                    willPublish.getDelayInterval(),
+                                    storedSession.getObject().getSessionExpiryIntervalSec()),
                             willPublish.getDelayInterval());
                 }));
     }
@@ -433,7 +430,8 @@ public class ClientSessionMemoryLocalPersistence implements ClientSessionLocalPe
 
                     removeWillReference(oldSession);
 
-                    final PersistenceEntry<ClientSession> newEntry = new PersistenceEntry<>(oldSession.copyWithoutWill(), oldEntry.getTimestamp());
+                    final PersistenceEntry<ClientSession> newEntry =
+                            new PersistenceEntry<>(oldSession.copyWithoutWill(), oldEntry.getTimestamp());
                     currentMemorySize.addAndGet(newEntry.getEstimatedSize());
                     return newEntry;
                 });
@@ -449,7 +447,8 @@ public class ClientSessionMemoryLocalPersistence implements ClientSessionLocalPe
         return new PersistenceEntry<>(session.deepCopy(), persistenceEntry.getTimestamp());
     }
 
-    // in contrast to the file persistence method we already have everything in memory. The sizing and pagination are ignored.
+    // in contrast to the file persistence method we already have everything in memory. The sizing and pagination are
+    // ignored.
     @Override
     public @NotNull BucketChunkResult<Map<String, ClientSession>> getAllClientsChunk(
             final int bucketIndex, final @Nullable String ignored, final int alsoIgnored) {
@@ -457,15 +456,13 @@ public class ClientSessionMemoryLocalPersistence implements ClientSessionLocalPe
         final long currentTimeMillis = System.currentTimeMillis();
         final Map<String, PersistenceEntry<ClientSession>> bucket = getBucket(bucketIndex);
 
-        final Map<String, ClientSession> sessions =
-                bucket.entrySet()
-                        .stream()
-                        .filter(entry -> {
-                            final PersistenceEntry<ClientSession> value = entry.getValue();
-                            return !value.getObject().isExpired(currentTimeMillis - value.getTimestamp());
-                        })
-                        .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey,
-                                entry -> entry.getValue().getObject().copyWithoutWill()));
+        final Map<String, ClientSession> sessions = bucket.entrySet().stream()
+                .filter(entry -> {
+                    final PersistenceEntry<ClientSession> value = entry.getValue();
+                    return !value.getObject().isExpired(currentTimeMillis - value.getTimestamp());
+                })
+                .collect(Collectors.toUnmodifiableMap(
+                        Map.Entry::getKey, entry -> entry.getValue().getObject().copyWithoutWill()));
 
         return new BucketChunkResult<>(sessions, true, null, bucketIndex);
     }
@@ -474,8 +471,8 @@ public class ClientSessionMemoryLocalPersistence implements ClientSessionLocalPe
     @ExecuteInSingleWriter
     public void closeDB(final int bucketIndex) {
         getBucket(bucketIndex).clear();
-        //happens for every bucket, but its faster than calculating all sizes
-        //and decrementing the memory and count every time,
+        // happens for every bucket, but its faster than calculating all sizes
+        // and decrementing the memory and count every time,
         sessionsCount.set(0);
         currentMemorySize.set(0);
     }

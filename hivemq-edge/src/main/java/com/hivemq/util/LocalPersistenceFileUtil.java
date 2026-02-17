@@ -16,12 +16,11 @@
 package com.hivemq.util;
 
 import com.hivemq.configuration.info.SystemInformation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.io.File;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A utility for the local file persistences
@@ -33,7 +32,6 @@ public class LocalPersistenceFileUtil {
 
     public static final String PERSISTENCE_SUBFOLDER_NAME = "persistence";
     private static final Logger log = LoggerFactory.getLogger(LocalPersistenceFileUtil.class);
-
 
     private final SystemInformation systemInformation;
 

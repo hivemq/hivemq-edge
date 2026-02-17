@@ -17,19 +17,18 @@ package com.hivemq.bootstrap.netty.initializer;
 
 import com.hivemq.bootstrap.netty.ChannelDependencies;
 import com.hivemq.configuration.service.entity.MqttTlsTcpListener;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.security.ssl.SslFactory;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
  */
 public class TlsTcpChannelInitializer extends AbstractTlsChannelInitializer {
 
-
-    public TlsTcpChannelInitializer(final @NotNull ChannelDependencies channelDependencies,
-                                    final @NotNull MqttTlsTcpListener mqttTlsTcpListener,
-                                    final @NotNull SslFactory sslFactory) {
+    public TlsTcpChannelInitializer(
+            final @NotNull ChannelDependencies channelDependencies,
+            final @NotNull MqttTlsTcpListener mqttTlsTcpListener,
+            final @NotNull SslFactory sslFactory) {
         super(channelDependencies, mqttTlsTcpListener, sslFactory);
     }
-
 }

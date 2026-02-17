@@ -15,21 +15,6 @@
  */
 package com.hivemq.edge.modules.adapters.impl.polling;
 
-import com.hivemq.adapter.sdk.api.events.EventService;
-import com.hivemq.configuration.service.InternalConfigurations;
-import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
-import org.jetbrains.annotations.NotNull;
-import com.hivemq.protocols.AbstractSubscriptionSampler;
-import com.hivemq.util.NanoTimeProvider;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -40,6 +25,20 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.configuration.service.InternalConfigurations;
+import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
+import com.hivemq.protocols.AbstractSubscriptionSampler;
+import com.hivemq.util.NanoTimeProvider;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 class PollingTaskTest {
 
@@ -122,7 +121,6 @@ class PollingTaskTest {
         verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
     }
 
-
     @Test
     void run_whenSampleExecutionThrowsError_thenTaskIsRescheduled() {
         final ScheduledExecutorService mockedExecutor = mock();
@@ -133,7 +131,6 @@ class PollingTaskTest {
 
         verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
     }
-
 
     @Test
     void run_whenSampleExecutionReturnsExceptionalFuture_thenTaskIsRescheduled() {
@@ -163,7 +160,6 @@ class PollingTaskTest {
             return true;
         });
     }
-
 
     @Test
     void schedule_whenTaskShouldBeScheduled_thenTaskGetsGetsScheduled() {
@@ -201,6 +197,4 @@ class PollingTaskTest {
 
         verify(mockedExecutor, times(1)).schedule(same(pollingTask), eq(expectedDelay), eq(TimeUnit.MILLISECONDS));
     }
-
-
 }

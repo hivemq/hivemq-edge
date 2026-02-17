@@ -15,12 +15,13 @@
  */
 package com.hivemq.persistence;
 
+import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENCE_SHUTDOWN_TIMEOUT_SEC;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.clientsession.ClientSessionPersistence;
 import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence;
@@ -29,14 +30,12 @@ import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.persistence.qos.IncomingMessageFlowPersistence;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
 import com.hivemq.persistence.util.FutureUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENCE_SHUTDOWN_TIMEOUT_SEC;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Lukas Brandl
@@ -97,7 +96,8 @@ public class PersistenceShutdownHook implements HiveMQShutdownHook {
         builder.add(retainedMessagePersistence.closeDB());
         builder.add(clientQueuePersistence.closeDB());
 
-        //We have to use a direct executor service here because the usual persistence executor might already be shut down
+        // We have to use a direct executor service here because the usual persistence executor might already be shut
+        // down
         final ListenableFuture<Void> combinedFuture = FutureUtils.voidFutureFromList(builder.build());
 
         final int shutdownTimeout = PERSISTENCE_SHUTDOWN_TIMEOUT_SEC.get();
@@ -115,7 +115,8 @@ public class PersistenceShutdownHook implements HiveMQShutdownHook {
         }
         payloadPersistence.closeDB();
 
-        // All persistence producers are terminated at this point. Make sure all other producers for the single writer service are stopped as well.
+        // All persistence producers are terminated at this point. Make sure all other producers for the single writer
+        // service are stopped as well.
         singleWriterService.stop();
 
         persistenceScheduledExecutorService.shutdownNow();

@@ -15,8 +15,8 @@
  */
 package com.hivemq.extensions.interceptor.protocoladapter.parameter;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.protocoladapter.parameter.ProtocolAdapterInformation;
+import org.jetbrains.annotations.NotNull;
 
 public class ProtocolAdapterInformationImpl implements ProtocolAdapterInformation {
 

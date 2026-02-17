@@ -15,6 +15,16 @@
  */
 package com.hivemq.edge.adapters.opcua.southbound;
 
+import static com.hivemq.edge.adapters.opcua.Constants.ARRAY_ITEMS;
+import static com.hivemq.edge.adapters.opcua.Constants.ARRAY_MAX_TIMES;
+import static com.hivemq.edge.adapters.opcua.Constants.ARRAY_MIN_TIMES;
+import static com.hivemq.edge.adapters.opcua.Constants.BOOLEAN_DATA_TYPE;
+import static com.hivemq.edge.adapters.opcua.Constants.DATETIME_DATA_TYPE;
+import static com.hivemq.edge.adapters.opcua.Constants.NUMBER_DATA_TYPE;
+import static com.hivemq.edge.adapters.opcua.Constants.OBJECT_DATA_TYPE;
+import static com.hivemq.edge.adapters.opcua.Constants.STRING_DATA_TYPE;
+import static com.hivemq.edge.adapters.opcua.Constants.TYPE;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -27,6 +37,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.ShortNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.hivemq.edge.adapters.opcua.Constants;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
@@ -36,20 +49,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
-import static com.hivemq.edge.adapters.opcua.Constants.ARRAY_ITEMS;
-import static com.hivemq.edge.adapters.opcua.Constants.ARRAY_MAX_TIMES;
-import static com.hivemq.edge.adapters.opcua.Constants.ARRAY_MIN_TIMES;
-import static com.hivemq.edge.adapters.opcua.Constants.BOOLEAN_DATA_TYPE;
-import static com.hivemq.edge.adapters.opcua.Constants.DATETIME_DATA_TYPE;
-import static com.hivemq.edge.adapters.opcua.Constants.NUMBER_DATA_TYPE;
-import static com.hivemq.edge.adapters.opcua.Constants.OBJECT_DATA_TYPE;
-import static com.hivemq.edge.adapters.opcua.Constants.STRING_DATA_TYPE;
-import static com.hivemq.edge.adapters.opcua.Constants.TYPE;
 
 public class BuiltinJsonSchema {
     static final @NotNull String SCHEMA_URI = "https://json-schema.org/draft/2019-09/schema";
@@ -63,8 +62,8 @@ public class BuiltinJsonSchema {
 
             // unsupported types: ExtensionObject, DataValue, Variant, DiagnosticInfo
 
-            types.put(OpcUaDataType.Boolean,
-                    createJsonSchemaForBuiltinType("Boolean JsonSchema", OpcUaDataType.Boolean));
+            types.put(
+                    OpcUaDataType.Boolean, createJsonSchemaForBuiltinType("Boolean JsonSchema", OpcUaDataType.Boolean));
 
             types.put(OpcUaDataType.SByte, createJsonSchemaForBuiltinType("SByte JsonSchema", OpcUaDataType.SByte));
             types.put(OpcUaDataType.Byte, createJsonSchemaForBuiltinType("Byte JsonSchema", OpcUaDataType.Byte));
@@ -81,25 +80,32 @@ public class BuiltinJsonSchema {
             types.put(OpcUaDataType.Double, createJsonSchemaForBuiltinType("Double JsonSchema", OpcUaDataType.Double));
             types.put(OpcUaDataType.String, createJsonSchemaForBuiltinType("String JsonSchema", OpcUaDataType.String));
 
-            types.put(OpcUaDataType.DateTime,
+            types.put(
+                    OpcUaDataType.DateTime,
                     createJsonSchemaForBuiltinType("DateTime JsonSchema", OpcUaDataType.DateTime));
 
             types.put(OpcUaDataType.Guid, createJsonSchemaForBuiltinType("Guid JsonSchema", OpcUaDataType.String));
-            types.put(OpcUaDataType.ByteString,
+            types.put(
+                    OpcUaDataType.ByteString,
                     createJsonSchemaForBuiltinType("ByteString JsonSchema", OpcUaDataType.String));
-            types.put(OpcUaDataType.XmlElement,
+            types.put(
+                    OpcUaDataType.XmlElement,
                     createJsonSchemaForBuiltinType("XmlElement JsonSchema", OpcUaDataType.String));
 
-            types.put(OpcUaDataType.QualifiedName,
+            types.put(
+                    OpcUaDataType.QualifiedName,
                     createJsonSchemaForBuiltinType("QualifiedName JsonSchema", OpcUaDataType.QualifiedName));
 
             types.put(OpcUaDataType.NodeId, createJsonSchemaForBuiltinType("XmlElement NodeId", OpcUaDataType.String));
-            types.put(OpcUaDataType.ExpandedNodeId,
+            types.put(
+                    OpcUaDataType.ExpandedNodeId,
                     createJsonSchemaForBuiltinType("ExpandedNodeId JsonSchema", OpcUaDataType.String));
 
-            types.put(OpcUaDataType.StatusCode,
+            types.put(
+                    OpcUaDataType.StatusCode,
                     createJsonSchemaForBuiltinType("StatusCode JsonSchema", OpcUaDataType.StatusCode));
-            types.put(OpcUaDataType.LocalizedText,
+            types.put(
+                    OpcUaDataType.LocalizedText,
                     createJsonSchemaForBuiltinType("LocalizedText JsonSchema", OpcUaDataType.String));
 
             BUILT_IN_TYPES = Map.copyOf(types);
@@ -121,7 +127,7 @@ public class BuiltinJsonSchema {
 
         propertiesNode.set(TYPE, new TextNode(Constants.ARRAY_DATA_TYPE));
 
-        //0 for a dimension means unlimited
+        // 0 for a dimension means unlimited
         if (maxSize > 0) {
             propertiesNode.set(ARRAY_MAX_TIMES, new LongNode(maxSize));
             propertiesNode.set(ARRAY_MIN_TIMES, new LongNode(maxSize));
@@ -130,14 +136,12 @@ public class BuiltinJsonSchema {
         propertiesNode.set(ARRAY_ITEMS, itemsNode);
 
         if (dimensions.length == 1) {
-            //last element, we can now set the array type
+            // last element, we can now set the array type
             populatePropertiesForBuiltinType(itemsNode, builtinDataType, objectMapper);
         } else {
-            //nesting deeper
-            populatePropertiesForArray(itemsNode,
-                    builtinDataType,
-                    objectMapper,
-                    Arrays.copyOfRange(dimensions, 1, dimensions.length));
+            // nesting deeper
+            populatePropertiesForArray(
+                    itemsNode, builtinDataType, objectMapper, Arrays.copyOfRange(dimensions, 1, dimensions.length));
         }
     }
 
@@ -241,8 +245,7 @@ public class BuiltinJsonSchema {
     }
 
     private static @NotNull JsonNode createJsonSchemaForBuiltinType(
-            final @NotNull String title,
-            final @NotNull OpcUaDataType builtinDataType) {
+            final @NotNull String title, final @NotNull OpcUaDataType builtinDataType) {
         final ObjectNode rootNode = MAPPER.createObjectNode();
         final ObjectNode propertiesNode = MAPPER.createObjectNode();
         final ObjectNode valueNode = MAPPER.createObjectNode();
@@ -261,8 +264,7 @@ public class BuiltinJsonSchema {
     }
 
     static @NotNull JsonNode createJsonSchemaForArrayType(
-            final @NotNull OpcUaDataType builtinDataType,
-            final @NotNull UInteger @NotNull [] dimensions) {
+            final @NotNull OpcUaDataType builtinDataType, final @NotNull UInteger @NotNull [] dimensions) {
         final ObjectNode rootNode = MAPPER.createObjectNode();
         final ObjectNode propertiesNode = MAPPER.createObjectNode();
         final ObjectNode valueNode = MAPPER.createObjectNode();

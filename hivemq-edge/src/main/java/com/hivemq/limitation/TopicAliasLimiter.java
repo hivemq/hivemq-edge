@@ -60,5 +60,4 @@ public interface TopicAliasLimiter {
      * @param topics the topics to remove memory usage for
      */
     void finishUsage(final @NotNull String... topics);
-
 }

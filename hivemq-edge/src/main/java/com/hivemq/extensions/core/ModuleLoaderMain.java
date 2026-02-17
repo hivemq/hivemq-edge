@@ -30,5 +30,4 @@ public interface ModuleLoaderMain {
     void afterPersistenceBootstrap(@NotNull CompleteBootstrapService completeBootstrapService);
 
     void afterHiveMQStart(@NotNull AfterHiveMQStartBootstrapService afterHiveMQStartBootstrapService);
-
 }

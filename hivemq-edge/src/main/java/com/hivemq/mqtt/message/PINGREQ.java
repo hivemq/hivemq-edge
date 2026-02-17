@@ -35,7 +35,7 @@ public class PINGREQ implements Message {
 
     @Override
     public void setEncodedLength(final int bufferSize) {
-        //noop since ping req is always 2 bytes
+        // noop since ping req is always 2 bytes
     }
 
     @Override
@@ -45,7 +45,7 @@ public class PINGREQ implements Message {
 
     @Override
     public void setRemainingLength(final int length) {
-        //noop
+        // noop
     }
 
     @Override
@@ -55,7 +55,7 @@ public class PINGREQ implements Message {
 
     @Override
     public void setPropertyLength(final int length) {
-        //noop
+        // noop
     }
 
     @Override
@@ -65,7 +65,7 @@ public class PINGREQ implements Message {
 
     @Override
     public void setOmittedProperties(final int omittedProperties) {
-        //noop
+        // noop
     }
 
     @Override

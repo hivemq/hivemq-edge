@@ -20,12 +20,11 @@ import com.hivemq.configuration.service.entity.Listener;
 import com.hivemq.configuration.service.entity.MqttTcpListener;
 import com.hivemq.configuration.service.entity.MqttTlsTcpListener;
 import com.hivemq.configuration.service.entity.MqttTlsWebsocketListener;
-import com.hivemq.configuration.service.entity.MqttsnUdpListener;
 import com.hivemq.configuration.service.entity.MqttWebsocketListener;
+import com.hivemq.configuration.service.entity.MqttsnUdpListener;
 import com.hivemq.configuration.service.exception.ConfigurationValidationException;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 public interface ListenerConfigurationService {
 
@@ -44,39 +43,44 @@ public interface ListenerConfigurationService {
      * @return a unmodifiable list of all active listeners
      */
     @ReadOnly
-    @NotNull List<Listener> getListeners();
+    @NotNull
+    List<Listener> getListeners();
 
     /**
      * @return a unmodifiable list of all active TCP listeners
      */
     @ReadOnly
-    @NotNull List<MqttTcpListener> getTcpListeners();
+    @NotNull
+    List<MqttTcpListener> getTcpListeners();
 
     /**
      * @return a unmodifiable list of all active TLS listeners
      */
     @ReadOnly
-    @NotNull List<MqttTlsTcpListener> getTlsTcpListeners();
+    @NotNull
+    List<MqttTlsTcpListener> getTlsTcpListeners();
 
     /**
      * @return a unmodifiable list of all active Websocket listeners
      */
     @ReadOnly
-    @NotNull List<MqttWebsocketListener> getWebsocketListeners();
+    @NotNull
+    List<MqttWebsocketListener> getWebsocketListeners();
 
     /**
      * @return a unmodifiable list of all active TLS Websocket listeners
      */
     @ReadOnly
-    @NotNull List<MqttTlsWebsocketListener> getTlsWebsocketListeners();
+    @NotNull
+    List<MqttTlsWebsocketListener> getTlsWebsocketListeners();
 
     /**
      * @return a unmodifiable list of all active UDP listeners
      */
     @ReadOnly
-    @NotNull List<MqttsnUdpListener> getUdpListeners();
+    @NotNull
+    List<MqttsnUdpListener> getUdpListeners();
 
     @ReadOnly
     void clear();
-
 }

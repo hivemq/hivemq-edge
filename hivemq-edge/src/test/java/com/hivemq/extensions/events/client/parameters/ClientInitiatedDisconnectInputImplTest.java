@@ -15,6 +15,9 @@
  */
 package com.hivemq.extensions.events.client.parameters;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.extension.sdk.api.packets.general.DisconnectedReasonCode;
@@ -22,13 +25,8 @@ import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Florian Limpöck
@@ -38,8 +36,10 @@ public class ClientInitiatedDisconnectInputImplTest {
 
     @Test
     public void test_construction_client_null() {
-    
-        assertThrows(NullPointerException.class, () -> new ClientInitiatedDisconnectInputImpl(null, new EmbeddedChannel(), null, null, null, false));
+
+        assertThrows(
+                NullPointerException.class,
+                () -> new ClientInitiatedDisconnectInputImpl(null, new EmbeddedChannel(), null, null, null, false));
     }
 
     @Test
@@ -48,7 +48,8 @@ public class ClientInitiatedDisconnectInputImplTest {
         final ClientConnection clientConnection = new ClientConnection(channel, null);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
-        final ClientInitiatedDisconnectInputImpl disconnectInput = new ClientInitiatedDisconnectInputImpl("client", channel, null, null, null, false);
+        final ClientInitiatedDisconnectInputImpl disconnectInput =
+                new ClientInitiatedDisconnectInputImpl("client", channel, null, null, null, false);
         assertEquals(Optional.empty(), disconnectInput.getReasonCode());
         assertEquals(Optional.empty(), disconnectInput.getReasonString());
         assertEquals(Optional.empty(), disconnectInput.getUserProperties());
@@ -64,9 +65,13 @@ public class ClientInitiatedDisconnectInputImplTest {
         final ClientConnection clientConnection = new ClientConnection(channel, null);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
-        final ClientInitiatedDisconnectInputImpl disconnectInput =
-                new ClientInitiatedDisconnectInputImpl("client", channel, DisconnectedReasonCode.NORMAL_DISCONNECTION,
-                        "reason", UserPropertiesImpl.of(ImmutableList.of(new MqttUserProperty("key", "val"))), true);
+        final ClientInitiatedDisconnectInputImpl disconnectInput = new ClientInitiatedDisconnectInputImpl(
+                "client",
+                channel,
+                DisconnectedReasonCode.NORMAL_DISCONNECTION,
+                "reason",
+                UserPropertiesImpl.of(ImmutableList.of(new MqttUserProperty("key", "val"))),
+                true);
         assertEquals(Optional.of(DisconnectedReasonCode.NORMAL_DISCONNECTION), disconnectInput.getReasonCode());
         assertEquals(Optional.of("reason"), disconnectInput.getReasonString());
         assertTrue(disconnectInput.getUserProperties().isPresent());

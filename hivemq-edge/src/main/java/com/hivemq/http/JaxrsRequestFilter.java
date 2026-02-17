@@ -16,11 +16,6 @@
 package com.hivemq.http;
 
 import com.hivemq.edge.HiveMQEdgeConstants;
-import org.jetbrains.annotations.NotNull;
-import org.glassfish.jersey.server.ContainerRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -30,6 +25,10 @@ import jakarta.ws.rs.core.UriInfo;
 import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
 import java.util.stream.Collectors;
+import org.glassfish.jersey.server.ContainerRequest;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Request filter that obtains the details of the inbound HttpRequest. When enabled, details are
@@ -46,12 +45,13 @@ public class JaxrsRequestFilter implements ContainerRequestFilter {
     @Override
     public void filter(final @NotNull ContainerRequestContext ctx) throws IOException {
         if (DEBUG) {
-//            printUriInfo(ctx.getUriInfo());
-//            printRequest(ctx.getRequest());
-//            printHeaders(ctx.getHeaders());
-//            printSecurityContext(ctx.getSecurityContext());
+            //            printUriInfo(ctx.getUriInfo());
+            //            printRequest(ctx.getRequest());
+            //            printHeaders(ctx.getHeaders());
+            //            printSecurityContext(ctx.getSecurityContext());
             if (logger.isInfoEnabled()) {
-                logger.info("Http Request [{}] -> [{}]",
+                logger.info(
+                        "Http Request [{}] -> [{}]",
                         ctx.getRequest().getMethod(),
                         ctx.getUriInfo().getRequestUri());
             }
@@ -60,7 +60,8 @@ public class JaxrsRequestFilter implements ContainerRequestFilter {
 
     protected void printHeaders(final @NotNull MultivaluedMap<String, String> headers) {
         for (String header : headers.keySet()) {
-            logger.debug("*** Http-Header: {} -> {}",
+            logger.debug(
+                    "*** Http-Header: {} -> {}",
                     header,
                     headers.get(header).stream().map(Object::toString).collect(Collectors.joining()));
         }
@@ -74,7 +75,6 @@ public class JaxrsRequestFilter implements ContainerRequestFilter {
         logger.debug("*** Http-Uri-QueryParams: {}", info.getQueryParameters());
         logger.debug("*** Http-Uri-Resources: {}", info.getMatchedResources());
         logger.debug("*** Http-Uri-Matched-Uri: {}", info.getMatchedURIs());
-
     }
 
     protected void printSecurityContext(final @NotNull SecurityContext securityContext) {

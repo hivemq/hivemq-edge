@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.handler.testextensions;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.events.client.ClientLifecycleEventListener;
 import com.hivemq.extension.sdk.api.events.client.ClientLifecycleEventListenerProvider;
 import com.hivemq.extension.sdk.api.events.client.parameters.*;
-
 import java.util.concurrent.CountDownLatch;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Test extension used in ClientLifecycleEventHandlerTest
@@ -47,7 +45,8 @@ public final class TestProvider implements ClientLifecycleEventListenerProvider 
     }
 
     @Override
-    public @NotNull ClientLifecycleEventListener getClientLifecycleEventListener(final @NotNull ClientLifecycleEventListenerProviderInput input) {
+    public @NotNull ClientLifecycleEventListener getClientLifecycleEventListener(
+            final @NotNull ClientLifecycleEventListenerProviderInput input) {
         return new ClientLifecycleEventListener() {
             @Override
             public void onMqttConnectionStart(final @NotNull ConnectionStartInput input) {

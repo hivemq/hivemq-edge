@@ -15,13 +15,12 @@
  */
 package com.hivemq.configuration.entity.bridge;
 
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.Objects;
+import org.jetbrains.annotations.Nullable;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlRootElement(name = "mqtt-simple-authentication")

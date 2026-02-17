@@ -32,43 +32,42 @@ import com.github.victools.jsonschema.generator.SchemaVersion;
 import com.github.victools.jsonschema.module.jackson.JacksonModule;
 import com.github.victools.jsonschema.module.jackson.JacksonOption;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.math.BigDecimal;
 import java.util.Arrays;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class CustomConfigSchemaGenerator {
 
     public static final String ENUM_NAMES_ATTRIBUTE = "enumNames";
 
     public @NotNull JsonNode generateJsonSchema(final @NotNull Class clazz) {
-        SchemaGeneratorConfigBuilder configBuilder =
-                new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON).
-                    with(new JacksonModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED,
+        SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(
+                        SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON)
+                .with(new JacksonModule(
+                        JacksonOption.RESPECT_JSONPROPERTY_REQUIRED,
                         JacksonOption.INCLUDE_ONLY_JSONPROPERTY_ANNOTATED_METHODS,
-                        JacksonOption.RESPECT_JSONPROPERTY_ORDER)).
-                    with(new ModuleConfigSchemaGeneratorModule());
+                        JacksonOption.RESPECT_JSONPROPERTY_ORDER))
+                .with(new ModuleConfigSchemaGeneratorModule());
         withEnumDisplayNameProvider(configBuilder);
         SchemaGeneratorConfig config = configBuilder.build();
         SchemaGenerator generator = new SchemaGenerator(config);
         return generator.generateSchema(clazz);
     }
 
-
     /**
      * There is no default way to provide "displayNames" for enum types, the actual way to do it is provide a secondary array
      * where the indices match the value indices with the names. This can be provided by using the field configuration object
      * "enumDisplayNames {}"
      */
-    private static void withEnumDisplayNameProvider(final @NotNull SchemaGeneratorConfigBuilder configBuilder){
+    private static void withEnumDisplayNameProvider(final @NotNull SchemaGeneratorConfigBuilder configBuilder) {
         configBuilder.forFields().withInstanceAttributeOverride((collectedMemberAttributes, member, context) -> {
             ModuleConfigField configField = member.getAnnotation(ModuleConfigField.class);
-            if(configField != null){
+            if (configField != null) {
                 String[] displayValues = configField.enumDisplayValues();
-                if(displayValues != null && displayValues.length > 0){
+                if (displayValues != null && displayValues.length > 0) {
                     ArrayNode node = (ArrayNode) collectedMemberAttributes.get(ENUM_NAMES_ATTRIBUTE);
-                    if(node == null){
+                    if (node == null) {
                         node = collectedMemberAttributes.putArray(ENUM_NAMES_ATTRIBUTE);
                     }
                     Arrays.stream(displayValues).forEach(node::add);
@@ -86,7 +85,8 @@ public class CustomConfigSchemaGenerator {
         }
 
         private void applyToConfigPart(final @NotNull SchemaGeneratorConfigPart<?> schemaGeneratorConfigPart) {
-            schemaGeneratorConfigPart.withTitleResolver(this::title)
+            schemaGeneratorConfigPart
+                    .withTitleResolver(this::title)
                     .withArrayMinItemsResolver(this::arrayMinItems)
                     .withArrayMaxItemsResolver(this::arrayMaxItems)
                     .withArrayUniqueItemsResolver(this::arrayUniqueItems)
@@ -141,41 +141,49 @@ public class CustomConfigSchemaGenerator {
 
         private Integer arrayMaxItems(final @NotNull MemberScope<?, ?> memberScope) {
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
-            return fieldInfo != null && fieldInfo.arrayMaxItems() > 0 && fieldInfo.arrayMaxItems() < Integer.MAX_VALUE ?
-                    fieldInfo.arrayMaxItems() :
-                    null;
+            return fieldInfo != null && fieldInfo.arrayMaxItems() > 0 && fieldInfo.arrayMaxItems() < Integer.MAX_VALUE
+                    ? fieldInfo.arrayMaxItems()
+                    : null;
         }
 
         private String title(final @NotNull MemberScope<?, ?> memberScope) {
-            //-- We should not allow duplication of titles for wrapped types
-            if(memberScope.isFakeContainerItemScope()) return null;
+            // -- We should not allow duplication of titles for wrapped types
+            if (memberScope.isFakeContainerItemScope()) return null;
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
-            return fieldInfo != null && fieldInfo.title() != null && !fieldInfo.title().isBlank() ?
-                    fieldInfo.title() :
-                    null;
+            return fieldInfo != null
+                            && fieldInfo.title() != null
+                            && !fieldInfo.title().isBlank()
+                    ? fieldInfo.title()
+                    : null;
         }
 
         private String description(final @NotNull MemberScope<?, ?> memberScope) {
-            //-- We should not allow duplication of descriptions for wrapped types
-            if(memberScope.isFakeContainerItemScope()) return null;
+            // -- We should not allow duplication of descriptions for wrapped types
+            if (memberScope.isFakeContainerItemScope()) return null;
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
-            return fieldInfo != null && fieldInfo.description() != null && !fieldInfo.description().isBlank() ?
-                    fieldInfo.description() :
-                    null;
+            return fieldInfo != null
+                            && fieldInfo.description() != null
+                            && !fieldInfo.description().isBlank()
+                    ? fieldInfo.description()
+                    : null;
         }
 
         private String stringFormat(final @NotNull MemberScope<?, ?> memberScope) {
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
-            return fieldInfo != null &&
-                    fieldInfo.format() != null &&
-                    fieldInfo.format() != ModuleConfigField.FieldType.UNSPECIFIED ? fieldInfo.format().getName() : null;
+            return fieldInfo != null
+                            && fieldInfo.format() != null
+                            && fieldInfo.format() != ModuleConfigField.FieldType.UNSPECIFIED
+                    ? fieldInfo.format().getName()
+                    : null;
         }
 
         private Object defaultValue(final @NotNull MemberScope<?, ?> memberScope) {
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
-            String str = fieldInfo != null && fieldInfo.defaultValue() != null && !fieldInfo.defaultValue().isEmpty() ?
-                    fieldInfo.defaultValue() :
-                    null;
+            String str = fieldInfo != null
+                            && fieldInfo.defaultValue() != null
+                            && !fieldInfo.defaultValue().isEmpty()
+                    ? fieldInfo.defaultValue()
+                    : null;
             return getNativeObject(str);
         }
 
@@ -191,16 +199,16 @@ public class CustomConfigSchemaGenerator {
 
         private BigDecimal numberInclusiveMin(final @NotNull MemberScope<?, ?> memberScope) {
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
-            return  fieldInfo != null && fieldInfo.numberMin() != Double.MIN_VALUE ?
-                    BigDecimal.valueOf(fieldInfo.numberMin()) :
-                    null;
+            return fieldInfo != null && fieldInfo.numberMin() != Double.MIN_VALUE
+                    ? BigDecimal.valueOf(fieldInfo.numberMin())
+                    : null;
         }
 
         private BigDecimal numberInclusiveMax(final @NotNull MemberScope<?, ?> memberScope) {
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
-            return fieldInfo != null && fieldInfo.numberMax() < Double.MAX_VALUE ?
-                    BigDecimal.valueOf(fieldInfo.numberMax()) :
-                    null;
+            return fieldInfo != null && fieldInfo.numberMax() < Double.MAX_VALUE
+                    ? BigDecimal.valueOf(fieldInfo.numberMax())
+                    : null;
         }
 
         private Integer stringMinLength(final @NotNull MemberScope<?, ?> memberScope) {
@@ -210,37 +218,40 @@ public class CustomConfigSchemaGenerator {
 
         private Integer stringMaxLength(final @NotNull MemberScope<?, ?> memberScope) {
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
-            return fieldInfo != null &&
-                    fieldInfo.stringMaxLength() > 0 &&
-                    fieldInfo.stringMaxLength() < Integer.MAX_VALUE ? fieldInfo.stringMaxLength() : null;
+            return fieldInfo != null
+                            && fieldInfo.stringMaxLength() > 0
+                            && fieldInfo.stringMaxLength() < Integer.MAX_VALUE
+                    ? fieldInfo.stringMaxLength()
+                    : null;
         }
 
         protected String stringPattern(final @NotNull MemberScope<?, ?> memberScope) {
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
-            return fieldInfo != null && fieldInfo.stringPattern() != null && !fieldInfo.stringPattern().isBlank() ?
-                    fieldInfo.stringPattern() :
-                    null;
+            return fieldInfo != null
+                            && fieldInfo.stringPattern() != null
+                            && !fieldInfo.stringPattern().isBlank()
+                    ? fieldInfo.stringPattern()
+                    : null;
         }
 
-        //-- Removed support until bug resolved in 3rd party lib
-//        protected List<?> resolveAllowableValues(final @NotNull MemberScope<?, ?> memberScope) {
-//            final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
-//            if (fieldInfo != null &&
-//                    fieldInfo.allowableValues() != null &&
-//                    fieldInfo.allowableValues().length > 0) {
-//                try {
-//                    return Arrays.stream(fieldInfo.allowableValues()).
-//                        map(BigInteger::new).collect(
-//                        Collectors.toList());
-//                } catch(NumberFormatException e){
-//                    return Arrays.asList(fieldInfo.allowableValues());
-//                }
-//            }
-//            return null;
-//        }
+        // -- Removed support until bug resolved in 3rd party lib
+        //        protected List<?> resolveAllowableValues(final @NotNull MemberScope<?, ?> memberScope) {
+        //            final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
+        //            if (fieldInfo != null &&
+        //                    fieldInfo.allowableValues() != null &&
+        //                    fieldInfo.allowableValues().length > 0) {
+        //                try {
+        //                    return Arrays.stream(fieldInfo.allowableValues()).
+        //                        map(BigInteger::new).collect(
+        //                        Collectors.toList());
+        //                } catch(NumberFormatException e){
+        //                    return Arrays.asList(fieldInfo.allowableValues());
+        //                }
+        //            }
+        //            return null;
+        //        }
 
-        protected @Nullable ModuleConfigField getModuleFieldInfo(
-                MemberScope<?, ?> member) {
+        protected @Nullable ModuleConfigField getModuleFieldInfo(MemberScope<?, ?> member) {
             ModuleConfigField annotation = member.getAnnotation(ModuleConfigField.class);
             if (annotation == null) {
                 MemberScope<?, ?> source;
@@ -257,22 +268,20 @@ public class CustomConfigSchemaGenerator {
         }
     }
 
-    private static Object getNativeObject(final @NotNull String format){
-        if(format != null){
-            if("true".equalsIgnoreCase(format.trim()) ||
-                    "false".equalsIgnoreCase(format.trim())){
+    private static Object getNativeObject(final @NotNull String format) {
+        if (format != null) {
+            if ("true".equalsIgnoreCase(format.trim()) || "false".equalsIgnoreCase(format.trim())) {
                 return Boolean.parseBoolean(format.trim());
             }
             try {
                 return Long.parseLong(format);
-            } catch(NumberFormatException e){
+            } catch (NumberFormatException e) {
             }
             try {
                 return Double.parseDouble(format);
-            } catch(NumberFormatException e){
+            } catch (NumberFormatException e) {
             }
         }
         return format;
     }
-
 }

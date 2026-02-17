@@ -23,7 +23,7 @@ public class CustomUserProperty {
     private final @NotNull String key;
     private final @NotNull String value;
 
-    public static CustomUserProperty of(final @NotNull String key, final @NotNull String value){
+    public static CustomUserProperty of(final @NotNull String key, final @NotNull String value) {
         return new CustomUserProperty(key, value);
     }
 

@@ -28,19 +28,17 @@ import com.unboundid.ldap.sdk.SearchRequest;
 import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.ldap.sdk.SimpleBindRequest;
 import com.unboundid.ldap.sdk.StartTLSPostConnectProcessor;
+import java.security.GeneralSecurityException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLContext;
-import java.security.GeneralSecurityException;
 
 /**
  * LDAP client that manages connections and provides authentication operations.
@@ -79,8 +77,8 @@ public class LdapClient {
      *
      * @param connectionProperties The connection configuration
      */
-    public LdapClient(final @NotNull LdapConnectionProperties connectionProperties,
-                      final @NotNull SecurityLog securityLog) {
+    public LdapClient(
+            final @NotNull LdapConnectionProperties connectionProperties, final @NotNull SecurityLog securityLog) {
         this.connectionProperties = connectionProperties;
         this.securityLog = securityLog;
         // Resolver will be created after connection pool is established in start()
@@ -99,15 +97,17 @@ public class LdapClient {
             throw new IllegalStateException("LDAP client is already started");
         }
 
-        log.debug("Starting LDAP client, connecting to {}:{}",
-                connectionProperties.servers().hosts()[0], connectionProperties.servers().ports()[0]);
+        log.debug(
+                "Starting LDAP client, connecting to {}:{}",
+                connectionProperties.servers().hosts()[0],
+                connectionProperties.servers().ports()[0]);
 
         final var connectionOptions = connectionProperties.createConnectionOptions();
 
         SocketFactory socketFactory = null;
         StartTLSPostConnectProcessor startTlsProcessor = null;
         switch (connectionProperties.tlsMode()) {
-            case NONE -> {} //NOOP
+            case NONE -> {} // NOOP
             case LDAPS -> {
                 final SSLContext sslContext = connectionProperties.createSSLContext();
                 socketFactory = sslContext.getSocketFactory();
@@ -118,7 +118,8 @@ public class LdapClient {
             }
         }
 
-        final var bindRequest = new SimpleBindRequest(connectionProperties.getEffectiveServiceAccountDn(),
+        final var bindRequest = new SimpleBindRequest(
+                connectionProperties.getEffectiveServiceAccountDn(),
                 connectionProperties.ldapSimpleBind().userPassword());
 
         // Store admin bind request for re-authenticating connections after user authentication
@@ -136,9 +137,8 @@ public class LdapClient {
                 bindRequest,
                 startTlsProcessor);
 
-        final var ldapConnectionPoolHealthCheck =
-                new PruneUnneededConnectionsLDAPConnectionPoolHealthCheck(
-                        minConnections, 1_000L); //TODO configurable??
+        final var ldapConnectionPoolHealthCheck = new PruneUnneededConnectionsLDAPConnectionPoolHealthCheck(
+                minConnections, 1_000L); // TODO configurable??
 
         try {
             connectionPool = new LDAPConnectionPool( //
@@ -157,11 +157,13 @@ public class LdapClient {
             userDnResolver = connectionProperties.createUserDnResolver(connectionPool);
 
             started = true;
-            log.info("LDAP client started successfully, connected to {}:{}",
-                    connectionProperties.servers().hosts()[0], connectionProperties.servers().ports()[0]);
+            log.info(
+                    "LDAP client started successfully, connected to {}:{}",
+                    connectionProperties.servers().hosts()[0],
+                    connectionProperties.servers().ports()[0]);
         } catch (final Exception e) {
             // Close the connection if pool creation fails
-            if(connectionPool != null) {
+            if (connectionPool != null) {
                 connectionPool.close();
             }
             throw e;
@@ -257,7 +259,6 @@ public class LdapClient {
             securityLog.authenticationFailed("LDAP", username, "Failed to resolve DN for user");
             throw e;
         }
-
     }
 
     /**
@@ -273,9 +274,7 @@ public class LdapClient {
      * @throws IllegalStateException if the client is not started
      */
     public @NotNull Set<String> getRolesForUser(
-            final @NotNull String username,
-            final @Nullable List<UserRoleEntity> userRoles)
-            throws LDAPException {
+            final @NotNull String username, final @Nullable List<UserRoleEntity> userRoles) throws LDAPException {
 
         ensureStarted();
 
@@ -318,12 +317,12 @@ public class LdapClient {
                         false, // Types only = false
                         filter,
                         "1.1" // Return no attributes, we only need to know if entries exist
-                );
+                        );
 
                 final var searchResult = connectionPool.search(searchRequest);
-                if (searchResult.getResultCode() == ResultCode.SUCCESS &&
-                        searchResult.getEntryCount() > 0) {
-                    log.debug("Role query for '{}' matched {} entries, adding role", role, searchResult.getEntryCount());
+                if (searchResult.getResultCode() == ResultCode.SUCCESS && searchResult.getEntryCount() > 0) {
+                    log.debug(
+                            "Role query for '{}' matched {} entries, adding role", role, searchResult.getEntryCount());
                     matchedRoles.add(role);
                 } else {
                     log.debug("Role query for '{}' returned no matches", role);

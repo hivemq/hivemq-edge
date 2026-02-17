@@ -16,16 +16,15 @@
 package com.hivemq.extensions.services.subscription;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.services.subscription.TopicSubscription;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5RetainHandling;
 import com.hivemq.mqtt.message.subscribe.Topic;
-
 import java.util.Objects;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -39,8 +38,12 @@ public class TopicSubscriptionImpl implements TopicSubscription {
     private final boolean noLocal;
     private final @Nullable Integer subscriptionIdentifier;
 
-    public TopicSubscriptionImpl(final @NotNull String topicFilter, final @NotNull Qos qos, final boolean retainAsPublished,
-                                 final boolean noLocal, final @Nullable Integer subscriptionIdentifier) {
+    public TopicSubscriptionImpl(
+            final @NotNull String topicFilter,
+            final @NotNull Qos qos,
+            final boolean retainAsPublished,
+            final boolean noLocal,
+            final @Nullable Integer subscriptionIdentifier) {
         Preconditions.checkNotNull(topicFilter, "Topic filter must never be null");
         Preconditions.checkNotNull(qos, "QoS must never be null");
         this.topicFilter = topicFilter;
@@ -86,7 +89,8 @@ public class TopicSubscriptionImpl implements TopicSubscription {
 
     public static @NotNull Topic convertToTopic(final @NotNull TopicSubscription topicSubscription) {
         Preconditions.checkNotNull(topicSubscription, "TopicSubscription must never be null");
-        return new Topic(topicSubscription.getTopicFilter(),
+        return new Topic(
+                topicSubscription.getTopicFilter(),
                 Objects.requireNonNull(QoS.valueOf(topicSubscription.getQos().getQosNumber())),
                 topicSubscription.getNoLocal(),
                 topicSubscription.getRetainAsPublished(),
@@ -96,12 +100,11 @@ public class TopicSubscriptionImpl implements TopicSubscription {
 
     @Override
     public String toString() {
-        return "TopicSubscription{" +
-                "topicFilter='" + topicFilter + '\'' +
-                ", qos=" + qos +
-                ", retainAsPublished=" + retainAsPublished +
-                ", noLocal=" + noLocal +
-                ", subscriptionIdentifier=" + subscriptionIdentifier +
-                '}';
+        return "TopicSubscription{" + "topicFilter='"
+                + topicFilter + '\'' + ", qos="
+                + qos + ", retainAsPublished="
+                + retainAsPublished + ", noLocal="
+                + noLocal + ", subscriptionIdentifier="
+                + subscriptionIdentifier + '}';
     }
 }

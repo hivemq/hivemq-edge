@@ -15,23 +15,22 @@
  */
 package com.hivemq.persistence.topicfilter;
 
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-
 public interface TopicFilterPersistence {
-
 
     void sync();
 
     @NotNull
     TopicFilterAddResult addTopicFilter(@NotNull TopicFilterPojo domainTag);
 
-    @NotNull TopicFilterUpdateResult updateTopicFilter(@NotNull TopicFilterPojo topicFilter);
+    @NotNull
+    TopicFilterUpdateResult updateTopicFilter(@NotNull TopicFilterPojo topicFilter);
 
-    @NotNull TopicFilterUpdateResult updateAllTopicFilters(@NotNull List<TopicFilterPojo> topicFilter);
-
+    @NotNull
+    TopicFilterUpdateResult updateAllTopicFilters(@NotNull List<TopicFilterPojo> topicFilter);
 
     @NotNull
     TopicFilterDeleteResult deleteTopicFilter(@NotNull String filter);

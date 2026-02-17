@@ -17,16 +17,15 @@ package com.hivemq.extensions.packets.puback;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.puback.ModifiablePubackPacket;
 import com.hivemq.extension.sdk.api.packets.publish.AckReasonCode;
 import com.hivemq.extensions.packets.general.ModifiableUserPropertiesImpl;
 import com.hivemq.extensions.services.builder.PluginBuilderUtil;
 import com.hivemq.mqtt.message.reason.Mqtt5PubAckReasonCode;
-
 import java.util.Objects;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Yannick Weber
@@ -43,14 +42,14 @@ public class ModifiablePubackPacketImpl implements ModifiablePubackPacket {
     private boolean modified = false;
 
     public ModifiablePubackPacketImpl(
-            final @NotNull PubackPacketImpl packet,
-            final @NotNull ConfigurationService configurationService) {
+            final @NotNull PubackPacketImpl packet, final @NotNull ConfigurationService configurationService) {
 
         packetIdentifier = packet.packetIdentifier;
         reasonCode = packet.reasonCode;
         reasonString = packet.reasonString;
         userProperties = new ModifiableUserPropertiesImpl(
-                packet.userProperties.asInternalList(), configurationService.securityConfiguration().validateUTF8());
+                packet.userProperties.asInternalList(),
+                configurationService.securityConfiguration().validateUTF8());
 
         this.configurationService = configurationService;
     }
@@ -87,7 +86,8 @@ public class ModifiablePubackPacketImpl implements ModifiablePubackPacket {
 
     @Override
     public void setReasonString(final @Nullable String reasonString) {
-        PluginBuilderUtil.checkReasonString(reasonString, configurationService.securityConfiguration().validateUTF8());
+        PluginBuilderUtil.checkReasonString(
+                reasonString, configurationService.securityConfiguration().validateUTF8());
         if (Objects.equals(this.reasonString, reasonString)) {
             return;
         }

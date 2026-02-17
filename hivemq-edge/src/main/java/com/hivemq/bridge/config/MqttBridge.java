@@ -15,11 +15,10 @@
  */
 package com.hivemq.bridge.config;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.List;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class MqttBridge {
 
@@ -207,7 +206,8 @@ public class MqttBridge {
             return this;
         }
 
-        public @NotNull Builder withWebsocketConfiguration(final @Nullable BridgeWebsocketConfig bridgeWebsocketConfig) {
+        public @NotNull Builder withWebsocketConfiguration(
+                final @Nullable BridgeWebsocketConfig bridgeWebsocketConfig) {
             this.bridgeWebsocketConfig = bridgeWebsocketConfig;
             return this;
         }
@@ -336,40 +336,39 @@ public class MqttBridge {
 
     @Override
     public @NotNull String toString() {
-        return "MqttBridge{" +
-                "id='" +
-                id +
-                '\'' +
-                ", host='" +
-                host +
-                '\'' +
-                ", port=" +
-                port +
-                ", clientId='" +
-                clientId +
-                '\'' +
-                ", keepAlive=" +
-                keepAlive +
-                ", sessionExpiry=" +
-                sessionExpiry +
-                ", cleanStart=" +
-                cleanStart +
-                ", username='" +
-                username +
-                '\'' +
-                ", password='" +
-                password +
-                '\'' +
-                ", bridgeTls=" +
-                bridgeTls +
-                ", remoteSubscriptions=" +
-                remoteSubscriptions +
-                ", localSubscriptions=" +
-                localSubscriptions +
-                ", loopPreventionEnabled=" +
-                loopPreventionEnabled +
-                ", loopPreventionHopCount=" +
-                loopPreventionHopCount +
-                '}';
+        return "MqttBridge{" + "id='"
+                + id
+                + '\''
+                + ", host='"
+                + host
+                + '\''
+                + ", port="
+                + port
+                + ", clientId='"
+                + clientId
+                + '\''
+                + ", keepAlive="
+                + keepAlive
+                + ", sessionExpiry="
+                + sessionExpiry
+                + ", cleanStart="
+                + cleanStart
+                + ", username='"
+                + username
+                + '\''
+                + ", password='"
+                + password
+                + '\''
+                + ", bridgeTls="
+                + bridgeTls
+                + ", remoteSubscriptions="
+                + remoteSubscriptions
+                + ", localSubscriptions="
+                + localSubscriptions
+                + ", loopPreventionEnabled="
+                + loopPreventionEnabled
+                + ", loopPreventionHopCount="
+                + loopPreventionHopCount
+                + '}';
     }
 }

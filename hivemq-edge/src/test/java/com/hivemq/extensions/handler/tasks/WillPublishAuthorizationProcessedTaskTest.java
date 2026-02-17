@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.handler.tasks;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+
 import com.hivemq.common.shutdown.ShutdownHooks;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.packets.disconnect.DisconnectReasonCode;
 import com.hivemq.extension.sdk.api.packets.publish.AckReasonCode;
 import com.hivemq.extensions.auth.parameter.PublishAuthorizerOutputImpl;
@@ -27,13 +28,11 @@ import com.hivemq.extensions.handler.PluginAuthorizerServiceImpl.AuthorizeWillRe
 import com.hivemq.mqtt.message.connect.CONNECT;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import util.CollectUserEventsHandler;
 import util.TestMessageUtil;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
 
 public class WillPublishAuthorizationProcessedTaskTest {
 
@@ -41,6 +40,7 @@ public class WillPublishAuthorizationProcessedTaskTest {
     private @NotNull EmbeddedChannel channel;
     private @NotNull WillPublishAuthorizationProcessedTask task;
     private @NotNull PublishAuthorizerOutputImpl output;
+
     @BeforeEach
     public void before() {
         eventsCollector = new CollectUserEventsHandler<>(AuthorizeWillResultEvent.class);
@@ -73,7 +73,8 @@ public class WillPublishAuthorizationProcessedTaskTest {
 
         final AuthorizeWillResultEvent resultEvent = eventsCollector.pollEvent();
         assertNotNull(resultEvent);
-        assertEquals(DisconnectReasonCode.QUOTA_EXCEEDED, resultEvent.getResult().getDisconnectReasonCode());
+        assertEquals(
+                DisconnectReasonCode.QUOTA_EXCEEDED, resultEvent.getResult().getDisconnectReasonCode());
     }
 
     @Test
@@ -84,7 +85,8 @@ public class WillPublishAuthorizationProcessedTaskTest {
 
         final AuthorizeWillResultEvent resultEvent = eventsCollector.pollEvent();
         assertNotNull(resultEvent);
-        assertEquals(DisconnectReasonCode.QUOTA_EXCEEDED, resultEvent.getResult().getDisconnectReasonCode());
+        assertEquals(
+                DisconnectReasonCode.QUOTA_EXCEEDED, resultEvent.getResult().getDisconnectReasonCode());
         assertEquals("test-string", resultEvent.getResult().getReasonString());
     }
 

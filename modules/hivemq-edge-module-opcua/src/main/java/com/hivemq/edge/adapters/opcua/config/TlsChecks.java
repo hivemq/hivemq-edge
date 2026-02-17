@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public enum TlsChecks {
-
     @JsonProperty("NONE")
     NONE("NONE"),
 
@@ -57,8 +56,8 @@ public enum TlsChecks {
             return null;
         }
         for (final var mode : values()) {
-            if (mode.name().equalsIgnoreCase(value) ||
-                    mode.name().replace("_", "").equalsIgnoreCase(value)) {
+            if (mode.name().equalsIgnoreCase(value)
+                    || mode.name().replace("_", "").equalsIgnoreCase(value)) {
                 return mode;
             }
         }

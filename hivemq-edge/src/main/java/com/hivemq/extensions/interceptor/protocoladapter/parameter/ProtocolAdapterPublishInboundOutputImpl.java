@@ -15,13 +15,12 @@
  */
 package com.hivemq.extensions.interceptor.protocoladapter.parameter;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.protocoladapter.parameter.ProtocolAdapterPublishInboundOutput;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
 import com.hivemq.extensions.executor.task.AbstractAsyncOutput;
 import com.hivemq.extensions.packets.publish.ModifiablePublishPacketImpl;
-
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jetbrains.annotations.NotNull;
 
 public class ProtocolAdapterPublishInboundOutputImpl extends AbstractAsyncOutput<ProtocolAdapterPublishInboundOutput>
         implements ProtocolAdapterPublishInboundOutput {
@@ -59,9 +58,8 @@ public class ProtocolAdapterPublishInboundOutputImpl extends AbstractAsyncOutput
         }
     }
 
-    public @NotNull ProtocolAdapterPublishInboundOutputImpl update(final @NotNull ProtocolAdapterPublishInboundInputImpl input) {
+    public @NotNull ProtocolAdapterPublishInboundOutputImpl update(
+            final @NotNull ProtocolAdapterPublishInboundInputImpl input) {
         return new ProtocolAdapterPublishInboundOutputImpl(asyncer, publishPacket.update(input.getPublishPacket()));
     }
-
-
 }

@@ -15,8 +15,9 @@
  */
 package com.hivemq.mqtt.handler.publish;
 
+import static com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults.MAX_EXPIRY_INTERVAL_DEFAULT;
+
 import com.hivemq.configuration.service.InternalConfigurations;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.event.PublishDroppedEvent;
 import com.hivemq.mqtt.event.PubrelDroppedEvent;
 import com.hivemq.mqtt.message.QoS;
@@ -26,13 +27,11 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-
-import static com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults.MAX_EXPIRY_INTERVAL_DEFAULT;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Florian Limpöck
@@ -46,8 +45,7 @@ public class MessageExpiryHandler extends ChannelOutboundHandlerAdapter {
     static final Logger log = LoggerFactory.getLogger(MessageExpiryHandler.class);
 
     @Inject
-    public MessageExpiryHandler() {
-    }
+    public MessageExpiryHandler() {}
 
     @Override
     public void write(
@@ -68,7 +66,9 @@ public class MessageExpiryHandler extends ChannelOutboundHandlerAdapter {
             final PUBREL pubrel = (PUBREL) msg;
             checkAndSetPubrelExpiry(pubrel);
             final boolean expireInflight = InternalConfigurations.EXPIRE_INFLIGHT_PUBRELS_ENABLED;
-            final boolean drop = (pubrel.getMessageExpiryInterval() != null) && (pubrel.getMessageExpiryInterval() == 0) && expireInflight;
+            final boolean drop = (pubrel.getMessageExpiryInterval() != null)
+                    && (pubrel.getMessageExpiryInterval() == 0)
+                    && expireInflight;
             if (drop) {
                 ctx.fireUserEventTriggered(new PubrelDroppedEvent(pubrel));
                 return;
@@ -96,5 +96,4 @@ public class MessageExpiryHandler extends ChannelOutboundHandlerAdapter {
             message.setMessageExpiryInterval(remainingInterval);
         }
     }
-
 }

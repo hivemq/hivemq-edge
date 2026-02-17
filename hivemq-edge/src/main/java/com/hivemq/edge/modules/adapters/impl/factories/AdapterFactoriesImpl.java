@@ -23,7 +23,6 @@ import org.jetbrains.annotations.NotNull;
 
 public class AdapterFactoriesImpl implements AdapterFactories {
 
-
     @Override
     public @NotNull DataPointFactory dataPointFactory() {
         return new DataPointFactory() {
@@ -34,8 +33,7 @@ public class AdapterFactoriesImpl implements AdapterFactories {
 
             @Override
             public @NotNull DataPoint createJsonDataPoint(
-                    final @NotNull String tagName,
-                    final @NotNull Object tagValue) {
+                    final @NotNull String tagName, final @NotNull Object tagValue) {
                 return new DataPointImpl(tagName, tagValue, true);
             }
         };

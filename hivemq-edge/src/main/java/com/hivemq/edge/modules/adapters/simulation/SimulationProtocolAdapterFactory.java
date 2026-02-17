@@ -23,13 +23,11 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 
-public class SimulationProtocolAdapterFactory
-        implements ProtocolAdapterFactory<SimulationSpecificAdapterConfig> {
+public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<SimulationSpecificAdapterConfig> {
 
     final boolean writingEnabled;
 
-    public SimulationProtocolAdapterFactory(
-            final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput) {
+    public SimulationProtocolAdapterFactory(final @NotNull ProtocolAdapterFactoryInput protocolAdapterFactoryInput) {
         this.writingEnabled = protocolAdapterFactoryInput.isWritingEnabled();
     }
 
@@ -44,5 +42,4 @@ public class SimulationProtocolAdapterFactory
             final @NotNull ProtocolAdapterInput<SimulationSpecificAdapterConfig> input) {
         return new SimulationProtocolAdapter(adapterInformation, input, TimeWaiter.INSTANCE);
     }
-
 }

@@ -15,14 +15,13 @@
  */
 package com.hivemq.edge.adapters.modbus.config;
 
+import static java.util.Objects.requireNonNullElse;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Objects;
-
-import static java.util.Objects.requireNonNullElse;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @since 4.9.0
@@ -40,29 +39,34 @@ public class ModbusToMqttConfig {
             Boolean.parseBoolean(DEFAULT_PUBLISH_CHANGED_DATA_ONLY_STRING);
 
     @JsonProperty("pollingIntervalMillis")
-    @ModuleConfigField(title = "Polling Interval [ms]",
-                       description = "Time in millisecond that this endpoint will be polled",
-                       numberMin = 1,
-                       defaultValue = DEFAULT_POLL_INTERVAL_MILLIS_STRING)
+    @ModuleConfigField(
+            title = "Polling Interval [ms]",
+            description = "Time in millisecond that this endpoint will be polled",
+            numberMin = 1,
+            defaultValue = DEFAULT_POLL_INTERVAL_MILLIS_STRING)
     private final int pollingIntervalMillis;
 
     @JsonProperty("maxPollingErrorsBeforeRemoval")
-    @ModuleConfigField(title = "Max. Polling Errors",
-                       description = "Max. errors polling the endpoint before the polling daemon is stopped (-1 for unlimited retries)",
-                       numberMin = -1,
-                       defaultValue = DEFAULT_MAX_POLL_ERRORS_BEFORE_REMOVAL_STRING)
+    @ModuleConfigField(
+            title = "Max. Polling Errors",
+            description =
+                    "Max. errors polling the endpoint before the polling daemon is stopped (-1 for unlimited retries)",
+            numberMin = -1,
+            defaultValue = DEFAULT_MAX_POLL_ERRORS_BEFORE_REMOVAL_STRING)
     private final int maxPollingErrorsBeforeRemoval;
 
     @JsonProperty("publishChangedDataOnly")
-    @ModuleConfigField(title = "Only publish data items that have changed since last poll",
-                       defaultValue = DEFAULT_PUBLISH_CHANGED_DATA_ONLY_STRING,
-                       format = ModuleConfigField.FieldType.BOOLEAN)
+    @ModuleConfigField(
+            title = "Only publish data items that have changed since last poll",
+            defaultValue = DEFAULT_PUBLISH_CHANGED_DATA_ONLY_STRING,
+            format = ModuleConfigField.FieldType.BOOLEAN)
     private final boolean publishChangedDataOnly;
 
     @JsonCreator
     public ModbusToMqttConfig(
             @JsonProperty(value = "pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
-            @JsonProperty(value = "maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
+            @JsonProperty(value = "maxPollingErrorsBeforeRemoval")
+                    final @Nullable Integer maxPollingErrorsBeforeRemoval,
             @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly) {
         this.pollingIntervalMillis = requireNonNullElse(pollingIntervalMillis, DEFAULT_POLL_INTERVAL_MILLIS);
         this.maxPollingErrorsBeforeRemoval =
@@ -87,15 +91,14 @@ public class ModbusToMqttConfig {
         if (!(o instanceof ModbusToMqttConfig that)) {
             return false;
         }
-        return getPollingIntervalMillis() == that.getPollingIntervalMillis() &&
-                getMaxPollingErrorsBeforeRemoval() == that.getMaxPollingErrorsBeforeRemoval() &&
-                getPublishChangedDataOnly() == that.getPublishChangedDataOnly();
+        return getPollingIntervalMillis() == that.getPollingIntervalMillis()
+                && getMaxPollingErrorsBeforeRemoval() == that.getMaxPollingErrorsBeforeRemoval()
+                && getPublishChangedDataOnly() == that.getPublishChangedDataOnly();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getPollingIntervalMillis(),
-                getMaxPollingErrorsBeforeRemoval(),
-                getPublishChangedDataOnly());
+        return Objects.hash(
+                getPollingIntervalMillis(), getMaxPollingErrorsBeforeRemoval(), getPublishChangedDataOnly());
     }
 }

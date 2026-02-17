@@ -15,6 +15,9 @@
  */
 package com.hivemq.security.ssl;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.*;
+
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.bootstrap.netty.ChannelHandlerNames;
 import com.hivemq.configuration.service.entity.Tls;
@@ -24,18 +27,14 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
+import java.security.cert.Certificate;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSession;
-import java.security.cert.Certificate;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.*;
 
 /**
  * @author Florian Limpöck
@@ -59,6 +58,7 @@ public class SslClientCertificateHandlerTest {
 
     @Mock
     private SSLSession sslSession;
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -86,8 +86,8 @@ public class SslClientCertificateHandlerTest {
         when(sslSession.getPeerCertificates()).thenReturn(new Certificate[0]);
         channel.pipeline().fireUserEventTriggered(SslHandshakeCompletionEvent.SUCCESS);
 
-        assertNotNull(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getAuthCertificate());
-
+        assertNotNull(
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getAuthCertificate());
     }
 
     @Test
@@ -162,9 +162,9 @@ public class SslClientCertificateHandlerTest {
     private class WrongHandler extends SimpleChannelInboundHandler<Object> {
 
         @Override
-        protected void channelRead0(final ChannelHandlerContext channelHandlerContext, final Object o) throws Exception {
+        protected void channelRead0(final ChannelHandlerContext channelHandlerContext, final Object o)
+                throws Exception {
             super.channelRead(channelHandlerContext, o);
         }
     }
-
 }

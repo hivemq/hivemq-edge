@@ -25,7 +25,6 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface ITranscoder<FromT, ToT> {
 
-
     /**
      * Convert the messages from the message supplied into the output format. May
      * return null if a message type is not supported, or may throw if the
@@ -36,8 +35,8 @@ public interface ITranscoder<FromT, ToT> {
      * @return a new instance of the message you are converting to
      * @throws MessageTranscodingException a fatal error converting the type, for example a protocol violation
      */
-    @NotNull TranscodingResult<FromT, ToT> transcode(@NotNull ITranscodingContext context, @NotNull FromT messageIn);
+    @NotNull
+    TranscodingResult<FromT, ToT> transcode(@NotNull ITranscodingContext context, @NotNull FromT messageIn);
 
     boolean canHandle(@NotNull ITranscodingContext context, @NotNull Class<? extends FromT> messageType);
-
 }

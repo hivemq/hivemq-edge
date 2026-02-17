@@ -15,15 +15,14 @@
  */
 package com.hivemq.configuration.service.entity;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A listener which allows to listen to MQTT traffic over secure websockets with TLS.
@@ -80,7 +79,7 @@ public class MqttTlsWebsocketListener extends MqttWebsocketListener implements M
         public Builder() {
             path = "";
             subprotocols = new ArrayList<>();
-            subprotocols.add("mqtt"); //Add default subprotocol which is required by the MQTT spec
+            subprotocols.add("mqtt"); // Add default subprotocol which is required by the MQTT spec
             allowExtensions = false;
         }
 
@@ -208,7 +207,8 @@ public class MqttTlsWebsocketListener extends MqttWebsocketListener implements M
             if (tls == null) {
                 throw new IllegalStateException("The TLS settings for a TLS Websocket listener was not set.");
             }
-            return new MqttTlsWebsocketListener(port, bindAddress, path, allowExtensions, subprotocols, tls, name, externalHostname);
+            return new MqttTlsWebsocketListener(
+                    port, bindAddress, path, allowExtensions, subprotocols, tls, name, externalHostname);
         }
     }
 }

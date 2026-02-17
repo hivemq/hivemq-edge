@@ -15,21 +15,20 @@
  */
 package com.hivemq.security.ssl;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.bootstrap.netty.ChannelHandlerNames;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLSession;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Florian Limpöck
@@ -47,6 +46,7 @@ public class SslParameterHandlerTest {
 
     @Mock
     private SSLSession sslSession;
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -70,8 +70,12 @@ public class SslParameterHandlerTest {
         when(sslSession.getCipherSuite()).thenReturn("CipherSuite");
         when(sslSession.getProtocol()).thenReturn("Protocol");
         channel.pipeline().fireUserEventTriggered(SslHandshakeCompletionEvent.SUCCESS);
-        assertEquals("Protocol", channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getAuthProtocol());
-        assertEquals("CipherSuite", channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getAuthCipherSuite());
+        assertEquals(
+                "Protocol",
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getAuthProtocol());
+        assertEquals(
+                "CipherSuite",
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getAuthCipherSuite());
         assertNull(channel.pipeline().get(SslParameterHandler.class));
     }
 }

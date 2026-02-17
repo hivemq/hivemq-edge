@@ -15,11 +15,10 @@
  */
 package com.hivemq.api.auth;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson

@@ -16,9 +16,8 @@
 package com.hivemq.api.auth.provider;
 
 import com.hivemq.api.auth.ApiPrincipal;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -28,5 +27,4 @@ public interface ITokenVerifier {
     Optional<ApiPrincipal> verify(final @NotNull String tokenValue);
 
     Optional<Long> getExpiryTimeMillis(final @NotNull String tokenValue);
-
 }

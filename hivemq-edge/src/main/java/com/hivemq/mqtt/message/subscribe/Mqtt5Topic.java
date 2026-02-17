@@ -15,9 +15,9 @@
  */
 package com.hivemq.mqtt.message.subscribe;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5RetainHandling;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -67,5 +67,4 @@ public interface Mqtt5Topic {
      * @return whether the retain flag for incoming publishes must be set to its original value.
      */
     boolean isRetainAsPublished();
-
 }

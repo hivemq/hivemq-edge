@@ -16,7 +16,6 @@
 package com.hivemq.configuration.entity;
 
 import com.hivemq.configuration.service.InternalConfigurations;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;

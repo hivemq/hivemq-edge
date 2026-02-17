@@ -15,16 +15,15 @@
  */
 package com.hivemq.extensions.packets.publish;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.hivemq.codec.encoder.mqtt5.UnsignedDataTypes;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.annotations.ThreadSafe;
 import com.hivemq.extension.sdk.api.packets.publish.ModifiableWillPublish;
-
 import java.util.Objects;
-
-import static com.google.common.base.Preconditions.checkArgument;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Lukas Brandl
@@ -62,8 +61,19 @@ public class ModifiableWillPublishImpl extends ModifiablePublishPacketImpl imple
 
     @Override
     public @NotNull WillPublishPacketImpl copy() {
-        return new WillPublishPacketImpl(topic, qos, payload, retain, messageExpiryInterval, payloadFormatIndicator,
-                contentType, responseTopic, correlationData, userProperties.copy(), willDelay, timestamp);
+        return new WillPublishPacketImpl(
+                topic,
+                qos,
+                payload,
+                retain,
+                messageExpiryInterval,
+                payloadFormatIndicator,
+                contentType,
+                responseTopic,
+                correlationData,
+                userProperties.copy(),
+                willDelay,
+                timestamp);
     }
 
     @Override

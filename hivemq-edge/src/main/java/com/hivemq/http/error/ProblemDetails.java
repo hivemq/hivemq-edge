@@ -18,12 +18,11 @@ package com.hivemq.http.error;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ProblemDetails {
 
@@ -90,12 +89,12 @@ public class ProblemDetails {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final ProblemDetails that = (ProblemDetails) o;
-        return status == that.status &&
-                Objects.equals(type, that.type) &&
-                Objects.equals(title, that.title) &&
-                Objects.equals(detail, that.detail) &&
-                Objects.equals(code, that.code) &&
-                Objects.equals(errors, that.errors);
+        return status == that.status
+                && Objects.equals(type, that.type)
+                && Objects.equals(title, that.title)
+                && Objects.equals(detail, that.detail)
+                && Objects.equals(code, that.code)
+                && Objects.equals(errors, that.errors);
     }
 
     @Override
@@ -105,23 +104,22 @@ public class ProblemDetails {
 
     @Override
     public String toString() {
-        return "ProblemDetails{" +
-                "type='" +
-                type +
-                '\'' +
-                ", title='" +
-                title +
-                '\'' +
-                ", detail='" +
-                detail +
-                '\'' +
-                ", status=" +
-                status +
-                ", code='" +
-                code +
-                '\'' +
-                ", errors=" +
-                errors +
-                '}';
+        return "ProblemDetails{" + "type='"
+                + type
+                + '\''
+                + ", title='"
+                + title
+                + '\''
+                + ", detail='"
+                + detail
+                + '\''
+                + ", status="
+                + status
+                + ", code='"
+                + code
+                + '\''
+                + ", errors="
+                + errors
+                + '}';
     }
 }

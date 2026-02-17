@@ -67,7 +67,7 @@ public class TestConfigurationBootstrap {
         dynamicConfigurationService = new GatewayConfigurationServiceImpl();
         moduleConfigurationService = new ModuleConfigurationServiceImpl();
 
-        //-- Ensure usage reporting is disabled during tests
+        // -- Ensure usage reporting is disabled during tests
         usageTrackingConfigurationService = new UsageTrackingConfigurationServiceImpl() {
             @Override
             public boolean isUsageTrackingEnabled() {
@@ -75,7 +75,8 @@ public class TestConfigurationBootstrap {
             }
         };
 
-        configurationService = new ConfigurationServiceImpl(listenerConfigurationService,
+        configurationService = new ConfigurationServiceImpl(
+                listenerConfigurationService,
                 mqttConfigurationService,
                 restrictionsConfigurationService,
                 securityConfigurationService,
@@ -100,7 +101,8 @@ public class TestConfigurationBootstrap {
         return listenerConfigurationService;
     }
 
-    public void setListenerConfigurationService(final @NotNull ListenerConfigurationServiceImpl listenerConfigurationService) {
+    public void setListenerConfigurationService(
+            final @NotNull ListenerConfigurationServiceImpl listenerConfigurationService) {
         this.listenerConfigurationService = listenerConfigurationService;
     }
 
@@ -116,7 +118,8 @@ public class TestConfigurationBootstrap {
         return restrictionsConfigurationService;
     }
 
-    public void setRestrictionsConfigurationService(final @NotNull RestrictionsConfigurationServiceImpl restrictionsConfigurationService) {
+    public void setRestrictionsConfigurationService(
+            final @NotNull RestrictionsConfigurationServiceImpl restrictionsConfigurationService) {
         this.restrictionsConfigurationService = restrictionsConfigurationService;
     }
 
@@ -132,7 +135,8 @@ public class TestConfigurationBootstrap {
         return mqttsnConfigurationService;
     }
 
-    public void setMqttsnConfigurationService(final @NotNull MqttsnConfigurationServiceImpl mqttsnConfigurationService) {
+    public void setMqttsnConfigurationService(
+            final @NotNull MqttsnConfigurationServiceImpl mqttsnConfigurationService) {
         this.mqttsnConfigurationService = mqttsnConfigurationService;
     }
 

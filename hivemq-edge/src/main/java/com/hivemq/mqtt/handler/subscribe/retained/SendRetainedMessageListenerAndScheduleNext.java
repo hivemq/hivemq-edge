@@ -15,22 +15,21 @@
  */
 package com.hivemq.mqtt.handler.subscribe.retained;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.pool.exception.NoMessageIdAvailableException;
 import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.util.Exceptions;
 import io.netty.channel.Channel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This FutureCallback sends a retained message and schedules the sending of the next retained message.
@@ -83,14 +82,22 @@ public class SendRetainedMessageListenerAndScheduleNext implements FutureCallbac
         final Topic[] topicBatch = new Topic[batchSize];
         for (int i = 0; i < batchSize; i++) {
             final String nextTopic = topics.poll();
-            topicBatch[i] = new Topic(nextTopic, subscription.getQoS(), subscription.isNoLocal(),
-                    subscription.isRetainAsPublished(), subscription.getRetainHandling(),
+            topicBatch[i] = new Topic(
+                    nextTopic,
+                    subscription.getQoS(),
+                    subscription.isNoLocal(),
+                    subscription.isRetainAsPublished(),
+                    subscription.getRetainHandling(),
                     subscription.getSubscriptionIdentifier());
         }
 
         final ListenableFuture<Void> sentFuture = retainedMessagesSender.writeRetainedMessages(channel, topicBatch);
 
-        Futures.addCallback(sentFuture, new SendRetainedMessageListenerAndScheduleNext(subscription, topics, channel, retainedMessagesSender, batchSizeMax), channel.eventLoop());
+        Futures.addCallback(
+                sentFuture,
+                new SendRetainedMessageListenerAndScheduleNext(
+                        subscription, topics, channel, retainedMessagesSender, batchSizeMax),
+                channel.eventLoop());
     }
 
     @Override
@@ -102,19 +109,31 @@ public class SendRetainedMessageListenerAndScheduleNext implements FutureCallbac
 
         if (throwable instanceof NoMessageIdAvailableException) {
             if (channel.isActive()) {
-                //We should just try again
-                channel.eventLoop().schedule(() -> {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Retrying retained message for client '{}' on topic '{}'.",
-                                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getClientId(), subscription.getTopic());
-                    }
-                    send();
-                }, 1, TimeUnit.SECONDS);
+                // We should just try again
+                channel.eventLoop()
+                        .schedule(
+                                () -> {
+                                    if (log.isTraceEnabled()) {
+                                        log.trace(
+                                                "Retrying retained message for client '{}' on topic '{}'.",
+                                                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                                                        .get()
+                                                        .getClientId(),
+                                                subscription.getTopic());
+                                    }
+                                    send();
+                                },
+                                1,
+                                TimeUnit.SECONDS);
             }
 
         } else {
-            Exceptions.rethrowError("Unable to send retained message for subscription " + subscription.getTopic() +
-                    " to client " + channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getClientId() + ".", throwable);
+            Exceptions.rethrowError(
+                    "Unable to send retained message for subscription " + subscription.getTopic() + " to client "
+                            + channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                                    .get()
+                                    .getClientId() + ".",
+                    throwable);
             channel.disconnect();
         }
     }

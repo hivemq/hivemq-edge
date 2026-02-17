@@ -17,13 +17,12 @@ package com.hivemq.persistence.retained;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.annotations.ReadOnly;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.iteration.ChunkCursor;
 import com.hivemq.extensions.iteration.MultipleChunkResult;
 import com.hivemq.persistence.RetainedMessage;
-
 import java.util.Map;
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Dominik Obermaier
@@ -99,5 +98,7 @@ public interface RetainedMessagePersistence {
      * @param cursor the cursor returned from the last chunk or a new (empty) cursor to start iterating the persistence
      * @return a result containing the new cursor and a map of clientIds to their session
      */
-    @NotNull ListenableFuture<MultipleChunkResult<Map<String, @NotNull RetainedMessage>>> getAllLocalRetainedMessagesChunk(@NotNull ChunkCursor cursor);
+    @NotNull
+    ListenableFuture<MultipleChunkResult<Map<String, @NotNull RetainedMessage>>> getAllLocalRetainedMessagesChunk(
+            @NotNull ChunkCursor cursor);
 }

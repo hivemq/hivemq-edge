@@ -16,18 +16,17 @@
 package com.hivemq.extensions;
 
 import com.hivemq.extension.sdk.api.ExtensionMain;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStartInput;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStartOutput;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStopInput;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStopOutput;
 import com.hivemq.util.Checkpoints;
-import org.slf4j.Logger;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
 
 /**
  * @author Florian Limpöck
@@ -134,7 +133,8 @@ public abstract class AbstractHiveMQExtension implements HiveMQExtension {
 
     @Override
     public void start(
-            final @NotNull ExtensionStartInput extensionStartInput, final @NotNull ExtensionStartOutput extensionStartOutput) {
+            final @NotNull ExtensionStartInput extensionStartInput,
+            final @NotNull ExtensionStartOutput extensionStartOutput) {
 
         if (extensionMain != null) {
             extensionMain.extensionStart(extensionStartInput, extensionStartOutput);
@@ -142,7 +142,9 @@ public abstract class AbstractHiveMQExtension implements HiveMQExtension {
     }
 
     @Override
-    public void stop(final @NotNull ExtensionStopInput extensionStopInput, final @NotNull ExtensionStopOutput extensionStopOutput) {
+    public void stop(
+            final @NotNull ExtensionStopInput extensionStopInput,
+            final @NotNull ExtensionStopOutput extensionStopOutput) {
         if (extensionMain != null) {
             extensionMain.extensionStop(extensionStopInput, extensionStopOutput);
         }
@@ -158,20 +160,21 @@ public abstract class AbstractHiveMQExtension implements HiveMQExtension {
                 if (extensionFolderPath.toFile().exists()) {
                     disabled = ExtensionUtil.disableExtensionFolder(extensionFolderPath);
                 } else {
-                    getLogger().trace(
-                            "Extension folder {} was already removed and cannot be disabled, continuing normally",
-                            extensionFolderPath.toFile().getAbsolutePath());
+                    getLogger()
+                            .trace(
+                                    "Extension folder {} was already removed and cannot be disabled, continuing normally",
+                                    extensionFolderPath.toFile().getAbsolutePath());
                     disabled = true;
                 }
                 if (!disabled) {
                     getLogger().warn("Could not disable extension folder {}.", extensionFolderPath);
                 }
             } catch (final IOException e) {
-                getLogger().warn("Could not disable extension folder {}, reason {}", extensionFolderPath, e.getMessage());
+                getLogger()
+                        .warn("Could not disable extension folder {}, reason {}", extensionFolderPath, e.getMessage());
                 getLogger().trace("Original exception", e);
             }
             Checkpoints.checkpoint("extension-disabled");
         }
     }
-
 }

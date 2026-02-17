@@ -15,12 +15,11 @@
  */
 package com.hivemq.persistence.topicfilter.xml;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @XmlAccessorType(XmlAccessType.FIELD)
 public class TopicFilterXmlEntity {
@@ -34,7 +33,7 @@ public class TopicFilterXmlEntity {
     @XmlElement(name = "schema")
     private final @Nullable String schema;
 
-    //no-arg for JaxB
+    // no-arg for JaxB
     @SuppressWarnings("unused")
     public TopicFilterXmlEntity() {
         this.description = "";
@@ -48,7 +47,6 @@ public class TopicFilterXmlEntity {
         this.topicFilter = topicFilter;
         this.schema = schema;
     }
-
 
     public @NotNull String getDescription() {
         return description;
@@ -64,16 +62,15 @@ public class TopicFilterXmlEntity {
 
     @Override
     public @NotNull String toString() {
-        return "TopicFilterXmlEntity{" +
-                "description='" +
-                description +
-                '\'' +
-                ", topicFilter='" +
-                topicFilter +
-                '\'' +
-                ", schema='" +
-                schema +
-                '\'' +
-                '}';
+        return "TopicFilterXmlEntity{" + "description='"
+                + description
+                + '\''
+                + ", topicFilter='"
+                + topicFilter
+                + '\''
+                + ", schema='"
+                + schema
+                + '\''
+                + '}';
     }
 }

@@ -23,11 +23,10 @@ import com.hivemq.api.model.components.PreLoginNotice;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.http.core.UsernamePasswordRoles;
 import jakarta.inject.Singleton;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @Singleton
 public class ApiConfigurationServiceImpl implements ApiConfigurationService {

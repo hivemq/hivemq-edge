@@ -16,12 +16,12 @@
 package com.hivemq.extensions.interceptor.connect.parameter;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
 import com.hivemq.extension.sdk.api.interceptor.connect.parameter.ConnectInboundInput;
 import com.hivemq.extensions.executor.task.PluginTaskInput;
 import com.hivemq.extensions.packets.connect.ConnectPacketImpl;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Lukas Brandl
@@ -61,6 +61,9 @@ public class ConnectInboundInputImpl implements ConnectInboundInput, PluginTaskI
     }
 
     public @NotNull ConnectInboundInputImpl update(final @NotNull ConnectInboundOutputImpl output) {
-        return new ConnectInboundInputImpl(clientInformation, connectionInformation, output.getConnectPacket().copy());
+        return new ConnectInboundInputImpl(
+                clientInformation,
+                connectionInformation,
+                output.getConnectPacket().copy());
     }
 }

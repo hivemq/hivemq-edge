@@ -15,10 +15,10 @@
  */
 package com.hivemq.mqtt.message.pubrec;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.reason.Mqtt5PubRecReasonCode;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Waldemar Ruck
@@ -27,7 +27,6 @@ import com.hivemq.mqtt.message.reason.Mqtt5PubRecReasonCode;
 public interface Mqtt5PUBREC {
 
     Mqtt5PubRecReasonCode DEFAULT_REASON_CODE = Mqtt5PubRecReasonCode.SUCCESS;
-
 
     /**
      * @return the reason code of this PUBREC packet.

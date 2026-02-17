@@ -17,12 +17,11 @@ package com.hivemq.api.auth.handler.impl;
 
 import com.hivemq.api.auth.handler.AuthenticationResult;
 import com.hivemq.api.auth.handler.IAuthenticationHandler;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Response;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Simple Authentication chain where the first Success wins, and the last denied wins. For more complex operations
@@ -41,9 +40,9 @@ public class ChainedAuthenticationHandler extends AbstractAuthenticationHandler 
     @Override
     public AuthenticationResult authenticate(final ContainerRequestContext requestContext) {
         AuthenticationResult finalResult = null;
-        for(IAuthenticationHandler handler : handlers){
+        for (IAuthenticationHandler handler : handlers) {
             AuthenticationResult result = handler.authenticate(requestContext);
-            if(result.isSuccess()){
+            if (result.isSuccess()) {
                 finalResult = result;
                 break;
             } else {

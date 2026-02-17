@@ -15,19 +15,17 @@
  */
 package com.hivemq.persistence.qos;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.MessageWithID;
 import com.hivemq.persistence.local.IncomingMessageFlowLocalPersistence;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Dominik Obermaier
  */
 @Singleton
 public class IncomingMessageFlowPersistenceImpl implements IncomingMessageFlowPersistence {
-
 
     private final @NotNull IncomingMessageFlowLocalPersistence localPersistence;
 

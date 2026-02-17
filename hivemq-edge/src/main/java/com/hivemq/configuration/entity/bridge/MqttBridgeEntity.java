@@ -15,9 +15,6 @@
  */
 package com.hivemq.configuration.entity.bridge;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -27,7 +24,8 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 @XmlRootElement(name = "mqtt-bridge")
@@ -107,17 +105,18 @@ public class MqttBridgeEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final MqttBridgeEntity that = (MqttBridgeEntity) o;
-        return getPersist() == that.getPersist() &&
-                Objects.equals(getId(), that.getId()) &&
-                Objects.equals(getRemoteBroker(), that.getRemoteBroker()) &&
-                Objects.equals(getRemoteSubscriptions(), that.getRemoteSubscriptions()) &&
-                Objects.equals(getForwardedTopics(), that.getForwardedTopics()) &&
-                Objects.equals(getLoopPrevention(), that.getLoopPrevention());
+        return getPersist() == that.getPersist()
+                && Objects.equals(getId(), that.getId())
+                && Objects.equals(getRemoteBroker(), that.getRemoteBroker())
+                && Objects.equals(getRemoteSubscriptions(), that.getRemoteSubscriptions())
+                && Objects.equals(getForwardedTopics(), that.getForwardedTopics())
+                && Objects.equals(getLoopPrevention(), that.getLoopPrevention());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(),
+        return Objects.hash(
+                getId(),
                 getRemoteBroker(),
                 getRemoteSubscriptions(),
                 getForwardedTopics(),

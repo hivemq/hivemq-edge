@@ -27,24 +27,31 @@ import org.jetbrains.annotations.NotNull;
 
 public interface CompleteBootstrapService extends PersistenceBootstrapService {
 
-    @NotNull Persistences persistences();
+    @NotNull
+    Persistences persistences();
 
-    @NotNull RestComponentsService restComponentsService();
+    @NotNull
+    RestComponentsService restComponentsService();
 
-    @NotNull HandlerService handlerService();
+    @NotNull
+    HandlerService handlerService();
 
-    @NotNull EventService eventService();
+    @NotNull
+    EventService eventService();
 
-    @NotNull PublishService publishService();
+    @NotNull
+    PublishService publishService();
 
     /**
      * Required here to be able to directly put messages into client queues without them getting processed again by
      * another PrePublishHandler
      */
-    @NotNull InternalPublishService internalPublishService();
+    @NotNull
+    InternalPublishService internalPublishService();
 
-    @NotNull AssetProviderRegistry assetProviderRegistry();
+    @NotNull
+    AssetProviderRegistry assetProviderRegistry();
 
-    @NotNull StatusProviderRegistry statusProviderRegistry();
-
+    @NotNull
+    StatusProviderRegistry statusProviderRegistry();
 }

@@ -47,6 +47,4 @@ public class ProtocolAdapterPublisherJsonPayload extends AbstractProtocolAdapter
     public String getTagName() {
         return tagName;
     }
-
-
 }

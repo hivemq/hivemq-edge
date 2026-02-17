@@ -15,9 +15,9 @@
  */
 package com.hivemq.extensions.handler.tasks;
 
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.disconnect.DisconnectReasonCode;
 import com.hivemq.extension.sdk.api.packets.publish.AckReasonCode;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Christoph Schäbel
@@ -29,19 +29,21 @@ public class PublishAuthorizerResult {
     private final @Nullable String reasonString;
     private final boolean authorizerPresent;
 
-    public PublishAuthorizerResult(final @Nullable AckReasonCode ackReasonCode,
-                                   final @Nullable String reasonString,
-                                   final boolean authorizerPresent,
-                                   final @Nullable DisconnectReasonCode disconnectReasonCode) {
+    public PublishAuthorizerResult(
+            final @Nullable AckReasonCode ackReasonCode,
+            final @Nullable String reasonString,
+            final boolean authorizerPresent,
+            final @Nullable DisconnectReasonCode disconnectReasonCode) {
         this.ackReasonCode = ackReasonCode;
         this.reasonString = reasonString;
         this.authorizerPresent = authorizerPresent;
         this.disconnectReasonCode = disconnectReasonCode;
     }
 
-    public PublishAuthorizerResult(final @Nullable AckReasonCode ackReasonCode,
-                                   final @Nullable String reasonString,
-                                   final boolean authorizerPresent) {
+    public PublishAuthorizerResult(
+            final @Nullable AckReasonCode ackReasonCode,
+            final @Nullable String reasonString,
+            final boolean authorizerPresent) {
         this.ackReasonCode = ackReasonCode;
         this.reasonString = reasonString;
         this.authorizerPresent = authorizerPresent;

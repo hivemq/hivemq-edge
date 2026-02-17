@@ -16,7 +16,6 @@
 package com.hivemq.bootstrap.netty;
 
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import io.netty.channel.Channel;
@@ -24,16 +23,16 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.CorruptedFrameException;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
+import javax.net.ssl.SSLException;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Singleton
 @ChannelHandler.Sharable
@@ -61,51 +60,52 @@ public class ExceptionHandler extends ChannelHandlerAdapter {
         final Channel channel = ctx.channel();
 
         if (cause instanceof SSLException) {
-            //We can ignore SSL Exceptions, since the channel gets closed anyway.
+            // We can ignore SSL Exceptions, since the channel gets closed anyway.
             return;
 
         } else if (cause instanceof ClosedChannelException) {
-            //We can ignore this because the channel is already closed
+            // We can ignore this because the channel is already closed
             return;
 
         } else if (cause instanceof IOException) {
 
-            //We can ignore this because the channel is already closed because of an IO problem
+            // We can ignore this because the channel is already closed because of an IO problem
             return;
 
         } else if (cause instanceof CorruptedFrameException) {
 
-            //We can ignore this because the channel is already closed because of an IO problem
-            mqttServerDisconnector.disconnect(channel,
+            // We can ignore this because the channel is already closed because of an IO problem
+            mqttServerDisconnector.disconnect(
+                    channel,
                     "A client (IP: {}) sent illegal websocket data. Disconnecting client.",
                     "Illegal websocket data sent by client: " + cause.getMessage(),
                     Mqtt5DisconnectReasonCode.UNSPECIFIED_ERROR,
-                    null
-            );
+                    null);
             return;
-
 
         } else if (cause instanceof IllegalArgumentException) {
 
-            //do not log IllegalArgumentException as error
+            // do not log IllegalArgumentException as error
 
         } else {
-            final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
-            final Optional<String> channelIP = (clientConnection == null)
-                    ? Optional.empty()
-                    : clientConnection.getChannelIP();
+            final ClientConnection clientConnection =
+                    channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+            final Optional<String> channelIP =
+                    (clientConnection == null) ? Optional.empty() : clientConnection.getChannelIP();
 
-            log.error("An unexpected error occurred for client with IP {}: {}",
-                    channelIP.orElse("UNKNOWN"), ExceptionUtils.getStackTrace(cause));
+            log.error(
+                    "An unexpected error occurred for client with IP {}: {}",
+                    channelIP.orElse("UNKNOWN"),
+                    ExceptionUtils.getStackTrace(cause));
         }
 
         if (channel != null) {
-            mqttServerDisconnector.disconnect(channel,
+            mqttServerDisconnector.disconnect(
+                    channel,
                     null, // already logged
                     "Channel exception: " + cause.getMessage(),
                     Mqtt5DisconnectReasonCode.UNSPECIFIED_ERROR,
-                    null
-            );
+                    null);
         }
     }
 }

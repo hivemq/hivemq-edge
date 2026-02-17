@@ -15,6 +15,15 @@
  */
 package com.hivemq.persistence.clientsession;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.codahale.metrics.Counter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Futures;
@@ -27,21 +36,11 @@ import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.connect.MqttWillPublish;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.persistence.local.ClientSessionLocalPersistence;
+import java.util.concurrent.Executors;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.concurrent.Executors;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyBoolean;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Lukas Brandl
@@ -56,20 +55,24 @@ public class PendingWillMessagesTest {
             mock(ClientSessionLocalPersistence.class);
     private @NotNull PendingWillMessages pendingWillMessages;
     private final @NotNull DataGovernanceService dataGovernanceService = mock(DataGovernanceService.class);
+
     @BeforeEach
     public void setUp() throws Exception {
 
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishingResult.DELIVERED));
+        when(dataGovernanceService.applyAndPublish(any()))
+                .thenReturn(Futures.immediateFuture(PublishingResult.DELIVERED));
 
         final MetricsHolder metricsHolder = mock(MetricsHolder.class);
         when(metricsHolder.getPublishedWillMessagesCount()).thenReturn(mock(Counter.class));
 
-        pendingWillMessages = new PendingWillMessages(executorService,
+        pendingWillMessages = new PendingWillMessages(
+                executorService,
                 () -> clientSessionPersistence,
                 clientSessionLocalPersistence,
                 metricsHolder,
                 dataGovernanceService);
     }
+
     @AfterEach
     public void tearDown() throws Exception {
         executorService.shutdown();
@@ -77,7 +80,8 @@ public class PendingWillMessagesTest {
 
     @Test
     public void test_add() {
-        final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder().withHivemqId("hivemqId")
+        final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder()
+                .withHivemqId("hivemqId")
                 .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
                 .withPayload("message".getBytes())
                 .withQos(QoS.AT_MOST_ONCE)
@@ -88,13 +92,15 @@ public class PendingWillMessagesTest {
         final ClientSession clientSession = new ClientSession(false, 10, sessionWill, 123L);
         pendingWillMessages.sendOrEnqueueWillIfAvailable("client", clientSession);
 
-        final PendingWillMessages.PendingWill pendingWill = pendingWillMessages.getPendingWills().get("client");
+        final PendingWillMessages.PendingWill pendingWill =
+                pendingWillMessages.getPendingWills().get("client");
         assertEquals(5, pendingWill.getDelayInterval());
     }
 
     @Test
     public void test_add_session_expiry() {
-        final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder().withHivemqId("hivemqId")
+        final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder()
+                .withHivemqId("hivemqId")
                 .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
                 .withPayload("message".getBytes())
                 .withQos(QoS.AT_MOST_ONCE)
@@ -105,13 +111,15 @@ public class PendingWillMessagesTest {
         final ClientSession clientSession = new ClientSession(false, 5, sessionWill, 123L);
         pendingWillMessages.sendOrEnqueueWillIfAvailable("client", clientSession);
 
-        final PendingWillMessages.PendingWill pendingWill = pendingWillMessages.getPendingWills().get("client");
+        final PendingWillMessages.PendingWill pendingWill =
+                pendingWillMessages.getPendingWills().get("client");
         assertEquals(5, pendingWill.getDelayInterval());
     }
 
     @Test
     public void test_add_and_send() {
-        final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder().withHivemqId("hivemqId")
+        final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder()
+                .withHivemqId("hivemqId")
                 .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
                 .withPayload("message".getBytes())
                 .withQos(QoS.AT_MOST_ONCE)
@@ -128,7 +136,8 @@ public class PendingWillMessagesTest {
 
     @Test
     public void test_add_and_expiry() {
-        final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder().withHivemqId("hivemqId")
+        final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder()
+                .withHivemqId("hivemqId")
                 .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
                 .withPayload("message".getBytes())
                 .withQos(QoS.AT_MOST_ONCE)
@@ -145,7 +154,8 @@ public class PendingWillMessagesTest {
 
     @Test
     public void reset() {
-        final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder().withHivemqId("hivemqId")
+        final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder()
+                .withHivemqId("hivemqId")
                 .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
                 .withPayload("message".getBytes())
                 .withQos(QoS.AT_MOST_ONCE)
@@ -156,8 +166,9 @@ public class PendingWillMessagesTest {
         final ClientSession clientSession = new ClientSession(false, 10, sessionWill, 123L);
         pendingWillMessages.sendOrEnqueueWillIfAvailable("client", clientSession);
 
-        when(clientSessionPersistence.pendingWills()).thenReturn(Futures.immediateFuture(ImmutableMap.of("client1",
-                new PendingWillMessages.PendingWill(3, System.currentTimeMillis()))));
+        when(clientSessionPersistence.pendingWills())
+                .thenReturn(Futures.immediateFuture(ImmutableMap.of(
+                        "client1", new PendingWillMessages.PendingWill(3, System.currentTimeMillis()))));
 
         pendingWillMessages.reset();
 
@@ -167,7 +178,8 @@ public class PendingWillMessagesTest {
 
     @Test
     public void test_check_dont_send() {
-        final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder().withHivemqId("hivemqId")
+        final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder()
+                .withHivemqId("hivemqId")
                 .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
                 .withPayload("message".getBytes())
                 .withQos(QoS.AT_MOST_ONCE)
@@ -187,7 +199,8 @@ public class PendingWillMessagesTest {
     @Test
     public void test_check_send() {
 
-        final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder().withHivemqId("hivemqId")
+        final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder()
+                .withHivemqId("hivemqId")
                 .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
                 .withPayload("message".getBytes())
                 .withQos(QoS.AT_MOST_ONCE)
@@ -197,7 +210,8 @@ public class PendingWillMessagesTest {
         final ClientSessionWill sessionWill = new ClientSessionWill(mqttWillPublish, 1L);
         final ClientSession clientSession = new ClientSession(false, 10, sessionWill, 123L);
         when(clientSessionLocalPersistence.getSession("client", false)).thenReturn(clientSession);
-        pendingWillMessages.getPendingWills()
+        pendingWillMessages
+                .getPendingWills()
                 .put("client", new PendingWillMessages.PendingWill(3, System.currentTimeMillis() - 5000));
 
         final PendingWillMessages.CheckWillsTask checkWillsTask = pendingWillMessages.new CheckWillsTask();
@@ -208,7 +222,8 @@ public class PendingWillMessagesTest {
 
     @Test
     public void sendWillIfPending_sendsPendingWillIfAvailable_andRemovesIt() {
-        final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder().withHivemqId("hivemqId")
+        final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder()
+                .withHivemqId("hivemqId")
                 .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
                 .withPayload("message".getBytes())
                 .withQos(QoS.AT_MOST_ONCE)
@@ -218,7 +233,8 @@ public class PendingWillMessagesTest {
         final ClientSessionWill sessionWill = new ClientSessionWill(mqttWillPublish, 1L);
         final ClientSession clientSession = new ClientSession(false, 10, sessionWill, 123L);
         final String clientId = "client";
-        when(clientSessionLocalPersistence.getSession(eq(clientId), anyBoolean())).thenReturn(clientSession);
+        when(clientSessionLocalPersistence.getSession(eq(clientId), anyBoolean()))
+                .thenReturn(clientSession);
 
         pendingWillMessages.sendWillIfPending("foobar");
         verify(dataGovernanceService, never()).applyAndPublish(any());

@@ -15,9 +15,8 @@
  */
 package com.hivemq.extensions;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Comparator;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck

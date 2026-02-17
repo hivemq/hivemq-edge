@@ -20,8 +20,7 @@ package com.hivemq.mqttsn;
  */
 public class MqttsnProtocolException extends Exception {
 
-    public MqttsnProtocolException() {
-    }
+    public MqttsnProtocolException() {}
 
     public MqttsnProtocolException(String message) {
         super(message);

@@ -16,14 +16,13 @@
 package com.hivemq.edge.modules.api.adapters;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
@@ -34,13 +33,15 @@ public interface ProtocolAdapterPollingSampler {
 
     long getPeriod();
 
-    @NotNull TimeUnit getUnit();
+    @NotNull
+    TimeUnit getUnit();
 
     /**
      * Do the work associated with this polling job. It is acceptable to throw exceptions from this method,
      * they will be caught and the process will be backed off accordingly
      */
-    @NotNull CompletableFuture<?> execute() ;
+    @NotNull
+    CompletableFuture<?> execute();
 
     /**
      * Called when the job is remove from the pool
@@ -49,23 +50,33 @@ public interface ProtocolAdapterPollingSampler {
 
     boolean isClosed();
 
-    @NotNull UUID getId();
-    @NotNull Date getCreated();
-    @NotNull String getAdapterId();
-    @NotNull String getProtocolId();
+    @NotNull
+    UUID getId();
 
-    default @NotNull String getReferenceId(){
+    @NotNull
+    Date getCreated();
+
+    @NotNull
+    String getAdapterId();
+
+    @NotNull
+    String getProtocolId();
+
+    default @NotNull String getReferenceId() {
         return String.format("%s:%s", getAdapterId(), getId());
     }
 
     default void error(final @NotNull Throwable t, final boolean continuing) {}
 
-    default int getMaxErrorsBeforeRemoval(){
+    default int getMaxErrorsBeforeRemoval() {
         return 25;
     }
 
-    @Nullable ScheduledFuture<?> getScheduledFuture();
+    @Nullable
+    ScheduledFuture<?> getScheduledFuture();
+
     void setScheduledFuture(@NotNull ScheduledFuture<?> future);
 
-    @NotNull ProtocolAdapter getAdapter();
+    @NotNull
+    ProtocolAdapter getAdapter();
 }

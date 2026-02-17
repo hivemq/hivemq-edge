@@ -18,17 +18,17 @@ package com.hivemq.edge.adapters.mtconnect.config.tag;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.Tag;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
-
 public class MtConnectAdapterTag implements Tag {
     @JsonProperty(value = "name", required = true)
-    @ModuleConfigField(title = "name",
-                       description = "name of the tag to be used in mappings",
-                       format = ModuleConfigField.FieldType.MQTT_TAG,
-                       required = true)
+    @ModuleConfigField(
+            title = "name",
+            description = "name of the tag to be used in mappings",
+            format = ModuleConfigField.FieldType.MQTT_TAG,
+            required = true)
     private final @NotNull String name;
 
     @JsonProperty(value = "description")
@@ -42,8 +42,8 @@ public class MtConnectAdapterTag implements Tag {
     public MtConnectAdapterTag(
             @JsonProperty(value = "name", required = true) final @NotNull String name,
             @JsonProperty(value = "description") final @Nullable String description,
-            @JsonProperty(value = "definition",
-                          required = true) final @NotNull MtConnectAdapterTagDefinition definition) {
+            @JsonProperty(value = "definition", required = true)
+                    final @NotNull MtConnectAdapterTagDefinition definition) {
         this.name = name;
         this.description = Objects.requireNonNullElse(description, "no description present.");
         this.definition = definition;
@@ -66,16 +66,15 @@ public class MtConnectAdapterTag implements Tag {
 
     @Override
     public @NotNull String toString() {
-        return "MtConnectAdapterTag {" +
-                "name='" +
-                name +
-                '\'' +
-                ", description='" +
-                description +
-                '\'' +
-                ", definition=" +
-                definition +
-                '}';
+        return "MtConnectAdapterTag {" + "name='"
+                + name
+                + '\''
+                + ", description='"
+                + description
+                + '\''
+                + ", definition="
+                + definition
+                + '}';
     }
 
     @Override
@@ -86,9 +85,9 @@ public class MtConnectAdapterTag implements Tag {
         if (!(o instanceof MtConnectAdapterTag tag)) {
             return false;
         }
-        return Objects.equals(name, tag.name) &&
-                Objects.equals(description, tag.description) &&
-                Objects.equals(definition, tag.definition);
+        return Objects.equals(name, tag.name)
+                && Objects.equals(description, tag.description)
+                && Objects.equals(definition, tag.definition);
     }
 
     @Override
@@ -96,5 +95,3 @@ public class MtConnectAdapterTag implements Tag {
         return Objects.hash(name, description, definition);
     }
 }
-
-

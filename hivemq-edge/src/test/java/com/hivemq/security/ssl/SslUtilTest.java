@@ -15,28 +15,29 @@
  */
 package com.hivemq.security.ssl;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import com.hivemq.security.exception.SslException;
+import java.io.File;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManagerFactory;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import util.TestKeyStoreGenerator;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.TrustManagerFactory;
-import java.io.File;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
 public class SslUtilTest {
 
     private @NotNull TestKeyStoreGenerator testKeyStoreGenerator;
+
     @BeforeEach
     public void before() {
         testKeyStoreGenerator = new TestKeyStoreGenerator();
     }
+
     @AfterEach
     public void tearDown() throws Exception {
         testKeyStoreGenerator.release();

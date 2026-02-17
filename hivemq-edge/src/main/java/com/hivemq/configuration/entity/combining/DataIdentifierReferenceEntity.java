@@ -18,12 +18,11 @@ package com.hivemq.configuration.entity.combining;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.configuration.entity.EntityValidatable;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlElement;
 import java.util.List;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 public class DataIdentifierReferenceEntity implements EntityValidatable {
 
@@ -36,8 +35,7 @@ public class DataIdentifierReferenceEntity implements EntityValidatable {
     private @NotNull DataIdentifierReference.Type type;
 
     // no-arg for jaxb
-    public DataIdentifierReferenceEntity() {
-    }
+    public DataIdentifierReferenceEntity() {}
 
     public DataIdentifierReferenceEntity(@NotNull final String id, @NotNull final DataIdentifierReference.Type type) {
         Objects.requireNonNull(type, "type must not be null");

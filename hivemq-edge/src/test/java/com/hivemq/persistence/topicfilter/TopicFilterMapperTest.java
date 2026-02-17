@@ -15,10 +15,10 @@
  */
 package com.hivemq.persistence.topicfilter;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.hivemq.persistence.topicfilter.xml.TopicFilterXmlEntity;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class TopicFilterMapperTest {
 

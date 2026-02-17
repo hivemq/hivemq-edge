@@ -17,18 +17,16 @@ package com.hivemq.extensions.iteration;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Map;
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
  */
 public class ChunkCursor {
 
-
-    //Map consisting of: persistence bucketId -> last already fetched key from the persistence
+    // Map consisting of: persistence bucketId -> last already fetched key from the persistence
     private final @NotNull Map<Integer, String> lastKeys;
     private final @NotNull Set<Integer> finishedBuckets;
 
@@ -54,9 +52,6 @@ public class ChunkCursor {
 
     @Override
     public String toString() {
-        return "ChunkCursor{" +
-                "lastKeys=" + lastKeys +
-                ", finishedBuckets=" + finishedBuckets +
-                '}';
+        return "ChunkCursor{" + "lastKeys=" + lastKeys + ", finishedBuckets=" + finishedBuckets + '}';
     }
 }

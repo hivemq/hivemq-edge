@@ -18,7 +18,6 @@ package com.hivemq.api.errors.adapters;
 import com.hivemq.http.HttpStatus;
 import com.hivemq.http.error.Error;
 import com.hivemq.http.error.ProblemDetails;
-
 import java.util.List;
 
 public class DomainTagNotFoundError extends ProblemDetails {

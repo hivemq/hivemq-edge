@@ -15,9 +15,8 @@
  */
 package com.hivemq.mqttsn;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents either one of the 2 types of TopicAlias within the MQTTSN subsystem.
@@ -33,11 +32,11 @@ public class MqttsnTopicAlias {
 
         int topicAliasTypeId;
 
-        TYPE(int topicAliasTypeId){
+        TYPE(int topicAliasTypeId) {
             this.topicAliasTypeId = topicAliasTypeId;
         }
 
-        public int getTopicAliasTypeId(){
+        public int getTopicAliasTypeId() {
             return topicAliasTypeId;
         }
     }
@@ -84,10 +83,6 @@ public class MqttsnTopicAlias {
 
     @Override
     public String toString() {
-        return "MqttsnTopicAlias{" +
-                "topicName='" + topicName + '\'' +
-                ", alias=" + alias +
-                ", type=" + type +
-                '}';
+        return "MqttsnTopicAlias{" + "topicName='" + topicName + '\'' + ", alias=" + alias + ", type=" + type + '}';
     }
 }

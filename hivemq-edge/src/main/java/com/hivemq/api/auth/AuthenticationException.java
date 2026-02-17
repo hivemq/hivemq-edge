@@ -18,11 +18,9 @@ package com.hivemq.api.auth;
 /**
  * @author Simon L Johnson
  */
-public class AuthenticationException extends Exception{
+public class AuthenticationException extends Exception {
 
-
-    public AuthenticationException() {
-    }
+    public AuthenticationException() {}
 
     public AuthenticationException(final String message) {
         super(message);

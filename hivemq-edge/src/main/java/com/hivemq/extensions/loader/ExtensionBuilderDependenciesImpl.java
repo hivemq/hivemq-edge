@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.loader;
 
 import com.google.common.collect.ImmutableMap;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.builder.*;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import java.util.function.Supplier;
+import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class ExtensionBuilderDependenciesImpl implements ExtensionBuilderDependencies {
@@ -35,11 +33,12 @@ public class ExtensionBuilderDependenciesImpl implements ExtensionBuilderDepende
     private final @NotNull Provider<WillPublishBuilder> willPublishBuilderProvider;
 
     @Inject
-    public ExtensionBuilderDependenciesImpl(final @NotNull Provider<RetainedPublishBuilder> retainedPublishBuilderProvider,
-                                            final @NotNull Provider<TopicSubscriptionBuilder> topicSubscriptionBuilderProvider,
-                                            final @NotNull Provider<TopicPermissionBuilder> topicPermissionBuilderProvider,
-                                            final @NotNull Provider<PublishBuilder> publishBuilderProvider,
-                                            final @NotNull Provider<WillPublishBuilder> willPublishBuilderProvider) {
+    public ExtensionBuilderDependenciesImpl(
+            final @NotNull Provider<RetainedPublishBuilder> retainedPublishBuilderProvider,
+            final @NotNull Provider<TopicSubscriptionBuilder> topicSubscriptionBuilderProvider,
+            final @NotNull Provider<TopicPermissionBuilder> topicPermissionBuilderProvider,
+            final @NotNull Provider<PublishBuilder> publishBuilderProvider,
+            final @NotNull Provider<WillPublishBuilder> willPublishBuilderProvider) {
         this.retainedPublishBuilderProvider = retainedPublishBuilderProvider;
         this.topicSubscriptionBuilderProvider = topicSubscriptionBuilderProvider;
         this.topicPermissionBuilderProvider = topicPermissionBuilderProvider;

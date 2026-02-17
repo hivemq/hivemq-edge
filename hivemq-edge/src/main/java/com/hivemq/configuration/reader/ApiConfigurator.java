@@ -15,6 +15,10 @@
  */
 package com.hivemq.configuration.reader;
 
+import static com.hivemq.api.auth.ApiRoles.ADMIN;
+import static com.hivemq.http.core.UsernamePasswordRoles.DEFAULT_PASSWORD;
+import static com.hivemq.http.core.UsernamePasswordRoles.DEFAULT_USERNAME;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.api.auth.provider.impl.ldap.LdapConnectionProperties;
 import com.hivemq.api.config.ApiJwtConfiguration;
@@ -36,25 +40,20 @@ import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.http.core.UsernamePasswordRoles;
 import jakarta.inject.Inject;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Set;
-
-import static com.hivemq.api.auth.ApiRoles.ADMIN;
-import static com.hivemq.http.core.UsernamePasswordRoles.DEFAULT_PASSWORD;
-import static com.hivemq.http.core.UsernamePasswordRoles.DEFAULT_USERNAME;
-
 public class ApiConfigurator implements Configurator<AdminApiEntity> {
 
     private static final @NotNull List<ApiListener> DEFAULT_LISTENERS = List.of(new HttpListener(8080, "127.0.0.1"));
     private static final @NotNull Logger log = LoggerFactory.getLogger(ApiConfigurator.class);
-    private static final @NotNull List<UsernamePasswordRoles> DEFAULT_USERS =
-            List.of(new UsernamePasswordRoles(DEFAULT_USERNAME, DEFAULT_PASSWORD.getBytes(StandardCharsets.UTF_8), Set.of(ADMIN)));
+    private static final @NotNull List<UsernamePasswordRoles> DEFAULT_USERS = List.of(new UsernamePasswordRoles(
+            DEFAULT_USERNAME, DEFAULT_PASSWORD.getBytes(StandardCharsets.UTF_8), Set.of(ADMIN)));
 
     private final @NotNull ApiConfigurationService apiCfgService;
     private volatile @Nullable AdminApiEntity configEntity;
@@ -65,12 +64,13 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
     }
 
     private static @NotNull UsernamePasswordRoles fromModel(final @NotNull UserEntity userEntity) {
-        return new UsernamePasswordRoles(userEntity.getUserName(),
+        return new UsernamePasswordRoles(
+                userEntity.getUserName(),
                 userEntity.getPassword().getBytes(StandardCharsets.UTF_8),
                 Set.copyOf(userEntity.getRoles()));
     }
 
-    //-- Converts XML entity types to bean types
+    // -- Converts XML entity types to bean types
 
     @Override
     public boolean needsRestartWithConfig(final @NotNull HiveMQConfigEntity config) {
@@ -88,14 +88,16 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
         apiCfgService.setEnforceApiAuth(entity.isEnforceApiAuth());
 
         // Users
-        if(entity.getLdap() != null) {
+        if (entity.getLdap() != null) {
             apiCfgService.setLdapConnectionProperties(LdapConnectionProperties.fromEntity(entity.getLdap()));
         } else {
             final List<UserEntity> users = entity.getUsers();
             if (!users.isEmpty()) {
-                log.warn("The <users> element in the <api> configuration is deprecated and will be removed in future versions. " +
-                        "Please use the <username-roles-source> element instead.");
-                apiCfgService.setUserList(users.stream().map(ApiConfigurator::fromModel).toList());
+                log.warn(
+                        "The <users> element in the <api> configuration is deprecated and will be removed in future versions. "
+                                + "Please use the <username-roles-source> element instead.");
+                apiCfgService.setUserList(
+                        users.stream().map(ApiConfigurator::fromModel).toList());
             } else {
                 apiCfgService.setUserList(DEFAULT_USERS);
             }
@@ -103,7 +105,8 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
 
         // JWT
         final ApiJwsEntity jwsEntity = entity.getJws();
-        apiCfgService.setApiJwtConfiguration(new ApiJwtConfiguration.Builder().withAudience(jwsEntity.getAudience())
+        apiCfgService.setApiJwtConfiguration(new ApiJwtConfiguration.Builder()
+                .withAudience(jwsEntity.getAudience())
                 .withIssuer(jwsEntity.getIssuer())
                 .withKeySize(jwsEntity.getKeySize())
                 .withExpiryTimeMinutes(jwsEntity.getExpiryTimeMinutes())
@@ -111,7 +114,7 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
                 .build());
 
         if (entity.getListeners().isEmpty()) {
-            //set default listener
+            // set default listener
             apiCfgService.setListeners(DEFAULT_LISTENERS);
         } else {
             final ImmutableList.Builder<@NotNull ApiListener> listenersBld = ImmutableList.builder();
@@ -125,7 +128,8 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
                         log.error("Keystore can not be emtpy for HTTPS listener");
                         throw new UnrecoverableException(false);
                     }
-                    listenersBld.add(new HttpsListener(listener.getPort(),
+                    listenersBld.add(new HttpsListener(
+                            listener.getPort(),
                             listener.getBindAddress(),
                             tls.getProtocols(),
                             tls.getCipherSuites(),
@@ -142,10 +146,8 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
 
         // pre login message
         final PreLoginNoticeEntity pln = entity.getPreLoginNotice();
-        apiCfgService.setPreLoginNotice(new PreLoginNotice(pln.isEnabled(),
-                pln.getTitle(),
-                pln.getMessage(),
-                pln.getConsent()));
+        apiCfgService.setPreLoginNotice(
+                new PreLoginNotice(pln.isEnabled(), pln.getTitle(), pln.getMessage(), pln.getConsent()));
 
         return ConfigResult.SUCCESS;
     }

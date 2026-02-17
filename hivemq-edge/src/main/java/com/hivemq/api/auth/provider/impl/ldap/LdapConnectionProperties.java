@@ -15,13 +15,15 @@
  */
 package com.hivemq.api.auth.provider.impl.ldap;
 
+import static com.hivemq.api.auth.ApiRoles.ADMIN;
+import static java.util.Arrays.stream;
+
+import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.entity.api.ldap.LdapAuthenticationEntity;
 import com.hivemq.configuration.entity.api.ldap.LdapServerEntity;
 import com.hivemq.configuration.entity.api.ldap.LdapSimpleBindEntity;
 import com.hivemq.configuration.entity.api.ldap.TrustStoreEntity;
 import com.hivemq.configuration.entity.api.ldap.UserRoleEntity;
-
-import com.google.common.collect.ImmutableList;
 import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.LDAPConnectionOptions;
 import com.unboundid.ldap.sdk.LDAPConnectionPool;
@@ -30,17 +32,13 @@ import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.util.ssl.SSLUtil;
 import com.unboundid.util.ssl.TrustAllTrustManager;
 import com.unboundid.util.ssl.TrustStoreTrustManager;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import javax.net.ssl.SSLContext;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-
-import static com.hivemq.api.auth.ApiRoles.ADMIN;
-import static java.util.Arrays.stream;
+import javax.net.ssl.SSLContext;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Record representing LDAP connection properties.
@@ -106,11 +104,10 @@ public record LdapConnectionProperties(
     /**
      * This class represents the simple bind credentials for an LDAP connection.
      */
-    public record LdapSimpleBind (@NotNull String rdns, @NotNull String userPassword){
+    public record LdapSimpleBind(
+            @NotNull String rdns, @NotNull String userPassword) {
         public static LdapSimpleBind fromEntity(final @NotNull LdapSimpleBindEntity ldapSimpleBindEntity) {
-            return new LdapSimpleBind(
-                    ldapSimpleBindEntity.getRdns(),
-                    ldapSimpleBindEntity.getUserPassword());
+            return new LdapSimpleBind(ldapSimpleBindEntity.getRdns(), ldapSimpleBindEntity.getUserPassword());
         }
 
         @Override
@@ -129,7 +126,7 @@ public record LdapConnectionProperties(
     /**
      * This class represents the simple bind credentials for an LDAP connection.
      */
-    public record LdapServers (@NotNull String[] hosts, int @NotNull [] ports){
+    public record LdapServers(@NotNull String[] hosts, int @NotNull [] ports) {
 
         /**
          * Compact constructor that makes defensive copies of the arrays to ensure immutability.
@@ -140,8 +137,11 @@ public record LdapConnectionProperties(
         }
 
         public static LdapServers fromEntity(final @NotNull List<LdapServerEntity> ldapServerEntities) {
-            final String[] hosts = ldapServerEntities.stream().map(LdapServerEntity::getHost).toArray(String[]::new);
-            final int[] ports = ldapServerEntities.stream().mapToInt(LdapServerEntity::getPort).toArray();
+            final String[] hosts =
+                    ldapServerEntities.stream().map(LdapServerEntity::getHost).toArray(String[]::new);
+            final int[] ports = ldapServerEntities.stream()
+                    .mapToInt(LdapServerEntity::getPort)
+                    .toArray();
             return new LdapServers(hosts, ports);
         }
 
@@ -161,7 +161,10 @@ public record LdapConnectionProperties(
     /**
      * This class represents the simple bind credentials for an LDAP connection.
      */
-    public record TrustStore (@NotNull String trustStorePath, @Nullable String trustStorePassword, @Nullable String trustStoreType){
+    public record TrustStore(
+            @NotNull String trustStorePath,
+            @Nullable String trustStorePassword,
+            @Nullable String trustStoreType) {
         public static TrustStore fromEntity(final @NotNull TrustStoreEntity trustStoreEntity) {
             return new TrustStore(
                     trustStoreEntity.getTrustStorePath(),
@@ -173,9 +176,9 @@ public record LdapConnectionProperties(
         public boolean equals(final Object o) {
             if (o == null || getClass() != o.getClass()) return false;
             final TrustStore that = (TrustStore) o;
-            return Objects.equals(trustStorePath(), that.trustStorePath()) &&
-                    Objects.equals(trustStoreType(), that.trustStoreType()) &&
-                    Objects.equals(trustStorePassword(), that.trustStorePassword());
+            return Objects.equals(trustStorePath(), that.trustStorePath())
+                    && Objects.equals(trustStoreType(), that.trustStoreType())
+                    && Objects.equals(trustStorePassword(), that.trustStorePassword());
         }
 
         @Override
@@ -194,8 +197,7 @@ public record LdapConnectionProperties(
      * @return Configured LdapConnectionProperties for runtime use
      * @throws IllegalArgumentException if the entity configuration is invalid
      */
-    public static @NotNull LdapConnectionProperties fromEntity(
-            final @NotNull LdapAuthenticationEntity entity) {
+    public static @NotNull LdapConnectionProperties fromEntity(final @NotNull LdapAuthenticationEntity entity) {
         // Parse TLS mode from string
         final TlsMode tlsMode;
         try {
@@ -219,10 +221,9 @@ public record LdapConnectionProperties(
                 entity.getDirecoryDescent() ? SearchScope.SUB : SearchScope.BASE,
                 entity.getSearchTimeoutSeconds(),
                 ADMIN,
-                false,  // Never allow test-only certificate acceptance from XML config
+                false, // Never allow test-only certificate acceptance from XML config
                 LdapSimpleBind.fromEntity(entity.getSimpleBindEntity()),
-                entity.getUserRoles()
-        );
+                entity.getUserRoles());
     }
 
     /**
@@ -243,9 +244,8 @@ public record LdapConnectionProperties(
             throw new IllegalArgumentException("Response timeout cannot be negative: " + responseTimeoutMillis);
         }
 
-        if(uidAttribute == null || uidAttribute.isBlank()) {
-            throw new IllegalArgumentException(
-                    "uidAttribute must be set to a non-blank value");
+        if (uidAttribute == null || uidAttribute.isBlank()) {
+            throw new IllegalArgumentException("uidAttribute must be set to a non-blank value");
         }
 
         if (searchTimeoutSeconds < 0) {
@@ -294,21 +294,20 @@ public record LdapConnectionProperties(
         if (searchScope.equals(SearchScope.SUB)) {
             if (connectionPool == null) {
                 throw new IllegalStateException(
-                    "Connection pool is required for Directory Descent (search-based DN resolution). " +
-                    "Ensure the LDAP client is started before creating the resolver.");
+                        "Connection pool is required for Directory Descent (search-based DN resolution). "
+                                + "Ensure the LDAP client is started before creating the resolver.");
             }
 
-            return new SearchFilterDnResolver(connectionPool,
+            return new SearchFilterDnResolver(
+                    connectionPool,
                     getEffectiveSearchRootDn(),
                     uidAttribute,
                     requiredObjectClass,
                     searchScope,
                     searchTimeoutSeconds);
         } else {
-            return new TemplateDnResolver(uidAttribute,
-                    getEffectiveSearchRootDn());
+            return new TemplateDnResolver(uidAttribute, getEffectiveSearchRootDn());
         }
-
     }
 
     /**
@@ -352,7 +351,9 @@ public record LdapConnectionProperties(
         // Use custom truststore for self-signed certificates or internal CAs
         final SSLUtil sslUtil = new SSLUtil(new TrustStoreTrustManager(
                 trustStore().trustStorePath(),
-                trustStore().trustStorePassword() != null ? trustStore().trustStorePassword().toCharArray() : null,
+                trustStore().trustStorePassword() != null
+                        ? trustStore().trustStorePassword().toCharArray()
+                        : null,
                 trustStore().trustStoreType(),
                 true));
         return sslUtil.createSSLContext();
@@ -379,16 +380,16 @@ public record LdapConnectionProperties(
 
     // effectiveSearchRootDn is usually the (search) rdns relative to baseDn,
     // but in legacy more - when baseDn is empty it is the (search) rdns treated as absolute DN
-    String getEffectiveSearchRootDn () {
+    String getEffectiveSearchRootDn() {
         final String effectiveSearchRootDn;
-        if (baseDn != null && ! baseDn.isBlank()) {
+        if (baseDn != null && !baseDn.isBlank()) {
             try {
                 effectiveSearchRootDn = new DN(ImmutableList.<RDN>builder()
-                        .add(new DN(rdns).getRDNs())
-                        .add(new DN(baseDn).getRDNs())
-                        .build()).toString();
-            }
-            catch (final Exception e) {
+                                .add(new DN(rdns).getRDNs())
+                                .add(new DN(baseDn).getRDNs())
+                                .build())
+                        .toString();
+            } catch (final Exception e) {
                 throw new IllegalArgumentException(
                         "Cannot create effectiveSearchRootDn from (search) rdns " + rdns + " and base " + baseDn, e);
             }
@@ -399,7 +400,7 @@ public record LdapConnectionProperties(
     }
 
     // effectiveQueryRootDn is usually the base-dn, but in legacy mode the (search) rdns
-    String getEffectiveQueryRootDn () {
+    String getEffectiveQueryRootDn() {
         final String effectiveQueryRootDn;
         if (baseDn != null && !baseDn.isBlank()) {
             effectiveQueryRootDn = baseDn;
@@ -420,14 +421,16 @@ public record LdapConnectionProperties(
             } else {
                 try {
                     effectiveServiceAccountDn = new DN(ImmutableList.<RDN>builder()
-                            .add(new DN(ldapSimpleBind.rdns).getRDNs())
-                            .add(new DN(baseDn).getRDNs())
-                            .build()).toString();
+                                    .add(new DN(ldapSimpleBind.rdns).getRDNs())
+                                    .add(new DN(baseDn).getRDNs())
+                                    .build())
+                            .toString();
                 } catch (final Exception e) {
-                    throw new IllegalArgumentException("Cannot create effectiveServiceAccountDn from (search) rdns " +
-                            ldapSimpleBind.rdns +
-                            " and base " +
-                            baseDn, e);
+                    throw new IllegalArgumentException(
+                            "Cannot create effectiveServiceAccountDn from (search) rdns " + ldapSimpleBind.rdns
+                                    + " and base "
+                                    + baseDn,
+                            e);
                 }
             }
         } else {
@@ -436,14 +439,16 @@ public record LdapConnectionProperties(
             } else {
                 try {
                     effectiveServiceAccountDn = new DN(ImmutableList.<RDN>builder()
-                            .add(new DN(ldapSimpleBind.rdns).getRDNs())
-                            .add(new DN(rdns).getRDNs())
-                            .build()).toString();
+                                    .add(new DN(ldapSimpleBind.rdns).getRDNs())
+                                    .add(new DN(rdns).getRDNs())
+                                    .build())
+                            .toString();
                 } catch (final Exception e) {
-                    throw new IllegalArgumentException("Cannot create effectiveServiceAccountDn from (search) rdns " +
-                            ldapSimpleBind.rdns +
-                            " and base " +
-                            rdns, e);
+                    throw new IllegalArgumentException(
+                            "Cannot create effectiveServiceAccountDn from (search) rdns " + ldapSimpleBind.rdns
+                                    + " and base "
+                                    + rdns,
+                            e);
                 }
             }
         }
@@ -454,27 +459,28 @@ public record LdapConnectionProperties(
     public boolean equals(final Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         final LdapConnectionProperties that = (LdapConnectionProperties) o;
-        return maxConnections() == that.maxConnections() &&
-                connectTimeoutMillis() == that.connectTimeoutMillis() &&
-                searchTimeoutSeconds() == that.searchTimeoutSeconds() &&
-                responseTimeoutMillis() == that.responseTimeoutMillis() &&
-                acceptAnyCertificateForTesting() == that.acceptAnyCertificateForTesting() &&
-                Objects.equals(rdns(), that.rdns()) &&
-                Objects.equals(baseDn(), that.baseDn()) &&
-                tlsMode() == that.tlsMode() &&
-                Objects.equals(servers(), that.servers()) &&
-                Objects.equals(uidAttribute(), that.uidAttribute()) &&
-                Objects.equals(assignedRole(), that.assignedRole()) &&
-                Objects.equals(trustStore(), that.trustStore()) &&
-                Objects.equals(searchScope(), that.searchScope()) &&
-                Objects.equals(requiredObjectClass(), that.requiredObjectClass()) &&
-                Objects.equals(ldapSimpleBind(), that.ldapSimpleBind()) &&
-                Objects.equals(userRoles(), that.userRoles());
+        return maxConnections() == that.maxConnections()
+                && connectTimeoutMillis() == that.connectTimeoutMillis()
+                && searchTimeoutSeconds() == that.searchTimeoutSeconds()
+                && responseTimeoutMillis() == that.responseTimeoutMillis()
+                && acceptAnyCertificateForTesting() == that.acceptAnyCertificateForTesting()
+                && Objects.equals(rdns(), that.rdns())
+                && Objects.equals(baseDn(), that.baseDn())
+                && tlsMode() == that.tlsMode()
+                && Objects.equals(servers(), that.servers())
+                && Objects.equals(uidAttribute(), that.uidAttribute())
+                && Objects.equals(assignedRole(), that.assignedRole())
+                && Objects.equals(trustStore(), that.trustStore())
+                && Objects.equals(searchScope(), that.searchScope())
+                && Objects.equals(requiredObjectClass(), that.requiredObjectClass())
+                && Objects.equals(ldapSimpleBind(), that.ldapSimpleBind())
+                && Objects.equals(userRoles(), that.userRoles());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(servers(),
+        return Objects.hash(
+                servers(),
                 tlsMode(),
                 trustStore(),
                 connectTimeoutMillis(),

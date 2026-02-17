@@ -15,10 +15,9 @@
  */
 package com.hivemq.configuration.entity.mqtt;
 
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.xml.bind.annotation.*;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 @XmlRootElement(name = "queued-messages")
 @XmlAccessorType(XmlAccessType.NONE)
@@ -53,8 +52,8 @@ public class QueuedMessagesConfigEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final QueuedMessagesConfigEntity that = (QueuedMessagesConfigEntity) o;
-        return getMaxQueueSize() == that.getMaxQueueSize() &&
-                getQueuedMessagesStrategy() == that.getQueuedMessagesStrategy();
+        return getMaxQueueSize() == that.getMaxQueueSize()
+                && getQueuedMessagesStrategy() == that.getQueuedMessagesStrategy();
     }
 
     @Override

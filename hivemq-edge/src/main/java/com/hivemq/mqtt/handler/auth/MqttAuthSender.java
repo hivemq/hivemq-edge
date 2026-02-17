@@ -16,8 +16,6 @@
 package com.hivemq.mqtt.handler.auth;
 
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.logging.EventLog;
 import com.hivemq.mqtt.message.auth.AUTH;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
@@ -25,10 +23,11 @@ import com.hivemq.mqtt.message.reason.Mqtt5AuthReasonCode;
 import com.hivemq.util.Bytes;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.nio.ByteBuffer;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Daniel Krüger
@@ -63,9 +62,7 @@ public class MqttAuthSender {
     }
 
     public void logAuth(
-            final @NotNull Channel channel,
-            final @NotNull Mqtt5AuthReasonCode reasonCode,
-            final boolean received) {
+            final @NotNull Channel channel, final @NotNull Mqtt5AuthReasonCode reasonCode, final boolean received) {
 
         eventLog.clientAuthentication(channel, reasonCode, received);
     }

@@ -16,7 +16,6 @@
 package com.hivemq.http.core;
 
 import com.hivemq.http.HttpConstants;
-
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.Charset;
@@ -48,8 +47,7 @@ public abstract class HttpRequestResponse implements IHttpRequestResponse {
     }
 
     public String getContextRelativePath() {
-        return HttpUtils.getContextRelativePath(contextPath,
-                httpRequestUri.getPath());
+        return HttpUtils.getContextRelativePath(contextPath, httpRequestUri.getPath());
     }
 
     public URI getHttpRequestUri() {
@@ -65,9 +63,9 @@ public abstract class HttpRequestResponse implements IHttpRequestResponse {
         return responseSize;
     }
 
-    public void setResponseContentType(String mimeType, Charset charset){
-        addResponseHeader(HttpConstants.CONTENT_TYPE_HEADER,
-                HttpUtils.getContentTypeHeaderValue(mimeType, charset.toString()));
+    public void setResponseContentType(String mimeType, Charset charset) {
+        addResponseHeader(
+                HttpConstants.CONTENT_TYPE_HEADER, HttpUtils.getContentTypeHeaderValue(mimeType, charset.toString()));
     }
 
     public final void sendResponseHeaders(int httpCode, int responseSize) throws IOException {
@@ -78,8 +76,8 @@ public abstract class HttpRequestResponse implements IHttpRequestResponse {
 
     @Override
     public synchronized String getParameter(String key) {
-        if(parameters == null){
-//            String query = httpRequestUri.getQuery();
+        if (parameters == null) {
+            //            String query = httpRequestUri.getQuery();
             String query = httpRequestUri.getRawQuery();
             parameters = HttpUtils.parseQueryString(query);
         }
@@ -88,13 +86,13 @@ public abstract class HttpRequestResponse implements IHttpRequestResponse {
 
     @Override
     public String toString() {
-        return "HttpRequestResponse{" +
-                "contextPath='" + contextPath + '\'' +
-                ", httpRequestUri=" + httpRequestUri +
-                ", method=" + method +
-                '}';
+        return "HttpRequestResponse{" + "contextPath='"
+                + contextPath + '\'' + ", httpRequestUri="
+                + httpRequestUri + ", method="
+                + method + '}';
     }
 
-    protected abstract void sendResponseHeadersInternal(int httpCode, int size) throws IOException ;
+    protected abstract void sendResponseHeadersInternal(int httpCode, int size) throws IOException;
+
     protected abstract Map<String, String> getRequestHeaders();
 }

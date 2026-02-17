@@ -15,16 +15,16 @@
  */
 package com.hivemq.edge.adapters.opcua.client;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+
 import com.hivemq.edge.adapters.opcua.Constants;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClientConfigBuilder;
 import org.eclipse.milo.opcua.sdk.client.identity.AnonymousProvider;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
 
 class OpcUaClientConfiguratorTest {
 
@@ -40,12 +40,12 @@ class OpcUaClientConfiguratorTest {
         // Given
         // Don't use keyPairWithChain to avoid needing to fully mock the certificate chain
         final ParsedConfig parsedConfig = new ParsedConfig(
-                false,  // TLS disabled to avoid certificate configuration
+                false, // TLS disabled to avoid certificate configuration
                 null,
                 null,
                 new AnonymousProvider(),
-                EXTRACTED_URI  // Application URI from certificate
-        );
+                EXTRACTED_URI // Application URI from certificate
+                );
 
         final OpcUaClientConfigurator configurator = new OpcUaClientConfigurator(ADAPTER_ID, parsedConfig, TEST_CONFIG);
         final OpcUaClientConfigBuilder configBuilder = spy(new OpcUaClientConfigBuilder());
@@ -66,12 +66,12 @@ class OpcUaClientConfiguratorTest {
     void testAccept_withoutExtractedUri_usesDefaultUri() {
         // Given
         final ParsedConfig parsedConfig = new ParsedConfig(
-                false,  // TLS disabled to avoid certificate configuration
+                false, // TLS disabled to avoid certificate configuration
                 null,
                 null,
                 new AnonymousProvider(),
-                null  // No Application URI from certificate
-        );
+                null // No Application URI from certificate
+                );
 
         final OpcUaClientConfigurator configurator = new OpcUaClientConfigurator(ADAPTER_ID, parsedConfig, TEST_CONFIG);
         final OpcUaClientConfigBuilder configBuilder = spy(new OpcUaClientConfigBuilder());
@@ -92,12 +92,12 @@ class OpcUaClientConfiguratorTest {
     void testAccept_tlsDisabled_usesDefaultUri() {
         // Given
         final ParsedConfig parsedConfig = new ParsedConfig(
-                false,  // TLS disabled
+                false, // TLS disabled
                 null,
                 null,
                 new AnonymousProvider(),
-                null  // No Application URI
-        );
+                null // No Application URI
+                );
 
         final OpcUaClientConfigurator configurator = new OpcUaClientConfigurator(ADAPTER_ID, parsedConfig, TEST_CONFIG);
         final OpcUaClientConfigBuilder configBuilder = spy(new OpcUaClientConfigBuilder());
@@ -117,13 +117,7 @@ class OpcUaClientConfiguratorTest {
     @Test
     void testAccept_withExtractedUri_configuresOtherSettings() {
         // Given
-        final ParsedConfig parsedConfig = new ParsedConfig(
-                false,
-                null,
-                null,
-                new AnonymousProvider(),
-                EXTRACTED_URI
-        );
+        final ParsedConfig parsedConfig = new ParsedConfig(false, null, null, new AnonymousProvider(), EXTRACTED_URI);
 
         final OpcUaClientConfigurator configurator = new OpcUaClientConfigurator(ADAPTER_ID, parsedConfig, TEST_CONFIG);
         final OpcUaClientConfigBuilder configBuilder = spy(new OpcUaClientConfigBuilder());
@@ -143,12 +137,12 @@ class OpcUaClientConfiguratorTest {
     void testAccept_nullApplicationUri_usesDefault() {
         // Given - Explicitly test null vs not provided
         final ParsedConfig parsedConfig = new ParsedConfig(
-                false,  // TLS disabled to avoid certificate configuration
+                false, // TLS disabled to avoid certificate configuration
                 null,
                 null,
                 new AnonymousProvider(),
-                null  // Explicitly null
-        );
+                null // Explicitly null
+                );
 
         final OpcUaClientConfigurator configurator = new OpcUaClientConfigurator(ADAPTER_ID, parsedConfig, TEST_CONFIG);
         final OpcUaClientConfigBuilder configBuilder = spy(new OpcUaClientConfigBuilder());
@@ -170,12 +164,12 @@ class OpcUaClientConfiguratorTest {
         // Given - Test configured override URI (Priority 1)
         final String configuredUri = "urn:custom:configured:uri";
         final ParsedConfig parsedConfig = new ParsedConfig(
-                false,  // TLS disabled to avoid certificate configuration
+                false, // TLS disabled to avoid certificate configuration
                 null,
                 null,
                 new AnonymousProvider(),
-                configuredUri  // Configured override URI
-        );
+                configuredUri // Configured override URI
+                );
 
         final OpcUaClientConfigurator configurator = new OpcUaClientConfigurator(ADAPTER_ID, parsedConfig, TEST_CONFIG);
         final OpcUaClientConfigBuilder configBuilder = spy(new OpcUaClientConfigBuilder());

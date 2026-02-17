@@ -13,18 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.classloader;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.services.Services;
 import com.hivemq.extension.sdk.api.services.builder.Builders;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -33,6 +27,10 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A classloader which is meant to be used for the isolated HiveMQ extensions. This is a parent-last
@@ -46,26 +44,28 @@ public class IsolatedExtensionClassloader extends URLClassLoader {
     private static final Logger log = LoggerFactory.getLogger(IsolatedExtensionClassloader.class);
 
     @VisibleForTesting
-    private static final ImmutableSet<String> restrictedPackages = new ImmutableSet.Builder<String>().add(
-            // JDK
-            "java.",
-            "jakarta.annotation",
-            "jdk.",
+    private static final ImmutableSet<String> restrictedPackages = new ImmutableSet.Builder<String>()
+            .add(
+                    // JDK
+                    "java.",
+                    "jakarta.annotation",
+                    "jdk.",
 
-            // HiveMQ
-            "com.hivemq.extension.sdk.api",
+                    // HiveMQ
+                    "com.hivemq.extension.sdk.api",
 
-            // HiveMQ dependencies
-            "org.slf4j",
-            "com.codahale.metrics"
-    ).build();
+                    // HiveMQ dependencies
+                    "org.slf4j",
+                    "com.codahale.metrics")
+            .build();
 
-    private static final ImmutableSet<Class<?>> classesWithStaticContext =
-            new ImmutableSet.Builder<Class<?>>().add(Services.class, Builders.class).build();
+    private static final ImmutableSet<Class<?>> classesWithStaticContext = new ImmutableSet.Builder<Class<?>>()
+            .add(Services.class, Builders.class)
+            .build();
 
-    private static final ImmutableSet<String> classNamesWithStaticContext =
-            new ImmutableSet.Builder<String>().add(Services.class.getCanonicalName(), Builders.class.getCanonicalName())
-                    .build();
+    private static final ImmutableSet<String> classNamesWithStaticContext = new ImmutableSet.Builder<String>()
+            .add(Services.class.getCanonicalName(), Builders.class.getCanonicalName())
+            .build();
 
     private final @Nullable ClassLoader delegate;
 
@@ -75,14 +75,14 @@ public class IsolatedExtensionClassloader extends URLClassLoader {
     }
 
     public IsolatedExtensionClassloader(final @NotNull ClassLoader delegate, final @NotNull ClassLoader parent) {
-        super(new URL[]{}, parent);
+        super(new URL[] {}, parent);
         this.delegate = delegate;
     }
 
     public void loadClassesWithStaticContext() {
         for (final Class<?> staticClass : classesWithStaticContext) {
-            try (final InputStream resourceAsStream = staticClass.getResourceAsStream(
-                    staticClass.getSimpleName() + ".class")) {
+            try (final InputStream resourceAsStream =
+                    staticClass.getResourceAsStream(staticClass.getSimpleName() + ".class")) {
                 if (resourceAsStream != null) {
                     final byte[] bytes = resourceAsStream.readAllBytes();
                     defineClass(staticClass.getCanonicalName(), bytes, 0, bytes.length);
@@ -129,7 +129,8 @@ public class IsolatedExtensionClassloader extends URLClassLoader {
                 // checking local
                 c = findClass(name);
             } catch (final ClassNotFoundException e) {
-                // checking parent (this call to loadClass may eventually call findClass again, in case the parent doesn't find anything)
+                // checking parent (this call to loadClass may eventually call findClass again, in case the parent
+                // doesn't find anything)
                 c = super.loadClass(name, resolve);
             }
         }

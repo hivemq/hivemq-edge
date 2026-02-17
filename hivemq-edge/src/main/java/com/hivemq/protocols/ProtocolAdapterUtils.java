@@ -30,7 +30,8 @@ public class ProtocolAdapterUtils {
     public static @NotNull ObjectMapper createProtocolAdapterMapper(final @NotNull ObjectMapper objectMapper) {
         final ObjectMapper copy = objectMapper.copy();
         copy.coercionConfigFor(LogicalType.POJO).setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsNull);
-        copy.coercionConfigFor(LogicalType.Collection).setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsNull);
+        copy.coercionConfigFor(LogicalType.Collection)
+                .setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsNull);
         copy.configure(MapperFeature.AUTO_DETECT_GETTERS, false);
         final SimpleModule module = new SimpleModule("UserPropertyModule", Version.unknownVersion());
         final SimpleAbstractTypeResolver resolver = new SimpleAbstractTypeResolver();

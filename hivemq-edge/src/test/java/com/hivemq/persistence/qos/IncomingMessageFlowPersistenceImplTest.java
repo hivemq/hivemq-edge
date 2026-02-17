@@ -15,6 +15,8 @@
  */
 package com.hivemq.persistence.qos;
 
+import static org.mockito.Mockito.verify;
+
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.persistence.local.IncomingMessageFlowLocalPersistence;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,8 +24,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestMessageUtil;
-
-import static org.mockito.Mockito.verify;
 
 /**
  * @since 4.1.0
@@ -35,6 +35,7 @@ public class IncomingMessageFlowPersistenceImplTest {
 
     @Mock
     private IncomingMessageFlowLocalPersistence incomingMessageFlowLocalPersistence;
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);

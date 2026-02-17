@@ -22,11 +22,10 @@ import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
 import com.hivemq.api.json.TimestampToDateConverter;
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import io.swagger.v3.oas.annotations.media.Schema;
-
-import java.util.Objects;
 
 /**
  * Bean to transport events across the API
@@ -53,17 +52,17 @@ public class EventImpl implements Event {
     }
 
     @JsonProperty("identifier")
-    @Schema(description = "The unique id of the event object",
-            required = true)
+    @Schema(description = "The unique id of the event object", required = true)
     private final @NotNull TypeIdentifier identifier;
 
     @JsonProperty("severity")
-    @Schema(description = "The severity that this log is considered to be",
-            required = true)
+    @Schema(description = "The severity that this log is considered to be", required = true)
     private final @NotNull SEVERITY severity;
 
     @JsonProperty("message")
-    @Schema(description = "The message associated with the event. A message will be no more than 1024 characters in length",
+    @Schema(
+            description =
+                    "The message associated with the event. A message will be no more than 1024 characters in length",
             type = "string",
             required = true)
     private final @NotNull String message;
@@ -75,15 +74,11 @@ public class EventImpl implements Event {
     @JsonProperty("created")
     @JsonSerialize(using = TimestampToDateConverter.Serializer.class)
     @JsonDeserialize(using = TimestampToDateConverter.Deserializer.class)
-    @Schema(type = "string",
-            format = "date-time",
-            description = "Time the event was in date format",
-            required = true)
+    @Schema(type = "string", format = "date-time", description = "Time the event was in date format", required = true)
     private final @NotNull Long created;
 
     @JsonProperty("timestamp")
-    @Schema(description = "Time the event was generated in epoch format",
-            required = true)
+    @Schema(description = "Time the event was generated in epoch format", required = true)
     private final @NotNull Long timestamp;
 
     @JsonProperty("associatedObject")
@@ -151,5 +146,4 @@ public class EventImpl implements Event {
     public int hashCode() {
         return Objects.hash(identifier);
     }
-
 }

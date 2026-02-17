@@ -15,13 +15,13 @@
  */
 package com.hivemq.edge.adapters.plc4x.impl;
 
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.plc4x.java.api.messages.PlcReadResponse;
-import org.apache.plc4x.java.api.types.PlcValueType;
-import org.apache.plc4x.java.api.value.PlcValue;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.time.temporal.ChronoField.DAY_OF_MONTH;
+import static java.time.temporal.ChronoField.HOUR_OF_DAY;
+import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
+import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
+import static java.time.temporal.ChronoField.NANO_OF_SECOND;
+import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
+import static java.time.temporal.ChronoField.YEAR;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -34,14 +34,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-
-import static java.time.temporal.ChronoField.DAY_OF_MONTH;
-import static java.time.temporal.ChronoField.HOUR_OF_DAY;
-import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
-import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
-import static java.time.temporal.ChronoField.NANO_OF_SECOND;
-import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
-import static java.time.temporal.ChronoField.YEAR;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.plc4x.java.api.messages.PlcReadResponse;
+import org.apache.plc4x.java.api.types.PlcValueType;
+import org.apache.plc4x.java.api.value.PlcValue;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Some data utilies to manage the interaction with the PLC API
@@ -52,7 +51,7 @@ public class Plc4xDataUtils {
     private static final String AMP = "&";
     private static final String EQUALS = "=";
     public static final DateTimeFormatter TIME_FORMATTER =
-            new DateTimeFormatterBuilder() //custom formatter to prevent weird abbreviations
+            new DateTimeFormatterBuilder() // custom formatter to prevent weird abbreviations
                     .appendValue(HOUR_OF_DAY, 2)
                     .appendLiteral(':')
                     .appendValue(MINUTE_OF_HOUR, 2)
@@ -63,7 +62,7 @@ public class Plc4xDataUtils {
                     .toFormatter();
 
     public static final DateTimeFormatter DATE_TIME_FORMATTER =
-            new DateTimeFormatterBuilder() //custom formatter to prevent weird abbreviations
+            new DateTimeFormatterBuilder() // custom formatter to prevent weird abbreviations
                     .appendValue(YEAR, 4)
                     .appendLiteral("-")
                     .appendValue(MONTH_OF_YEAR, 2)
@@ -99,15 +98,15 @@ public class Plc4xDataUtils {
     }
 
     public static final String createQueryString(
-            final @NotNull Map<String, String> map,
-            final boolean includeKeysForNullValues) {
+            final @NotNull Map<String, String> map, final boolean includeKeysForNullValues) {
         final StringBuilder res = new StringBuilder();
         for (final Map.Entry<String, String> entry : map.entrySet()) {
             if (res.length() > 0) {
                 res.append(AMP);
             }
             if (entry.getValue() != null || includeKeysForNullValues) {
-                res.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8)).append(EQUALS);
+                res.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8))
+                        .append(EQUALS);
                 if (entry.getKey() != null) {
                     res.append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
                 }
@@ -121,68 +120,67 @@ public class Plc4xDataUtils {
         try (final ByteArrayOutputStream memoryStream = new ByteArrayOutputStream()) {
             try (final DataOutputStream outputStream = new DataOutputStream(memoryStream)) {
                 switch (type) {
-
-                    case BOOL:  //Boolean 1bit
+                    case BOOL: // Boolean 1bit
                         outputStream.writeBoolean(value.getBoolean());
                         break;
 
-                    case INT:   //16bit signed
-                    case USINT: //8bit unsigned
+                    case INT: // 16bit signed
+                    case USINT: // 8bit unsigned
                         outputStream.writeShort(value.getShort());
                         break;
 
-                    case WORD:  //16bit unsigned
-                    case DWORD: //32bit unsigned
-                    case UINT:  //16bit unsigned
-                    case DINT:  //32bit signed
+                    case WORD: // 16bit unsigned
+                    case DWORD: // 32bit unsigned
+                    case UINT: // 16bit unsigned
+                    case DINT: // 32bit signed
                         outputStream.writeInt(value.getInt());
                         break;
 
-                    case LWORD: //64bit unsigned
-                    case UDINT: //32bit unsigned
-                    case LINT:  //64bit signed
+                    case LWORD: // 64bit unsigned
+                    case UDINT: // 32bit unsigned
+                    case LINT: // 64bit signed
                         outputStream.writeLong(value.getLong());
                         break;
 
-                    case ULINT: //64bit unsigned
+                    case ULINT: // 64bit unsigned
                         outputStream.write(value.getBigInteger().toByteArray());
                         break;
 
-                    case REAL: //32bit signed
+                    case REAL: // 32bit signed
                         outputStream.writeFloat(value.getFloat());
                         break;
 
-                    case WCHAR: //16bit unicode
-                    case CHAR: //8-bit ascii
+                    case WCHAR: // 16bit unicode
+                    case CHAR: // 8-bit ascii
                         outputStream.writeChar(value.getByte());
                         break;
 
-                    case WSTRING: //String
+                    case WSTRING: // String
                     case STRING:
                         outputStream.writeChars(value.getString());
                         break;
 
-                    case LTIME://Duration
+                    case LTIME: // Duration
                     case TIME:
                         outputStream.writeLong(value.getDuration().toMillis());
                         break;
 
-                    case DATE: //LocalDate
+                    case DATE: // LocalDate
                     case LDATE:
                         outputStream.writeChars(value.getDate().toString());
                         break;
 
-                    case TIME_OF_DAY: //LocalTime
+                    case TIME_OF_DAY: // LocalTime
                     case LTIME_OF_DAY:
                         outputStream.writeChars(value.getTime().toString());
                         break;
 
-                    case DATE_AND_TIME: //LocalDateTime
+                    case DATE_AND_TIME: // LocalDateTime
                     case LDATE_AND_TIME:
                         outputStream.writeChars(value.getDateTime().toString());
                         break;
 
-                    case BYTE: //Byte
+                    case BYTE: // Byte
                     case SINT:
                         outputStream.writeByte(value.getByte());
                         break;
@@ -191,8 +189,8 @@ public class Plc4xDataUtils {
                         outputStream.write(value.getRaw());
                         break;
 
-                    case Struct: //HashMap
-                    case List: //ArrayList
+                    case Struct: // HashMap
+                    case List: // ArrayList
                     case NULL:
                     default:
                         break;
@@ -207,68 +205,71 @@ public class Plc4xDataUtils {
     public static Object convertObject(final PlcValue value) {
         final PlcValueType type = value.getPlcValueType();
         switch (type) {
-
-            case BOOL:  //Boolean 1bit
+            case BOOL: // Boolean 1bit
                 return value.getBoolean();
 
-            case INT:    //16bit signed
-            case USINT:  //8bit unsigned
-            case SINT:   //8bit signed
-            case BYTE:   //byte is treated as unsigned for most PLCs/protocols
+            case INT: // 16bit signed
+            case USINT: // 8bit unsigned
+            case SINT: // 8bit signed
+            case BYTE: // byte is treated as unsigned for most PLCs/protocols
                 return value.getShort();
 
-            case WORD:  //16bit unsigned
-            case UINT:  //16bit unsigned
-            case DINT:  //32bit signed
+            case WORD: // 16bit unsigned
+            case UINT: // 16bit unsigned
+            case DINT: // 32bit signed
                 return value.getInt();
 
-            case DWORD: //32bit unsigned
-            case UDINT: //32bit unsigned
-            case LINT:  //64bit signed
+            case DWORD: // 32bit unsigned
+            case UDINT: // 32bit unsigned
+            case LINT: // 64bit signed
                 return value.getLong();
 
-            case LWORD: //64bit unsigned
-            case ULINT: //64bit unsigned
+            case LWORD: // 64bit unsigned
+            case ULINT: // 64bit unsigned
                 return value.getBigInteger();
 
-            case REAL: //32bit signed
+            case REAL: // 32bit signed
                 return value.getFloat();
 
-            case LREAL: //Float
+            case LREAL: // Float
                 return value.getDouble();
 
-            case WCHAR:  //16bit unicode
-            case CHAR:   //8bit ascii
-                return value.getString(); //internally already converts numerical into character string
+            case WCHAR: // 16bit unicode
+            case CHAR: // 8bit ascii
+                return value.getString(); // internally already converts numerical into character string
 
-            case WSTRING: //String
+            case WSTRING: // String
             case STRING:
                 return value.getString();
 
-            case TIME:  //32bit signed, millisecond of the day (or day prior) (-24d20h31m23s648ms - +24d20h31m23s647ms)
+            case TIME: // 32bit signed, millisecond of the day (or day prior) (-24d20h31m23s648ms - +24d20h31m23s647ms)
                 return value.getDuration().toMillis();
 
-            case LTIME: //64bit signed, nanosecond of the day (or day prior) (--106751d23h47m16s854ms775us808ns - +106751d23h47m16s854ms775us807ns)
+            case LTIME: // 64bit signed, nanosecond of the day (or day prior) (--106751d23h47m16s854ms775us808ns -
+                // +106751d23h47m16s854ms775us807ns)
                 return value.getDuration().toNanos();
 
-            case DATE: //16bit signed, days since 1990-1-1 (1990-01-01 - 2168-12-31)
+            case DATE: // 16bit signed, days since 1990-1-1 (1990-01-01 - 2168-12-31)
             case LDATE:
-                return value.getDate().toString(); //ISO date
+                return value.getDate().toString(); // ISO date
 
-            case TIME_OF_DAY: //32bit signed, millisecond of the day (00:00:00.000 - 23:59:59.999)
-            case LTIME_OF_DAY: //64bit signed, nanosecond of the day (00:00:00.000000000 - 23:59:59.999999999)
-                return TIME_FORMATTER.format(value.getTime()); //ISO time
+            case TIME_OF_DAY: // 32bit signed, millisecond of the day (00:00:00.000 - 23:59:59.999)
+            case LTIME_OF_DAY: // 64bit signed, nanosecond of the day (00:00:00.000000000 - 23:59:59.999999999)
+                return TIME_FORMATTER.format(value.getTime()); // ISO time
 
-            case DATE_AND_TIME: //64bit signed, milliseconds since 1990-1-1 (1990-01-01-0:0:0 - 2089-12-31-23:59:59.999)
-            case LDATE_AND_TIME: //64bit signed, nanoseconds since 1970-1-1 (1970-01-01-0:0:0.000000000 - 2262-04-11-23:47:16.854775807)
-            case DATE_AND_LTIME: //64bit signed, nanoseconds since 1970-1-1 (1970-01-01-0:0:0.000000000 - 2262-04-11-23:47:16.854775807)
+            case DATE_AND_TIME: // 64bit signed, milliseconds since 1990-1-1 (1990-01-01-0:0:0 -
+            // 2089-12-31-23:59:59.999)
+            case LDATE_AND_TIME: // 64bit signed, nanoseconds since 1970-1-1 (1970-01-01-0:0:0.000000000 -
+            // 2262-04-11-23:47:16.854775807)
+            case DATE_AND_LTIME: // 64bit signed, nanoseconds since 1970-1-1 (1970-01-01-0:0:0.000000000 -
+                // 2262-04-11-23:47:16.854775807)
                 return DATE_TIME_FORMATTER.format(value.getDateTime());
 
             case RAW_BYTE_ARRAY:
                 return value.getRaw();
 
-            case Struct: //HashMap
-            case List: //ArrayList
+            case Struct: // HashMap
+            case List: // ArrayList
             case NULL:
             default:
                 log.error("Unable to convert PLC4X value of type {} and value {}", type, value.getDateTime());

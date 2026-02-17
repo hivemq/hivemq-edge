@@ -16,11 +16,10 @@
 package com.hivemq.persistence.local.xodus;
 
 import com.google.common.collect.ImmutableSet;
+import java.util.*;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.apache.commons.lang3.StringUtils;
-
-import java.util.*;
 
 /**
  * @author Lukas Brandl
@@ -52,6 +51,7 @@ public class PublishTopicTree {
         // child and childSubTopic are only used if there is no more than one child node.
         @Nullable
         Node child = null;
+
         @Nullable
         String childSubTopic = null;
 
@@ -74,14 +74,14 @@ public class PublishTopicTree {
 
             Node nextChild;
             if (childNodes != null) {
-                //This is NOT the first child node that is added
+                // This is NOT the first child node that is added
                 nextChild = childNodes.get(currentSubTopic);
                 if (nextChild == null) {
                     nextChild = new Node();
                     childNodes.put(currentSubTopic, nextChild);
                 }
             } else if (child == null) {
-                //This is the first child node that is added
+                // This is the first child node that is added
                 child = new Node();
                 childSubTopic = currentSubTopic;
                 nextChild = child;
@@ -139,13 +139,15 @@ public class PublishTopicTree {
                 if (removed && !node.directMatch) {
                     childNodes.remove(currentSubTopic);
                     if (childNodes.size() == 1) {
-                        final Map.Entry<String, Node> entry = childNodes.entrySet().iterator().next();
+                        final Map.Entry<String, Node> entry =
+                                childNodes.entrySet().iterator().next();
                         child = entry.getValue();
                         childSubTopic = entry.getKey();
                         childNodes = null;
                     }
                 }
-                // Never remove here because if this would have been the only child node, the childNodes map would have been null
+                // Never remove here because if this would have been the only child node, the childNodes map would have
+                // been null
                 return false;
             }
         }
@@ -194,7 +196,8 @@ public class PublishTopicTree {
                         } else {
                             result.addAll(entry.getValue()
                                     .get(
-                                            nextSubTopics, currentTopic + "/" + entry.getKey(),
+                                            nextSubTopics,
+                                            currentTopic + "/" + entry.getKey(),
                                             currentSubTopic.equals("#")));
                         }
                     }
@@ -202,8 +205,8 @@ public class PublishTopicTree {
                     if (currentTopic == null) {
                         result.addAll(child.get(nextSubTopics, childSubTopic, currentSubTopic.equals("#")));
                     } else {
-                        result.addAll(child.get(nextSubTopics, currentTopic + "/" + childSubTopic,
-                                currentSubTopic.equals("#")));
+                        result.addAll(child.get(
+                                nextSubTopics, currentTopic + "/" + childSubTopic, currentSubTopic.equals("#")));
                     }
                 }
             } else {

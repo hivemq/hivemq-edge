@@ -27,12 +27,10 @@ import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
 import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTagDefinition;
-import org.jetbrains.annotations.NotNull;
-
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-
+import org.jetbrains.annotations.NotNull;
 
 class ModbusClient {
 
@@ -42,20 +40,24 @@ class ModbusClient {
     private final @NotNull ModbusTcpClient client;
 
     ModbusClient(final @NotNull ModbusSpecificAdapterConfig adapterConfig) {
-        client = ModbusTcpClient.create(NettyTcpClientTransport.create(cfg -> {
-            cfg.hostname = adapterConfig.getHost();
-            cfg.port = adapterConfig.getPort();
-            cfg.connectTimeout = Duration.ofMillis(adapterConfig.getTimeoutMillis());
-        }), cfg -> cfg.timeoutScheduler = new NettyTimeoutScheduler(Netty.sharedWheelTimer()));
+        client = ModbusTcpClient.create(
+                NettyTcpClientTransport.create(cfg -> {
+                    cfg.hostname = adapterConfig.getHost();
+                    cfg.port = adapterConfig.getPort();
+                    cfg.connectTimeout = Duration.ofMillis(adapterConfig.getTimeoutMillis());
+                }),
+                cfg -> cfg.timeoutScheduler = new NettyTimeoutScheduler(Netty.sharedWheelTimer()));
     }
 
-    @NotNull CompletionStage<Void> connect() {
+    @NotNull
+    CompletionStage<Void> connect() {
         return client.connectAsync().thenApply(unused -> null);
     }
 
-    @NotNull CompletionStage<Void> disconnect() {
-        //-- If the client is manually disconnected before connection established ensure we still call into the client
-        //-- to shut it all down.
+    @NotNull
+    CompletionStage<Void> disconnect() {
+        // -- If the client is manually disconnected before connection established ensure we still call into the client
+        // -- to shut it all down.
         return client.disconnectAsync().thenApply(unused -> null);
     }
 
@@ -63,8 +65,8 @@ class ModbusClient {
         return client.isConnected();
     }
 
-    @NotNull CompletionStage<Object> readRegisters(
-            final @NotNull ModbusTag modbusTag) {
+    @NotNull
+    CompletionStage<Object> readRegisters(final @NotNull ModbusTag modbusTag) {
         final ModbusTagDefinition def = modbusTag.getDefinition();
         final var dataType = def.getDataType();
         return (switch (def.readType) {
@@ -78,7 +80,8 @@ class ModbusClient {
     /**
      * Coils are 1bit.
      */
-    @NotNull CompletionStage<Object> readCoils(final int startIdx, final int unitId) {
+    @NotNull
+    CompletionStage<Object> readCoils(final int startIdx, final int unitId) {
         if (!client.isConnected()) {
             return CompletableFuture.completedFuture(null);
         }
@@ -90,49 +93,48 @@ class ModbusClient {
     /**
      * Discrete registers are 1bit.
      */
-    @NotNull CompletionStage<Object> readDiscreteInput(final int startIdx, final int unitId) {
+    @NotNull
+    CompletionStage<Object> readDiscreteInput(final int startIdx, final int unitId) {
         if (!client.isConnected()) {
             return CompletableFuture.completedFuture(null);
         }
 
-        return client.readDiscreteInputsAsync(unitId,
-                        new ReadDiscreteInputsRequest(startIdx, Math.min(1, DEFAULT_MAX_DISCRETE_INPUTS)))
+        return client.readDiscreteInputsAsync(
+                        unitId, new ReadDiscreteInputsRequest(startIdx, Math.min(1, DEFAULT_MAX_DISCRETE_INPUTS)))
                 .thenApply(response -> ModbusDataType.BOOL.convert(response.inputs(), false));
     }
 
     /**
      * Holding registers are 16bit.
      */
-    @NotNull CompletionStage<Object> readHoldingRegisters(
-            final int startIdx,
-            final @NotNull ModbusDataType dataType,
-            final int unitId,
-            final boolean flipRegisters) {
+    @NotNull
+    CompletionStage<Object> readHoldingRegisters(
+            final int startIdx, final @NotNull ModbusDataType dataType, final int unitId, final boolean flipRegisters) {
         if (!client.isConnected()) {
             return CompletableFuture.completedFuture(null);
         }
 
-        return client.readHoldingRegistersAsync(unitId,
-                        new ReadHoldingRegistersRequest(startIdx,
-                                Math.min(dataType.nrOfRegistersToRead, DEFAULT_MAX_INPUT_REGISTERS)))
+        return client.readHoldingRegistersAsync(
+                        unitId,
+                        new ReadHoldingRegistersRequest(
+                                startIdx, Math.min(dataType.nrOfRegistersToRead, DEFAULT_MAX_INPUT_REGISTERS)))
                 .thenApply(response -> dataType.convert(response.registers(), flipRegisters));
     }
 
     /**
      * Inout registers are 16bit.
      */
-    @NotNull CompletionStage<Object> readInputRegisters(
-            final int startIdx,
-            final @NotNull ModbusDataType dataType,
-            final int unitId,
-            final boolean flipRegisters) {
+    @NotNull
+    CompletionStage<Object> readInputRegisters(
+            final int startIdx, final @NotNull ModbusDataType dataType, final int unitId, final boolean flipRegisters) {
         if (!client.isConnected()) {
             return CompletableFuture.completedFuture(null);
         }
 
-        return client.readInputRegistersAsync(unitId,
-                        new ReadInputRegistersRequest(startIdx,
-                                Math.min(dataType.nrOfRegistersToRead, DEFAULT_MAX_INPUT_REGISTERS)))
+        return client.readInputRegistersAsync(
+                        unitId,
+                        new ReadInputRegistersRequest(
+                                startIdx, Math.min(dataType.nrOfRegistersToRead, DEFAULT_MAX_INPUT_REGISTERS)))
                 .thenApply(response -> dataType.convert(response.registers(), flipRegisters));
     }
 }

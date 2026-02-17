@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.configuration.reader;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
@@ -26,6 +28,12 @@ import com.hivemq.configuration.entity.pulse.PulseAssetMappingStatus;
 import com.hivemq.configuration.entity.pulse.PulseAssetsEntity;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.exceptions.UnrecoverableException;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
@@ -39,16 +47,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 import util.LogbackCapturingAppender;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @ExtendWith(MockitoExtension.class)
 public class PulseExtractorTest {
@@ -168,9 +166,11 @@ public class PulseExtractorTest {
     public void whenAllElementsAreCorrect_thenSetConfigurationPasses() throws IOException {
         final ConfigFileReaderWriter configFileReader = getConfigFileReaderWriter();
         final HiveMQConfigEntity configEntity = configFileReader.applyConfig();
-        configEntity.getPulseEntity()
+        configEntity
+                .getPulseEntity()
                 .setPulseAssetsEntity(PulseAssetsEntity.builder()
-                        .addPulseAssetEntities(List.of(PulseAssetEntity.builder()
+                        .addPulseAssetEntities(List.of(
+                                PulseAssetEntity.builder()
                                         .id(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))
                                         .name("asset1")
                                         .description("description1")
@@ -213,8 +213,8 @@ public class PulseExtractorTest {
         assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
         assertThat(logCapture.isLogCaptured()).isTrue();
         assertThat(logCapture.getLastCapturedLog().getLevel()).isEqualTo(Level.ERROR);
-        assertThat(logCapture.getLastCapturedLog().getFormattedMessage()).contains(
-                "Attribute 'id' must appear on element 'managed-asset'.");
+        assertThat(logCapture.getLastCapturedLog().getFormattedMessage())
+                .contains("Attribute 'id' must appear on element 'managed-asset'.");
     }
 
     @ParameterizedTest
@@ -235,11 +235,12 @@ public class PulseExtractorTest {
         assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
         assertThat(logCapture.isLogCaptured()).isTrue();
         assertThat(logCapture.getLastCapturedLog().getLevel()).isEqualTo(Level.ERROR);
-        assertThat(logCapture.getLastCapturedLog().getFormattedMessage()).contains(
-                "Value '%s' is not facet-valid with respect to pattern".formatted(idString));
-        assertThat(logCapture.getLastCapturedLog().getFormattedMessage()).contains(
-                "The value '%s' of attribute 'id' on element 'managed-asset' is not valid with respect to its type, 'uuidType'.".formatted(
-                        idString));
+        assertThat(logCapture.getLastCapturedLog().getFormattedMessage())
+                .contains("Value '%s' is not facet-valid with respect to pattern".formatted(idString));
+        assertThat(logCapture.getLastCapturedLog().getFormattedMessage())
+                .contains(
+                        "The value '%s' of attribute 'id' on element 'managed-asset' is not valid with respect to its type, 'uuidType'."
+                                .formatted(idString));
         assertThat(logCapture.getLastCapturedLog().getFormattedMessage()).contains("Invalid UUID string");
     }
 
@@ -260,8 +261,8 @@ public class PulseExtractorTest {
         assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
         assertThat(logCapture.isLogCaptured()).isTrue();
         assertThat(logCapture.getLastCapturedLog().getLevel()).isEqualTo(Level.ERROR);
-        assertThat(logCapture.getLastCapturedLog().getFormattedMessage()).contains(
-                "Attribute 'name' must appear on element 'managed-asset'.");
+        assertThat(logCapture.getLastCapturedLog().getFormattedMessage())
+                .contains("Attribute 'name' must appear on element 'managed-asset'.");
     }
 
     @Test
@@ -281,10 +282,10 @@ public class PulseExtractorTest {
         assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
         assertThat(logCapture.isLogCaptured()).isTrue();
         assertThat(logCapture.getLastCapturedLog().getLevel()).isEqualTo(Level.ERROR);
-        assertThat(logCapture.getCapturedLogs()
-                .stream()
-                .map(ILoggingEvent::getFormattedMessage)
-                .collect(Collectors.joining("\n"))).contains("Pulse config error: name is missing");
+        assertThat(logCapture.getCapturedLogs().stream()
+                        .map(ILoggingEvent::getFormattedMessage)
+                        .collect(Collectors.joining("\n")))
+                .contains("Pulse config error: name is missing");
     }
 
     @Test
@@ -304,8 +305,8 @@ public class PulseExtractorTest {
         assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
         assertThat(logCapture.isLogCaptured()).isTrue();
         assertThat(logCapture.getLastCapturedLog().getLevel()).isEqualTo(Level.ERROR);
-        assertThat(logCapture.getLastCapturedLog().getFormattedMessage()).contains(
-                "Attribute 'topic' must appear on element 'managed-asset'.");
+        assertThat(logCapture.getLastCapturedLog().getFormattedMessage())
+                .contains("Attribute 'topic' must appear on element 'managed-asset'.");
     }
 
     @Test
@@ -325,10 +326,10 @@ public class PulseExtractorTest {
         assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
         assertThat(logCapture.isLogCaptured()).isTrue();
         assertThat(logCapture.getLastCapturedLog().getLevel()).isEqualTo(Level.ERROR);
-        assertThat(logCapture.getCapturedLogs()
-                .stream()
-                .map(ILoggingEvent::getFormattedMessage)
-                .collect(Collectors.joining("\n"))).contains("Pulse config error: topic is missing");
+        assertThat(logCapture.getCapturedLogs().stream()
+                        .map(ILoggingEvent::getFormattedMessage)
+                        .collect(Collectors.joining("\n")))
+                .contains("Pulse config error: topic is missing");
     }
 
     @Test
@@ -347,8 +348,8 @@ public class PulseExtractorTest {
         assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
         assertThat(logCapture.isLogCaptured()).isTrue();
         assertThat(logCapture.getLastCapturedLog().getLevel()).isEqualTo(Level.ERROR);
-        assertThat(logCapture.getLastCapturedLog().getFormattedMessage()).contains(
-                "Invalid content was found starting with element 'mapping'. One of '{schema}' is expected.");
+        assertThat(logCapture.getLastCapturedLog().getFormattedMessage())
+                .contains("Invalid content was found starting with element 'mapping'. One of '{schema}' is expected.");
     }
 
     @Test
@@ -368,10 +369,10 @@ public class PulseExtractorTest {
         assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
         assertThat(logCapture.isLogCaptured()).isTrue();
         assertThat(logCapture.getLastCapturedLog().getLevel()).isEqualTo(Level.ERROR);
-        assertThat(logCapture.getCapturedLogs()
-                .stream()
-                .map(ILoggingEvent::getFormattedMessage)
-                .collect(Collectors.joining("\n"))).contains("Pulse config error: schema is missing");
+        assertThat(logCapture.getCapturedLogs().stream()
+                        .map(ILoggingEvent::getFormattedMessage)
+                        .collect(Collectors.joining("\n")))
+                .contains("Pulse config error: schema is missing");
     }
 
     @Test
@@ -410,8 +411,8 @@ public class PulseExtractorTest {
         assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
         assertThat(logCapture.isLogCaptured()).isTrue();
         assertThat(logCapture.getLastCapturedLog().getLevel()).isEqualTo(Level.ERROR);
-        assertThat(logCapture.getLastCapturedLog().getFormattedMessage()).contains(
-                "Attribute 'status' must appear on element 'mapping'.");
+        assertThat(logCapture.getLastCapturedLog().getFormattedMessage())
+                .contains("Attribute 'status' must appear on element 'mapping'.");
     }
 
     @Test
@@ -431,10 +432,12 @@ public class PulseExtractorTest {
         assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
         assertThat(logCapture.isLogCaptured()).isTrue();
         assertThat(logCapture.getLastCapturedLog().getLevel()).isEqualTo(Level.ERROR);
-        assertThat(logCapture.getLastCapturedLog().getFormattedMessage()).contains(
-                "Value 'INVALID' is not facet-valid with respect to enumeration '[DRAFT, MISSING, REQUIRES_REMAPPING, STREAMING, UNMAPPED]'. It must be a value from the enumeration.");
-        assertThat(logCapture.getLastCapturedLog().getFormattedMessage()).contains(
-                "The value 'INVALID' of attribute 'status' on element 'mapping' is not valid with respect to its type, '#AnonType_statuspulseAssetMappingEntity'.");
+        assertThat(logCapture.getLastCapturedLog().getFormattedMessage())
+                .contains(
+                        "Value 'INVALID' is not facet-valid with respect to enumeration '[DRAFT, MISSING, REQUIRES_REMAPPING, STREAMING, UNMAPPED]'. It must be a value from the enumeration.");
+        assertThat(logCapture.getLastCapturedLog().getFormattedMessage())
+                .contains(
+                        "The value 'INVALID' of attribute 'status' on element 'mapping' is not valid with respect to its type, '#AnonType_statuspulseAssetMappingEntity'.");
     }
 
     @ParameterizedTest
@@ -455,21 +458,22 @@ public class PulseExtractorTest {
         assertThatThrownBy(configFileReader::applyConfig).isInstanceOf(UnrecoverableException.class);
         assertThat(logCapture.isLogCaptured()).isTrue();
         assertThat(logCapture.getLastCapturedLog().getLevel()).isEqualTo(Level.ERROR);
-        assertThat(logCapture.getLastCapturedLog().getFormattedMessage()).contains(
-                "Value '%s' is not facet-valid with respect to pattern".formatted(idString));
-        assertThat(logCapture.getLastCapturedLog().getFormattedMessage()).contains(
-                "The value '%s' of attribute 'id' on element 'mapping' is not valid with respect to its type, 'uuidType'.".formatted(
-                        idString));
+        assertThat(logCapture.getLastCapturedLog().getFormattedMessage())
+                .contains("Value '%s' is not facet-valid with respect to pattern".formatted(idString));
+        assertThat(logCapture.getLastCapturedLog().getFormattedMessage())
+                .contains(
+                        "The value '%s' of attribute 'id' on element 'mapping' is not valid with respect to its type, 'uuidType'."
+                                .formatted(idString));
         assertThat(logCapture.getLastCapturedLog().getFormattedMessage()).contains("Invalid UUID string");
     }
 
     protected @NotNull List<PulseAssetEntity> extractPulseAssetEntities(
-            final @NotNull HiveMQConfigEntity configEntity,
-            final int expectedSize) {
+            final @NotNull HiveMQConfigEntity configEntity, final int expectedSize) {
         assertThat(configEntity).isNotNull();
         assertThat(configEntity.getPulseEntity()).isNotNull();
         assertThat(configEntity.getPulseEntity().getPulseAssetsEntity()).isNotNull();
-        assertThat(configEntity.getPulseEntity().getPulseAssetsEntity().getPulseAssetEntities()).hasSize(expectedSize);
+        assertThat(configEntity.getPulseEntity().getPulseAssetsEntity().getPulseAssetEntities())
+                .hasSize(expectedSize);
         return configEntity.getPulseEntity().getPulseAssetsEntity().getPulseAssetEntities();
     }
 }

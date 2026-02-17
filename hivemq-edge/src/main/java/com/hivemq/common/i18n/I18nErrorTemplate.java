@@ -1,30 +1,24 @@
 /*
- *  Copyright 2019-present HiveMQ GmbH
+ * Copyright 2019-present HiveMQ GmbH
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
 package com.hivemq.common.i18n;
 
 import freemarker.cache.StringTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
-import org.apache.commons.io.IOUtils;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -34,6 +28,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Singleton class to manage OpenAPI i18n error templates using FreeMarker.
@@ -48,8 +46,7 @@ public final class I18nErrorTemplate {
     private final @NotNull ClassLoader classLoader;
 
     public I18nErrorTemplate(
-            final @NotNull Function<Locale, String> resourceNameFunction,
-            final @NotNull ClassLoader classLoader) {
+            final @NotNull Function<Locale, String> resourceNameFunction, final @NotNull ClassLoader classLoader) {
         configurationMap = new ConcurrentHashMap<>();
         this.classLoader = classLoader;
         this.resourceNameFunction = resourceNameFunction;
@@ -63,8 +60,8 @@ public final class I18nErrorTemplate {
         configuration.setLocale(locale);
         final Properties properties = new Properties();
         final String resourceName = resourceNameFunction.apply(locale);
-        try (final StringReader stringReader = new StringReader(IOUtils.resourceToString(resourceName,
-                StandardCharsets.UTF_8, classLoader))) {
+        try (final StringReader stringReader =
+                new StringReader(IOUtils.resourceToString(resourceName, StandardCharsets.UTF_8, classLoader))) {
             properties.load(stringReader);
         }
         for (final Map.Entry<Object, Object> entry : properties.entrySet()) {

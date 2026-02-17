@@ -15,27 +15,26 @@
  */
 package com.hivemq.extensions.iteration;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-import org.mockito.MockitoAnnotations;
-
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.mockito.MockitoAnnotations;
 
 /**
  * @author Christoph Schäbel
@@ -47,6 +46,7 @@ public class AsyncLocalChunkIteratorTest {
     private TestFetchCallback fetchCallback;
     private TestItemCallback itemCallback;
     private ExecutorService executorService;
+
     @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
@@ -56,7 +56,6 @@ public class AsyncLocalChunkIteratorTest {
         asyncIterator = new AsyncLocalChunkIterator<>(fetchCallback, itemCallback, executorService);
     }
 
-
     @Test
     @Timeout(15)
     public void test_fetch_failed() throws Throwable {
@@ -65,8 +64,7 @@ public class AsyncLocalChunkIteratorTest {
 
         asyncIterator.fetchAndIterate();
 
-        assertThatThrownBy(() -> asyncIterator.getFetchFuture().get())
-                .hasCauseInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> asyncIterator.getFetchFuture().get()).hasCauseInstanceOf(RuntimeException.class);
     }
 
     @Test
@@ -77,18 +75,17 @@ public class AsyncLocalChunkIteratorTest {
 
         asyncIterator.fetchAndIterate();
 
-        assertThatThrownBy(() -> asyncIterator.getFinishedFuture().get())
-                .hasCauseInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> asyncIterator.getFinishedFuture().get()).hasCauseInstanceOf(RuntimeException.class);
     }
 
     @Test
     @Timeout(15)
     public void test_fetch_result_null() throws Throwable {
 
-        asyncIterator = new AsyncLocalChunkIterator<>((cursor) -> Futures.immediateFuture(null), itemCallback, executorService);
+        asyncIterator =
+                new AsyncLocalChunkIterator<>((cursor) -> Futures.immediateFuture(null), itemCallback, executorService);
 
         asyncIterator.fetchAndIterate();
-
 
         assertThatThrownBy(() -> asyncIterator.getFinishedFuture().get())
                 .hasCauseInstanceOf(NullPointerException.class);
@@ -181,7 +178,6 @@ public class AsyncLocalChunkIteratorTest {
 
             final SettableFuture<ChunkResult<String>> resultFuture = SettableFuture.create();
             executorService.submit(() -> {
-
                 final Queue<Collection<String>> chunkQueue = chunks.get();
                 if (block.get()) {
                     blockingLatch.countDown();

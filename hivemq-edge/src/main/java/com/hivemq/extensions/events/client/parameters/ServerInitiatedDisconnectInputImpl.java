@@ -16,8 +16,6 @@
 package com.hivemq.extensions.events.client.parameters;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
 import com.hivemq.extension.sdk.api.events.client.parameters.ConnectionLostInput;
@@ -27,15 +25,20 @@ import com.hivemq.extension.sdk.api.packets.general.UserProperties;
 import com.hivemq.extensions.ExtensionInformationUtil;
 import com.hivemq.extensions.executor.task.PluginTaskInput;
 import io.netty.channel.Channel;
-
 import java.util.Optional;
 import java.util.function.Supplier;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
  * @since 4.0.0
  */
-public class ServerInitiatedDisconnectInputImpl implements ServerInitiatedDisconnectInput, ConnectionLostInput, PluginTaskInput, Supplier<ServerInitiatedDisconnectInputImpl> {
+public class ServerInitiatedDisconnectInputImpl
+        implements ServerInitiatedDisconnectInput,
+                ConnectionLostInput,
+                PluginTaskInput,
+                Supplier<ServerInitiatedDisconnectInputImpl> {
 
     private final @Nullable DisconnectedReasonCode reasonCode;
     private final @Nullable String reasonString;
@@ -43,11 +46,12 @@ public class ServerInitiatedDisconnectInputImpl implements ServerInitiatedDiscon
     private final @NotNull ClientInformation clientInformation;
     private final @NotNull ConnectionInformation connectionInformation;
 
-    public ServerInitiatedDisconnectInputImpl(final @NotNull String clientId,
-                                              final @NotNull Channel channel,
-                                              final @Nullable DisconnectedReasonCode reasonCode,
-                                              final @Nullable String reasonString,
-                                              final @Nullable UserProperties userProperties) {
+    public ServerInitiatedDisconnectInputImpl(
+            final @NotNull String clientId,
+            final @NotNull Channel channel,
+            final @Nullable DisconnectedReasonCode reasonCode,
+            final @Nullable String reasonString,
+            final @Nullable UserProperties userProperties) {
         Preconditions.checkNotNull(clientId, "client id must never be null");
         Preconditions.checkNotNull(channel, "channel must never be null");
 

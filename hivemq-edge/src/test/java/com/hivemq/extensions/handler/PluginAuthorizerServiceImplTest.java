@@ -13,8 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.handler;
+
+import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.bootstrap.ClientConnection;
@@ -50,15 +62,6 @@ import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-import org.junit.jupiter.api.io.TempDir;
-import util.CollectUserEventsHandler;
-import util.IsolatedExtensionClassloaderUtil;
-import util.TestMessageUtil;
-
 import java.io.File;
 import java.time.Duration;
 import java.util.HashMap;
@@ -67,19 +70,14 @@ import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import util.CollectUserEventsHandler;
+import util.IsolatedExtensionClassloaderUtil;
+import util.TestMessageUtil;
 
 /**
  * @since 4.0.0
@@ -103,6 +101,7 @@ public class PluginAuthorizerServiceImplTest {
     private @NotNull PluginAuthorizerServiceImpl pluginAuthorizerService;
     private @NotNull CollectUserEventsHandler<AuthorizeWillResultEvent> eventsHandler;
     private @NotNull ChannelHandlerContext channelHandlerContext;
+
     @BeforeEach
     public void setUp() throws Exception {
         executor = new PluginTaskExecutor(new AtomicLong());
@@ -130,7 +129,8 @@ public class PluginAuthorizerServiceImplTest {
 
         final PluginTaskExecutorService pluginTaskExecutorService =
                 new PluginTaskExecutorServiceImpl(() -> executor, mock(ShutdownHooks.class));
-        pluginAuthorizerService = new PluginAuthorizerServiceImpl(authorizers,
+        pluginAuthorizerService = new PluginAuthorizerServiceImpl(
+                authorizers,
                 asyncer,
                 pluginTaskExecutorService,
                 serverInformation,
@@ -305,8 +305,8 @@ public class PluginAuthorizerServiceImplTest {
         final CountDownLatch authorizeLatch2 = new CountDownLatch(3);
 
         when(authorizers.areAuthorizersAvailable()).thenReturn(true);
-        when(authorizers.getAuthorizerProviderMap()).thenReturn(createSubscriptionAuthorizerMap(authorizeLatch1,
-                authorizeLatch2));
+        when(authorizers.getAuthorizerProviderMap())
+                .thenReturn(createSubscriptionAuthorizerMap(authorizeLatch1, authorizeLatch2));
 
         final SUBSCRIBE fullMqtt5Subscribe = TestMessageUtil.createFullMqtt5Subscribe();
 
@@ -317,7 +317,8 @@ public class PluginAuthorizerServiceImplTest {
         final ClientAuthorizers extensionClientAuthorizers =
                 channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getExtensionClientAuthorizers();
         assertNotNull(extensionClientAuthorizers);
-        assertEquals(2, extensionClientAuthorizers.getSubscriptionAuthorizersMap().size());
+        assertEquals(
+                2, extensionClientAuthorizers.getSubscriptionAuthorizersMap().size());
     }
 
     @Test
@@ -328,8 +329,8 @@ public class PluginAuthorizerServiceImplTest {
         final CountDownLatch authorizeLatch2 = new CountDownLatch(1);
 
         when(authorizers.areAuthorizersAvailable()).thenReturn(true);
-        when(authorizers.getAuthorizerProviderMap()).thenReturn(createPublishAuthorizerMap(authorizeLatch1,
-                authorizeLatch2));
+        when(authorizers.getAuthorizerProviderMap())
+                .thenReturn(createPublishAuthorizerMap(authorizeLatch1, authorizeLatch2));
 
         final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic", QoS.AT_LEAST_ONCE);
 
@@ -355,8 +356,8 @@ public class PluginAuthorizerServiceImplTest {
         final CountDownLatch authorizeLatch2 = new CountDownLatch(1);
 
         when(authorizers.areAuthorizersAvailable()).thenReturn(true);
-        when(authorizers.getAuthorizerProviderMap()).thenReturn(createPublishAuthorizerMap(authorizeLatch1,
-                authorizeLatch2));
+        when(authorizers.getAuthorizerProviderMap())
+                .thenReturn(createPublishAuthorizerMap(authorizeLatch1, authorizeLatch2));
 
         final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic", QoS.AT_LEAST_ONCE);
 
@@ -393,8 +394,8 @@ public class PluginAuthorizerServiceImplTest {
         final CountDownLatch authorizeLatch2 = new CountDownLatch(1);
 
         when(authorizers.areAuthorizersAvailable()).thenReturn(true);
-        when(authorizers.getAuthorizerProviderMap()).thenReturn(createPublishAuthorizerMap(authorizeLatch1,
-                authorizeLatch2));
+        when(authorizers.getAuthorizerProviderMap())
+                .thenReturn(createPublishAuthorizerMap(authorizeLatch1, authorizeLatch2));
 
         final CONNECT connect = TestMessageUtil.createMqtt5ConnectWithWill();
 
@@ -426,10 +427,12 @@ public class PluginAuthorizerServiceImplTest {
         final CountDownLatch authorizeLatch2 = new CountDownLatch(3);
 
         when(authorizers.areAuthorizersAvailable()).thenReturn(true);
-        when(authorizers.getAuthorizerProviderMap()).thenReturn(ImmutableMap.of("extension1",
-                getTestAuthorizerProvider(TestAuthorizerForgetProvider.class, authorizeLatch1),
-                "extension2",
-                getTestAuthorizerProvider(TestAuthorizerForgetProvider.class, authorizeLatch2)));
+        when(authorizers.getAuthorizerProviderMap())
+                .thenReturn(ImmutableMap.of(
+                        "extension1",
+                        getTestAuthorizerProvider(TestAuthorizerForgetProvider.class, authorizeLatch1),
+                        "extension2",
+                        getTestAuthorizerProvider(TestAuthorizerForgetProvider.class, authorizeLatch2)));
 
         final SUBSCRIBE fullMqtt5Subscribe = TestMessageUtil.createFullMqtt5Subscribe();
 
@@ -440,7 +443,8 @@ public class PluginAuthorizerServiceImplTest {
         final ClientAuthorizers extensionClientAuthorizers =
                 channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getExtensionClientAuthorizers();
         assertNotNull(extensionClientAuthorizers);
-        assertEquals(2, extensionClientAuthorizers.getSubscriptionAuthorizersMap().size());
+        assertEquals(
+                2, extensionClientAuthorizers.getSubscriptionAuthorizersMap().size());
     }
 
     @Test
@@ -450,8 +454,9 @@ public class PluginAuthorizerServiceImplTest {
         final CountDownLatch authorizeLatch1 = new CountDownLatch(3);
 
         when(authorizers.areAuthorizersAvailable()).thenReturn(true);
-        when(authorizers.getAuthorizerProviderMap()).thenReturn(ImmutableMap.of("extension1",
-                getTestAuthorizerProvider(TestTimeoutAuthorizerProvider.class, authorizeLatch1)));
+        when(authorizers.getAuthorizerProviderMap())
+                .thenReturn(ImmutableMap.of(
+                        "extension1", getTestAuthorizerProvider(TestTimeoutAuthorizerProvider.class, authorizeLatch1)));
 
         final SUBSCRIBE fullMqtt5Subscribe = TestMessageUtil.createFullMqtt5Subscribe();
 
@@ -462,7 +467,8 @@ public class PluginAuthorizerServiceImplTest {
         final ClientAuthorizers extensionClientAuthorizers =
                 channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getExtensionClientAuthorizers();
         assertNotNull(extensionClientAuthorizers);
-        assertEquals(1, extensionClientAuthorizers.getSubscriptionAuthorizersMap().size());
+        assertEquals(
+                1, extensionClientAuthorizers.getSubscriptionAuthorizersMap().size());
     }
 
     @Test
@@ -472,8 +478,10 @@ public class PluginAuthorizerServiceImplTest {
         final CountDownLatch authorizeLatch1 = new CountDownLatch(3);
 
         when(authorizers.areAuthorizersAvailable()).thenReturn(true);
-        when(authorizers.getAuthorizerProviderMap()).thenReturn(ImmutableMap.of("extension1",
-                getTestAuthorizerProvider(TestAuthorizerDisconnectProvider.class, authorizeLatch1)));
+        when(authorizers.getAuthorizerProviderMap())
+                .thenReturn(ImmutableMap.of(
+                        "extension1",
+                        getTestAuthorizerProvider(TestAuthorizerDisconnectProvider.class, authorizeLatch1)));
 
         final SUBSCRIBE fullMqtt5Subscribe = TestMessageUtil.createFullMqtt5Subscribe();
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
@@ -485,7 +493,8 @@ public class PluginAuthorizerServiceImplTest {
         final ClientAuthorizers extensionClientAuthorizers =
                 channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getExtensionClientAuthorizers();
         assertNotNull(extensionClientAuthorizers);
-        assertEquals(1, extensionClientAuthorizers.getSubscriptionAuthorizersMap().size());
+        assertEquals(
+                1, extensionClientAuthorizers.getSubscriptionAuthorizersMap().size());
 
         await().pollInterval(Duration.ofMillis(25)).until(() -> {
             if (channel.isActive()) {
@@ -503,8 +512,10 @@ public class PluginAuthorizerServiceImplTest {
         final CountDownLatch authorizeLatch1 = new CountDownLatch(3);
 
         when(authorizers.areAuthorizersAvailable()).thenReturn(true);
-        when(authorizers.getAuthorizerProviderMap()).thenReturn(ImmutableMap.of("extension1",
-                getTestAuthorizerProvider(TestAuthorizerDisconnectProvider.class, authorizeLatch1)));
+        when(authorizers.getAuthorizerProviderMap())
+                .thenReturn(ImmutableMap.of(
+                        "extension1",
+                        getTestAuthorizerProvider(TestAuthorizerDisconnectProvider.class, authorizeLatch1)));
 
         final SUBSCRIBE fullMqtt5Subscribe = TestMessageUtil.createFullMqtt5Subscribe();
 
@@ -517,7 +528,8 @@ public class PluginAuthorizerServiceImplTest {
         final ClientAuthorizers extensionClientAuthorizers =
                 channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getExtensionClientAuthorizers();
         assertNotNull(extensionClientAuthorizers);
-        assertEquals(1, extensionClientAuthorizers.getSubscriptionAuthorizersMap().size());
+        assertEquals(
+                1, extensionClientAuthorizers.getSubscriptionAuthorizersMap().size());
 
         await().pollInterval(Duration.ofMillis(25)).until(() -> {
             if (channel.isActive()) {
@@ -547,12 +559,10 @@ public class PluginAuthorizerServiceImplTest {
     }
 
     private AuthorizerProvider getTestAuthorizerProvider(
-            final @NotNull Class<?> clazz,
-            final @NotNull CountDownLatch countDownLatch) throws Exception {
-        final Class<?> providerClass =
-                IsolatedExtensionClassloaderUtil.loadClass(temporaryFolder.toPath(), clazz);
-        return (AuthorizerProvider) providerClass.getDeclaredConstructor(CountDownLatch.class)
-                .newInstance(countDownLatch);
+            final @NotNull Class<?> clazz, final @NotNull CountDownLatch countDownLatch) throws Exception {
+        final Class<?> providerClass = IsolatedExtensionClassloaderUtil.loadClass(temporaryFolder.toPath(), clazz);
+        return (AuthorizerProvider)
+                providerClass.getDeclaredConstructor(CountDownLatch.class).newInstance(countDownLatch);
     }
 
     private @NotNull HiveMQExtension getHiveMQExtension() {

@@ -21,15 +21,14 @@ import com.hivemq.HiveMQEdgeMain;
 import com.hivemq.configuration.EnvironmentVariables;
 import com.hivemq.configuration.SystemProperties;
 import com.hivemq.util.ManifestUtils;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Christoph Schäbel
@@ -81,9 +80,12 @@ public class SystemInformationImpl implements SystemInformation {
             final @Nullable File modulesFolder,
             final @Nullable File licenseFolder,
             final @Nullable File pulseTokenLocation) {
-        final String refreshInterval = getSystemPropertyOrEnvironmentVariable(SystemProperties.CONFIG_REFRESH_INTERVAL, EnvironmentVariables.CONFIG_REFRESH_INTERVAL);
-        final String configWriteable = getSystemPropertyOrEnvironmentVariable(SystemProperties.CONFIG_WRITEABLE, EnvironmentVariables.CONFIG_WRITEABLE);
-        final String configFragmentBase64ZipString = getSystemPropertyOrEnvironmentVariable(SystemProperties.CONFIG_FRAGMENT_BASE64ZIP, EnvironmentVariables.CONFIG_FRAGMENT_BASE64ZIP);
+        final String refreshInterval = getSystemPropertyOrEnvironmentVariable(
+                SystemProperties.CONFIG_REFRESH_INTERVAL, EnvironmentVariables.CONFIG_REFRESH_INTERVAL);
+        final String configWriteable = getSystemPropertyOrEnvironmentVariable(
+                SystemProperties.CONFIG_WRITEABLE, EnvironmentVariables.CONFIG_WRITEABLE);
+        final String configFragmentBase64ZipString = getSystemPropertyOrEnvironmentVariable(
+                SystemProperties.CONFIG_FRAGMENT_BASE64ZIP, EnvironmentVariables.CONFIG_FRAGMENT_BASE64ZIP);
         this.usePathOfRunningJar = usePathOfRunningJar;
         this.embedded = embedded;
         this.configFolder = configFolder;
@@ -95,8 +97,12 @@ public class SystemInformationImpl implements SystemInformation {
         this.pulseTokenFolder = pulseTokenLocation;
         this.runningSince = System.currentTimeMillis();
         this.configRefreshIntervalInMs = Long.parseLong(Objects.requireNonNullElse(refreshInterval, "-1"));
-        this.configWriteable = Boolean.parseBoolean((configWriteable == null || configWriteable.isEmpty()) ? "true" : configWriteable );
-        this.configFragmentBase64Zip = Boolean.parseBoolean((configFragmentBase64ZipString == null || configFragmentBase64ZipString.isEmpty()) ? "false" : configFragmentBase64ZipString );
+        this.configWriteable =
+                Boolean.parseBoolean((configWriteable == null || configWriteable.isEmpty()) ? "true" : configWriteable);
+        this.configFragmentBase64Zip = Boolean.parseBoolean(
+                (configFragmentBase64ZipString == null || configFragmentBase64ZipString.isEmpty())
+                        ? "false"
+                        : configFragmentBase64ZipString);
         processorCount = getPhysicalProcessorCount();
     }
 
@@ -115,16 +121,10 @@ public class SystemInformationImpl implements SystemInformation {
         configFolder = Objects.requireNonNullElseGet(
                 configFolder,
                 () -> setUpHiveMQFolder(
-                        SystemProperties.CONFIG_FOLDER,
-                        EnvironmentVariables.CONFIG_FOLDER,
-                        "conf",
-                        false
-                )
-        );
+                        SystemProperties.CONFIG_FOLDER, EnvironmentVariables.CONFIG_FOLDER, "conf", false));
 
         final String secondaryConfigFolderName = getSystemPropertyOrEnvironmentVariable(
-                SystemProperties.CONFIG_FOLDER_SECONDARY,
-                EnvironmentVariables.CONFIG_FOLDER_SECONDARY);
+                SystemProperties.CONFIG_FOLDER_SECONDARY, EnvironmentVariables.CONFIG_FOLDER_SECONDARY);
 
         if (secondaryConfigFolderName == null) {
             secondaryConfigFolder = configFolder;
@@ -135,21 +135,13 @@ public class SystemInformationImpl implements SystemInformation {
                             SystemProperties.CONFIG_FOLDER_SECONDARY,
                             EnvironmentVariables.CONFIG_FOLDER_SECONDARY,
                             "conf",
-                            false
-                    )
-            );
+                            false));
         }
 
         licenseFolder = Objects.requireNonNullElseGet(
                 licenseFolder,
                 () -> setUpHiveMQFolder(
-                        SystemProperties.LICENSE_FOLDER,
-                        EnvironmentVariables.LICENSE_FOLDER,
-                        "license",
-                        false
-                )
-        );
-
+                        SystemProperties.LICENSE_FOLDER, EnvironmentVariables.LICENSE_FOLDER, "license", false));
 
         logFolder = setUpHiveMQFolder(SystemProperties.LOG_FOLDER, EnvironmentVariables.LOG_FOLDER, "log", !embedded);
         // Set log folder property for logger-xml-config
@@ -157,22 +149,15 @@ public class SystemInformationImpl implements SystemInformation {
 
         dataFolder = Objects.requireNonNullElseGet(
                 dataFolder,
-                () -> setUpHiveMQFolder(
-                        SystemProperties.DATA_FOLDER,
-                        EnvironmentVariables.DATA_FOLDER,
-                        "data",
-                        true
-                )
-        );
+                () -> setUpHiveMQFolder(SystemProperties.DATA_FOLDER, EnvironmentVariables.DATA_FOLDER, "data", true));
 
-        pulseTokenFolder = Objects.requireNonNullElseGet(pulseTokenFolder,
+        pulseTokenFolder = Objects.requireNonNullElseGet(
+                pulseTokenFolder,
                 () -> setUpHiveMQFolder(
                         SystemProperties.PULSE_TOKEN_FOLDER,
                         EnvironmentVariables.PULSE_TOKEN_FOLDER,
                         new File(dataFolder, "pulsetoken").getAbsolutePath(),
-                        true
-                )
-        );
+                        true));
 
         pluginFolder = Objects.requireNonNullElseGet(
                 pluginFolder,
@@ -180,19 +165,12 @@ public class SystemInformationImpl implements SystemInformation {
                         SystemProperties.EXTENSIONS_FOLDER,
                         EnvironmentVariables.EXTENSION_FOLDER,
                         "extensions",
-                        !embedded
-                )
-        );
+                        !embedded));
 
         modulesFolder = Objects.requireNonNullElseGet(
                 modulesFolder,
                 () -> setUpHiveMQFolder(
-                        SystemProperties.MODULES_FOLDER,
-                        EnvironmentVariables.MODULES_FOLDER,
-                        "modules",
-                        !embedded
-                )
-        );
+                        SystemProperties.MODULES_FOLDER, EnvironmentVariables.MODULES_FOLDER, "modules", !embedded));
     }
 
     private void setHivemqVersion() {
@@ -226,7 +204,6 @@ public class SystemInformationImpl implements SystemInformation {
     public @NotNull File getConfigFolder() {
         return configFolder;
     }
-
 
     @Override
     public @NotNull File getSecondaryHiveMQHomeFolder() {
@@ -336,7 +313,7 @@ public class SystemInformationImpl implements SystemInformation {
             homeFolder = findAbsoluteAndRelative(home);
             log.info("HiveMQ home directory: {}", homeFolder.getAbsolutePath());
 
-            //setting system property to support the deprecated PathUtils in the SPI
+            // setting system property to support the deprecated PathUtils in the SPI
             System.setProperty(SystemProperties.HIVEMQ_HOME, homeFolder.getAbsolutePath());
 
         } else if (usePathOfRunningJar) {
@@ -360,7 +337,8 @@ public class SystemInformationImpl implements SystemInformation {
     private void usePathOfRunningJarAsHomeFolder() {
         final File pathOfRunningJar = getPathOfRunningJar();
         if (!embedded) {
-            log.warn("No {} property or {} environment variable was set. Using {}",
+            log.warn(
+                    "No {} property or {} environment variable was set. Using {}",
                     SystemProperties.HIVEMQ_HOME,
                     EnvironmentVariables.HIVEMQ_HOME,
                     pathOfRunningJar.getAbsolutePath());
@@ -369,9 +347,13 @@ public class SystemInformationImpl implements SystemInformation {
     }
 
     private @NotNull File getPathOfRunningJar() {
-        final String decode =
-                URLDecoder.decode(HiveMQEdgeGateway.class.getProtectionDomain().getCodeSource().getLocation().getPath(),
-                        StandardCharsets.UTF_8);
+        final String decode = URLDecoder.decode(
+                HiveMQEdgeGateway.class
+                        .getProtectionDomain()
+                        .getCodeSource()
+                        .getLocation()
+                        .getPath(),
+                StandardCharsets.UTF_8);
         final String path = decode.substring(0, decode.lastIndexOf('/') + 1);
         return new File(path);
     }

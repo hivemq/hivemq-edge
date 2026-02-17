@@ -15,18 +15,17 @@
  */
 package com.hivemq.mqttsn.handler.sleep;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqttsn.MqttsnClientConnection;
 import com.hivemq.mqttsn.MqttsnConnectionHelper;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slj.mqtt.sn.wire.version1_2.payload.MqttsnDisconnect;
-
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 
 @Singleton
 @ChannelHandler.Sharable
@@ -35,18 +34,19 @@ public class SleepHandler extends SimpleChannelInboundHandler<MqttsnDisconnect> 
     private static final Logger log = LoggerFactory.getLogger(SleepHandler.class);
 
     @Inject
-    public SleepHandler() {
-    }
+    public SleepHandler() {}
 
     @Override
-    protected void channelRead0(
-            final @NotNull ChannelHandlerContext ctx, final @NotNull MqttsnDisconnect msg) throws Exception {
+    protected void channelRead0(final @NotNull ChannelHandlerContext ctx, final @NotNull MqttsnDisconnect msg)
+            throws Exception {
 
         final MqttsnClientConnection clientConnection = MqttsnConnectionHelper.getConnection(ctx);
         clientConnection.proposeSleep();
         log.trace("Device {} has requested to go to sleep for {}", clientConnection.getClientId(), msg.getDuration());
         clientConnection.setClientSessionExpiryInterval(Long.valueOf(msg.getDuration()));
-        clientConnection.getChannel().writeAndFlush(
-                MqttsnConnectionHelper.getMessageFactoryForConnection(clientConnection).createDisconnect());
+        clientConnection
+                .getChannel()
+                .writeAndFlush(MqttsnConnectionHelper.getMessageFactoryForConnection(clientConnection)
+                        .createDisconnect());
     }
 }

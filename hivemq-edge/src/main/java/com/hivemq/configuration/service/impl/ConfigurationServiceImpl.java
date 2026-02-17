@@ -35,11 +35,6 @@ import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
 import com.hivemq.configuration.service.UsageTrackingConfigurationService;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.Writer;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
@@ -48,6 +43,10 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Stream;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The implementation of the {@link ConfigurationService}
@@ -72,7 +71,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     private final @NotNull InternalConfigurationService internalConfigurationService;
     private @Nullable ConfigFileReaderWriter configFileReaderWriter;
     private final @NotNull ReadWriteLock lock = new ReentrantReadWriteLock();
-
 
     public ConfigurationServiceImpl(
             final @NotNull ListenerConfigurationService listenerConfigurationService,
@@ -192,14 +190,14 @@ public class ConfigurationServiceImpl implements ConfigurationService {
             final @NotNull Class<T> type, final @NotNull T instance, final @Nullable Class<?>... ifs) {
 
         if (configFileReaderWriter == null) {
-            //-- This is the initial loading phase from the XML through the configurators
+            // -- This is the initial loading phase from the XML through the configurators
             // --back to the config services, so do not proxy this else it will lead to a loop
             return instance;
         } else {
             final InvocationHandler handler = (proxyIn, method, args) -> {
-                final boolean mutator = method.getName().startsWith("set") ||
-                        method.getName().startsWith("add") ||
-                        method.getName().startsWith("remove");
+                final boolean mutator = method.getName().startsWith("set")
+                        || method.getName().startsWith("add")
+                        || method.getName().startsWith("remove");
                 final Lock presentLock = mutator ? lock.writeLock() : lock.readLock();
                 try {
                     presentLock.lock();

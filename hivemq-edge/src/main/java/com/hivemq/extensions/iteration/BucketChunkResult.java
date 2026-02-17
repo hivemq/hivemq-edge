@@ -23,13 +23,13 @@ import org.jetbrains.annotations.Nullable;
  */
 public class BucketChunkResult<V> {
 
-
     private final @NotNull V value;
     private final boolean finished;
     private final @Nullable String lastKey;
     private final int bucketIndex;
 
-    public BucketChunkResult(final @NotNull V value, final boolean finished, final @Nullable String lastKey, final int bucketIndex) {
+    public BucketChunkResult(
+            final @NotNull V value, final boolean finished, final @Nullable String lastKey, final int bucketIndex) {
         this.value = value;
         this.finished = finished;
         this.lastKey = lastKey;
@@ -55,11 +55,10 @@ public class BucketChunkResult<V> {
 
     @Override
     public String toString() {
-        return "BucketChunkResult{" +
-                "value=" + value +
-                ", finished=" + finished +
-                ", lastKey='" + lastKey + '\'' +
-                ", bucketIndex=" + bucketIndex +
-                '}';
+        return "BucketChunkResult{" + "value="
+                + value + ", finished="
+                + finished + ", lastKey='"
+                + lastKey + '\'' + ", bucketIndex="
+                + bucketIndex + '}';
     }
 }

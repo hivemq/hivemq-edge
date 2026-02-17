@@ -15,15 +15,14 @@
  */
 package com.hivemq.extensions.services.admin;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 import com.hivemq.extension.sdk.api.services.admin.AdminService;
 import com.hivemq.extension.sdk.api.services.admin.LicenseEdition;
 import com.hivemq.extension.sdk.api.services.admin.LicenseInformation;
 import com.hivemq.extension.sdk.api.services.admin.LifecycleStage;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Lukas Brandl
@@ -63,5 +62,4 @@ public class AdminServiceImpl implements AdminService {
     public LicenseInformation getLicenseInformation() {
         return new LicenseInformationImpl(LicenseEdition.COMMUNITY);
     }
-
 }

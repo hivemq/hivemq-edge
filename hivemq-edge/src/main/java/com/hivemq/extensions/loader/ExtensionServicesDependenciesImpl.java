@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.loader;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableMap;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.events.EventRegistry;
 import com.hivemq.extension.sdk.api.services.ManagedExtensionExecutorService;
 import com.hivemq.extension.sdk.api.services.admin.AdminService;
@@ -34,9 +32,9 @@ import com.hivemq.extension.sdk.api.services.subscription.SubscriptionStore;
 import com.hivemq.extensions.HiveMQExtensions;
 import com.hivemq.extensions.services.executor.GlobalManagedExtensionExecutorService;
 import com.hivemq.extensions.services.executor.ManagedExecutorServicePerExtension;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class ExtensionServicesDependenciesImpl implements ExtensionServicesDependencies {
@@ -122,10 +120,8 @@ public class ExtensionServicesDependenciesImpl implements ExtensionServicesDepen
     }
 
     @NotNull
-    private ManagedExecutorServicePerExtension getManagedExecutorService(
-            final @NotNull ClassLoader classLoader) {
-        return new ManagedExecutorServicePerExtension(globalManagedExtensionExecutorService,
-                classLoader,
-                hiveMQExtensions);
+    private ManagedExecutorServicePerExtension getManagedExecutorService(final @NotNull ClassLoader classLoader) {
+        return new ManagedExecutorServicePerExtension(
+                globalManagedExtensionExecutorService, classLoader, hiveMQExtensions);
     }
 }

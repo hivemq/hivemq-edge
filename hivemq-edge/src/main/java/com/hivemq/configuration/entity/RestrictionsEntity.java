@@ -15,16 +15,14 @@
  */
 package com.hivemq.configuration.entity;
 
-import org.jetbrains.annotations.NotNull;
+import static com.hivemq.configuration.service.RestrictionsConfigurationService.*;
 
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
-
 import java.util.Objects;
-
-import static com.hivemq.configuration.service.RestrictionsConfigurationService.*;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Dominik Obermaier
@@ -75,16 +73,17 @@ public class RestrictionsEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final RestrictionsEntity that = (RestrictionsEntity) o;
-        return Objects.equals(getMaxConnections(), that.getMaxConnections()) &&
-                Objects.equals(getMaxClientIdLength(), that.getMaxClientIdLength()) &&
-                Objects.equals(getMaxTopicLength(), that.getMaxTopicLength()) &&
-                Objects.equals(getNoConnectIdleTimeout(), that.getNoConnectIdleTimeout()) &&
-                Objects.equals(getIncomingBandwidthThrottling(), that.getIncomingBandwidthThrottling());
+        return Objects.equals(getMaxConnections(), that.getMaxConnections())
+                && Objects.equals(getMaxClientIdLength(), that.getMaxClientIdLength())
+                && Objects.equals(getMaxTopicLength(), that.getMaxTopicLength())
+                && Objects.equals(getNoConnectIdleTimeout(), that.getNoConnectIdleTimeout())
+                && Objects.equals(getIncomingBandwidthThrottling(), that.getIncomingBandwidthThrottling());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getMaxConnections(),
+        return Objects.hash(
+                getMaxConnections(),
                 getMaxClientIdLength(),
                 getMaxTopicLength(),
                 getNoConnectIdleTimeout(),

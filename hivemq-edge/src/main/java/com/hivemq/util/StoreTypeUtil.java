@@ -15,10 +15,10 @@
  */
 package com.hivemq.util;
 
-import org.jetbrains.annotations.NotNull;
-
 import static com.hivemq.configuration.reader.BridgeExtractor.KEYSTORE_TYPE_JKS;
 import static com.hivemq.configuration.reader.BridgeExtractor.KEYSTORE_TYPE_PKCS12;
+
+import org.jetbrains.annotations.NotNull;
 
 public class StoreTypeUtil {
 

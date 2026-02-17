@@ -15,6 +15,10 @@
  */
 package com.hivemq.api.resources.impl;
 
+import static com.hivemq.edge.HiveMQEdgeConstants.CONFIGURATION_EXPORT_ENABLED;
+import static com.hivemq.edge.HiveMQEdgeConstants.MUTABLE_CONFIGURAION_ENABLED;
+import static com.hivemq.edge.HiveMQEdgeConstants.VERSION_PROPERTY;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.model.components.EnvironmentProperties;
@@ -42,15 +46,10 @@ import com.hivemq.http.core.UsernamePasswordRoles;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static com.hivemq.edge.HiveMQEdgeConstants.CONFIGURATION_EXPORT_ENABLED;
-import static com.hivemq.edge.HiveMQEdgeConstants.MUTABLE_CONFIGURAION_ENABLED;
-import static com.hivemq.edge.HiveMQEdgeConstants.VERSION_PROPERTY;
+import org.jetbrains.annotations.NotNull;
 
 public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
 
@@ -90,40 +89,40 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
 
     @Override
     public @NotNull Response getConfiguration() {
-        return Response.ok(new GatewayConfiguration(getEnvironmentProperties(),
-                getCloudLink(),
-                getGitHubLink(),
-                getDocumentationLink(),
-                getFirstUse(),
-                getDashboardCTAs(),
-                getResources(),
-                getModules(),
-                getExtensions(),
-                hivemqId.get(),
-                configurationService.usageTrackingConfiguration().isUsageTrackingEnabled(),
-                configurationService.apiConfiguration().getPreLoginNotice())).build();
+        return Response.ok(new GatewayConfiguration(
+                        getEnvironmentProperties(),
+                        getCloudLink(),
+                        getGitHubLink(),
+                        getDocumentationLink(),
+                        getFirstUse(),
+                        getDashboardCTAs(),
+                        getResources(),
+                        getModules(),
+                        getExtensions(),
+                        hivemqId.get(),
+                        configurationService.usageTrackingConfiguration().isUsageTrackingEnabled(),
+                        configurationService.apiConfiguration().getPreLoginNotice()))
+                .build();
     }
 
     @Override
     public @NotNull Response getNotifications() {
         final ImmutableList.Builder<@NotNull Notification> notifs = new ImmutableList.Builder<>();
         final Optional<Long> lastUpdate = configurationService.getLastUpdateTime();
-        if (!configurationService.gatewayConfiguration().isMutableConfigurationEnabled() &&
-                configurationService.gatewayConfiguration().isConfigurationExportEnabled() &&
-                lastUpdate.isPresent() &&
-                lastUpdate.get() > System.currentTimeMillis() - (60000 * 5)) {
-            notifs.add(new Notification(Notification.LEVEL.NOTICE,
+        if (!configurationService.gatewayConfiguration().isMutableConfigurationEnabled()
+                && configurationService.gatewayConfiguration().isConfigurationExportEnabled()
+                && lastUpdate.isPresent()
+                && lastUpdate.get() > System.currentTimeMillis() - (60000 * 5)) {
+            notifs.add(new Notification(
+                    Notification.LEVEL.NOTICE,
                     "Configuration Has Changed",
                     "The gateway configuration has recently been modify. In order to persist these changes across runtimes, please export your configuration for use in your containers.",
-                    new Link("Download XML Configuration",
-                            "/configuration-download",
-                            null,
-                            null,
-                            null,
-                            Boolean.FALSE)));
+                    new Link(
+                            "Download XML Configuration", "/configuration-download", null, null, null, Boolean.FALSE)));
         }
         if (ApiUtils.hasDefaultUser(configurationService.apiConfiguration().getUserList())) {
-            notifs.add(new Notification(Notification.LEVEL.WARNING,
+            notifs.add(new Notification(
+                    Notification.LEVEL.WARNING,
                     "Default Credentials Need Changing!",
                     "Your gateway access is configured to use the default username/password combination. This is a security risk. Please ensure you modify your access credentials in your config.xml file.",
                     null));
@@ -133,27 +132,30 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
 
     @Override
     public @NotNull Response getCapabilities() {
-        return Response.ok(new CapabilityList(capabilityService.getList()
-                .getItems()
-                .stream()
-                .map(FrontendResourceImpl::fromModel)
-                .toList())).build();
+        return Response.ok(new CapabilityList(capabilityService.getList().getItems().stream()
+                        .map(FrontendResourceImpl::fromModel)
+                        .toList()))
+                .build();
     }
 
     private @NotNull LinkList getDashboardCTAs() {
-        return new LinkList(List.of(new Link("Connect My First Device",
+        return new LinkList(List.of(
+                new Link(
+                        "Connect My First Device",
                         "./protocol-adapters?from=dashboard-cta",
                         LoremIpsum.generate(40),
                         null,
                         null,
                         Boolean.FALSE),
-                new Link("Connect To My MQTT Broker",
+                new Link(
+                        "Connect To My MQTT Broker",
                         "./bridges?from=dashboard-cta",
                         LoremIpsum.generate(40),
                         null,
                         null,
                         Boolean.FALSE),
-                new Link("Learn More",
+                new Link(
+                        "Learn More",
                         "resources?from=dashboard-cta",
                         LoremIpsum.generate(40),
                         null,
@@ -178,7 +180,8 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
     }
 
     private @NotNull LinkList getResources() {
-        return new LinkList(hiveMQEdgeRemoteConfigurationService.getConfiguration().getResources());
+        return new LinkList(
+                hiveMQEdgeRemoteConfigurationService.getConfiguration().getResources());
     }
 
     private @NotNull ExtensionList getExtensions() {
@@ -190,10 +193,11 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
     }
 
     private @NotNull FirstUseInformation getFirstUse() {
-        //-- First use is determined by zero configuration
-        final boolean firstUse = configurationService.bridgeExtractor().getBridges().isEmpty() &&
-                protocolAdapterManager.getProtocolAdapters().isEmpty();
-        //-- Populate login prefill
+        // -- First use is determined by zero configuration
+        final boolean firstUse =
+                configurationService.bridgeExtractor().getBridges().isEmpty()
+                        && protocolAdapterManager.getProtocolAdapters().isEmpty();
+        // -- Populate login prefill
         String prefillUsername = null;
         String prefillPassword = null;
         String firstUseTitle = null;
@@ -209,7 +213,8 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
     }
 
     private @NotNull EnvironmentProperties getEnvironmentProperties() {
-        return new EnvironmentProperties(Map.of(VERSION_PROPERTY,
+        return new EnvironmentProperties(Map.of(
+                VERSION_PROPERTY,
                 systemInformation.getHiveMQVersion(),
                 MUTABLE_CONFIGURAION_ENABLED,
                 String.valueOf(configurationService.gatewayConfiguration().isMutableConfigurationEnabled()),

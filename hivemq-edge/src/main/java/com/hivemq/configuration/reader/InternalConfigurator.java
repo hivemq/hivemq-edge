@@ -18,11 +18,8 @@ package com.hivemq.configuration.reader;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.InternalConfigEntity;
 import com.hivemq.configuration.entity.OptionEntity;
-import com.hivemq.configuration.entity.bridge.MqttBridgeEntity;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.List;
 
 public class InternalConfigurator implements Configurator<InternalConfigEntity> {
 
@@ -37,7 +34,7 @@ public class InternalConfigurator implements Configurator<InternalConfigEntity> 
 
     @Override
     public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
-        if(initialized && hasChanged(this.configEntity, config.getInternal())) {
+        if (initialized && hasChanged(this.configEntity, config.getInternal())) {
             return true;
         }
         return false;

@@ -15,19 +15,18 @@
  */
 package com.hivemq.extensions.packets.general;
 
-import com.google.common.collect.ImmutableList;
-import org.jetbrains.annotations.NotNull;
-import com.hivemq.extension.sdk.api.packets.general.UserProperties;
-import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
-import nl.jqno.equalsverifier.EqualsVerifier;
-import nl.jqno.equalsverifier.Warning;
-import org.junit.jupiter.api.Test;
-
-import java.util.List;
-import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.google.common.collect.ImmutableList;
+import com.hivemq.extension.sdk.api.packets.general.UserProperties;
+import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
+import java.util.List;
+import java.util.Optional;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Florian Limpöck

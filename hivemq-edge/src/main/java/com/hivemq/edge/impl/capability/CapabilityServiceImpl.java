@@ -18,12 +18,11 @@ package com.hivemq.edge.impl.capability;
 import com.hivemq.api.model.capabilities.Capability;
 import com.hivemq.api.model.capabilities.CapabilityList;
 import com.hivemq.edge.HiveMQCapabilityService;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Via this Service components can add capabilities to Edge, which can be retrieved via REST API.
@@ -34,8 +33,7 @@ public class CapabilityServiceImpl implements HiveMQCapabilityService {
     private final @NotNull Set<Capability> capabilities = new HashSet<>();
 
     @Inject
-    public CapabilityServiceImpl() {
-    }
+    public CapabilityServiceImpl() {}
 
     @Override
     public @NotNull synchronized CapabilityList getList() {

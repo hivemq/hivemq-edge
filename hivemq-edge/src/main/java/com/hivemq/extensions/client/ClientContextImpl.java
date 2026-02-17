@@ -18,7 +18,6 @@ package com.hivemq.extensions.client;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.Interceptor;
 import com.hivemq.extension.sdk.api.interceptor.disconnect.DisconnectInboundInterceptor;
 import com.hivemq.extension.sdk.api.interceptor.disconnect.DisconnectOutboundInterceptor;
@@ -41,10 +40,10 @@ import com.hivemq.extension.sdk.api.interceptor.unsubscribe.UnsubscribeInboundIn
 import com.hivemq.extension.sdk.api.packets.auth.ModifiableDefaultPermissions;
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensions;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -382,8 +381,8 @@ public class ClientContextImpl {
         return subackOutbounds;
     }
 
-    public @Immutable @NotNull List<@NotNull UnsubscribeInboundInterceptor> getUnsubscribeInboundInterceptorsOfExtension(
-            final @NotNull ClassLoader extensionClassLoader) {
+    public @Immutable @NotNull List<@NotNull UnsubscribeInboundInterceptor>
+            getUnsubscribeInboundInterceptorsOfExtension(final @NotNull ClassLoader extensionClassLoader) {
 
         return filterInterceptorsOfExtension(unsubscribeInbounds, extensionClassLoader);
     }
@@ -412,8 +411,8 @@ public class ClientContextImpl {
         return disconnectInbounds;
     }
 
-    public @Immutable @NotNull List<@NotNull DisconnectOutboundInterceptor> getDisconnectOutboundInterceptorsOfExtension(
-            final @NotNull ClassLoader extensionClassLoader) {
+    public @Immutable @NotNull List<@NotNull DisconnectOutboundInterceptor>
+            getDisconnectOutboundInterceptorsOfExtension(final @NotNull ClassLoader extensionClassLoader) {
 
         return filterInterceptorsOfExtension(disconnectOutbounds, extensionClassLoader);
     }
@@ -518,8 +517,7 @@ public class ClientContextImpl {
     }
 
     private <T extends Interceptor> @NotNull ImmutableList<T> filterInterceptorsOfExtension(
-            final @NotNull ImmutableList<T> interceptors,
-            final @NotNull ClassLoader extensionClassloader) {
+            final @NotNull ImmutableList<T> interceptors, final @NotNull ClassLoader extensionClassloader) {
 
         final ImmutableList.Builder<T> builder = ImmutableList.builder();
         for (int i = 0; i < interceptors.size(); i++) {
@@ -532,8 +530,7 @@ public class ClientContextImpl {
     }
 
     private <T extends Interceptor> @NotNull ImmutableList<T> removeInterceptorsOfExtension(
-            final @NotNull ImmutableList<T> interceptors,
-            final @NotNull ClassLoader extensionClassloader) {
+            final @NotNull ImmutableList<T> interceptors, final @NotNull ClassLoader extensionClassloader) {
 
         final ImmutableList.Builder<T> builder = ImmutableList.builder();
         for (int i = 0; i < interceptors.size(); i++) {
@@ -546,7 +543,8 @@ public class ClientContextImpl {
     }
 
     private int getExtensionPriority(final @NotNull Object object) {
-        final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(object.getClass().getClassLoader());
+        final HiveMQExtension extension =
+                hiveMQExtensions.getExtensionForClassloader(object.getClass().getClassLoader());
         if (extension != null) {
             return extension.getPriority();
         } else {

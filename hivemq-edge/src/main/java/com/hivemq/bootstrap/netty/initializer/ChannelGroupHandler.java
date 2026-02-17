@@ -15,10 +15,10 @@
  */
 package com.hivemq.bootstrap.netty.initializer;
 
-import org.jetbrains.annotations.NotNull;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.group.ChannelGroup;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
@@ -37,5 +37,4 @@ public class ChannelGroupHandler extends ChannelInboundHandlerAdapter {
         ctx.fireChannelActive();
         ctx.pipeline().remove(this);
     }
-
 }

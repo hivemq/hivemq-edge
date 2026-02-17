@@ -15,17 +15,17 @@
  */
 package com.hivemq.bootstrap.netty.initializer;
 
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.SSL_CLIENT_CERTIFICATE_HANDLER;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.SSL_PARAMETER_HANDLER;
+
 import com.hivemq.bootstrap.netty.ChannelDependencies;
-import com.hivemq.configuration.service.entity.Tls;
 import com.hivemq.configuration.service.entity.MqttTlsWebsocketListener;
-import org.jetbrains.annotations.NotNull;
+import com.hivemq.configuration.service.entity.Tls;
 import com.hivemq.security.exception.SslException;
 import com.hivemq.security.ssl.SslFactory;
 import com.hivemq.websocket.WebSocketInitializer;
 import io.netty.channel.Channel;
-
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.SSL_CLIENT_CERTIFICATE_HANDLER;
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.SSL_PARAMETER_HANDLER;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
@@ -35,9 +35,10 @@ public class TlsWebsocketChannelInitializer extends AbstractTlsChannelInitialize
     @NotNull
     private final MqttTlsWebsocketListener mqttTlsWebsocketListener;
 
-    public TlsWebsocketChannelInitializer(final @NotNull ChannelDependencies channelDependencies,
-                                          final @NotNull MqttTlsWebsocketListener mqttTlsWebsocketListener,
-                                          final @NotNull SslFactory sslFactory) {
+    public TlsWebsocketChannelInitializer(
+            final @NotNull ChannelDependencies channelDependencies,
+            final @NotNull MqttTlsWebsocketListener mqttTlsWebsocketListener,
+            final @NotNull SslFactory sslFactory) {
 
         super(channelDependencies, mqttTlsWebsocketListener, sslFactory);
         this.mqttTlsWebsocketListener = mqttTlsWebsocketListener;
@@ -48,7 +49,8 @@ public class TlsWebsocketChannelInitializer extends AbstractTlsChannelInitialize
         super.addSpecialHandlers(ch);
 
         final Tls.ClientAuthMode authMode = mqttTlsWebsocketListener.getTls().getClientAuthMode();
-        final String handlerName = !Tls.ClientAuthMode.NONE.equals(authMode) ? SSL_CLIENT_CERTIFICATE_HANDLER : SSL_PARAMETER_HANDLER;
+        final String handlerName =
+                !Tls.ClientAuthMode.NONE.equals(authMode) ? SSL_CLIENT_CERTIFICATE_HANDLER : SSL_PARAMETER_HANDLER;
         new WebSocketInitializer(mqttTlsWebsocketListener).addHandlers(ch, handlerName);
     }
 }

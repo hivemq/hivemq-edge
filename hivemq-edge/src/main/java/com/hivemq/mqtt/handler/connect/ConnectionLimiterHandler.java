@@ -17,7 +17,6 @@ package com.hivemq.mqtt.handler.connect;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.metrics.gauges.OpenConnectionsGauge;
 import com.hivemq.mqtt.handler.connack.MqttConnacker;
 import com.hivemq.mqtt.message.connect.CONNECT;
@@ -25,11 +24,11 @@ import com.hivemq.mqtt.message.reason.Mqtt5ConnAckReasonCode;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A {@link ChannelHandler} which is responsible for limiting the concurrent connections
@@ -65,11 +64,12 @@ public class ConnectionLimiterHandler extends ChannelInboundHandlerAdapter {
         final long configuredCount = restrictionsConfigurationService.maxConnections();
 
         if (configuredCount > RestrictionsConfigurationService.UNLIMITED_CONNECTIONS) {
-            // If we use the max connections configured in the config file, we set the Threshold to 90% of the maximum allowed connections.
+            // If we use the max connections configured in the config file, we set the Threshold to 90% of the maximum
+            // allowed connections.
             this.warnThreshold = 90 * configuredCount / 100;
             this.maxConnections = configuredCount;
         } else {
-            //This means we are dealing with unlimited connections so we can remove this handler from the pipeline
+            // This means we are dealing with unlimited connections so we can remove this handler from the pipeline
             ctx.pipeline().remove(this);
         }
 
@@ -85,8 +85,12 @@ public class ConnectionLimiterHandler extends ChannelInboundHandlerAdapter {
             final long currentCount = openConnectionsGauge.getValue();
 
             if (currentCount > maxConnections) {
-                log.warn("The connection limit ({}) is reached. ClientID ({}) connection denied.", maxConnections, connect.getClientIdentifier());
-                mqttConnacker.connackError(ctx.channel(),
+                log.warn(
+                        "The connection limit ({}) is reached. ClientID ({}) connection denied.",
+                        maxConnections,
+                        connect.getClientIdentifier());
+                mqttConnacker.connackError(
+                        ctx.channel(),
                         null, // logged on warn
                         "The configured maximum amount of connections is reached",
                         Mqtt5ConnAckReasonCode.QUOTA_EXCEEDED,
@@ -112,4 +116,3 @@ public class ConnectionLimiterHandler extends ChannelInboundHandlerAdapter {
         return maxConnections;
     }
 }
-

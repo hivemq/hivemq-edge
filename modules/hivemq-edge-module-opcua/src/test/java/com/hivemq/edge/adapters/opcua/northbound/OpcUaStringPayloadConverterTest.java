@@ -15,11 +15,16 @@
  */
 package com.hivemq.edge.adapters.opcua.northbound;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.protocols.ProtocolAdapterStopOutputImpl;
+import java.time.Instant;
+import java.util.stream.Stream;
 import org.assertj.core.groups.Tuple;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
@@ -32,12 +37,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.time.Instant;
-import java.util.stream.Stream;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 @Disabled("String payload conversion is disabled atm")
 class OpcUaStringPayloadConverterTest extends AbstractOpcUaPayloadConverterTest {
 
@@ -45,11 +44,13 @@ class OpcUaStringPayloadConverterTest extends AbstractOpcUaPayloadConverterTest 
     public static final byte @NotNull [] TEST_BYTES = {1, 2, 3, 4, 5};
 
     private static @NotNull Stream<Arguments> provideBaseTypes() {
-        return Stream.of(Arguments.of("Boolean", NodeIds.Boolean, true, "true"),
+        return Stream.of(
+                Arguments.of("Boolean", NodeIds.Boolean, true, "true"),
                 Arguments.of("Byte", NodeIds.Byte, 0, "0"),
                 Arguments.of("Byte", NodeIds.Byte, 255, "255"),
                 Arguments.of("ByteString", NodeIds.ByteString, new ByteString(TEST_BYTES), new String(TEST_BYTES)),
-                Arguments.of("DateTime",
+                Arguments.of(
+                        "DateTime",
                         NodeIds.DateTime,
                         new DateTime(Instant.ofEpochMilli(1683724156000L)),
                         "2023-05-10T13:09:16Z"),
@@ -79,19 +80,21 @@ class OpcUaStringPayloadConverterTest extends AbstractOpcUaPayloadConverterTest 
             final @NotNull String name,
             final @NotNull NodeId typeId,
             final @NotNull Object serverValue,
-            final @NotNull String expectedValue) throws Exception {
+            final @NotNull String expectedValue)
+            throws Exception {
         final String nodeId =
                 opcUaServerExtension.getTestNamespace().addNode("Test" + name + "Node", typeId, () -> serverValue, 999);
 
         final OpcUaProtocolAdapter protocolAdapter = createAndStartAdapter(nodeId);
-        assertEquals(ProtocolAdapterState.ConnectionStatus.CONNECTED,
+        assertEquals(
+                ProtocolAdapterState.ConnectionStatus.CONNECTED,
                 protocolAdapter.getProtocolAdapterState().getConnectionStatus());
         final var received = expectAdapterPublish();
-        protocolAdapter.stop(new ProtocolAdapterStopInput() {
-        }, new ProtocolAdapterStopOutputImpl());
+        protocolAdapter.stop(new ProtocolAdapterStopInput() {}, new ProtocolAdapterStopOutputImpl());
 
         assertThat(received).extractingByKey(nodeId).satisfies(dataPoints -> {
-            assertThat(dataPoints).hasSize(1)
+            assertThat(dataPoints)
+                    .hasSize(1)
                     .extracting(DataPoint::getTagName, DataPoint::getTagValue)
                     .containsExactly(Tuple.tuple(nodeId, expectedValue));
         });

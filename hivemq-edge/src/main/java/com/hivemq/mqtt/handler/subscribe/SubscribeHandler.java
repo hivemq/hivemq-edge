@@ -15,16 +15,15 @@
  */
 package com.hivemq.mqtt.handler.subscribe;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.handler.IncomingSubscribeHandler;
 import com.hivemq.mqtt.handler.connect.SubscribeMessageBarrier;
 import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -41,7 +40,8 @@ public class SubscribeHandler extends SimpleChannelInboundHandler<SUBSCRIBE> {
     }
 
     @Override
-    protected void channelRead0(final @NotNull ChannelHandlerContext ctx, final @NotNull SUBSCRIBE msg) throws Exception {
+    protected void channelRead0(final @NotNull ChannelHandlerContext ctx, final @NotNull SUBSCRIBE msg)
+            throws Exception {
         SubscribeMessageBarrier.addToPipeline(ctx);
         incomingSubscribeHandler.interceptOrDelegate(ctx, msg);
     }

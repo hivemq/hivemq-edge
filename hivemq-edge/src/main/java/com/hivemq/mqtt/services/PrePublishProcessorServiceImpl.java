@@ -15,7 +15,6 @@
  */
 package com.hivemq.mqtt.services;
 
-
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.bootstrap.factories.HandlerResult;
@@ -25,12 +24,11 @@ import com.hivemq.mqtt.handler.publish.PublishingResult;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import jakarta.inject.Inject;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class PrePublishProcessorServiceImpl implements PrePublishProcessorService {
 
@@ -61,34 +59,41 @@ public class PrePublishProcessorServiceImpl implements PrePublishProcessorServic
                 prePublishProcessorHandling.get(0).apply(publish, sender, executorService, messageDroppedService);
         for (int i = 1; i < prePublishProcessorHandling.size(); i++) {
             final PrePublishProcessorHandling handler = prePublishProcessorHandling.get(i);
-            future = Futures.transformAsync(future, result -> {
-                if (Objects.requireNonNull(result).isPublishAlreadyHandled()) {
-                    return Futures.immediateFuture(result);
-                }
+            future = Futures.transformAsync(
+                    future,
+                    result -> {
+                        if (Objects.requireNonNull(result).isPublishAlreadyHandled()) {
+                            return Futures.immediateFuture(result);
+                        }
 
-                //FIXME: check when modifiedPublish can be null
-                if (result.isPreventPublish() || result.getModifiedPublish() == null) {
-                    //skip further processing and return the previous result
-                    return Futures.immediateFuture(result);
-                } else {
-                    return handler.apply(result.getModifiedPublish(), sender, executorService, messageDroppedService);
-                }
-            }, executorService);
+                        // FIXME: check when modifiedPublish can be null
+                        if (result.isPreventPublish() || result.getModifiedPublish() == null) {
+                            // skip further processing and return the previous result
+                            return Futures.immediateFuture(result);
+                        } else {
+                            return handler.apply(
+                                    result.getModifiedPublish(), sender, executorService, messageDroppedService);
+                        }
+                    },
+                    executorService);
         }
 
-        return Futures.transformAsync(future, handlerResult -> {
-            if (Objects.requireNonNull(handlerResult).isPublishAlreadyHandled()) {
-                return Futures.immediateFuture(PublishingResult.DELIVERED);
-            }
+        return Futures.transformAsync(
+                future,
+                handlerResult -> {
+                    if (Objects.requireNonNull(handlerResult).isPublishAlreadyHandled()) {
+                        return Futures.immediateFuture(PublishingResult.DELIVERED);
+                    }
 
-            final PUBLISH modifiedPublish = handlerResult.getModifiedPublish();
-            if (handlerResult.isPreventPublish() || modifiedPublish == null) {
-                return Futures.immediateFuture(PublishingResult.failed(handlerResult.getReasonString(),
-                        handlerResult.getAckReasonCode()));
-            } else {
-                // already merged the original and modified Publish.
-                return internalPublishService.publish(modifiedPublish, executorService, sender);
-            }
-        }, executorService);
+                    final PUBLISH modifiedPublish = handlerResult.getModifiedPublish();
+                    if (handlerResult.isPreventPublish() || modifiedPublish == null) {
+                        return Futures.immediateFuture(PublishingResult.failed(
+                                handlerResult.getReasonString(), handlerResult.getAckReasonCode()));
+                    } else {
+                        // already merged the original and modified Publish.
+                        return internalPublishService.publish(modifiedPublish, executorService, sender);
+                    }
+                },
+                executorService);
     }
 }

@@ -24,5 +24,6 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface PluginTask {
 
-    @NotNull ClassLoader getPluginClassLoader();
+    @NotNull
+    ClassLoader getPluginClassLoader();
 }

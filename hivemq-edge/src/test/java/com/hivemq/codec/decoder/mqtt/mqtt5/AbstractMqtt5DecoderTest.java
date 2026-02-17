@@ -15,14 +15,14 @@
  */
 package com.hivemq.codec.decoder.mqtt.mqtt5;
 
-import org.jetbrains.annotations.NotNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import com.hivemq.mqtt.message.Message;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import io.netty.buffer.ByteBuf;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 abstract class AbstractMqtt5DecoderTest extends AbstractMqttDecoderTest {
     @BeforeEach

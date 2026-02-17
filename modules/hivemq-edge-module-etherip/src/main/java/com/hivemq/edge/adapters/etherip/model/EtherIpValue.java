@@ -20,5 +20,4 @@ public interface EtherIpValue {
     String getTagAdress();
 
     Object getValue();
-
 }

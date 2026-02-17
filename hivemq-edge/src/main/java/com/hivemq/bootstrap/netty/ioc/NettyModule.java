@@ -19,15 +19,14 @@ import com.hivemq.bootstrap.netty.ChannelInitializerFactory;
 import com.hivemq.bootstrap.netty.ChannelInitializerFactoryImpl;
 import com.hivemq.bootstrap.netty.NettyTcpConfiguration;
 import com.hivemq.bootstrap.netty.NettyUdpConfiguration;
-import org.jetbrains.annotations.NotNull;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.GlobalEventExecutor;
-
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 @Module
 public abstract class NettyModule {
@@ -40,17 +39,19 @@ public abstract class NettyModule {
 
     @Provides
     @Singleton
-    static @NotNull NettyTcpConfiguration nettyTcpConfiguration(NettyTcpConfigurationProvider nettyTcpConfigurationProvider) {
+    static @NotNull NettyTcpConfiguration nettyTcpConfiguration(
+            NettyTcpConfigurationProvider nettyTcpConfigurationProvider) {
         return nettyTcpConfigurationProvider.get();
     }
 
     @Provides
     @Singleton
-    static @NotNull NettyUdpConfiguration nettyUdpConfiguration(NettyUdpConfigurationProvider nettyUdpConfigurationProvider) {
+    static @NotNull NettyUdpConfiguration nettyUdpConfiguration(
+            NettyUdpConfigurationProvider nettyUdpConfigurationProvider) {
         return nettyUdpConfigurationProvider.get();
     }
 
     @Binds
-    public abstract ChannelInitializerFactory channelInitializerFactory(ChannelInitializerFactoryImpl channelInitializerFactory);
-
+    public abstract ChannelInitializerFactory channelInitializerFactory(
+            ChannelInitializerFactoryImpl channelInitializerFactory);
 }

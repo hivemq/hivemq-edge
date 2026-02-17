@@ -15,12 +15,11 @@
  */
 package com.hivemq.bootstrap;
 
-import com.hivemq.exceptions.UnrecoverableException;
-import org.junit.jupiter.api.Test;
-
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import static org.assertj.core.api.Assertions.assertThat;
+
+import com.hivemq.exceptions.UnrecoverableException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Christoph Schäbel
@@ -31,8 +30,8 @@ public class HiveMQExceptionHandlerBootstrapTest {
     public void test_unrecoverableException_false() {
         AtomicBoolean invoked = new AtomicBoolean(false);
         HiveMQExceptionHandlerBootstrap.setTerminator(() -> invoked.set(true));
-        HiveMQExceptionHandlerBootstrap.handleUncaughtException(Thread.currentThread(),
-                new UnrecoverableException(false));
+        HiveMQExceptionHandlerBootstrap.handleUncaughtException(
+                Thread.currentThread(), new UnrecoverableException(false));
         assertThat(invoked.get()).isTrue();
     }
 
@@ -40,8 +39,8 @@ public class HiveMQExceptionHandlerBootstrapTest {
     public void test_unrecoverableException_true() {
         AtomicBoolean invoked = new AtomicBoolean(false);
         HiveMQExceptionHandlerBootstrap.setTerminator(() -> invoked.set(true));
-        HiveMQExceptionHandlerBootstrap.handleUncaughtException(Thread.currentThread(),
-                new UnrecoverableException(true));
+        HiveMQExceptionHandlerBootstrap.handleUncaughtException(
+                Thread.currentThread(), new UnrecoverableException(true));
         assertThat(invoked.get()).isTrue();
     }
 
@@ -49,8 +48,8 @@ public class HiveMQExceptionHandlerBootstrapTest {
     public void test_unrecoverableException_wrapped() {
         AtomicBoolean invoked = new AtomicBoolean(false);
         HiveMQExceptionHandlerBootstrap.setTerminator(() -> invoked.set(true));
-        HiveMQExceptionHandlerBootstrap.handleUncaughtException(Thread.currentThread(),
-                new RuntimeException("test", new UnrecoverableException(true)));
+        HiveMQExceptionHandlerBootstrap.handleUncaughtException(
+                Thread.currentThread(), new RuntimeException("test", new UnrecoverableException(true)));
         assertThat(invoked.get()).isFalse();
     }
 }

@@ -15,6 +15,14 @@
  */
 package com.hivemq.edge.adapters.plc4x.impl;
 
+import static com.hivemq.edge.adapters.plc4x.impl.Plc4xDataUtils.convertObject;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.math.BigInteger;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import org.apache.plc4x.java.spi.values.PlcBOOL;
 import org.apache.plc4x.java.spi.values.PlcBYTE;
 import org.apache.plc4x.java.spi.values.PlcCHAR;
@@ -40,15 +48,6 @@ import org.apache.plc4x.java.spi.values.PlcWCHAR;
 import org.apache.plc4x.java.spi.values.PlcWORD;
 import org.apache.plc4x.java.spi.values.PlcWSTRING;
 import org.junit.jupiter.api.Test;
-
-import java.math.BigInteger;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-
-import static com.hivemq.edge.adapters.plc4x.impl.Plc4xDataUtils.convertObject;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Plc4xDataUtilsTest {
 
@@ -124,14 +123,16 @@ public class Plc4xDataUtilsTest {
     @Test
     public void whenConvertLword_thenReturnUnsignedNumber() {
         assertEquals(BigInteger.ZERO, convertObject(new PlcLWORD(BigInteger.ZERO)));
-        assertEquals(new BigInteger("18446744073709551615"),
+        assertEquals(
+                new BigInteger("18446744073709551615"),
                 convertObject(new PlcLWORD(new BigInteger("18446744073709551615"))));
     }
 
     @Test
     public void whenConvertULint_thenReturnUnsignedNumber() {
         assertEquals(BigInteger.ZERO, convertObject(new PlcULINT(BigInteger.ZERO)));
-        assertEquals(new BigInteger("18446744073709551615"),
+        assertEquals(
+                new BigInteger("18446744073709551615"),
                 convertObject(new PlcULINT(new BigInteger("18446744073709551615"))));
     }
 
@@ -176,7 +177,8 @@ public class Plc4xDataUtilsTest {
 
     @Test
     public void whenConvertWString_thenReturnUnicodeString() {
-        assertEquals("abdefghhijklmnopqrstuvwxyzABDEFGHHIJKLMNOPQRSTUVWXYZ0123456789",
+        assertEquals(
+                "abdefghhijklmnopqrstuvwxyzABDEFGHHIJKLMNOPQRSTUVWXYZ0123456789",
                 convertObject(new PlcWSTRING("abdefghhijklmnopqrstuvwxyzABDEFGHHIJKLMNOPQRSTUVWXYZ0123456789")));
         assertEquals("@/;:-?=!\\\"$$%\r\n", convertObject(new PlcWSTRING("@/;:-?=!\\\"$$%\r\n")));
         assertEquals("Ɣʝ", convertObject(new PlcWSTRING("Ɣʝ")));
@@ -184,7 +186,8 @@ public class Plc4xDataUtilsTest {
 
     @Test
     public void whenConvertString_thenReturnAsciiString() {
-        assertEquals("abdefghhijklmnopqrstuvwxyzABDEFGHHIJKLMNOPQRSTUVWXYZ0123456789",
+        assertEquals(
+                "abdefghhijklmnopqrstuvwxyzABDEFGHHIJKLMNOPQRSTUVWXYZ0123456789",
                 convertObject(new PlcWSTRING("abdefghhijklmnopqrstuvwxyzABDEFGHHIJKLMNOPQRSTUVWXYZ0123456789")));
         assertEquals("@/;:-?=!\\\"$$%\r\n", convertObject(new PlcWSTRING("@/;:-?=!\\\"$$%\r\n")));
     }
@@ -195,11 +198,19 @@ public class Plc4xDataUtilsTest {
         final Duration expected1 = Duration.ofDays(0);
         assertEquals(0L, convertObject(new PlcTIME(expected1)));
 
-        final Duration expectedMax = Duration.ofDays(24).plusHours(20).plusMinutes(31).plusSeconds(23).plusMillis(647);
+        final Duration expectedMax = Duration.ofDays(24)
+                .plusHours(20)
+                .plusMinutes(31)
+                .plusSeconds(23)
+                .plusMillis(647);
         assertEquals(expectedMax.toMillis(), convertObject(new PlcTIME(expectedMax)));
 
-        final Duration expectedMin =
-                Duration.ofDays(0).minusDays(24).minusHours(20).minusMinutes(31).minusSeconds(23).minusMillis(648);
+        final Duration expectedMin = Duration.ofDays(0)
+                .minusDays(24)
+                .minusHours(20)
+                .minusMinutes(31)
+                .minusSeconds(23)
+                .minusMillis(648);
         assertEquals(expectedMin.toMillis(), convertObject(new PlcTIME(expectedMin)));
     }
 
@@ -213,34 +224,49 @@ public class Plc4xDataUtilsTest {
     @Test
     public void whenConvertDate_thenReturnIsoDate() {
         assertEquals("2020-04-13", convertObject(new PlcDATE(LocalDate.of(2020, 4, 13))));
-        assertEquals("1990-01-01", convertObject(new PlcDATE(LocalDate.of(1990, 1, 1)))); //min
-        assertEquals("2168-12-31", convertObject(new PlcDATE(LocalDate.of(2168, 12, 31)))); //max
+        assertEquals("1990-01-01", convertObject(new PlcDATE(LocalDate.of(1990, 1, 1)))); // min
+        assertEquals("2168-12-31", convertObject(new PlcDATE(LocalDate.of(2168, 12, 31)))); // max
     }
 
     @Test
     public void whenConvertTimeOfDay_thenReturnIsoTimeWithMillis() {
-        assertEquals("01:23:45.678", convertObject(new PlcTIME_OF_DAY(LocalTime.of(1,23, 45).plusNanos(678000000))));
-        assertEquals("00:00:00.000", convertObject(new PlcTIME_OF_DAY(LocalTime.of(0,0,0))));
-        assertEquals("23:59:59.999", convertObject(new PlcTIME_OF_DAY(LocalTime.of(23,59,59).plusNanos(999000000))));
+        assertEquals(
+                "01:23:45.678",
+                convertObject(new PlcTIME_OF_DAY(LocalTime.of(1, 23, 45).plusNanos(678000000))));
+        assertEquals("00:00:00.000", convertObject(new PlcTIME_OF_DAY(LocalTime.of(0, 0, 0))));
+        assertEquals(
+                "23:59:59.999",
+                convertObject(new PlcTIME_OF_DAY(LocalTime.of(23, 59, 59).plusNanos(999000000))));
     }
 
     @Test
     public void whenConvertLtimeOfDay_thenReturnIsoTimeWithNanos() {
-        assertEquals("01:23:45.678901234", convertObject(new PlcLTIME_OF_DAY(LocalTime.of(1,23, 45).plusNanos(678901234))));
-        assertEquals("00:00:00.000", convertObject(new PlcLTIME_OF_DAY(LocalTime.of(0,0,0))));
-        assertEquals("23:59:59.999999999", convertObject(new PlcTIME_OF_DAY(LocalTime.of(23,59,59).plusNanos(999999999))));
+        assertEquals(
+                "01:23:45.678901234",
+                convertObject(new PlcLTIME_OF_DAY(LocalTime.of(1, 23, 45).plusNanos(678901234))));
+        assertEquals("00:00:00.000", convertObject(new PlcLTIME_OF_DAY(LocalTime.of(0, 0, 0))));
+        assertEquals(
+                "23:59:59.999999999",
+                convertObject(new PlcTIME_OF_DAY(LocalTime.of(23, 59, 59).plusNanos(999999999))));
     }
 
     @Test
     public void whenConvertDateAndTime_thenReturnIsoTimeWithMillis() {
-        assertEquals("2089-12-31T23:59:59.999", convertObject(new PlcDATE_AND_TIME(LocalDateTime.of(2089, 12,31, 23, 59, 59, 999000000))));
-        assertEquals("1970-01-01T00:00:00.000", convertObject(new PlcDATE_AND_TIME(LocalDateTime.of(1970, 1,1, 0, 0, 0, 0))));
+        assertEquals(
+                "2089-12-31T23:59:59.999",
+                convertObject(new PlcDATE_AND_TIME(LocalDateTime.of(2089, 12, 31, 23, 59, 59, 999000000))));
+        assertEquals(
+                "1970-01-01T00:00:00.000",
+                convertObject(new PlcDATE_AND_TIME(LocalDateTime.of(1970, 1, 1, 0, 0, 0, 0))));
     }
 
     @Test
     public void whenConvertLdateAndTime_thenReturnIsoTimeWithNanos() {
-        assertEquals("2262-04-11T23:47:16.854775807", convertObject(new PlcLDATE_AND_TIME(LocalDateTime.of(2262, 4,11, 23, 47, 16, 854775807))));
-        assertEquals("1970-01-01T00:00:00.000", convertObject(new PlcLDATE_AND_TIME(LocalDateTime.of(1970, 1,1, 0, 0, 0, 0))));
+        assertEquals(
+                "2262-04-11T23:47:16.854775807",
+                convertObject(new PlcLDATE_AND_TIME(LocalDateTime.of(2262, 4, 11, 23, 47, 16, 854775807))));
+        assertEquals(
+                "1970-01-01T00:00:00.000",
+                convertObject(new PlcLDATE_AND_TIME(LocalDateTime.of(1970, 1, 1, 0, 0, 0, 0))));
     }
-
 }

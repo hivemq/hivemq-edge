@@ -23,5 +23,4 @@ public interface ApiRoles {
     String SUPER = "SUPER";
     String ADMIN = "ADMIN";
     String USER = "USER";
-
 }

@@ -15,11 +15,17 @@
  */
 package com.hivemq.codec.encoder.mqtt5;
 
+import static com.hivemq.codec.encoder.mqtt5.Mqtt5MessageEncoderUtil.encodeNullableProperty;
+import static com.hivemq.codec.encoder.mqtt5.Mqtt5MessageEncoderUtil.nullablePropertyEncodedLength;
+import static com.hivemq.codec.encoder.mqtt5.MqttMessageEncoderUtil.encodedLengthWithHeader;
+import static com.hivemq.codec.encoder.mqtt5.MqttMessageEncoderUtil.encodedPacketLength;
+import static com.hivemq.codec.encoder.mqtt5.MqttVariableByteInteger.MAXIMUM_PACKET_SIZE_LIMIT;
+import static com.hivemq.mqtt.message.mqtt5.MessageProperties.REASON_STRING;
+
 import com.google.common.base.Preconditions;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.encoder.MqttEncoder;
 import com.hivemq.configuration.service.SecurityConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.event.PublishDroppedEvent;
 import com.hivemq.mqtt.message.Message;
 import com.hivemq.mqtt.message.connack.CONNACK;
@@ -32,17 +38,10 @@ import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.reason.Mqtt5ReasonCode;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.EncoderException;
+import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Objects;
-
-import static com.hivemq.codec.encoder.mqtt5.Mqtt5MessageEncoderUtil.encodeNullableProperty;
-import static com.hivemq.codec.encoder.mqtt5.Mqtt5MessageEncoderUtil.nullablePropertyEncodedLength;
-import static com.hivemq.codec.encoder.mqtt5.MqttMessageEncoderUtil.encodedLengthWithHeader;
-import static com.hivemq.codec.encoder.mqtt5.MqttMessageEncoderUtil.encodedPacketLength;
-import static com.hivemq.codec.encoder.mqtt5.MqttVariableByteInteger.MAXIMUM_PACKET_SIZE_LIMIT;
-import static com.hivemq.mqtt.message.mqtt5.MessageProperties.REASON_STRING;
 
 /**
  * Base class for encoders of MQTT messages with omissible User Properties.
@@ -79,21 +78,32 @@ abstract class Mqtt5MessageWithUserPropertiesEncoder<T extends Message> implemen
 
             final long maximumPacketSize = calculateMaxMessageSize(clientConnection);
 
-            //PUBLISH must not omit any properties
+            // PUBLISH must not omit any properties
             if (msg instanceof PUBLISH) {
                 // The maximal packet size exceeds the clients accepted packet size
                 clientConnection.getChannel().pipeline().fireUserEventTriggered(new PublishDroppedEvent((PUBLISH) msg));
-                messageDroppedService.publishMaxPacketSizeExceeded(clientId, ((PUBLISH) msg).getTopic(), ((PUBLISH) msg).getQoS().getQosNumber(), maximumPacketSize, msg.getEncodedLength());
+                messageDroppedService.publishMaxPacketSizeExceeded(
+                        clientId,
+                        ((PUBLISH) msg).getTopic(),
+                        ((PUBLISH) msg).getQoS().getQosNumber(),
+                        maximumPacketSize,
+                        msg.getEncodedLength());
                 if (log.isTraceEnabled()) {
-                    log.trace("Could not encode publish message for client ({}): Maximum packet size limit exceeded", clientId);
+                    log.trace(
+                            "Could not encode publish message for client ({}): Maximum packet size limit exceeded",
+                            clientId);
                 }
                 return;
             }
 
             if (msg.getPropertyLength() < 0 && msg.getEncodedLength() > maximumPacketSize) {
-                messageDroppedService.messageMaxPacketSizeExceeded(clientId, msg.getType().name(), maximumPacketSize, msg.getEncodedLength());
+                messageDroppedService.messageMaxPacketSizeExceeded(
+                        clientId, msg.getType().name(), maximumPacketSize, msg.getEncodedLength());
                 if (log.isTraceEnabled()) {
-                    log.trace("Could not encode message of type {} for client {}: Packet too large", msg.getType(), clientId);
+                    log.trace(
+                            "Could not encode message of type {} for client {}: Packet too large",
+                            msg.getType(),
+                            clientId);
                 }
                 throw new EncoderException("Maximum packet size exceeded");
             }
@@ -109,10 +119,12 @@ abstract class Mqtt5MessageWithUserPropertiesEncoder<T extends Message> implemen
         int propertyLength = calculatePropertyLength(msg);
 
         if (!securityConfigurationService.allowRequestProblemInformation()
-                || !Objects.requireNonNullElse(clientConnection.getRequestProblemInformation(), Mqtt5CONNECT.DEFAULT_PROBLEM_INFORMATION_REQUESTED)) {
+                || !Objects.requireNonNullElse(
+                        clientConnection.getRequestProblemInformation(),
+                        Mqtt5CONNECT.DEFAULT_PROBLEM_INFORMATION_REQUESTED)) {
 
-            //Must omit user properties and reason string for any other packet than PUBLISH, CONNACK, DISCONNECT
-            //if no problem information requested.
+            // Must omit user properties and reason string for any other packet than PUBLISH, CONNACK, DISCONNECT
+            // if no problem information requested.
             final boolean mustOmit = !(msg instanceof PUBLISH || msg instanceof CONNACK || msg instanceof DISCONNECT);
 
             if (mustOmit) {
@@ -156,7 +168,8 @@ abstract class Mqtt5MessageWithUserPropertiesEncoder<T extends Message> implemen
 
     abstract void encode(@NotNull T message, @NotNull ByteBuf out);
 
-    public int remainingLength(final @NotNull T message, final int remainingLengthWithoutProperties, final int propertyLength) {
+    public int remainingLength(
+            final @NotNull T message, final int remainingLengthWithoutProperties, final int propertyLength) {
         return remainingLengthWithoutProperties + encodedPropertyLengthWithHeader(message, propertyLength);
     }
 
@@ -219,7 +232,8 @@ abstract class Mqtt5MessageWithUserPropertiesEncoder<T extends Message> implemen
     /**
      * Base class for encoders of MQTT messages with an omissible Reason String and omissible User Properties.
      */
-    abstract static class Mqtt5MessageWithReasonStringEncoder<M extends MqttMessageWithUserProperties.MqttMessageWithReasonString>
+    abstract static class Mqtt5MessageWithReasonStringEncoder<
+                    M extends MqttMessageWithUserProperties.MqttMessageWithReasonString>
             extends Mqtt5MessageWithUserPropertiesEncoder<M> {
 
         Mqtt5MessageWithReasonStringEncoder(
@@ -262,7 +276,8 @@ abstract class Mqtt5MessageWithUserPropertiesEncoder<T extends Message> implemen
         }
 
         @Override
-        @NotNull Mqtt5UserProperties getUserProperties(final @NotNull M message) {
+        @NotNull
+        Mqtt5UserProperties getUserProperties(final @NotNull M message) {
             return message.getUserProperties();
         }
     }
@@ -271,7 +286,8 @@ abstract class Mqtt5MessageWithUserPropertiesEncoder<T extends Message> implemen
      * Base class for encoders of MQTT messages with an omissible Reason Code, an omissible Reason String and omissible
      * User Properties. The Reason Code is omitted if it is the default and the property length is 0.
      */
-    abstract static class Mqtt5MessageWithOmissibleReasonCodeEncoder<M extends MqttMessageWithUserProperties.MqttMessageWithReasonCode<R>, R extends Mqtt5ReasonCode>
+    abstract static class Mqtt5MessageWithOmissibleReasonCodeEncoder<
+                    M extends MqttMessageWithUserProperties.MqttMessageWithReasonCode<R>, R extends Mqtt5ReasonCode>
             extends Mqtt5MessageWithReasonStringEncoder<M> {
 
         Mqtt5MessageWithOmissibleReasonCodeEncoder(
@@ -328,11 +344,9 @@ abstract class Mqtt5MessageWithUserPropertiesEncoder<T extends Message> implemen
             }
         }
 
-        void encodeAdditionalVariableHeader(final @NotNull M message, final @NotNull ByteBuf out) {
-        }
+        void encodeAdditionalVariableHeader(final @NotNull M message, final @NotNull ByteBuf out) {}
 
-        void encodeAdditionalProperties(final @NotNull M message, final @NotNull ByteBuf out) {
-        }
+        void encodeAdditionalProperties(final @NotNull M message, final @NotNull ByteBuf out) {}
 
         @Override
         final int encodedPropertyLengthWithHeader(final @NotNull M message, final int propertyLength) {
@@ -348,7 +362,9 @@ abstract class Mqtt5MessageWithUserPropertiesEncoder<T extends Message> implemen
      * String and omissible User Properties. The Reason Code is omitted if it is the default and the property length is
      * 0.
      */
-    abstract static class Mqtt5MessageWithIdAndOmissibleReasonCodeEncoder<M extends MqttMessageWithUserProperties.MqttMessageWithIdAndReasonCode<R>, R extends Mqtt5ReasonCode>
+    abstract static class Mqtt5MessageWithIdAndOmissibleReasonCodeEncoder<
+                    M extends MqttMessageWithUserProperties.MqttMessageWithIdAndReasonCode<R>,
+                    R extends Mqtt5ReasonCode>
             extends Mqtt5MessageWithOmissibleReasonCodeEncoder<M, R> {
 
         Mqtt5MessageWithIdAndOmissibleReasonCodeEncoder(

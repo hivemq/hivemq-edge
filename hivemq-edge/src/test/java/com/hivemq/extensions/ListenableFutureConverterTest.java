@@ -15,27 +15,24 @@
  */
 package com.hivemq.extensions;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import util.TestException;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.function.Function;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Florian Limpöck
@@ -45,6 +42,7 @@ public class ListenableFutureConverterTest {
 
     @Mock
     private RetainedMessagePersistence retainedMessagePersistence;
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -55,14 +53,14 @@ public class ListenableFutureConverterTest {
 
         final ListenableFuture<Void> voidListenableFuture = SettableFuture.create();
 
-        final CompletableFuture<Void> voidCompletableFuture = ListenableFutureConverter.toCompletable(voidListenableFuture, MoreExecutors.directExecutor());
+        final CompletableFuture<Void> voidCompletableFuture =
+                ListenableFutureConverter.toCompletable(voidListenableFuture, MoreExecutors.directExecutor());
 
         assertFalse(voidCompletableFuture.isCancelled());
         assertFalse(voidListenableFuture.isCancelled());
 
         voidCompletableFuture.cancel(true);
         assertTrue(voidListenableFuture.isCancelled());
-
     }
 
     @Test
@@ -72,14 +70,14 @@ public class ListenableFutureConverterTest {
 
         final Function<Void, String> functionMock = Mockito.mock(Function.class);
 
-        final CompletableFuture<String> voidCompletableFuture = ListenableFutureConverter.toCompletable(voidListenableFuture, functionMock, false, MoreExecutors.directExecutor());
+        final CompletableFuture<String> voidCompletableFuture = ListenableFutureConverter.toCompletable(
+                voidListenableFuture, functionMock, false, MoreExecutors.directExecutor());
 
         when(functionMock.apply(null)).thenThrow(new RuntimeException("TEST"));
 
         voidListenableFuture.set(null);
 
         assertTrue(voidCompletableFuture.isCompletedExceptionally());
-
     }
 
     @Test
@@ -89,9 +87,10 @@ public class ListenableFutureConverterTest {
 
         final Function<Void, String> functionMock = Mockito.mock(Function.class);
 
-        final CompletableFuture<String> voidCompletableFuture = ListenableFutureConverter.toCompletable(voidListenableFuture, functionMock, true, MoreExecutors.directExecutor());
+        final CompletableFuture<String> voidCompletableFuture = ListenableFutureConverter.toCompletable(
+                voidListenableFuture, functionMock, true, MoreExecutors.directExecutor());
 
-        //apply must not be called, if result nullable and null
+        // apply must not be called, if result nullable and null
         when(functionMock.apply(any(Void.class))).thenThrow(new RuntimeException("TEST"));
 
         voidListenableFuture.set(null);
@@ -100,7 +99,6 @@ public class ListenableFutureConverterTest {
         assertFalse(voidCompletableFuture.isCompletedExceptionally());
 
         assertNull(voidCompletableFuture.get());
-
     }
 
     @Test
@@ -110,7 +108,8 @@ public class ListenableFutureConverterTest {
 
         final Function<Integer, String> functionMock = x -> "" + x;
 
-        final CompletableFuture<String> voidCompletableFuture = ListenableFutureConverter.toCompletable(voidListenableFuture, functionMock, true, MoreExecutors.directExecutor());
+        final CompletableFuture<String> voidCompletableFuture = ListenableFutureConverter.toCompletable(
+                voidListenableFuture, functionMock, true, MoreExecutors.directExecutor());
 
         voidListenableFuture.set(5);
 
@@ -118,15 +117,16 @@ public class ListenableFutureConverterTest {
         assertFalse(voidCompletableFuture.isCompletedExceptionally());
 
         assertEquals("5", voidCompletableFuture.get());
-
     }
 
     @Test
-    public void test_conversion_nullable_not_null_result_no_converter() throws ExecutionException, InterruptedException {
+    public void test_conversion_nullable_not_null_result_no_converter()
+            throws ExecutionException, InterruptedException {
 
         final SettableFuture<Integer> voidListenableFuture = SettableFuture.create();
 
-        final CompletableFuture<Integer> voidCompletableFuture = ListenableFutureConverter.toCompletable(voidListenableFuture, MoreExecutors.directExecutor());
+        final CompletableFuture<Integer> voidCompletableFuture =
+                ListenableFutureConverter.toCompletable(voidListenableFuture, MoreExecutors.directExecutor());
 
         voidListenableFuture.set(5);
 
@@ -134,7 +134,6 @@ public class ListenableFutureConverterTest {
         assertFalse(voidCompletableFuture.isCompletedExceptionally());
 
         assertEquals(5, voidCompletableFuture.get().intValue());
-
     }
 
     @Test
@@ -142,7 +141,8 @@ public class ListenableFutureConverterTest {
 
         final SettableFuture<Integer> voidListenableFuture = SettableFuture.create();
 
-        final CompletableFuture<Integer> voidCompletableFuture = ListenableFutureConverter.toCompletable(voidListenableFuture, MoreExecutors.directExecutor());
+        final CompletableFuture<Integer> voidCompletableFuture =
+                ListenableFutureConverter.toCompletable(voidListenableFuture, MoreExecutors.directExecutor());
 
         voidListenableFuture.set(null);
 
@@ -150,7 +150,6 @@ public class ListenableFutureConverterTest {
         assertFalse(voidCompletableFuture.isCompletedExceptionally());
 
         assertNull(voidCompletableFuture.get());
-
     }
 
     @Test
@@ -160,7 +159,8 @@ public class ListenableFutureConverterTest {
 
         final Function<Integer, String> functionMock = x -> "" + x;
 
-        final CompletableFuture<String> voidCompletableFuture = ListenableFutureConverter.toCompletable(voidListenableFuture, functionMock, MoreExecutors.directExecutor());
+        final CompletableFuture<String> voidCompletableFuture = ListenableFutureConverter.toCompletable(
+                voidListenableFuture, functionMock, MoreExecutors.directExecutor());
 
         voidListenableFuture.set(null);
 
@@ -168,7 +168,6 @@ public class ListenableFutureConverterTest {
         assertFalse(voidCompletableFuture.isCompletedExceptionally());
 
         assertNull(voidCompletableFuture.get());
-
     }
 
     @Test
@@ -178,13 +177,11 @@ public class ListenableFutureConverterTest {
 
         final Function<Void, String> functionMock = Mockito.mock(Function.class);
 
-        final CompletableFuture<String> voidCompletableFuture = ListenableFutureConverter.toCompletable(voidListenableFuture, functionMock, MoreExecutors.directExecutor());
+        final CompletableFuture<String> voidCompletableFuture = ListenableFutureConverter.toCompletable(
+                voidListenableFuture, functionMock, MoreExecutors.directExecutor());
 
         voidListenableFuture.setException(TestException.INSTANCE);
 
-        assertThatThrownBy(() -> voidCompletableFuture.get())
-                .isInstanceOf(ExecutionException.class);
-
+        assertThatThrownBy(() -> voidCompletableFuture.get()).isInstanceOf(ExecutionException.class);
     }
-
 }

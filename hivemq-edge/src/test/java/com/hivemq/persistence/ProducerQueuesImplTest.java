@@ -15,19 +15,18 @@
  */
 package com.hivemq.persistence;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.when;
+
+import java.util.Queue;
+import java.util.concurrent.atomic.AtomicLong;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import java.util.Queue;
-import java.util.concurrent.atomic.AtomicLong;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Lukas Brandl
@@ -35,9 +34,12 @@ import static org.mockito.Mockito.when;
 public class ProducerQueuesImplTest {
 
     @Mock
-    @NotNull InFileSingleWriter singleWriterServiceImpl;
+    @NotNull
+    InFileSingleWriter singleWriterServiceImpl;
 
-    @NotNull ProducerQueuesImpl producerQueues;
+    @NotNull
+    ProducerQueuesImpl producerQueues;
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);

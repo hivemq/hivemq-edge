@@ -15,9 +15,8 @@
  */
 package com.hivemq.configuration.info;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.io.File;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Useful information about HiveMQ and the underlying system
@@ -91,7 +90,8 @@ public interface SystemInformation {
     /**
      * @return the modules folder of HiveMQ
      */
-    @NotNull File getModulesFolder();
+    @NotNull
+    File getModulesFolder();
 
     /**
      * @return the timestamp of HiveMQ start

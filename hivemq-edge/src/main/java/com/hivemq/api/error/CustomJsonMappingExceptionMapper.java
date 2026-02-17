@@ -20,12 +20,11 @@ import com.hivemq.api.errors.InvalidInputError;
 import com.hivemq.api.errors.ValidationError;
 import com.hivemq.http.error.Error;
 import com.hivemq.util.ErrorResponseUtil;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 @Priority(1)
 public class CustomJsonMappingExceptionMapper implements ExceptionMapper<JsonMappingException> {
@@ -36,7 +35,8 @@ public class CustomJsonMappingExceptionMapper implements ExceptionMapper<JsonMap
         if (originalMessage != null) {
             return ErrorResponseUtil.errorResponse(new ValidationError(List.of(new Error(originalMessage, null))));
         } else {
-            return ErrorResponseUtil.errorResponse(new InvalidInputError("Unable to parse JSON body, please check the input format."));
+            return ErrorResponseUtil.errorResponse(
+                    new InvalidInputError("Unable to parse JSON body, please check the input format."));
         }
     }
 }

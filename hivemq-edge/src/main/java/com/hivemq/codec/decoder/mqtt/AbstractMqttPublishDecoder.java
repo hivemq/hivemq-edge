@@ -19,15 +19,14 @@ import com.google.common.base.Utf8;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.encoder.mqtt5.Mqtt5PayloadFormatIndicator;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.Message;
 import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import com.hivemq.util.Bytes;
 import com.hivemq.util.ReasonStrings;
 import io.netty.buffer.ByteBuf;
-
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -57,7 +56,8 @@ public abstract class AbstractMqttPublishDecoder<T extends Message> extends Abst
         final int qos = (header & 0b0000_0110) >> 1;
 
         if (qos == 3) {
-            disconnector.disconnect(clientConnection.getChannel(),
+            disconnector.disconnect(
+                    clientConnection.getChannel(),
                     "A client (IP: {}) sent a PUBLISH with an invalid QoS. Disconnecting client.",
                     "Sent a PUBLISH with an invalid QoS",
                     Mqtt5DisconnectReasonCode.MALFORMED_PACKET,
@@ -85,7 +85,8 @@ public abstract class AbstractMqttPublishDecoder<T extends Message> extends Abst
         final boolean dup = Bytes.isBitSet(header, 3);
 
         if (qos == 0 && dup) {
-            disconnector.disconnect(clientConnection.getChannel(),
+            disconnector.disconnect(
+                    clientConnection.getChannel(),
                     "A client (IP: {}) sent a PUBLISH with QoS 0 and DUP set to 1. Disconnecting client.",
                     "Sent a PUBLISH with QoS 0 and DUP set to 1",
                     Mqtt5DisconnectReasonCode.PROTOCOL_ERROR,
@@ -110,7 +111,8 @@ public abstract class AbstractMqttPublishDecoder<T extends Message> extends Abst
         final boolean retained = Bytes.isBitSet(header, 0);
 
         if (retained && !configurationService.mqttConfiguration().retainedMessagesEnabled()) {
-            disconnector.disconnect(clientConnection.getChannel(),
+            disconnector.disconnect(
+                    clientConnection.getChannel(),
                     "A client (IP: {}) sent a PUBLISH with retain set to 1 although retain is not available. Disconnecting client.",
                     "Sent a PUBLISH with retain set to 1 although retain is not available",
                     Mqtt5DisconnectReasonCode.RETAIN_NOT_SUPPORTED,
@@ -137,7 +139,8 @@ public abstract class AbstractMqttPublishDecoder<T extends Message> extends Abst
 
         final int packetIdentifier = buf.readUnsignedShort();
         if (packetIdentifier == 0) {
-            disconnector.disconnect(clientConnection.getChannel(),
+            disconnector.disconnect(
+                    clientConnection.getChannel(),
                     "A client (IP: {}) sent a PUBLISH with QoS > 0 and packet identifier 0. Disconnecting client.",
                     "Sent a PUBLISH with QoS > 0 and packet identifier 0",
                     Mqtt5DisconnectReasonCode.PROTOCOL_ERROR,
@@ -175,7 +178,8 @@ public abstract class AbstractMqttPublishDecoder<T extends Message> extends Abst
             if (payloadFormatIndicator == Mqtt5PayloadFormatIndicator.UTF_8) {
                 if (validatePayloadFormat) {
                     if (!Utf8.isWellFormed(payload)) {
-                        disconnector.disconnect(clientConnection.getChannel(),
+                        disconnector.disconnect(
+                                clientConnection.getChannel(),
                                 "A client (IP: {}) sent a PUBLISH with an invalid UTF-8 payload. This is not allowed. Disconnecting client.",
                                 "Sent a PUBLISH with an invalid UTF-8 payload",
                                 Mqtt5DisconnectReasonCode.PAYLOAD_FORMAT_INVALID,

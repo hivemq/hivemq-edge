@@ -20,8 +20,6 @@ import com.google.common.base.Preconditions;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.InternalConfigurations;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;
 import com.hivemq.http.core.IHttpRequestResponseHandler;
 import com.hivemq.http.error.DefaultExceptionMapper;
@@ -32,12 +30,6 @@ import com.hivemq.http.handlers.WebAppHandler;
 import com.hivemq.http.sun.SunHttpHandlerProxy;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsServer;
-import org.apache.commons.lang3.tuple.Pair;
-import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
-import org.glassfish.jersey.server.ResourceConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -48,6 +40,13 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import org.apache.commons.lang3.tuple.Pair;
+import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
+import org.glassfish.jersey.server.ResourceConfig;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Super simple light-weight jax-rs implementation that backs onto the sun HttpServer
@@ -88,7 +87,7 @@ public class JaxrsHttpServer {
 
                     final long start = System.currentTimeMillis();
 
-                    //timeout connections, default: no timeout
+                    // timeout connections, default: no timeout
                     System.setProperty(MAX_REQ_TIME, "45");
                     System.setProperty(MAX_RESP_TIME, "45");
 
@@ -109,31 +108,33 @@ public class JaxrsHttpServer {
                         bootstrapResources(config, resources);
                         logger.trace("Registered resources in {}ms", System.currentTimeMillis() - startResources);
 
-                        logger.debug("Starting WebServer with protocol '{}' on port {}",
+                        logger.debug(
+                                "Starting WebServer with protocol '{}' on port {}",
                                 config.getProtocol(),
                                 config.getPort());
-                        URI baseUri =
-                                UriBuilder.fromUri(String.format("%s://%s/", config.getProtocol(), config.getHost()))
-                                        .port(config.getPort())
-                                        .build();
+                        URI baseUri = UriBuilder.fromUri(
+                                        String.format("%s://%s/", config.getProtocol(), config.getHost()))
+                                .port(config.getPort())
+                                .build();
 
                         boolean isSecure = JaxrsHttpServerConfiguration.HTTPS_PROTOCOL.equals(config.getProtocol());
 
                         final HttpServer httpServer;
 
                         final long startCreate = System.currentTimeMillis();
-                        //-- Create the server instance, setting the executor service if supplied
+                        // -- Create the server instance, setting the executor service if supplied
                         if (isSecure) {
-                            Preconditions.checkNotNull(config.getSslContext(),
-                                    "When configured with SSL, context must be supplied");
+                            Preconditions.checkNotNull(
+                                    config.getSslContext(), "When configured with SSL, context must be supplied");
                             try {
-                                httpServer = JdkHttpServerFactory.createHttpServer(baseUri,
-                                        resources,
-                                        config.getSslContext(),
-                                        false);
+                                httpServer = JdkHttpServerFactory.createHttpServer(
+                                        baseUri, resources, config.getSslContext(), false);
                                 if (config.getHttpsConfigurator() != null) {
-                                    logger.debug("WebServer configured with SSL [{}] configuration..",
-                                            config.getHttpsConfigurator().getSSLContext().getProtocol());
+                                    logger.debug(
+                                            "WebServer configured with SSL [{}] configuration..",
+                                            config.getHttpsConfigurator()
+                                                    .getSSLContext()
+                                                    .getProtocol());
                                     ((HttpsServer) httpServer).setHttpsConfigurator(config.getHttpsConfigurator());
                                 }
                             } catch (ProcessingException processingException) {
@@ -178,26 +179,26 @@ public class JaxrsHttpServer {
                             httpServer.setExecutor(executorService);
                         }
 
-                        //-- If a static resource path has been supplied in config, ensure we mount it
+                        // -- If a static resource path has been supplied in config, ensure we mount it
                         registerStaticRoot(config, httpServer);
 
-                        registerContext("/app",
-                                new WebAppHandler(objectMapperProvider.getMapper(), "httpd"),
-                                httpServer);
-                        registerContext("/images",
+                        registerContext(
+                                "/app", new WebAppHandler(objectMapperProvider.getMapper(), "httpd"), httpServer);
+                        registerContext(
+                                "/images",
                                 new StaticFileHandler(objectMapperProvider.getMapper(), "httpd/images"),
                                 httpServer);
-                        registerContext("/module/images",
-                                new AlternativeClassloadingStaticFileHandler(objectMapperProvider.getMapper(),
-                                        "httpd/images",
-                                        shutdownHooks),
+                        registerContext(
+                                "/module/images",
+                                new AlternativeClassloadingStaticFileHandler(
+                                        objectMapperProvider.getMapper(), "httpd/images", shutdownHooks),
                                 httpServer);
-
 
                         httpServers.add(httpServer);
                         logger.trace("Registered API server in {}ms", (System.currentTimeMillis() - startRegister));
                         httpServer.start();
-                        logger.info("Started WebServer with protocol '{}' on port {} in {}ms",
+                        logger.info(
+                                "Started WebServer with protocol '{}' on port {} in {}ms",
                                 config.getProtocol(),
                                 config.getPort(),
                                 (System.currentTimeMillis() - start));
@@ -211,22 +212,22 @@ public class JaxrsHttpServer {
     protected void bootstrapResources(
             final @NotNull JaxrsHttpServerConfiguration config, final @NotNull ResourceConfig resources) {
 
-        //-- Provide an Object Mapper either from config (If supplied) or one with reasonable defaults
+        // -- Provide an Object Mapper either from config (If supplied) or one with reasonable defaults
         objectMapperProvider = createObjectMapperProvider(config);
         resources.register(objectMapperProvider, MAX_BINDING_PRIORITY);
 
-        //-- Add the Custom Filter which optionally adds request debug
-//        resources.register(new JaxrsRequestFilter());
+        // -- Add the Custom Filter which optionally adds request debug
+        //        resources.register(new JaxrsRequestFilter());
         resources.register(new JaxrsResponseFilter());
         resources.register(new CorsFilter());
 
-        //-- Register the injectors via a Bridge (Jersey uses HK2 so need to bridge to Guice)
-//        resources.register(new JaxrsInjectorBridge(injector));
+        // -- Register the injectors via a Bridge (Jersey uses HK2 so need to bridge to Guice)
+        //        resources.register(new JaxrsInjectorBridge(injector));
 
-        //-- Provide a catch all Exception Mapper to handle fall back when custom mappers arent supplied
+        // -- Provide a catch all Exception Mapper to handle fall back when custom mappers arent supplied
         resources.register(new DefaultExceptionMapper(), MAX_BINDING_PRIORITY);
 
-        //-- Register any supplied mappers
+        // -- Register any supplied mappers
         final List<ExceptionMapper> mappers = config.getExceptionMappers();
         if (!mappers.isEmpty()) {
             mappers.stream().forEach(resources::register);
@@ -247,14 +248,15 @@ public class JaxrsHttpServer {
                         }
                     } finally {
                         httpServers.clear();
-                        //-- If we have a config supplied executor, bring them down gracefully
+                        // -- If we have a config supplied executor, bring them down gracefully
                         for (JaxrsHttpServerConfiguration config : configs) {
                             if (config.getHttpThreadPoolExecutor() != null) {
                                 ExecutorService threadPoolExecutor = config.getHttpThreadPoolExecutor();
                                 if (!threadPoolExecutor.isShutdown()) {
                                     threadPoolExecutor.shutdown();
                                     try {
-                                        threadPoolExecutor.awaitTermination(InternalConfigurations.HTTP_API_SHUTDOWN_TIME_SECONDS.get(),
+                                        threadPoolExecutor.awaitTermination(
+                                                InternalConfigurations.HTTP_API_SHUTDOWN_TIME_SECONDS.get(),
                                                 TimeUnit.SECONDS);
                                     } catch (InterruptedException e) {
                                         Thread.currentThread().interrupt();
@@ -281,13 +283,13 @@ public class JaxrsHttpServer {
         }
     }
 
-
     private void registerStaticRoot(
             final @NotNull JaxrsHttpServerConfiguration config, final @NotNull HttpServer server) {
         List<Pair<String, String>> staticResources = config.getStaticResources();
         if (staticResources != null && !staticResources.isEmpty()) {
             staticResources.stream()
-                    .forEach(s -> registerContext(s.getLeft(),
+                    .forEach(s -> registerContext(
+                            s.getLeft(),
                             new StaticFileHandler(objectMapperProvider.getMapper(), s.getRight()),
                             server));
         }

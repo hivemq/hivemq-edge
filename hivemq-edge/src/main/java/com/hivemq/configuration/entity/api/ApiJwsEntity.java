@@ -15,10 +15,9 @@
  */
 package com.hivemq.configuration.entity.api;
 
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.xml.bind.annotation.*;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -30,12 +29,16 @@ public class ApiJwsEntity {
 
     @XmlElement(name = "keySize", required = true)
     private int keySize = 2048;
+
     @XmlElement(name = "issuer", required = true, defaultValue = "HiveMQ-Edge")
     private @NotNull String issuer = "HiveMQ-Edge";
+
     @XmlElement(name = "audience", required = true, defaultValue = "HiveMQ-Edge-Api")
     private @NotNull String audience = "HiveMQ-Edge-Api";
+
     @XmlElement(name = "expiryTimeMinutes", required = true, defaultValue = "30")
     private int expiryTimeMinutes = 30;
+
     @XmlElement(name = "tokenEarlyEpochThresholdMinutes", required = true, defaultValue = "2")
     private int tokenEarlyEpochThresholdMinutes = 2;
 
@@ -64,19 +67,16 @@ public class ApiJwsEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final ApiJwsEntity that = (ApiJwsEntity) o;
-        return getKeySize() == that.getKeySize() &&
-                getExpiryTimeMinutes() == that.getExpiryTimeMinutes() &&
-                getTokenEarlyEpochThresholdMinutes() == that.getTokenEarlyEpochThresholdMinutes() &&
-                Objects.equals(getIssuer(), that.getIssuer()) &&
-                Objects.equals(getAudience(), that.getAudience());
+        return getKeySize() == that.getKeySize()
+                && getExpiryTimeMinutes() == that.getExpiryTimeMinutes()
+                && getTokenEarlyEpochThresholdMinutes() == that.getTokenEarlyEpochThresholdMinutes()
+                && Objects.equals(getIssuer(), that.getIssuer())
+                && Objects.equals(getAudience(), that.getAudience());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getKeySize(),
-                getIssuer(),
-                getAudience(),
-                getExpiryTimeMinutes(),
-                getTokenEarlyEpochThresholdMinutes());
+        return Objects.hash(
+                getKeySize(), getIssuer(), getAudience(), getExpiryTimeMinutes(), getTokenEarlyEpochThresholdMinutes());
     }
 }

@@ -33,14 +33,13 @@ import com.hivemq.edge.VersionProvider;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.protocols.ProtocolAdapterSchemaManager;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Utilities that handle the display, sort and filter logic relating to protocol adapters.
@@ -78,12 +77,14 @@ public class ProtocolAdapterApiUtils {
         if (!adapterManager.protocolAdapterFactoryExists(info.getProtocolId())) {
             // this can only happen if the adapter somehow got removed from
             // the manager concurrently, which is not possible right now
-            log.error("Factory for adapter '{}' was not found while conversion of adapter to information for REST API.",
+            log.error(
+                    "Factory for adapter '{}' was not found while conversion of adapter to information for REST API.",
                     info.getDisplayName());
             return null;
         }
 
-        return new ProtocolAdapter(info.getProtocolId(),
+        return new ProtocolAdapter(
+                info.getProtocolId(),
                 info.getProtocolName(),
                 info.getDisplayName(),
                 info.getDescription(),
@@ -93,31 +94,36 @@ public class ProtocolAdapterApiUtils {
                 null,
                 info.getAuthor(),
                 true,
-                info.getCapabilities()
-                        .stream()
+                info.getCapabilities().stream()
                         .filter(cap -> cap != ProtocolAdapterCapability.WRITE || adapterManager.writingEnabled())
                         .map(ProtocolAdapter.Capability::from)
                         .collect(Collectors.toSet()),
                 convertApiCategory(info.getCategory()),
-                info.getTags() != null ? info.getTags().stream().map(Enum::toString).toList() : null,
-                new ProtocolAdapterSchemaManager(objectMapper,
-                        adapterManager.writingEnabled() ?
-                                info.configurationClassNorthAndSouthbound() :
-                                info.configurationClassNorthbound()).generateSchemaNode(),
+                info.getTags() != null
+                        ? info.getTags().stream().map(Enum::toString).toList()
+                        : null,
+                new ProtocolAdapterSchemaManager(
+                                objectMapper,
+                                adapterManager.writingEnabled()
+                                        ? info.configurationClassNorthAndSouthbound()
+                                        : info.configurationClassNorthbound())
+                        .generateSchemaNode(),
                 getUiSchemaForAdapter(objectMapper, info));
     }
 
-
     @VisibleForTesting
     protected static @NotNull JsonNode getUiSchemaForAdapter(
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull ProtocolAdapterInformation info) {
+            final @NotNull ObjectMapper objectMapper, final @NotNull ProtocolAdapterInformation info) {
         final String uiSchemaAsString = info.getUiSchema();
         if (uiSchemaAsString != null) {
             try {
-                return objectMapper.reader().withFeatures(JsonParser.Feature.ALLOW_COMMENTS).readTree(uiSchemaAsString);
+                return objectMapper
+                        .reader()
+                        .withFeatures(JsonParser.Feature.ALLOW_COMMENTS)
+                        .readTree(uiSchemaAsString);
             } catch (final JsonProcessingException e) {
-                log.warn("Ui schema for adapter '{}' is not parsable, the default schema will be applied. ",
+                log.warn(
+                        "Ui schema for adapter '{}' is not parsable, the default schema will be applied. ",
                         info.getDisplayName(),
                         e);
                 // fall through to parsing the DEFAULT SCHEMA
@@ -139,18 +145,22 @@ public class ProtocolAdapterApiUtils {
      * @return The instance to be sent across the API
      */
     public static @NotNull ProtocolAdapter convertModuleAdapterType(
-            final @NotNull Module module,
-            final @NotNull ConfigurationService configurationService) {
+            final @NotNull Module module, final @NotNull ConfigurationService configurationService) {
         Preconditions.checkNotNull(module);
         Preconditions.checkNotNull(configurationService);
-        return new ProtocolAdapter(module.getId(),
+        return new ProtocolAdapter(
+                module.getId(),
                 module.getId(),
                 module.getName(),
                 module.getDescription(),
-                module.getDocumentationLink() != null ? module.getDocumentationLink().getUrl() : null,
+                module.getDocumentationLink() != null
+                        ? module.getDocumentationLink().getUrl()
+                        : null,
                 module.getVersion(),
                 getLogoUrl(module, configurationService),
-                module.getProvisioningLink() != null ? module.getProvisioningLink().getUrl() : null,
+                module.getProvisioningLink() != null
+                        ? module.getProvisioningLink().getUrl()
+                        : null,
                 module.getAuthor(),
                 false,
                 Set.of(),
@@ -161,8 +171,7 @@ public class ProtocolAdapterApiUtils {
     }
 
     private static @Nullable String getLogoUrl(
-            final @NotNull Module module,
-            final @NotNull ConfigurationService configurationService) {
+            final @NotNull Module module, final @NotNull ConfigurationService configurationService) {
         String logoUrl = null;
         if (module.getLogoUrl() != null) {
             logoUrl = module.getLogoUrl().getUrl();
@@ -206,16 +215,16 @@ public class ProtocolAdapterApiUtils {
 
     @VisibleForTesting
     public static @NotNull String applyAbsoluteServerAddressInDeveloperMode(
-            final @NotNull String logoUrl,
-            final @NotNull ConfigurationService configurationService) {
+            final @NotNull String logoUrl, final @NotNull ConfigurationService configurationService) {
         Preconditions.checkNotNull(logoUrl);
         Preconditions.checkNotNull(configurationService);
         if (Boolean.getBoolean(HiveMQEdgeConstants.DEVELOPMENT_MODE)) {
-            //-- when we're in developer mode, ensure we make the logo urls fully qualified
-            //-- as the FE maybe being run from a different development server.
+            // -- when we're in developer mode, ensure we make the logo urls fully qualified
+            // -- as the FE maybe being run from a different development server.
             if (!logoUrl.startsWith(HttpConstants.HTTP)) {
-                return ApiUtils.getWebContextRoot(configurationService.apiConfiguration(),
-                        !logoUrl.startsWith(HttpConstants.SLASH)) + logoUrl;
+                return ApiUtils.getWebContextRoot(
+                                configurationService.apiConfiguration(), !logoUrl.startsWith(HttpConstants.SLASH))
+                        + logoUrl;
             }
         }
         return logoUrl;
@@ -227,13 +236,12 @@ public class ProtocolAdapterApiUtils {
      * @param category the category enum to convert
      */
     @org.jetbrains.annotations.VisibleForTesting
-    public static @Nullable ProtocolAdapterCategory convertApiCategory(final @Nullable com.hivemq.adapter.sdk.api.ProtocolAdapterCategory category) {
+    public static @Nullable ProtocolAdapterCategory convertApiCategory(
+            final @Nullable com.hivemq.adapter.sdk.api.ProtocolAdapterCategory category) {
         if (category == null) {
             return null;
         }
-        return new ProtocolAdapterCategory(category.name(),
-                category.getDisplayName(),
-                category.getDescription(),
-                category.getImage());
+        return new ProtocolAdapterCategory(
+                category.name(), category.getDisplayName(), category.getDescription(), category.getImage());
     }
 }

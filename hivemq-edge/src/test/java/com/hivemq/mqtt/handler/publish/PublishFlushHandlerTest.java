@@ -15,10 +15,14 @@
  */
 package com.hivemq.mqtt.handler.publish;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.Mockito.*;
+import static org.mockito.MockitoAnnotations.initMocks;
+
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.configuration.service.InternalConfigurations;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
@@ -29,36 +33,33 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.EventLoop;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
-
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.mockito.Mockito.*;
-import static org.mockito.MockitoAnnotations.initMocks;
 
 /**
  * @author Daniel Krüger
  */
 public class PublishFlushHandlerTest {
 
-
     private final @NotNull EmbeddedChannel embeddedChannel = new EmbeddedChannel();
 
     @Mock
     private @NotNull Channel channel;
+
     @Mock
     private @NotNull ChannelHandlerContext channelHandlerContext;
+
     @Mock
     private @NotNull EventLoop eventLoop;
 
     private final @NotNull MetricsHolder metricsHolder = new MetricsHolder(new MetricRegistry());
 
     private @NotNull PublishFlushHandler publishFlushHandler = new PublishFlushHandler(metricsHolder);
+
     @BeforeEach
     public void setUp() {
         initMocks(this);
@@ -66,32 +67,46 @@ public class PublishFlushHandlerTest {
         when(channelHandlerContext.channel()).thenReturn(channel);
         when(channel.eventLoop()).thenReturn(eventLoop);
         doAnswer(invocation -> {
-            ((Runnable) invocation.getArgument(0)).run();
-            return null;
-        }).when(eventLoop).execute(any(Runnable.class));
+                    ((Runnable) invocation.getArgument(0)).run();
+                    return null;
+                })
+                .when(eventLoop)
+                .execute(any(Runnable.class));
         when(channelHandlerContext.write(any())).thenReturn(mock(ChannelFuture.class));
     }
 
     @Test
     public void whenPublishesAreAdded_thenConsumptionIsTriggered() {
         embeddedChannel.pipeline().addLast(publishFlushHandler);
-        final PUBLISH publish = new PUBLISHFactory.Mqtt3Builder().withTopic("topic").withHivemqId("hivemqId").withQoS(QoS.AT_LEAST_ONCE).withOnwardQos(QoS.AT_LEAST_ONCE).withPayload(new byte[100]).build();
+        final PUBLISH publish = new PUBLISHFactory.Mqtt3Builder()
+                .withTopic("topic")
+                .withHivemqId("hivemqId")
+                .withQoS(QoS.AT_LEAST_ONCE)
+                .withOnwardQos(QoS.AT_LEAST_ONCE)
+                .withPayload(new byte[100])
+                .build();
         final SettableFuture<PublishStatus> publishStatusSettableFuture = SettableFuture.create();
         final PublishWithFuture publishWithFuture = new PublishWithFuture(publish, publishStatusSettableFuture, false);
         publishFlushHandler.sendPublishes(List.of(publishWithFuture));
         embeddedChannel.finish();
         assertFalse(embeddedChannel.outboundMessages().isEmpty());
-        final PublishWithFuture polled = (PublishWithFuture) embeddedChannel.outboundMessages().poll();
+        final PublishWithFuture polled =
+                (PublishWithFuture) embeddedChannel.outboundMessages().poll();
         assertEquals(publishWithFuture, polled);
     }
-
 
     @Test
     public void whenQueueIsNotEmpty_thenWriteAndFlushAfterChannelIsWritable() {
         when(channel.isWritable()).thenReturn(false);
         when(channel.isActive()).thenReturn(true);
         publishFlushHandler.handlerAdded(channelHandlerContext);
-        final PUBLISH publish = new PUBLISHFactory.Mqtt3Builder().withTopic("topic").withHivemqId("hivemqId").withQoS(QoS.AT_LEAST_ONCE).withOnwardQos(QoS.AT_LEAST_ONCE).withPayload(new byte[100]).build();
+        final PUBLISH publish = new PUBLISHFactory.Mqtt3Builder()
+                .withTopic("topic")
+                .withHivemqId("hivemqId")
+                .withQoS(QoS.AT_LEAST_ONCE)
+                .withOnwardQos(QoS.AT_LEAST_ONCE)
+                .withPayload(new byte[100])
+                .build();
         final SettableFuture<PublishStatus> publishStatusSettableFuture = SettableFuture.create();
         final PublishWithFuture publishWithFuture = new PublishWithFuture(publish, publishStatusSettableFuture, false);
         publishFlushHandler.sendPublishes(List.of(publishWithFuture));
@@ -112,7 +127,13 @@ public class PublishFlushHandlerTest {
         InternalConfigurations.COUNT_OF_PUBLISHES_WRITTEN_TO_CHANNEL_TO_TRIGGER_FLUSH.set(1);
         publishFlushHandler = new PublishFlushHandler(metricsHolder);
         publishFlushHandler.handlerAdded(channelHandlerContext);
-        final PUBLISH publish = new PUBLISHFactory.Mqtt3Builder().withTopic("topic").withHivemqId("hivemqId").withQoS(QoS.AT_LEAST_ONCE).withOnwardQos(QoS.AT_LEAST_ONCE).withPayload(new byte[100]).build();
+        final PUBLISH publish = new PUBLISHFactory.Mqtt3Builder()
+                .withTopic("topic")
+                .withHivemqId("hivemqId")
+                .withQoS(QoS.AT_LEAST_ONCE)
+                .withOnwardQos(QoS.AT_LEAST_ONCE)
+                .withPayload(new byte[100])
+                .build();
         final SettableFuture<PublishStatus> publishStatusSettableFuture = SettableFuture.create();
         final PublishWithFuture publishWithFuture = new PublishWithFuture(publish, publishStatusSettableFuture, false);
         final PublishWithFuture publishWithFuture2 = new PublishWithFuture(publish, publishStatusSettableFuture, false);
@@ -122,10 +143,17 @@ public class PublishFlushHandlerTest {
     }
 
     @Test
-    public void whenChannelInactive_thenPublishStatusesAreSetToNotConnected() throws ExecutionException, InterruptedException {
+    public void whenChannelInactive_thenPublishStatusesAreSetToNotConnected()
+            throws ExecutionException, InterruptedException {
         when(channel.isActive()).thenReturn(false);
         publishFlushHandler.handlerAdded(channelHandlerContext);
-        final PUBLISH publish = new PUBLISHFactory.Mqtt3Builder().withTopic("topic").withHivemqId("hivemqId").withQoS(QoS.AT_LEAST_ONCE).withOnwardQos(QoS.AT_LEAST_ONCE).withPayload(new byte[100]).build();
+        final PUBLISH publish = new PUBLISHFactory.Mqtt3Builder()
+                .withTopic("topic")
+                .withHivemqId("hivemqId")
+                .withQoS(QoS.AT_LEAST_ONCE)
+                .withOnwardQos(QoS.AT_LEAST_ONCE)
+                .withPayload(new byte[100])
+                .build();
         final SettableFuture<PublishStatus> publishStatusSettableFuture = SettableFuture.create();
         final PublishWithFuture publishWithFuture = new PublishWithFuture(publish, publishStatusSettableFuture, false);
         final PublishWithFuture publishWithFuture2 = new PublishWithFuture(publish, publishStatusSettableFuture, false);
@@ -134,6 +162,4 @@ public class PublishFlushHandlerTest {
         assertEquals(PublishStatus.NOT_CONNECTED, publishWithFuture.getFuture().get());
         assertEquals(PublishStatus.NOT_CONNECTED, publishWithFuture2.getFuture().get());
     }
-
-
 }

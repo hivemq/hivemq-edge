@@ -17,8 +17,8 @@ package com.hivemq.mqtt.message.connect;
 
 import com.hivemq.codec.encoder.mqtt5.MqttVariableByteInteger;
 import com.hivemq.codec.encoder.mqtt5.UnsignedDataTypes;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.Message;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -63,16 +63,20 @@ public interface Mqtt5CONNECT extends Message {
     boolean isProblemInformationRequested();
 
     // simple auth
-    @Nullable String getUsername();
+    @Nullable
+    String getUsername();
 
     byte @Nullable [] getPassword();
 
-    @Nullable String getPasswordAsUTF8String();
+    @Nullable
+    String getPasswordAsUTF8String();
 
     // enhanced auth
-    @Nullable String getAuthMethod();
+    @Nullable
+    String getAuthMethod();
 
     byte @Nullable [] getAuthData();
 
-    @Nullable MqttWillPublish getWillPublish();
+    @Nullable
+    MqttWillPublish getWillPublish();
 }

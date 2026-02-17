@@ -13,8 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.mqtt.handler.connack;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.bootstrap.ClientState;
@@ -26,28 +30,19 @@ import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.connack.CONNACK;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.reason.Mqtt5ConnAckReasonCode;
-
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.nio.ByteBuffer;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import org.junit.jupiter.api.Timeout;
 import org.slf4j.LoggerFactory;
 import util.DummyHandler;
 import util.LogbackCapturingAppender;
-
-import java.nio.ByteBuffer;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 /**
  * @author Florian Limpöck
@@ -60,6 +55,7 @@ public class MqttConnackerTest {
     private EmbeddedChannel channel;
     private LogbackCapturingAppender logbackCapturingAppender;
     private ClientConnection clientConnection;
+
     @BeforeEach
     public void setUp() throws Exception {
         eventLog = mock(EventLog.class);
@@ -67,8 +63,10 @@ public class MqttConnackerTest {
         channel = new EmbeddedChannel(new DummyHandler());
         clientConnection = new ClientConnection(channel, null);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
-        logbackCapturingAppender = LogbackCapturingAppender.Factory.weaveInto(LoggerFactory.getLogger(MqttConnackerImpl.class));
+        logbackCapturingAppender =
+                LogbackCapturingAppender.Factory.weaveInto(LoggerFactory.getLogger(MqttConnackerImpl.class));
     }
+
     @AfterEach
     public void tearDown() throws Exception {
         LogbackCapturingAppender.Factory.cleanUp();
@@ -78,14 +76,17 @@ public class MqttConnackerTest {
 
     @Test
     public void test_connackError_channel_null() {
-    
+
         assertThrows(NullPointerException.class, () -> mqttConnacker.connackError(null, "log", "eventlog", null, null));
     }
 
     @Test
     public void test_connackError_success_code() {
-    
-        assertThrows(IllegalArgumentException.class, () -> mqttConnacker.connackError(clientConnection.getChannel(), "log", "eventlog", Mqtt5ConnAckReasonCode.SUCCESS, null));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> mqttConnacker.connackError(
+                        clientConnection.getChannel(), "log", "eventlog", Mqtt5ConnAckReasonCode.SUCCESS, null));
     }
 
     @Test
@@ -135,9 +136,15 @@ public class MqttConnackerTest {
         clientConnection.setClientId("luke_skywalker");
         assertTrue(channel.isActive());
 
-        mqttConnacker.connackError(clientConnection.getChannel(), "log", "eventlog", Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID, "packettoolarge");
+        mqttConnacker.connackError(
+                clientConnection.getChannel(),
+                "log",
+                "eventlog",
+                Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID,
+                "packettoolarge");
 
-        assertEquals(Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID, ((CONNACK) channel.readOutbound()).getReasonCode());
+        assertEquals(
+                Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID, ((CONNACK) channel.readOutbound()).getReasonCode());
         assertFalse(channel.isActive());
         verify(eventLog, times(1)).clientWasDisconnected(any(), any());
         assertEquals("log", logbackCapturingAppender.getLastCapturedLog().getFormattedMessage());
@@ -152,7 +159,12 @@ public class MqttConnackerTest {
         clientConnection.setClientId("luke_skywalker");
         assertTrue(channel.isActive());
 
-        mqttConnacker.connackError(clientConnection.getChannel(), "log", "eventlog", Mqtt5ConnAckReasonCode.UNSPECIFIED_ERROR, "packettoolarge");
+        mqttConnacker.connackError(
+                clientConnection.getChannel(),
+                "log",
+                "eventlog",
+                Mqtt5ConnAckReasonCode.UNSPECIFIED_ERROR,
+                "packettoolarge");
 
         assertNull(channel.readOutbound());
         assertFalse(channel.isActive());
@@ -167,7 +179,12 @@ public class MqttConnackerTest {
         clientConnection.setClientId("luke_skywalker");
         assertTrue(channel.isActive());
 
-        mqttConnacker.connackError(clientConnection.getChannel(), "log", "eventlog", Mqtt5ConnAckReasonCode.MALFORMED_PACKET, "packettoolarge");
+        mqttConnacker.connackError(
+                clientConnection.getChannel(),
+                "log",
+                "eventlog",
+                Mqtt5ConnAckReasonCode.MALFORMED_PACKET,
+                "packettoolarge");
 
         assertNull(channel.readOutbound());
         assertFalse(channel.isActive());
@@ -182,7 +199,12 @@ public class MqttConnackerTest {
         clientConnection.setClientId("luke_skywalker");
         assertTrue(channel.isActive());
 
-        mqttConnacker.connackError(clientConnection.getChannel(), "log", "eventlog", Mqtt5ConnAckReasonCode.PROTOCOL_ERROR, "packettoolarge");
+        mqttConnacker.connackError(
+                clientConnection.getChannel(),
+                "log",
+                "eventlog",
+                Mqtt5ConnAckReasonCode.PROTOCOL_ERROR,
+                "packettoolarge");
 
         assertNull(channel.readOutbound());
         assertFalse(channel.isActive());
@@ -197,7 +219,12 @@ public class MqttConnackerTest {
         clientConnection.setClientId("luke_skywalker");
         assertTrue(channel.isActive());
 
-        mqttConnacker.connackError(clientConnection.getChannel(), "log", "eventlog", Mqtt5ConnAckReasonCode.IMPLEMENTATION_SPECIFIC_ERROR, "packettoolarge");
+        mqttConnacker.connackError(
+                clientConnection.getChannel(),
+                "log",
+                "eventlog",
+                Mqtt5ConnAckReasonCode.IMPLEMENTATION_SPECIFIC_ERROR,
+                "packettoolarge");
 
         assertNull(channel.readOutbound());
         assertFalse(channel.isActive());
@@ -212,9 +239,15 @@ public class MqttConnackerTest {
         clientConnection.setClientId("luke_skywalker");
         assertTrue(channel.isActive());
 
-        mqttConnacker.connackError(clientConnection.getChannel(), "log", "eventlog", Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID, "packettoolarge");
+        mqttConnacker.connackError(
+                clientConnection.getChannel(),
+                "log",
+                "eventlog",
+                Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID,
+                "packettoolarge");
 
-        assertEquals(Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID, ((CONNACK) channel.readOutbound()).getReasonCode());
+        assertEquals(
+                Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID, ((CONNACK) channel.readOutbound()).getReasonCode());
         assertFalse(channel.isActive());
         verify(eventLog, times(1)).clientWasDisconnected(any(), any());
         assertEquals("log", logbackCapturingAppender.getLastCapturedLog().getFormattedMessage());
@@ -229,7 +262,12 @@ public class MqttConnackerTest {
         clientConnection.setClientId("luke_skywalker");
         assertTrue(channel.isActive());
 
-        mqttConnacker.connackError(clientConnection.getChannel(), "log", "eventlog", Mqtt5ConnAckReasonCode.UNSPECIFIED_ERROR, "unspecified_error");
+        mqttConnacker.connackError(
+                clientConnection.getChannel(),
+                "log",
+                "eventlog",
+                Mqtt5ConnAckReasonCode.UNSPECIFIED_ERROR,
+                "unspecified_error");
 
         assertNull(channel.readOutbound());
         assertFalse(channel.isActive());
@@ -244,7 +282,12 @@ public class MqttConnackerTest {
         clientConnection.setClientId("luke_skywalker");
         assertTrue(channel.isActive());
 
-        mqttConnacker.connackError(clientConnection.getChannel(), "log", "eventlog", Mqtt5ConnAckReasonCode.MALFORMED_PACKET, "malformed_packet");
+        mqttConnacker.connackError(
+                clientConnection.getChannel(),
+                "log",
+                "eventlog",
+                Mqtt5ConnAckReasonCode.MALFORMED_PACKET,
+                "malformed_packet");
 
         assertNull(channel.readOutbound());
         assertFalse(channel.isActive());
@@ -259,7 +302,12 @@ public class MqttConnackerTest {
         clientConnection.setClientId("luke_skywalker");
         assertTrue(channel.isActive());
 
-        mqttConnacker.connackError(clientConnection.getChannel(), "log", "eventlog", Mqtt5ConnAckReasonCode.PROTOCOL_ERROR, "protocol_error");
+        mqttConnacker.connackError(
+                clientConnection.getChannel(),
+                "log",
+                "eventlog",
+                Mqtt5ConnAckReasonCode.PROTOCOL_ERROR,
+                "protocol_error");
 
         assertNull(channel.readOutbound());
         assertFalse(channel.isActive());
@@ -274,7 +322,12 @@ public class MqttConnackerTest {
         clientConnection.setClientId("luke_skywalker");
         assertTrue(channel.isActive());
 
-        mqttConnacker.connackError(clientConnection.getChannel(), "log", "eventlog", Mqtt5ConnAckReasonCode.IMPLEMENTATION_SPECIFIC_ERROR, "implementation_specific_error");
+        mqttConnacker.connackError(
+                clientConnection.getChannel(),
+                "log",
+                "eventlog",
+                Mqtt5ConnAckReasonCode.IMPLEMENTATION_SPECIFIC_ERROR,
+                "implementation_specific_error");
 
         assertNull(channel.readOutbound());
         assertFalse(channel.isActive());
@@ -291,7 +344,12 @@ public class MqttConnackerTest {
         clientConnection.setClientId("luke_skywalker");
         assertTrue(channel.isActive());
 
-        mqttConnacker.connackError(clientConnection.getChannel(), "log", "eventlog", Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID, "packettoolarge");
+        mqttConnacker.connackError(
+                clientConnection.getChannel(),
+                "log",
+                "eventlog",
+                Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID,
+                "packettoolarge");
 
         assertNull(channel.readOutbound());
         assertFalse(channel.isActive());
@@ -316,9 +374,15 @@ public class MqttConnackerTest {
         clientConnection.setClientId("luke_skywalker");
         assertTrue(channel.isActive());
 
-        mqttConnacker.connackError(clientConnection.getChannel(), "log", "eventlog", Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID, "packettoolarge");
+        mqttConnacker.connackError(
+                clientConnection.getChannel(),
+                "log",
+                "eventlog",
+                Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID,
+                "packettoolarge");
 
-        assertEquals(Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID, ((CONNACK) channel.readOutbound()).getReasonCode());
+        assertEquals(
+                Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID, ((CONNACK) channel.readOutbound()).getReasonCode());
         assertFalse(channel.isActive());
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
@@ -342,9 +406,17 @@ public class MqttConnackerTest {
         clientConnection.setClientId("luke_skywalker");
         assertTrue(channel.isActive());
 
-        mqttConnacker.connackError(clientConnection.getChannel(), "log", "eventlog", Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID, "packettoolarge", Mqtt5UserProperties.NO_USER_PROPERTIES, true);
+        mqttConnacker.connackError(
+                clientConnection.getChannel(),
+                "log",
+                "eventlog",
+                Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID,
+                "packettoolarge",
+                Mqtt5UserProperties.NO_USER_PROPERTIES,
+                true);
 
-        assertEquals(Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID, ((CONNACK) channel.readOutbound()).getReasonCode());
+        assertEquals(
+                Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID, ((CONNACK) channel.readOutbound()).getReasonCode());
         assertFalse(channel.isActive());
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
@@ -368,9 +440,15 @@ public class MqttConnackerTest {
         clientConnection.setClientId("luke_skywalker");
         assertTrue(channel.isActive());
 
-        mqttConnacker.connackError(clientConnection.getChannel(), "log", "eventlog", Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID, "packettoolarge");
+        mqttConnacker.connackError(
+                clientConnection.getChannel(),
+                "log",
+                "eventlog",
+                Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID,
+                "packettoolarge");
 
-        assertEquals(Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID, ((CONNACK) channel.readOutbound()).getReasonCode());
+        assertEquals(
+                Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID, ((CONNACK) channel.readOutbound()).getReasonCode());
         assertFalse(channel.isActive());
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
@@ -394,7 +472,14 @@ public class MqttConnackerTest {
         clientConnection.setClientId("luke_skywalker");
         assertTrue(channel.isActive());
 
-        mqttConnacker.connackError(clientConnection.getChannel(), "log", "eventlog", Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID, "packettoolarge", Mqtt5UserProperties.NO_USER_PROPERTIES, true);
+        mqttConnacker.connackError(
+                clientConnection.getChannel(),
+                "log",
+                "eventlog",
+                Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID,
+                "packettoolarge",
+                Mqtt5UserProperties.NO_USER_PROPERTIES,
+                true);
 
         final CONNACK connack = channel.readOutbound();
         assertEquals(Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID, connack.getReasonCode());
@@ -414,13 +499,19 @@ public class MqttConnackerTest {
         clientConnection.setClientId("luke_skywalker");
         assertTrue(channel.isActive());
 
-        mqttConnacker.connackError(clientConnection.getChannel(), "log", "eventlog", Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID, "packettoolarge", Mqtt5UserProperties.NO_USER_PROPERTIES, true);
+        mqttConnacker.connackError(
+                clientConnection.getChannel(),
+                "log",
+                "eventlog",
+                Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID,
+                "packettoolarge",
+                Mqtt5UserProperties.NO_USER_PROPERTIES,
+                true);
 
         final CONNACK connack = channel.readOutbound();
         assertEquals(Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID, connack.getReasonCode());
         assertNull(connack.getReasonString());
         assertFalse(channel.isActive());
-
     }
 
     @Test
@@ -434,7 +525,12 @@ public class MqttConnackerTest {
         clientConnection.setClientId("luke_skywalker");
         assertTrue(channel.isActive());
 
-        mqttConnacker.connackError(clientConnection.getChannel(), "log", "eventlog", Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID, "packettoolarge");
+        mqttConnacker.connackError(
+                clientConnection.getChannel(),
+                "log",
+                "eventlog",
+                Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID,
+                "packettoolarge");
 
         assertNull(channel.readOutbound());
         assertFalse(channel.isActive());
@@ -452,7 +548,12 @@ public class MqttConnackerTest {
         clientConnection.setAuthMethod("face_check");
         assertTrue(channel.isActive());
 
-        mqttConnacker.connackError(clientConnection.getChannel(), "log", "eventlog", Mqtt5ConnAckReasonCode.NOT_AUTHORIZED, "dont like him");
+        mqttConnacker.connackError(
+                clientConnection.getChannel(),
+                "log",
+                "eventlog",
+                Mqtt5ConnAckReasonCode.NOT_AUTHORIZED,
+                "dont like him");
 
         final CONNACK connack = channel.readOutbound();
         assertEquals(Mqtt5ConnAckReasonCode.NOT_AUTHORIZED, connack.getReasonCode());
@@ -473,7 +574,12 @@ public class MqttConnackerTest {
         clientConnection.setAuthData(ByteBuffer.wrap("decent_guy".getBytes()));
         assertTrue(channel.isActive());
 
-        mqttConnacker.connackError(clientConnection.getChannel(), "log", "eventlog", Mqtt5ConnAckReasonCode.NOT_AUTHORIZED, "dont like him");
+        mqttConnacker.connackError(
+                clientConnection.getChannel(),
+                "log",
+                "eventlog",
+                Mqtt5ConnAckReasonCode.NOT_AUTHORIZED,
+                "dont like him");
 
         final CONNACK connack = channel.readOutbound();
         assertEquals(Mqtt5ConnAckReasonCode.NOT_AUTHORIZED, connack.getReasonCode());
@@ -494,7 +600,12 @@ public class MqttConnackerTest {
         clientConnection.setAuthMethod("face_check");
         assertTrue(channel.isActive());
 
-        mqttConnacker.connackError(clientConnection.getChannel(), "log", "eventlog", Mqtt5ConnAckReasonCode.NOT_AUTHORIZED, "dont like him");
+        mqttConnacker.connackError(
+                clientConnection.getChannel(),
+                "log",
+                "eventlog",
+                Mqtt5ConnAckReasonCode.NOT_AUTHORIZED,
+                "dont like him");
 
         final CONNACK connack = channel.readOutbound();
         assertEquals(Mqtt5ConnAckReasonCode.NOT_AUTHORIZED, connack.getReasonCode());
@@ -506,25 +617,35 @@ public class MqttConnackerTest {
 
     @Test
     public void test_connackSuccess_ctx_null() {
-    
-        assertThrows(NullPointerException.class, () -> mqttConnacker.connackSuccess(null, new CONNACK(Mqtt5ConnAckReasonCode.SUCCESS, null)));
+
+        assertThrows(
+                NullPointerException.class,
+                () -> mqttConnacker.connackSuccess(null, new CONNACK(Mqtt5ConnAckReasonCode.SUCCESS, null)));
     }
 
     @Test
     public void test_connackSuccess_connack_null() {
-    
-        assertThrows(NullPointerException.class, () -> mqttConnacker.connackSuccess(channel.pipeline().firstContext(), null));
+
+        assertThrows(
+                NullPointerException.class,
+                () -> mqttConnacker.connackSuccess(channel.pipeline().firstContext(), null));
     }
 
     @Test
     public void test_connackSuccess_connack_error_reason_code() {
-    
-        assertThrows(IllegalArgumentException.class, () -> mqttConnacker.connackSuccess(clientConnection.getChannel().pipeline().firstContext(), new CONNACK(Mqtt5ConnAckReasonCode.NOT_AUTHORIZED, null)));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> mqttConnacker.connackSuccess(
+                        clientConnection.getChannel().pipeline().firstContext(),
+                        new CONNACK(Mqtt5ConnAckReasonCode.NOT_AUTHORIZED, null)));
     }
 
     @Test
     public void test_connackSuccess() {
-        mqttConnacker.connackSuccess(clientConnection.getChannel().pipeline().firstContext(), new CONNACK(Mqtt5ConnAckReasonCode.SUCCESS, null));
+        mqttConnacker.connackSuccess(
+                clientConnection.getChannel().pipeline().firstContext(),
+                new CONNACK(Mqtt5ConnAckReasonCode.SUCCESS, null));
 
         final CONNACK connack = channel.readOutbound();
         assertEquals(Mqtt5ConnAckReasonCode.SUCCESS, connack.getReasonCode());

@@ -17,9 +17,8 @@ package com.hivemq.persistence.mappings;
 
 import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 import com.hivemq.protocols.InternalWritingContext;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 public class SouthboundMapping implements InternalWritingContext {
 
@@ -54,20 +53,21 @@ public class SouthboundMapping implements InternalWritingContext {
     public static @NotNull SouthboundMapping fromModel(
             final @NotNull com.hivemq.edge.api.model.SouthboundMapping southboundMapping,
             final @NotNull String schema) {
-        return new SouthboundMapping(southboundMapping.getTagName(),
+        return new SouthboundMapping(
+                southboundMapping.getTagName(),
                 southboundMapping.getTopicFilter(),
-                southboundMapping.getFieldMapping() != null ?
-                        FieldMapping.fromModel(southboundMapping.getFieldMapping()) :
-                        FieldMapping.DEFAULT_FIELD_MAPPING,
+                southboundMapping.getFieldMapping() != null
+                        ? FieldMapping.fromModel(southboundMapping.getFieldMapping())
+                        : FieldMapping.DEFAULT_FIELD_MAPPING,
                 schema);
     }
 
     public @NotNull com.hivemq.edge.api.model.SouthboundMapping toModel() {
-        return new com.hivemq.edge.api.model.SouthboundMapping().topicFilter(this.getTopicFilter())
+        return new com.hivemq.edge.api.model.SouthboundMapping()
+                .topicFilter(this.getTopicFilter())
                 .tagName(this.getTagName())
                 .fieldMapping(this.fieldMapping.toModel());
     }
-
 
     @Override
     public @NotNull String getSchema() {
@@ -76,26 +76,25 @@ public class SouthboundMapping implements InternalWritingContext {
 
     @Override
     public @NotNull String toString() {
-        return "SouthboundMapping{" +
-                "fieldMapping=" +
-                fieldMapping +
-                ", topicFilter='" +
-                topicFilter +
-                '\'' +
-                ", tagName='" +
-                tagName +
-                '\'' +
-                '}';
+        return "SouthboundMapping{" + "fieldMapping="
+                + fieldMapping
+                + ", topicFilter='"
+                + topicFilter
+                + '\''
+                + ", tagName='"
+                + tagName
+                + '\''
+                + '}';
     }
 
     @Override
     public boolean equals(final Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         final SouthboundMapping that = (SouthboundMapping) o;
-        return Objects.equals(getTopicFilter(), that.getTopicFilter()) &&
-                Objects.equals(getTagName(), that.getTagName()) &&
-                Objects.equals(getFieldMapping(), that.getFieldMapping()) &&
-                Objects.equals(getSchema(), that.getSchema());
+        return Objects.equals(getTopicFilter(), that.getTopicFilter())
+                && Objects.equals(getTagName(), that.getTagName())
+                && Objects.equals(getFieldMapping(), that.getFieldMapping())
+                && Objects.equals(getSchema(), that.getSchema());
     }
 
     @Override

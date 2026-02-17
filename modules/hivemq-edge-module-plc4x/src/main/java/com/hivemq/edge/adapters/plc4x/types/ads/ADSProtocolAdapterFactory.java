@@ -22,11 +22,11 @@ import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
+
 /**
  * Factory for creating ADS protocol adapter instances.
  */
-public class ADSProtocolAdapterFactory
-        implements ProtocolAdapterFactory<ADSSpecificAdapterConfig> {
+public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSSpecificAdapterConfig> {
 
     final boolean writingEnabled;
 

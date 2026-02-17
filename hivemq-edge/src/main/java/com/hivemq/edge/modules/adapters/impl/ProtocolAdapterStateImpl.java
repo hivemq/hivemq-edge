@@ -20,15 +20,14 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
     private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdapterStateImpl.class);
@@ -91,15 +90,14 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
 
     @Override
     public void reportErrorMessage(
-            final @Nullable Throwable throwable,
-            final @Nullable String errorMessage,
-            final boolean sendEvent) {
+            final @Nullable Throwable throwable, final @Nullable String errorMessage, final boolean sendEvent) {
         // Sets the last error message associated with the adapter runtime.
         // This is can be sent through the API to give an indication of the
         // status of an adapter runtime.
         lastErrorMessage.set(errorMessage == null ? throwable == null ? null : throwable.getMessage() : errorMessage);
         if (sendEvent) {
-            final var eventBuilder = eventService.createAdapterEvent(adapterId, protocolId)
+            final var eventBuilder = eventService
+                    .createAdapterEvent(adapterId, protocolId)
                     .withSeverity(EventImpl.SEVERITY.ERROR)
                     .withMessage(String.format("Adapter '%s' encountered an error.", adapterId));
             if (throwable != null) {

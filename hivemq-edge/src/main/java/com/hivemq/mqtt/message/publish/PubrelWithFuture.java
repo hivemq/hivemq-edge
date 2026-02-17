@@ -16,9 +16,9 @@
 package com.hivemq.mqtt.message.publish;
 
 import com.google.common.util.concurrent.SettableFuture;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.handler.publish.PublishStatus;
 import com.hivemq.mqtt.message.pubrel.PUBREL;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Lukas Brandl
@@ -29,8 +29,13 @@ public class PubrelWithFuture extends PUBREL {
     private final SettableFuture<PublishStatus> future;
 
     public PubrelWithFuture(final @NotNull PUBREL pubrel, final @NotNull SettableFuture<PublishStatus> future) {
-        super(pubrel.getPacketIdentifier(), pubrel.getReasonCode(), pubrel.getReasonString(), pubrel.getUserProperties(),
-                pubrel.getPublishTimestamp(), pubrel.getMessageExpiryInterval());
+        super(
+                pubrel.getPacketIdentifier(),
+                pubrel.getReasonCode(),
+                pubrel.getReasonString(),
+                pubrel.getUserProperties(),
+                pubrel.getPublishTimestamp(),
+                pubrel.getMessageExpiryInterval());
         this.future = future;
     }
 

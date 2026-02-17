@@ -16,15 +16,14 @@
 package com.hivemq.mqtt.handler;
 
 import com.google.common.annotations.VisibleForTesting;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.Future;
-
 import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Basically a {@link IdleStateHandler} where all functions besides the read idle state are removed.
@@ -42,9 +41,10 @@ public class KeepAliveDisconnectHandler extends ChannelInboundHandlerAdapter {
     private boolean reading;
     private final @NotNull KeepAliveDisconnectService keepAliveDisconnectService;
 
-    public KeepAliveDisconnectHandler(final long readerIdleTime,
-                                      final @NotNull TimeUnit unit,
-                                      final @NotNull KeepAliveDisconnectService keepAliveDisconnectService) {
+    public KeepAliveDisconnectHandler(
+            final long readerIdleTime,
+            final @NotNull TimeUnit unit,
+            final @NotNull KeepAliveDisconnectService keepAliveDisconnectService) {
         this.keepAliveDisconnectService = keepAliveDisconnectService;
         if (readerIdleTime <= 0) {
             readerIdleTimeNanos = 0;
@@ -110,14 +110,15 @@ public class KeepAliveDisconnectHandler extends ChannelInboundHandlerAdapter {
 
     @VisibleForTesting
     void initialize(final @NotNull Channel channel) {
-        //only initialize of it's not initialized
+        // only initialize of it's not initialized
         if (state > NOT_INITIATED) {
             return;
         }
         state = INITIATED;
         lastReadTime = ticksInNanos();
         if (readerIdleTimeNanos > 0) {
-            timeoutTaskFuture = channel.eventLoop().schedule(new ReaderIdleTimeoutTask(channel), readerIdleTimeNanos, TimeUnit.NANOSECONDS);
+            timeoutTaskFuture = channel.eventLoop()
+                    .schedule(new ReaderIdleTimeoutTask(channel), readerIdleTimeNanos, TimeUnit.NANOSECONDS);
         }
     }
 
@@ -125,7 +126,6 @@ public class KeepAliveDisconnectHandler extends ChannelInboundHandlerAdapter {
     long ticksInNanos() {
         return System.nanoTime();
     }
-
 
     private void destroy() {
         state = DESTROYED;

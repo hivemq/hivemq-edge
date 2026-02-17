@@ -15,9 +15,8 @@
  */
 package com.hivemq.extensions.services.executor;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.concurrent.CompletableFuture;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -38,8 +37,10 @@ public class WrappedRunnableWithResult<T> implements Runnable {
     private final T result;
 
     WrappedRunnableWithResult(
-            final @NotNull Runnable runnable, final @NotNull ClassLoader classLoader,
-            final @NotNull CompletableFuture<T> future, final @NotNull T result) {
+            final @NotNull Runnable runnable,
+            final @NotNull ClassLoader classLoader,
+            final @NotNull CompletableFuture<T> future,
+            final @NotNull T result) {
         this.runnable = runnable;
         this.classLoader = classLoader;
         this.future = future;

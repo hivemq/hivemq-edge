@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.services.executor;
-
-import com.hivemq.common.shutdown.HiveMQShutdownHook;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Test;
-
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
+
+import com.hivemq.common.shutdown.HiveMQShutdownHook;
+import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 
 /**
  * @since 4.0.0
@@ -53,9 +51,8 @@ public class ManagedPluginExecutorShutdownHookTest {
         final ManagedPluginExecutorShutdownHook pluginExecutorShutdownHook =
                 new ManagedPluginExecutorShutdownHook(executorService, 60);
 
-        when(executorService.awaitTermination(
-                anyLong(),
-                any(TimeUnit.class))).thenThrow(new InterruptedException("test"));
+        when(executorService.awaitTermination(anyLong(), any(TimeUnit.class)))
+                .thenThrow(new InterruptedException("test"));
         pluginExecutorShutdownHook.run();
 
         verify(executorService, times(1)).shutdownNow();

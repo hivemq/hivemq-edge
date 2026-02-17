@@ -18,10 +18,9 @@ package com.hivemq.edge.adapters.plc4x.impl;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A protocol adapter sample, is a sampled measurement taken at a point in time. It can encapsulate more than one
@@ -31,7 +30,7 @@ public class Plc4xDataSample {
 
     private final @NotNull DataPointFactory dataPointFactory;
 
-    //-- Handle multiple tags in the same sample
+    // -- Handle multiple tags in the same sample
     protected @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
 
     public Plc4xDataSample(final @NotNull DataPointFactory dataPointFactory) {

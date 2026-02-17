@@ -15,12 +15,13 @@
  */
 package com.hivemq.extensions.handler;
 
+import static com.hivemq.configuration.service.InternalConfigurations.MQTT_ALLOW_DOLLAR_TOPICS;
+
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.parameter.AuthorizerProviderInput;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 import com.hivemq.extension.sdk.api.services.auth.provider.AuthorizerProvider;
@@ -44,14 +45,12 @@ import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;
 import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.util.Topics;
 import io.netty.channel.ChannelHandlerContext;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import static com.hivemq.configuration.service.InternalConfigurations.MQTT_ALLOW_DOLLAR_TOPICS;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -95,7 +94,7 @@ public class PluginAuthorizerServiceImpl implements PluginAuthorizerService {
 
     public void authorizePublish(final @NotNull ChannelHandlerContext ctx, final @NotNull PUBLISH msg) {
 
-        //We first check if the topic is allowed to be published
+        // We first check if the topic is allowed to be published
         if (!Topics.isValidTopicToPublish(msg.getTopic())) {
             disconnectWithReasonCode(ctx, "an invalid topic ('" + msg.getTopic() + "')", "an invalid topic");
             return;
@@ -108,11 +107,13 @@ public class PluginAuthorizerServiceImpl implements PluginAuthorizerService {
             return;
         }
 
-
-        final String clientId = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getClientId();
+        final String clientId = ctx.channel()
+                .attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                .get()
+                .getClientId();
 
         if (clientId == null) {
-            //we must process the msg in every case !
+            // we must process the msg in every case !
             incomingPublishService.processPublish(ctx, msg, null);
             return;
         }
@@ -136,36 +137,38 @@ public class PluginAuthorizerServiceImpl implements PluginAuthorizerService {
         final PublishAuthorizerInputImpl input = new PublishAuthorizerInputImpl(msg, ctx.channel(), clientId);
         final PublishAuthorizerOutputImpl output = new PublishAuthorizerOutputImpl(asyncer);
 
-        final SettableFuture<PublishAuthorizerOutputImpl> publishProcessedFuture =
-                executePublishAuthorizer(clientId, providerMap, clientAuthorizers, authorizerProviderInput, input,
-                        output, ctx);
+        final SettableFuture<PublishAuthorizerOutputImpl> publishProcessedFuture = executePublishAuthorizer(
+                clientId, providerMap, clientAuthorizers, authorizerProviderInput, input, output, ctx);
 
         Futures.addCallback(
                 publishProcessedFuture,
-                new PublishAuthorizationProcessedTask(msg, ctx, mqttServerDisconnector,
-                        incomingPublishService), MoreExecutors.directExecutor());
+                new PublishAuthorizationProcessedTask(msg, ctx, mqttServerDisconnector, incomingPublishService),
+                MoreExecutors.directExecutor());
     }
 
     public void authorizeWillPublish(final @NotNull ChannelHandlerContext ctx, final @NotNull CONNECT connect) {
 
-        final String clientId = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getClientId();
+        final String clientId = ctx.channel()
+                .attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                .get()
+                .getClientId();
         if (clientId == null || !ctx.channel().isActive()) {
-            //no more processing needed, client is already disconnected
+            // no more processing needed, client is already disconnected
             return;
         }
 
         if (!authorizers.areAuthorizersAvailable() || connect.getWillPublish() == null) {
-            ctx.pipeline().fireUserEventTriggered(new AuthorizeWillResultEvent(
-                    connect,
-                    new PublishAuthorizerResult(null, null, false)));
+            ctx.pipeline()
+                    .fireUserEventTriggered(
+                            new AuthorizeWillResultEvent(connect, new PublishAuthorizerResult(null, null, false)));
             return;
         }
 
         final Map<String, AuthorizerProvider> providerMap = authorizers.getAuthorizerProviderMap();
         if (providerMap.isEmpty()) {
-            ctx.pipeline().fireUserEventTriggered(new AuthorizeWillResultEvent(
-                    connect,
-                    new PublishAuthorizerResult(null, null, false)));
+            ctx.pipeline()
+                    .fireUserEventTriggered(
+                            new AuthorizeWillResultEvent(connect, new PublishAuthorizerResult(null, null, false)));
             return;
         }
 
@@ -178,12 +181,12 @@ public class PluginAuthorizerServiceImpl implements PluginAuthorizerService {
                 new PublishAuthorizerInputImpl(connect.getWillPublish(), ctx.channel(), clientId);
         final PublishAuthorizerOutputImpl output = new PublishAuthorizerOutputImpl(asyncer);
 
-        final SettableFuture<PublishAuthorizerOutputImpl> publishProcessedFuture =
-                executePublishAuthorizer(clientId, providerMap, clientAuthorizers, authorizerProviderInput, input,
-                        output, ctx);
+        final SettableFuture<PublishAuthorizerOutputImpl> publishProcessedFuture = executePublishAuthorizer(
+                clientId, providerMap, clientAuthorizers, authorizerProviderInput, input, output, ctx);
 
         Futures.addCallback(
-                publishProcessedFuture, new WillPublishAuthorizationProcessedTask(connect, ctx),
+                publishProcessedFuture,
+                new WillPublishAuthorizationProcessedTask(connect, ctx),
                 MoreExecutors.directExecutor());
     }
 
@@ -202,9 +205,8 @@ public class PluginAuthorizerServiceImpl implements PluginAuthorizerService {
                 new PublishAuthorizerContext(clientId, output, publishProcessedFuture, providerMap.size(), ctx);
 
         for (final Map.Entry<String, AuthorizerProvider> entry : providerMap.entrySet()) {
-            final PublishAuthorizerTask task =
-                    new PublishAuthorizerTask(entry.getValue(), entry.getKey(), authorizerProviderInput,
-                            clientAuthorizers, ctx);
+            final PublishAuthorizerTask task = new PublishAuthorizerTask(
+                    entry.getValue(), entry.getKey(), authorizerProviderInput, clientAuthorizers, ctx);
             pluginTaskExecutorService.handlePluginInOutTaskExecution(context, input, output, task);
         }
         return publishProcessedFuture;
@@ -212,9 +214,12 @@ public class PluginAuthorizerServiceImpl implements PluginAuthorizerService {
 
     public void authorizeSubscriptions(final @NotNull ChannelHandlerContext ctx, final @NotNull SUBSCRIBE msg) {
 
-        final String clientId = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getClientId();
+        final String clientId = ctx.channel()
+                .attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                .get()
+                .getClientId();
         if (clientId == null || !ctx.channel().isActive()) {
-            //no more processing needed
+            // no more processing needed
             return;
         }
 
@@ -236,12 +241,11 @@ public class PluginAuthorizerServiceImpl implements PluginAuthorizerService {
         final AuthorizerProviderInput authorizerProviderInput =
                 new AuthorizerProviderInputImpl(ctx.channel(), serverInformation, clientId);
 
-        //every topic gets its own task per authorizer
+        // every topic gets its own task per authorizer
         for (final Topic topic : msg.getTopics()) {
 
-            final SubscriptionAuthorizerInputImpl input =
-                    new SubscriptionAuthorizerInputImpl(UserPropertiesImpl.of(msg.getUserProperties().asList()), topic,
-                            ctx.channel(), clientId);
+            final SubscriptionAuthorizerInputImpl input = new SubscriptionAuthorizerInputImpl(
+                    UserPropertiesImpl.of(msg.getUserProperties().asList()), topic, ctx.channel(), clientId);
             final SubscriptionAuthorizerOutputImpl output = new SubscriptionAuthorizerOutputImpl(asyncer);
 
             final SettableFuture<SubscriptionAuthorizerOutputImpl> topicProcessedFuture = SettableFuture.create();
@@ -251,35 +255,36 @@ public class PluginAuthorizerServiceImpl implements PluginAuthorizerService {
                     new SubscriptionAuthorizerContext(clientId, output, topicProcessedFuture, providerMap.size());
 
             for (final Map.Entry<String, AuthorizerProvider> entry : providerMap.entrySet()) {
-                final SubscriptionAuthorizerTask task =
-                        new SubscriptionAuthorizerTask(entry.getValue(), entry.getKey(), authorizerProviderInput,
-                                clientAuthorizers);
+                final SubscriptionAuthorizerTask task = new SubscriptionAuthorizerTask(
+                        entry.getValue(), entry.getKey(), authorizerProviderInput, clientAuthorizers);
                 pluginTaskExecutorService.handlePluginInOutTaskExecution(context, input, output, task);
             }
         }
 
-        final AllTopicsProcessedTask allTopicsProcessedTask = new AllTopicsProcessedTask(msg, listenableFutures, ctx, mqttServerDisconnector, incomingSubscribeService);
-        Futures.whenAllComplete(listenableFutures)
-                .run(allTopicsProcessedTask, MoreExecutors.directExecutor());
+        final AllTopicsProcessedTask allTopicsProcessedTask = new AllTopicsProcessedTask(
+                msg, listenableFutures, ctx, mqttServerDisconnector, incomingSubscribeService);
+        Futures.whenAllComplete(listenableFutures).run(allTopicsProcessedTask, MoreExecutors.directExecutor());
     }
 
     private @NotNull ClientAuthorizers getClientAuthorizers(final @NotNull ChannelHandlerContext ctx) {
-        final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         if (clientConnection.getExtensionClientAuthorizers() == null) {
             clientConnection.setExtensionClientAuthorizers(new ClientAuthorizersImpl(extensionPriorityComparator));
         }
         return clientConnection.getExtensionClientAuthorizers();
     }
 
-    private void disconnectWithReasonCode(final @NotNull ChannelHandlerContext ctx, final @NotNull String logReason, final @NotNull String reasonString) {
+    private void disconnectWithReasonCode(
+            final @NotNull ChannelHandlerContext ctx,
+            final @NotNull String logReason,
+            final @NotNull String reasonString) {
         if (ctx.channel().isActive()) {
-            final String logMessage = "Client (IP: {}) sent PUBLISH for " + logReason + ". This is not allowed. Disconnecting client.";
+            final String logMessage =
+                    "Client (IP: {}) sent PUBLISH for " + logReason + ". This is not allowed. Disconnecting client.";
             final String reasonMessage = "Sent PUBLISH for " + reasonString;
-            mqttServerDisconnector.disconnect(ctx.channel(),
-                    logMessage,
-                    reasonMessage,
-                    Mqtt5DisconnectReasonCode.PROTOCOL_ERROR,
-                    reasonMessage);
+            mqttServerDisconnector.disconnect(
+                    ctx.channel(), logMessage, reasonMessage, Mqtt5DisconnectReasonCode.PROTOCOL_ERROR, reasonMessage);
             ctx.close();
         }
     }

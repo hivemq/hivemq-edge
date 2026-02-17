@@ -15,6 +15,8 @@
  */
 package com.hivemq.edge.adapters.opcua.listeners;
 
+import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
+
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
@@ -27,8 +29,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
 
 public class OpcUaServiceFaultListener implements ServiceFaultListener {
 
@@ -59,11 +59,10 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
 
         // Check if this is a critical fault requiring immediate reconnection
         if (reconnectOnServiceFault && isCriticalFault(statusCode)) {
-            log.error("Critical OPC UA service fault detected for adapter '{}': {}",
-                    adapterId,
-                    statusCode);
+            log.error("Critical OPC UA service fault detected for adapter '{}': {}", adapterId, statusCode);
 
-            eventService.createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+            eventService
+                    .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
                     .withSeverity(Event.SEVERITY.ERROR)
                     .withPayload(statusCode)
                     .withMessage("Critical Service Fault detected: " + statusCode + ". Triggering reconnection.")
@@ -82,11 +81,10 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
             }
         } else {
             // Non-critical fault or feature disabled, just log
-            log.warn("OPC UA service fault detected for adapter '{}': {}",
-                    adapterId,
-                    statusCode);
+            log.warn("OPC UA service fault detected for adapter '{}': {}", adapterId, statusCode);
 
-            eventService.createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+            eventService
+                    .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
                     .withSeverity(Event.SEVERITY.WARN)
                     .withPayload(statusCode)
                     .withMessage("Service Fault detected: " + statusCode)
@@ -104,11 +102,11 @@ public class OpcUaServiceFaultListener implements ServiceFaultListener {
      */
     private boolean isCriticalFault(final @NotNull StatusCode statusCode) {
         final long code = statusCode.getValue();
-        return code == StatusCodes.Bad_SessionIdInvalid ||
-                code == StatusCodes.Bad_NoSubscription ||
-                code == StatusCodes.Bad_SessionClosed ||
-                code == StatusCodes.Bad_SecureChannelClosed ||
-                code == StatusCodes.Bad_SubscriptionIdInvalid ||
-                code == StatusCodes.Bad_IdentityTokenInvalid;
+        return code == StatusCodes.Bad_SessionIdInvalid
+                || code == StatusCodes.Bad_NoSubscription
+                || code == StatusCodes.Bad_SessionClosed
+                || code == StatusCodes.Bad_SecureChannelClosed
+                || code == StatusCodes.Bad_SubscriptionIdInvalid
+                || code == StatusCodes.Bad_IdentityTokenInvalid;
     }
 }

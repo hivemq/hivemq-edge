@@ -16,11 +16,11 @@
 package com.hivemq.extensions.handler;
 
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.auth.parameter.ModifiableClientSettingsImpl;
 import com.hivemq.mqtt.message.auth.AUTH;
 import com.hivemq.mqtt.message.connect.CONNECT;
 import io.netty.channel.ChannelHandlerContext;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -53,7 +53,5 @@ public interface PluginAuthenticatorService {
      * @param auth             the original AUTH message.
      */
     void authenticateAuth(
-            @NotNull ChannelHandlerContext ctx,
-            @NotNull ClientConnection clientConnection,
-            @NotNull AUTH auth);
+            @NotNull ChannelHandlerContext ctx, @NotNull ClientConnection clientConnection, @NotNull AUTH auth);
 }

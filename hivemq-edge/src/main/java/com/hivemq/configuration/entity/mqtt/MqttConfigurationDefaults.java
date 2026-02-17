@@ -28,7 +28,8 @@ public class MqttConfigurationDefaults {
     public static final int TTL_DISABLED = -1;
     public static final int SERVER_RECEIVE_MAXIMUM_DEFAULT = 10;
     public static final long MAX_QUEUED_MESSAGES_DEFAULT = 1000;
-    public static final MqttConfigurationService.QueuedMessagesStrategy QUEUED_MESSAGES_STRATEGY_DEFAULT = MqttConfigurationService.QueuedMessagesStrategy.DISCARD;
+    public static final MqttConfigurationService.QueuedMessagesStrategy QUEUED_MESSAGES_STRATEGY_DEFAULT =
+            MqttConfigurationService.QueuedMessagesStrategy.DISCARD;
     public static final long MAX_EXPIRY_INTERVAL_DEFAULT = UnsignedDataTypes.UNSIGNED_INT_MAX_VALUE + 1;
 
     public static final boolean RETAINED_MESSAGES_ENABLED_DEFAULT = true;
@@ -46,5 +47,4 @@ public class MqttConfigurationDefaults {
 
     public static final boolean KEEP_ALIVE_ALLOW_UNLIMITED_DEFAULT = true;
     public static final int KEEP_ALIVE_MAX_DEFAULT = UnsignedDataTypes.UNSIGNED_SHORT_MAX_VALUE;
-
 }

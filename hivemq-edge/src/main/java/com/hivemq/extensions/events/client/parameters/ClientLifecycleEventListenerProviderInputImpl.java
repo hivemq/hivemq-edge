@@ -16,12 +16,12 @@
 package com.hivemq.extensions.events.client.parameters;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
 import com.hivemq.extension.sdk.api.events.client.parameters.ClientLifecycleEventListenerProviderInput;
 import com.hivemq.extensions.ExtensionInformationUtil;
 import io.netty.channel.Channel;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -32,7 +32,8 @@ public class ClientLifecycleEventListenerProviderInputImpl implements ClientLife
     private final @NotNull ClientInformation clientInformation;
     private final @NotNull ConnectionInformation connectionInformation;
 
-    public ClientLifecycleEventListenerProviderInputImpl(final @NotNull String clientId, final @NotNull Channel channel) {
+    public ClientLifecycleEventListenerProviderInputImpl(
+            final @NotNull String clientId, final @NotNull Channel channel) {
         Preconditions.checkNotNull(clientId, "client id must never be null");
         Preconditions.checkNotNull(channel, "channel must never be null");
         this.connectionInformation = ExtensionInformationUtil.getAndSetConnectionInformation(channel);

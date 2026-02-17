@@ -15,24 +15,23 @@
  */
 package com.hivemq.bootstrap;
 
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.hivemq.configuration.service.entity.MqttTcpListener;
 import io.netty.channel.ChannelFuture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.jupiter.api.Assertions.assertSame;
-
 public class BindInformationTest {
-
 
     @Mock
     ChannelFuture future;
 
     private MqttTcpListener listener;
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -49,13 +48,13 @@ public class BindInformationTest {
 
     @Test
     public void test_listener_null() {
-    
+
         assertThrows(NullPointerException.class, () -> new BindInformation(null, future));
     }
 
     @Test
     public void test_future_null() {
-    
+
         assertThrows(NullPointerException.class, () -> new BindInformation(listener, null));
     }
 }

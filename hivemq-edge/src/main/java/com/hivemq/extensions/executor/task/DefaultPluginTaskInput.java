@@ -29,7 +29,5 @@ public class DefaultPluginTaskInput implements PluginTaskInput {
         return INSTANCE;
     }
 
-    private DefaultPluginTaskInput() {
-    }
-
+    private DefaultPluginTaskInput() {}
 }
