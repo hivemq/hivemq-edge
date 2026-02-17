@@ -22,6 +22,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.hivemq.combining.mapping.DataCombiningTransformationService;
 import com.hivemq.combining.model.DataCombining;
+import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.mqtt.handler.publish.PublishingResult;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
@@ -73,11 +74,23 @@ public final class VanillaDataCombiningTransformationService implements DataComb
                         parsingException = e;
                     }
                     if (parsingException != null) {
-                        LOGGER.warn("Source json path {} does not exist", sourceJsonPath, parsingException);
-                    } else if (value == null) {
-                        LOGGER.warn("No data found for source json path {}", sourceJsonPath);
+                        if (instruction.dataIdentifierReference().type() == DataIdentifierReference.Type.TAG
+                                && sourceJsonPath.endsWith(".value")) {
+                            try {
+                                value = sourceDocumentContext.read(
+                                        sourceJsonPath.substring(0, sourceJsonPath.length() - 6), Object.class);
+                                parsingException = null;
+                            } catch (final Exception e) {
+                                parsingException = e;
+                            }
+                        }
+                        if (parsingException != null) {
+                            LOGGER.warn("Source json path {} does not exist", sourceJsonPath, parsingException);
+                        }
                     }
-                    if (value != null) {
+                    if (value == null) {
+                        LOGGER.warn("No data found for source json path {}", sourceJsonPath);
+                    } else {
                         final String destinationJsonPath = instruction.toDestinationJsonPath();
                         final String[] fieldNames = destinationJsonPath.split("\\.+");
                         if (fieldNames.length == 0) {
