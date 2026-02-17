@@ -77,7 +77,7 @@ public abstract class QueueConsumer {
             final ListenableFuture<ImmutableList<PUBLISH>> publishesFuture =
                     clientQueuePersistence.readShared(queueId, READ_LIMIT, PUBLISH_POLL_BATCH_SIZE_BYTES);
 
-            Futures.transform(
+            var unused = Futures.transform(
                     publishesFuture,
                     publishes -> {
                         if (publishes.isEmpty()) {

@@ -16,6 +16,8 @@
 package com.hivemq.mqtt.message;
 
 /**
+ * MQTT and MQTT-SN protocol version identifiers.
+ *
  * @author Dominik Obermaier
  */
 public enum ProtocolVersion {

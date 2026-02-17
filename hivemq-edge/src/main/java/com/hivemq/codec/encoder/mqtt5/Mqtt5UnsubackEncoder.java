@@ -27,6 +27,8 @@ import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Encoder for MQTT 5 UNSUBACK messages.
+ *
  * @author Florian Limpöck
  * @since 4.0.0
  */
@@ -34,6 +36,7 @@ import org.jetbrains.annotations.NotNull;
 public class Mqtt5UnsubackEncoder
         extends Mqtt5MessageWithUserPropertiesEncoder.Mqtt5MessageWithReasonStringEncoder<UNSUBACK> {
 
+    @SuppressWarnings("EnumOrdinal")
     private static final int FIXED_HEADER = MessageType.UNSUBACK.ordinal() << 4;
 
     public Mqtt5UnsubackEncoder(

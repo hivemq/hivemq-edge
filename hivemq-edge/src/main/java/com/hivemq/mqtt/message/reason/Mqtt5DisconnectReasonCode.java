@@ -92,10 +92,16 @@ public enum Mqtt5DisconnectReasonCode implements Mqtt5ReasonCode {
 
     private static final @NotNull Mqtt5DisconnectReasonCode @NotNull [] DISCONNECT_LOOKUP =
             new Mqtt5DisconnectReasonCode[DisconnectReasonCode.values().length];
+    @SuppressWarnings("MultipleNullnessAnnotations")
     private static final @Nullable Mqtt5DisconnectReasonCode @NotNull [] DISCONNECTED_LOOKUP =
             new Mqtt5DisconnectReasonCode[DisconnectedReasonCode.values().length];
 
     static {
+        initLookups();
+    }
+
+    @SuppressWarnings("EnumOrdinal")
+    private static void initLookups() {
         for (final Mqtt5DisconnectReasonCode reasonCode : values()) {
             if (reasonCode != NORMAL_DISCONNECTION && reasonCode != DISCONNECT_WITH_WILL_MESSAGE) {
                 ERROR_CODE_LOOKUP[reasonCode.code - ERROR_CODE_MIN] = reasonCode;
@@ -125,10 +131,12 @@ public enum Mqtt5DisconnectReasonCode implements Mqtt5ReasonCode {
         return ERROR_CODE_LOOKUP[code - ERROR_CODE_MIN];
     }
 
+    @SuppressWarnings("EnumOrdinal")
     public static @NotNull Mqtt5DisconnectReasonCode from(final @NotNull DisconnectReasonCode reasonCode) {
         return DISCONNECT_LOOKUP[reasonCode.ordinal()];
     }
 
+    @SuppressWarnings("EnumOrdinal")
     public static @Nullable Mqtt5DisconnectReasonCode from(final @NotNull DisconnectedReasonCode reasonCode) {
         return DISCONNECTED_LOOKUP[reasonCode.ordinal()];
     }

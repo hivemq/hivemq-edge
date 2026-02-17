@@ -40,6 +40,8 @@ public enum Mqtt5RetainHandling {
     }
 
     /**
+     * Returns the numeric code of this retain handling option.
+     *
      * @return the byte code of this Retain Handling.
      */
     public int getCode() {

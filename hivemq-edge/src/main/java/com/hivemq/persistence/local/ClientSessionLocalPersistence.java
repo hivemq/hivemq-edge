@@ -29,6 +29,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Local persistence interface for client session data.
+ *
  * @author Dominik Obermaier
  * @author Lukas Brandl
  */
@@ -91,6 +93,8 @@ public interface ClientSessionLocalPersistence extends LocalPersistence {
     ClientSession getSession(@NotNull String clientId, boolean checkExpired, boolean includeWill);
 
     /**
+     * Returns the timestamp of the client session.
+     *
      * @param clientId The id associated with the session
      * @return The timestamp of the client session (last connected/disconnected) or {@code null} if there is no session
      * stored for the given id
@@ -99,6 +103,8 @@ public interface ClientSessionLocalPersistence extends LocalPersistence {
     Long getTimestamp(@NotNull String clientId);
 
     /**
+     * Returns the timestamp of the client session in a specific bucket.
+     *
      * @param clientId    The id associated with the session
      * @param bucketIndex The index of the bucket in which the session is stored
      * @return The timestamp of the client session (last connected/disconnected) or null if there is no session stored
@@ -170,6 +176,8 @@ public interface ClientSessionLocalPersistence extends LocalPersistence {
     Set<@NotNull String> getDisconnectedClients(int bucketIndex);
 
     /**
+     * Returns the number of active client sessions.
+     *
      * @return the amount of not expired client sessions.
      */
     int getSessionsCount();
@@ -185,6 +193,8 @@ public interface ClientSessionLocalPersistence extends LocalPersistence {
     void setSessionExpiryInterval(@NotNull String clientId, long sessionExpiryInterval, int bucketIndex);
 
     /**
+     * Returns all pending will messages for a specific bucket.
+     *
      * @return the delay of all wills of disconnected clients that have not been sent yet. The key is the client id
      */
     @NotNull

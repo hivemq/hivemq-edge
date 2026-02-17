@@ -18,6 +18,8 @@ package com.hivemq.mqtt.message.pubrel;
 import com.hivemq.mqtt.message.MessageType;
 
 /**
+ * MQTT 3.x representation of a PUBREL message.
+ *
  * @author Waldemar Ruck
  */
 public interface Mqtt3PUBREL {

@@ -25,6 +25,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Wrapper for the will publish message associated with a client session.
+ *
  * @author Lukas Brandl
  */
 public class ClientSessionWill implements Sizable {
@@ -44,7 +46,6 @@ public class ClientSessionWill implements Sizable {
         return mqttWillPublish;
     }
 
-    @NotNull
     public long getPublishId() {
         return publishId;
     }

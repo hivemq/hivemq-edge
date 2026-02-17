@@ -24,8 +24,6 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slj.mqtt.sn.MqttsnConstants;
 import org.slj.mqtt.sn.spi.IMqttsnMessage;
 import org.slj.mqtt.sn.wire.version1_2.payload.MqttsnRegister;
@@ -40,8 +38,6 @@ import org.slj.mqtt.sn.wire.version1_2.payload.MqttsnRegister;
 @ChannelHandler.Sharable
 public class RegisterHandler extends SimpleChannelInboundHandler<MqttsnRegister> {
 
-    private static final Logger log = LoggerFactory.getLogger(RegisterHandler.class);
-
     private final @NotNull IMqttsnTopicRegistry mqttsnTopicRegistry;
 
     @Inject
@@ -50,6 +46,7 @@ public class RegisterHandler extends SimpleChannelInboundHandler<MqttsnRegister>
     }
 
     @Override
+    @SuppressWarnings("FutureReturnValueIgnored")
     protected void channelRead0(final @NotNull ChannelHandlerContext ctx, final @NotNull MqttsnRegister msg)
             throws Exception {
 

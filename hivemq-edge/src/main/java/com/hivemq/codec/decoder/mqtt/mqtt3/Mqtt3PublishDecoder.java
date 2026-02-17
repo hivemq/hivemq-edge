@@ -32,6 +32,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Decoder for MQTT 3 PUBLISH messages.
+ *
  * @author Dominik Obermaier
  * @author Christoph Schäbel
  */

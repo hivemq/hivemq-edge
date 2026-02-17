@@ -70,6 +70,7 @@ public class DisconnectHandler extends SimpleChannelInboundHandler<DISCONNECT> {
         logClientReasonString = InternalConfigurations.LOG_CLIENT_REASON_STRING_ON_DISCONNECT_ENABLED;
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     @Override
     protected void channelRead0(final @NotNull ChannelHandlerContext ctx, final @NotNull DISCONNECT msg)
             throws Exception {

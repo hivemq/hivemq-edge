@@ -31,6 +31,8 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Utility for reading persistence data in chunks across all buckets.
+ *
  * @author Georg Held
  */
 @Singleton

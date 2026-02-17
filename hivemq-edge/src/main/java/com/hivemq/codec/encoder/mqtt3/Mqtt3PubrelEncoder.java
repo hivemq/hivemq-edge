@@ -22,6 +22,8 @@ import io.netty.buffer.ByteBuf;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Encoder for MQTT 3 PUBREL messages.
+ *
  * @author Dominik Obermaier
  */
 public class Mqtt3PubrelEncoder implements MqttEncoder<PUBREL> {

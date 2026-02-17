@@ -23,6 +23,8 @@ import io.netty.buffer.ByteBuf;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Encoder for MQTT 3 CONNACK messages.
+ *
  * @author Dominik Obermaier
  */
 public class Mqtt3ConnackEncoder implements MqttEncoder<Mqtt3CONNACK> {
@@ -45,16 +47,15 @@ public class Mqtt3ConnackEncoder implements MqttEncoder<Mqtt3CONNACK> {
 
         final Mqtt3ConnAckReturnCode returnCode = msg.getReturnCode();
         switch (clientConnection.getProtocolVersion()) {
-            case MQTTv3_1:
-                out.writeByte(CONNACK_FLAGS_EMPTY);
-                break;
-            case MQTTv3_1_1:
+            case MQTTv3_1 -> out.writeByte(CONNACK_FLAGS_EMPTY);
+            case MQTTv3_1_1 -> {
                 if (returnCode == Mqtt3ConnAckReturnCode.ACCEPTED && msg.isSessionPresent()) {
                     out.writeByte(CONNACK_FLAGS_SP_SET);
                 } else {
                     out.writeByte(CONNACK_FLAGS_EMPTY);
                 }
-                break;
+            }
+            default -> {}
         }
         out.writeByte(returnCode.getCode());
     }

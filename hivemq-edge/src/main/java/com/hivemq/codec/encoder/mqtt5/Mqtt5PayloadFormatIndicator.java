@@ -37,8 +37,11 @@ public enum Mqtt5PayloadFormatIndicator {
     }
 
     /**
+     * Returns the byte code of this Payload Format Indicator.
+     *
      * @return the byte code of this Payload Format Indicator.
      */
+    @SuppressWarnings("EnumOrdinal")
     public int getCode() {
         return ordinal();
     }
@@ -47,13 +50,17 @@ public enum Mqtt5PayloadFormatIndicator {
         return payloadFormatIndicator;
     }
 
-    private static final @NotNull Mqtt5PayloadFormatIndicator @NotNull [] LOOKUP =
-            new Mqtt5PayloadFormatIndicator[PayloadFormatIndicator.values().length];
+    @SuppressWarnings("EnumOrdinal")
+    private static final @NotNull Mqtt5PayloadFormatIndicator @NotNull [] LOOKUP = initLookup();
 
-    static {
+    @SuppressWarnings("EnumOrdinal")
+    private static @NotNull Mqtt5PayloadFormatIndicator @NotNull [] initLookup() {
+        final Mqtt5PayloadFormatIndicator[] lookup =
+                new Mqtt5PayloadFormatIndicator[PayloadFormatIndicator.values().length];
         for (final Mqtt5PayloadFormatIndicator payloadFormatIndicator : values()) {
-            LOOKUP[payloadFormatIndicator.payloadFormatIndicator.ordinal()] = payloadFormatIndicator;
+            lookup[payloadFormatIndicator.payloadFormatIndicator.ordinal()] = payloadFormatIndicator;
         }
+        return lookup;
     }
 
     /**
@@ -67,6 +74,7 @@ public enum Mqtt5PayloadFormatIndicator {
         return (code >= 0 && code < VALUES.length) ? VALUES[code] : null;
     }
 
+    @SuppressWarnings("EnumOrdinal")
     public static @NotNull Mqtt5PayloadFormatIndicator from(
             final @NotNull PayloadFormatIndicator payloadFormatIndicator) {
 

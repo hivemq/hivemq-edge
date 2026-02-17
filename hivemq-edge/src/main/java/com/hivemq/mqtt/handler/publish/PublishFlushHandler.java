@@ -22,18 +22,20 @@ import com.hivemq.mqtt.message.publish.PublishWithFuture;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import java.util.LinkedList;
+import java.util.ArrayDeque;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Handles batching and flushing of PUBLISH messages to a channel.
+ *
  * @author Daniel Krüger
  */
 public class PublishFlushHandler extends ChannelInboundHandlerAdapter implements Runnable {
 
     private @Nullable ChannelHandlerContext ctx;
-    private final @NotNull LinkedList<PublishWithFuture> messagesToWrite = new LinkedList<>();
+    private final @NotNull ArrayDeque<PublishWithFuture> messagesToWrite = new ArrayDeque<>();
     private final @NotNull Counter channelNotWritable;
     private final int maxWritesBeforeFlush;
     private boolean wasWritable = true; // will only ever be updated in the channel's eventloop

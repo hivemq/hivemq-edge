@@ -18,6 +18,8 @@ package com.hivemq.extensions.executor.task;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Task context for plugin tasks that consume input and produce output.
+ *
  * @author Georg Held
  */
 public abstract class PluginInOutTaskContext<O extends PluginTaskOutput> extends AbstractPluginTaskContext

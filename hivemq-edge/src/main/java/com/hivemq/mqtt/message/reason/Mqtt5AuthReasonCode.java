@@ -54,6 +54,11 @@ public enum Mqtt5AuthReasonCode implements Mqtt5ReasonCode {
             new Mqtt5AuthReasonCode[AuthReasonCode.values().length];
 
     static {
+        initLookups();
+    }
+
+    @SuppressWarnings("EnumOrdinal")
+    private static void initLookups() {
         for (final Mqtt5AuthReasonCode reasonCode : values()) {
             AUTH_LOOKUP[reasonCode.authReasonCode.ordinal()] = reasonCode;
         }
@@ -77,6 +82,7 @@ public enum Mqtt5AuthReasonCode implements Mqtt5ReasonCode {
         return null;
     }
 
+    @SuppressWarnings("EnumOrdinal")
     public static @NotNull Mqtt5AuthReasonCode from(final @NotNull AuthReasonCode reasonCode) {
         return AUTH_LOOKUP[reasonCode.ordinal()];
     }

@@ -56,6 +56,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Handles CONNECT inbound interception for registered extension interceptors.
+ *
  * @author Lukas Brandl
  * @author Silvio Giebl
  */
@@ -145,6 +147,7 @@ public class ConnectInboundInterceptorHandler {
         }
     }
 
+    @SuppressWarnings("EffectivelyPrivate")
     private class ConnectInterceptorContext extends PluginInOutTaskContext<ConnectInboundOutputImpl>
             implements Runnable {
 

@@ -29,6 +29,8 @@ import jakarta.inject.Singleton;
 import javax.net.ssl.SSLSession;
 
 /**
+ * Netty handler that extracts SSL/TLS session parameters after the handshake completes.
+ *
  * @author Florian Limpöck
  */
 @Sharable

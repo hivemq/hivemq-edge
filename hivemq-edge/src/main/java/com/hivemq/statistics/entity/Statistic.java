@@ -16,6 +16,8 @@
 package com.hivemq.statistics.entity;
 
 /**
+ * Statistics data collected about a HiveMQ instance.
+ *
  * @author Christoph Schäbel
  */
 public class Statistic {
@@ -26,7 +28,10 @@ public class Statistic {
     private long hivemqUptime;
     private Number connectedClients;
     private long officialExtensions;
+
+    @SuppressWarnings("UnusedVariable")
     private long enterpriseExtensions;
+
     private long customExtensions;
     private long tcpListeners;
     private long tlsListeners;
@@ -36,6 +41,8 @@ public class Statistic {
     private long maxKeepalive;
     private long sessionExpiry;
     private long messageExpiry;
+
+    @SuppressWarnings("UnusedVariable")
     private boolean overloadProtection;
     private long connectionThrottling;
     private long bandwithIncoming;

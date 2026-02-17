@@ -26,6 +26,8 @@ import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Netty channel handler that processes inbound MQTT SUBSCRIBE messages.
+ *
  * @author Florian Limpöck
  */
 @Singleton

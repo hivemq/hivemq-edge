@@ -29,12 +29,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Decoder for MQTT 3 DISCONNECT messages.
+ *
  * @author Dominik Obermaier
  */
 @Singleton
 public class Mqtt3DisconnectDecoder extends AbstractMqttDecoder<DISCONNECT> {
 
-    private static final DISCONNECT DISCONNECT = new DISCONNECT();
+    private static final DISCONNECT DISCONNECT_INSTANCE = new DISCONNECT();
 
     @Inject
     public Mqtt3DisconnectDecoder(
@@ -53,6 +55,6 @@ public class Mqtt3DisconnectDecoder extends AbstractMqttDecoder<DISCONNECT> {
                 return null;
             }
         }
-        return DISCONNECT;
+        return DISCONNECT_INSTANCE;
     }
 }

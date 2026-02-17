@@ -29,6 +29,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Decoder for MQTT 3 PUBREC messages.
+ *
  * @author Dominik Obermaier
  */
 @Singleton

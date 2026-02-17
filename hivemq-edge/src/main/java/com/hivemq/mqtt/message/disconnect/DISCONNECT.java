@@ -25,6 +25,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Represents an MQTT DISCONNECT message supporting both MQTT 3 and MQTT 5.
+ *
  * @author Dominik Obermaier
  * @author Florian Limpöck
  * @since 1.4

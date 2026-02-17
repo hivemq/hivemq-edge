@@ -34,6 +34,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Outbound channel handler that checks and updates message expiry intervals, dropping expired messages.
+ *
  * @author Florian Limpöck
  * @author Lukas Brandl
  * @since 4.0.2
@@ -52,8 +54,7 @@ public class MessageExpiryHandler extends ChannelOutboundHandlerAdapter {
             final @NotNull ChannelHandlerContext ctx, final @NotNull Object msg, final @NotNull ChannelPromise promise)
             throws Exception {
 
-        if (msg instanceof PUBLISH) {
-            final PUBLISH publish = (PUBLISH) msg;
+        if (msg instanceof PUBLISH publish) {
             checkAndSetPublishExpiry(publish);
             final boolean expireInflight = InternalConfigurations.EXPIRE_INFLIGHT_MESSAGES_ENABLED;
             final boolean isInflight = (publish.getQoS() == QoS.EXACTLY_ONCE) && publish.isDuplicateDelivery();
@@ -62,8 +63,7 @@ public class MessageExpiryHandler extends ChannelOutboundHandlerAdapter {
                 ctx.fireUserEventTriggered(new PublishDroppedEvent(publish));
                 return;
             }
-        } else if (msg instanceof PUBREL) {
-            final PUBREL pubrel = (PUBREL) msg;
+        } else if (msg instanceof PUBREL pubrel) {
             checkAndSetPubrelExpiry(pubrel);
             final boolean expireInflight = InternalConfigurations.EXPIRE_INFLIGHT_PUBRELS_ENABLED;
             final boolean drop = (pubrel.getMessageExpiryInterval() != null)

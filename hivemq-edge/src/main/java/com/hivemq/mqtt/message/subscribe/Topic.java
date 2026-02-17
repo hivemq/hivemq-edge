@@ -113,6 +113,7 @@ public class Topic implements Serializable, Comparable<Topic>, Mqtt3Topic, Mqtt5
     /**
      * @return the topic as String representation
      */
+    @Override
     @NotNull
     public String getTopic() {
         return topic;
@@ -121,20 +122,22 @@ public class Topic implements Serializable, Comparable<Topic>, Mqtt3Topic, Mqtt5
     /**
      * @return the QoS of a Topic
      */
+    @Override
     @NotNull
     public QoS getQoS() {
         return qoS;
     }
 
-    public void setQoS(final @NotNull QoS qos) {
-        checkNotNull(qos, "QoS must not be null");
-        this.qoS = qos;
+    public void setQoS(final @NotNull QoS qoS) {
+        checkNotNull(qoS, "QoS must not be null");
+        this.qoS = qoS;
     }
 
     /**
      * @return whether the client must not receive messages published by itself. The default is {@link
      * #DEFAULT_NO_LOCAL}.
      */
+    @Override
     public boolean isNoLocal() {
         return noLocal;
     }
@@ -142,6 +145,7 @@ public class Topic implements Serializable, Comparable<Topic>, Mqtt3Topic, Mqtt5
     /**
      * @return the handling of retained message for this subscription. The default is {@link #DEFAULT_RETAIN_HANDLING}.
      */
+    @Override
     @NotNull
     public Mqtt5RetainHandling getRetainHandling() {
         return retainHandling;
@@ -150,6 +154,7 @@ public class Topic implements Serializable, Comparable<Topic>, Mqtt3Topic, Mqtt5
     /**
      * @return whether the retain flag for incoming publishes must be set to its original value.
      */
+    @Override
     public boolean isRetainAsPublished() {
         return retainAsPublished;
     }
@@ -162,9 +167,7 @@ public class Topic implements Serializable, Comparable<Topic>, Mqtt3Topic, Mqtt5
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        final Topic topic1 = (Topic) o;
+        if (!(o instanceof Topic topic1)) return false;
 
         return topic.equals(topic1.topic);
     }

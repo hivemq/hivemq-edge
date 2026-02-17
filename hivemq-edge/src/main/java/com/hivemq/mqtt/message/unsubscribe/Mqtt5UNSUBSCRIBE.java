@@ -28,11 +28,15 @@ import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 public interface Mqtt5UNSUBSCRIBE {
 
     /**
+     * Returns a list of topics the client wants to unsubscribe from.
+     *
      * @return a list of topic the client wants to unsubscribe to
      */
     ImmutableList<String> getTopics();
 
     /**
+     * Returns a list of user properties.
+     *
      * @return a list of user properties {@link com.hivemq.mqtt.message.mqtt5.MqttUserProperty}
      */
     Mqtt5UserProperties getUserProperties();

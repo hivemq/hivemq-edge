@@ -20,6 +20,8 @@ import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.mqtt.message.QoS;
 
 /**
+ * Default values for the MQTT configuration.
+ *
  * @author Florian Limpöck
  * @since 4.0.0
  */

@@ -27,6 +27,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Netty channel handler that responds to MQTT PINGREQ messages with PINGRESP.
+ *
  * @author Christoph Schäbel
  */
 @Singleton
@@ -40,6 +42,7 @@ public class PingRequestHandler extends SimpleChannelInboundHandler<PINGREQ> {
     @Inject
     PingRequestHandler() {}
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     @Override
     protected void channelRead0(final ChannelHandlerContext ctx, final PINGREQ msg) throws Exception {
         if (log.isTraceEnabled()) {

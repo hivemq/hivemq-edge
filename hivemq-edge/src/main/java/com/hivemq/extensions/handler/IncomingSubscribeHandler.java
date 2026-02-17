@@ -54,6 +54,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Handles inbound SUBSCRIBE messages by applying extension interceptors before delegating to authorization.
+ *
  * @author Florian Limpöck
  * @author Silvio Giebl
  * @since 4.1.0
@@ -186,6 +188,7 @@ public class IncomingSubscribeHandler {
             }
         }
 
+        @SuppressWarnings("EffectivelyPrivate")
         public boolean finishInterceptor() {
             if (counter.incrementAndGet() == interceptorCount) {
                 ctx.executor().execute(this);
@@ -206,6 +209,7 @@ public class IncomingSubscribeHandler {
             }
         }
 
+        @SuppressWarnings("FutureReturnValueIgnored")
         private void prevent(final @NotNull SubscribeInboundOutputImpl output) {
             final int size = output.getSubscribePacket().getSubscriptions().size();
             final ProtocolVersion version = ctx.channel()

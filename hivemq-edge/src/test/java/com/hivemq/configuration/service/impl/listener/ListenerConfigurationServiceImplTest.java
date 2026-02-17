@@ -140,6 +140,7 @@ public class ListenerConfigurationServiceImplTest {
     }
 
     @Test
+    @SuppressWarnings("DoNotCall")
     public void test_get_listeners_immutable() {
 
         listenerConfigurationService.addListener(new MqttTcpListener(1883, "localhost"));

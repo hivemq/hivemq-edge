@@ -50,6 +50,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Decoder for MQTT 5 PUBLISH messages.
+ *
  * @author Florian Limpöck
  */
 @Singleton
@@ -159,52 +161,46 @@ public class Mqtt5PublishDecoder extends AbstractMqttPublishDecoder<Mqtt5PUBLISH
             final int propertyIdentifier = buf.readByte();
 
             switch (propertyIdentifier) {
-                case MESSAGE_EXPIRY_INTERVAL:
+                case MESSAGE_EXPIRY_INTERVAL -> {
                     if (messageExpiryIntervalInvalid(
                             clientConnection, buf, messageExpiryInterval, MessageType.PUBLISH)) {
                         return null;
                     }
                     messageExpiryInterval = buf.readUnsignedInt();
-                    break;
-
-                case PAYLOAD_FORMAT_INDICATOR:
+                }
+                case PAYLOAD_FORMAT_INDICATOR -> {
                     payloadFormatIndicator = readPayloadFormatIndicator(
                             clientConnection, buf, payloadFormatIndicator, MessageType.PUBLISH);
                     if (payloadFormatIndicator == null) {
                         return null;
                     }
-                    break;
-
-                case CONTENT_TYPE:
+                }
+                case CONTENT_TYPE -> {
                     contentType = readContentType(clientConnection, buf, contentType, MessageType.PUBLISH);
                     if (contentType == null) {
                         return null;
                     }
-                    break;
-
-                case RESPONSE_TOPIC:
+                }
+                case RESPONSE_TOPIC -> {
                     responseTopic = readResponseTopic(clientConnection, buf, responseTopic, MessageType.PUBLISH);
                     if (responseTopic == null) {
                         return null;
                     }
-                    break;
-
-                case CORRELATION_DATA:
+                }
+                case CORRELATION_DATA -> {
                     correlationData = readCorrelationData(clientConnection, buf, correlationData, MessageType.PUBLISH);
                     if (correlationData == null) {
                         return null;
                     }
-                    break;
-
-                case USER_PROPERTY:
+                }
+                case USER_PROPERTY -> {
                     userPropertiesBuilder =
                             readUserProperty(clientConnection, buf, userPropertiesBuilder, MessageType.PUBLISH);
                     if (userPropertiesBuilder == null) {
                         return null;
                     }
-                    break;
-
-                case TOPIC_ALIAS:
+                }
+                case TOPIC_ALIAS -> {
                     if (topicAliasInvalid(clientConnection, buf, topicAlias)) {
                         return null;
                     }
@@ -218,9 +214,8 @@ public class Mqtt5PublishDecoder extends AbstractMqttPublishDecoder<Mqtt5PUBLISH
                                 ReasonStrings.DISCONNECT_TOPIC_ALIAS_INVALID_ZERO);
                         return null;
                     }
-                    break;
-
-                case SUBSCRIPTION_IDENTIFIER:
+                }
+                case SUBSCRIPTION_IDENTIFIER -> {
                     disconnector.disconnect(
                             clientConnection.getChannel(),
                             "A client (IP: {}) sent a PUBLISH with subscription identifiers. This is not allowed. Disconnecting client.",
@@ -228,10 +223,11 @@ public class Mqtt5PublishDecoder extends AbstractMqttPublishDecoder<Mqtt5PUBLISH
                             Mqtt5DisconnectReasonCode.PROTOCOL_ERROR,
                             ReasonStrings.DISCONNECT_PROTOCOL_ERROR_PUBLISH_SUBSCRIPTION_IDENTIFIER);
                     return null;
-
-                default:
+                }
+                default -> {
                     disconnectByInvalidPropertyIdentifier(clientConnection, propertyIdentifier, MessageType.PUBLISH);
                     return null;
+                }
             }
         }
 

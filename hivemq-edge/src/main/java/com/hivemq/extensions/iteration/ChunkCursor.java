@@ -22,6 +22,8 @@ import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Cursor used to track iteration progress across persistence buckets.
+ *
  * @author Christoph Schäbel
  */
 public class ChunkCursor {

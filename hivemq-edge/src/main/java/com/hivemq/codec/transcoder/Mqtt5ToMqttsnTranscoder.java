@@ -71,7 +71,7 @@ public class Mqtt5ToMqttsnTranscoder implements ITranscoder<Message, List<IMqtts
             List list = new ArrayList();
             MessageType type = messageIn.getType();
             switch (type) {
-                case CONNACK:
+                case CONNACK -> {
                     CONNACK connack = (CONNACK) messageIn;
                     IMqttsnMessage out = factory.createConnack(
                             connack.getReasonCode().isError()
@@ -81,14 +81,14 @@ public class Mqtt5ToMqttsnTranscoder implements ITranscoder<Message, List<IMqtts
                             null,
                             connack.getSessionExpiryInterval());
                     list.add(out);
-                    break;
-                case UNSUBACK:
+                }
+                case UNSUBACK -> {
                     UNSUBACK unsuback = (UNSUBACK) messageIn;
-                    out = factory.createUnsuback(MqttsnConstants.RETURN_CODE_ACCEPTED);
+                    IMqttsnMessage out = factory.createUnsuback(MqttsnConstants.RETURN_CODE_ACCEPTED);
                     out.setId(unsuback.getPacketIdentifier());
                     list.add(out);
-                    break;
-                case PUBLISH:
+                }
+                case PUBLISH -> {
                     PUBLISH publish = (PUBLISH) messageIn;
                     Optional<MqttsnTopicAlias> aliasOptional = pipelineContext
                             .getTopicRegistry()
@@ -100,7 +100,7 @@ public class Mqtt5ToMqttsnTranscoder implements ITranscoder<Message, List<IMqtts
                         int topicAliasVal = pipelineContext
                                 .getTopicRegistry()
                                 .register(connection.getClientId(), publish.getTopic());
-                        out = factory.createRegister(topicAliasVal, publish.getTopic());
+                        IMqttsnMessage out = factory.createRegister(topicAliasVal, publish.getTopic());
                         list.add(out);
                     } else {
                         topicAlias = aliasOptional.get();
@@ -114,7 +114,7 @@ public class Mqtt5ToMqttsnTranscoder implements ITranscoder<Message, List<IMqtts
                                 .get();
                     }
 
-                    out = factory.createPublish(
+                    IMqttsnMessage publishOut = factory.createPublish(
                             publish.getQoS().getQosNumber(),
                             publish.isDuplicateDelivery(),
                             publish.isRetain(),
@@ -122,49 +122,48 @@ public class Mqtt5ToMqttsnTranscoder implements ITranscoder<Message, List<IMqtts
                             topicAlias.getAlias(),
                             publish.getPayload());
                     if (publish.getQoS().getQosNumber() > 0) {
-                        out.setId(publish.getPacketIdentifier());
+                        publishOut.setId(publish.getPacketIdentifier());
                     }
-                    list.add(out);
-                    break;
-                case PUBACK:
+                    list.add(publishOut);
+                }
+                case PUBACK -> {
                     PUBACK puback = (PUBACK) messageIn;
                     Integer topicId = connection.getOriginatingTopicAliasForMessageId(puback.getPacketIdentifier());
-                    out = factory.createPuback(
+                    IMqttsnMessage out = factory.createPuback(
                             topicId == null ? 0 : topicId,
                             puback.getReasonCode().isError()
                                     ? MqttsnConstants.RETURN_CODE_INVALID_TOPIC_ID
                                     : MqttsnConstants.RETURN_CODE_ACCEPTED);
                     out.setId(puback.getPacketIdentifier());
                     list.add(out);
-                    break;
-                case PUBREC:
+                }
+                case PUBREC -> {
                     PUBREC pubrec = (PUBREC) messageIn;
-                    out = factory.createPubrec();
+                    IMqttsnMessage out = factory.createPubrec();
                     out.setId(pubrec.getPacketIdentifier());
                     list.add(out);
-                    break;
-                case PUBREL:
+                }
+                case PUBREL -> {
                     PUBREL pubrel = (PUBREL) messageIn;
-                    out = factory.createPubrel();
+                    IMqttsnMessage out = factory.createPubrel();
                     out.setId(pubrel.getPacketIdentifier());
                     list.add(out);
-                    break;
-                case PUBCOMP:
+                }
+                case PUBCOMP -> {
                     PUBCOMP pubcomp = (PUBCOMP) messageIn;
-                    out = factory.createPubcomp();
+                    IMqttsnMessage out = factory.createPubcomp();
                     out.setId(pubcomp.getPacketIdentifier());
                     list.add(out);
-                    break;
-                case PINGRESP:
-                    PINGRESP pingresp = (PINGRESP) messageIn;
-                    out = factory.createPingresp();
+                }
+                case PINGRESP -> {
+                    IMqttsnMessage out = factory.createPingresp();
                     list.add(out);
-                    break;
-                case DISCONNECT:
-                    DISCONNECT disconnect = (DISCONNECT) messageIn;
-                    out = factory.createDisconnect();
+                }
+                case DISCONNECT -> {
+                    IMqttsnMessage out = factory.createDisconnect();
                     list.add(out);
-                    break;
+                }
+                default -> {}
             }
 
             if (!list.isEmpty()) {
@@ -197,16 +196,11 @@ public class Mqtt5ToMqttsnTranscoder implements ITranscoder<Message, List<IMqtts
     }
 
     private static MqttsnConstants.TOPIC_TYPE mapTopicType(MqttsnTopicAlias.TYPE type) {
-        switch (type) {
-            case FULL:
-                return MqttsnConstants.TOPIC_TYPE.FULL;
-            case SHORT:
-                return MqttsnConstants.TOPIC_TYPE.SHORT;
-            case NORMAL:
-                return MqttsnConstants.TOPIC_TYPE.NORMAL;
-            case PREDEFINED:
-                return MqttsnConstants.TOPIC_TYPE.PREDEFINED;
-        }
-        throw new IllegalArgumentException("unknown alias type");
+        return switch (type) {
+            case FULL -> MqttsnConstants.TOPIC_TYPE.FULL;
+            case SHORT -> MqttsnConstants.TOPIC_TYPE.SHORT;
+            case NORMAL -> MqttsnConstants.TOPIC_TYPE.NORMAL;
+            case PREDEFINED -> MqttsnConstants.TOPIC_TYPE.PREDEFINED;
+        };
     }
 }

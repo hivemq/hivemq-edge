@@ -25,6 +25,8 @@ import org.jetbrains.annotations.NotNull;
 public interface PluginTaskContext {
 
     /**
+     * Returns the identifier used for internal scheduling.
+     *
      * @return a String for the internal scheduling of the {@link com.hivemq.extensions.executor.PluginTaskExecutorService}.
      */
     @NotNull

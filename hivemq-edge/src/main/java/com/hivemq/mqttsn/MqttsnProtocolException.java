@@ -16,6 +16,8 @@
 package com.hivemq.mqttsn;
 
 /**
+ * Exception thrown when an MQTT-SN protocol violation is detected.
+ *
  * @author Simon L Johnson
  */
 public class MqttsnProtocolException extends Exception {

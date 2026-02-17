@@ -21,6 +21,8 @@ import com.hivemq.mqtt.message.Message;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Interface for MQTT 5 CONNECT message properties.
+ *
  * @author Florian Limpöck
  */
 public interface Mqtt5CONNECT extends Message {

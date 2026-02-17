@@ -16,6 +16,8 @@
 package com.hivemq.edge.adapters.plc4x;
 
 /**
+ * Exception thrown when a PLC4X operation fails.
+ *
  * @author Simon L Johnson
  */
 public class Plc4xException extends Exception {

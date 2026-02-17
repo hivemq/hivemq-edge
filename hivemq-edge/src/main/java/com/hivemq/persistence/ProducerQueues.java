@@ -21,6 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Interface for submitting tasks to single-writer persistence queues.
+ *
  * @author Daniel Krüger
  */
 public interface ProducerQueues {

@@ -51,9 +51,11 @@ public class PersistenceShutdownHookTest {
     private RetainedMessagePersistence retainedMessagePersistence;
 
     @Mock
+    @SuppressWarnings("DoNotMock")
     private ListeningExecutorService persistenceExecutorService;
 
     @Mock
+    @SuppressWarnings("DoNotMock")
     private ListeningScheduledExecutorService persistenceScheduledExecutorService;
 
     @Mock

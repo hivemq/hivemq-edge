@@ -24,6 +24,8 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Persistence interface for client message queue data.
+ *
  * @author Lukas Brandl
  */
 public interface ClientQueuePersistence {

@@ -26,6 +26,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Immutable implementation of the PUBREL extension packet.
+ *
  * @author Yannick Weber
  * @author Silvio Giebl
  */
@@ -82,10 +84,9 @@ public class PubrelPacketImpl implements PubrelPacket {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PubrelPacketImpl)) {
+        if (!(o instanceof PubrelPacketImpl that)) {
             return false;
         }
-        final PubrelPacketImpl that = (PubrelPacketImpl) o;
         return (packetIdentifier == that.packetIdentifier)
                 && (reasonCode == that.reasonCode)
                 && Objects.equals(reasonString, that.reasonString)

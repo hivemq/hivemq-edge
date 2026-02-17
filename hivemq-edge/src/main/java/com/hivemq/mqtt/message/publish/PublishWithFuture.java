@@ -22,6 +22,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * A PUBLISH message paired with a {@link SettableFuture} tracking its delivery status.
+ *
  * @author Christoph Schäbel
  */
 public class PublishWithFuture extends PUBLISH {

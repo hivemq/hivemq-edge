@@ -30,6 +30,8 @@ import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Encoder for MQTT 5 DISCONNECT messages.
+ *
  * @author Silvio Giebl
  * @author Florian Limpöck
  */
@@ -37,6 +39,7 @@ import org.jetbrains.annotations.NotNull;
 public class Mqtt5DisconnectEncoder
         extends Mqtt5MessageWithOmissibleReasonCodeEncoder<DISCONNECT, Mqtt5DisconnectReasonCode> {
 
+    @SuppressWarnings("EnumOrdinal")
     private static final int FIXED_HEADER = MessageType.DISCONNECT.ordinal() << 4;
 
     public Mqtt5DisconnectEncoder(

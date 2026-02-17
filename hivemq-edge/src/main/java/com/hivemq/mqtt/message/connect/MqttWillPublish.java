@@ -31,6 +31,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Represents a Will Publish message attached to an MQTT CONNECT packet.
+ *
  * @author Silvio Giebl
  * @author Florian Limpöck
  */

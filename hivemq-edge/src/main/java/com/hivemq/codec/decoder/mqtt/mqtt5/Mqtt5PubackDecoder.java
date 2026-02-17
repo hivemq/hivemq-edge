@@ -36,6 +36,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Decoder for MQTT 5 PUBACK messages.
+ *
  * @author Waldemar Ruck
  * @since 4.0
  */
@@ -96,24 +98,23 @@ public class Mqtt5PubackDecoder extends AbstractMqttDecoder<PUBACK> {
             final int propertyIdentifier = buf.readByte();
 
             switch (propertyIdentifier) {
-                case REASON_STRING:
+                case REASON_STRING -> {
                     reasonString = decodeReasonString(clientConnection, buf, reasonString, MessageType.PUBACK);
                     if (reasonString == null) {
                         return null;
                     }
-                    break;
-
-                case USER_PROPERTY:
+                }
+                case USER_PROPERTY -> {
                     userPropertiesBuilder =
                             readUserProperty(clientConnection, buf, userPropertiesBuilder, MessageType.PUBACK);
                     if (userPropertiesBuilder == null) {
                         return null;
                     }
-                    break;
-
-                default:
+                }
+                default -> {
                     disconnectByInvalidPropertyIdentifier(clientConnection, propertyIdentifier, MessageType.PUBACK);
                     return null;
+                }
             }
         }
 

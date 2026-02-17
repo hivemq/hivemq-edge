@@ -21,6 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Persistence layer for PUBLISH message payloads with reference counting.
+ *
  * @author Lukas Brandl
  */
 public interface PublishPayloadPersistence {

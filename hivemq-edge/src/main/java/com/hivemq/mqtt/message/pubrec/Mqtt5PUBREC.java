@@ -21,6 +21,8 @@ import com.hivemq.mqtt.message.reason.Mqtt5PubRecReasonCode;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * MQTT 5 representation of a PUBREC message.
+ *
  * @author Waldemar Ruck
  * @since 4.0
  */
@@ -29,18 +31,24 @@ public interface Mqtt5PUBREC {
     Mqtt5PubRecReasonCode DEFAULT_REASON_CODE = Mqtt5PubRecReasonCode.SUCCESS;
 
     /**
+     * Returns the reason code of this PUBREC packet.
+     *
      * @return the reason code of this PUBREC packet.
      */
     @NotNull
     Mqtt5PubRecReasonCode getReasonCode();
 
     /**
+     * Returns the optional reason string of this PUBREC packet.
+     *
      * @return the optional reason string of this PUBREC packet.
      */
     @NotNull
     String getReasonString();
 
     /**
+     * Returns the optional user properties of this PUBREC packet.
+     *
      * @return the optional user properties of this PUBREC packet.
      */
     @NotNull

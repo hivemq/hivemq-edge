@@ -42,13 +42,18 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Registry of MQTT message decoders for both MQTT 3 and MQTT 5 protocol versions.
+ *
  * @author Lukas Brandl
  * @author Florian Limpöck
  */
 @Singleton
 public class MqttDecoders {
 
+    @SuppressWarnings("MultipleNullnessAnnotations")
     private final @Nullable MqttDecoder @NotNull [] mqtt3Decoder;
+
+    @SuppressWarnings("MultipleNullnessAnnotations")
     private final @Nullable MqttDecoder @NotNull [] mqtt5Decoder;
 
     @Inject

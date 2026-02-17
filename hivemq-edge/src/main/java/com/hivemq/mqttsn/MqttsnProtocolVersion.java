@@ -16,6 +16,8 @@
 package com.hivemq.mqttsn;
 
 /**
+ * MQTT-SN protocol version identifiers.
+ *
  * @author Simon L Johnson
  */
 public enum MqttsnProtocolVersion {

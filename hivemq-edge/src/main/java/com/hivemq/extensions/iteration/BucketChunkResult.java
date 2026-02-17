@@ -19,6 +19,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Result of a single chunk read from a persistence bucket.
+ *
  * @author Christoph Schäbel
  */
 public class BucketChunkResult<V> {

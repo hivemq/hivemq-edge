@@ -28,6 +28,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Decoder for MQTT PINGREQ messages.
+ *
  * @author Florian Limpöck
  */
 @Singleton

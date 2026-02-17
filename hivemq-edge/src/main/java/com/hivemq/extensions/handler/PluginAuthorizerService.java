@@ -22,6 +22,8 @@ import io.netty.channel.ChannelHandlerContext;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Service for authorizing MQTT messages using extension-provided authorizers.
+ *
  * @author Florian Limpöck
  * @since 4.1.0
  */

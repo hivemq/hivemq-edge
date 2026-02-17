@@ -39,6 +39,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Implementation of the shared subscription service that manages shared subscription caching and resolution.
+ *
  * @author Florian Limpöck
  * @since 4.0.1
  */
@@ -102,6 +104,7 @@ public class SharedSubscriptionServiceImpl implements SharedSubscriptionService 
      * @param topic a validated subscription topic string
      * @return a SharedSubscription or null if $share keyword not present
      */
+    @Override
     @Nullable
     public SharedSubscription checkForSharedSubscription(final @NotNull String topic) {
 
@@ -117,6 +120,7 @@ public class SharedSubscriptionServiceImpl implements SharedSubscriptionService 
         return null;
     }
 
+    @Override
     @NotNull
     public Subscription createSubscription(final @NotNull Topic topic) {
 
@@ -146,6 +150,7 @@ public class SharedSubscriptionServiceImpl implements SharedSubscriptionService 
      * @param sharedSubscription is the share name and the topic filter separated by a '/'
      * @return a set of subscribers
      */
+    @Override
     @NotNull
     public ImmutableSet<SubscriberWithQoS> getSharedSubscriber(final @NotNull String sharedSubscription) {
         // calling this method before post construct will return an empty set
@@ -168,6 +173,7 @@ public class SharedSubscriptionServiceImpl implements SharedSubscriptionService 
      * @param client of which the subscriptions are requested.
      * @return a set of subscriptions
      */
+    @Override
     @NotNull
     public ImmutableSet<Topic> getSharedSubscriptions(final @NotNull String client) throws ExecutionException {
         // calling this method before post construct will return an empty set
@@ -192,12 +198,14 @@ public class SharedSubscriptionServiceImpl implements SharedSubscriptionService 
         return new SharedSubscription(topicFilter, group);
     }
 
+    @Override
     public void invalidateSharedSubscriberCache(final @NotNull String sharedSubscription) {
         if (sharedSubscriberCache != null) {
             sharedSubscriberCache.invalidate(sharedSubscription);
         }
     }
 
+    @Override
     public void invalidateSharedSubscriptionCache(final @NotNull String clientId) {
         if (sharedSubscriptionCache != null) {
             sharedSubscriptionCache.invalidate(clientId);
@@ -211,6 +219,7 @@ public class SharedSubscriptionServiceImpl implements SharedSubscriptionService 
      * @param topic from which the prefix will be removed
      * @return the topic without the leading '$share/' or the original topic if it does't start with '$share/'
      */
+    @Override
     @NotNull
     public String removePrefix(final @NotNull String topic) {
         if (topic.startsWith(SHARED_SUBSCRIPTION_PREFIX)) {

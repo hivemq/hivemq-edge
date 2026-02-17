@@ -53,6 +53,8 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Implementation of the authorizer service that delegates authorization to registered extension authorizers.
+ *
  * @author Florian Limpöck
  * @since 4.1.0
  */
@@ -92,6 +94,7 @@ public class PluginAuthorizerServiceImpl implements PluginAuthorizerService {
         this.allowDollarTopics = MQTT_ALLOW_DOLLAR_TOPICS.get();
     }
 
+    @Override
     public void authorizePublish(final @NotNull ChannelHandlerContext ctx, final @NotNull PUBLISH msg) {
 
         // We first check if the topic is allowed to be published
@@ -146,6 +149,7 @@ public class PluginAuthorizerServiceImpl implements PluginAuthorizerService {
                 MoreExecutors.directExecutor());
     }
 
+    @Override
     public void authorizeWillPublish(final @NotNull ChannelHandlerContext ctx, final @NotNull CONNECT connect) {
 
         final String clientId = ctx.channel()
@@ -212,6 +216,8 @@ public class PluginAuthorizerServiceImpl implements PluginAuthorizerService {
         return publishProcessedFuture;
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
+    @Override
     public void authorizeSubscriptions(final @NotNull ChannelHandlerContext ctx, final @NotNull SUBSCRIBE msg) {
 
         final String clientId = ctx.channel()
@@ -263,7 +269,7 @@ public class PluginAuthorizerServiceImpl implements PluginAuthorizerService {
 
         final AllTopicsProcessedTask allTopicsProcessedTask = new AllTopicsProcessedTask(
                 msg, listenableFutures, ctx, mqttServerDisconnector, incomingSubscribeService);
-        Futures.whenAllComplete(listenableFutures).run(allTopicsProcessedTask, MoreExecutors.directExecutor());
+        var unused = Futures.whenAllComplete(listenableFutures).run(allTopicsProcessedTask, MoreExecutors.directExecutor());
     }
 
     private @NotNull ClientAuthorizers getClientAuthorizers(final @NotNull ChannelHandlerContext ctx) {
@@ -275,6 +281,7 @@ public class PluginAuthorizerServiceImpl implements PluginAuthorizerService {
         return clientConnection.getExtensionClientAuthorizers();
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     private void disconnectWithReasonCode(
             final @NotNull ChannelHandlerContext ctx,
             final @NotNull String logReason,

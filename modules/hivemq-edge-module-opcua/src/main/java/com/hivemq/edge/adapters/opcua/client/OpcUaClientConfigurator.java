@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.opcua.client;
 import com.hivemq.edge.adapters.opcua.Constants;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import java.security.KeyPair;
+import java.security.cert.X509Certificate;
 import java.util.function.Consumer;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClientConfigBuilder;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
@@ -93,7 +94,7 @@ public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilde
                 }
                 configBuilder.setCertificate(parsedConfig.keyPairWithChain().publicKey());
                 configBuilder.setCertificateChain(
-                        parsedConfig.keyPairWithChain().certificateChain());
+                        parsedConfig.keyPairWithChain().certificateChain().toArray(X509Certificate[]::new));
             } else {
                 if (log.isDebugEnabled()) {
                     log.debug("Keystore for TLS is not available");

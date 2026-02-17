@@ -21,6 +21,8 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Registry for per-client enhanced authenticators.
+ *
  * @author Florian Limpöck
  */
 public interface ClientAuthenticators {
@@ -41,6 +43,8 @@ public interface ClientAuthenticators {
     void removeForExtension(@NotNull IsolatedExtensionClassloader pluginClassLoader);
 
     /**
+     * Returns a map containing all extensions with their registered enhanced authenticators.
+     *
      * @return a map containing all extensions with their registered enhanced authenticators.
      */
     @NotNull

@@ -53,6 +53,11 @@ public enum Mqtt5PubRelReasonCode implements Mqtt5ReasonCode {
             new Mqtt5PubRelReasonCode[PubrelReasonCode.values().length];
 
     static {
+        initLookup();
+    }
+
+    @SuppressWarnings("EnumOrdinal")
+    private static void initLookup() {
         for (final Mqtt5PubRelReasonCode reasonCode : values()) {
             PUBREL_LOOKUP[reasonCode.pubrelReasonCode.ordinal()] = reasonCode;
         }
@@ -74,6 +79,7 @@ public enum Mqtt5PubRelReasonCode implements Mqtt5ReasonCode {
         return null;
     }
 
+    @SuppressWarnings("EnumOrdinal")
     public static @NotNull Mqtt5PubRelReasonCode from(final @NotNull PubrelReasonCode reasonCode) {
         return PUBREL_LOOKUP[reasonCode.ordinal()];
     }

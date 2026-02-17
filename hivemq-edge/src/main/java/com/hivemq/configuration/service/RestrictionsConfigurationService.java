@@ -67,21 +67,29 @@ public interface RestrictionsConfigurationService {
     long maxConnections();
 
     /**
+     * Returns the global maximum allowed client identifier length.
+     *
      * @return the global maximum allowed client identifier length
      */
     int maxClientIdLength();
 
     /**
+     * Returns the global maximum timeout for idle TCP connections of clients which didn't send a CONNECT message.
+     *
      * @return the global maximum timeout for idle TCP connections of clients which didn't send a CONNECT message.
      */
     long noConnectIdleTimeout();
 
     /**
+     * Returns the incoming bandwidth limit in bytes.
+     *
      * @return the incoming bandwidth limit in bytes
      */
     long incomingLimit();
 
     /**
+     * Returns the global maximum allowed topic length.
+     *
      * @return the global maximum allowed topic length
      */
     int maxTopicLength();

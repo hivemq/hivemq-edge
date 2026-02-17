@@ -27,6 +27,8 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Persistence interface for client session subscription data.
+ *
  * @author Dominik Obermaier
  * @author Lukas Brandl
  */

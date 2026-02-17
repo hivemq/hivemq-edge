@@ -22,34 +22,46 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Represents an MQTT 5 DISCONNECT message.
+ *
  * @author Florian Limpöck
  */
 public interface Mqtt5DISCONNECT {
 
     /**
+     * Returns the reason code of this DISCONNECT packet.
+     *
      * @return the reason code of this DISCONNECT packet.
      */
     @NotNull
     Mqtt5DisconnectReasonCode getReasonCode();
 
     /**
+     * Returns the optional expiry interval for the session, the client disconnects from with this DISCONNECT packet.
+     *
      * @return the optional expiry interval for the session, the client disconnects from with this DISCONNECT packet.
      */
     long getSessionExpiryInterval();
 
     /**
+     * Returns the optional server reference, which can be used if the server sent this DISCONNECT packet.
+     *
      * @return the optional server reference, which can be used if the server sent this DISCONNECT packet.
      */
     @Nullable
     String getServerReference();
 
     /**
+     * Returns the optional reason string of this DISCONNECT packet.
+     *
      * @return the optional reason string of this DISCONNECT packet.
      */
     @Nullable
     String getReasonString();
 
     /**
+     * Returns the optional user properties of this DISCONNECT packet.
+     *
      * @return the optional user properties of this DISCONNECT packet.
      */
     @NotNull

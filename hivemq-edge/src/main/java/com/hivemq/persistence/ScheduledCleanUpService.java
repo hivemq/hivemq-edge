@@ -211,7 +211,7 @@ public class ScheduledCleanUpService {
                 // currently doesn't react to a set thread interrupt flag. But we expect this to be a rare case and want
                 // to ensure the progress of other cleanup procedures despite the potential additional load.
                 try {
-                    Futures.withTimeout(future, cleanUpTaskTimeoutSec, TimeUnit.SECONDS, scheduledExecutorService);
+                    var unused = Futures.withTimeout(future, cleanUpTaskTimeoutSec, TimeUnit.SECONDS, scheduledExecutorService);
                 } catch (final RejectedExecutionException rejectedExecutionException) {
                     log.warn(
                             "Clean up job timeout scheduling rejected, executor is shutting down.",

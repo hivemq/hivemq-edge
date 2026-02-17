@@ -24,6 +24,8 @@ import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Encoder for MQTT 5 PUBREC messages.
+ *
  * @author Waldemar Ruck
  * @since 4.0
  */
@@ -32,6 +34,7 @@ public class Mqtt5PubrecEncoder
         extends Mqtt5MessageWithUserPropertiesEncoder.Mqtt5MessageWithIdAndOmissibleReasonCodeEncoder<
                 PUBREC, Mqtt5PubRecReasonCode> {
 
+    @SuppressWarnings("EnumOrdinal")
     private static final int FIXED_HEADER = (MessageType.PUBREC.ordinal() << 4);
 
     public Mqtt5PubrecEncoder(

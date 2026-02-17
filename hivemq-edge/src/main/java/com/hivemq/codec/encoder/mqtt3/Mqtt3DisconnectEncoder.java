@@ -22,6 +22,8 @@ import io.netty.buffer.ByteBuf;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Encoder for MQTT 3 DISCONNECT messages.
+ *
  * @author Lukas Brandl
  */
 public class Mqtt3DisconnectEncoder implements MqttEncoder<DISCONNECT> {

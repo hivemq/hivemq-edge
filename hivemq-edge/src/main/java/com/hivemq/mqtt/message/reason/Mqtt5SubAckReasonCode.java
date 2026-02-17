@@ -65,6 +65,11 @@ public enum Mqtt5SubAckReasonCode implements Mqtt5ReasonCode {
             new Mqtt5SubAckReasonCode[SubackReasonCode.values().length];
 
     static {
+        initLookup();
+    }
+
+    @SuppressWarnings("EnumOrdinal")
+    private static void initLookup() {
         for (final Mqtt5SubAckReasonCode reasonCode : values()) {
             SUBACK_LOOKUP[reasonCode.subackReasonCode.ordinal()] = reasonCode;
         }
@@ -86,6 +91,7 @@ public enum Mqtt5SubAckReasonCode implements Mqtt5ReasonCode {
         return null;
     }
 
+    @SuppressWarnings("EnumOrdinal")
     public static @NotNull Mqtt5SubAckReasonCode from(final @NotNull SubackReasonCode reasonCode) {
         return SUBACK_LOOKUP[reasonCode.ordinal()];
     }

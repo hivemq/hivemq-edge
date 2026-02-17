@@ -23,6 +23,8 @@ import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Holds references to commonly used metrics counters.
+ *
  * @author Christoph Schäbel
  */
 @Singleton

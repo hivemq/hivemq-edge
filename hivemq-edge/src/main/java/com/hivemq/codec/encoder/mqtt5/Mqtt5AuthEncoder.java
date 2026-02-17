@@ -38,6 +38,7 @@ public class Mqtt5AuthEncoder
         extends Mqtt5MessageWithUserPropertiesEncoder.Mqtt5MessageWithOmissibleReasonCodeEncoder<
                 AUTH, Mqtt5AuthReasonCode> {
 
+    @SuppressWarnings("EnumOrdinal")
     private static final int FIXED_HEADER = MessageType.AUTH.ordinal() << 4;
 
     public Mqtt5AuthEncoder(

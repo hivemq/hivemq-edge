@@ -114,6 +114,7 @@ public class ClientSessionPersistenceImpl extends AbstractPersistence implements
     }
 
     @Override
+    @SuppressWarnings("FutureReturnValueIgnored")
     public @NotNull ListenableFuture<Void> clientDisconnected(
             final @NotNull String client, final boolean sendWill, final long sessionExpiry) {
 

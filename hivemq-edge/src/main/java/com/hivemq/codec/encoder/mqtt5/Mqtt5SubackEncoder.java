@@ -28,12 +28,15 @@ import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Encoder for MQTT 5 SUBACK messages.
+ *
  * @author Silvio Giebl
  * @author Florian Limpöck
  */
 @Singleton
 public class Mqtt5SubackEncoder extends Mqtt5MessageWithReasonStringEncoder<SUBACK> {
 
+    @SuppressWarnings("EnumOrdinal")
     private static final int FIXED_HEADER = MessageType.SUBACK.ordinal() << 4;
 
     public Mqtt5SubackEncoder(

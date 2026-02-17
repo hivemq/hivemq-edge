@@ -15,7 +15,7 @@
  */
 package com.hivemq.persistence;
 
-import static com.hivemq.persistence.InFileSingleWriter.Task;
+import static com.hivemq.persistence.SingleWriterService.Task;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;

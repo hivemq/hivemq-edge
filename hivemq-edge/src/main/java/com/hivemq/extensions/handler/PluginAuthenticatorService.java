@@ -23,6 +23,8 @@ import io.netty.channel.ChannelHandlerContext;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Service for authenticating clients via extension-provided authenticators.
+ *
  * @author Florian Limpöck
  */
 public interface PluginAuthenticatorService {

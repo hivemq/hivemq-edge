@@ -23,6 +23,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Handles server-initiated MQTT disconnections.
+ *
  * @author Florian Limpöck
  */
 @ExecuteInEventloop

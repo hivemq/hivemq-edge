@@ -51,6 +51,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Handles DISCONNECT interception for registered extension interceptors.
+ *
  * @author Robin Atherton
  * @author Silvio Giebl
  */
@@ -133,6 +135,7 @@ public class DisconnectInterceptorHandler {
         }
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void handleOutboundDisconnect(
             final @NotNull ChannelHandlerContext ctx,
             final @NotNull DISCONNECT disconnect,
@@ -188,6 +191,7 @@ public class DisconnectInterceptorHandler {
         }
     }
 
+    @SuppressWarnings("EffectivelyPrivate")
     private static class DisconnectOutboundInterceptorContext
             extends PluginInOutTaskContext<DisconnectOutboundOutputImpl> implements Runnable {
 
@@ -238,6 +242,7 @@ public class DisconnectInterceptorHandler {
             return false;
         }
 
+        @SuppressWarnings("FutureReturnValueIgnored")
         @Override
         public void run() {
             ctx.writeAndFlush(DISCONNECT.from(inputHolder.get().getDisconnectPacket()), promise);
@@ -281,6 +286,7 @@ public class DisconnectInterceptorHandler {
         }
     }
 
+    @SuppressWarnings("EffectivelyPrivate")
     private static class DisconnectInboundInterceptorContext extends PluginInOutTaskContext<DisconnectInboundOutputImpl>
             implements Runnable {
 

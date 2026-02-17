@@ -62,6 +62,11 @@ public enum Mqtt5PubAckReasonCode implements Mqtt5ReasonCode {
             new Mqtt5PubAckReasonCode[AckReasonCode.values().length];
 
     static {
+        initLookup();
+    }
+
+    @SuppressWarnings("EnumOrdinal")
+    private static void initLookup() {
         for (final Mqtt5PubAckReasonCode reasonCode : VALUES) {
             ACK_LOOKUP[reasonCode.ackReasonCode.ordinal()] = reasonCode;
         }
@@ -83,6 +88,7 @@ public enum Mqtt5PubAckReasonCode implements Mqtt5ReasonCode {
         return null;
     }
 
+    @SuppressWarnings("EnumOrdinal")
     public static @NotNull Mqtt5PubAckReasonCode from(final @NotNull AckReasonCode reasonCode) {
         return ACK_LOOKUP[reasonCode.ordinal()];
     }

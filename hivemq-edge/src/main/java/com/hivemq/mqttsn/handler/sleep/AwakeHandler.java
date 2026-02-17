@@ -48,6 +48,7 @@ public class AwakeHandler extends SimpleChannelInboundHandler<MqttsnPingreq> {
     }
 
     @Override
+    @SuppressWarnings("FutureReturnValueIgnored")
     protected void channelRead0(final @NotNull ChannelHandlerContext ctx, final @NotNull MqttsnPingreq msg)
             throws Exception {
 

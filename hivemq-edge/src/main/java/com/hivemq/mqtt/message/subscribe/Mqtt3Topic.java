@@ -19,18 +19,24 @@ import com.hivemq.mqtt.message.QoS;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Represents a topic subscription in MQTT 3.
+ *
  * @author Florian Limpöck
  * @since 4.0.0
  */
 public interface Mqtt3Topic {
 
     /**
+     * Returns the topic filter string.
+     *
      * @return the topic as String representation
      */
     @NotNull
     String getTopic();
 
     /**
+     * Returns the quality of service level for this topic.
+     *
      * @return the QoS of a Topic
      */
     @NotNull

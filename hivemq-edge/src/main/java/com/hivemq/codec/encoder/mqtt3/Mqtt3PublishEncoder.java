@@ -23,6 +23,8 @@ import io.netty.buffer.ByteBuf;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Encoder for MQTT 3 PUBLISH messages.
+ *
  * @author Dominik Obermaier
  */
 public class Mqtt3PublishEncoder extends AbstractVariableHeaderLengthEncoder<Mqtt3PUBLISH> {
@@ -38,12 +40,12 @@ public class Mqtt3PublishEncoder extends AbstractVariableHeaderLengthEncoder<Mqt
         byte header = PUBLISH_FIXED_HEADER;
         final int qos = msg.getQoS().getQosNumber();
         if (msg.isDuplicateDelivery()) {
-            header |= 0b0000_1000;
+            header = (byte) (header | 0b0000_1000);
         }
         if (msg.isRetain()) {
-            header |= 0b0000_0001;
+            header = (byte) (header | 0b0000_0001);
         }
-        header |= qos << 1;
+        header = (byte) (header | qos << 1);
 
         out.writeByte(header);
         createRemainingLength(msg.getRemainingLength(), out);
@@ -56,6 +58,7 @@ public class Mqtt3PublishEncoder extends AbstractVariableHeaderLengthEncoder<Mqt
         out.writeBytes(msg.getPayload());
     }
 
+    @Override
     protected int remainingLength(final @NotNull Mqtt3PUBLISH msg) {
         int length = 0;
         length += Utf8Utils.encodedLength(msg.getTopic());

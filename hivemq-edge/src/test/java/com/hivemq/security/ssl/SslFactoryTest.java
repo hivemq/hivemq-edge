@@ -62,6 +62,7 @@ public class SslFactoryTest {
     private @NotNull ByteBufAllocator byteBufAllocator;
 
     @Mock
+    @SuppressWarnings("DoNotMock")
     private @NotNull ListeningScheduledExecutorService executorService;
 
     private @NotNull SslFactory sslFactory;

@@ -18,6 +18,8 @@ package com.hivemq.mqtt.message;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * MQTT control packet types as defined in the MQTT specification.
+ *
  * @author Dominik Obermaier
  * @since 1.4
  */

@@ -27,6 +27,8 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Immutable implementation of {@link UserProperties} backed by an {@link ImmutableList}.
+ *
  * @author Florian Limpöck
  * @author Silvio Giebl
  * @since 4.0.0
@@ -83,10 +85,9 @@ public class UserPropertiesImpl implements UserProperties {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof UserPropertiesImpl)) {
+        if (!(o instanceof UserPropertiesImpl that)) {
             return false;
         }
-        final UserPropertiesImpl that = (UserPropertiesImpl) o;
         return list.equals(that.list);
     }
 

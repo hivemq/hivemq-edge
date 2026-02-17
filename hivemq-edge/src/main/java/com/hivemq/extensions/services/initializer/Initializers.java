@@ -20,6 +20,8 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Registry for client initializers provided by extensions.
+ *
  * @author Florian Limpöck
  * @since 4.0.0
  */
@@ -33,6 +35,8 @@ public interface Initializers {
     void addClientInitializer(@NotNull ClientInitializer initializer);
 
     /**
+     * Returns the registered client initializers.
+     *
      * @return a map of extension ids and client initializers, sorted descending by extension priority.
      */
     @NotNull

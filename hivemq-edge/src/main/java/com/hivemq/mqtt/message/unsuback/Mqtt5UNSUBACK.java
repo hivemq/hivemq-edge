@@ -20,6 +20,8 @@ import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.reason.Mqtt5UnsubAckReasonCode;
 
 /**
+ * MQTT 5 representation of an UNSUBACK message.
+ *
  * @author Florian Limpöck
  * @since 4.0.0
  */

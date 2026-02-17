@@ -19,12 +19,16 @@ import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Represents an MQTT 3 SUBSCRIBE message.
+ *
  * @author Florian Limpöck
  * @since 4.0.0
  */
 public interface Mqtt3SUBSCRIBE {
 
     /**
+     * Returns a list of topics and their corresponding QoS the SUBSCRIBE message contains.
+     *
      * @return a List of topics and their corresponding QoS the SUBSCRIBE message contains
      */
     @NotNull

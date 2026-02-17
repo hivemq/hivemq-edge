@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 class ConfigFileReaderWriterTest {
 
     @Test
+    @SuppressWarnings("ImpossibleNullComparison")
     public void test_alltags() throws Exception {
         final var systemInformation = mock(SystemInformation.class);
         when(systemInformation.isConfigFragmentBase64Zip()).thenReturn(false);
@@ -40,6 +41,7 @@ class ConfigFileReaderWriterTest {
     }
 
     @Test
+    @SuppressWarnings("ImpossibleNullComparison")
     public void test_empty() throws Exception {
         final var systemInformation = mock(SystemInformation.class);
         when(systemInformation.isConfigFragmentBase64Zip()).thenReturn(false);
@@ -53,6 +55,7 @@ class ConfigFileReaderWriterTest {
     }
 
     @Test
+    @SuppressWarnings("ImpossibleNullComparison")
     public void test_datacombiners_no_source() throws Exception {
         final var systemInformation = mock(SystemInformation.class);
         when(systemInformation.isConfigFragmentBase64Zip()).thenReturn(false);

@@ -20,6 +20,8 @@ import com.hivemq.util.MemoryEstimator;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Timestamped wrapper for objects stored in persistence.
+ *
  * @author Lukas Brandl
  */
 @Immutable

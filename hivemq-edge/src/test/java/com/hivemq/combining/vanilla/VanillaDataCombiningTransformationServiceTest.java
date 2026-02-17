@@ -66,6 +66,7 @@ public class VanillaDataCombiningTransformationServiceTest {
     private @NotNull DataCombiningDestination dataCombiningDestination;
 
     @Mock
+    @SuppressWarnings("DoNotMock")
     private @NotNull ListenableFuture<PublishingResult> listenableFuture;
 
     private @NotNull ArgumentCaptor<PUBLISH> publishCaptor;

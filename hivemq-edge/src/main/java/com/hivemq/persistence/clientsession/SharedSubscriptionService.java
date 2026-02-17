@@ -25,6 +25,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Service for managing MQTT shared subscriptions, including subscriber lookup and caching.
+ *
  * @author Dominik Obermaier
  * @author Christoph Schäbel
  */

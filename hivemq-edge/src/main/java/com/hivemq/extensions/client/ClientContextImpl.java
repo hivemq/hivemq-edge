@@ -46,6 +46,8 @@ import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Manages per-client interceptor registrations and default permissions.
+ *
  * @author Florian Limpöck
  * @since 4.0.0
  */
@@ -455,7 +457,7 @@ public class ClientContextImpl {
         int low = 0;
         int high = interceptors.size() - 1;
         while (low <= high) {
-            final int mid = low + high >>> 1;
+            final int mid = (low + high) >>> 1;
             final T midInterceptor = interceptors.get(mid);
             final int midPriority = getExtensionPriority(midInterceptor);
 
@@ -492,7 +494,7 @@ public class ClientContextImpl {
         int low = 0;
         int high = interceptors.size() - 1;
         while (low <= high) {
-            final int mid = low + high >>> 1;
+            final int mid = (low + high) >>> 1;
             final T midInterceptor = interceptors.get(mid);
             final int midPriority = getExtensionPriority(midInterceptor);
 
@@ -523,19 +525,6 @@ public class ClientContextImpl {
         for (int i = 0; i < interceptors.size(); i++) {
             final T interceptor = interceptors.get(i);
             if (interceptor.getClass().getClassLoader().equals(extensionClassloader)) {
-                builder.add(interceptor);
-            }
-        }
-        return builder.build();
-    }
-
-    private <T extends Interceptor> @NotNull ImmutableList<T> removeInterceptorsOfExtension(
-            final @NotNull ImmutableList<T> interceptors, final @NotNull ClassLoader extensionClassloader) {
-
-        final ImmutableList.Builder<T> builder = ImmutableList.builder();
-        for (int i = 0; i < interceptors.size(); i++) {
-            final T interceptor = interceptors.get(i);
-            if (!interceptor.getClass().getClassLoader().equals(extensionClassloader)) {
                 builder.add(interceptor);
             }
         }

@@ -81,15 +81,22 @@ public enum Mqtt5ConnAckReasonCode implements Mqtt5ReasonCode {
 
     private static final int ERROR_CODE_MIN = UNSPECIFIED_ERROR.code;
     private static final int ERROR_CODE_MAX = CONNECTION_RATE_EXCEEDED.code;
+    @SuppressWarnings("MultipleNullnessAnnotations")
     private static final @Nullable Mqtt5ConnAckReasonCode @NotNull [] ERROR_CODE_LOOKUP =
             new Mqtt5ConnAckReasonCode[ERROR_CODE_MAX - ERROR_CODE_MIN + 1];
 
     private static final @NotNull Mqtt5ConnAckReasonCode @NotNull [] CONNACK_LOOKUP =
             new Mqtt5ConnAckReasonCode[ConnackReasonCode.values().length];
+    @SuppressWarnings("MultipleNullnessAnnotations")
     private static final @Nullable Mqtt5ConnAckReasonCode @NotNull [] DISCONNECTED_LOOKUP =
             new Mqtt5ConnAckReasonCode[DisconnectedReasonCode.values().length];
 
     static {
+        initLookups();
+    }
+
+    @SuppressWarnings("EnumOrdinal")
+    private static void initLookups() {
         for (final Mqtt5ConnAckReasonCode reasonCode : values()) {
             if (reasonCode != SUCCESS) {
                 ERROR_CODE_LOOKUP[reasonCode.code - ERROR_CODE_MIN] = reasonCode;
@@ -116,114 +123,76 @@ public enum Mqtt5ConnAckReasonCode implements Mqtt5ReasonCode {
         return ERROR_CODE_LOOKUP[code - ERROR_CODE_MIN];
     }
 
+    @SuppressWarnings("EnumOrdinal")
     public static @NotNull Mqtt5ConnAckReasonCode from(final @NotNull ConnackReasonCode reasonCode) {
         return CONNACK_LOOKUP[reasonCode.ordinal()];
     }
 
+    @SuppressWarnings("EnumOrdinal")
     public static @Nullable Mqtt5ConnAckReasonCode from(final @NotNull DisconnectedReasonCode reasonCode) {
         return DISCONNECTED_LOOKUP[reasonCode.ordinal()];
     }
 
     @NotNull
     public static Mqtt5ConnAckReasonCode fromReturnCode(final @NotNull Mqtt3ConnAckReturnCode returnCode) {
-        switch (returnCode) {
-            case ACCEPTED:
-                return Mqtt5ConnAckReasonCode.SUCCESS;
-            case REFUSED_UNACCEPTABLE_PROTOCOL_VERSION:
-                return Mqtt5ConnAckReasonCode.UNSUPPORTED_PROTOCOL_VERSION;
-            case REFUSED_IDENTIFIER_REJECTED:
-                return Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID;
-            case REFUSED_SERVER_UNAVAILABLE:
-                return Mqtt5ConnAckReasonCode.SERVER_UNAVAILABLE;
-            case REFUSED_BAD_USERNAME_OR_PASSWORD:
-                return Mqtt5ConnAckReasonCode.BAD_USER_NAME_OR_PASSWORD;
-            case REFUSED_NOT_AUTHORIZED:
-                return Mqtt5ConnAckReasonCode.NOT_AUTHORIZED;
-            default:
-                throw new IllegalStateException();
-        }
+        return switch (returnCode) {
+            case ACCEPTED -> Mqtt5ConnAckReasonCode.SUCCESS;
+            case REFUSED_UNACCEPTABLE_PROTOCOL_VERSION -> Mqtt5ConnAckReasonCode.UNSUPPORTED_PROTOCOL_VERSION;
+            case REFUSED_IDENTIFIER_REJECTED -> Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID;
+            case REFUSED_SERVER_UNAVAILABLE -> Mqtt5ConnAckReasonCode.SERVER_UNAVAILABLE;
+            case REFUSED_BAD_USERNAME_OR_PASSWORD -> Mqtt5ConnAckReasonCode.BAD_USER_NAME_OR_PASSWORD;
+            case REFUSED_NOT_AUTHORIZED -> Mqtt5ConnAckReasonCode.NOT_AUTHORIZED;
+        };
     }
 
     @NotNull
     public static Mqtt5ConnAckReasonCode fromDisconnectReasonCode(
             final @NotNull DisconnectReasonCode disconnectReasonCode) {
-        switch (disconnectReasonCode) {
-            case NORMAL_DISCONNECTION:
-            case DISCONNECT_WITH_WILL_MESSAGE:
-            case KEEP_ALIVE_TIMEOUT:
-            case UNSPECIFIED_ERROR:
-            case SESSION_TAKEN_OVER:
-            case RECEIVE_MAXIMUM_EXCEEDED:
-            case TOPIC_ALIAS_INVALID:
-            case MESSAGE_RATE_TOO_HIGH:
-            case ADMINISTRATIVE_ACTION:
-            case SHARED_SUBSCRIPTION_NOT_SUPPORTED:
-            case MAXIMUM_CONNECT_TIME:
-            case SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED:
-            case WILDCARD_SUBSCRIPTION_NOT_SUPPORTED:
-                return Mqtt5ConnAckReasonCode.UNSPECIFIED_ERROR;
-            case MALFORMED_PACKET:
-                return Mqtt5ConnAckReasonCode.MALFORMED_PACKET;
-            case PROTOCOL_ERROR:
-                return Mqtt5ConnAckReasonCode.PROTOCOL_ERROR;
-            case IMPLEMENTATION_SPECIFIC_ERROR:
-                return Mqtt5ConnAckReasonCode.IMPLEMENTATION_SPECIFIC_ERROR;
-            case NOT_AUTHORIZED:
-                return Mqtt5ConnAckReasonCode.NOT_AUTHORIZED;
-            case SERVER_BUSY:
-                return Mqtt5ConnAckReasonCode.SERVER_BUSY;
-            case SERVER_SHUTTING_DOWN:
-                return Mqtt5ConnAckReasonCode.SERVER_UNAVAILABLE;
-            case BAD_AUTHENTICATION_METHOD:
-                return Mqtt5ConnAckReasonCode.BAD_AUTHENTICATION_METHOD;
-            case CLIENT_IDENTIFIER_NOT_VALID:
-                return Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID;
-            case TOPIC_FILTER_INVALID:
-            case TOPIC_NAME_INVALID:
-                return Mqtt5ConnAckReasonCode.TOPIC_NAME_INVALID;
-            case PACKET_TOO_LARGE:
-                return Mqtt5ConnAckReasonCode.PACKET_TOO_LARGE;
-            case QUOTA_EXCEEDED:
-                return Mqtt5ConnAckReasonCode.QUOTA_EXCEEDED;
-            case PAYLOAD_FORMAT_INVALID:
-                return Mqtt5ConnAckReasonCode.PAYLOAD_FORMAT_INVALID;
-            case RETAIN_NOT_SUPPORTED:
-                return Mqtt5ConnAckReasonCode.RETAIN_NOT_SUPPORTED;
-            case QOS_NOT_SUPPORTED:
-                return Mqtt5ConnAckReasonCode.QOS_NOT_SUPPORTED;
-            case USE_ANOTHER_SERVER:
-                return Mqtt5ConnAckReasonCode.USE_ANOTHER_SERVER;
-            case SERVER_MOVED:
-                return Mqtt5ConnAckReasonCode.SERVER_MOVED;
-            case CONNECTION_RATE_EXCEEDED:
-                return Mqtt5ConnAckReasonCode.CONNECTION_RATE_EXCEEDED;
-            default:
-                return Mqtt5ConnAckReasonCode.UNSPECIFIED_ERROR;
-        }
+        return switch (disconnectReasonCode) {
+            case NORMAL_DISCONNECTION,
+                    DISCONNECT_WITH_WILL_MESSAGE,
+                    KEEP_ALIVE_TIMEOUT,
+                    UNSPECIFIED_ERROR,
+                    SESSION_TAKEN_OVER,
+                    RECEIVE_MAXIMUM_EXCEEDED,
+                    TOPIC_ALIAS_INVALID,
+                    MESSAGE_RATE_TOO_HIGH,
+                    ADMINISTRATIVE_ACTION,
+                    SHARED_SUBSCRIPTION_NOT_SUPPORTED,
+                    MAXIMUM_CONNECT_TIME,
+                    SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED,
+                    WILDCARD_SUBSCRIPTION_NOT_SUPPORTED -> Mqtt5ConnAckReasonCode.UNSPECIFIED_ERROR;
+            case MALFORMED_PACKET -> Mqtt5ConnAckReasonCode.MALFORMED_PACKET;
+            case PROTOCOL_ERROR -> Mqtt5ConnAckReasonCode.PROTOCOL_ERROR;
+            case IMPLEMENTATION_SPECIFIC_ERROR -> Mqtt5ConnAckReasonCode.IMPLEMENTATION_SPECIFIC_ERROR;
+            case NOT_AUTHORIZED -> Mqtt5ConnAckReasonCode.NOT_AUTHORIZED;
+            case SERVER_BUSY -> Mqtt5ConnAckReasonCode.SERVER_BUSY;
+            case SERVER_SHUTTING_DOWN -> Mqtt5ConnAckReasonCode.SERVER_UNAVAILABLE;
+            case BAD_AUTHENTICATION_METHOD -> Mqtt5ConnAckReasonCode.BAD_AUTHENTICATION_METHOD;
+            case CLIENT_IDENTIFIER_NOT_VALID -> Mqtt5ConnAckReasonCode.CLIENT_IDENTIFIER_NOT_VALID;
+            case TOPIC_FILTER_INVALID, TOPIC_NAME_INVALID -> Mqtt5ConnAckReasonCode.TOPIC_NAME_INVALID;
+            case PACKET_TOO_LARGE -> Mqtt5ConnAckReasonCode.PACKET_TOO_LARGE;
+            case QUOTA_EXCEEDED -> Mqtt5ConnAckReasonCode.QUOTA_EXCEEDED;
+            case PAYLOAD_FORMAT_INVALID -> Mqtt5ConnAckReasonCode.PAYLOAD_FORMAT_INVALID;
+            case RETAIN_NOT_SUPPORTED -> Mqtt5ConnAckReasonCode.RETAIN_NOT_SUPPORTED;
+            case QOS_NOT_SUPPORTED -> Mqtt5ConnAckReasonCode.QOS_NOT_SUPPORTED;
+            case USE_ANOTHER_SERVER -> Mqtt5ConnAckReasonCode.USE_ANOTHER_SERVER;
+            case SERVER_MOVED -> Mqtt5ConnAckReasonCode.SERVER_MOVED;
+            case CONNECTION_RATE_EXCEEDED -> Mqtt5ConnAckReasonCode.CONNECTION_RATE_EXCEEDED;
+        };
     }
 
     @NotNull
     public static Mqtt5ConnAckReasonCode fromAckReasonCode(final @NotNull AckReasonCode ackReasonCode) {
-
-        switch (ackReasonCode) {
-            case SUCCESS:
-                return Mqtt5ConnAckReasonCode.SUCCESS;
-            case NO_MATCHING_SUBSCRIBERS:
-            case PACKET_IDENTIFIER_IN_USE:
-            case UNSPECIFIED_ERROR:
-                return Mqtt5ConnAckReasonCode.UNSPECIFIED_ERROR;
-            case IMPLEMENTATION_SPECIFIC_ERROR:
-                return Mqtt5ConnAckReasonCode.IMPLEMENTATION_SPECIFIC_ERROR;
-            case NOT_AUTHORIZED:
-                return Mqtt5ConnAckReasonCode.NOT_AUTHORIZED;
-            case TOPIC_NAME_INVALID:
-                return Mqtt5ConnAckReasonCode.TOPIC_NAME_INVALID;
-            case QUOTA_EXCEEDED:
-                return Mqtt5ConnAckReasonCode.QUOTA_EXCEEDED;
-            case PAYLOAD_FORMAT_INVALID:
-                return Mqtt5ConnAckReasonCode.PAYLOAD_FORMAT_INVALID;
-            default:
-                return Mqtt5ConnAckReasonCode.UNSPECIFIED_ERROR;
-        }
+        return switch (ackReasonCode) {
+            case SUCCESS -> Mqtt5ConnAckReasonCode.SUCCESS;
+            case NO_MATCHING_SUBSCRIBERS, PACKET_IDENTIFIER_IN_USE, UNSPECIFIED_ERROR ->
+                    Mqtt5ConnAckReasonCode.UNSPECIFIED_ERROR;
+            case IMPLEMENTATION_SPECIFIC_ERROR -> Mqtt5ConnAckReasonCode.IMPLEMENTATION_SPECIFIC_ERROR;
+            case NOT_AUTHORIZED -> Mqtt5ConnAckReasonCode.NOT_AUTHORIZED;
+            case TOPIC_NAME_INVALID -> Mqtt5ConnAckReasonCode.TOPIC_NAME_INVALID;
+            case QUOTA_EXCEEDED -> Mqtt5ConnAckReasonCode.QUOTA_EXCEEDED;
+            case PAYLOAD_FORMAT_INVALID -> Mqtt5ConnAckReasonCode.PAYLOAD_FORMAT_INVALID;
+        };
     }
 }

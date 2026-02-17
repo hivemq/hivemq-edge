@@ -53,6 +53,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Handles CONNACK outbound interception for registered extension interceptors.
+ *
  * @author Florian Limpöck
  * @author Silvio Giebl
  * @since 4.2.0
@@ -89,6 +91,7 @@ public class ConnackOutboundInterceptorHandler {
         this.eventLog = eventLog;
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void handleOutboundConnack(
             final @NotNull ChannelHandlerContext ctx,
             final @NotNull CONNACK connack,
@@ -143,6 +146,7 @@ public class ConnackOutboundInterceptorHandler {
         }
     }
 
+    @SuppressWarnings("EffectivelyPrivate")
     private class ConnackInterceptorContext extends PluginInOutTaskContext<ConnackOutboundOutputImpl>
             implements Runnable {
 
@@ -195,6 +199,7 @@ public class ConnackOutboundInterceptorHandler {
             return false;
         }
 
+        @SuppressWarnings("FutureReturnValueIgnored")
         @Override
         public void run() {
             if (outputHolder.get().isPrevent()) {

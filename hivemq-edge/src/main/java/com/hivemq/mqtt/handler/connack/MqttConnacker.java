@@ -26,6 +26,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Service for sending MQTT CONNACK messages for both successful and error connection acknowledgements.
+ *
  * @author Florian Limpöck
  */
 @ExecuteInEventloop

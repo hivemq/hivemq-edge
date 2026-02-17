@@ -24,6 +24,8 @@ import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Encoder for MQTT 5 PUBCOMP messages.
+ *
  * @author Waldemar Ruck
  * @since 4.0
  */
@@ -32,6 +34,7 @@ public class Mqtt5PubCompEncoder
         extends Mqtt5MessageWithUserPropertiesEncoder.Mqtt5MessageWithIdAndOmissibleReasonCodeEncoder<
                 PUBCOMP, Mqtt5PubCompReasonCode> {
 
+    @SuppressWarnings("EnumOrdinal")
     private static final int FIXED_HEADER = MessageType.PUBCOMP.ordinal() << 4;
 
     public Mqtt5PubCompEncoder(

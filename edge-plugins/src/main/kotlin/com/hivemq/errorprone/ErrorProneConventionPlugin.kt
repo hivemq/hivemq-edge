@@ -1,5 +1,6 @@
 package com.hivemq.errorprone
 
+import net.ltgt.gradle.errorprone.CheckSeverity
 import net.ltgt.gradle.errorprone.ErrorPronePlugin
 import net.ltgt.gradle.errorprone.errorprone
 import org.gradle.api.Plugin
@@ -27,7 +28,23 @@ class ErrorProneConventionPlugin : Plugin<Project> {
         }
 
         project.tasks.withType<JavaCompile>().configureEach {
-            options.errorprone.disableWarningsInGeneratedCode.set(true)
+            options.errorprone {
+                disableWarningsInGeneratedCode.set(true)
+
+                // High-volume stylistic checks disabled for initial rollout.
+                // Enable these incrementally in follow-up PRs.
+                check("MissingSummary", CheckSeverity.OFF)
+                check("MissingOverride", CheckSeverity.OFF)
+                check("PatternMatchingInstanceof", CheckSeverity.OFF)
+                check("EqualsGetClass", CheckSeverity.OFF)
+                check("StatementSwitchToExpressionSwitch", CheckSeverity.OFF)
+                check("EffectivelyPrivate", CheckSeverity.OFF)
+                check("EmptyBlockTag", CheckSeverity.OFF)
+                check("UnnecessaryParentheses", CheckSeverity.OFF)
+                check("FormatStringShouldUsePlaceholders", CheckSeverity.OFF)
+            }
+            options.compilerArgs.add("-Xmaxwarns")
+            options.compilerArgs.add("9999")
         }
     }
 }

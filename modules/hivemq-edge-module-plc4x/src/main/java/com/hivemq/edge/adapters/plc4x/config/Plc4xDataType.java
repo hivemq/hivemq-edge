@@ -22,6 +22,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 /**
+ * PLC4X data type definitions mapping protocol types to Java types.
+ *
  * @author Simon L Johnson
  */
 public class Plc4xDataType {
@@ -64,8 +66,8 @@ public class Plc4xDataType {
             this.javaType = javaType;
         }
 
-        private short code;
-        private Class<?> javaType;
+        private final short code;
+        private final Class<?> javaType;
 
         public short getCode() {
             return code;
