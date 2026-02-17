@@ -68,17 +68,6 @@ class SpotlessConventionPlugin : Plugin<Project> {
             trimTrailingWhitespace()
             endWithNewline()
         })
-
-        // Remove the automatic spotlessCheck -> check dependency that the Spotless plugin creates.
-        // spotlessCheck can still be run explicitly; it just won't run as part of `check`.
-        // TODO re-enable once spotlessApply has been run across the codebase
-        project.afterEvaluate {
-            project.tasks.findByName("check")?.let { checkTask ->
-                checkTask.setDependsOn(checkTask.dependsOn.filterNot { dep ->
-                    dep is TaskProvider<*> && dep.name == "spotlessCheck"
-                })
-            }
-        }
     }
 
     /**

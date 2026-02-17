@@ -15,21 +15,23 @@
  */
 package com.hivemq.bootstrap.netty;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 public class NettyUdpConfigurationTest {
 
     private NioEventLoopGroup eventloop;
+
     @BeforeEach
     public void setUp() throws Exception {
         eventloop = new NioEventLoopGroup(1);
     }
+
     @AfterEach
     public void tearDown() throws Exception {
         if (eventloop != null) {
@@ -39,14 +41,13 @@ public class NettyUdpConfigurationTest {
 
     @Test
     public void test_server_socket_class_npe() {
-    
+
         assertThrows(NullPointerException.class, () -> new NettyUdpConfiguration(null, eventloop, eventloop));
     }
 
-
     @Test
     public void test_child_eventloop_npe() {
-    
+
         assertThrows(NullPointerException.class, () -> new NettyUdpConfiguration(NioDatagramChannel.class, null, null));
     }
 }

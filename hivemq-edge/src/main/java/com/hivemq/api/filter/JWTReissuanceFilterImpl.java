@@ -19,17 +19,15 @@ import com.hivemq.api.auth.ApiPrincipal;
 import com.hivemq.api.auth.handler.impl.BearerTokenAuthenticationHandler;
 import com.hivemq.api.auth.provider.ITokenGenerator;
 import com.hivemq.api.auth.provider.ITokenVerifier;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
-import java.util.Date;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Simon L Johnson
@@ -43,7 +41,8 @@ public class JWTReissuanceFilterImpl implements ContainerResponseFilter {
     private final @NotNull ITokenVerifier tokenVerifier;
     private final int MILLIS_BEFORE_EXPIRY_TO_REISSUE = 60 * 5 * 1000;
 
-    public JWTReissuanceFilterImpl(final @NotNull ITokenGenerator tokenGenerator, final @NotNull ITokenVerifier tokenVerifier) {
+    public JWTReissuanceFilterImpl(
+            final @NotNull ITokenGenerator tokenGenerator, final @NotNull ITokenVerifier tokenVerifier) {
         this.tokenGenerator = tokenGenerator;
         this.tokenVerifier = tokenVerifier;
     }
@@ -53,21 +52,21 @@ public class JWTReissuanceFilterImpl implements ContainerResponseFilter {
             throws IOException {
         try {
             String token;
-            if((token = (String) requestContext.getProperty(BearerTokenAuthenticationHandler.TOKEN)) != null){
+            if ((token = (String) requestContext.getProperty(BearerTokenAuthenticationHandler.TOKEN)) != null) {
                 Optional<Long> millis = tokenVerifier.getExpiryTimeMillis(token);
                 long current = System.currentTimeMillis();
-                if(millis.isPresent()){
+                if (millis.isPresent()) {
                     long expires = millis.get();
-                    if(expires > current){
-                        if(current >= (expires - MILLIS_BEFORE_EXPIRY_TO_REISSUE)){
-                            String newToken =
-                                    tokenGenerator.generateToken((ApiPrincipal) requestContext.getSecurityContext().getUserPrincipal());
+                    if (expires > current) {
+                        if (current >= (expires - MILLIS_BEFORE_EXPIRY_TO_REISSUE)) {
+                            String newToken = tokenGenerator.generateToken((ApiPrincipal)
+                                    requestContext.getSecurityContext().getUserPrincipal());
                             responseContext.getHeaders().add(BearerTokenAuthenticationHandler.REISSUE, newToken);
                         }
                     }
                 }
             }
-        } catch(Exception e){
+        } catch (Exception e) {
             logger.warn("Error Reissuing JWT Token in Response Header", e);
         }
     }

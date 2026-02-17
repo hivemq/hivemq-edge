@@ -17,12 +17,6 @@ package util;
 
 import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.NameFileFilter;
-import org.apache.commons.io.filefilter.SuffixFileFilter;
-import org.apache.commons.io.filefilter.TrueFileFilter;
-
-import javax.tools.*;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -31,6 +25,11 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.*;
+import javax.tools.*;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.NameFileFilter;
+import org.apache.commons.io.filefilter.SuffixFileFilter;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 
 /**
  * Various utilities for compilation of Java classes on the fly
@@ -47,23 +46,27 @@ public class OnTheFlyCompilationUtil {
 
         fileManager.setLocation(StandardLocation.CLASS_OUTPUT, Collections.singletonList(toFolder));
 
-
         // Compile the file
-        compiler.getTask(null, fileManager, null, null, null,
-                fileManager.getJavaFileObjectsFromFiles(Collections.singletonList(javaFile))).call();
+        compiler.getTask(
+                        null,
+                        fileManager,
+                        null,
+                        null,
+                        null,
+                        fileManager.getJavaFileObjectsFromFiles(Collections.singletonList(javaFile)))
+                .call();
         fileManager.close();
 
-        final Collection<File> files = FileUtils.listFiles(toFolder, new SuffixFileFilter("class"), TrueFileFilter.INSTANCE);
+        final Collection<File> files =
+                FileUtils.listFiles(toFolder, new SuffixFileFilter("class"), TrueFileFilter.INSTANCE);
 
         return Iterables.getOnlyElement(files);
     }
-
 
     public static ClassLoader compile(final StringJavaFileObject... toCompile) throws Exception {
         final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         final MemClassLoader classLoader = new MemClassLoader();
         final JavaFileManager fileManager = new MemJavaFileManager(compiler, classLoader);
-
 
         final Collection<? extends JavaFileObject> units = Arrays.asList(toCompile);
         final JavaCompiler.CompilationTask task = compiler.getTask(null, fileManager, null, null, null, units);
@@ -75,11 +78,9 @@ public class OnTheFlyCompilationUtil {
         return classLoader;
     }
 
-
     /*
-        Utils for the compiler API for in-memory compilation
-     */
-
+       Utils for the compiler API for in-memory compilation
+    */
 
     public static class StringJavaFileObject extends SimpleJavaFileObject {
         private final CharSequence code;
@@ -99,13 +100,11 @@ public class OnTheFlyCompilationUtil {
         private final Map<String, MemJavaFileObject> classFiles = new HashMap<>();
         private final File tempDir;
 
-
         public MemClassLoader() throws Exception {
             super(ClassLoader.getSystemClassLoader());
             final File tempDir = Files.createTempDir();
             tempDir.deleteOnExit();
             this.tempDir = tempDir;
-
         }
 
         public void addClassFile(final MemJavaFileObject memJavaFileObject) throws IOException {
@@ -153,8 +152,7 @@ public class OnTheFlyCompilationUtil {
         private final String className;
 
         MemJavaFileObject(final String className) {
-            super(URI.create("string:///" + className.replace('.', '/') + Kind.CLASS.extension),
-                    Kind.CLASS);
+            super(URI.create("string:///" + className.replace('.', '/') + Kind.CLASS.extension), Kind.CLASS);
             this.className = className;
         }
 
@@ -170,8 +168,6 @@ public class OnTheFlyCompilationUtil {
         public OutputStream openOutputStream() {
             return baos;
         }
-
-
     }
 
     static class MemJavaFileManager extends ForwardingJavaFileManager<StandardJavaFileManager> {
@@ -183,12 +179,13 @@ public class OnTheFlyCompilationUtil {
             this.classLoader = classLoader;
         }
 
-
         @Override
-        public JavaFileObject getJavaFileForOutput(final Location location,
-                                                   final String className,
-                                                   final JavaFileObject.Kind kind,
-                                                   final FileObject sibling) throws IOException {
+        public JavaFileObject getJavaFileForOutput(
+                final Location location,
+                final String className,
+                final JavaFileObject.Kind kind,
+                final FileObject sibling)
+                throws IOException {
             final MemJavaFileObject fileObject = new MemJavaFileObject(className);
             classLoader.addClassFile(fileObject);
             return fileObject;

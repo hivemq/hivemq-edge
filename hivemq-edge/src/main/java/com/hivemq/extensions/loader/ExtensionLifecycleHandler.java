@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.loader;
 
 import com.google.common.collect.ImmutableCollection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.HiveMQExtensionEvent;
-
 import java.util.concurrent.CompletableFuture;
+import org.jetbrains.annotations.NotNull;
 
 public interface ExtensionLifecycleHandler {
 
@@ -30,5 +28,6 @@ public interface ExtensionLifecycleHandler {
      * @param hiveMQExtensionEvents {@link ImmutableCollection} of {@link HiveMQExtensionEvent}s which should be processed.
      */
     @NotNull
-    CompletableFuture<Void> handleExtensionEvents(@NotNull ImmutableCollection<HiveMQExtensionEvent> hiveMQExtensionEvents);
+    CompletableFuture<Void> handleExtensionEvents(
+            @NotNull ImmutableCollection<HiveMQExtensionEvent> hiveMQExtensionEvents);
 }

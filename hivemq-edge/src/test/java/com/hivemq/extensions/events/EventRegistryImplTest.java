@@ -15,20 +15,19 @@
  */
 package com.hivemq.extensions.events;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.verify;
+
 import com.hivemq.extension.sdk.api.events.EventRegistry;
 import com.hivemq.extension.sdk.api.events.client.ClientLifecycleEventListener;
 import com.hivemq.extension.sdk.api.events.client.ClientLifecycleEventListenerProvider;
 import com.hivemq.extension.sdk.api.events.client.parameters.ClientLifecycleEventListenerProviderInput;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import static org.mockito.Mockito.verify;
 
 /**
  * @author Florian Limpöck
@@ -41,12 +40,12 @@ public class EventRegistryImplTest {
     private LifecycleEventListeners eventListeners;
 
     private EventRegistry registry;
+
     @BeforeEach
     public void setUp() throws Exception {
 
         MockitoAnnotations.initMocks(this);
         registry = new EventRegistryImpl(eventListeners);
-
     }
 
     @Test
@@ -54,7 +53,8 @@ public class EventRegistryImplTest {
 
         final ClientLifecycleEventListenerProvider provider = new ClientLifecycleEventListenerProvider() {
             @Override
-            public @Nullable ClientLifecycleEventListener getClientLifecycleEventListener(@NotNull ClientLifecycleEventListenerProviderInput input) {
+            public @Nullable ClientLifecycleEventListener getClientLifecycleEventListener(
+                    @NotNull ClientLifecycleEventListenerProviderInput input) {
                 return null;
             }
         };
@@ -62,13 +62,11 @@ public class EventRegistryImplTest {
         registry.setClientLifecycleEventListener(provider);
 
         verify(eventListeners).addClientLifecycleEventListenerProvider(provider);
-
     }
 
     @Test
     public void test_set_null() {
-    
+
         assertThrows(NullPointerException.class, () -> registry.setClientLifecycleEventListener(null));
     }
-
 }

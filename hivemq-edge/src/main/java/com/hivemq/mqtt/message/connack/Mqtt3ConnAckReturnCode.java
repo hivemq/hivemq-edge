@@ -15,8 +15,8 @@
  */
 package com.hivemq.mqtt.message.connack;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.reason.Mqtt5ConnAckReasonCode;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * The return code of a MQTT 3.1.1 {@link CONNACK} message.

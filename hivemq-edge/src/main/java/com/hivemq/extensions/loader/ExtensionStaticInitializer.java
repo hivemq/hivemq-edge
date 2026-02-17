@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.loader;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.exception.ExtensionLoadingException;
+import org.jetbrains.annotations.NotNull;
 
 public interface ExtensionStaticInitializer {
 

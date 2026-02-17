@@ -15,6 +15,9 @@
  */
 package com.hivemq.bootstrap.netty;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
+
 import com.hivemq.bootstrap.factories.HandlerProvider;
 import com.hivemq.codec.decoder.mqtt.MqttConnectDecoder;
 import com.hivemq.codec.decoder.mqtt.MqttDecoders;
@@ -56,9 +59,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.mock;
 
 /**
  * @author Florian Limpöck
@@ -170,6 +170,7 @@ public class ChannelDependenciesTest {
 
     @Mock
     private MqttConnacker mqttConnacker;
+
     @BeforeEach
     public void setUp() throws Exception {
 
@@ -254,6 +255,5 @@ public class ChannelDependenciesTest {
         assertNotNull(channelDependencies.getAwakeHandler());
         assertNotNull(channelDependencies.getSleepHandler());
         assertNotNull(channelDependencies.getMqttConnacker());
-
     }
 }

@@ -16,20 +16,24 @@
 package com.hivemq.configuration.reader;
 
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Objects;
 
 /**
  * Configurators are initialized before the actual dagger bootstrap.
  *
  * @param <T>
  */
-public interface Configurator <T> {
+public interface Configurator<T> {
     Logger log = LoggerFactory.getLogger(Configurator.class);
 
-    enum ConfigResult {SUCCESS, NO_OP, NEEDS_RESTART, ERROR}
+    enum ConfigResult {
+        SUCCESS,
+        NO_OP,
+        NEEDS_RESTART,
+        ERROR
+    }
 
     /**
      * Called for initial setup.
@@ -39,7 +43,6 @@ public interface Configurator <T> {
      * @return indicator on whether the config was correctly applied
      */
     ConfigResult applyConfig(HiveMQConfigEntity config);
-
 
     /**
      * Indicate if the given config will require an edge restart to be applied

@@ -23,16 +23,15 @@ import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig;
 import com.hivemq.edge.adapters.http.tag.HttpTag;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.EnumSet;
+import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.EnumSet;
-import java.util.List;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -45,8 +44,7 @@ public class HttpProtocolAdapterInformation implements ProtocolAdapterInformatio
     private static final @NotNull Logger log = LoggerFactory.getLogger(HttpProtocolAdapterInformation.class);
     private static final int CURRENT_CONFIG_VERSION = 1;
 
-    protected HttpProtocolAdapterInformation() {
-    }
+    protected HttpProtocolAdapterInformation() {}
 
     @Override
     public @NotNull String getProtocolName() {
@@ -105,9 +103,8 @@ public class HttpProtocolAdapterInformation implements ProtocolAdapterInformatio
 
     @Override
     public @Nullable String getUiSchema() {
-        try (final InputStream is = this.getClass()
-                .getClassLoader()
-                .getResourceAsStream("http-adapter-ui-schema.json")) {
+        try (final InputStream is =
+                this.getClass().getClassLoader().getResourceAsStream("http-adapter-ui-schema.json")) {
             if (is == null) {
                 log.warn("The UISchema for the Http Adapter could not be loaded from resources: Not found.");
                 return null;

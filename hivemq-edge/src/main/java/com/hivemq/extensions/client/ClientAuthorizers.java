@@ -15,13 +15,12 @@
  */
 package com.hivemq.extensions.client;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.Authorizer;
 import com.hivemq.extension.sdk.api.auth.PublishAuthorizer;
 import com.hivemq.extension.sdk.api.auth.SubscriptionAuthorizer;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
-
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -47,10 +46,12 @@ public interface ClientAuthorizers {
     /**
      * @return a map of all subscription authorizers per extension id.
      */
-    @NotNull Map<String, SubscriptionAuthorizer> getSubscriptionAuthorizersMap();
+    @NotNull
+    Map<String, SubscriptionAuthorizer> getSubscriptionAuthorizersMap();
 
     /**
      * @return a map of all publish authorizers per extension id.
      */
-    @NotNull Map<String, PublishAuthorizer> getPublishAuthorizersMap();
+    @NotNull
+    Map<String, PublishAuthorizer> getPublishAuthorizersMap();
 }

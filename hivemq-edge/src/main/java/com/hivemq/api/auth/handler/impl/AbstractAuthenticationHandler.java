@@ -17,11 +17,10 @@ package com.hivemq.api.auth.handler.impl;
 
 import com.hivemq.api.auth.handler.AuthenticationResult;
 import com.hivemq.api.auth.handler.IAuthenticationHandler;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Response;
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -30,13 +29,12 @@ public abstract class AbstractAuthenticationHandler implements IAuthenticationHa
 
     @Override
     public boolean authorized(
-            final @NotNull ContainerRequestContext requestContext,
-            final @NotNull Set<String> permissions) {
-        if(requestContext.getSecurityContext() == null){
+            final @NotNull ContainerRequestContext requestContext, final @NotNull Set<String> permissions) {
+        if (requestContext.getSecurityContext() == null) {
             return false;
         }
         boolean authorized = false;
-        for(String permission : permissions){
+        for (String permission : permissions) {
             authorized |= requestContext.getSecurityContext().isUserInRole(permission);
         }
         return authorized;
@@ -44,7 +42,7 @@ public abstract class AbstractAuthenticationHandler implements IAuthenticationHa
 
     @Override
     public void decorateResponse(final AuthenticationResult result, final Response.ResponseBuilder builder) {
-        //Hook method for IAuthenticationHandler's to send back custom/modified responses,
-        //by default do nothing
+        // Hook method for IAuthenticationHandler's to send back custom/modified responses,
+        // by default do nothing
     }
 }

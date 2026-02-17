@@ -48,9 +48,7 @@ public class ProtocolAdapterValidationFailureImpl implements ProtocolAdapterVali
     }
 
     public ProtocolAdapterValidationFailureImpl(
-            final @NotNull String message,
-            final @Nullable String fieldName,
-            final @Nullable Class origin) {
+            final @NotNull String message, final @Nullable String fieldName, final @Nullable Class origin) {
         Preconditions.checkNotNull(message);
         this.message = message;
         this.origin = origin;

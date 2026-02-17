@@ -15,6 +15,15 @@
  */
 package com.hivemq.api.resources.impl;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.bridge.BridgeService;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.configuration.info.SystemInformation;
@@ -23,11 +32,6 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.api.model.Bridge;
 import com.hivemq.edge.api.model.StatusTransitionCommand;
 import jakarta.ws.rs.core.Response;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -38,15 +42,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Concurrency test for BridgeResourceImpl to verify that all CRUD operations are properly synchronized
@@ -85,16 +84,20 @@ class BridgeResourceImplConcurrencyTest {
         when(bridgeExtractor.getBridges()).thenAnswer(invocation -> new ArrayList<>(bridgeStore.values()));
 
         doAnswer(invocation -> {
-            final MqttBridge bridge = invocation.getArgument(0);
-            bridgeStore.put(bridge.getId(), bridge);
-            return null;
-        }).when(bridgeExtractor).addBridge(any(MqttBridge.class));
+                    final MqttBridge bridge = invocation.getArgument(0);
+                    bridgeStore.put(bridge.getId(), bridge);
+                    return null;
+                })
+                .when(bridgeExtractor)
+                .addBridge(any(MqttBridge.class));
 
         doAnswer(invocation -> {
-            final String bridgeId = invocation.getArgument(0);
-            bridgeStore.remove(bridgeId);
-            return null;
-        }).when(bridgeExtractor).removeBridge(anyString());
+                    final String bridgeId = invocation.getArgument(0);
+                    bridgeStore.remove(bridgeId);
+                    return null;
+                })
+                .when(bridgeExtractor)
+                .removeBridge(anyString());
 
         bridgeResource = new BridgeResourceImpl(configurationService, bridgeService, systemInformation);
     }
@@ -159,11 +162,11 @@ class BridgeResourceImplConcurrencyTest {
 
             // Verify: Either update then remove succeeded, or remove then update failed with 404
             final int totalSuccesses = updateSuccessCount.get() + removeSuccessCount.get();
-            assertTrue(totalSuccesses >= 1 && totalSuccesses <= 2,
-                    "At least one operation should succeed: update=" +
-                            updateSuccessCount.get() +
-                            ", remove=" +
-                            removeSuccessCount.get());
+            assertTrue(
+                    totalSuccesses >= 1 && totalSuccesses <= 2,
+                    "At least one operation should succeed: update=" + updateSuccessCount.get()
+                            + ", remove="
+                            + removeSuccessCount.get());
 
             // If both succeeded, verify final state is deleted
             if (totalSuccesses == 2) {
@@ -381,7 +384,8 @@ class BridgeResourceImplConcurrencyTest {
                                     bridgeResource.removeBridge(bridgeId);
                                     break;
                                 case 2: // Update
-                                    final Bridge updatedBridge = createTestBridge(bridgeId).port(9000 + j);
+                                    final Bridge updatedBridge =
+                                            createTestBridge(bridgeId).port(9000 + j);
                                     bridgeResource.updateBridge(bridgeId, updatedBridge);
                                     break;
                                 case 3: // Read by name
@@ -526,7 +530,8 @@ class BridgeResourceImplConcurrencyTest {
 
             // Final state should be consistent (either bridge exists or doesn't)
             final int finalBridgeCount = bridgeStore.size();
-            assertTrue(finalBridgeCount == 0 || finalBridgeCount == 1,
+            assertTrue(
+                    finalBridgeCount == 0 || finalBridgeCount == 1,
                     "Bridge count should be 0 or 1, not " + finalBridgeCount);
         }
     }
@@ -809,13 +814,13 @@ class BridgeResourceImplConcurrencyTest {
             // 2. Remove succeeded, transition got 404 (remove happened first)
 
             final int totalSuccesses = transitionSuccessCount.get() + removeSuccessCount.get();
-            assertTrue(totalSuccesses >= 1 && totalSuccesses <= 2,
-                    "At least one operation should succeed: transition=" +
-                            transitionSuccessCount.get() +
-                            ", transition-404=" +
-                            transitionNotFoundCount.get() +
-                            ", remove=" +
-                            removeSuccessCount.get());
+            assertTrue(
+                    totalSuccesses >= 1 && totalSuccesses <= 2,
+                    "At least one operation should succeed: transition=" + transitionSuccessCount.get()
+                            + ", transition-404="
+                            + transitionNotFoundCount.get()
+                            + ", remove="
+                            + removeSuccessCount.get());
 
             // If both succeeded, bridge should be gone (remove was last)
             if (totalSuccesses == 2) {
@@ -888,8 +893,8 @@ class BridgeResourceImplConcurrencyTest {
 
             startLatch.countDown();
             assertTrue(completionLatch.await(15, TimeUnit.SECONDS), "Both threads should complete");
-            assertFalse(errorOccurred.get(),
-                    "No errors should occur when reading bridges during concurrent modifications");
+            assertFalse(
+                    errorOccurred.get(), "No errors should occur when reading bridges during concurrent modifications");
         }
     }
 

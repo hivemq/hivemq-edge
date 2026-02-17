@@ -15,13 +15,12 @@
  */
 package com.hivemq.extensions.interceptor.bridge.parameter;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.bridge.parameter.BridgePublishInboundOutput;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
 import com.hivemq.extensions.executor.task.AbstractAsyncOutput;
 import com.hivemq.extensions.packets.publish.ModifiablePublishPacketImpl;
-
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jetbrains.annotations.NotNull;
 
 public class BridgePublishInboundOutputImpl extends AbstractAsyncOutput<BridgePublishInboundOutput>
         implements BridgePublishInboundOutput {
@@ -62,6 +61,4 @@ public class BridgePublishInboundOutputImpl extends AbstractAsyncOutput<BridgePu
     public @NotNull BridgePublishInboundOutputImpl update(final @NotNull BridgePublishInboundInputImpl input) {
         return new BridgePublishInboundOutputImpl(asyncer, publishPacket.update(input.getPublishPacket()));
     }
-
-
 }

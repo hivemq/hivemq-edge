@@ -20,16 +20,15 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.InternalConfigurations;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.annotations.ThreadSafe;
 import com.hivemq.extension.sdk.api.services.exception.LimitExceededException;
 import io.netty.channel.Channel;
-
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents connection attributes for a connected client.
@@ -41,6 +40,7 @@ public class ConnectionAttributes {
 
     @Nullable
     private Map<String, ByteBuffer> data;
+
     private final int maxValueSizeBytes;
 
     /**
@@ -74,7 +74,8 @@ public class ConnectionAttributes {
 
         final int maxValueSizeBytes = InternalConfigurations.CONNECTION_ATTRIBUTE_STORE_MAX_VALUE_SIZE_BYTES;
 
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         return clientConnection.setConnectionAttributesIfAbsent(new ConnectionAttributes(maxValueSizeBytes));
     }
 
@@ -95,7 +96,9 @@ public class ConnectionAttributes {
         Preconditions.checkNotNull(value, "Value of connection attribute must not be null.");
 
         if (value.remaining() > maxValueSizeBytes) {
-            throw new LimitExceededException("value with a size of " + value.remaining() + " bytes for key '" + key + "' in connection attribute store is larger than the allowed limit of " + maxValueSizeBytes + " bytes");
+            throw new LimitExceededException("value with a size of " + value.remaining() + " bytes for key '" + key
+                    + "' in connection attribute store is larger than the allowed limit of " + maxValueSizeBytes
+                    + " bytes");
         }
 
         if (data == null) {
@@ -167,5 +170,4 @@ public class ConnectionAttributes {
     public synchronized void clear() {
         data = null;
     }
-
 }

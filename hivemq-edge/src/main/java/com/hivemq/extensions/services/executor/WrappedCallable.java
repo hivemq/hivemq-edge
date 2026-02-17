@@ -15,11 +15,10 @@
  */
 package com.hivemq.extensions.services.executor;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -37,7 +36,8 @@ public class WrappedCallable<V> implements Callable<V> {
     private final CompletableFuture<V> completableFuture;
 
     WrappedCallable(
-            final @NotNull Callable<V> callable, final @NotNull ClassLoader classLoader,
+            final @NotNull Callable<V> callable,
+            final @NotNull ClassLoader classLoader,
             final @Nullable CompletableFuture<V> completableFuture) {
         this.callable = callable;
         this.classLoader = classLoader;

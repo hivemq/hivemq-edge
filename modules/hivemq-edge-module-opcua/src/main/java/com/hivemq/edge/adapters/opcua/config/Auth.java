@@ -24,21 +24,29 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import java.io.IOException;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
-import java.util.Map;
-
 @JsonDeserialize(using = Auth.AuthDeserializer.class)
-public record Auth(@JsonProperty("basic") @JsonInclude(JsonInclude.Include.NON_NULL) @ModuleConfigField(title = "Basic Authentication",
-                                                                                                        description = "Username / password based authentication") @Nullable BasicAuth basicAuth,
-                   @JsonProperty("x509") @JsonInclude(JsonInclude.Include.NON_NULL) @ModuleConfigField(title = "X509 Authentication",
-                                                            description = "Authentication based on certificate / private key") @Nullable X509Auth x509Auth) {
+public record Auth(
+        @JsonProperty("basic")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @ModuleConfigField(title = "Basic Authentication", description = "Username / password based authentication")
+        @Nullable
+        BasicAuth basicAuth,
+
+        @JsonProperty("x509")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @ModuleConfigField(
+                title = "X509 Authentication",
+                description = "Authentication based on certificate / private key")
+        @Nullable
+        X509Auth x509Auth) {
 
     @JsonCreator
-    public Auth {
-    }
+    public Auth {}
 
     private static <T> @Nullable T fetch(
             final @NotNull Map<String, Object> map,
@@ -60,8 +68,8 @@ public record Auth(@JsonProperty("basic") @JsonInclude(JsonInclude.Include.NON_N
 
     static class AuthDeserializer extends JsonDeserializer<Auth> {
         @Override
-        public @NotNull Auth deserialize(final @NotNull JsonParser parser, final @NotNull DeserializationContext context)
-                throws IOException {
+        public @NotNull Auth deserialize(
+                final @NotNull JsonParser parser, final @NotNull DeserializationContext context) throws IOException {
             final String text = parser.getText();
             if (text != null && text.isEmpty()) {
                 return new Auth(null, null);

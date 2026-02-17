@@ -15,17 +15,17 @@
  */
 package com.hivemq.codec.encoder.mqtt5;
 
+import static com.hivemq.codec.encoder.mqtt5.Mqtt5MessageEncoderUtil.*;
+import static com.hivemq.mqtt.message.mqtt5.MessageProperties.AUTHENTICATION_DATA;
+import static com.hivemq.mqtt.message.mqtt5.MessageProperties.AUTHENTICATION_METHOD;
+
 import com.hivemq.configuration.service.SecurityConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.auth.AUTH;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.mqtt.message.reason.Mqtt5AuthReasonCode;
 import io.netty.buffer.ByteBuf;
-
-import static com.hivemq.codec.encoder.mqtt5.Mqtt5MessageEncoderUtil.*;
-import static com.hivemq.mqtt.message.mqtt5.MessageProperties.AUTHENTICATION_DATA;
-import static com.hivemq.mqtt.message.mqtt5.MessageProperties.AUTHENTICATION_METHOD;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Encoder for AUTH messages.
@@ -34,7 +34,9 @@ import static com.hivemq.mqtt.message.mqtt5.MessageProperties.AUTHENTICATION_MET
  * @author Florian Limpöck
  * @since 4.0
  */
-public class Mqtt5AuthEncoder extends Mqtt5MessageWithUserPropertiesEncoder.Mqtt5MessageWithOmissibleReasonCodeEncoder<AUTH, Mqtt5AuthReasonCode> {
+public class Mqtt5AuthEncoder
+        extends Mqtt5MessageWithUserPropertiesEncoder.Mqtt5MessageWithOmissibleReasonCodeEncoder<
+                AUTH, Mqtt5AuthReasonCode> {
 
     private static final int FIXED_HEADER = MessageType.AUTH.ordinal() << 4;
 
@@ -50,7 +52,8 @@ public class Mqtt5AuthEncoder extends Mqtt5MessageWithUserPropertiesEncoder.Mqtt
     }
 
     @Override
-    @NotNull Mqtt5AuthReasonCode getDefaultReasonCode() {
+    @NotNull
+    Mqtt5AuthReasonCode getDefaultReasonCode() {
         return Mqtt5AuthReasonCode.SUCCESS;
     }
 

@@ -26,11 +26,11 @@ public class RandomPortGenerator {
             tries--;
             try {
                 final int randomNumber = (int) (Math.round(Math.random() * 40000) + 10000);
-                try (final ServerSocket serverSocket = new ServerSocket(randomNumber)){
+                try (final ServerSocket serverSocket = new ServerSocket(randomNumber)) {
                     return serverSocket.getLocalPort();
                 }
             } catch (final IOException ex) {
-                //continue
+                // continue
             }
         }
         throw new RuntimeException("Random port not found");

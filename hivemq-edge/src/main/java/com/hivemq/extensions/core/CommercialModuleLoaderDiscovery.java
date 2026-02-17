@@ -70,14 +70,9 @@ public class CommercialModuleLoaderDiscovery {
         }
     }
 
-
     public void afterHiveMQStart(final @NotNull AfterHiveMQStartBootstrapService afterHiveMQStartBootstrapService) {
         if (instance != null) {
             instance.afterHiveMQStart(afterHiveMQStartBootstrapService);
         }
     }
-
-
 }
-
-

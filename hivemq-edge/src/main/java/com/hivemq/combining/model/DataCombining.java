@@ -18,41 +18,43 @@ package com.hivemq.combining.model;
 import com.hivemq.configuration.entity.adapter.fieldmapping.InstructionEntity;
 import com.hivemq.configuration.entity.combining.DataCombiningEntity;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
+import java.util.List;
+import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-
-public record DataCombining(UUID id, DataCombiningSources sources, DataCombiningDestination destination,
-                            List<com.hivemq.persistence.mappings.fieldmapping.Instruction> instructions) {
+public record DataCombining(
+        UUID id,
+        DataCombiningSources sources,
+        DataCombiningDestination destination,
+        List<com.hivemq.persistence.mappings.fieldmapping.Instruction> instructions) {
 
     public static @NotNull DataCombining fromModel(final @NotNull com.hivemq.edge.api.model.DataCombining model) {
-        return new DataCombining(model.getId(),
+        return new DataCombining(
+                model.getId(),
                 DataCombiningSources.fromModel(model.getSources()),
                 DataCombiningDestination.from(model.getDestination()),
                 model.getInstructions().stream().map(Instruction::from).toList());
     }
 
     public static @NotNull DataCombining fromPersistence(final @NotNull DataCombiningEntity model) {
-        return new DataCombining(model.getId(),
+        return new DataCombining(
+                model.getId(),
                 DataCombiningSources.fromPersistence(model.getSources()),
                 DataCombiningDestination.fromPersistence(model.getDestination()),
                 model.getInstructions().stream().map(InstructionEntity::to).toList());
     }
 
     public @NotNull com.hivemq.edge.api.model.DataCombining toModel() {
-        return new com.hivemq.edge.api.model.DataCombining().id(id())
+        return new com.hivemq.edge.api.model.DataCombining()
+                .id(id())
                 .sources(sources().toModel())
                 .destination(destination().toModel())
                 .instructions(instructions().stream().map(Instruction::toModel).toList());
     }
 
     public @NotNull DataCombiningEntity toPersistence() {
-        return new DataCombiningEntity(id(),
+        return new DataCombiningEntity(
+                id(),
                 sources().toPersistence(),
                 destination().toPersistence(),
                 instructions().stream().map(InstructionEntity::from).toList());

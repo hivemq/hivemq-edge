@@ -16,13 +16,12 @@
 package com.hivemq.extensions;
 
 import com.hivemq.extension.sdk.api.ExtensionMain;
+import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
+import java.nio.file.Path;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.nio.file.Path;
 
 /**
  * @author Georg Held
@@ -34,17 +33,27 @@ public class HiveMQExtensionImpl extends AbstractHiveMQExtension {
     private static final @NotNull Logger log = LoggerFactory.getLogger(HiveMQExtensionImpl.class);
 
     public HiveMQExtensionImpl(
-            final @NotNull HiveMQExtensionEntity pluginEntity, final @NotNull Path pluginFolderPath,
-            final @NotNull ExtensionMain extensionMain, final boolean enabled) {
-        super(pluginEntity.getId(), pluginEntity.getVersion(), pluginEntity.getName(),
-                pluginEntity.getAuthor(), pluginEntity.getPriority(),
-                pluginEntity.getStartPriority(), extensionMain, enabled,
+            final @NotNull HiveMQExtensionEntity pluginEntity,
+            final @NotNull Path pluginFolderPath,
+            final @NotNull ExtensionMain extensionMain,
+            final boolean enabled) {
+        super(
+                pluginEntity.getId(),
+                pluginEntity.getVersion(),
+                pluginEntity.getName(),
+                pluginEntity.getAuthor(),
+                pluginEntity.getPriority(),
+                pluginEntity.getStartPriority(),
+                extensionMain,
+                enabled,
                 pluginFolderPath);
     }
 
     @Override
     public @Nullable IsolatedExtensionClassloader getExtensionClassloader() {
-        return extensionMain != null ? (IsolatedExtensionClassloader) extensionMain.getClass().getClassLoader() : null;
+        return extensionMain != null
+                ? (IsolatedExtensionClassloader) extensionMain.getClass().getClassLoader()
+                : null;
     }
 
     @Override

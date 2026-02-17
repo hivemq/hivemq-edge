@@ -19,10 +19,8 @@ import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Objects;
-
+import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 @XmlRootElement(name = "pre-login-notice")
@@ -77,11 +75,11 @@ public class PreLoginNoticeEntity {
         if (this == o) {
             return true;
         }
-        return o instanceof final PreLoginNoticeEntity that &&
-                enabled == that.enabled &&
-                Objects.equals(title, that.title) &&
-                Objects.equals(message, that.message) &&
-                Objects.equals(consent, that.consent);
+        return o instanceof final PreLoginNoticeEntity that
+                && enabled == that.enabled
+                && Objects.equals(title, that.title)
+                && Objects.equals(message, that.message)
+                && Objects.equals(consent, that.consent);
     }
 
     @Override

@@ -18,16 +18,15 @@ package com.hivemq.persistence;
 import com.google.common.base.Preconditions;
 import com.hivemq.codec.encoder.mqtt5.Mqtt5PayloadFormatIndicator;
 import com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.util.MemoryEstimator;
-
 import java.util.Arrays;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Dominik Obermaier
@@ -100,9 +99,7 @@ public class RetainedMessage {
         this.timestamp = timestamp;
     }
 
-    public RetainedMessage(
-            final @NotNull PUBLISH publish,
-            final long messageExpiryInterval) {
+    public RetainedMessage(final @NotNull PUBLISH publish, final long messageExpiryInterval) {
         this.message = publish.getPayload();
         this.qos = publish.getQoS();
         this.publishId = publish.getPublishId();
@@ -140,9 +137,9 @@ public class RetainedMessage {
         size += MemoryEstimator.LONG_WRAPPER_SIZE; // Payload ID
         size += MemoryEstimator.LONG_SIZE; // expiry interval
 
-        size += 24; //User Properties Overhead
+        size += 24; // User Properties Overhead
         for (final MqttUserProperty userProperty : getUserProperties().asList()) {
-            size += 24; //UserProperty Object Overhead
+            size += 24; // UserProperty Object Overhead
             size += MemoryEstimator.stringSize(userProperty.getName());
             size += MemoryEstimator.stringSize(userProperty.getValue());
         }
@@ -244,8 +241,8 @@ public class RetainedMessage {
     }
 
     public boolean isExpiryDisabled() {
-        return (messageExpiryInterval == MqttConfigurationDefaults.TTL_DISABLED) ||
-                (messageExpiryInterval == PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET);
+        return (messageExpiryInterval == MqttConfigurationDefaults.TTL_DISABLED)
+                || (messageExpiryInterval == PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET);
     }
 
     public boolean hasExpired() {

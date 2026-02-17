@@ -16,8 +16,8 @@
 package com.hivemq.api.model.client;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.jetbrains.annotations.NotNull;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson

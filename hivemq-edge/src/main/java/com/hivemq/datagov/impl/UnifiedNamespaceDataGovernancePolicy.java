@@ -25,7 +25,6 @@ import com.hivemq.datagov.model.impl.DataGovernancePolicyImpl;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.uns.UnifiedNamespaceService;
 import com.hivemq.uns.config.ISA95;
-
 import jakarta.inject.Inject;
 import java.util.Map;
 
@@ -40,40 +39,41 @@ public class UnifiedNamespaceDataGovernancePolicy extends DataGovernancePolicyIm
     private final UnifiedNamespaceService unifiedNamespaceService;
 
     @Inject
-    public UnifiedNamespaceDataGovernancePolicy(
-            final UnifiedNamespaceService unifiedNamespaceService) {
+    public UnifiedNamespaceDataGovernancePolicy(final UnifiedNamespaceService unifiedNamespaceService) {
         super(ID, NAME);
         this.unifiedNamespaceService = unifiedNamespaceService;
     }
 
-    public void execute(final DataGovernanceContext context, final DataGovernanceData input){
+    public void execute(final DataGovernanceContext context, final DataGovernanceData input) {
 
         ImmutableMap.Builder builder = ImmutableMap.<String, String>builder();
         Map<String, String> tokens = context.getTokenProvider().getTokenReplacements(context);
-        if(tokens != null){
+        if (tokens != null) {
             builder.putAll(tokens);
         }
 
         MqttTopic mqttTopic = MqttTopic.of(input.getPublish().getTopic());
-        //-- Topic modifications
+        // -- Topic modifications
         ISA95 isa95 = unifiedNamespaceService.getISA95();
-        if(isa95.isEnabled()){
+        if (isa95.isEnabled()) {
             builder.putAll(unifiedNamespaceService.getTopicReplacements(isa95));
-            if(isa95.isPrefixAllTopics()){
-                //-- Add a topic prefix regardless of the templates being used
+            if (isa95.isPrefixAllTopics()) {
+                // -- Add a topic prefix regardless of the templates being used
                 mqttTopic = unifiedNamespaceService.prefixISA95(mqttTopic);
             }
         }
 
-        //-- Apply topic transformations from the context
-        mqttTopic = TopicFilterProcessor.applyDestinationModifier(mqttTopic,
-                mqttTopic.toString(),
-                builder.build());
+        // -- Apply topic transformations from the context
+        mqttTopic = TopicFilterProcessor.applyDestinationModifier(mqttTopic, mqttTopic.toString(), builder.build());
 
-        //-- Update the Resulting Object If Aspects Have Changed
-        if(!MqttTopic.of(input.getPublish().getTopic()).equals(mqttTopic)){
-            context.getResult().getOutput().setPublish(new PUBLISHFactory.Mqtt5Builder().fromPublish(
-                    context.getResult().getOutput().getPublish()).withTopic(mqttTopic.toString()).build());
+        // -- Update the Resulting Object If Aspects Have Changed
+        if (!MqttTopic.of(input.getPublish().getTopic()).equals(mqttTopic)) {
+            context.getResult()
+                    .getOutput()
+                    .setPublish(new PUBLISHFactory.Mqtt5Builder()
+                            .fromPublish(context.getResult().getOutput().getPublish())
+                            .withTopic(mqttTopic.toString())
+                            .build());
         }
     }
 }

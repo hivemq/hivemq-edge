@@ -15,9 +15,8 @@
  */
 package com.hivemq.mqtt.message;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.io.Serializable;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Dominik Obermaier
@@ -26,7 +25,8 @@ import java.io.Serializable;
  */
 public interface Message extends Serializable {
 
-    @NotNull MessageType getType();
+    @NotNull
+    MessageType getType();
 
     /**
      * sets the fully encoded length of that message
@@ -63,5 +63,4 @@ public interface Message extends Serializable {
     void setOmittedProperties(final int omittedProperties);
 
     int getOmittedProperties();
-
 }

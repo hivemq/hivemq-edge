@@ -15,23 +15,6 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.siemens;
 
-import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
-import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
-import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
-import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
-import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.DATE;
 import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.DATE_AND_TIME;
 import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.LDATE;
@@ -43,6 +26,22 @@ import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.TIME
 import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.TIME_OF_DAY;
 import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.WCHAR;
 import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.WSTRING;
+
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
+import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
+import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
+import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Protocol adapter for Siemens S7 PLC communication.
@@ -71,17 +70,8 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7SpecificAdapterCon
             READ_TIMEOUT = "read-timeout";      //This is the maximum waiting time for reading on the TCP channel. As there is no traffic, it must be assumed that the connection with the interlocutor was lost and it must be restarted. When the channel is closed, the "fail over" is carried out in case of having the secondary channel, or it is expected that it will be restored automatically, which is done every 4 seconds. Default value: 8 seconds.
     // @formatter:on
 
-    private final Set<Plc4xDataType.DATA_TYPE> SPECIAL_ADDRESS_SCHEME_TYPES = Set.of(WCHAR,
-            STRING,
-            WSTRING,
-            DATE,
-            TIME,
-            LTIME,
-            TIME_OF_DAY,
-            LDATE,
-            LTIME_OF_DAY,
-            DATE_AND_TIME,
-            LDATE_AND_TIME);
+    private final Set<Plc4xDataType.DATA_TYPE> SPECIAL_ADDRESS_SCHEME_TYPES = Set.of(
+            WCHAR, STRING, WSTRING, DATE, TIME, LTIME, TIME_OF_DAY, LDATE, LTIME_OF_DAY, DATE_AND_TIME, LDATE_AND_TIME);
 
     private final Pattern SHORT_BLOCK_ADDRESS_PATTERN = Pattern.compile("^%DB\\d{1,7}:\\d{1,7}(\\.[0-7])*?:.*");
     private final Pattern BLOCK_ADDRESS_PATTERN =
@@ -116,8 +106,8 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7SpecificAdapterCon
         map.put(REMOTE_TSAP, nullSafe(config.getRemoteTsap()));
 
         // Enable ping if explicitly configured OR if polling interval >= 7s (existing behavior)
-        boolean autoEnablePing = config.getPlc4xToMqttConfig() != null &&
-                config.getPlc4xToMqttConfig().getPollingIntervalMillis() >= 7000;
+        boolean autoEnablePing = config.getPlc4xToMqttConfig() != null
+                && config.getPlc4xToMqttConfig().getPollingIntervalMillis() >= 7000;
         if (config.isKeepAlive() || autoEnablePing) {
             map.put(PING, "true");
             map.put(PING_TIME, "4");
@@ -129,21 +119,23 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7SpecificAdapterCon
     protected @NotNull String createTagAddressForSubscription(final @NotNull Plc4xTag tag) {
         final String tagAddress = tag.getDefinition().getTagAddress();
 
-        final String formattedAddress = String.format("%s%s%s", tagAddress, ":", tag.getDefinition().getDataType());
+        final String formattedAddress =
+                String.format("%s%s%s", tagAddress, ":", tag.getDefinition().getDataType());
 
         if (SPECIAL_ADDRESS_SCHEME_TYPES.contains(tag.getDefinition().getDataType())) {
-            //correct Siemens` addressing scheme into a valid Plc4x addressing scheme (example replacement: %IW20 -> %IX20)
+            // correct Siemens` addressing scheme into a valid Plc4x addressing scheme (example replacement: %IW20 ->
+            // %IX20)
             if (SHORT_BLOCK_ADDRESS_PATTERN.matcher(formattedAddress).matches()) {
                 return formattedAddress;
             }
             final Matcher blockMatcher = BLOCK_ADDRESS_PATTERN.matcher(formattedAddress);
             if (blockMatcher.matches()) {
-                final String correctedAddress =
-                        new StringBuilder(formattedAddress).replace(blockMatcher.start("dataType"),
-                                blockMatcher.end("dataType"),
-                                "X").toString();
+                final String correctedAddress = new StringBuilder(formattedAddress)
+                        .replace(blockMatcher.start("dataType"), blockMatcher.end("dataType"), "X")
+                        .toString();
                 if (log.isTraceEnabled()) {
-                    log.trace("Correcting S7 tag address from '{}' to '{}' to improve compatibility.",
+                    log.trace(
+                            "Correcting S7 tag address from '{}' to '{}' to improve compatibility.",
                             formattedAddress,
                             correctedAddress);
                 }
@@ -152,12 +144,12 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7SpecificAdapterCon
             }
             final Matcher addressMatcher = ADDRESS_PATTERN.matcher(formattedAddress);
             if (addressMatcher.matches()) {
-                final String correctedAddress =
-                        new StringBuilder(formattedAddress).replace(addressMatcher.start("dataType"),
-                                addressMatcher.end("dataType"),
-                                "X").toString();
+                final String correctedAddress = new StringBuilder(formattedAddress)
+                        .replace(addressMatcher.start("dataType"), addressMatcher.end("dataType"), "X")
+                        .toString();
                 if (log.isTraceEnabled()) {
-                    log.trace("Correcting S7 tag address from '{}' to '{}' to improve compatibility",
+                    log.trace(
+                            "Correcting S7 tag address from '{}' to '{}' to improve compatibility",
                             formattedAddress,
                             correctedAddress);
                 }

@@ -17,23 +17,23 @@ package com.hivemq.persistence.clientsession.callback;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
+import com.hivemq.mqtt.message.subscribe.Topic;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.mqtt.message.subscribe.Topic;
 
 @Immutable
 public class SubscriptionResult {
 
     @NotNull
     private final Topic topic;
+
     private final boolean subscriptionAlreadyExisted;
+
     @Nullable
     private final String shareName;
 
-
-    public SubscriptionResult(final @NotNull Topic topic,
-                              final boolean subscriptionAlreadyExisted,
-                              final @Nullable String shareName) {
+    public SubscriptionResult(
+            final @NotNull Topic topic, final boolean subscriptionAlreadyExisted, final @Nullable String shareName) {
 
         Preconditions.checkNotNull(topic, "Topic cannot be null");
 

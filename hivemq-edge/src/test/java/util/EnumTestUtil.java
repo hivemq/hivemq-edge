@@ -15,19 +15,19 @@
  */
 package util;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import static org.junit.Assert.*;
 
 import java.util.function.IntFunction;
 import java.util.function.ToIntFunction;
-
-import static org.junit.Assert.*;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class EnumTestUtil {
 
-    public static <T extends Enum<T>> void assertAllValueOf(final @NotNull Class<T> enumClass,
-                                                            final @NotNull ToIntFunction<T> toValueFunction,
-                                                            final @NotNull IntFunction<T> toEnumFunction) {
+    public static <T extends Enum<T>> void assertAllValueOf(
+            final @NotNull Class<T> enumClass,
+            final @NotNull ToIntFunction<T> toValueFunction,
+            final @NotNull IntFunction<T> toEnumFunction) {
         int minValue = Integer.MAX_VALUE;
         int maxValue = Integer.MIN_VALUE;
 
@@ -52,10 +52,11 @@ public final class EnumTestUtil {
         }
     }
 
-    public static <T extends Enum<T>> void assertAllValueOfWithFallback(final @NotNull Class<T> enumClass,
-                                                                        final @NotNull ToIntFunction<T> toValueFunction,
-                                                                        final @NotNull IntFunction<T> toEnumFunction,
-                                                                        final @Nullable T fallback) {
+    public static <T extends Enum<T>> void assertAllValueOfWithFallback(
+            final @NotNull Class<T> enumClass,
+            final @NotNull ToIntFunction<T> toValueFunction,
+            final @NotNull IntFunction<T> toEnumFunction,
+            final @Nullable T fallback) {
         int minValue = Integer.MAX_VALUE;
         int maxValue = Integer.MIN_VALUE;
 
@@ -69,6 +70,5 @@ public final class EnumTestUtil {
         assertEquals(fallback, toEnumFunction.apply(maxValue + 1));
     }
 
-    private EnumTestUtil() {
-    }
+    private EnumTestUtil() {}
 }

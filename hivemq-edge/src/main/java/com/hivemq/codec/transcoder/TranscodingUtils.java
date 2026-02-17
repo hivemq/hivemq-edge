@@ -20,9 +20,9 @@ package com.hivemq.codec.transcoder;
  */
 public class TranscodingUtils {
 
-    public static boolean instanceOf(Class<?> cls, Class... l){
-        for (Class c : l){
-            if(c.isAssignableFrom(cls)){
+    public static boolean instanceOf(Class<?> cls, Class... l) {
+        for (Class c : l) {
+            if (c.isAssignableFrom(cls)) {
                 return true;
             }
         }

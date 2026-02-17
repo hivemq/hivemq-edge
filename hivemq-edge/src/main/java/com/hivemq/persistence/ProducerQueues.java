@@ -16,10 +16,9 @@
 package com.hivemq.persistence;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
 
 /**
  * @author Daniel Krüger
@@ -30,11 +29,14 @@ public interface ProducerQueues {
 
     <R> @NotNull ListenableFuture<R> submit(int bucketIndex, @NotNull SingleWriterService.Task<R> task);
 
-    @NotNull <R> List<ListenableFuture<R>> submitToAllBucketsParallel(@NotNull SingleWriterService.Task<R> task);
+    @NotNull
+    <R> List<ListenableFuture<R>> submitToAllBucketsParallel(@NotNull SingleWriterService.Task<R> task);
 
-    @NotNull <R> List<ListenableFuture<R>> submitToAllBucketsSequential(@NotNull SingleWriterService.Task<R> task);
+    @NotNull
+    <R> List<ListenableFuture<R>> submitToAllBucketsSequential(@NotNull SingleWriterService.Task<R> task);
 
     int getBucket(@NotNull String key);
 
-    @NotNull ListenableFuture<Void> shutdown(final @Nullable SingleWriterService.Task<Void> finalTask);
+    @NotNull
+    ListenableFuture<Void> shutdown(final @Nullable SingleWriterService.Task<Void> finalTask);
 }

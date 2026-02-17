@@ -34,13 +34,12 @@ import com.hivemq.codec.decoder.mqtt.mqtt5.Mqtt5PubrecDecoder;
 import com.hivemq.codec.decoder.mqtt.mqtt5.Mqtt5PubrelDecoder;
 import com.hivemq.codec.decoder.mqtt.mqtt5.Mqtt5SubscribeDecoder;
 import com.hivemq.codec.decoder.mqtt.mqtt5.Mqtt5UnsubscribeDecoder;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.ProtocolVersion;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Lukas Brandl

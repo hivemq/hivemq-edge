@@ -18,8 +18,6 @@ package com.hivemq.codec.decoder.mqtt.mqtt3;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.decoder.mqtt.AbstractMqttDecoder;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.ProtocolVersion;
@@ -28,11 +26,12 @@ import com.hivemq.mqtt.message.unsubscribe.UNSUBSCRIBE;
 import com.hivemq.util.ReasonStrings;
 import com.hivemq.util.Strings;
 import io.netty.buffer.ByteBuf;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Dominik Obermaier
@@ -52,14 +51,14 @@ public class Mqtt3UnsubscribeDecoder extends AbstractMqttDecoder<UNSUBSCRIBE> {
             final @NotNull ClientConnection clientConnection, final @NotNull ByteBuf buf, final byte header) {
 
         if (clientConnection.getProtocolVersion() == ProtocolVersion.MQTTv3_1_1) {
-            //Must match 0b0000_0010
+            // Must match 0b0000_0010
             if ((header & 0b0000_1111) != 2) {
                 disconnectByInvalidFixedHeader(clientConnection, MessageType.UNSUBSCRIBE);
                 buf.clear();
                 return null;
             }
         } else if (clientConnection.getProtocolVersion() == ProtocolVersion.MQTTv3_1) {
-            //Must match 0b0000_0010 or 0b0000_0011
+            // Must match 0b0000_0010 or 0b0000_0011
             if ((header & 0b0000_1111) > 3) {
                 disconnectByInvalidFixedHeader(clientConnection, MessageType.UNSUBSCRIBE);
                 buf.clear();
@@ -78,7 +77,8 @@ public class Mqtt3UnsubscribeDecoder extends AbstractMqttDecoder<UNSUBSCRIBE> {
         while (buf.isReadable()) {
             final String topic = Strings.getPrefixedString(buf);
             if (isInvalidTopic(clientConnection, topic)) {
-                disconnector.disconnect(clientConnection.getChannel(),
+                disconnector.disconnect(
+                        clientConnection.getChannel(),
                         "A client (IP: {}) sent an UNSUBSCRIBE with an empty topic. This is not allowed. Disconnecting client.",
                         "Sent UNSUBSCRIBE with an empty topic",
                         Mqtt5DisconnectReasonCode.MALFORMED_PACKET,
@@ -90,7 +90,8 @@ public class Mqtt3UnsubscribeDecoder extends AbstractMqttDecoder<UNSUBSCRIBE> {
         }
 
         if (topics.isEmpty()) {
-            disconnector.disconnect(clientConnection.getChannel(),
+            disconnector.disconnect(
+                    clientConnection.getChannel(),
                     "A client (IP: {}) sent an UNSUBSCRIBE without topic filters. This is not allowed. Disconnecting client.",
                     "Sent UNSUBSCRIBE without topic filters",
                     Mqtt5DisconnectReasonCode.PROTOCOL_ERROR,

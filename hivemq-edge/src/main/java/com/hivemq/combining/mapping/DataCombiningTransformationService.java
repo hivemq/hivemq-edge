@@ -17,17 +17,16 @@ package com.hivemq.combining.mapping;
 
 import com.hivemq.combining.model.DataCombining;
 import com.hivemq.mqtt.message.publish.PUBLISH;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.concurrent.CompletableFuture;
+import org.jetbrains.annotations.NotNull;
 
 public interface DataCombiningTransformationService {
 
-    @NotNull CompletableFuture<Void> applyMappings(
+    @NotNull
+    CompletableFuture<Void> applyMappings(
             final @NotNull PUBLISH mergedPublish, final @NotNull DataCombining dataCombining);
 
     void removeScriptForDataCombining(@NotNull DataCombining combining);
 
     void addScriptForDataCombining(@NotNull DataCombining combining);
-
 }

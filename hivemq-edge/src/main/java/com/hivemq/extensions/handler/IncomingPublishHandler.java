@@ -17,7 +17,6 @@ package com.hivemq.extensions.handler;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
@@ -49,13 +48,13 @@ import com.hivemq.mqtt.message.reason.Mqtt5PubRecReasonCode;
 import com.hivemq.util.Exceptions;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This handler intercepts every inbound PUBLISH message and delegates it to all registered {@link
@@ -117,10 +116,12 @@ public class IncomingPublishHandler {
      * @param ctx     the context of the channel handler
      * @param publish the publish to process
      */
-    public void interceptOrDelegate(final @NotNull ChannelHandlerContext ctx, final @NotNull PUBLISH publish, final @NotNull String clientId) {
+    public void interceptOrDelegate(
+            final @NotNull ChannelHandlerContext ctx, final @NotNull PUBLISH publish, final @NotNull String clientId) {
         final Channel channel = ctx.channel();
 
-        final ClientContextImpl clientContext = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getExtensionClientContext();
+        final ClientContextImpl clientContext =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getExtensionClientContext();
         if (clientContext == null) {
             ctx.executor().execute(() -> authorizerService.authorizePublish(ctx, publish));
             return;
@@ -148,7 +149,8 @@ public class IncomingPublishHandler {
 
         for (final PublishInboundInterceptor interceptor : interceptors) {
 
-            final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(interceptor.getClass().getClassLoader());
+            final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(
+                    interceptor.getClass().getClassLoader());
             if (extension == null) { // disabled extension would be null
                 context.finishInterceptor();
                 continue;
@@ -218,7 +220,8 @@ public class IncomingPublishHandler {
             if (output.isPreventDelivery()) {
                 dropMessage(output);
             } else {
-                final PUBLISH finalPublish = PUBLISHFactory.merge(inputHolder.get().getPublishPacket(), publish);
+                final PUBLISH finalPublish =
+                        PUBLISHFactory.merge(inputHolder.get().getPublishPacket(), publish);
                 authorizerService.authorizePublish(ctx, finalPublish);
             }
         }
@@ -227,14 +230,15 @@ public class IncomingPublishHandler {
             final Channel channel = ctx.channel();
             final String clientId = getIdentifier();
 
-            final ProtocolVersion protocolVersion = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getProtocolVersion();
-            //MQTT 3
+            final ProtocolVersion protocolVersion =
+                    channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getProtocolVersion();
+            // MQTT 3
             if (protocolVersion == ProtocolVersion.MQTTv3_1 || protocolVersion == ProtocolVersion.MQTTv3_1_1) {
                 if (output.getReasonCode() != AckReasonCode.SUCCESS) {
                     mqttDisconnector.disconnect(
                             channel,
-                            "Client '" + clientId +
-                                    "' (IP: {}) sent a PUBLISH, but its onward delivery was prevented by a publish inbound interceptor. Disconnecting client.",
+                            "Client '" + clientId
+                                    + "' (IP: {}) sent a PUBLISH, but its onward delivery was prevented by a publish inbound interceptor. Disconnecting client.",
                             "Sent PUBLISH, but its onward delivery was prevented by a publish inbound interceptor",
                             Mqtt5DisconnectReasonCode.ADMINISTRATIVE_ACTION,
                             null);
@@ -242,7 +246,7 @@ public class IncomingPublishHandler {
 
                     switch (publish.getQoS()) {
                         case AT_MOST_ONCE:
-                            //no ack for qos 0
+                            // no ack for qos 0
                             break;
                         case AT_LEAST_ONCE:
                             ctx.writeAndFlush(new PUBACK(publish.getPacketIdentifier()));
@@ -251,31 +255,35 @@ public class IncomingPublishHandler {
                             ctx.writeAndFlush(new PUBREC(publish.getPacketIdentifier()));
                             break;
                     }
-
                 }
 
-                //MQTT 5 + MQTT-SN
+                // MQTT 5 + MQTT-SN
             } else {
                 switch (publish.getQoS()) {
                     case AT_MOST_ONCE:
-                        //no ack for qos 0
+                        // no ack for qos 0
                         break;
                     case AT_LEAST_ONCE:
-                        final Mqtt5PubAckReasonCode ackReasonCode =
-                                Mqtt5PubAckReasonCode.from(output.getReasonCode());
-                        ctx.writeAndFlush(new PUBACK(publish.getPacketIdentifier(), ackReasonCode,
-                                output.getReasonString(), Mqtt5UserProperties.NO_USER_PROPERTIES));
+                        final Mqtt5PubAckReasonCode ackReasonCode = Mqtt5PubAckReasonCode.from(output.getReasonCode());
+                        ctx.writeAndFlush(new PUBACK(
+                                publish.getPacketIdentifier(),
+                                ackReasonCode,
+                                output.getReasonString(),
+                                Mqtt5UserProperties.NO_USER_PROPERTIES));
                         break;
                     case EXACTLY_ONCE:
-                        final Mqtt5PubRecReasonCode recReasonCode =
-                                Mqtt5PubRecReasonCode.from(output.getReasonCode());
-                        ctx.writeAndFlush(new PUBREC(publish.getPacketIdentifier(), recReasonCode,
-                                output.getReasonString(), Mqtt5UserProperties.NO_USER_PROPERTIES));
+                        final Mqtt5PubRecReasonCode recReasonCode = Mqtt5PubRecReasonCode.from(output.getReasonCode());
+                        ctx.writeAndFlush(new PUBREC(
+                                publish.getPacketIdentifier(),
+                                recReasonCode,
+                                output.getReasonString(),
+                                Mqtt5UserProperties.NO_USER_PROPERTIES));
                         break;
                 }
             }
 
-            messageDroppedService.extensionPrevented(clientId, publish.getTopic(), publish.getQoS().getQosNumber());
+            messageDroppedService.extensionPrevented(
+                    clientId, publish.getTopic(), publish.getQoS().getQosNumber());
         }
     }
 
@@ -304,8 +312,10 @@ public class IncomingPublishHandler {
                 interceptor.onInboundPublish(input, output);
             } catch (final Throwable e) {
                 log.warn(
-                        "Uncaught exception was thrown from extension with id \"{}\" on inbound PUBLISH interception. " +
-                                "Extensions are responsible for their own exception handling.", extensionId, e);
+                        "Uncaught exception was thrown from extension with id \"{}\" on inbound PUBLISH interception. "
+                                + "Extensions are responsible for their own exception handling.",
+                        extensionId,
+                        e);
                 output.forciblyPreventPublishDelivery(output.getReasonCode(), output.getReasonString());
                 Exceptions.rethrowError(e);
             }

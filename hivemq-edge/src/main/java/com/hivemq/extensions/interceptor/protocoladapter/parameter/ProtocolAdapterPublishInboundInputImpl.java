@@ -15,11 +15,11 @@
  */
 package com.hivemq.extensions.interceptor.protocoladapter.parameter;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.protocoladapter.parameter.ProtocolAdapterDynamicContext;
 import com.hivemq.extension.sdk.api.interceptor.protocoladapter.parameter.ProtocolAdapterPublishInboundInput;
 import com.hivemq.extensions.executor.task.PluginTaskInput;
 import com.hivemq.extensions.packets.publish.PublishPacketImpl;
+import org.jetbrains.annotations.NotNull;
 
 public class ProtocolAdapterPublishInboundInputImpl implements ProtocolAdapterPublishInboundInput, PluginTaskInput {
 
@@ -51,10 +51,9 @@ public class ProtocolAdapterPublishInboundInputImpl implements ProtocolAdapterPu
         return dynamicContext;
     }
 
-    public @NotNull ProtocolAdapterPublishInboundInputImpl update(final @NotNull ProtocolAdapterPublishInboundOutputImpl output) {
-        return new ProtocolAdapterPublishInboundInputImpl(adapterInformation,
-                output.getPublishPacket().copy(),
-                dynamicContext);
+    public @NotNull ProtocolAdapterPublishInboundInputImpl update(
+            final @NotNull ProtocolAdapterPublishInboundOutputImpl output) {
+        return new ProtocolAdapterPublishInboundInputImpl(
+                adapterInformation, output.getPublishPacket().copy(), dynamicContext);
     }
-
 }

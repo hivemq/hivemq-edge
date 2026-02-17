@@ -17,14 +17,13 @@ package com.hivemq.migration.meta;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.configuration.info.SystemInformation;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.util.LocalPersistenceFileUtil;
-import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.IOException;
+import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Christoph Schäbel
@@ -76,8 +75,7 @@ public class MetaFileService {
     }
 
     public static void writeMetaFile(
-            final @NotNull SystemInformation systemInformation,
-            final @NotNull MetaInformation metaInformation) {
+            final @NotNull SystemInformation systemInformation, final @NotNull MetaInformation metaInformation) {
         Preconditions.checkArgument(metaInformation.getPublishPayloadPersistenceType() != null);
         Preconditions.checkArgument(metaInformation.getRetainedMessagesPersistenceType() != null);
 
@@ -96,5 +94,4 @@ public class MetaFileService {
     private static File getMetaFile(final SystemInformation systemInformation) {
         return new File(systemInformation.getDataFolder(), META_FOLDER_NAME + File.separator + META_FILE_NAME);
     }
-
 }

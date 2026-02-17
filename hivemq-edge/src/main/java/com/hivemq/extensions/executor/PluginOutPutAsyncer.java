@@ -15,12 +15,11 @@
  */
 package com.hivemq.extensions.executor;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.async.Async;
 import com.hivemq.extension.sdk.api.async.AsyncOutput;
 import com.hivemq.extensions.executor.task.PluginTaskOutput;
-
 import java.time.Duration;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Interface that handles the async option for the diverse {@link AsyncOutput}s.
@@ -38,6 +37,6 @@ public interface PluginOutPutAsyncer {
      * @param <T>     an implementation of {@link PluginTaskOutput}
      * @return an {@link Async} of {@code <T>}
      */
-    @NotNull <T extends PluginTaskOutput> Async<T> asyncify(final @NotNull T output,
-                                                            final @NotNull Duration timeout);
+    @NotNull
+    <T extends PluginTaskOutput> Async<T> asyncify(final @NotNull T output, final @NotNull Duration timeout);
 }

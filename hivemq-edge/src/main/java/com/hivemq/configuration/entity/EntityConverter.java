@@ -1,26 +1,24 @@
 /*
- *  Copyright 2019-present HiveMQ GmbH
+ * Copyright 2019-present HiveMQ GmbH
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
 package com.hivemq.configuration.entity;
-
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A generic interface for converting between REST entities and internal entities.
@@ -38,7 +36,8 @@ public interface EntityConverter<RestEntity, InternalEntity> {
      * @param restEntity the REST entity to convert. Must not be null.
      * @return the converted internal entity. Will not be null.
      */
-    @NotNull InternalEntity toInternalEntity(final @NotNull RestEntity restEntity);
+    @NotNull
+    InternalEntity toInternalEntity(final @NotNull RestEntity restEntity);
 
     /**
      * Converts an internal entity to a REST entity.
@@ -46,7 +45,8 @@ public interface EntityConverter<RestEntity, InternalEntity> {
      * @param internalEntity the internal entity to convert. Must not be null.
      * @return the converted REST entity. Will not be null.
      */
-    @NotNull RestEntity toRestEntity(final @NotNull InternalEntity internalEntity);
+    @NotNull
+    RestEntity toRestEntity(final @NotNull InternalEntity internalEntity);
 
     default @NotNull List<InternalEntity> toInternalEntities(final @NotNull List<RestEntity> restEntities) {
         return restEntities.stream().map(this::toInternalEntity).collect(Collectors.toCollection(ArrayList::new));

@@ -21,17 +21,16 @@ import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.util.NanoTimeProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Daniel Krüger
@@ -60,15 +59,15 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
 
     @Override
     public void schedulePolling(final @NotNull ProtocolAdapterPollingSampler sampler) {
-        final PollingTask pollingTask = new PollingTask(sampler, scheduledExecutorService, eventService, nanoTimeProvider);
+        final PollingTask pollingTask =
+                new PollingTask(sampler, scheduledExecutorService, eventService, nanoTimeProvider);
         scheduledExecutorService.schedule(pollingTask, sampler.getInitialDelay(), sampler.getUnit());
         samplerToTask.put(sampler, pollingTask);
     }
 
     @Override
     public void stopPollingForAdapterInstance(final @NotNull ProtocolAdapter adapter) {
-        samplerToTask.keySet()
-                .stream()
+        samplerToTask.keySet().stream()
                 .filter(p -> p.getAdapterId().equals(adapter.getId()))
                 .forEach(this::stopPolling);
     }
@@ -81,7 +80,6 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
     public void stopAllPolling() {
         samplerToTask.keySet().forEach(this::stopPolling);
     }
-
 
     private class Shutdown implements HiveMQShutdownHook {
         @Override
@@ -104,5 +102,4 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
             }
         }
     }
-
 }

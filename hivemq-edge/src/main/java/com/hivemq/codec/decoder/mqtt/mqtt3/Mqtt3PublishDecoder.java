@@ -19,8 +19,6 @@ import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.decoder.mqtt.AbstractMqttPublishDecoder;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.QoS;
@@ -28,9 +26,10 @@ import com.hivemq.mqtt.message.publish.Mqtt3PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.util.Strings;
 import io.netty.buffer.ByteBuf;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Dominik Obermaier

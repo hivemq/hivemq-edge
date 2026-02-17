@@ -21,12 +21,11 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementRef;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * XML entity for LDAP authentication configuration.
@@ -152,24 +151,25 @@ public class LdapAuthenticationEntity {
     public boolean equals(final Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         final LdapAuthenticationEntity that = (LdapAuthenticationEntity) o;
-        return getConnectTimeoutMillis() == that.getConnectTimeoutMillis() &&
-                getResponseTimeoutMillis() == that.getResponseTimeoutMillis() &&
-                getMaxConnections() == that.getMaxConnections() &&
-                directoryDescent == that.directoryDescent &&
-                getSearchTimeoutSeconds() == that.getSearchTimeoutSeconds() &&
-                Objects.equals(getServers(), that.getServers()) &&
-                Objects.equals(getTlsMode(), that.getTlsMode()) &&
-                Objects.equals(getTrustStore(), that.getTrustStore()) &&
-                Objects.equals(getUidAttribute(), that.getUidAttribute()) &&
-                Objects.equals(getRdns(), that.getRdns()) &&
-                Objects.equals(getRequiredObjectClass(), that.getRequiredObjectClass()) &&
-                Objects.equals(getSimpleBindEntity(), that.getSimpleBindEntity()) &&
-                Objects.equals(getUserRoles(), that.getUserRoles());
+        return getConnectTimeoutMillis() == that.getConnectTimeoutMillis()
+                && getResponseTimeoutMillis() == that.getResponseTimeoutMillis()
+                && getMaxConnections() == that.getMaxConnections()
+                && directoryDescent == that.directoryDescent
+                && getSearchTimeoutSeconds() == that.getSearchTimeoutSeconds()
+                && Objects.equals(getServers(), that.getServers())
+                && Objects.equals(getTlsMode(), that.getTlsMode())
+                && Objects.equals(getTrustStore(), that.getTrustStore())
+                && Objects.equals(getUidAttribute(), that.getUidAttribute())
+                && Objects.equals(getRdns(), that.getRdns())
+                && Objects.equals(getRequiredObjectClass(), that.getRequiredObjectClass())
+                && Objects.equals(getSimpleBindEntity(), that.getSimpleBindEntity())
+                && Objects.equals(getUserRoles(), that.getUserRoles());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getServers(),
+        return Objects.hash(
+                getServers(),
                 getTlsMode(),
                 getTrustStore(),
                 getConnectTimeoutMillis(),

@@ -18,13 +18,11 @@ package com.hivemq.api.errors;
 import com.hivemq.http.HttpStatus;
 import com.hivemq.http.error.Error;
 import com.hivemq.http.error.ProblemDetails;
+import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-
 public class AlreadyExistsError extends ProblemDetails {
-    public AlreadyExistsError(
-            final @Nullable String error) {
+    public AlreadyExistsError(final @Nullable String error) {
         super(
                 "ResourceAlreadyExists",
                 "The resource already exists",

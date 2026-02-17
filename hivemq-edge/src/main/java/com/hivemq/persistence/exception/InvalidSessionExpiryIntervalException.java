@@ -15,7 +15,6 @@
  */
 package com.hivemq.persistence.exception;
 
-
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -29,5 +28,4 @@ public class InvalidSessionExpiryIntervalException extends RuntimeException {
     public InvalidSessionExpiryIntervalException(final @NotNull String message) {
         super(message);
     }
-
 }

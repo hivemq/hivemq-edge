@@ -20,11 +20,10 @@ import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.api.model.ApiConstants;
 import com.hivemq.edge.api.model.Status;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
-import org.jetbrains.annotations.NotNull;
-
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -33,11 +32,12 @@ public class AdapterStatusModelConversionUtils {
 
     public static @NotNull Status getAdapterStatus(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
         Preconditions.checkNotNull(protocolAdapterWrapper);
-        final OffsetDateTime offsetDateTime = protocolAdapterWrapper.getTimeOfLastStartAttempt() == null ?
-                null :
-                OffsetDateTime.ofInstant(Instant.ofEpochMilli(protocolAdapterWrapper.getTimeOfLastStartAttempt()),
-                        ZoneOffset.UTC);
-        return new Status().runtime(convertRuntimeStatus(protocolAdapterWrapper.getRuntimeStatus()))
+        final OffsetDateTime offsetDateTime = protocolAdapterWrapper.getTimeOfLastStartAttempt() == null
+                ? null
+                : OffsetDateTime.ofInstant(
+                        Instant.ofEpochMilli(protocolAdapterWrapper.getTimeOfLastStartAttempt()), ZoneOffset.UTC);
+        return new Status()
+                .runtime(convertRuntimeStatus(protocolAdapterWrapper.getRuntimeStatus()))
                 .connection(convertConnectionStatus(protocolAdapterWrapper.getConnectionStatus()))
                 .id(protocolAdapterWrapper.getId())
                 .type(ApiConstants.ADAPTER_TYPE)
@@ -45,7 +45,8 @@ public class AdapterStatusModelConversionUtils {
                 .message(protocolAdapterWrapper.getErrorMessage());
     }
 
-    public static @NotNull Status.ConnectionEnum convertConnectionStatus(final @NotNull ProtocolAdapterState.ConnectionStatus connectionStatus) {
+    public static @NotNull Status.ConnectionEnum convertConnectionStatus(
+            final @NotNull ProtocolAdapterState.ConnectionStatus connectionStatus) {
         Preconditions.checkNotNull(connectionStatus);
         return switch (connectionStatus) {
             case DISCONNECTED -> Status.ConnectionEnum.DISCONNECTED;
@@ -56,9 +57,10 @@ public class AdapterStatusModelConversionUtils {
         };
     }
 
-    public static @NotNull Status.RuntimeEnum convertRuntimeStatus(final @NotNull ProtocolAdapterState.RuntimeStatus runtimeStatus) {
+    public static @NotNull Status.RuntimeEnum convertRuntimeStatus(
+            final @NotNull ProtocolAdapterState.RuntimeStatus runtimeStatus) {
         Preconditions.checkNotNull(runtimeStatus);
-        if(ProtocolAdapterState.RuntimeStatus.STARTED.equals(runtimeStatus)) {
+        if (ProtocolAdapterState.RuntimeStatus.STARTED.equals(runtimeStatus)) {
             return Status.RuntimeEnum.STARTED;
         }
         return Status.RuntimeEnum.STOPPED;

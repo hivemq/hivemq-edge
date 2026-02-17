@@ -15,13 +15,12 @@
  */
 package com.hivemq.configuration.entity.listener;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
@@ -60,10 +59,10 @@ public abstract class ListenerEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final ListenerEntity that = (ListenerEntity) o;
-        return getPort() == that.getPort() &&
-                Objects.equals(getBindAddress(), that.getBindAddress()) &&
-                Objects.equals(getName(), that.getName()) &&
-                Objects.equals(getExternalHostname(), that.getExternalHostname());
+        return getPort() == that.getPort()
+                && Objects.equals(getBindAddress(), that.getBindAddress())
+                && Objects.equals(getName(), that.getName())
+                && Objects.equals(getExternalHostname(), that.getExternalHostname());
     }
 
     @Override

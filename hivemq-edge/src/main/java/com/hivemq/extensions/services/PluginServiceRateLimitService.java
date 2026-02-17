@@ -15,14 +15,13 @@
  */
 package com.hivemq.extensions.services;
 
-import com.hivemq.extension.sdk.api.services.exception.RateLimitExceededException;
+import static com.hivemq.configuration.service.InternalConfigurations.EXTENSION_SERVICE_CALL_RATE_LIMIT_PER_SEC;
 
+import com.hivemq.extension.sdk.api.services.exception.RateLimitExceededException;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static com.hivemq.configuration.service.InternalConfigurations.EXTENSION_SERVICE_CALL_RATE_LIMIT_PER_SEC;
 
 /**
  * @author Lukas Brandl
@@ -60,7 +59,7 @@ public class PluginServiceRateLimitService {
             if (startTime.compareAndSet(rateTimer, currentTime)) {
                 counter.set(1); // This call is the first
 
-                //reset reserve after 10 seconds
+                // reset reserve after 10 seconds
                 final long resetTime = this.resetTime.get();
                 if (currentTime - resetTime > 10000) {
 
@@ -70,14 +69,15 @@ public class PluginServiceRateLimitService {
                     }
                 }
 
-                //first call in this second window
+                // first call in this second window
                 return false;
             }
         }
 
         final boolean exceeded = counter.incrementAndGet() > rateLimit;
         if (exceeded) {
-            // if counter is exceeded try if there is still a reserve. This allows to handle short bursts even if the second limit is breached.
+            // if counter is exceeded try if there is still a reserve. This allows to handle short bursts even if the
+            // second limit is breached.
             return reserveCounter.incrementAndGet() > rateLimit;
         }
         return false;

@@ -20,9 +20,9 @@ import com.hivemq.bootstrap.factories.ClientSessionLocalPersistenceFactory;
 import com.hivemq.bootstrap.factories.ClientSessionSubscriptionLocalPersistenceFactory;
 import com.hivemq.bootstrap.factories.PublishPayloadPersistenceFactory;
 import com.hivemq.bootstrap.factories.RetainedMessageLocalPersistenceFactory;
+import com.hivemq.persistence.PersistenceStartup;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.persistence.PersistenceStartup;
 
 @SuppressWarnings("unused")
 public class PersistencesService {
@@ -45,7 +45,8 @@ public class PersistencesService {
         return persistenceStartup;
     }
 
-    public void supplyClientSessionLocalPersistenceFactory(final @NotNull ClientSessionLocalPersistenceFactory clientSessionLocalPersistenceFactory) {
+    public void supplyClientSessionLocalPersistenceFactory(
+            final @NotNull ClientSessionLocalPersistenceFactory clientSessionLocalPersistenceFactory) {
         this.clientSessionLocalPersistenceFactory = clientSessionLocalPersistenceFactory;
         filePersistencesPresent = true;
     }
@@ -56,7 +57,9 @@ public class PersistencesService {
         filePersistencesPresent = true;
     }
 
-    public void supplyClientSessionSubscriptionLocalPersistenceFactory(final @NotNull ClientSessionSubscriptionLocalPersistenceFactory clientSessionSubscriptionLocalPersistenceFactory) {
+    public void supplyClientSessionSubscriptionLocalPersistenceFactory(
+            final @NotNull ClientSessionSubscriptionLocalPersistenceFactory
+                            clientSessionSubscriptionLocalPersistenceFactory) {
         this.clientSessionSubscriptionLocalPersistenceFactory = clientSessionSubscriptionLocalPersistenceFactory;
         filePersistencesPresent = true;
     }
@@ -67,11 +70,11 @@ public class PersistencesService {
         filePersistencesPresent = true;
     }
 
-    public void supplyRetainedMessageLocalPersistenceFactory(final @NotNull RetainedMessageLocalPersistenceFactory retainedMessageLocalPersistenceFactory) {
-         this.retainedMessageLocalPersistenceFactory = retainedMessageLocalPersistenceFactory;
+    public void supplyRetainedMessageLocalPersistenceFactory(
+            final @NotNull RetainedMessageLocalPersistenceFactory retainedMessageLocalPersistenceFactory) {
+        this.retainedMessageLocalPersistenceFactory = retainedMessageLocalPersistenceFactory;
         filePersistencesPresent = true;
     }
-
 
     public @Nullable ClientSessionLocalPersistenceFactory getClientSessionLocalPersistenceFactory() {
         return clientSessionLocalPersistenceFactory;
@@ -85,7 +88,8 @@ public class PersistencesService {
         return publishPayloadPersistenceFactory;
     }
 
-    public @Nullable ClientSessionSubscriptionLocalPersistenceFactory getClientSessionSubscriptionLocalPersistenceFactory() {
+    public @Nullable ClientSessionSubscriptionLocalPersistenceFactory
+            getClientSessionSubscriptionLocalPersistenceFactory() {
         return clientSessionSubscriptionLocalPersistenceFactory;
     }
 

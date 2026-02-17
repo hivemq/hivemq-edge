@@ -13,20 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.configuration.reader;
 
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
-import com.hivemq.configuration.entity.MqttConfigEntity;
 import com.hivemq.configuration.entity.MqttSnConfigEntity;
 import com.hivemq.configuration.entity.mqttsn.MqttsnPredefinedTopicAliasEntity;
 import com.hivemq.configuration.service.MqttsnConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqttsn.MqttsnTopicAlias;
-
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
-public class MqttsnConfigurator implements Configurator<MqttSnConfigEntity>{
+public class MqttsnConfigurator implements Configurator<MqttSnConfigEntity> {
 
     private final @NotNull MqttsnConfigurationService mqttsnConfigurationService;
     private volatile MqttSnConfigEntity configEntity;
@@ -38,15 +35,14 @@ public class MqttsnConfigurator implements Configurator<MqttSnConfigEntity>{
 
     void setPredefinedTopicAliases(final @NotNull List<MqttsnPredefinedTopicAliasEntity> topicAliases) {
         for (final MqttsnPredefinedTopicAliasEntity a : topicAliases) {
-            mqttsnConfigurationService.addPredefinedAlias(new MqttsnTopicAlias(a.getTopicName(), a.getAlias(),
-                    MqttsnTopicAlias.TYPE.PREDEFINED));
+            mqttsnConfigurationService.addPredefinedAlias(
+                    new MqttsnTopicAlias(a.getTopicName(), a.getAlias(), MqttsnTopicAlias.TYPE.PREDEFINED));
         }
     }
 
-
     @Override
     public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
-        if(initialized && hasChanged(this.configEntity, config.getMqttsnConfig())) {
+        if (initialized && hasChanged(this.configEntity, config.getMqttsnConfig())) {
             return true;
         }
         return false;
@@ -60,15 +56,22 @@ public class MqttsnConfigurator implements Configurator<MqttSnConfigEntity>{
         mqttsnConfigurationService.setGatewayId(configEntity.getGatewayId());
         setPredefinedTopicAliases(configEntity.getPredefinedTopicAliases());
         mqttsnConfigurationService.setMaxClientIdentifierLength(configEntity.getMaxClientIdentifierLength());
-        mqttsnConfigurationService.setTopicRegistrationsHeldDuringSleepEnabled(configEntity.getTopicRegistrationsHeldDuringSleepEntity().isEnabled());
-        mqttsnConfigurationService.setAllowWakingPingToHijackSessionEnabled(configEntity.getAllowWakingPingToHijackSessionEntity().isEnabled());
-        mqttsnConfigurationService.setAllowEmptyClientIdentifierEnabled(configEntity.getAllowEmptyClientIdentifierEntity().isEnabled());
-        mqttsnConfigurationService.setAllowAnonymousPublishMinus1Enabled(configEntity.getAllowAnonymousPublishMinus1Entity().isEnabled());
+        mqttsnConfigurationService.setTopicRegistrationsHeldDuringSleepEnabled(
+                configEntity.getTopicRegistrationsHeldDuringSleepEntity().isEnabled());
+        mqttsnConfigurationService.setAllowWakingPingToHijackSessionEnabled(
+                configEntity.getAllowWakingPingToHijackSessionEntity().isEnabled());
+        mqttsnConfigurationService.setAllowEmptyClientIdentifierEnabled(
+                configEntity.getAllowEmptyClientIdentifierEntity().isEnabled());
+        mqttsnConfigurationService.setAllowAnonymousPublishMinus1Enabled(
+                configEntity.getAllowAnonymousPublishMinus1Entity().isEnabled());
 
-        //Discovery
-        mqttsnConfigurationService.setDiscoveryEnabled(configEntity.getDiscoveryEntity().isEnabled());
-        mqttsnConfigurationService.setDiscoveryBroadcastIntervalSeconds(configEntity.getDiscoveryEntity().getDiscoveryInterval());
-        mqttsnConfigurationService.setDiscoveryBroadcastAddresses(configEntity.getDiscoveryEntity().getBroadcastAddresses());
+        // Discovery
+        mqttsnConfigurationService.setDiscoveryEnabled(
+                configEntity.getDiscoveryEntity().isEnabled());
+        mqttsnConfigurationService.setDiscoveryBroadcastIntervalSeconds(
+                configEntity.getDiscoveryEntity().getDiscoveryInterval());
+        mqttsnConfigurationService.setDiscoveryBroadcastAddresses(
+                configEntity.getDiscoveryEntity().getBroadcastAddresses());
 
         return ConfigResult.SUCCESS;
     }

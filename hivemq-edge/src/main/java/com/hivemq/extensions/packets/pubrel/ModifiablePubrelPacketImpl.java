@@ -16,15 +16,14 @@
 package com.hivemq.extensions.packets.pubrel;
 
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.pubrel.ModifiablePubrelPacket;
 import com.hivemq.extension.sdk.api.packets.pubrel.PubrelReasonCode;
 import com.hivemq.extensions.packets.general.ModifiableUserPropertiesImpl;
 import com.hivemq.extensions.services.builder.PluginBuilderUtil;
-
 import java.util.Objects;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Yannick Weber
@@ -41,14 +40,14 @@ public class ModifiablePubrelPacketImpl implements ModifiablePubrelPacket {
     private boolean modified = false;
 
     public ModifiablePubrelPacketImpl(
-            final @NotNull PubrelPacketImpl packet,
-            final @NotNull ConfigurationService configurationService) {
+            final @NotNull PubrelPacketImpl packet, final @NotNull ConfigurationService configurationService) {
 
         packetIdentifier = packet.packetIdentifier;
         reasonCode = packet.reasonCode;
         reasonString = packet.reasonString;
         userProperties = new ModifiableUserPropertiesImpl(
-                packet.userProperties.asInternalList(), configurationService.securityConfiguration().validateUTF8());
+                packet.userProperties.asInternalList(),
+                configurationService.securityConfiguration().validateUTF8());
 
         this.configurationService = configurationService;
     }
@@ -70,7 +69,8 @@ public class ModifiablePubrelPacketImpl implements ModifiablePubrelPacket {
 
     @Override
     public void setReasonString(final @Nullable String reasonString) {
-        PluginBuilderUtil.checkReasonString(reasonString, configurationService.securityConfiguration().validateUTF8());
+        PluginBuilderUtil.checkReasonString(
+                reasonString, configurationService.securityConfiguration().validateUTF8());
         if (Objects.equals(this.reasonString, reasonString)) {
             return;
         }

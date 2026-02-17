@@ -16,14 +16,13 @@
 package com.hivemq.extensions.services.interceptor;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.bridge.BridgePublishInboundInterceptorProvider;
 import com.hivemq.extension.sdk.api.interceptor.bridge.BridgePublishOutboundInterceptorProvider;
 import com.hivemq.extension.sdk.api.interceptor.protocoladapter.ProtocolAdapterPublishInboundInterceptorProvider;
 import com.hivemq.extension.sdk.api.services.interceptor.EdgeInterceptorRegistry;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class EdgeInterceptorRegistryImpl implements EdgeInterceptorRegistry {
@@ -37,22 +36,26 @@ public class EdgeInterceptorRegistryImpl implements EdgeInterceptorRegistry {
     }
 
     @Override
-    public void setBridgeInboundInterceptorProvider(final @NotNull BridgePublishInboundInterceptorProvider bridgeInboundInterceptorProvider) {
-        Preconditions.checkNotNull(bridgeInboundInterceptorProvider,
-                "Bridge inbound interceptor provider must never be null");
+    public void setBridgeInboundInterceptorProvider(
+            final @NotNull BridgePublishInboundInterceptorProvider bridgeInboundInterceptorProvider) {
+        Preconditions.checkNotNull(
+                bridgeInboundInterceptorProvider, "Bridge inbound interceptor provider must never be null");
         interceptors.addBridgeInboundInterceptorProvider(bridgeInboundInterceptorProvider);
     }
 
     @Override
-    public void setBridgeOutboundInterceptorProvider(final @NotNull BridgePublishOutboundInterceptorProvider bridgeOutboundInterceptorProvider) {
-        Preconditions.checkNotNull(bridgeOutboundInterceptorProvider,
-                "Bridge outbound nterceptor provider must never be null");
+    public void setBridgeOutboundInterceptorProvider(
+            final @NotNull BridgePublishOutboundInterceptorProvider bridgeOutboundInterceptorProvider) {
+        Preconditions.checkNotNull(
+                bridgeOutboundInterceptorProvider, "Bridge outbound nterceptor provider must never be null");
         interceptors.addBridgeOutboundInterceptorProvider(bridgeOutboundInterceptorProvider);
     }
 
     @Override
-    public void setProtocolAdapterInboundInterceptorProvider(final @NotNull ProtocolAdapterPublishInboundInterceptorProvider protocolAdapterInboundInterceptorProvider) {
-        Preconditions.checkNotNull(protocolAdapterInboundInterceptorProvider,
+    public void setProtocolAdapterInboundInterceptorProvider(
+            final @NotNull ProtocolAdapterPublishInboundInterceptorProvider protocolAdapterInboundInterceptorProvider) {
+        Preconditions.checkNotNull(
+                protocolAdapterInboundInterceptorProvider,
                 "Protocol adapter inbound interceptor provider must never be null");
         interceptors.addProtocolAdapterInboundInterceptorProvider(protocolAdapterInboundInterceptorProvider);
     }

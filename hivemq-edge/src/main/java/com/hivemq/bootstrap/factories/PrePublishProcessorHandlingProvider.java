@@ -24,9 +24,8 @@ import com.hivemq.mqtt.message.dropping.IncomingPublishDropper;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class PrePublishProcessorHandlingProvider {
@@ -72,7 +71,8 @@ public class PrePublishProcessorHandlingProvider {
                 }
                 final ImmutableList.Builder<PrePublishProcessorHandling> processorHandlers = ImmutableList.builder();
                 for (final PrePublishProcessorHandlingFactory factory : factories) {
-                    processorHandlers.add(factory.build(mqttConnacker,
+                    processorHandlers.add(factory.build(
+                            mqttConnacker,
                             mqttServerDisconnector,
                             incomingPublishDropper,
                             configurationService,
@@ -84,5 +84,4 @@ public class PrePublishProcessorHandlingProvider {
             return handlers;
         }
     }
-
 }

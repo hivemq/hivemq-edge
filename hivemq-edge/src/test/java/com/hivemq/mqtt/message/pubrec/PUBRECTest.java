@@ -15,14 +15,14 @@
  */
 package com.hivemq.mqtt.message.pubrec;
 
-import org.jetbrains.annotations.NotNull;
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.hivemq.extensions.packets.pubrec.PubrecPacketImpl;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.reason.Mqtt5PubRecReasonCode;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Yannick Weber
@@ -62,8 +62,7 @@ public class PUBRECTest {
                 new MqttUserProperty("user2", "value2"),
                 new MqttUserProperty("user3", "value3"));
 
-        final PUBREC origin =
-                new PUBREC(1, Mqtt5PubRecReasonCode.NOT_AUTHORIZED, "NotAuthorized", userProperties);
+        final PUBREC origin = new PUBREC(1, Mqtt5PubRecReasonCode.NOT_AUTHORIZED, "NotAuthorized", userProperties);
         final PubrecPacketImpl packet = new PubrecPacketImpl(origin);
 
         final PUBREC merged = PUBREC.from(packet);

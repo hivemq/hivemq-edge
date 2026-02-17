@@ -17,21 +17,18 @@ package com.hivemq.edge.modules.adapters.impl.polling;
 
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
 public class PollingInputImpl implements PollingInput {
-
 
     private static final Logger log = LoggerFactory.getLogger(PollingInputImpl.class);
 
     private final @NotNull List<PollingContext> pollingContext;
 
-    public PollingInputImpl(
-            final @NotNull List<PollingContext> pollingContext) {
+    public PollingInputImpl(final @NotNull List<PollingContext> pollingContext) {
         this.pollingContext = pollingContext;
     }
 

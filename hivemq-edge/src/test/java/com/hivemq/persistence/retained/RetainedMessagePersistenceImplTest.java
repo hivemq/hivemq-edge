@@ -15,33 +15,29 @@
  */
 package com.hivemq.persistence.retained;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
+
 import com.google.common.collect.Sets;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.iteration.Chunker;
 import com.hivemq.persistence.RetainedMessage;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestMessageUtil;
 import util.TestSingleWriterFactory;
-
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
 
 /**
  * @author Florian Limpöck
@@ -59,18 +55,19 @@ public class RetainedMessagePersistenceImplTest {
     private @NotNull RetainedMessage message;
 
     private @NotNull SingleWriterService singleWriterService;
-    private final @NotNull InternalConfigurationService
-            internalConfigurationService = new InternalConfigurationServiceImpl();
+    private final @NotNull InternalConfigurationService internalConfigurationService =
+            new InternalConfigurationServiceImpl();
+
     @BeforeEach
     public void setUp() throws Exception {
         closeableMock = MockitoAnnotations.openMocks(this);
         internalConfigurationService.set(InternalConfigurations.PERSISTENCE_BUCKET_COUNT, "4");
         message = new RetainedMessage(TestMessageUtil.createMqtt3Publish(), 1000);
         singleWriterService = TestSingleWriterFactory.defaultSingleWriter(internalConfigurationService);
-        retainedMessagePersistence =
-                new RetainedMessagePersistenceImpl(localPersistence, payloadPersistence,
-                        singleWriterService, new Chunker(internalConfigurationService));
+        retainedMessagePersistence = new RetainedMessagePersistenceImpl(
+                localPersistence, payloadPersistence, singleWriterService, new Chunker(internalConfigurationService));
     }
+
     @AfterEach
     public void tearDown() throws Exception {
         retainedMessagePersistence.closeDB();
@@ -98,33 +95,48 @@ public class RetainedMessagePersistenceImplTest {
 
     @Test
     public void test_get_with_wildcards_topic_null() {
-        assertThatThrownBy(() -> retainedMessagePersistence.getWithWildcards(null).get())
+        assertThatThrownBy(
+                        () -> retainedMessagePersistence.getWithWildcards(null).get())
                 .hasCauseInstanceOf(NullPointerException.class);
     }
 
     @Test
     public void test_get_with_wildcards_topic_without_wildcard() {
-        assertThatThrownBy(() -> retainedMessagePersistence.getWithWildcards("topic").get())
+        assertThatThrownBy(() ->
+                        retainedMessagePersistence.getWithWildcards("topic").get())
                 .hasCauseInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void test_get_success_null() throws ExecutionException, InterruptedException {
-        when(localPersistence.get("topic", BucketUtils.getBucket("topic", internalConfigurationService.getInteger(InternalConfigurations.PERSISTENCE_BUCKET_COUNT)))).thenReturn(null);
+        when(localPersistence.get(
+                        "topic",
+                        BucketUtils.getBucket(
+                                "topic",
+                                internalConfigurationService.getInteger(
+                                        InternalConfigurations.PERSISTENCE_BUCKET_COUNT))))
+                .thenReturn(null);
         assertNull(retainedMessagePersistence.get("topic").get());
     }
 
     @Test
     public void test_get_success_message() throws ExecutionException, InterruptedException {
-        when(localPersistence.get("topic", BucketUtils.getBucket("topic", internalConfigurationService.getInteger(InternalConfigurations.PERSISTENCE_BUCKET_COUNT)))).thenReturn(message);
+        when(localPersistence.get(
+                        "topic",
+                        BucketUtils.getBucket(
+                                "topic",
+                                internalConfigurationService.getInteger(
+                                        InternalConfigurations.PERSISTENCE_BUCKET_COUNT))))
+                .thenReturn(message);
         assertEquals(message, retainedMessagePersistence.get("topic").get());
     }
 
     @Test
     public void test_get_with_wildcards_success() throws ExecutionException, InterruptedException {
-        when(localPersistence.getAllTopics(anyString(), anyInt())).thenReturn(
-                Sets.newHashSet("topic/1", "topic/2", "topic/3"));
-        final Set<String> topics = retainedMessagePersistence.getWithWildcards("topic/#").get();
+        when(localPersistence.getAllTopics(anyString(), anyInt()))
+                .thenReturn(Sets.newHashSet("topic/1", "topic/2", "topic/3"));
+        final Set<String> topics =
+                retainedMessagePersistence.getWithWildcards("topic/#").get();
 
         assertTrue(topics.contains("topic/1"));
         assertTrue(topics.contains("topic/2"));
@@ -156,14 +168,16 @@ public class RetainedMessagePersistenceImplTest {
 
     @Test
     public void test_persist_topic_null() {
-        assertThatThrownBy(() -> retainedMessagePersistence.persist(null, message).get())
+        assertThatThrownBy(
+                        () -> retainedMessagePersistence.persist(null, message).get())
                 .hasCauseInstanceOf(NullPointerException.class);
         verify(localPersistence, never()).put(any(RetainedMessage.class), anyString(), anyInt());
     }
 
     @Test
     public void test_persist_message_null() {
-        assertThatThrownBy(() -> retainedMessagePersistence.persist("topic", null).get())
+        assertThatThrownBy(
+                        () -> retainedMessagePersistence.persist("topic", null).get())
                 .hasCauseInstanceOf(NullPointerException.class);
         verify(localPersistence, never()).put(any(RetainedMessage.class), anyString(), anyInt());
     }
@@ -188,12 +202,18 @@ public class RetainedMessagePersistenceImplTest {
     @Test
     public void test_close() throws ExecutionException, InterruptedException {
         retainedMessagePersistence.closeDB().get();
-        verify(localPersistence, times(internalConfigurationService.getInteger(InternalConfigurations.PERSISTENCE_BUCKET_COUNT))).closeDB(anyInt());
+        verify(
+                        localPersistence,
+                        times(internalConfigurationService.getInteger(InternalConfigurations.PERSISTENCE_BUCKET_COUNT)))
+                .closeDB(anyInt());
     }
 
     @Test
     public void test_clear() throws ExecutionException, InterruptedException {
         retainedMessagePersistence.clear().get();
-        verify(localPersistence, times(internalConfigurationService.getInteger(InternalConfigurations.PERSISTENCE_BUCKET_COUNT))).clear(anyInt());
+        verify(
+                        localPersistence,
+                        times(internalConfigurationService.getInteger(InternalConfigurations.PERSISTENCE_BUCKET_COUNT)))
+                .clear(anyInt());
     }
 }

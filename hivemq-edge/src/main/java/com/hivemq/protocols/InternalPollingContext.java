@@ -15,12 +15,11 @@
  */
 package com.hivemq.protocols;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
+import org.jetbrains.annotations.NotNull;
 
 public interface InternalPollingContext {
 
     @NotNull
     FieldMapping getFieldMapping();
-
 }

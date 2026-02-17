@@ -15,20 +15,18 @@
  */
 package com.hivemq.extensions.packets.subscribe;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.packets.subscribe.RetainHandling;
 import com.hivemq.mqtt.message.QoS;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import util.TestConfigurationBootstrap;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Florian Limpöck
@@ -37,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ModifiableSubscriptionImplTest {
 
     private @NotNull ConfigurationService configurationService;
+
     @BeforeEach
     public void setUp() {
         configurationService = new TestConfigurationBootstrap().getConfigurationService();
@@ -78,8 +77,7 @@ public class ModifiableSubscriptionImplTest {
         final ModifiableSubscriptionImpl modifiableSubscription =
                 new ModifiableSubscriptionImpl(subscription, configurationService);
 
-        assertThatThrownBy(() -> modifiableSubscription.setTopicFilter(null))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> modifiableSubscription.setTopicFilter(null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -197,8 +195,7 @@ public class ModifiableSubscriptionImplTest {
         final ModifiableSubscriptionImpl modifiableSubscription =
                 new ModifiableSubscriptionImpl(subscription, configurationService);
 
-        assertThatThrownBy(() -> modifiableSubscription.setQos(null))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> modifiableSubscription.setQos(null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -291,8 +288,7 @@ public class ModifiableSubscriptionImplTest {
         final ModifiableSubscriptionImpl modifiableSubscription =
                 new ModifiableSubscriptionImpl(subscription, configurationService);
 
-        assertThatThrownBy(() -> modifiableSubscription.setNoLocal(true))
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> modifiableSubscription.setNoLocal(true)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

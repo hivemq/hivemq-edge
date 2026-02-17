@@ -15,6 +15,13 @@
  */
 package com.hivemq.adapter;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.api.config.HttpListener;
 import com.hivemq.api.model.adapters.ProtocolAdapter;
 import com.hivemq.api.model.adapters.ProtocolAdapterCategory;
@@ -24,16 +31,8 @@ import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.impl.ApiConfigurationServiceImpl;
 import com.hivemq.edge.HiveMQEdgeConstants;
-import org.junit.jupiter.api.Test;
-
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Simon L Johnson
@@ -43,8 +42,8 @@ public class AdapterModelConverterTest {
     @Test
     void testCategoriesConvertToTransportModel() {
 
-        ProtocolAdapterCategory apiCategory =
-                ProtocolAdapterApiUtils.convertApiCategory(com.hivemq.adapter.sdk.api.ProtocolAdapterCategory.INDUSTRIAL);
+        ProtocolAdapterCategory apiCategory = ProtocolAdapterApiUtils.convertApiCategory(
+                com.hivemq.adapter.sdk.api.ProtocolAdapterCategory.INDUSTRIAL);
 
         assertEquals(com.hivemq.adapter.sdk.api.ProtocolAdapterCategory.INDUSTRIAL.name(), apiCategory.getName());
         assertNotNull(apiCategory.getDisplayName(), "Category Display Name should not be null");
@@ -57,7 +56,7 @@ public class AdapterModelConverterTest {
 
         ConfigurationService configurationService = mock(ConfigurationService.class);
         Module testModule = ModuleModelTests.createTestModule();
-        ProtocolAdapter adapter = ProtocolAdapterApiUtils.convertModuleAdapterType(testModule,configurationService);
+        ProtocolAdapter adapter = ProtocolAdapterApiUtils.convertModuleAdapterType(testModule, configurationService);
         assertEquals(testModule.getName(), adapter.getName(), "Adapter name should match module name");
         assertEquals(testModule.getDescription(), adapter.getDescription(), "Adapter description should match");
         assertEquals(testModule.getId(), adapter.getId(), "Adapter id should match");
@@ -71,7 +70,8 @@ public class AdapterModelConverterTest {
     void testProtocolAdapterImageConversionInProductionMode() {
         ConfigurationService configurationService = mock(ConfigurationService.class);
         String inputLogoUrl = "/mylogo.png";
-        String resultLogoUrl = ProtocolAdapterApiUtils.applyAbsoluteServerAddressInDeveloperMode(inputLogoUrl, configurationService);
+        String resultLogoUrl =
+                ProtocolAdapterApiUtils.applyAbsoluteServerAddressInDeveloperMode(inputLogoUrl, configurationService);
         assertEquals(inputLogoUrl, resultLogoUrl, "logos should not change when not in dev mode");
     }
 
@@ -86,14 +86,22 @@ public class AdapterModelConverterTest {
 
         {
             String inputLogoUrl = "/mylogo.png";
-            String resultLogoUrl = ProtocolAdapterApiUtils.applyAbsoluteServerAddressInDeveloperMode(inputLogoUrl, configurationService);
-            assertEquals("http://localhost:8080/mylogo.png", resultLogoUrl, "logos should be fully qualified change when in dev mode");
+            String resultLogoUrl = ProtocolAdapterApiUtils.applyAbsoluteServerAddressInDeveloperMode(
+                    inputLogoUrl, configurationService);
+            assertEquals(
+                    "http://localhost:8080/mylogo.png",
+                    resultLogoUrl,
+                    "logos should be fully qualified change when in dev mode");
         }
 
         {
             String inputLogoUrl = "mylogo.png";
-            String resultLogoUrl = ProtocolAdapterApiUtils.applyAbsoluteServerAddressInDeveloperMode(inputLogoUrl, configurationService);
-            assertEquals("http://localhost:8080/mylogo.png", resultLogoUrl, "logos should be fully qualified and contain correct uri separation");
+            String resultLogoUrl = ProtocolAdapterApiUtils.applyAbsoluteServerAddressInDeveloperMode(
+                    inputLogoUrl, configurationService);
+            assertEquals(
+                    "http://localhost:8080/mylogo.png",
+                    resultLogoUrl,
+                    "logos should be fully qualified and contain correct uri separation");
         }
     }
 
@@ -102,8 +110,10 @@ public class AdapterModelConverterTest {
 
         ConfigurationService configurationService = mock(ConfigurationService.class);
         Module testModule = ModuleModelTests.createTestModule();
-        ProtocolAdapter adapter = ProtocolAdapterApiUtils.convertModuleAdapterType(testModule,configurationService);
-        assertFalse(adapter.getCapabilities().contains(ProtocolAdapter.Capability.DISCOVER), "Module generated adapter should not support discovery");
+        ProtocolAdapter adapter = ProtocolAdapterApiUtils.convertModuleAdapterType(testModule, configurationService);
+        assertFalse(
+                adapter.getCapabilities().contains(ProtocolAdapter.Capability.DISCOVER),
+                "Module generated adapter should not support discovery");
     }
 
     @Test
@@ -111,7 +121,9 @@ public class AdapterModelConverterTest {
 
         ConfigurationService configurationService = mock(ConfigurationService.class);
         Module testModule = ModuleModelTests.createTestModule();
-        ProtocolAdapter adapter = ProtocolAdapterApiUtils.convertModuleAdapterType(testModule,configurationService);
-        assertFalse(adapter.getCapabilities().contains(ProtocolAdapter.Capability.READ), "Module generated adapter should not support read");
+        ProtocolAdapter adapter = ProtocolAdapterApiUtils.convertModuleAdapterType(testModule, configurationService);
+        assertFalse(
+                adapter.getCapabilities().contains(ProtocolAdapter.Capability.READ),
+                "Module generated adapter should not support read");
     }
 }

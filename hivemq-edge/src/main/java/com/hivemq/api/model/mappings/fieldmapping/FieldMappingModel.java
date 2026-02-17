@@ -16,12 +16,9 @@
 package com.hivemq.api.model.mappings.fieldmapping;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
-import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 
 @Schema(name = "FieldMapping")
 public class FieldMappingModel {
@@ -38,6 +35,4 @@ public class FieldMappingModel {
     public @NotNull List<InstructionModel> getInstructions() {
         return instructions;
     }
-
-
 }

@@ -15,18 +15,17 @@
  */
 package com.hivemq.mqtt.handler.publish;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
+
 import com.google.common.util.concurrent.SettableFuture;
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.EncoderException;
+import java.nio.channels.ClosedChannelException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import java.nio.channels.ClosedChannelException;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Lukas Brandl
@@ -35,6 +34,7 @@ public class PublishWriteFailedListenerTest {
 
     @Mock
     ChannelFuture channelFuture;
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);

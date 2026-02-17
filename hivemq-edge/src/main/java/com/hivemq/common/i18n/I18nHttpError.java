@@ -1,24 +1,22 @@
 /*
- *  Copyright 2019-present HiveMQ GmbH
+ * Copyright 2019-present HiveMQ GmbH
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
 package com.hivemq.common.i18n;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 public enum I18nHttpError implements I18nError {
     HTTP_ERROR_400_INVALID_QUERY_PARAMETER_DETAIL_WITH_PARAMETER_AND_REASON,
@@ -43,9 +41,8 @@ public enum I18nHttpError implements I18nError {
 
     private static final @NotNull String RESOURCE_NAME_PREFIX = "templates/http-errors-";
     private static final @NotNull String RESOURCE_NAME_SUFFIX = ".properties";
-    private static final @NotNull I18nErrorTemplate TEMPLATE =
-            new I18nErrorTemplate(locale -> RESOURCE_NAME_PREFIX + locale + RESOURCE_NAME_SUFFIX,
-                    I18nHttpError.class.getClassLoader());
+    private static final @NotNull I18nErrorTemplate TEMPLATE = new I18nErrorTemplate(
+            locale -> RESOURCE_NAME_PREFIX + locale + RESOURCE_NAME_SUFFIX, I18nHttpError.class.getClassLoader());
 
     private final @NotNull String key;
 

@@ -15,12 +15,17 @@
  */
 package com.hivemq.mqtt.handler.unsubscribe;
 
+import static com.google.common.collect.Lists.newArrayList;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.bootstrap.netty.ChannelHandlerNames;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.reason.Mqtt5UnsubAckReasonCode;
 import com.hivemq.mqtt.message.unsuback.UNSUBACK;
@@ -30,22 +35,16 @@ import com.hivemq.persistence.clientsession.SharedSubscriptionService;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Queue;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.DummyHandler;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Queue;
-
-import static com.google.common.collect.Lists.newArrayList;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Florian Limpoeck
@@ -54,15 +53,18 @@ import static org.mockito.Mockito.when;
 public class UnsubscribeHandlerTest {
 
     @Mock
-    @NotNull ClientSessionSubscriptionPersistence clientSessionSubscriptionPersistence;
+    @NotNull
+    ClientSessionSubscriptionPersistence clientSessionSubscriptionPersistence;
 
     @Mock
-    @NotNull SharedSubscriptionService sharedSubscriptionService;
+    @NotNull
+    SharedSubscriptionService sharedSubscriptionService;
 
     private @NotNull UnsubscribeHandler unsubscribeHandler;
 
     private @NotNull EmbeddedChannel channel;
     private final @NotNull ClientConnection clientConnection = new ClientConnection(channel, null);
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -72,8 +74,10 @@ public class UnsubscribeHandlerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         channel.pipeline().addFirst(ChannelHandlerNames.MQTT_MESSAGE_ENCODER, new DummyHandler());
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientId("myTestClient");
-        when(clientSessionSubscriptionPersistence.remove(anyString(), any(String.class))).thenReturn(Futures.immediateFuture(null));
-        when(clientSessionSubscriptionPersistence.removeSubscriptions(anyString(), any(ImmutableSet.class))).thenReturn(Futures.<Void>immediateFuture(null));
+        when(clientSessionSubscriptionPersistence.remove(anyString(), any(String.class)))
+                .thenReturn(Futures.immediateFuture(null));
+        when(clientSessionSubscriptionPersistence.removeSubscriptions(anyString(), any(ImmutableSet.class)))
+                .thenReturn(Futures.<Void>immediateFuture(null));
     }
 
     @Test
@@ -91,7 +95,6 @@ public class UnsubscribeHandlerTest {
         assertEquals(10, response.getPacketIdentifier());
 
         verify(clientSessionSubscriptionPersistence).remove("myTestClient", topic);
-
     }
 
     @Test
@@ -114,13 +117,13 @@ public class UnsubscribeHandlerTest {
         assertEquals(Mqtt5UnsubAckReasonCode.SUCCESS, response.getReasonCodes().get(0));
 
         verify(clientSessionSubscriptionPersistence).remove("myTestClient", topic);
-
     }
 
     @Test
     public void test_unsubscribe_single_and_acknowledge_error_mqtt5() {
 
-        when(clientSessionSubscriptionPersistence.remove(anyString(), any(String.class))).thenReturn(Futures.immediateFailedFuture(new NullPointerException("something is missing")));
+        when(clientSessionSubscriptionPersistence.remove(anyString(), any(String.class)))
+                .thenReturn(Futures.immediateFailedFuture(new NullPointerException("something is missing")));
 
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
 
@@ -136,10 +139,11 @@ public class UnsubscribeHandlerTest {
         final UNSUBACK response = (UNSUBACK) objects.element();
         assertEquals(10, response.getPacketIdentifier());
         assertEquals(1, response.getReasonCodes().size());
-        assertEquals(Mqtt5UnsubAckReasonCode.UNSPECIFIED_ERROR, response.getReasonCodes().get(0));
+        assertEquals(
+                Mqtt5UnsubAckReasonCode.UNSPECIFIED_ERROR,
+                response.getReasonCodes().get(0));
 
         verify(clientSessionSubscriptionPersistence).remove("myTestClient", topic);
-
     }
 
     @Test
@@ -165,8 +169,6 @@ public class UnsubscribeHandlerTest {
         assertEquals(10, response.getPacketIdentifier());
 
         verify(clientSessionSubscriptionPersistence).removeSubscriptions(eq("myTestClient"), any(ImmutableSet.class));
-
-
     }
 
     @Test
@@ -198,13 +200,13 @@ public class UnsubscribeHandlerTest {
         assertEquals(Mqtt5UnsubAckReasonCode.SUCCESS, response.getReasonCodes().get(2));
 
         verify(clientSessionSubscriptionPersistence).removeSubscriptions(eq("myTestClient"), any(ImmutableSet.class));
-
     }
 
     @Test
     public void test_unsubscribe_batched_and_acknowledge_error_mqtt5() {
 
-        when(clientSessionSubscriptionPersistence.removeSubscriptions(anyString(), any(ImmutableSet.class))).thenReturn(Futures.immediateFailedFuture(new NullPointerException("something is missing")));
+        when(clientSessionSubscriptionPersistence.removeSubscriptions(anyString(), any(ImmutableSet.class)))
+                .thenReturn(Futures.immediateFailedFuture(new NullPointerException("something is missing")));
 
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
 
@@ -227,12 +229,17 @@ public class UnsubscribeHandlerTest {
         final UNSUBACK response = (UNSUBACK) objects.element();
         assertEquals(10, response.getPacketIdentifier());
         assertEquals(3, response.getReasonCodes().size());
-        assertEquals(Mqtt5UnsubAckReasonCode.UNSPECIFIED_ERROR, response.getReasonCodes().get(0));
-        assertEquals(Mqtt5UnsubAckReasonCode.UNSPECIFIED_ERROR, response.getReasonCodes().get(1));
-        assertEquals(Mqtt5UnsubAckReasonCode.UNSPECIFIED_ERROR, response.getReasonCodes().get(2));
+        assertEquals(
+                Mqtt5UnsubAckReasonCode.UNSPECIFIED_ERROR,
+                response.getReasonCodes().get(0));
+        assertEquals(
+                Mqtt5UnsubAckReasonCode.UNSPECIFIED_ERROR,
+                response.getReasonCodes().get(1));
+        assertEquals(
+                Mqtt5UnsubAckReasonCode.UNSPECIFIED_ERROR,
+                response.getReasonCodes().get(2));
 
         verify(clientSessionSubscriptionPersistence).removeSubscriptions(eq("myTestClient"), any(ImmutableSet.class));
-
     }
 
     @Test
@@ -252,7 +259,8 @@ public class UnsubscribeHandlerTest {
     static class UnsubscribeEventFiredHandler extends ChannelInboundHandlerAdapter {
 
         @Override
-        public void userEventTriggered(final @NotNull ChannelHandlerContext ctx, final @NotNull Object evt) throws Exception {
+        public void userEventTriggered(final @NotNull ChannelHandlerContext ctx, final @NotNull Object evt)
+                throws Exception {
             super.userEventTriggered(ctx, evt);
         }
     }

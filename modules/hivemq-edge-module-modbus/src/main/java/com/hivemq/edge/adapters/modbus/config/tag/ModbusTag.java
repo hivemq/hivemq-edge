@@ -18,28 +18,26 @@ package com.hivemq.edge.adapters.modbus.config.tag;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.Tag;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
 
 public class ModbusTag implements Tag {
 
     @JsonProperty(value = "name", required = true)
-    @ModuleConfigField(title = "name",
-                       description = "name of the tag to be used in mappings",
-                       format = ModuleConfigField.FieldType.MQTT_TAG,
-                       required = true)
+    @ModuleConfigField(
+            title = "name",
+            description = "name of the tag to be used in mappings",
+            format = ModuleConfigField.FieldType.MQTT_TAG,
+            required = true)
     private final @NotNull String name;
 
     @JsonProperty(value = "description")
-    @ModuleConfigField(title = "description",
-                       description = "A human readable description of the tag")
+    @ModuleConfigField(title = "description", description = "A human readable description of the tag")
     private final @NotNull String description;
 
     @JsonProperty(value = "definition", required = true)
-    @ModuleConfigField(title = "definition",
-                       description = "The actual definition of the tag on the device")
+    @ModuleConfigField(title = "definition", description = "The actual definition of the tag on the device")
     private final @NotNull ModbusTagDefinition definition;
 
     public ModbusTag(
@@ -50,7 +48,6 @@ public class ModbusTag implements Tag {
         this.description = Objects.requireNonNullElse(description, "no description present.");
         this.definition = definiton;
     }
-
 
     @Override
     public @NotNull ModbusTagDefinition getDefinition() {
@@ -69,25 +66,24 @@ public class ModbusTag implements Tag {
 
     @Override
     public String toString() {
-        return "ModbusTag{" +
-                "name='" +
-                name +
-                '\'' +
-                ", description='" +
-                description +
-                '\'' +
-                ", definition=" +
-                definition +
-                '}';
+        return "ModbusTag{" + "name='"
+                + name
+                + '\''
+                + ", description='"
+                + description
+                + '\''
+                + ", definition="
+                + definition
+                + '}';
     }
 
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (!(o instanceof ModbusTag modbusTag)) return false;
-        return Objects.equals(name, modbusTag.name) &&
-                Objects.equals(description, modbusTag.description) &&
-                Objects.equals(definition, modbusTag.definition);
+        return Objects.equals(name, modbusTag.name)
+                && Objects.equals(description, modbusTag.description)
+                && Objects.equals(definition, modbusTag.definition);
     }
 
     @Override

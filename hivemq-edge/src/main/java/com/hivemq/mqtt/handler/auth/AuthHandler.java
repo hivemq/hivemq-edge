@@ -18,7 +18,6 @@ package com.hivemq.mqtt.handler.auth;
 import com.google.common.annotations.VisibleForTesting;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.bootstrap.ClientState;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.handler.PluginAuthenticatorService;
 import com.hivemq.mqtt.handler.connack.MqttConnacker;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
@@ -31,9 +30,9 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -43,14 +42,16 @@ import jakarta.inject.Singleton;
 public class AuthHandler extends SimpleChannelInboundHandler<AUTH> {
 
     @VisibleForTesting
-    static final String SUCCESS_AUTH_RECEIVED_FROM_CLIENT = "MQTT AUTH packet from client with IP {} " +
-            "provided SUCCESS reason code. Disconnecting client.";
+    static final String SUCCESS_AUTH_RECEIVED_FROM_CLIENT =
+            "MQTT AUTH packet from client with IP {} " + "provided SUCCESS reason code. Disconnecting client.";
+
     @VisibleForTesting
-    static final String REAUTHENTICATE_DURING_AUTH = "MQTT AUTH packet from client with IP {} " +
-            "provided REAUTHENTICATE reason code during ongoing auth. Disconnecting client.";
+    static final String REAUTHENTICATE_DURING_AUTH = "MQTT AUTH packet from client with IP {} "
+            + "provided REAUTHENTICATE reason code during ongoing auth. Disconnecting client.";
+
     @VisibleForTesting
-    static final String REAUTHENTICATE_DURING_RE_AUTH = "MQTT AUTH packet from client with IP {} " +
-            "provided REAUTHENTICATE reason code during ongoing re-auth. Disconnecting client.";
+    static final String REAUTHENTICATE_DURING_RE_AUTH = "MQTT AUTH packet from client with IP {} "
+            + "provided REAUTHENTICATE reason code during ongoing re-auth. Disconnecting client.";
 
     private final @NotNull MqttConnacker connacker;
     private final @NotNull MqttAuthSender authSender;
@@ -74,7 +75,8 @@ public class AuthHandler extends SimpleChannelInboundHandler<AUTH> {
     protected void channelRead0(final @NotNull ChannelHandlerContext ctx, final @NotNull AUTH msg) {
 
         final Channel channel = ctx.channel();
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
 
         authSender.logAuth(channel, msg.getReasonCode(), true);
 
@@ -96,7 +98,9 @@ public class AuthHandler extends SimpleChannelInboundHandler<AUTH> {
             final @NotNull AUTH msg,
             final @NotNull ClientConnection clientConnection) {
 
-        final String reasonString = String.format(ReasonStrings.DISCONNECT_PROTOCOL_ERROR_REASON_CODE, msg.getType().name());
+        final String reasonString = String.format(
+                ReasonStrings.DISCONNECT_PROTOCOL_ERROR_REASON_CODE,
+                msg.getType().name());
         if (clientConnection.getClientState() == ClientState.RE_AUTHENTICATING) {
             disconnector.disconnect(
                     ctx.channel(),
@@ -133,7 +137,9 @@ public class AuthHandler extends SimpleChannelInboundHandler<AUTH> {
 
         final ClientState clientState = clientConnection.getClientState();
         if (clientState == ClientState.AUTHENTICATING || clientState == ClientState.RE_AUTHENTICATING) {
-            final String reasonString = String.format(ReasonStrings.DISCONNECT_PROTOCOL_ERROR_REASON_CODE, msg.getType().name());
+            final String reasonString = String.format(
+                    ReasonStrings.DISCONNECT_PROTOCOL_ERROR_REASON_CODE,
+                    msg.getType().name());
             if (clientState == ClientState.RE_AUTHENTICATING) {
                 disconnector.disconnect(
                         ctx.channel(),

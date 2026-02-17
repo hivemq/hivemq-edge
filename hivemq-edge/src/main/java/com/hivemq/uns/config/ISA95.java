@@ -32,7 +32,6 @@ public class ISA95 {
     public static final String PRODUCTION_LINE = "production-line";
     public static final String WORK_CELL = "work-cell";
 
-
     boolean enabled = false;
     boolean prefixAllTopics = false;
 
@@ -137,7 +136,8 @@ public class ISA95 {
     }
 
     public static @NotNull ISA95ApiBean convert(final @NotNull ISA95 isa95Entity) {
-        return new ISA95ApiBean().enabled(isa95Entity.isEnabled())
+        return new ISA95ApiBean()
+                .enabled(isa95Entity.isEnabled())
                 .prefixAllTopics(isa95Entity.isPrefixAllTopics())
                 .enterprise(isa95Entity.getEnterprise())
                 .site(isa95Entity.getSite())
@@ -147,7 +147,8 @@ public class ISA95 {
     }
 
     public static @NotNull ISA95 unconvert(final @NotNull ISA95ApiBean apiBean) {
-        return  new ISA95(apiBean.getEnabled(),
+        return new ISA95(
+                apiBean.getEnabled(),
                 apiBean.getPrefixAllTopics(),
                 apiBean.getEnterprise(),
                 apiBean.getSite(),

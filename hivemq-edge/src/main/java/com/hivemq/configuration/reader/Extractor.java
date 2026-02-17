@@ -16,18 +16,16 @@
 package com.hivemq.configuration.reader;
 
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Objects;
-import java.util.function.Consumer;
 
 /**
  * Configurators are initialized before the actual dagger bootstrap.
  *
  * @param <T>
  */
-public interface Extractor<T,V> {
+public interface Extractor<T, V> {
     Logger log = LoggerFactory.getLogger(Extractor.class);
 
     /**
@@ -38,5 +36,4 @@ public interface Extractor<T,V> {
     boolean needsRestartWithConfig(HiveMQConfigEntity config);
 
     void registerConsumer(Consumer<V> consumer);
-
 }

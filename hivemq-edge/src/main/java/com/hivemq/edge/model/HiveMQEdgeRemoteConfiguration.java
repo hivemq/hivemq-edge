@@ -19,12 +19,11 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.api.model.components.Extension;
-import com.hivemq.api.model.components.Module;
 import com.hivemq.api.model.components.Link;
-import org.jetbrains.annotations.NotNull;
-
+import com.hivemq.api.model.components.Module;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson

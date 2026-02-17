@@ -16,14 +16,13 @@
 package com.hivemq.bootstrap.factories;
 
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.mqtt.handler.connack.MqttConnacker;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.dropping.IncomingPublishDropper;
-
 import jakarta.inject.Inject;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class HandlerProvider {
 
@@ -47,19 +46,12 @@ public class HandlerProvider {
         this.configurationService = configurationService;
     }
 
-
     public @Nullable HandlerPackage get() {
         final HandlerFactory handlerFactory = handlerService.getHandlerFactory();
         if (handlerFactory == null) {
             return null;
         }
-        return handlerFactory.build(mqttConnacker,
-                mqttServerDisconnector,
-                incomingPublishDropper,
-                configurationService);
+        return handlerFactory.build(
+                mqttConnacker, mqttServerDisconnector, incomingPublishDropper, configurationService);
     }
-
-
-
-
 }

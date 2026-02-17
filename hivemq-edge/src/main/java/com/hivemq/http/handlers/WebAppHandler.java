@@ -20,13 +20,12 @@ import com.hivemq.http.HttpConstants;
 import com.hivemq.http.core.Files;
 import com.hivemq.http.core.HttpUtils;
 import com.hivemq.http.core.IHttpRequestResponse;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 public class WebAppHandler extends AbstractHttpRequestResponseHandler {
     protected static final @NotNull String INDEX_HTML = "index.html";
@@ -52,8 +51,7 @@ public class WebAppHandler extends AbstractHttpRequestResponseHandler {
     }
 
     protected void writeDataFromResource(
-            final @NotNull IHttpRequestResponse requestResponse,
-            @NotNull String resourcePath) throws IOException {
+            final @NotNull IHttpRequestResponse requestResponse, @NotNull String resourcePath) throws IOException {
         if (resourcePath.endsWith(HttpConstants.SLASH)) {
             resourcePath += INDEX_HTML;
         }
@@ -81,7 +79,8 @@ public class WebAppHandler extends AbstractHttpRequestResponseHandler {
                          */
                         indexContent = indexContent.replaceAll("(href|src)=\"\\./", "$1=\"" + relativePathPrefix);
                     }
-                    writeResponseInternal(requestResponse,
+                    writeResponseInternal(
+                            requestResponse,
                             HttpConstants.SC_OK,
                             HttpConstants.HTML_MIME_TYPE,
                             indexContent.getBytes(StandardCharsets.UTF_8));
@@ -91,7 +90,7 @@ public class WebAppHandler extends AbstractHttpRequestResponseHandler {
                 }
             }
         } catch (final IOException ignored) {
-            //ignore
+            // ignore
         } finally {
             if (inputStream != null) {
                 inputStream.close();

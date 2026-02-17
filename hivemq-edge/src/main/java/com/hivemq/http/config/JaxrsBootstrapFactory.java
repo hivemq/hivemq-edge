@@ -21,7 +21,6 @@ import com.hivemq.api.config.HttpsListener;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.exceptions.UnrecoverableException;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.security.ssl.SslUtil;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
@@ -29,15 +28,15 @@ import io.netty.handler.ssl.JdkSslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
 import io.netty.handler.ssl.SupportedCipherSuiteFilter;
-import org.apache.commons.lang3.tuple.Pair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.util.concurrent.Executors;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLParameters;
-import java.util.concurrent.Executors;
+import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Simon L Johnson
@@ -55,8 +54,8 @@ public class JaxrsBootstrapFactory {
         final int httpThreadPoolSize = InternalConfigurations.HTTP_API_THREAD_COUNT.get();
         jaxrsConfig.setHttpThreadPoolSize(httpThreadPoolSize);
         jaxrsConfig.setHttpThreadPoolExecutor(Executors.newFixedThreadPool(Math.max(1, httpThreadPoolSize)));
-        jaxrsConfig.setHttpThreadPoolShutdownTimeoutSeconds(InternalConfigurations.HTTP_API_SHUTDOWN_TIME_SECONDS.get());
-
+        jaxrsConfig.setHttpThreadPoolShutdownTimeoutSeconds(
+                InternalConfigurations.HTTP_API_SHUTDOWN_TIME_SECONDS.get());
 
         if (listener instanceof HttpListener) {
             jaxrsConfig.setProtocol(JaxrsHttpServerConfiguration.HTTP_PROTOCOL);
@@ -64,16 +63,18 @@ public class JaxrsBootstrapFactory {
             jaxrsConfig.setProtocol(JaxrsHttpServerConfiguration.HTTPS_PROTOCOL);
             final HttpsListener httpsListener = (HttpsListener) listener;
 
-            final KeyManagerFactory keyManagerFactory = SslUtil.createKeyManagerFactory("JKS",
+            final KeyManagerFactory keyManagerFactory = SslUtil.createKeyManagerFactory(
+                    "JKS",
                     httpsListener.getKeystorePath(),
                     httpsListener.getKeystorePassword(),
                     httpsListener.getPrivateKeyPassword());
 
             try {
                 final SSLContext context = ((JdkSslContext) SslContextBuilder.forServer(keyManagerFactory)
-                        .sslProvider(SslProvider.JDK)
-                        .ciphers(httpsListener.getCipherSuites(), SupportedCipherSuiteFilter.INSTANCE)
-                        .build()).context();
+                                .sslProvider(SslProvider.JDK)
+                                .ciphers(httpsListener.getCipherSuites(), SupportedCipherSuiteFilter.INSTANCE)
+                                .build())
+                        .context();
 
                 jaxrsConfig.setSslContext(context);
                 jaxrsConfig.setHttpsConfigurator(new HttpsConfigurator(context) {
@@ -82,7 +83,8 @@ public class JaxrsBootstrapFactory {
                         final SSLContext sslContext = getSSLContext();
                         final SSLParameters parameters = sslContext.getDefaultSSLParameters();
                         parameters.setProtocols(httpsListener.getProtocols().toArray(new String[0]));
-                        parameters.setCipherSuites(httpsListener.getCipherSuites().toArray(new String[0]));
+                        parameters.setCipherSuites(
+                                httpsListener.getCipherSuites().toArray(new String[0]));
                         // The SSL parameters needs to come from the supported ones, not the default ones.
                         params.setSSLParameters(sslContext.getSupportedSSLParameters());
                     }
@@ -93,8 +95,9 @@ public class JaxrsBootstrapFactory {
             }
         }
 
-        //Static Resource Mouth Points
-        apiConfigurationService.getResourcePaths()
+        // Static Resource Mouth Points
+        apiConfigurationService
+                .getResourcePaths()
                 .forEach(s -> jaxrsConfig.addStaticResource(Pair.of(s.getUri(), s.getPath())));
         return jaxrsConfig;
     }

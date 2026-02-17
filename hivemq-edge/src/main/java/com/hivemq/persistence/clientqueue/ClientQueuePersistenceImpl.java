@@ -15,6 +15,10 @@
  */
 package com.hivemq.persistence.clientqueue;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl.SharedSubscription;
+import static com.hivemq.sampling.SamplingService.SAMPLER_PREFIX;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.ImmutableIntArray;
@@ -24,7 +28,6 @@ import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.bridge.MessageForwarder;
 import com.hivemq.bridge.MessageForwarderImpl;
 import com.hivemq.configuration.service.MqttConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.MessageWithID;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.mqtt.message.publish.PUBLISH;
@@ -41,7 +44,6 @@ import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.persistence.local.ClientSessionLocalPersistence;
 import com.hivemq.persistence.payload.PayloadPersistenceException;
 import dagger.Lazy;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
@@ -49,10 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl.SharedSubscription;
-import static com.hivemq.sampling.SamplingService.SAMPLER_PREFIX;
+import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class ClientQueuePersistenceImpl extends AbstractPersistence implements ClientQueuePersistence {
@@ -108,21 +107,14 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
             return Futures.immediateFailedFuture(exception);
         }
 
-
         return singleWriter.submit(queueId, (bucketIndex) -> {
             MqttConfigurationService.QueuedMessagesStrategy queuedMessagesStrategy =
                     mqttConfigurationService.getQueuedMessagesStrategy();
-            if(queueId.startsWith(SAMPLER_PREFIX)){
+            if (queueId.startsWith(SAMPLER_PREFIX)) {
                 queuedMessagesStrategy = MqttConfigurationService.QueuedMessagesStrategy.DISCARD_OLDEST;
             }
 
-            localPersistence.add(queueId,
-                    shared,
-                    publish,
-                    queueLimit,
-                    queuedMessagesStrategy,
-                    retained,
-                    bucketIndex);
+            localPersistence.add(queueId, shared, publish, queueLimit, queuedMessagesStrategy, retained, bucketIndex);
             final int queueSize = localPersistence.size(queueId, shared, bucketIndex);
             if (queueSize == 1) {
                 if (shared) {
@@ -154,16 +146,11 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
             final boolean queueWasEmpty = localPersistence.size(queueId, shared, bucketIndex) == 0;
             MqttConfigurationService.QueuedMessagesStrategy queuedMessagesStrategy =
                     mqttConfigurationService.getQueuedMessagesStrategy();
-            if(queueId.startsWith(SAMPLER_PREFIX)){
+            if (queueId.startsWith(SAMPLER_PREFIX)) {
                 queuedMessagesStrategy = MqttConfigurationService.QueuedMessagesStrategy.DISCARD_OLDEST;
             }
 
-            localPersistence.add(queueId,
-                    shared,
-                    publishes,
-                    queueLimit, queuedMessagesStrategy,
-                    retained,
-                    bucketIndex);
+            localPersistence.add(queueId, shared, publishes, queueLimit, queuedMessagesStrategy, retained, bucketIndex);
             if (queueWasEmpty) {
                 if (shared) {
                     sharedPublishAvailable(queueId);
@@ -190,9 +177,9 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
         if (clientConnection.isMessagesInFlight()) {
             return;
         }
-        clientConnection.getChannel()
-                .eventLoop()
-                .submit(() -> publishPollService.get().pollNewMessages(client, clientConnection.getChannel()));
+        clientConnection.getChannel().eventLoop().submit(() -> publishPollService
+                .get()
+                .pollNewMessages(client, clientConnection.getChannel()));
     }
 
     @Override
@@ -211,8 +198,7 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
 
     @Override
     public void addPublishAvailableCallback(
-            final @NotNull PublishAvailableCallback callback,
-            final @NotNull String queueId) {
+            final @NotNull PublishAvailableCallback callback, final @NotNull String queueId) {
         queueidCallbackMap.put(queueId, callback);
     }
 
@@ -234,31 +220,24 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
         } catch (final Exception exception) {
             return Futures.immediateFailedFuture(exception);
         }
-        return singleWriter.submit(queueId,
-                (bucketIndex) -> checkPayloadReference(localPersistence.readNew(queueId,
-                        shared,
-                        packetIds,
-                        byteLimit,
-                        bucketIndex), queueId, shared));
+        return singleWriter.submit(
+                queueId,
+                (bucketIndex) -> checkPayloadReference(
+                        localPersistence.readNew(queueId, shared, packetIds, byteLimit, bucketIndex), queueId, shared));
     }
 
     @Override
     public @NotNull ListenableFuture<ImmutableList<PUBLISH>> peek(
-            final @NotNull String queueId,
-            final boolean shared,
-            final long byteLimit,
-            final int maxMessages) {
+            final @NotNull String queueId, final boolean shared, final long byteLimit, final int maxMessages) {
         try {
             checkNotNull(queueId, "Queue ID must not be null");
         } catch (final Exception exception) {
             return Futures.immediateFailedFuture(exception);
         }
-        return singleWriter.submit(queueId,
-                (bucketIndex) -> checkPayloadReference(localPersistence.peek(queueId,
-                        shared,
-                        byteLimit,
-                        maxMessages,
-                        bucketIndex), queueId, shared));
+        return singleWriter.submit(
+                queueId,
+                (bucketIndex) -> checkPayloadReference(
+                        localPersistence.peek(queueId, shared, byteLimit, maxMessages, bucketIndex), queueId, shared));
     }
 
     @NotNull
@@ -271,7 +250,8 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
                 try {
                     publish.dereferencePayload();
                 } catch (final PayloadPersistenceException e) {
-                    messageDroppedService.failed(queueId, publish.getTopic(), publish.getQoS().getQosNumber());
+                    messageDroppedService.failed(
+                            queueId, publish.getTopic(), publish.getQoS().getQosNumber());
                     if (shared) {
                         removeShared(queueId, publish.getUniqueId());
                     } else {
@@ -298,7 +278,8 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
         // We reuse the non shared read new logic but without providing real message ID's.
         final ImmutableIntArray.Builder builder = ImmutableIntArray.builder(messageLimit);
         for (int i = 0; i < messageLimit; i++) {
-            builder.add(SHARED_IN_FLIGHT_MARKER); // We don't need a real message id here, messages are just marked as in-flight
+            builder.add(SHARED_IN_FLIGHT_MARKER); // We don't need a real message id here, messages are just marked as
+            // in-flight
         }
         return readNew(sharedSubscription, true, builder.build(), byteLimit);
     }
@@ -360,8 +341,7 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
                 final SharedSubscription sharedSubscription =
                         SharedSubscriptionServiceImpl.splitTopicAndGroup(sharedQueue);
                 final ImmutableSet<SubscriberWithQoS> sharedSubscriber = topicTree.getSharedSubscriber(
-                        sharedSubscription.getShareName(),
-                        sharedSubscription.getTopicFilter());
+                        sharedSubscription.getShareName(), sharedSubscription.getTopicFilter());
                 if (sharedSubscriber.isEmpty()) {
                     localPersistence.clear(sharedQueue, true, bucketIndex);
                 }
@@ -395,7 +375,6 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
             // We notify the clients that there are new messages to poll.
             sharedPublishAvailable(sharedSubscription);
             return null;
-
         });
     }
 
@@ -423,6 +402,7 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
 
         @NotNull
         private final String queueId;
+
         private final boolean shared;
 
         public Key(final @NotNull String queueId, final boolean shared) {

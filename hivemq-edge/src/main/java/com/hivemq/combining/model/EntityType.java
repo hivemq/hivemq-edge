@@ -18,7 +18,6 @@ package com.hivemq.combining.model;
 import org.jetbrains.annotations.NotNull;
 
 public enum EntityType {
-
     ADAPTER,
     DEVICE,
     BRIDGE,
@@ -40,7 +39,7 @@ public enum EntityType {
             case EDGE_BROKER -> {
                 return EDGE_BROKER;
             }
-            case  PULSE_AGENT -> {
+            case PULSE_AGENT -> {
                 return PULSE_AGENT;
             }
         }
@@ -67,6 +66,4 @@ public enum EntityType {
         }
         throw new IllegalArgumentException();
     }
-
-
 }

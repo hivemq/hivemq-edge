@@ -16,8 +16,8 @@
 package com.hivemq.persistence;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.util.MemoryEstimator;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Lukas Brandl
@@ -53,7 +53,7 @@ public class PersistenceEntry<T extends Sizable> implements Sizable {
     @Override
     public int getEstimatedSize() {
 
-        if (sizeInMemory != SIZE_NOT_CALCULATED){
+        if (sizeInMemory != SIZE_NOT_CALCULATED) {
             return sizeInMemory;
         }
 

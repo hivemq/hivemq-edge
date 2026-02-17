@@ -16,8 +16,8 @@
 package com.hivemq.extensions.auth.parameter;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
@@ -38,9 +38,14 @@ public class TopicPermissionImpl implements InternalTopicPermission {
     private final boolean isRootWildcard;
     private final boolean endsWithWildcard;
 
-    public TopicPermissionImpl(final @NotNull String topic, final @NotNull PermissionType type, final @NotNull Qos qos,
-                               final @NotNull MqttActivity activity, final @NotNull Retain retain,
-                               final @NotNull SharedSubscription sharedSubscription, final @NotNull String sharedGroup) {
+    public TopicPermissionImpl(
+            final @NotNull String topic,
+            final @NotNull PermissionType type,
+            final @NotNull Qos qos,
+            final @NotNull MqttActivity activity,
+            final @NotNull Retain retain,
+            final @NotNull SharedSubscription sharedSubscription,
+            final @NotNull String sharedGroup) {
         this.topic = topic;
         this.type = type;
         this.qos = qos;
@@ -49,7 +54,7 @@ public class TopicPermissionImpl implements InternalTopicPermission {
         this.sharedSubscription = sharedSubscription;
         this.sharedGroup = sharedGroup;
 
-        //these are used to speed up the evaluation of permissions
+        // these are used to speed up the evaluation of permissions
         final String strippedPermissionTopic = StringUtils.stripEnd(topic, "/");
         splitTopic = StringUtils.splitPreserveAllTokens(strippedPermissionTopic, "/");
         containsWildcardCharacter = !StringUtils.containsNone(strippedPermissionTopic, "#+");

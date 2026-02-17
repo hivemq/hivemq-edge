@@ -29,26 +29,26 @@ public class Files {
     public static final byte NEW_LINE_DECIMAL = 10;
     public static final String PERIOD = ".";
 
-    public static String getFileName(String filePath){
+    public static String getFileName(String filePath) {
         int idx = filePath.lastIndexOf(File.separator);
-        if(idx > -1){
+        if (idx > -1) {
             filePath = filePath.substring(idx);
         }
         return filePath;
     }
 
-    public static String getFileNameExcludingExtension(String filePath){
+    public static String getFileNameExcludingExtension(String filePath) {
         String name = getFileName(filePath);
-        if(name.contains(PERIOD)){
+        if (name.contains(PERIOD)) {
             name = name.substring(name.lastIndexOf(PERIOD) + 1);
         }
         return name;
     }
 
-    public static String getFileExtension(String filePath){
+    public static String getFileExtension(String filePath) {
         int idx = filePath.lastIndexOf(PERIOD);
         String ext = null;
-        if(idx > -1){
+        if (idx > -1) {
             ext = filePath.substring(idx + 1);
         }
         return ext;
@@ -63,8 +63,7 @@ public class Files {
     }
 
     public static byte[] read(InputStream is, int bufSize) throws IOException {
-        try(ByteArrayOutputStream baos
-                    = new ByteArrayOutputStream()){
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             byte[] buf = new byte[bufSize];
             int length;
             while ((length = is.read(buf)) != -1) {
@@ -75,10 +74,8 @@ public class Files {
     }
 
     public static byte[] read(File f) throws IOException {
-        try(InputStream is = new BufferedInputStream(
-                new FileInputStream(f))){
-            ByteArrayOutputStream baos
-                    = new ByteArrayOutputStream();
+        try (InputStream is = new BufferedInputStream(new FileInputStream(f))) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
             byte[] buf = new byte[1024];
             int length;
             while ((length = is.read(buf)) != -1) {
@@ -88,8 +85,7 @@ public class Files {
         }
     }
 
-    public static void writeWithLock(File file, byte[] bytes)
-            throws IOException, OverlappingFileLockException {
+    public static void writeWithLock(File file, byte[] bytes) throws IOException, OverlappingFileLockException {
 
         RandomAccessFile raf = new RandomAccessFile(file, "rw");
         FileChannel channel = raf.getChannel();
@@ -98,13 +94,12 @@ public class Files {
             lock = channel.tryLock();
             channel.truncate(bytes.length);
             channel.write(ByteBuffer.wrap(bytes));
-        }
-        finally {
+        } finally {
             try {
-                if(lock != null) lock.release();
+                if (lock != null) lock.release();
             } finally {
-                if(raf != null) raf.close();
-                if(channel != null) channel.close();
+                if (raf != null) raf.close();
+                if (channel != null) channel.close();
             }
         }
     }
@@ -112,29 +107,24 @@ public class Files {
     public static void appendWithLock(File file, byte[] bytes, boolean newLine)
             throws IOException, OverlappingFileLockException {
 
-        try (RandomAccessFile raf =
-                     new RandomAccessFile(file, "rw")){
+        try (RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
             raf.seek(raf.length());
             FileChannel channel = raf.getChannel();
             FileLock lock = null;
             try {
                 lock = channel.tryLock();
-                if(raf.getFilePointer() > 0 && newLine){
-                    channel.write(ByteBuffer.wrap(
-                            System.lineSeparator().
-                                    getBytes(StandardCharsets.UTF_8)));
+                if (raf.getFilePointer() > 0 && newLine) {
+                    channel.write(ByteBuffer.wrap(System.lineSeparator().getBytes(StandardCharsets.UTF_8)));
                 }
                 channel.write(ByteBuffer.wrap(bytes));
             } finally {
-                if(lock != null) lock.release();
+                if (lock != null) lock.release();
             }
         }
     }
 
-    public static void append(File f, byte[] bytes)
-            throws IOException {
-        java.nio.file.Files.write(f.toPath(), bytes,
-                StandardOpenOption.APPEND);
+    public static void append(File f, byte[] bytes) throws IOException {
+        java.nio.file.Files.write(f.toPath(), bytes, StandardOpenOption.APPEND);
     }
 
     public static long directorySize(File dir) {
@@ -158,21 +148,18 @@ public class Files {
     }
 
     public static void gzipFile(File input, File output, int bufferSize) throws IOException {
-        try (GZIPOutputStream out = new GZIPOutputStream(
-                new FileOutputStream(output))){
-            try (FileInputStream in =
-                         new FileInputStream(input)){
+        try (GZIPOutputStream out = new GZIPOutputStream(new FileOutputStream(output))) {
+            try (FileInputStream in = new FileInputStream(input)) {
                 byte[] buffer = new byte[bufferSize];
                 int len;
-                while( (len=in.read(buffer)) != -1)
-                    out.write(buffer, 0, len);
+                while ((len = in.read(buffer)) != -1) out.write(buffer, 0, len);
             }
         }
     }
 
     public static synchronized void createRuntimeLockFile(File dir) throws IOException {
         File lockFile = new File(dir, ".lck");
-        if(lockFile.exists()){
+        if (lockFile.exists()) {
             throw new IOException("lock already in use");
         }
         lockFile.createNewFile();
@@ -184,10 +171,9 @@ public class Files {
     /**
      * Count the lines in a given file (assumes the file is character data)
      */
-    public static int countLines(File file) throws IOException{
+    public static int countLines(File file) throws IOException {
         int lines = 0;
-        try(BufferedReader reader =
-                new BufferedReader(new FileReader(file))){
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             while (reader.readLine() != null) lines++;
         }
         return lines;
@@ -196,14 +182,11 @@ public class Files {
     /**
      * Truncate the given file to the size specified
      */
-    public static void truncate(File file, int size) throws IOException{
-        try (FileChannel outChan =
-                     new FileOutputStream(file, true).getChannel()) {
+    public static void truncate(File file, int size) throws IOException {
+        try (FileChannel outChan = new FileOutputStream(file, true).getChannel()) {
             outChan.truncate(size);
         }
     }
-
-
 
     /**
      * Given a file of character data, consume from the head of the file
@@ -217,50 +200,43 @@ public class Files {
      * NB: This should not be used on large files since it involves copying
      * large sections of the file.
      */
-    public static byte[] consumeLinesFromStart(File file, int count)
-            throws IOException {
+    public static byte[] consumeLinesFromStart(File file, int count) throws IOException {
         ByteArrayOutputStream baos = null;
-        try (BufferedReader reader =
-                     new BufferedReader(new FileReader(file))){
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             File tmp = File.createTempFile(
-                    getFileNameExcludingExtension(file.getName()),
-                    PERIOD + getFileExtension(file.getName()));
-            try(BufferedOutputStream fos =
-                    new BufferedOutputStream(
-                            new FileOutputStream(tmp))) {
+                    getFileNameExcludingExtension(file.getName()), PERIOD + getFileExtension(file.getName()));
+            try (BufferedOutputStream fos = new BufferedOutputStream(new FileOutputStream(tmp))) {
                 baos = new ByteArrayOutputStream(1024);
                 String line;
                 int progress = 0;
-                while((line = reader.readLine()) != null) {
+                while ((line = reader.readLine()) != null) {
                     byte[] b = line.getBytes(StandardCharsets.UTF_8);
-                    if(b.length > 0){
-                        OutputStream os =
-                                progress++ < count ?  baos : fos;
+                    if (b.length > 0) {
+                        OutputStream os = progress++ < count ? baos : fos;
                         os.write(b);
-                        os.write(System.lineSeparator().
-                                getBytes(StandardCharsets.UTF_8));
+                        os.write(System.lineSeparator().getBytes(StandardCharsets.UTF_8));
                     }
                 }
             }
 
-            if(!tmp.renameTo(file)){
+            if (!tmp.renameTo(file)) {
                 throw new IOException("unable to rename temp file");
             }
         }
         return trimNewLines(baos.toByteArray());
     }
 
-    private static byte[] trimNewLines(byte[] a){
+    private static byte[] trimNewLines(byte[] a) {
 
-        if(a.length == 0) return a;
+        if (a.length == 0) return a;
 
-        if(a[0] == NEW_LINE_DECIMAL){
+        if (a[0] == NEW_LINE_DECIMAL) {
             byte[] trim = new byte[a.length - 1];
             System.arraycopy(a, 1, trim, 0, a.length - 1);
             a = trim;
         }
 
-        if(a[a.length - 1] == NEW_LINE_DECIMAL){
+        if (a[a.length - 1] == NEW_LINE_DECIMAL) {
             byte[] trim = new byte[a.length - 1];
             System.arraycopy(a, 0, trim, 0, a.length - 1);
             a = trim;
@@ -269,17 +245,15 @@ public class Files {
         return a;
     }
 
-    public static void delete(File f)
-            throws IOException {
-        if(f.exists()) {
-            if(f.isDirectory()) {
+    public static void delete(File f) throws IOException {
+        if (f.exists()) {
+            if (f.isDirectory()) {
                 File[] files = f.listFiles();
-                for(int i = 0; files != null &&
-                        i < files.length; i++) {
+                for (int i = 0; files != null && i < files.length; i++) {
                     delete(files[i]);
                 }
             }
-            if(!f.delete()) {
+            if (!f.delete()) {
                 throw new IOException("unable to delete; " + f);
             }
         }

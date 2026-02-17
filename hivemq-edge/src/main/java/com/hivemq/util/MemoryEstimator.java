@@ -23,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public class MemoryEstimator {
 
-    public static final int OBJECT_SHELL_SIZE = 12; //Class Pointer (4), Flags (4), Locks (4)
+    public static final int OBJECT_SHELL_SIZE = 12; // Class Pointer (4), Flags (4), Locks (4)
     public static final int OBJECT_REF_SIZE = 4;
     public static final int ENUM_OVERHEAD = 4;
     public static final int STRING_OVERHEAD = 38;
@@ -38,7 +38,7 @@ public class MemoryEstimator {
     public static final int BOOLEAN_SIZE = 1;
 
     private MemoryEstimator() {
-        //This is a utility class, don't instantiate it!
+        // This is a utility class, don't instantiate it!
     }
 
     /**

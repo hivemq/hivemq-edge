@@ -24,6 +24,5 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface ITokenGenerator {
 
-    String generateToken(final @NotNull ApiPrincipal principal) throws AuthenticationException ;
-
+    String generateToken(final @NotNull ApiPrincipal principal) throws AuthenticationException;
 }

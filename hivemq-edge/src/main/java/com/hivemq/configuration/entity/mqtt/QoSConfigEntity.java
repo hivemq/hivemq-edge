@@ -15,14 +15,13 @@
  */
 package com.hivemq.configuration.entity.mqtt;
 
+import static com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults.MAXIMUM_QOS_DEFAULT;
+
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
-
 import java.util.Objects;
-
-import static com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults.MAXIMUM_QOS_DEFAULT;
 
 /**
  * @author Florian Limpöck

@@ -15,9 +15,9 @@
  */
 package com.hivemq.mqtt.topic;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Test;
 
 public class SubscriptionFlagTest {
 
@@ -45,5 +45,4 @@ public class SubscriptionFlagTest {
         final byte flags7 = SubscriptionFlag.getDefaultFlags(false, false, true);
         assertEquals((byte) 0b1000, flags7);
     }
-
 }

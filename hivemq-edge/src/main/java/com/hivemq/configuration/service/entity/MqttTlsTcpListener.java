@@ -15,11 +15,11 @@
  */
 package com.hivemq.configuration.service.entity;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.hivemq.extension.sdk.api.annotations.Immutable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * A listener which allows to listen to MQTT traffic via TLS
@@ -53,7 +53,11 @@ public class MqttTlsTcpListener extends MqttTcpListener implements MqttTlsListen
      * @param tls         the TLS configuration
      */
     public MqttTlsTcpListener(
-            final int port, final @NotNull String bindAddress, final @NotNull Tls tls, final @NotNull String name, final @Nullable String externalHostname) {
+            final int port,
+            final @NotNull String bindAddress,
+            final @NotNull Tls tls,
+            final @NotNull String name,
+            final @Nullable String externalHostname) {
         super(port, bindAddress, name, externalHostname);
         checkNotNull(tls);
         this.tls = tls;

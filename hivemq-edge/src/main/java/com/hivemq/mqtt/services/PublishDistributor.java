@@ -17,15 +17,14 @@ package com.hivemq.mqtt.services;
 
 import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.handler.publish.PublishStatus;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
-
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Christoph Schäbel
@@ -40,8 +39,10 @@ public interface PublishDistributor {
      * @param executorService the executor service in which all callbacks are executed
      */
     @NotNull
-    ListenableFuture<Void> distributeToNonSharedSubscribers(@NotNull Map<String, SubscriberWithIdentifiers> subscribers,
-                                                            @NotNull PUBLISH publish, @NotNull ExecutorService executorService);
+    ListenableFuture<Void> distributeToNonSharedSubscribers(
+            @NotNull Map<String, SubscriberWithIdentifiers> subscribers,
+            @NotNull PUBLISH publish,
+            @NotNull ExecutorService executorService);
 
     /**
      * Sends a message to the specified shared subscribers
@@ -52,8 +53,10 @@ public interface PublishDistributor {
      * @param executorService     the executor service in which all callbacks are executed
      */
     @NotNull
-    ListenableFuture<Void> distributeToSharedSubscribers(@NotNull Set<String> sharedSubscriptions, @NotNull PUBLISH publish,
-                                                         @NotNull ExecutorService executorService);
+    ListenableFuture<Void> distributeToSharedSubscribers(
+            @NotNull Set<String> sharedSubscriptions,
+            @NotNull PUBLISH publish,
+            @NotNull ExecutorService executorService);
 
     /**
      * Sends a message to a discrete subscriber
@@ -66,8 +69,11 @@ public interface PublishDistributor {
      * @return a future with the result for this publish
      */
     @NotNull
-    ListenableFuture<PublishStatus> sendMessageToSubscriber(@NotNull PUBLISH publish, @NotNull String clientId, final int subscriptionQos,
-                                                            boolean sharedSubscription, boolean retainAsPublished,
-                                                            @Nullable ImmutableIntArray subscriptionIdentifier);
-
+    ListenableFuture<PublishStatus> sendMessageToSubscriber(
+            @NotNull PUBLISH publish,
+            @NotNull String clientId,
+            final int subscriptionQos,
+            boolean sharedSubscription,
+            boolean retainAsPublished,
+            @Nullable ImmutableIntArray subscriptionIdentifier);
 }

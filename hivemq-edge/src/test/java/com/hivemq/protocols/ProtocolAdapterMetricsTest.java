@@ -15,19 +15,18 @@
  */
 package com.hivemq.protocols;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.MetricRegistry;
-import org.junit.jupiter.api.Test;
-
 import static com.hivemq.protocols.ProtocolAdapterMetrics.PROTOCOL_ADAPTER_PREFIX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.MetricRegistry;
+import org.junit.jupiter.api.Test;
 
 class ProtocolAdapterMetricsTest {
 
     private final MetricRegistry metricRegistry = new MetricRegistry();
     private final ProtocolAdapterMetrics protocolAdapterMetrics = new ProtocolAdapterMetrics(metricRegistry);
-
 
     @Test
     void increaseProtocolAdapterMetric_whenAlreadyExists_thenIncrementAndRegister() {

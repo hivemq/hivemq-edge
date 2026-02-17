@@ -16,11 +16,10 @@
 package com.hivemq.api.auth;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
-
 import java.security.Principal;
 import java.util.Objects;
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -30,8 +29,7 @@ public class ApiPrincipal implements Principal {
     private @NotNull String name;
     private Set<String> roles;
 
-    public ApiPrincipal() {
-    }
+    public ApiPrincipal() {}
 
     public ApiPrincipal(final @NotNull String name, final @NotNull Set<String> roles) {
         Preconditions.checkNotNull(name);

@@ -16,8 +16,6 @@
 package com.hivemq.extensions.interceptor.publish.parameter;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.async.Async;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extension.sdk.api.interceptor.publish.parameter.PublishInboundOutput;
@@ -25,9 +23,10 @@ import com.hivemq.extension.sdk.api.packets.publish.AckReasonCode;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
 import com.hivemq.extensions.executor.task.AbstractAsyncOutput;
 import com.hivemq.extensions.packets.publish.ModifiablePublishPacketImpl;
-
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -104,10 +103,12 @@ public class PublishInboundOutputImpl extends AbstractAsyncOutput<PublishInbound
         Preconditions.checkNotNull(duration, "Duration must never be null");
         Preconditions.checkNotNull(timeoutFallback, "Fallback must never be null");
         if (timeoutFallback == TimeoutFallback.SUCCESS) {
-            Preconditions.checkArgument(ackReasonCode == AckReasonCode.SUCCESS, "reason code must be success when fallback success");
+            Preconditions.checkArgument(
+                    ackReasonCode == AckReasonCode.SUCCESS, "reason code must be success when fallback success");
         }
         if (ackReasonCode == AckReasonCode.SUCCESS) {
-            Preconditions.checkArgument(reasonString == null, "reason string must not be set when ack reason code is success");
+            Preconditions.checkArgument(
+                    reasonString == null, "reason string must not be set when ack reason code is success");
         }
         Preconditions.checkNotNull(ackReasonCode, "Reason code must never be null");
 

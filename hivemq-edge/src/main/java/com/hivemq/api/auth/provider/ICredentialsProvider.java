@@ -18,5 +18,4 @@ package com.hivemq.api.auth.provider;
 /**
  * @author Simon L Johnson
  */
-public interface ICredentialsProvider {
-}
+public interface ICredentialsProvider {}

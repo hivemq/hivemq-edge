@@ -31,28 +31,31 @@ public abstract class Plc4XSpecificAdapterConfig<T extends Plc4xToMqttConfig> im
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
     @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
-    @ModuleConfigField(title = "Identifier",
-                       description = "Unique identifier for this protocol adapter",
-                       format = ModuleConfigField.FieldType.IDENTIFIER,
-                       required = true,
-                       stringPattern = ID_REGEX,
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
+    @ModuleConfigField(
+            title = "Identifier",
+            description = "Unique identifier for this protocol adapter",
+            format = ModuleConfigField.FieldType.IDENTIFIER,
+            required = true,
+            stringPattern = ID_REGEX,
+            stringMinLength = 1,
+            stringMaxLength = 1024)
     private @Nullable String id;
 
     @JsonProperty(value = "port", required = true)
-    @ModuleConfigField(title = "Port",
-                       description = "The port number on the device to connect to",
-                       required = true,
-                       numberMin = PORT_MIN,
-                       numberMax = PORT_MAX)
+    @ModuleConfigField(
+            title = "Port",
+            description = "The port number on the device to connect to",
+            required = true,
+            numberMin = PORT_MIN,
+            numberMax = PORT_MAX)
     private final int port;
 
     @JsonProperty(value = "host", required = true)
-    @ModuleConfigField(title = "Host",
-                       description = "IP Address or hostname of the device you wish to connect to",
-                       required = true,
-                       format = ModuleConfigField.FieldType.HOSTNAME)
+    @ModuleConfigField(
+            title = "Host",
+            description = "IP Address or hostname of the device you wish to connect to",
+            required = true,
+            format = ModuleConfigField.FieldType.HOSTNAME)
     private final @NotNull String host;
 
     @JsonCreator

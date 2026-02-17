@@ -16,8 +16,6 @@
 package com.hivemq.extensions.packets.connect;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.connect.ConnectPacket;
 import com.hivemq.extension.sdk.api.packets.connect.WillPublishPacket;
 import com.hivemq.extension.sdk.api.packets.general.MqttVersion;
@@ -25,10 +23,11 @@ import com.hivemq.extensions.packets.general.MqttVersionUtil;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.extensions.packets.publish.WillPublishPacketImpl;
 import com.hivemq.mqtt.message.connect.CONNECT;
-
 import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Georg Held
@@ -110,7 +109,9 @@ public class ConnectPacketImpl implements ConnectPacket {
                 (connect.getPassword() == null) ? null : ByteBuffer.wrap(connect.getPassword()),
                 connect.getAuthMethod(),
                 (connect.getAuthData() == null) ? null : ByteBuffer.wrap(connect.getAuthData()),
-                (connect.getWillPublish() == null) ? null : new WillPublishPacketImpl(connect.getWillPublish(), timestamp),
+                (connect.getWillPublish() == null)
+                        ? null
+                        : new WillPublishPacketImpl(connect.getWillPublish(), timestamp),
                 UserPropertiesImpl.of(connect.getUserProperties().asList()));
     }
 
@@ -203,28 +204,42 @@ public class ConnectPacketImpl implements ConnectPacket {
             return false;
         }
         final ConnectPacketImpl that = (ConnectPacketImpl) o;
-        return (mqttVersion == that.mqttVersion) &&
-                clientId.equals(that.clientId) &&
-                (cleanStart == that.cleanStart) &&
-                (sessionExpiryInterval == that.sessionExpiryInterval) &&
-                (keepAlive == that.keepAlive) &&
-                (receiveMaximum == that.receiveMaximum) &&
-                (maximumPacketSize == that.maximumPacketSize) &&
-                (topicAliasMaximum == that.topicAliasMaximum) &&
-                (requestProblemInformation == that.requestProblemInformation) &&
-                (requestResponseInformation == that.requestResponseInformation) &&
-                Objects.equals(userName, that.userName) &&
-                Objects.equals(password, that.password) &&
-                Objects.equals(authenticationMethod, that.authenticationMethod) &&
-                Objects.equals(authenticationData, that.authenticationData) &&
-                Objects.equals(willPublish, that.willPublish) &&
-                userProperties.equals(that.userProperties);
+        return (mqttVersion == that.mqttVersion)
+                && clientId.equals(that.clientId)
+                && (cleanStart == that.cleanStart)
+                && (sessionExpiryInterval == that.sessionExpiryInterval)
+                && (keepAlive == that.keepAlive)
+                && (receiveMaximum == that.receiveMaximum)
+                && (maximumPacketSize == that.maximumPacketSize)
+                && (topicAliasMaximum == that.topicAliasMaximum)
+                && (requestProblemInformation == that.requestProblemInformation)
+                && (requestResponseInformation == that.requestResponseInformation)
+                && Objects.equals(userName, that.userName)
+                && Objects.equals(password, that.password)
+                && Objects.equals(authenticationMethod, that.authenticationMethod)
+                && Objects.equals(authenticationData, that.authenticationData)
+                && Objects.equals(willPublish, that.willPublish)
+                && userProperties.equals(that.userProperties);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(mqttVersion, clientId, cleanStart, sessionExpiryInterval, keepAlive, receiveMaximum,
-                maximumPacketSize, topicAliasMaximum, requestProblemInformation, requestResponseInformation, userName,
-                password, authenticationMethod, authenticationData, willPublish, userProperties);
+        return Objects.hash(
+                mqttVersion,
+                clientId,
+                cleanStart,
+                sessionExpiryInterval,
+                keepAlive,
+                receiveMaximum,
+                maximumPacketSize,
+                topicAliasMaximum,
+                requestProblemInformation,
+                requestResponseInformation,
+                userName,
+                password,
+                authenticationMethod,
+                authenticationData,
+                willPublish,
+                userProperties);
     }
 }

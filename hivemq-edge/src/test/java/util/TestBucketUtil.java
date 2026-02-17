@@ -15,16 +15,15 @@
  */
 package util;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
 import org.apache.commons.lang3.RandomStringUtils;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * @author Georg Held
  */
 public class TestBucketUtil {
-
 
     public static String getId(final int desiredBucket, final int bucketSize) {
         checkArgument(0 <= desiredBucket && desiredBucket < bucketSize);

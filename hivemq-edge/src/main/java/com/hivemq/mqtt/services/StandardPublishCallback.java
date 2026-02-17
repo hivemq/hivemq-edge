@@ -17,11 +17,11 @@ package com.hivemq.mqtt.services;
 
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.SettableFuture;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.handler.publish.PublishStatus;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.util.Exceptions;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Christoph Schäbel
@@ -32,7 +32,10 @@ public class StandardPublishCallback implements FutureCallback<PublishStatus> {
     private final @NotNull PUBLISH msg;
     private final @NotNull SettableFuture<Void> publishFinishedFuture;
 
-    StandardPublishCallback(final @NotNull String subscriber, final @NotNull PUBLISH msg, final @NotNull SettableFuture<Void> publishFinishedFuture) {
+    StandardPublishCallback(
+            final @NotNull String subscriber,
+            final @NotNull PUBLISH msg,
+            final @NotNull SettableFuture<Void> publishFinishedFuture) {
         this.subscriber = subscriber;
         this.msg = msg;
         this.publishFinishedFuture = publishFinishedFuture;
@@ -48,6 +51,9 @@ public class StandardPublishCallback implements FutureCallback<PublishStatus> {
 
         publishFinishedFuture.set(null);
 
-        Exceptions.rethrowError("Unable to send message with id " + msg.getUniqueId() + " on topic " + msg.getTopic() + " to client " + subscriber, throwable);
+        Exceptions.rethrowError(
+                "Unable to send message with id " + msg.getUniqueId() + " on topic " + msg.getTopic() + " to client "
+                        + subscriber,
+                throwable);
     }
 }

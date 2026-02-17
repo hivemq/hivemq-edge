@@ -15,14 +15,14 @@
  */
 package com.hivemq.extensions.interceptor.suback.parameter;
 
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
 import com.hivemq.extensions.packets.suback.ModifiableSubackPacketImpl;
 import com.hivemq.extensions.packets.suback.SubackPacketImpl;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Robin Atherton

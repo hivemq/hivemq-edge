@@ -31,15 +31,14 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.embedded.EmbeddedExtension;
 import com.hivemq.exceptions.HiveMQEdgeStartupException;
+import com.hivemq.http.JaxrsHttpServer;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.http.JaxrsHttpServer;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 public class HiveMQEdgeMain {
     private static final Logger log = LoggerFactory.getLogger(HiveMQEdgeMain.class);
@@ -73,13 +72,11 @@ public class HiveMQEdgeMain {
         final HiveMQEdgeBootstrap bootstrap =
                 new HiveMQEdgeBootstrap(metricRegistry, systemInformation, moduleLoader, configService);
 
-
         injector = bootstrap.bootstrap();
         if (configService == null) {
             configService = injector.configurationService();
         }
     }
-
 
     protected void startGateway(final @Nullable EmbeddedExtension embeddedExtension) throws HiveMQEdgeStartupException {
         if (injector == null) {
@@ -110,17 +107,18 @@ public class HiveMQEdgeMain {
 
         shutdownHooks.runShutdownHooks();
 
-        //clear metrics
+        // clear metrics
         metricRegistry.removeMatching(MetricFilter.ALL);
 
-        //Stop the API Webserver
+        // Stop the API Webserver
         stopApiServer();
 
         LoggingBootstrap.resetLogging();
     }
 
     protected void initializeApiServer(final @NotNull Injector injector) {
-        final ApiConfigurationService config = Objects.requireNonNull(configService).apiConfiguration();
+        final ApiConfigurationService config =
+                Objects.requireNonNull(configService).apiConfiguration();
         if (jaxrsServer == null && config.isEnabled()) {
             jaxrsServer = injector.apiServer();
         } else {
@@ -129,8 +127,10 @@ public class HiveMQEdgeMain {
     }
 
     protected void startApiServer() {
-        //-- This will only have initialized if the config is enabled
-        if (jaxrsServer != null && configService != null && configService.apiConfiguration().isEnabled()) {
+        // -- This will only have initialized if the config is enabled
+        if (jaxrsServer != null
+                && configService != null
+                && configService.apiConfiguration().isEnabled()) {
             jaxrsServer.startServer();
         }
     }
@@ -143,7 +143,7 @@ public class HiveMQEdgeMain {
 
     protected void afterStart() {
         afterHiveMQStartBootstrap();
-        //hook method
+        // hook method
     }
 
     private void afterHiveMQStartBootstrap() {
@@ -154,7 +154,8 @@ public class HiveMQEdgeMain {
 
         try {
             final AfterHiveMQStartBootstrapService afterHiveMQStartBootstrapService =
-                    AfterHiveMQStartBootstrapServiceImpl.decorate(injector.completeBootstrapService(),
+                    AfterHiveMQStartBootstrapServiceImpl.decorate(
+                            injector.completeBootstrapService(),
                             injector.protocolAdapterManager(),
                             injector.services().modulesAndExtensionsService());
             injector.commercialModuleLoaderDiscovery().afterHiveMQStart(afterHiveMQStartBootstrapService);
@@ -183,7 +184,7 @@ public class HiveMQEdgeMain {
         try {
             Runtime.getRuntime().removeShutdownHook(shutdownThread);
         } catch (final IllegalStateException ignored) {
-            //ignore
+            // ignore
         }
     }
 
@@ -192,8 +193,7 @@ public class HiveMQEdgeMain {
         final long startTime = System.nanoTime();
         final SystemInformationImpl systemInformation = new SystemInformationImpl(true);
         final ModuleLoader moduleLoader = new ModuleLoader(systemInformation);
-        final HiveMQEdgeMain server =
-                new HiveMQEdgeMain(systemInformation, new MetricRegistry(), null, moduleLoader);
+        final HiveMQEdgeMain server = new HiveMQEdgeMain(systemInformation, new MetricRegistry(), null, moduleLoader);
         try {
             server.start(null);
             log.info("Started HiveMQ Edge in {}ms", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
@@ -205,6 +205,4 @@ public class HiveMQEdgeMain {
     public @Nullable Injector getInjector() {
         return injector;
     }
-
-
 }

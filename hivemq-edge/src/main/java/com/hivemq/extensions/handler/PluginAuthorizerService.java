@@ -15,11 +15,11 @@
  */
 package com.hivemq.extensions.handler;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.connect.CONNECT;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;
 import io.netty.channel.ChannelHandlerContext;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck

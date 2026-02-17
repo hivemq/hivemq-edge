@@ -22,16 +22,12 @@ import com.hivemq.api.errors.samples.NoSamplesFoundError;
 import com.hivemq.api.model.samples.PayloadSample;
 import com.hivemq.api.model.samples.PayloadSampleList;
 import com.hivemq.edge.api.PayloadSamplingApi;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.sampling.SamplingService;
 import com.hivemq.util.ErrorResponseUtil;
 import com.saasquatch.jsonschemainferrer.AdditionalPropertiesPolicies;
 import com.saasquatch.jsonschemainferrer.JsonSchemaInferrer;
 import com.saasquatch.jsonschemainferrer.RequiredPolicies;
 import com.saasquatch.jsonschemainferrer.SpecVersion;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
@@ -42,6 +38,9 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Singleton
 public class SamplingResourceImpl implements PayloadSamplingApi {
@@ -55,7 +54,6 @@ public class SamplingResourceImpl implements PayloadSamplingApi {
 
     private final @NotNull SamplingService samplingService;
     private final @NotNull ObjectMapper objectMapper;
-
 
     @Inject
     public SamplingResourceImpl(
@@ -74,7 +72,8 @@ public class SamplingResourceImpl implements PayloadSamplingApi {
         // we want LIFO, but the queue return FIFO
         Collections.reverse(samples);
 
-        samples.forEach(sample -> sampleArrayList.add(new PayloadSample(Base64.getEncoder().encodeToString(sample))));
+        samples.forEach(sample ->
+                sampleArrayList.add(new PayloadSample(Base64.getEncoder().encodeToString(sample))));
         return Response.ok(new PayloadSampleList(sampleArrayList)).build();
     }
 

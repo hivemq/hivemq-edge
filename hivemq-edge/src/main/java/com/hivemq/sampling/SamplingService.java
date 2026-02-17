@@ -17,25 +17,23 @@ package com.hivemq.sampling;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.topic.SubscriptionFlag;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Singleton
 public class SamplingService {
-
 
     private static final Logger log = LoggerFactory.getLogger(SamplingService.class);
 
@@ -59,7 +57,8 @@ public class SamplingService {
     public void startSampling(final @NotNull String topic) {
         log.debug("Starting sampling for topic: '{}'", topic);
         final String clientId = SAMPLER_PREFIX + topic;
-        localTopicTree.addTopic(clientId,
+        localTopicTree.addTopic(
+                clientId,
                 new Topic(topic, QoS.AT_LEAST_ONCE, false, true),
                 SubscriptionFlag.getDefaultFlags(true, true, false),
                 clientId);
@@ -83,6 +82,4 @@ public class SamplingService {
             throw new RuntimeException(e);
         }
     }
-
-
 }

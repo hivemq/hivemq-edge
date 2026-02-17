@@ -36,12 +36,10 @@ public class HttpUrlConnectionClient {
     static final int READ_BUFFER_SIZE = 1024;
 
     public static final Map<String, String> JSON_HEADERS =
-            Map.of("Content-Type", "application/json",
-                    "Accept", "application/json");
+            Map.of("Content-Type", "application/json", "Accept", "application/json");
 
     public static final Map<String, String> FORM_HEADERS =
-            Map.of("Content-Type", "application/x-www-form-urlencoded",
-                    "Accept", "application/json");
+            Map.of("Content-Type", "application/x-www-form-urlencoded", "Accept", "application/json");
 
     public static HttpResponse head(Map<String, String> headers, String url, int readTimeout) throws IOException {
         HttpURLConnection connection = null;
@@ -57,11 +55,15 @@ public class HttpUrlConnectionClient {
             connection.connect();
             return createResponse(url, connection, false);
         } finally {
-            try {connection.disconnect();} catch(Throwable t) {}
+            try {
+                connection.disconnect();
+            } catch (Throwable t) {
+            }
         }
     }
 
-    public static HttpResponse get(Map<String, String> headers, String url, int connectTimeoutMillis, int readTimeoutMillis)
+    public static HttpResponse get(
+            Map<String, String> headers, String url, int connectTimeoutMillis, int readTimeoutMillis)
             throws IOException {
 
         HttpURLConnection connection = null;
@@ -80,12 +82,24 @@ public class HttpUrlConnectionClient {
             connection.connect();
             return createResponse(url, connection, true);
         } finally {
-            try {connection.disconnect();} catch(Throwable t) {}
-            try {is.close();} catch(Throwable t) {}
+            try {
+                connection.disconnect();
+            } catch (Throwable t) {
+            }
+            try {
+                is.close();
+            } catch (Throwable t) {
+            }
         }
     }
 
-    public static HttpResponse _withdata(String httpMethod, Map<String, String> headers, String url, InputStream is, int connectTimeoutMillis, int readTimeoutMillis)
+    public static HttpResponse _withdata(
+            String httpMethod,
+            Map<String, String> headers,
+            String url,
+            InputStream is,
+            int connectTimeoutMillis,
+            int readTimeoutMillis)
             throws IOException {
 
         HttpURLConnection connection = null;
@@ -103,40 +117,50 @@ public class HttpUrlConnectionClient {
             connection.connect();
             return createResponse(url, connection, true);
         } finally {
-            try {connection.disconnect();} catch(Throwable t) {}
-            try {is.close();} catch(Throwable t) {}
+            try {
+                connection.disconnect();
+            } catch (Throwable t) {
+            }
+            try {
+                is.close();
+            } catch (Throwable t) {
+            }
         }
     }
 
-    public static HttpResponse put(Map<String, String> headers, String url, InputStream is, int connectTimeoutMillis, int readTimeoutMillis)
+    public static HttpResponse put(
+            Map<String, String> headers, String url, InputStream is, int connectTimeoutMillis, int readTimeoutMillis)
             throws IOException {
 
         return _withdata("PUT", headers, url, is, connectTimeoutMillis, readTimeoutMillis);
     }
 
-    public static HttpResponse post(Map<String, String> headers, String url, InputStream is, int connectTimeoutMillis, int readTimeoutMillis)
+    public static HttpResponse post(
+            Map<String, String> headers, String url, InputStream is, int connectTimeoutMillis, int readTimeoutMillis)
             throws IOException {
 
         return _withdata("POST", headers, url, is, connectTimeoutMillis, readTimeoutMillis);
     }
 
-    public static HttpResponse delete(Map<String, String> headers, String url, InputStream is, int connectTimeoutMillis, int readTimeoutMillis)
+    public static HttpResponse delete(
+            Map<String, String> headers, String url, InputStream is, int connectTimeoutMillis, int readTimeoutMillis)
             throws IOException {
 
         return _withdata("DELETE", headers, url, is, connectTimeoutMillis, readTimeoutMillis);
     }
 
-    private static void writeRequestHeaders(Map<String, String> headers, HttpURLConnection connection){
-        if(headers != null){
+    private static void writeRequestHeaders(Map<String, String> headers, HttpURLConnection connection) {
+        if (headers != null) {
             Iterator<String> keys = headers.keySet().iterator();
-            while(keys.hasNext()){
+            while (keys.hasNext()) {
                 String k = keys.next();
                 connection.setRequestProperty(k, headers.get(k));
             }
         }
     }
 
-    private static HttpResponse createResponse(String url, HttpURLConnection connection, boolean readBody) throws IOException {
+    private static HttpResponse createResponse(String url, HttpURLConnection connection, boolean readBody)
+            throws IOException {
         HttpResponse response = new HttpResponse();
         response.setRequestUrl(url);
         response.setContentLength(connection.getContentLength());
@@ -146,43 +170,43 @@ public class HttpUrlConnectionClient {
         response.setContentEncoding(connection.getContentEncoding());
 
         Map<String, String> headers = new HashMap<>();
-        for (int i = 0;; i++) {
+        for (int i = 0; ; i++) {
             String headerName = connection.getHeaderFieldKey(i);
             String headerValue = connection.getHeaderField(i);
             if (headerName == null && headerValue == null) {
-                //no more headers
+                // no more headers
                 break;
             }
             headers.put(headerName, headerValue);
         }
         response.setResponseHeaders(Collections.unmodifiableMap(headers));
 
-        if(readBody){
+        if (readBody) {
             InputStream is = null;
             try {
                 int code = response.getStatusCode();
-                if(code > 299) {
+                if (code > 299) {
                     is = connection.getErrorStream();
                 } else {
                     is = connection.getInputStream();
                 }
-                if(is != null){
+                if (is != null) {
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     byte[] buffer = new byte[READ_BUFFER_SIZE];
                     int bytesRead;
                     int total = 0;
-                    while ((bytesRead = is.read(buffer)) != -1){
+                    while ((bytesRead = is.read(buffer)) != -1) {
                         baos.write(buffer, 0, bytesRead);
                         total += bytesRead;
                     }
                     response.setResponseBody(baos.toByteArray());
                     response.setContentLength(total);
                 }
-            }
-            finally {
+            } finally {
                 try {
                     is.close();
-                } catch(Exception e){}
+                } catch (Exception e) {
+                }
             }
         }
         return response;

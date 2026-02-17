@@ -39,11 +39,6 @@ import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import com.hivemq.protocols.northbound.NorthboundTagConsumer;
 import com.hivemq.protocols.northbound.PerAdapterSampler;
 import com.hivemq.protocols.northbound.PerContextSampler;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -58,6 +53,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ProtocolAdapterWrapper {
 
@@ -105,8 +104,7 @@ public class ProtocolAdapterWrapper {
     }
 
     public @NotNull CompletableFuture<Void> startAsync(
-            final boolean writingEnabled,
-            final @NotNull ModuleServices moduleServices) {
+            final boolean writingEnabled, final @NotNull ModuleServices moduleServices) {
         final var existingStartFuture = getOngoingOperationIfPresent(operationState.get(), OperationState.STARTING);
         if (existingStartFuture != null) {
             return existingStartFuture;
@@ -121,8 +119,7 @@ public class ProtocolAdapterWrapper {
         initStartAttempt();
         final var output = new ProtocolAdapterStartOutputImpl();
         final var input = new ProtocolAdapterStartInputImpl(moduleServices);
-        final var startFuture = CompletableFuture
-                .supplyAsync(() -> {
+        final var startFuture = CompletableFuture.supplyAsync(() -> {
                     try {
                         adapter.start(input, output);
                     } catch (final Throwable throwable) {
@@ -130,38 +127,42 @@ public class ProtocolAdapterWrapper {
                     }
                     return output.getStartFuture();
                 })
-                .thenCompose(Function.identity()).handle((ignored, error) -> {
+                .thenCompose(Function.identity())
+                .handle((ignored, error) -> {
                     if (error != null) {
                         log.error("Error starting adapter", error);
                         stopAfterFailedStart();
                         protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
-                        //we still return the initial error since that's the most significant information
+                        // we still return the initial error since that's the most significant information
                         return CompletableFuture.failedFuture(error);
                     } else {
                         protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
-                        return attemptStartingConsumers(writingEnabled,
-                                moduleServices.eventService()).handle((success, startException) -> {
-                            if (startException == null) {
-                                if (success) {
-                                    log.debug("Successfully started adapter with id {}", adapter.getId());
-                                } else {
-                                    log.debug("Partially started adapter with id {}", adapter.getId());
-                                }
-                            } else {
-                                log.error("Failed to start adapter with id {}", adapter.getId(), startException);
-                                stopAfterFailedStart();
-                                //we still return the initial error since that's the most significant information
-                                protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
-                                throw new RuntimeException("Failed to start adapter with id " + adapter.getId(),
-                                        startException);
-                            }
-                            return success;
-                        });
+                        return attemptStartingConsumers(writingEnabled, moduleServices.eventService())
+                                .handle((success, startException) -> {
+                                    if (startException == null) {
+                                        if (success) {
+                                            log.debug("Successfully started adapter with id {}", adapter.getId());
+                                        } else {
+                                            log.debug("Partially started adapter with id {}", adapter.getId());
+                                        }
+                                    } else {
+                                        log.error(
+                                                "Failed to start adapter with id {}", adapter.getId(), startException);
+                                        stopAfterFailedStart();
+                                        // we still return the initial error since that's the most significant
+                                        // information
+                                        protocolAdapterState.setRuntimeStatus(
+                                                ProtocolAdapterState.RuntimeStatus.STOPPED);
+                                        throw new RuntimeException(
+                                                "Failed to start adapter with id " + adapter.getId(), startException);
+                                    }
+                                    return success;
+                                });
                     }
                 })
                 .thenApply(ignored -> (Void) null)
                 .whenComplete((result, throwable) -> {
-                    //always clean up state
+                    // always clean up state
                     startFutureRef.set(null);
                     operationState.set(OperationState.IDLE);
                 });
@@ -183,7 +184,7 @@ public class ProtocolAdapterWrapper {
         } catch (final Throwable throwable) {
             log.error("Stopping adapter after a start error failed", throwable);
         }
-        //force waiting for the stop future to complete, we are in a separate thread so no harm caused
+        // force waiting for the stop future to complete, we are in a separate thread so no harm caused
         try {
             stopOutput.getOutputFuture().get();
         } catch (final Throwable throwable) {
@@ -199,11 +200,10 @@ public class ProtocolAdapterWrapper {
     }
 
     private @NotNull CompletableFuture<Boolean> attemptStartingConsumers(
-            final boolean writingEnabled,
-            final @NotNull EventService eventService) {
+            final boolean writingEnabled, final @NotNull EventService eventService) {
         final CompletableFuture<Boolean> future = new CompletableFuture<>();
         try {
-            //Adapter started successfully, now start the consumers
+            // Adapter started successfully, now start the consumers
             createAndSubscribeTagConsumer();
             startPolling(protocolAdapterPollingService, eventService);
 
@@ -217,20 +217,25 @@ public class ProtocolAdapterWrapper {
                     thread.setDaemon(false);
                     return thread;
                 }));
-                schedulerFutureRef.set(schedulerRef.get().schedule(() -> {
-                    if (futureCompleted.compareAndSet(false, true)) {
-                        log.error("Protocol adapter with id {} start writing failed because of timeout.",
-                                adapter.getId());
-                        future.complete(false);
-                    }
-                }, WRITE_FUTURE_COMPLETE_DELAY, TimeUnit.SECONDS));
+                schedulerFutureRef.set(schedulerRef
+                        .get()
+                        .schedule(
+                                () -> {
+                                    if (futureCompleted.compareAndSet(false, true)) {
+                                        log.error(
+                                                "Protocol adapter with id {} start writing failed because of timeout.",
+                                                adapter.getId());
+                                        future.complete(false);
+                                    }
+                                },
+                                WRITE_FUTURE_COMPLETE_DELAY,
+                                TimeUnit.SECONDS));
                 future.thenAccept(success -> cleanUpScheduler());
                 final var initialConnectionStatus = protocolAdapterState.getConnectionStatus();
                 protocolAdapterState.setConnectionStatusListener(status -> {
                     if (firstCallToStatusListener.compareAndSet(true, false) && status == initialConnectionStatus) {
-                        log.trace("Ignoring initial status {} for adapter {}",
-                                initialConnectionStatus,
-                                adapter.getId());
+                        log.trace(
+                                "Ignoring initial status {} for adapter {}", initialConnectionStatus, adapter.getId());
                         return;
                     }
 
@@ -238,7 +243,8 @@ public class ProtocolAdapterWrapper {
                     switch (status) {
                         case CONNECTED, STATELESS -> {
                             try {
-                                if (startWritingAsync(protocolAdapterWritingService).get()) {
+                                if (startWritingAsync(protocolAdapterWritingService)
+                                        .get()) {
                                     log.info("Successfully started adapter with id {}", adapter.getId());
                                 } else {
                                     log.error(
@@ -253,7 +259,8 @@ public class ProtocolAdapterWrapper {
                             }
                         }
                         case ERROR, DISCONNECTED, UNKNOWN -> {
-                            log.error("Failed to start writing for adapter with id {} because the status is {}.",
+                            log.error(
+                                    "Failed to start writing for adapter with id {} because the status is {}.",
                                     adapter.getId(),
                                     status);
                             if (futureCompleted.compareAndSet(false, true)) {
@@ -301,8 +308,7 @@ public class ProtocolAdapterWrapper {
         final var stopFuture = new CompletableFuture<Void>();
         stopFutureRef.set(stopFuture);
 
-        final var actualFuture = CompletableFuture
-                .supplyAsync(() -> {
+        final var actualFuture = CompletableFuture.supplyAsync(() -> {
                     stopPolling(protocolAdapterPollingService);
                     stopWriting(protocolAdapterWritingService);
                     try {
@@ -335,8 +341,7 @@ public class ProtocolAdapterWrapper {
     }
 
     private @Nullable CompletableFuture<Void> getOngoingOperationIfPresent(
-            final @NotNull OperationState currentState,
-            final @NotNull OperationState targetState) {
+            final @NotNull OperationState currentState, final @NotNull OperationState targetState) {
         switch (currentState) {
             case STARTING:
                 if (targetState == OperationState.STARTING) {
@@ -380,8 +385,7 @@ public class ProtocolAdapterWrapper {
     }
 
     public void discoverValues(
-            final @NotNull ProtocolAdapterDiscoveryInput input,
-            final @NotNull ProtocolAdapterDiscoveryOutput output) {
+            final @NotNull ProtocolAdapterDiscoveryInput input, final @NotNull ProtocolAdapterDiscoveryOutput output) {
         adapter.discoverValues(input, output);
     }
 
@@ -477,8 +481,10 @@ public class ProtocolAdapterWrapper {
 
         if (isPolling()) {
             config.getTags().forEach(tag -> {
-                final PerContextSampler sampler = new PerContextSampler(this,
-                        new PollingContextWrapper("unused",
+                final PerContextSampler sampler = new PerContextSampler(
+                        this,
+                        new PollingContextWrapper(
+                                "unused",
                                 tag.getName(),
                                 MessageHandlingOptions.MQTTMessagePerTag,
                                 false,
@@ -493,8 +499,7 @@ public class ProtocolAdapterWrapper {
         }
     }
 
-    private void stopPolling(
-            final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService) {
+    private void stopPolling(final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService) {
         if (isPolling() || isBatchPolling()) {
             log.debug("Stopping polling for protocol adapter with id '{}'", getId());
             protocolAdapterPollingService.stopPollingForAdapterInstance(getAdapter());
@@ -510,13 +515,13 @@ public class ProtocolAdapterWrapper {
                 .map(InternalWritingContextImpl::new)
                 .collect(Collectors.<InternalWritingContext>toList());
 
-        return protocolAdapterWritingService.startWritingAsync((WritingProtocolAdapter) getAdapter(),
-                getProtocolAdapterMetricsService(),
-                writingContexts);
+        return protocolAdapterWritingService.startWritingAsync(
+                (WritingProtocolAdapter) getAdapter(), getProtocolAdapterMetricsService(), writingContexts);
     }
 
     private void stopWriting(final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService) {
-        //no check for 'writing is enabled', as we have to stop it anyway since the license could have been removed in the meantime.
+        // no check for 'writing is enabled', as we have to stop it anyway since the license could have been removed in
+        // the meantime.
         if (isWriting()) {
             log.debug("Stopping writing for protocol adapter with id '{}'", getId());
             final var writingContexts = getSouthboundMappings().stream()
@@ -528,9 +533,8 @@ public class ProtocolAdapterWrapper {
 
     private void createAndSubscribeTagConsumer() {
         getNorthboundMappings().stream()
-                .map(northboundMapping -> northboundConsumerFactory.build(this,
-                        northboundMapping,
-                        protocolAdapterMetricsService))
+                .map(northboundMapping ->
+                        northboundConsumerFactory.build(this, northboundMapping, protocolAdapterMetricsService))
                 .forEach(northboundTagConsumer -> {
                     tagManager.addConsumer(northboundTagConsumer);
                     consumers.add(northboundTagConsumer);

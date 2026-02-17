@@ -1,34 +1,25 @@
 /*
- * Copyright (c) 2021 Simon Johnson <simon622 AT gmail DOT com>
+ * Copyright 2019-present HiveMQ GmbH
  *
- * Find me on GitHub:
- * https://github.com/simon622
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
 package com.hivemq.util;
 
-import javax.annotation.concurrent.NotThreadSafe;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.annotation.concurrent.NotThreadSafe;
 
 /**
  * FIFO Rolling list, maintains a list with no more than the defined number of elements. When the element count is exceeded,
@@ -40,8 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RollingList<T> extends ArrayList<T> {
     public static final int DEFAULT_CEILING = 25;
     protected final int ceiling;
-    protected volatile AtomicInteger internalIdx
-            = new AtomicInteger(0);
+    protected volatile AtomicInteger internalIdx = new AtomicInteger(0);
 
     public RollingList() {
         super(DEFAULT_CEILING);
@@ -62,14 +52,13 @@ public class RollingList<T> extends ArrayList<T> {
 
     @Override
     public boolean add(T o) {
-        synchronized(internalIdx){
+        synchronized (internalIdx) {
             int i = internalIdx.get();
-            if(i > (ceiling - 1)){
+            if (i > (ceiling - 1)) {
                 internalIdx.set(0);
                 i = 0;
             }
-            if(size() > i
-                    && get(i) != null){
+            if (size() > i && get(i) != null) {
                 remove(i);
             }
             super.add(internalIdx.getAndIncrement(), o);
@@ -79,9 +68,9 @@ public class RollingList<T> extends ArrayList<T> {
 
     @Override
     public boolean addAll(Collection<? extends T> col) {
-        synchronized (col){
+        synchronized (col) {
             Iterator<? extends T> itr = col.iterator();
-            while(itr.hasNext()){
+            while (itr.hasNext()) {
                 add(itr.next());
             }
         }

@@ -15,14 +15,6 @@
  */
 package com.hivemq.mqtt.message.connack;
 
-import com.hivemq.mqtt.message.MessageType;
-import com.hivemq.mqtt.message.QoS;
-import com.hivemq.mqtt.message.connect.CONNECT;
-import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
-import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
-import com.hivemq.mqtt.message.reason.Mqtt5ConnAckReasonCode;
-import org.junit.jupiter.api.Test;
-
 import static com.hivemq.mqtt.message.connack.CONNACK.KEEP_ALIVE_NOT_SET;
 import static com.hivemq.mqtt.message.connack.CONNACK.SESSION_EXPIRY_NOT_SET;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -31,13 +23,22 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.hivemq.mqtt.message.MessageType;
+import com.hivemq.mqtt.message.QoS;
+import com.hivemq.mqtt.message.connect.CONNECT;
+import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
+import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
+import com.hivemq.mqtt.message.reason.Mqtt5ConnAckReasonCode;
+import org.junit.jupiter.api.Test;
+
 /**
  * @author Waldemar Ruck
  * @since 4.0
  */
 public class CONNACKBuilderTest {
 
-    private final CONNACK.Mqtt5Builder builder = new CONNACK.Mqtt5Builder().withReasonCode(Mqtt5ConnAckReasonCode.SUCCESS);
+    private final CONNACK.Mqtt5Builder builder =
+            new CONNACK.Mqtt5Builder().withReasonCode(Mqtt5ConnAckReasonCode.SUCCESS);
     private final String dataExceeded = new String(new char[65535 + 1]);
     private final int sizeExceeded = 65535 + 1;
 
@@ -95,8 +96,7 @@ public class CONNACKBuilderTest {
 
         final boolean wildcardSubscriptionAvailable = true;
 
-        final CONNACK connack = builder
-                .withServerKeepAlive(serverKeepAlive)
+        final CONNACK connack = builder.withServerKeepAlive(serverKeepAlive)
                 .withTopicAliasMaximum(topicAliasMaximum)
                 .withMaximumPacketSize(maximumPacketSize)
                 .withSessionExpiryInterval(sessionExpiryInterval)
@@ -166,7 +166,9 @@ public class CONNACKBuilderTest {
     @Test
     public void test_authData_precondition() {
         final byte[] dataExceeded = new byte[sizeExceeded];
-        assertThatThrownBy(() -> builder.withAuthMethod("Method").withAuthData(dataExceeded).build())
+        assertThatThrownBy(() -> builder.withAuthMethod("Method")
+                        .withAuthData(dataExceeded)
+                        .build())
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("An auth data must never exceed 65.535 bytes");
     }
@@ -187,7 +189,8 @@ public class CONNACKBuilderTest {
 
     @Test
     public void test_sessionExpiryInterval_precondition() {
-        assertThatThrownBy(() -> builder.withSessionExpiryInterval(4294967296L + 1).build())
+        assertThatThrownBy(
+                        () -> builder.withSessionExpiryInterval(4294967296L + 1).build())
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("A session expiry interval must never be larger than 4.294.967.296");
     }

@@ -13,23 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hivemq.util.Checkpoints.EXTENSION_STARTED;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.common.annotations.GuardedBy;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.annotations.ThreadSafe;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 import com.hivemq.extensions.parameter.ExtensionStartOutputImpl;
 import com.hivemq.extensions.parameter.ExtensionStartStopInputImpl;
 import com.hivemq.extensions.parameter.ExtensionStopOutputImpl;
 import com.hivemq.util.Checkpoints;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.nio.file.Path;
@@ -39,9 +36,10 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hivemq.util.Checkpoints.EXTENSION_STARTED;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Georg Held
@@ -55,10 +53,13 @@ public class HiveMQExtensions {
 
     @GuardedBy("extensionsLock")
     private final @NotNull HashMap<String, HiveMQExtension> knownExtensions = new HashMap<>();
+
     @GuardedBy("classloaderLock")
     private final @NotNull HashMap<ClassLoader, HiveMQExtension> classloaderToExtension = new HashMap<>();
+
     @GuardedBy("beforeExtensionStopCallbacksLock")
     private final @NotNull List<Consumer<HiveMQExtension>> beforeExtensionStopCallbacks = new LinkedList<>();
+
     @GuardedBy("afterExtensionStopCallbacksLock")
     private final @NotNull List<Consumer<HiveMQExtension>> afterExtensionStopCallbacks = new LinkedList<>();
 
@@ -77,8 +78,7 @@ public class HiveMQExtensions {
         final Lock lock = extensionsLock.readLock();
         try {
             lock.lock();
-            return knownExtensions.values()
-                    .stream()
+            return knownExtensions.values().stream()
                     .filter(HiveMQExtension::isEnabled)
                     .sorted(Comparator.comparingInt(HiveMQExtension::getPriority))
                     .collect(ImmutableMap.toImmutableMap(HiveMQExtension::getId, Function.identity()));
@@ -171,13 +171,12 @@ public class HiveMQExtensions {
     }
 
     private void addClassLoaderMapping(
-            final @NotNull ClassLoader classloader,
-            final @NotNull HiveMQExtension extension) {
+            final @NotNull ClassLoader classloader, final @NotNull HiveMQExtension extension) {
         final Lock loaderLock = classloaderLock.writeLock();
         try {
             loaderLock.lock();
             if (extension.isEmbedded() && extension.getExtensionMainClazz() != null) {
-                //for embedded extensions also add the original (delegate) classloader
+                // for embedded extensions also add the original (delegate) classloader
                 classloaderToExtension.put(extension.getExtensionMainClazz().getClassLoader(), extension);
             }
             classloaderToExtension.put(classloader, extension);
@@ -298,8 +297,10 @@ public class HiveMQExtensions {
                     extension.getName(),
                     extension.getVersion());
         } catch (final Throwable t) {
-            log.warn("Uncaught exception was thrown from extension with id \"" + extension.getId() +
-                    "\" on extension stop. Extensions are responsible on their own to handle exceptions.", t);
+            log.warn(
+                    "Uncaught exception was thrown from extension with id \"" + extension.getId()
+                            + "\" on extension stop. Extensions are responsible on their own to handle exceptions.",
+                    t);
             disable = true;
 
         } finally {

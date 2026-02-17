@@ -15,10 +15,10 @@
  */
 package com.hivemq.extensions.interceptor.bridge.parameter;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.bridge.parameter.BridgePublishInboundInput;
 import com.hivemq.extensions.executor.task.PluginTaskInput;
 import com.hivemq.extensions.packets.publish.PublishPacketImpl;
+import org.jetbrains.annotations.NotNull;
 
 public class BridgePublishInboundInputImpl implements BridgePublishInboundInput, PluginTaskInput {
 
@@ -42,7 +42,7 @@ public class BridgePublishInboundInputImpl implements BridgePublishInboundInput,
     }
 
     public @NotNull BridgePublishInboundInputImpl update(final @NotNull BridgePublishInboundOutputImpl output) {
-        return new BridgePublishInboundInputImpl(bridgeInformation, output.getPublishPacket().copy());
+        return new BridgePublishInboundInputImpl(
+                bridgeInformation, output.getPublishPacket().copy());
     }
-
 }

@@ -15,13 +15,13 @@
  */
 package com.hivemq.mqtt.message.pubrec;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extensions.packets.pubrec.PubrecPacketImpl;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttMessageWithUserProperties;
 import com.hivemq.mqtt.message.reason.Mqtt5PubRecReasonCode;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The MQTT pubrec message
@@ -33,12 +33,12 @@ import com.hivemq.mqtt.message.reason.Mqtt5PubRecReasonCode;
 public class PUBREC extends MqttMessageWithUserProperties.MqttMessageWithIdAndReasonCode<Mqtt5PubRecReasonCode>
         implements Mqtt3PUBREC, Mqtt5PUBREC {
 
-    //MQTT 3
+    // MQTT 3
     public PUBREC(final int packetIdentifier) {
         super(packetIdentifier, Mqtt5PubRecReasonCode.SUCCESS, null, Mqtt5UserProperties.NO_USER_PROPERTIES);
     }
 
-    //MQTT 5
+    // MQTT 5
     public PUBREC(
             final int packetIdentifier,
             final @NotNull Mqtt5PubRecReasonCode reasonCode,

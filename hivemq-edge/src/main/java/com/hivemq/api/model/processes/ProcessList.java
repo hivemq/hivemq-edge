@@ -18,9 +18,8 @@ package com.hivemq.api.model.processes;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.api.model.ItemsResponse;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -28,8 +27,7 @@ import java.util.List;
 public class ProcessList extends ItemsResponse<Process> {
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public ProcessList(
-            @JsonProperty("items") final @NotNull List<@NotNull Process> items) {
+    public ProcessList(@JsonProperty("items") final @NotNull List<@NotNull Process> items) {
         super(items);
     }
 }

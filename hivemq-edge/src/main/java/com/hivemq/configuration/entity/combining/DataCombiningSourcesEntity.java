@@ -16,16 +16,13 @@
 package com.hivemq.configuration.entity.combining;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class DataCombiningSourcesEntity {
 
@@ -44,8 +41,7 @@ public class DataCombiningSourcesEntity {
     private @NotNull List<String> topicFilters = new ArrayList<>();
 
     // no-arg for jaxb
-    public DataCombiningSourcesEntity() {
-    }
+    public DataCombiningSourcesEntity() {}
 
     public DataCombiningSourcesEntity(
             final @NotNull DataIdentifierReferenceEntity primaryIdentifier,
@@ -81,9 +77,9 @@ public class DataCombiningSourcesEntity {
         }
 
         final DataCombiningSourcesEntity that = (DataCombiningSourcesEntity) o;
-        return primaryIdentifier.equals(that.primaryIdentifier) &&
-                tags.equals(that.tags) &&
-                topicFilters.equals(that.topicFilters);
+        return primaryIdentifier.equals(that.primaryIdentifier)
+                && tags.equals(that.tags)
+                && topicFilters.equals(that.topicFilters);
     }
 
     @Override
@@ -94,4 +90,3 @@ public class DataCombiningSourcesEntity {
         return result;
     }
 }
-

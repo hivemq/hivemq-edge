@@ -13,21 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.services.interceptor;
 
-import org.jetbrains.annotations.NotNull;
-import com.hivemq.extension.sdk.api.interceptor.connack.ConnackOutboundInterceptorProvider;
-import com.hivemq.extension.sdk.api.interceptor.connect.ConnectInboundInterceptorProvider;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+
+import com.hivemq.extension.sdk.api.interceptor.connack.ConnackOutboundInterceptorProvider;
+import com.hivemq.extension.sdk.api.interceptor.connect.ConnectInboundInterceptorProvider;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @since 4.2.0
@@ -37,6 +34,7 @@ public class GlobalInterceptorRegistryImplTest {
     private final @NotNull Interceptors interceptors = mock(Interceptors.class);
 
     private @NotNull GlobalInterceptorRegistryImpl globalInterceptorRegistry;
+
     @BeforeEach
     public void setUp() throws Exception {
         globalInterceptorRegistry = new GlobalInterceptorRegistryImpl(interceptors);

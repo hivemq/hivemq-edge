@@ -26,7 +26,6 @@ public class UnrecoverableException extends RuntimeException {
 
     private final boolean showException;
 
-
     public UnrecoverableException() {
         this(true);
     }

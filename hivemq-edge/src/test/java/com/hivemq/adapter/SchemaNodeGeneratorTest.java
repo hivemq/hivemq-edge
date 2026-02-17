@@ -15,6 +15,8 @@
  */
 package com.hivemq.adapter;
 
+import static com.hivemq.edge.HiveMQEdgeConstants.ID_REGEX;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -27,18 +29,13 @@ import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
-import static com.hivemq.edge.HiveMQEdgeConstants.ID_REGEX;
-
 
 /**
  * @author Simon L Johnson
@@ -49,7 +46,7 @@ public class SchemaNodeGeneratorTest {
     private static final @NotNull ObjectMapper mapper = new ObjectMapper();
 
     @BeforeAll
-    static void beforeStart(){
+    static void beforeStart() {
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.setSerializationInclusion(JsonInclude.Include.ALWAYS);
@@ -73,12 +70,15 @@ public class SchemaNodeGeneratorTest {
 
         final CustomConfigSchemaGenerator generator = new CustomConfigSchemaGenerator();
         final JsonNode node = generator.generateJsonSchema(TestNestedEntity.class);
-//        System.err.println(mapper.writeValueAsString(node));
+        //        System.err.println(mapper.writeValueAsString(node));
         final JsonNode propertiesNode = node.get("properties");
         final JsonNode subscriptions = findFirstChild(propertiesNode, "subscriptions");
         final JsonNode subscriptionItems = findFirstChild(subscriptions, "items");
-        Assertions.assertFalse(hasImmediateChild(subscriptionItems, "title"), "Wrapped typed should not have a duplicate title");
-        Assertions.assertFalse(hasImmediateChild(subscriptionItems, "description"), "Wrapped typed should not have a duplicate description");
+        Assertions.assertFalse(
+                hasImmediateChild(subscriptionItems, "title"), "Wrapped typed should not have a duplicate title");
+        Assertions.assertFalse(
+                hasImmediateChild(subscriptionItems, "description"),
+                "Wrapped typed should not have a duplicate description");
     }
 
     @Test
@@ -89,18 +89,20 @@ public class SchemaNodeGeneratorTest {
         final JsonNode propertiesNode = node.get("properties");
         final JsonNode subscriptions = findFirstChild(propertiesNode, "subscriptions");
         final JsonNode subscriptionItems = findFirstChild(subscriptions, "items");
-        Assertions.assertTrue(hasImmediateChild(subscriptionItems, "testAttributeName"), "Wrapped typed should have a test-attribute");
+        Assertions.assertTrue(
+                hasImmediateChild(subscriptionItems, "testAttributeName"),
+                "Wrapped typed should have a test-attribute");
     }
 
-    private static JsonNode findFirstChild(final @NotNull JsonNode parent, final @NotNull String nodeName){
+    private static JsonNode findFirstChild(final @NotNull JsonNode parent, final @NotNull String nodeName) {
         Preconditions.checkNotNull(parent);
         JsonNode child = parent.get(nodeName);
-        if(child != null){
+        if (child != null) {
             return child;
         } else {
             final Iterator<JsonNode> nodes = parent.iterator();
-            while (nodes.hasNext()){
-                if((child = findFirstChild(nodes.next(), nodeName)) != null){
+            while (nodes.hasNext()) {
+                if ((child = findFirstChild(nodes.next(), nodeName)) != null) {
                     return child;
                 }
             }
@@ -108,7 +110,7 @@ public class SchemaNodeGeneratorTest {
         return null;
     }
 
-    private static boolean hasImmediateChild(final @NotNull JsonNode parent, final @NotNull String nodeName){
+    private static boolean hasImmediateChild(final @NotNull JsonNode parent, final @NotNull String nodeName) {
         Preconditions.checkNotNull(parent);
         return parent.get(nodeName) != null;
     }
@@ -117,13 +119,14 @@ public class SchemaNodeGeneratorTest {
     static class TestOrderingConfigSpecific implements ProtocolSpecificAdapterConfig {
 
         @JsonProperty(value = "id", required = true)
-        @ModuleConfigField(title = "Identifier",
-                           description = "Unique identifier for this protocol adapter",
-                           format = ModuleConfigField.FieldType.IDENTIFIER,
-                           required = true,
-                           stringPattern = ID_REGEX,
-                           stringMinLength = 1,
-                           stringMaxLength = 1024)
+        @ModuleConfigField(
+                title = "Identifier",
+                description = "Unique identifier for this protocol adapter",
+                format = ModuleConfigField.FieldType.IDENTIFIER,
+                required = true,
+                stringPattern = ID_REGEX,
+                stringMinLength = 1,
+                stringMaxLength = 1024)
         protected @NotNull String id;
 
         @JsonProperty(value = "startIdx")
@@ -138,21 +141,23 @@ public class SchemaNodeGeneratorTest {
     static class TestNestedEntity implements ProtocolSpecificAdapterConfig {
 
         @JsonProperty("subscriptions")
-        @ModuleConfigField(title = "Subscriptions",
-                           description = "Map your sensor data to MQTT Topics", customAttributes = {
-                @ModuleConfigField.CustomAttribute(name = "testAttributeName", value = "testAttributeValue")
-        })
+        @ModuleConfigField(
+                title = "Subscriptions",
+                description = "Map your sensor data to MQTT Topics",
+                customAttributes = {
+                    @ModuleConfigField.CustomAttribute(name = "testAttributeName", value = "testAttributeValue")
+                })
         private @NotNull List<PollingContext> subscriptions = new ArrayList<>();
 
-
         @JsonProperty(value = "id", required = true)
-        @ModuleConfigField(title = "Identifier",
-                           description = "Unique identifier for this protocol adapter",
-                           format = ModuleConfigField.FieldType.IDENTIFIER,
-                           required = true,
-                           stringPattern = ID_REGEX,
-                           stringMinLength = 1,
-                           stringMaxLength = 1024)
+        @ModuleConfigField(
+                title = "Identifier",
+                description = "Unique identifier for this protocol adapter",
+                format = ModuleConfigField.FieldType.IDENTIFIER,
+                required = true,
+                stringPattern = ID_REGEX,
+                stringMinLength = 1,
+                stringMaxLength = 1024)
         protected @NotNull String id;
     }
 }

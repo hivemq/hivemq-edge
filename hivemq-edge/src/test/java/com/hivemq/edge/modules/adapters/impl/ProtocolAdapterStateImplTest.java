@@ -15,25 +15,24 @@
  */
 package com.hivemq.edge.modules.adapters.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.EventBuilder;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 class ProtocolAdapterStateImplTest {
 
@@ -159,9 +158,10 @@ class ProtocolAdapterStateImplTest {
                             adapterState.markShuttingDown();
                         } else {
                             // Other half try to change status
-                            final boolean changed = adapterState.setConnectionStatus(threadId % 4 == 1 ?
-                                    ProtocolAdapterState.ConnectionStatus.CONNECTED :
-                                    ProtocolAdapterState.ConnectionStatus.ERROR);
+                            final boolean changed = adapterState.setConnectionStatus(
+                                    threadId % 4 == 1
+                                            ? ProtocolAdapterState.ConnectionStatus.CONNECTED
+                                            : ProtocolAdapterState.ConnectionStatus.ERROR);
                             if (changed) {
                                 successfulChanges.incrementAndGet();
                             }
@@ -180,9 +180,11 @@ class ProtocolAdapterStateImplTest {
         }
 
         // After shutdown is marked, state should remain consistent
-        assertThat(adapterState.getConnectionStatus()).isIn(ProtocolAdapterState.ConnectionStatus.DISCONNECTED,
-                ProtocolAdapterState.ConnectionStatus.CONNECTED,
-                ProtocolAdapterState.ConnectionStatus.ERROR);
+        assertThat(adapterState.getConnectionStatus())
+                .isIn(
+                        ProtocolAdapterState.ConnectionStatus.DISCONNECTED,
+                        ProtocolAdapterState.ConnectionStatus.CONNECTED,
+                        ProtocolAdapterState.ConnectionStatus.ERROR);
 
         // Verify no more changes are possible after shutdown
         adapterState.markShuttingDown();

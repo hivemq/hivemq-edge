@@ -16,12 +16,12 @@
 package com.hivemq.extensions.interceptor.puback.parameter;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
 import com.hivemq.extension.sdk.api.interceptor.puback.parameter.PubackOutboundInput;
 import com.hivemq.extensions.executor.task.PluginTaskInput;
 import com.hivemq.extensions.packets.puback.PubackPacketImpl;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Yannick Weber
@@ -61,6 +61,9 @@ public class PubackOutboundInputImpl implements PubackOutboundInput, PluginTaskI
     }
 
     public @NotNull PubackOutboundInputImpl update(final @NotNull PubackOutboundOutputImpl output) {
-        return new PubackOutboundInputImpl(clientInformation, connectionInformation, output.getPubackPacket().copy());
+        return new PubackOutboundInputImpl(
+                clientInformation,
+                connectionInformation,
+                output.getPubackPacket().copy());
     }
 }

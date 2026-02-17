@@ -15,13 +15,13 @@
  */
 package com.hivemq.mqtt.message.reason;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.connect.ConnackReasonCode;
 import com.hivemq.extension.sdk.api.packets.disconnect.DisconnectReasonCode;
 import com.hivemq.extension.sdk.api.packets.general.DisconnectedReasonCode;
 import com.hivemq.extension.sdk.api.packets.publish.AckReasonCode;
 import com.hivemq.mqtt.message.connack.Mqtt3ConnAckReturnCode;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * MQTT Reason Codes that can be used in CONNACK packets according to the MQTT 5 specification.
@@ -29,7 +29,6 @@ import com.hivemq.mqtt.message.connack.Mqtt3ConnAckReturnCode;
  * @author Silvio Giebl
  */
 public enum Mqtt5ConnAckReasonCode implements Mqtt5ReasonCode {
-
     SUCCESS(MqttCommonReasonCode.SUCCESS),
     UNSPECIFIED_ERROR(MqttCommonReasonCode.UNSPECIFIED_ERROR),
     MALFORMED_PACKET(MqttCommonReasonCode.MALFORMED_PACKET),
@@ -146,7 +145,8 @@ public enum Mqtt5ConnAckReasonCode implements Mqtt5ReasonCode {
     }
 
     @NotNull
-    public static Mqtt5ConnAckReasonCode fromDisconnectReasonCode(final @NotNull DisconnectReasonCode disconnectReasonCode) {
+    public static Mqtt5ConnAckReasonCode fromDisconnectReasonCode(
+            final @NotNull DisconnectReasonCode disconnectReasonCode) {
         switch (disconnectReasonCode) {
             case NORMAL_DISCONNECTION:
             case DISCONNECT_WITH_WILL_MESSAGE:
@@ -226,5 +226,4 @@ public enum Mqtt5ConnAckReasonCode implements Mqtt5ReasonCode {
                 return Mqtt5ConnAckReasonCode.UNSPECIFIED_ERROR;
         }
     }
-
 }

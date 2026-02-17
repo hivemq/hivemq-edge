@@ -17,15 +17,14 @@ package com.hivemq.mqtt.message.suback;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extensions.packets.suback.SubackPacketImpl;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttMessageWithUserProperties.MqttMessageWithIdAndReasonCodes;
 import com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode;
-
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The MQTT SUBACK message
@@ -37,17 +36,17 @@ import java.util.List;
 @Immutable
 public class SUBACK extends MqttMessageWithIdAndReasonCodes<Mqtt5SubAckReasonCode> implements Mqtt3SUBACK, Mqtt5SUBACK {
 
-    //MQTT 3
+    // MQTT 3
     public SUBACK(final int packetIdentifier, final @NotNull Mqtt5SubAckReasonCode... entries) {
         super(packetIdentifier, ImmutableList.copyOf(entries), null, Mqtt5UserProperties.NO_USER_PROPERTIES);
     }
 
-    //MQTT 3
+    // MQTT 3
     public SUBACK(final int packetIdentifier, final @NotNull List<Mqtt5SubAckReasonCode> grantedQos) {
         this(packetIdentifier, grantedQos, null, Mqtt5UserProperties.NO_USER_PROPERTIES);
     }
 
-    //MQTT 5
+    // MQTT 5
     public SUBACK(
             final int packetIdentifier,
             final @NotNull List<Mqtt5SubAckReasonCode> grantedQos,
@@ -56,7 +55,7 @@ public class SUBACK extends MqttMessageWithIdAndReasonCodes<Mqtt5SubAckReasonCod
         this(packetIdentifier, grantedQos, reasonString, Mqtt5UserProperties.NO_USER_PROPERTIES);
     }
 
-    //MQTT 5
+    // MQTT 5
     public SUBACK(
             final int packetIdentifier,
             final @NotNull List<Mqtt5SubAckReasonCode> grantedQos,
@@ -66,7 +65,7 @@ public class SUBACK extends MqttMessageWithIdAndReasonCodes<Mqtt5SubAckReasonCod
         super(packetIdentifier, ImmutableList.copyOf(grantedQos), reasonString, userProperties);
     }
 
-    //MQTT 5
+    // MQTT 5
     public SUBACK(
             final int packetIdentifier,
             final @Nullable String reasonString,

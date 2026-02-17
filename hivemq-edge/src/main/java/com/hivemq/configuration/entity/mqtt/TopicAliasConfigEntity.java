@@ -15,16 +15,14 @@
  */
 package com.hivemq.configuration.entity.mqtt;
 
-import com.hivemq.configuration.entity.EnabledEntity;
+import static com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults.TOPIC_ALIAS_MAX_PER_CLIENT_DEFAULT;
 
+import com.hivemq.configuration.entity.EnabledEntity;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
-
 import java.util.Objects;
-
-import static com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults.TOPIC_ALIAS_MAX_PER_CLIENT_DEFAULT;
 
 /**
  * @author Florian Limpöck

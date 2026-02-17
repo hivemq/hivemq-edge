@@ -16,13 +16,11 @@
 package com.hivemq.mqtt.services;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.mqtt.handler.publish.PublishingResult;
+import com.hivemq.mqtt.message.publish.PUBLISH;
+import java.util.concurrent.ExecutorService;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.mqtt.message.publish.PUBLISH;
-
-import java.util.concurrent.ExecutorService;
 
 public interface InternalPublishService {
 
@@ -33,9 +31,9 @@ public interface InternalPublishService {
      * @param executorService the executor service in which all callbacks are executed
      * @param sender          client identifier of the client which sent the message
      */
-    @NotNull ListenableFuture<PublishingResult> publish(
+    @NotNull
+    ListenableFuture<PublishingResult> publish(
             final @NotNull PUBLISH publish,
             final @NotNull ExecutorService executorService,
             final @Nullable String sender);
-
 }

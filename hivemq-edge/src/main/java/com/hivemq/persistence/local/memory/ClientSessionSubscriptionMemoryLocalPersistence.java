@@ -15,6 +15,10 @@
  */
 package com.hivemq.persistence.local.memory;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+import static com.hivemq.util.ThreadPreConditions.SINGLE_WRITER_THREAD_PREFIX;
+
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.annotations.VisibleForTesting;
@@ -23,8 +27,6 @@ import com.google.common.collect.Sets;
 import com.hivemq.annotations.ExecuteInSingleWriter;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extensions.iteration.BucketChunkResult;
 import com.hivemq.metrics.HiveMQMetrics;
 import com.hivemq.mqtt.message.subscribe.Topic;
@@ -33,17 +35,14 @@ import com.hivemq.persistence.local.ClientSessionSubscriptionLocalPersistence;
 import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
 import com.hivemq.util.MemoryEstimator;
 import com.hivemq.util.ThreadPreConditions;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
-import static com.hivemq.util.ThreadPreConditions.SINGLE_WRITER_THREAD_PREFIX;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A memory based ClientSessionSubscriptionLocalPersistence.
@@ -52,7 +51,6 @@ import static com.hivemq.util.ThreadPreConditions.SINGLE_WRITER_THREAD_PREFIX;
  */
 @Singleton
 public class ClientSessionSubscriptionMemoryLocalPersistence implements ClientSessionSubscriptionLocalPersistence {
-
 
     private final @NotNull Map<String, IterablePersistenceEntry<ImmutableSet<Topic>>> @NotNull [] buckets;
     private final int bucketCount;
@@ -74,9 +72,9 @@ public class ClientSessionSubscriptionMemoryLocalPersistence implements ClientSe
         }
 
         metricRegistry.remove(HiveMQMetrics.CLIENT_SESSION_SUBSCRIPTIONS_MEMORY_PERSISTENCE_TOTAL_SIZE.name());
-        metricRegistry.register(HiveMQMetrics.CLIENT_SESSION_SUBSCRIPTIONS_MEMORY_PERSISTENCE_TOTAL_SIZE.name(),
+        metricRegistry.register(
+                HiveMQMetrics.CLIENT_SESSION_SUBSCRIPTIONS_MEMORY_PERSISTENCE_TOTAL_SIZE.name(),
                 (Gauge<Long>) currentMemorySize::get);
-
     }
 
     @Override
@@ -107,8 +105,8 @@ public class ClientSessionSubscriptionMemoryLocalPersistence implements ClientSe
                 return newEntry;
             }
             currentMemorySize.addAndGet(-oldEntry.getEstimatedSize());
-            final IterablePersistenceEntry<ImmutableSet<Topic>> mergedEntry =
-                    new IterablePersistenceEntry<>(Sets.union(topics, oldEntry.getObject()).immutableCopy(), timestamp);
+            final IterablePersistenceEntry<ImmutableSet<Topic>> mergedEntry = new IterablePersistenceEntry<>(
+                    Sets.union(topics, oldEntry.getObject()).immutableCopy(), timestamp);
             currentMemorySize.addAndGet(mergedEntry.getEstimatedSize());
             return mergedEntry;
         });
@@ -184,7 +182,6 @@ public class ClientSessionSubscriptionMemoryLocalPersistence implements ClientSe
         } else {
             return entry.getObject();
         }
-
     }
 
     @Override
@@ -192,18 +189,16 @@ public class ClientSessionSubscriptionMemoryLocalPersistence implements ClientSe
     public BucketChunkResult<Map<String, ImmutableSet<Topic>>> getAllSubscribersChunk(
             final int bucketIndex, final @Nullable String lastClientIdIgnored, final int maxResultsIgnored) {
 
-        //as all subscriptions are already in memory, we can ignore any pagination here and return the whole bucket.
-        final Map<String, ImmutableSet<Topic>> result = buckets[bucketIndex].entrySet()
-                .stream()
+        // as all subscriptions are already in memory, we can ignore any pagination here and return the whole bucket.
+        final Map<String, ImmutableSet<Topic>> result = buckets[bucketIndex].entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getObject()));
 
         return new BucketChunkResult<>(result, true, lastClientIdIgnored, bucketIndex);
-
     }
 
     @Override
     public void cleanUp(final int bucket) {
-        //noop because we have no duplicates in memory
+        // noop because we have no duplicates in memory
     }
 
     @Override

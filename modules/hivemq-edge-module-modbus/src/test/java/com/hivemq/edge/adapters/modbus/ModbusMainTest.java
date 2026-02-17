@@ -26,8 +26,10 @@ public class ModbusMainTest {
         final ModbusSpecificAdapterConfig modbusAdapterConfig = new ModbusSpecificAdapterConfig(port, host, 5000, null);
         final ModbusClient modbusClient = new ModbusClient(modbusAdapterConfig);
         modbusClient.connect().toCompletableFuture().get();
-        final Object result =
-                modbusClient.readHoldingRegisters(100, ModbusDataType.INT_32, 255, false).toCompletableFuture().get();
+        final Object result = modbusClient
+                .readHoldingRegisters(100, ModbusDataType.INT_32, 255, false)
+                .toCompletableFuture()
+                .get();
         System.out.println(result);
         modbusClient.disconnect().toCompletableFuture().get();
     }

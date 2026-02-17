@@ -16,12 +16,12 @@
 package com.hivemq.extensions.interceptor.unsuback.parameter;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
 import com.hivemq.extension.sdk.api.interceptor.unsuback.parameter.UnsubackOutboundInput;
 import com.hivemq.extensions.executor.task.PluginTaskInput;
 import com.hivemq.extensions.packets.unsuback.UnsubackPacketImpl;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Robin Atherton
@@ -61,6 +61,8 @@ public class UnsubackOutboundInputImpl implements UnsubackOutboundInput, PluginT
 
     public @NotNull UnsubackOutboundInputImpl update(final @NotNull UnsubackOutboundOutputImpl output) {
         return new UnsubackOutboundInputImpl(
-                clientInformation, connectionInformation, output.getUnsubackPacket().copy());
+                clientInformation,
+                connectionInformation,
+                output.getUnsubackPacket().copy());
     }
 }

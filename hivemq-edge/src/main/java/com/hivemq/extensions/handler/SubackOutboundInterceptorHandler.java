@@ -17,7 +17,6 @@ package com.hivemq.extensions.handler;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
 import com.hivemq.extension.sdk.api.interceptor.suback.SubackOutboundInterceptor;
@@ -38,13 +37,13 @@ import com.hivemq.util.Exceptions;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Robin Atherton
@@ -79,7 +78,8 @@ public class SubackOutboundInterceptorHandler {
             final @NotNull ChannelPromise promise) {
 
         final Channel channel = ctx.channel();
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final String clientId = clientConnection.getClientId();
         if (clientId == null) {
             return;
@@ -113,7 +113,8 @@ public class SubackOutboundInterceptorHandler {
 
         for (final SubackOutboundInterceptor interceptor : interceptors) {
 
-            final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(interceptor.getClass().getClassLoader());
+            final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(
+                    interceptor.getClass().getClassLoader());
             if (extension == null) {
                 context.finishInterceptor();
                 continue;
@@ -201,8 +202,10 @@ public class SubackOutboundInterceptorHandler {
                 interceptor.onOutboundSuback(input, output);
             } catch (final Throwable e) {
                 log.warn(
-                        "Uncaught exception was thrown from extension with id \"{}\" on outbound SUBACK interception. " +
-                                "Extensions are responsible for their own exception handling.", extensionId, e);
+                        "Uncaught exception was thrown from extension with id \"{}\" on outbound SUBACK interception. "
+                                + "Extensions are responsible for their own exception handling.",
+                        extensionId,
+                        e);
                 output.markAsFailed();
                 Exceptions.rethrowError(e);
             }

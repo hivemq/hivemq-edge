@@ -15,6 +15,9 @@
  */
 package com.hivemq.security.ssl;
 
+import static com.hivemq.configuration.service.InternalConfigurations.SSL_RELOAD_ENABLED;
+import static com.hivemq.configuration.service.InternalConfigurations.SSL_RELOAD_INTERVAL_SEC;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.hash.Funnel;
 import com.google.common.hash.Funnels;
@@ -23,14 +26,9 @@ import com.google.common.hash.Hashing;
 import com.google.common.hash.PrimitiveSink;
 import com.hivemq.configuration.service.entity.Tls;
 import com.hivemq.exceptions.UnrecoverableException;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.security.exception.SslException;
 import com.hivemq.security.ioc.Security;
 import io.netty.handler.ssl.SslContext;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.io.FileInputStream;
@@ -43,9 +41,10 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-
-import static com.hivemq.configuration.service.InternalConfigurations.SSL_RELOAD_ENABLED;
-import static com.hivemq.configuration.service.InternalConfigurations.SSL_RELOAD_INTERVAL_SEC;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Singleton
 public class SslContextStore {
@@ -117,7 +116,7 @@ public class SslContextStore {
                     log.error("Could not generate initial hash of KeyStore and TrustStore", e);
                     throw new UnrecoverableException();
                 }
-                //only start scheduled execution if first hash went through
+                // only start scheduled execution if first hash went through
                 executorService.scheduleAtFixedRate(
                         new SslContextScheduledRunnable(tls),
                         SSL_RELOAD_INTERVAL_SEC,
@@ -179,5 +178,4 @@ public class SslContextStore {
             }
         }
     }
-
 }

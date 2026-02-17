@@ -16,12 +16,12 @@
 package com.hivemq.extensions.interceptor.pubrec.parameter;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
 import com.hivemq.extension.sdk.api.interceptor.pubrec.parameter.PubrecOutboundInput;
 import com.hivemq.extensions.executor.task.PluginTaskInput;
 import com.hivemq.extensions.packets.pubrec.PubrecPacketImpl;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Yannick Weber
@@ -60,6 +60,9 @@ public class PubrecOutboundInputImpl implements PubrecOutboundInput, PluginTaskI
     }
 
     public @NotNull PubrecOutboundInputImpl update(final @NotNull PubrecOutboundOutputImpl output) {
-        return new PubrecOutboundInputImpl(clientInformation, connectionInformation, output.getPubrecPacket().copy());
+        return new PubrecOutboundInputImpl(
+                clientInformation,
+                connectionInformation,
+                output.getPubrecPacket().copy());
     }
 }

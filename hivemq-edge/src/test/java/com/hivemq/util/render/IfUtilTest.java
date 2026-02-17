@@ -15,15 +15,14 @@
  */
 package com.hivemq.util.render;
 
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 
 public class IfUtilTest {
 
@@ -34,7 +33,8 @@ public class IfUtilTest {
         map.put("HIVEMQ_MQTTS_ENABLED", "false");
         setTempEnvVars(map);
 
-        final String testString = "${IF:HIVEMQ_MQTTS_ENABLED}hallo${IF:HIVEMQ_STUFF_ENABLED}GO AWAY${IF:HIVEMQ_STUFF_ENABLED}${IF:HIVEMQ_MQTTS_ENABLED}welt${IF:!HIVEMQ_HTTPS_ENABLED}!!!${IF:!HIVEMQ_HTTPS_ENABLED}9876543210";
+        final String testString =
+                "${IF:HIVEMQ_MQTTS_ENABLED}hallo${IF:HIVEMQ_STUFF_ENABLED}GO AWAY${IF:HIVEMQ_STUFF_ENABLED}${IF:HIVEMQ_MQTTS_ENABLED}welt${IF:!HIVEMQ_HTTPS_ENABLED}!!!${IF:!HIVEMQ_HTTPS_ENABLED}9876543210";
 
         final String result = IfUtil.replaceIfPlaceHolders(testString);
 
@@ -62,5 +62,4 @@ public class IfUtilTest {
             }
         }
     }
-
 }

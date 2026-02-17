@@ -21,6 +21,11 @@ import com.hivemq.api.auth.AuthenticationException;
 import com.hivemq.api.auth.provider.ITokenGenerator;
 import com.hivemq.api.auth.provider.ITokenVerifier;
 import com.hivemq.api.config.ApiJwtConfiguration;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jwa.AlgorithmConstraints;
 import org.jose4j.jwk.RsaJsonWebKey;
@@ -35,12 +40,6 @@ import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.jose4j.lang.JoseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 
 /**
  * JWT token provider. Use the cobnfiguration to change the key size and the configuration of the produced token.
@@ -63,20 +62,20 @@ public class JwtAuthenticationProvider implements ITokenGenerator, ITokenVerifie
     private final Object intializationMonitor = new Object();
 
     @Inject
-    public JwtAuthenticationProvider(final @NotNull ApiJwtConfiguration configuration){
+    public JwtAuthenticationProvider(final @NotNull ApiJwtConfiguration configuration) {
         this.configuration = configuration;
         try {
             initializeKey();
-        } catch(AuthenticationException e){
+        } catch (AuthenticationException e) {
             throw new ExceptionInInitializerError(e);
         }
     }
 
     protected RsaJsonWebKey getJwtKey() {
-        if(jwtKey == null){
-            //-- Protected against spurious wakeup
-            synchronized (intializationMonitor){
-                while(jwtKey == null){
+        if (jwtKey == null) {
+            // -- Protected against spurious wakeup
+            synchronized (intializationMonitor) {
+                while (jwtKey == null) {
                     try {
                         intializationMonitor.wait();
                     } catch (InterruptedException e) {
@@ -91,7 +90,7 @@ public class JwtAuthenticationProvider implements ITokenGenerator, ITokenVerifie
 
     private void initializeKey() throws AuthenticationException {
         Thread initThread = new Thread(() -> {
-            synchronized (intializationMonitor){
+            synchronized (intializationMonitor) {
                 initializeKeyInternal();
                 intializationMonitor.notifyAll();
             }
@@ -100,19 +99,18 @@ public class JwtAuthenticationProvider implements ITokenGenerator, ITokenVerifie
         initThread.start();
     }
 
-
     private void initializeKeyInternal() {
         try {
             log.debug("initializing RSA key");
-            if(jwtKey == null){
+            if (jwtKey == null) {
                 long start = System.currentTimeMillis();
                 RsaJsonWebKey rsaJsonWebKey = RsaJwkGenerator.generateJwk(configuration.getKeySize());
                 rsaJsonWebKey.setKeyId(KEY_ID);
                 rsaJsonWebKey.setAlgorithm(AlgorithmIdentifiers.RSA_USING_SHA256);
                 jwtKey = rsaJsonWebKey;
-                log.debug("finished initializing RSA key in {}ms", (System.currentTimeMillis()-start));
+                log.debug("finished initializing RSA key in {}ms", (System.currentTimeMillis() - start));
             }
-        } catch(Exception e){
+        } catch (Exception e) {
             log.warn("Error initializing key store", e);
         }
     }
@@ -135,13 +133,13 @@ public class JwtAuthenticationProvider implements ITokenGenerator, ITokenVerifie
             throw new AuthenticationException("error creating <token> from JWS", e);
         }
 
-        if(log.isTraceEnabled()){
+        if (log.isTraceEnabled()) {
             log.trace("Generated JWE {} for principal {}", token, principal);
         }
         return token;
     }
 
-    protected JwtClaims createClaims(final @NotNull ApiPrincipal principal){
+    protected JwtClaims createClaims(final @NotNull ApiPrincipal principal) {
         Preconditions.checkNotNull(principal);
         JwtClaims claims = new JwtClaims();
         claims.setGeneratedJwtId();
@@ -155,7 +153,7 @@ public class JwtAuthenticationProvider implements ITokenGenerator, ITokenVerifie
         return claims;
     }
 
-    protected JsonWebSignature signClaims(final @NotNull JwtClaims claims){
+    protected JsonWebSignature signClaims(final @NotNull JwtClaims claims) {
         Preconditions.checkNotNull(claims);
         JsonWebSignature jws = new JsonWebSignature();
         jws.setPayload(claims.toJson());
@@ -165,7 +163,7 @@ public class JwtAuthenticationProvider implements ITokenGenerator, ITokenVerifie
         return jws;
     }
 
-    protected JwtConsumer buildConsumer(){
+    protected JwtConsumer buildConsumer() {
         return new JwtConsumerBuilder()
                 .setRequireExpirationTime()
                 .setAllowedClockSkewInSeconds(30)
@@ -185,14 +183,11 @@ public class JwtAuthenticationProvider implements ITokenGenerator, ITokenVerifie
             Preconditions.checkNotNull(tokenValue);
             JwtClaims claims = buildConsumer().processToClaims(tokenValue);
             String subject = claims.getSubject();
-            return Optional.of(new ApiPrincipal(subject,
-                    Set.copyOf(claims.getStringListClaimValue(CLAIM_ROLES))));
-        }
-        catch(MalformedClaimException e){
+            return Optional.of(new ApiPrincipal(subject, Set.copyOf(claims.getStringListClaimValue(CLAIM_ROLES))));
+        } catch (MalformedClaimException e) {
             log.trace("jwt parse failed, reason {}", e.getMessage());
-        }
-        catch (InvalidJwtException e){
-            if (!e.hasExpired()){
+        } catch (InvalidJwtException e) {
+            if (!e.hasExpired()) {
                 log.debug("jwt validation failed, reason {}", e.getMessage());
             } else {
                 log.trace("jwt expired, reason {}", e.getMessage());
@@ -209,12 +204,10 @@ public class JwtAuthenticationProvider implements ITokenGenerator, ITokenVerifie
             Preconditions.checkNotNull(tokenValue);
             JwtClaims claims = buildConsumer().processToClaims(tokenValue);
             return Optional.of(claims.getExpirationTime().getValueInMillis());
-        }
-        catch(MalformedClaimException e){
+        } catch (MalformedClaimException e) {
             log.warn("jwt parse failed, reason {}", e.getMessage());
-        }
-        catch (InvalidJwtException e){
-            if (!e.hasExpired()){
+        } catch (InvalidJwtException e) {
+            if (!e.hasExpired()) {
                 log.trace("jwt validation failed, reason {}", e.getMessage());
             } else {
                 log.trace("jwt validation failed, reason {}", e.getMessage());

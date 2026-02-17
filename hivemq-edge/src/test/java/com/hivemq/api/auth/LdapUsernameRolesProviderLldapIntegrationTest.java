@@ -15,6 +15,11 @@
  */
 package com.hivemq.api.auth;
 
+import static com.hivemq.api.auth.ApiRoles.ADMIN;
+import static com.hivemq.api.auth.ApiRoles.SUPER;
+import static com.hivemq.api.auth.ApiRoles.USER;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.api.auth.provider.IUsernameRolesProvider;
@@ -34,12 +39,6 @@ import com.unboundid.ldap.sdk.ModifyRequest;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.ldap.sdk.SimpleBindRequest;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -47,11 +46,11 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
-
-import static com.hivemq.api.auth.ApiRoles.ADMIN;
-import static com.hivemq.api.auth.ApiRoles.SUPER;
-import static com.hivemq.api.auth.ApiRoles.USER;
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Integration test for {@link LdapUsernameRolesProvider} using LLDAP testcontainer.
@@ -94,43 +93,36 @@ class LdapUsernameRolesProviderLldapIntegrationTest {
         final var baseDn = LLDAP_CONTAINER.getBaseDn();
 
         // Create LdapSimpleBind for LLDAP admin authentication
-        final var ldapSimpleBind =
-                new LdapConnectionProperties.LdapSimpleBind(
-                        LLDAP_CONTAINER.getAdminRdns(),
-                        LLDAP_CONTAINER.getAdminPassword());
+        final var ldapSimpleBind = new LdapConnectionProperties.LdapSimpleBind(
+                LLDAP_CONTAINER.getAdminRdns(), LLDAP_CONTAINER.getAdminPassword());
 
         // Create user role rules based on LDAP group membership using memberOf attribute
         // LLDAP maintains memberOf on user entries when users are added to groups via the API
         // Note: LLDAP group DNs use format: cn=groupname,ou=groups,{baseDn}
         // "(&(objectClass=groupOfNames)(cn=administrators)(member={userDn}))"
         final var userRoleRules = List.of(
-                new UserRoleEntity(ADMIN,
-                        "(&(objectClass=groupOfNames)(cn=administrators)(member={userDn}))"),
-                new UserRoleEntity(SUPER,
-                        "(&(objectClass=groupOfNames)(cn=developers)(member={userDn}))"),
-                new UserRoleEntity(USER,
-                        "(&(objectClass=groupOfNames)(cn=data-scientists)(member={userDn}))")
-        );
+                new UserRoleEntity(ADMIN, "(&(objectClass=groupOfNames)(cn=administrators)(member={userDn}))"),
+                new UserRoleEntity(SUPER, "(&(objectClass=groupOfNames)(cn=developers)(member={userDn}))"),
+                new UserRoleEntity(USER, "(&(objectClass=groupOfNames)(cn=data-scientists)(member={userDn}))"));
 
         // Create connection properties for plain LDAP (no TLS for simplicity)
         // Search base is ou=people for finding users, role rules search from baseDn for groups
-        final var ldapConnectionProperties =
-                new LdapConnectionProperties(
-                        new LdapConnectionProperties.LdapServers(new String[]{host}, new int[]{port}),
-                        TlsMode.NONE,
-                        null,
-                        5000,  // 5 second connect timeout
-                        10000, // 10 second response timeout
-                        1,
-                        "uid",       // uidAttribute
-                        baseDn,  // Search in ou=people for users
-                        null,
-                        SearchScope.SUB,
-                        5,
-                        ADMIN,  // assignedRole (fallback, not used when userRoleRules are provided)
-                        false,
-                        ldapSimpleBind,
-                        userRoleRules);
+        final var ldapConnectionProperties = new LdapConnectionProperties(
+                new LdapConnectionProperties.LdapServers(new String[] {host}, new int[] {port}),
+                TlsMode.NONE,
+                null,
+                5000, // 5 second connect timeout
+                10000, // 10 second response timeout
+                1,
+                "uid", // uidAttribute
+                baseDn, // Search in ou=people for users
+                null,
+                SearchScope.SUB,
+                5,
+                ADMIN, // assignedRole (fallback, not used when userRoleRules are provided)
+                false,
+                ldapSimpleBind,
+                userRoleRules);
 
         // Create test users and groups in LLDAP using the HTTP API
         createTestUsersAndGroups();
@@ -170,22 +162,23 @@ class LdapUsernameRolesProviderLldapIntegrationTest {
         connectionOptions.setConnectTimeoutMillis(5000);
         connectionOptions.setResponseTimeoutMillis(10000);
 
-        try (final var connection = new LDAPConnection(connectionOptions,
-                LLDAP_CONTAINER.getHost(), LLDAP_CONTAINER.getLdapPort())) {
+        try (final var connection =
+                new LDAPConnection(connectionOptions, LLDAP_CONTAINER.getHost(), LLDAP_CONTAINER.getLdapPort())) {
 
             // Bind as admin
-            final var bindResult = connection.bind(new SimpleBindRequest(
-                    LLDAP_CONTAINER.getAdminDn(),
-                    LLDAP_CONTAINER.getAdminPassword()));
+            final var bindResult = connection.bind(
+                    new SimpleBindRequest(LLDAP_CONTAINER.getAdminDn(), LLDAP_CONTAINER.getAdminPassword()));
             assertThat(bindResult.getResultCode())
                     .as("Admin bind should succeed")
                     .isEqualTo(ResultCode.SUCCESS);
 
             // Create users with passwords
 
-            createUserViaLdap(connection, ALICE_USERNAME, "Alice", "Anderson", "alice@example.com", ALICE_PASSWORD, baseDn);
+            createUserViaLdap(
+                    connection, ALICE_USERNAME, "Alice", "Anderson", "alice@example.com", ALICE_PASSWORD, baseDn);
             createUserViaLdap(connection, BOB_USERNAME, "Bob", "Brown", "bob@example.com", BOB_PASSWORD, baseDn);
-            createUserViaLdap(connection, CHARLIE_USERNAME, "Charlie", "Chen", "charlie@example.com", CHARLIE_PASSWORD, baseDn);
+            createUserViaLdap(
+                    connection, CHARLIE_USERNAME, "Charlie", "Chen", "charlie@example.com", CHARLIE_PASSWORD, baseDn);
             createUserViaLdap(connection, DON_USERNAME, "Don", "Duncan", "don@example.com", DON_PASSWORD, baseDn);
         }
     }
@@ -197,12 +190,14 @@ class LdapUsernameRolesProviderLldapIntegrationTest {
             final String lastName,
             final String email,
             final String password,
-            final String baseDn) throws Exception {
+            final String baseDn)
+            throws Exception {
 
         final String userDn = "uid=" + uid + ",ou=people," + baseDn;
 
         // Add user entry
-        final AddRequest addRequest = new AddRequest(userDn,
+        final AddRequest addRequest = new AddRequest(
+                userDn,
                 new Attribute("objectClass", "inetOrgPerson", "posixAccount"),
                 new Attribute("uid", uid),
                 new Attribute("cn", firstName + " " + lastName),
@@ -211,16 +206,15 @@ class LdapUsernameRolesProviderLldapIntegrationTest {
                 new Attribute("mail", email),
                 new Attribute("uidNumber", String.valueOf(1000 + uid.hashCode() % 1000)),
                 new Attribute("gidNumber", "1000"),
-                new Attribute("homeDirectory", "/home/" + uid)
-        );
+                new Attribute("homeDirectory", "/home/" + uid));
         final var addResult = connection.add(addRequest);
         assertThat(addResult.getResultCode())
                 .as("Adding user " + uid + " should succeed")
                 .isEqualTo(ResultCode.SUCCESS);
 
         // Set password
-        final ModifyRequest modifyRequest = new ModifyRequest(userDn,
-                new Modification(ModificationType.REPLACE, "userPassword", password));
+        final ModifyRequest modifyRequest =
+                new ModifyRequest(userDn, new Modification(ModificationType.REPLACE, "userPassword", password));
         final var modifyResult = connection.modify(modifyRequest);
         assertThat(modifyResult.getResultCode())
                 .as("Setting password for " + uid + " should succeed")
@@ -277,12 +271,13 @@ class LdapUsernameRolesProviderLldapIntegrationTest {
         executeGraphQL(token, graphqlQuery, variables);
     }
 
-    private static String executeGraphQL(final String token, final String query, final String variables) throws Exception {
+    private static String executeGraphQL(final String token, final String query, final String variables)
+            throws Exception {
         final String baseUrl = "http://" + LLDAP_CONTAINER.getHost() + ":" + LLDAP_CONTAINER.getHttpPort();
         final String graphqlUrl = baseUrl + "/api/graphql";
 
-        final String requestBody = String.format("{\"query\": %s, \"variables\": %s}",
-                OBJECT_MAPPER.writeValueAsString(query), variables);
+        final String requestBody =
+                String.format("{\"query\": %s, \"variables\": %s}", OBJECT_MAPPER.writeValueAsString(query), variables);
 
         final HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(graphqlUrl))
@@ -292,7 +287,9 @@ class LdapUsernameRolesProviderLldapIntegrationTest {
                 .build();
 
         final HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-        assertThat(response.statusCode()).as("GraphQL request should succeed: " + response.body()).isEqualTo(200);
+        assertThat(response.statusCode())
+                .as("GraphQL request should succeed: " + response.body())
+                .isEqualTo(200);
 
         return response.body();
     }
@@ -352,9 +349,7 @@ class LdapUsernameRolesProviderLldapIntegrationTest {
                 provider.findByUsernameAndPassword(ALICE_USERNAME, wrongPassword.getBytes(StandardCharsets.UTF_8));
 
         // Assert
-        assertThat(result)
-                .as("Authentication should fail with wrong password")
-                .isEmpty();
+        assertThat(result).as("Authentication should fail with wrong password").isEmpty();
     }
 
     /**
@@ -423,9 +418,7 @@ class LdapUsernameRolesProviderLldapIntegrationTest {
                 provider.findByUsernameAndPassword(ALICE_USERNAME, emptyPassword.getBytes(StandardCharsets.UTF_8));
 
         // Assert
-        assertThat(result)
-                .as("Authentication should fail with empty password")
-                .isEmpty();
+        assertThat(result).as("Authentication should fail with empty password").isEmpty();
     }
 
     /**
@@ -443,9 +436,7 @@ class LdapUsernameRolesProviderLldapIntegrationTest {
                 provider.findByUsernameAndPassword(emptyUsername, ALICE_PASSWORD.getBytes(StandardCharsets.UTF_8));
 
         // Assert
-        assertThat(result)
-                .as("Authentication should fail with empty username")
-                .isEmpty();
+        assertThat(result).as("Authentication should fail with empty username").isEmpty();
     }
 
     /**

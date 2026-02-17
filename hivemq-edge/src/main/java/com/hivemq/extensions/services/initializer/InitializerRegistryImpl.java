@@ -16,12 +16,11 @@
 package com.hivemq.extensions.services.initializer;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.intializer.ClientInitializer;
 import com.hivemq.extension.sdk.api.services.intializer.InitializerRegistry;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck

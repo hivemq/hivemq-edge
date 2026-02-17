@@ -15,6 +15,11 @@
  */
 package com.hivemq.mqtt.handler.connect;
 
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MQTT_SUBSCRIBE_MESSAGE_BARRIER;
+import static com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode.fromCode;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.mqtt.message.disconnect.DISCONNECT;
 import com.hivemq.mqtt.message.puback.PUBACK;
@@ -24,22 +29,17 @@ import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import util.TestMessageUtil;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MQTT_SUBSCRIBE_MESSAGE_BARRIER;
-import static com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode.fromCode;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-
 public class SubscribeMessageBarrierTest {
 
     private EmbeddedChannel channel;
     private SubscribeMessageBarrier subscribeMessageBarrier;
+
     @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
@@ -83,13 +83,15 @@ public class SubscribeMessageBarrierTest {
 
         final AtomicInteger counter = new AtomicInteger(0);
 
-        channel.pipeline().addAfter(MQTT_SUBSCRIBE_MESSAGE_BARRIER, "inbound_handler", new SimpleChannelInboundHandler<PUBLISH>() {
+        channel.pipeline()
+                .addAfter(
+                        MQTT_SUBSCRIBE_MESSAGE_BARRIER, "inbound_handler", new SimpleChannelInboundHandler<PUBLISH>() {
 
-            @Override
-            protected void channelRead0(final ChannelHandlerContext ctx, final PUBLISH msg) {
-                counter.incrementAndGet();
-            }
-        });
+                            @Override
+                            protected void channelRead0(final ChannelHandlerContext ctx, final PUBLISH msg) {
+                                counter.incrementAndGet();
+                            }
+                        });
 
         channel.writeOutbound(new SUBACK(1, fromCode(1)));
 
@@ -111,13 +113,15 @@ public class SubscribeMessageBarrierTest {
 
         final AtomicInteger counter = new AtomicInteger(0);
 
-        channel.pipeline().addAfter(MQTT_SUBSCRIBE_MESSAGE_BARRIER, "inbound_handler", new SimpleChannelInboundHandler<PUBLISH>() {
+        channel.pipeline()
+                .addAfter(
+                        MQTT_SUBSCRIBE_MESSAGE_BARRIER, "inbound_handler", new SimpleChannelInboundHandler<PUBLISH>() {
 
-            @Override
-            protected void channelRead0(final ChannelHandlerContext ctx, final PUBLISH msg) {
-                counter.incrementAndGet();
-            }
-        });
+                            @Override
+                            protected void channelRead0(final ChannelHandlerContext ctx, final PUBLISH msg) {
+                                counter.incrementAndGet();
+                            }
+                        });
 
         channel.writeOutbound(new SUBACK(1, fromCode(1)));
 
@@ -129,5 +133,4 @@ public class SubscribeMessageBarrierTest {
         assertEquals(4, counter.get());
         assertEquals(0, subscribeMessageBarrier.getQueue().size());
     }
-
 }

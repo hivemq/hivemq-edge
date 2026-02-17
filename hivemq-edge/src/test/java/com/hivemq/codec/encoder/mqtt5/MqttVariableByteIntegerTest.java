@@ -15,11 +15,11 @@
  */
 package com.hivemq.codec.encoder.mqtt5;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Silvio Giebl
@@ -86,7 +86,10 @@ public class MqttVariableByteIntegerTest {
                         if (l != 1 && l != 126) {
                             continue;
                         }
-                        byteBuf.writeByte(128 + i).writeByte(128 + j).writeByte(128 + k).writeByte(l);
+                        byteBuf.writeByte(128 + i)
+                                .writeByte(128 + j)
+                                .writeByte(128 + k)
+                                .writeByte(l);
                         assertEquals(
                                 i + j * 128 + k * 128 * 128 + l * 128 * 128 * 128,
                                 MqttVariableByteInteger.decode(byteBuf));

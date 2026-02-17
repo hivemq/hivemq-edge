@@ -15,23 +15,20 @@
  */
 package com.hivemq.extensions.packets.unsuback;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.packets.unsuback.UnsubackReasonCode;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import util.TestConfigurationBootstrap;
-
 import java.util.Arrays;
 import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import util.TestConfigurationBootstrap;
 
 /**
  * @author Robin Atherton
@@ -40,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ModifiableUnsubackPacketImplTest {
 
     private @NotNull ConfigurationService configurationService;
+
     @BeforeEach
     public void setUp() {
         configurationService = new TestConfigurationBootstrap().getConfigurationService();
@@ -98,9 +96,9 @@ public class ModifiableUnsubackPacketImplTest {
                 new ModifiableUnsubackPacketImpl(packet, configurationService);
 
         assertThatThrownBy(() -> modifiablePacket.setReasonCodes(ImmutableList.of(
-                UnsubackReasonCode.NO_SUBSCRIPTIONS_EXISTED,
-                UnsubackReasonCode.NOT_AUTHORIZED,
-                UnsubackReasonCode.UNSPECIFIED_ERROR)))
+                        UnsubackReasonCode.NO_SUBSCRIPTIONS_EXISTED,
+                        UnsubackReasonCode.NOT_AUTHORIZED,
+                        UnsubackReasonCode.UNSPECIFIED_ERROR)))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -114,7 +112,8 @@ public class ModifiableUnsubackPacketImplTest {
         final ModifiableUnsubackPacketImpl modifiablePacket =
                 new ModifiableUnsubackPacketImpl(packet, configurationService);
 
-        assertThatThrownBy(() -> modifiablePacket.setReasonCodes(ImmutableList.of(UnsubackReasonCode.NO_SUBSCRIPTIONS_EXISTED)))
+        assertThatThrownBy(() ->
+                        modifiablePacket.setReasonCodes(ImmutableList.of(UnsubackReasonCode.NO_SUBSCRIPTIONS_EXISTED)))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -128,8 +127,7 @@ public class ModifiableUnsubackPacketImplTest {
         final ModifiableUnsubackPacketImpl modifiablePacket =
                 new ModifiableUnsubackPacketImpl(packet, configurationService);
 
-        assertThatThrownBy(() -> modifiablePacket.setReasonCodes(null))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> modifiablePacket.setReasonCodes(null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test

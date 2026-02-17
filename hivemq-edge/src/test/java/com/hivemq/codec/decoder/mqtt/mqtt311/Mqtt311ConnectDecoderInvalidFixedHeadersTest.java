@@ -15,6 +15,12 @@
  */
 package com.hivemq.codec.decoder.mqtt.mqtt311;
 
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.decoder.mqtt.mqtt3.Mqtt311ConnectDecoder;
 import com.hivemq.configuration.HivemqId;
@@ -30,12 +36,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import util.TestChannelAttribute;
 import util.TestConfigurationBootstrap;
 
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 public class Mqtt311ConnectDecoderInvalidFixedHeadersTest {
 
     private MqttConnacker connacker;
@@ -49,25 +49,35 @@ public class Mqtt311ConnectDecoderInvalidFixedHeadersTest {
         clientConnection = new ClientConnection(channel, null);
         when(channel.attr(any(AttributeKey.class))).thenReturn(new TestChannelAttribute(clientConnection));
 
-        decoder = new Mqtt311ConnectDecoder(connacker,
+        decoder = new Mqtt311ConnectDecoder(
+                connacker,
                 new ClientIds(new HivemqId()),
                 new TestConfigurationBootstrap().getConfigurationService(),
                 new HivemqId());
     }
 
     @ParameterizedTest
-    @ValueSource(bytes = {
-            (byte) 0b0001_0001, (byte) 0b0001_0011, (byte) 0b0001_0111, (byte) 0b0001_1111,
-            (byte) 0b0001_0010, (byte) 0b0001_0110, (byte) 0b0001_1110,
-            (byte) 0b0001_0100, (byte) 0b0001_1100,
-            (byte) 0b0001_1000
-    })
+    @ValueSource(
+            bytes = {
+                (byte) 0b0001_0001,
+                (byte) 0b0001_0011,
+                (byte) 0b0001_0111,
+                (byte) 0b0001_1111,
+                (byte) 0b0001_0010,
+                (byte) 0b0001_0110,
+                (byte) 0b0001_1110,
+                (byte) 0b0001_0100,
+                (byte) 0b0001_1100,
+                (byte) 0b0001_1000
+            })
     public void test_fixed_header_reserved_bit_set(byte invalidBitHeader) {
         assertNull(decoder.decode(clientConnection, null, invalidBitHeader));
-        verify(connacker).connackError(clientConnection.getChannel(),
-                "A client (IP: {}) connected with an invalid fixed header.",
-                "Invalid CONNECT fixed header",
-                Mqtt5ConnAckReasonCode.MALFORMED_PACKET,
-                ReasonStrings.CONNACK_MALFORMED_PACKET_FIXED_HEADER);
+        verify(connacker)
+                .connackError(
+                        clientConnection.getChannel(),
+                        "A client (IP: {}) connected with an invalid fixed header.",
+                        "Invalid CONNECT fixed header",
+                        Mqtt5ConnAckReasonCode.MALFORMED_PACKET,
+                        ReasonStrings.CONNACK_MALFORMED_PACKET_FIXED_HEADER);
     }
 }

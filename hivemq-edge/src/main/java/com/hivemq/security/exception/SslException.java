@@ -20,8 +20,7 @@ package com.hivemq.security.exception;
  */
 public class SslException extends RuntimeException {
 
-    public SslException() {
-    }
+    public SslException() {}
 
     public SslException(final String message) {
         super(message);

@@ -13,21 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.persistence.util;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.*;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Lukas Brandl
@@ -38,46 +36,53 @@ public class FutureUtils {
 
     public static ListenableFuture<Void> voidFutureFromList(final ImmutableList<ListenableFuture<Void>> futures) {
         final SettableFuture<Void> result = SettableFuture.create();
-        Futures.whenAllComplete(futures).call((Callable<Void>) () -> {
-            final List<Throwable> throwables = new ArrayList<>();
-            for (final ListenableFuture<Void> future : futures) {
-                // The callback is executed immediately because the future is already completed.
-                Futures.addCallback(future, new FutureCallback<>() {
-                    @Override
-                    public void onSuccess(final Void entry) {
+        Futures.whenAllComplete(futures)
+                .call(
+                        (Callable<Void>) () -> {
+                            final List<Throwable> throwables = new ArrayList<>();
+                            for (final ListenableFuture<Void> future : futures) {
+                                // The callback is executed immediately because the future is already completed.
+                                Futures.addCallback(
+                                        future,
+                                        new FutureCallback<>() {
+                                            @Override
+                                            public void onSuccess(final Void entry) {}
 
-                    }
-
-                    @Override
-                    public void onFailure(final Throwable t) {
-                        throwables.add(t);
-                    }
-                }, MoreExecutors.directExecutor());
-            }
-            if (throwables.isEmpty()) {
-                result.set(null);
-            } else if (throwables.size() == 1) {
-                result.setException(throwables.get(0));
-            } else {
-                result.setException(new BatchedException(throwables));
-            }
-            return null;
-        }, MoreExecutors.directExecutor());
+                                            @Override
+                                            public void onFailure(final Throwable t) {
+                                                throwables.add(t);
+                                            }
+                                        },
+                                        MoreExecutors.directExecutor());
+                            }
+                            if (throwables.isEmpty()) {
+                                result.set(null);
+                            } else if (throwables.size() == 1) {
+                                result.setException(throwables.get(0));
+                            } else {
+                                result.setException(new BatchedException(throwables));
+                            }
+                            return null;
+                        },
+                        MoreExecutors.directExecutor());
         return result;
     }
 
     public static void addExceptionLogger(final ListenableFuture<?> listenableFuture) {
-        Futures.addCallback(listenableFuture, new FutureCallback<Object>() {
-            @Override
-            public void onSuccess(final @Nullable Object o) {
-                //no op
-            }
+        Futures.addCallback(
+                listenableFuture,
+                new FutureCallback<Object>() {
+                    @Override
+                    public void onSuccess(final @Nullable Object o) {
+                        // no op
+                    }
 
-            @Override
-            public void onFailure(final Throwable throwable) {
-                log.error("Uncaught exception", throwable);
-            }
-        }, MoreExecutors.directExecutor());
+                    @Override
+                    public void onFailure(final Throwable throwable) {
+                        log.error("Uncaught exception", throwable);
+                    }
+                },
+                MoreExecutors.directExecutor());
     }
 
     public static void syncFuture(final @NotNull Future<?> future) {

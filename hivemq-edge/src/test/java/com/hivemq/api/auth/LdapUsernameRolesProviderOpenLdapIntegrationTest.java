@@ -15,6 +15,11 @@
  */
 package com.hivemq.api.auth;
 
+import static com.hivemq.api.auth.ApiRoles.ADMIN;
+import static com.hivemq.api.auth.ApiRoles.SUPER;
+import static com.hivemq.api.auth.ApiRoles.USER;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.hivemq.api.auth.provider.IUsernameRolesProvider;
 import com.hivemq.api.auth.provider.impl.ldap.LdapConnectionProperties;
 import com.hivemq.api.auth.provider.impl.ldap.LdapUsernameRolesProvider;
@@ -23,20 +28,14 @@ import com.hivemq.api.auth.provider.impl.ldap.testcontainer.OpenLdapContainer;
 import com.hivemq.configuration.entity.api.ldap.UserRoleEntity;
 import com.hivemq.logging.SecurityLog;
 import com.unboundid.ldap.sdk.SearchScope;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Optional;
-
-import static com.hivemq.api.auth.ApiRoles.ADMIN;
-import static com.hivemq.api.auth.ApiRoles.SUPER;
-import static com.hivemq.api.auth.ApiRoles.USER;
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Integration test for {@link LdapUsernameRolesProvider} using OpenLDAP testcontainer.
@@ -77,43 +76,38 @@ class LdapUsernameRolesProviderOpenLdapIntegrationTest {
         // Create LdapSimpleBind for OpenLDAP admin authentication
         // OpenLDAP admin DN: cn=admin,{baseDn}
         final var ldapSimpleBind =
-                new LdapConnectionProperties.LdapSimpleBind(
-                        "cn=admin",
-                        OPENLDAP_CONTAINER.getAdminPassword());
+                new LdapConnectionProperties.LdapSimpleBind("cn=admin", OPENLDAP_CONTAINER.getAdminPassword());
 
         // Create user role rules based on LDAP group membership
         // The queries below search for the user entry for memberOf attributes (requires memberOf overlay)
         // Alternatively it is possible to use queries for the groups with "member" or "uniqueMember"
         // "(&(objectClass=groupOfNames)(cn=administrators)(member={userDn}))")
         final var userRoleRules = List.of(
-                new UserRoleEntity(ADMIN,
-                        "(&(entryDN={userDn})(memberOf=cn=administrators,ou=groups,dc=example,dc=org))"),
-                new UserRoleEntity(SUPER,
-                        "(&(entryDN={userDn})(memberOf=cn=developers,ou=groups,dc=example,dc=org))"),
-                new UserRoleEntity(USER,
-                        "(&(entryDN={userDn})(memberOf=cn=data-scientists,ou=groups,dc=example,dc=org))")
-        );
+                new UserRoleEntity(
+                        ADMIN, "(&(entryDN={userDn})(memberOf=cn=administrators,ou=groups,dc=example,dc=org))"),
+                new UserRoleEntity(SUPER, "(&(entryDN={userDn})(memberOf=cn=developers,ou=groups,dc=example,dc=org))"),
+                new UserRoleEntity(
+                        USER, "(&(entryDN={userDn})(memberOf=cn=data-scientists,ou=groups,dc=example,dc=org))"));
 
         // Create connection properties for plain LDAP (no TLS for simplicity)
         // 5 second connect timeout
         // 10 second response timeout
-        final var ldapConnectionProperties =
-                new LdapConnectionProperties(
-                        new LdapConnectionProperties.LdapServers(new String[]{host}, new int[]{port}),
-                        TlsMode.NONE,
-                        null,
-                        5000,  // 5 second connect timeout
-                        10000, // 10 second response timeout
-                        1,
-                        "uid",       // uidAttribute
-                        OPENLDAP_CONTAINER.getBaseDn(), // Use full base DN, SearchScope.SUB will find users in ou=people
-                        null,
-                        SearchScope.SUB,
-                        5,
-                        ADMIN,  // assignedRole (fallback, not used when userRoleRules are provided)
-                        false,
-                        ldapSimpleBind,
-                        userRoleRules);
+        final var ldapConnectionProperties = new LdapConnectionProperties(
+                new LdapConnectionProperties.LdapServers(new String[] {host}, new int[] {port}),
+                TlsMode.NONE,
+                null,
+                5000, // 5 second connect timeout
+                10000, // 10 second response timeout
+                1,
+                "uid", // uidAttribute
+                OPENLDAP_CONTAINER.getBaseDn(), // Use full base DN, SearchScope.SUB will find users in ou=people
+                null,
+                SearchScope.SUB,
+                5,
+                ADMIN, // assignedRole (fallback, not used when userRoleRules are provided)
+                false,
+                ldapSimpleBind,
+                userRoleRules);
 
         // Wait for OpenLDAP to finish loading LDIF files
         Thread.sleep(8000);
@@ -174,9 +168,7 @@ class LdapUsernameRolesProviderOpenLdapIntegrationTest {
                 provider.findByUsernameAndPassword(ALICE_USERNAME, wrongPassword.getBytes(StandardCharsets.UTF_8));
 
         // Assert
-        assertThat(result)
-                .as("Authentication should fail with wrong password")
-                .isEmpty();
+        assertThat(result).as("Authentication should fail with wrong password").isEmpty();
     }
 
     /**
@@ -245,9 +237,7 @@ class LdapUsernameRolesProviderOpenLdapIntegrationTest {
                 provider.findByUsernameAndPassword(ALICE_USERNAME, emptyPassword.getBytes(StandardCharsets.UTF_8));
 
         // Assert
-        assertThat(result)
-                .as("Authentication should fail with empty password")
-                .isEmpty();
+        assertThat(result).as("Authentication should fail with empty password").isEmpty();
     }
 
     /**
@@ -265,9 +255,7 @@ class LdapUsernameRolesProviderOpenLdapIntegrationTest {
                 provider.findByUsernameAndPassword(emptyUsername, ALICE_PASSWORD.getBytes(StandardCharsets.UTF_8));
 
         // Assert
-        assertThat(result)
-                .as("Authentication should fail with empty username")
-                .isEmpty();
+        assertThat(result).as("Authentication should fail with empty username").isEmpty();
     }
 
     /**

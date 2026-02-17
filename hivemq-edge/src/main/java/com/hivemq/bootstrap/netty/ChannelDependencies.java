@@ -26,7 +26,6 @@ import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.handler.ClientLifecycleEventHandler;
 import com.hivemq.extensions.handler.IncomingPublishHandler;
 import com.hivemq.extensions.handler.IncomingSubscribeHandler;
@@ -56,9 +55,9 @@ import com.hivemq.security.ssl.SslParameterHandler;
 import dagger.Lazy;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
+import org.jetbrains.annotations.NotNull;
 
 public class ChannelDependencies {
 
@@ -139,7 +138,8 @@ public class ChannelDependencies {
             final @NotNull AwakeHandler awakeHandler,
             final @NotNull SleepHandler sleepHandler,
             final @NotNull MqttConnacker mqttConnacker,
-            final @NotNull Provider<IGatewayBroadcastService> gatewayDiscoveryService, @NotNull HandlerProvider handlerProvider) {
+            final @NotNull Provider<IGatewayBroadcastService> gatewayDiscoveryService,
+            @NotNull HandlerProvider handlerProvider) {
 
         this.noConnectIdleHandler = noConnectIdleHandler;
         this.connectHandlerProvider = connectHandlerProvider;

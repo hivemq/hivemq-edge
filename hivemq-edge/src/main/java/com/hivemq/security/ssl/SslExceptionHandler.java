@@ -15,21 +15,20 @@
  */
 package com.hivemq.security.ssl;
 
+import static com.hivemq.logging.LoggingUtils.appendListenerToMessage;
+
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.ssl.NotSslRecordException;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
-
-import static com.hivemq.logging.LoggingUtils.appendListenerToMessage;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This Exception handler is responsible for handling SSLExceptions and all other
@@ -55,43 +54,49 @@ public class SslExceptionHandler extends ChannelHandlerAdapter {
             return;
         }
 
-        //SslHandshakeExceptions are wrapped so we check the cause instead
+        // SslHandshakeExceptions are wrapped so we check the cause instead
         if (cause.getCause() != null) {
             if (cause.getCause() instanceof SSLHandshakeException) {
                 logSSLHandshakeException(ctx, cause);
-                //Just in case the channel wasn't closed already
+                // Just in case the channel wasn't closed already
                 final String eventLogMessage = appendListenerToMessage(ctx.channel(), "SSL handshake failed");
-                mqttServerDisconnector.logAndClose(ctx.channel(),
-                        null, //already logged
+                mqttServerDisconnector.logAndClose(
+                        ctx.channel(),
+                        null, // already logged
                         eventLogMessage);
                 return;
 
             } else if (cause.getCause() instanceof SSLException) {
                 logSSLException(ctx, cause);
-                final String eventLogMessage = appendListenerToMessage(ctx.channel(), "SSL message transmission failed");
-                mqttServerDisconnector.logAndClose(ctx.channel(),
-                        null, //already logged
+                final String eventLogMessage =
+                        appendListenerToMessage(ctx.channel(), "SSL message transmission failed");
+                mqttServerDisconnector.logAndClose(
+                        ctx.channel(),
+                        null, // already logged
                         eventLogMessage);
                 return;
             }
         }
 
-        //Rethrow Exception, we can only handle SSL Exceptions
+        // Rethrow Exception, we can only handle SSL Exceptions
         ctx.fireExceptionCaught(cause);
     }
-
 
     private void logSSLException(final @NotNull ChannelHandlerContext ctx, final @NotNull Throwable cause) {
         if (log.isDebugEnabled()) {
 
             final Throwable rootCause = ExceptionUtils.getRootCause(cause);
 
-            final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+            final ClientConnection clientConnection =
+                    ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
             final String clientId = clientConnection.getClientId();
             if (clientId != null) {
                 log.debug("SSL message transmission for client {} failed: {}", clientId, rootCause.getMessage());
             } else {
-                log.debug("SSL message transmission failed for client with IP {}: {}", clientConnection.getChannelIP().orElse("UNKNOWN"), rootCause.getMessage());
+                log.debug(
+                        "SSL message transmission failed for client with IP {}: {}",
+                        clientConnection.getChannelIP().orElse("UNKNOWN"),
+                        rootCause.getMessage());
             }
             log.trace("Original Exception", rootCause);
         }
@@ -102,30 +107,38 @@ public class SslExceptionHandler extends ChannelHandlerAdapter {
 
             final Throwable rootCause = ExceptionUtils.getRootCause(cause);
 
-            final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+            final ClientConnection clientConnection =
+                    ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
             final String clientId = clientConnection.getClientId();
             if (clientId != null) {
                 log.debug("SSL Handshake for client {} failed: {}", clientId, rootCause.getMessage());
             } else {
-                log.debug("SSL Handshake failed for client with IP {}: {}", clientConnection.getChannelIP().orElse("UNKNOWN"), rootCause.getMessage());
+                log.debug(
+                        "SSL Handshake failed for client with IP {}: {}",
+                        clientConnection.getChannelIP().orElse("UNKNOWN"),
+                        rootCause.getMessage());
             }
             log.trace("Original Exception", rootCause);
         }
     }
 
-
     private boolean ignorableException(final @NotNull Throwable cause, final @NotNull ChannelHandlerContext ctx) {
 
         if (cause instanceof NotSslRecordException) {
             if (log.isDebugEnabled()) {
-                final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
-                log.debug("Client {} sent data which is not SSL/TLS to a SSL/TLS listener. Disconnecting client.", clientConnection.getChannelIP().orElse("UNKNOWN"));
+                final ClientConnection clientConnection = ctx.channel()
+                        .attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                        .get();
+                log.debug(
+                        "Client {} sent data which is not SSL/TLS to a SSL/TLS listener. Disconnecting client.",
+                        clientConnection.getChannelIP().orElse("UNKNOWN"));
                 log.trace("Original Exception:", cause);
             }
-            //Just in case the client wasn't disconnected already
+            // Just in case the client wasn't disconnected already
             final String eventLogMessage = appendListenerToMessage(ctx.channel(), "SSL handshake failed");
-            mqttServerDisconnector.logAndClose(ctx.channel(),
-                    null, //already logged
+            mqttServerDisconnector.logAndClose(
+                    ctx.channel(),
+                    null, // already logged
                     eventLogMessage);
             return true;
         }

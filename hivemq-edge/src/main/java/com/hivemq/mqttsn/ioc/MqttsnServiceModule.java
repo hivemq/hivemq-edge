@@ -39,6 +39,6 @@ public interface MqttsnServiceModule {
     IGatewayBroadcastService gatewayBroadcastService(GatewayBroadcastServiceImpl gatewayBroadcastService);
 
     @Binds
-    BroadcastChannelCreatedListener broadcastChannelCreatedListener(UdpChannelCreatedListener udpChannelCreatedListener);
-
+    BroadcastChannelCreatedListener broadcastChannelCreatedListener(
+            UdpChannelCreatedListener udpChannelCreatedListener);
 }

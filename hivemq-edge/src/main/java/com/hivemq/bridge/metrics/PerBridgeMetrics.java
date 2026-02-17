@@ -17,14 +17,11 @@ package com.hivemq.bridge.metrics;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.metrics.HiveMQMetrics;
 import dagger.internal.Preconditions;
-import javassist.convert.TransformNew;
-
-import javax.sound.midi.VoiceStatus;
 import java.util.HashSet;
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
 
 public class PerBridgeMetrics {
 
@@ -44,60 +41,36 @@ public class PerBridgeMetrics {
 
     public PerBridgeMetrics(final @NotNull String bridgeName, final @NotNull MetricRegistry metricRegistry) {
 
-        publishForwardSuccessCounter = createBridgeCounter(metricRegistry,
-                bridgeName,
-                "forward.publish",
-                "count");
+        publishForwardSuccessCounter = createBridgeCounter(metricRegistry, bridgeName, "forward.publish", "count");
 
-        publishForwardFailCounter = createBridgeCounter(metricRegistry,
-                bridgeName,
-                "forward.publish.failed",
-                "count");
+        publishForwardFailCounter = createBridgeCounter(metricRegistry, bridgeName, "forward.publish.failed", "count");
 
-        publishRemoteReceivedCounter = createBridgeCounter(metricRegistry,
-                bridgeName,
-                "remote.publish.received",
-                "count");
+        publishRemoteReceivedCounter =
+                createBridgeCounter(metricRegistry, bridgeName, "remote.publish.received", "count");
 
-        publishLocalReceivedCounter = createBridgeCounter(metricRegistry,
-                bridgeName,
-                "local.publish.received",
-                "count");
+        publishLocalReceivedCounter =
+                createBridgeCounter(metricRegistry, bridgeName, "local.publish.received", "count");
 
-        publishLocalSuccessCounter = createBridgeCounter(metricRegistry,
-        bridgeName,
-                "local.publish",
-                "count");
+        publishLocalSuccessCounter = createBridgeCounter(metricRegistry, bridgeName, "local.publish", "count");
 
-        publishLocalNoSubscriberCounter = createBridgeCounter(metricRegistry,
-                bridgeName,
-                "local.publish.no-subscriber-present",
-                "count");
+        publishLocalNoSubscriberCounter =
+                createBridgeCounter(metricRegistry, bridgeName, "local.publish.no-subscriber-present", "count");
 
-        publishLocalFailCounter = createBridgeCounter(metricRegistry,
-                bridgeName,
-                "local.publish.failed",
-                "count");
+        publishLocalFailCounter = createBridgeCounter(metricRegistry, bridgeName, "local.publish.failed", "count");
 
-        remotePublishExcludedCounter = createBridgeCounter(metricRegistry,
-                bridgeName,
-                "forward.publish.excluded",
-                "count");
+        remotePublishExcludedCounter =
+                createBridgeCounter(metricRegistry, bridgeName, "forward.publish.excluded", "count");
 
-        loopPreventionForwardDropCounter = createBridgeCounter(metricRegistry,
-                bridgeName,
-                "forward.publish.loop-hops-exceeded",
-                "count");
+        loopPreventionForwardDropCounter =
+                createBridgeCounter(metricRegistry, bridgeName, "forward.publish.loop-hops-exceeded", "count");
 
-        loopPreventionRemoteDropCounter = createBridgeCounter(metricRegistry,
-                bridgeName,
-                "remote.publish.loop-hops-exceeded",
-                "count");
+        loopPreventionRemoteDropCounter =
+                createBridgeCounter(metricRegistry, bridgeName, "remote.publish.loop-hops-exceeded", "count");
     }
 
-    private Counter createBridgeCounter(final @NotNull MetricRegistry metricRegistry, final @NotNull String... names){
+    private Counter createBridgeCounter(final @NotNull MetricRegistry metricRegistry, final @NotNull String... names) {
         final String metricName = MetricRegistry.name(BRIDGE_PREFIX, names);
-        synchronized (mutex){
+        synchronized (mutex) {
             metricNames.add(metricName);
         }
         return metricRegistry.counter(metricName);
@@ -143,9 +116,9 @@ public class PerBridgeMetrics {
         return loopPreventionRemoteDropCounter;
     }
 
-    public void clearAll(final @NotNull MetricRegistry metricRegistry){
+    public void clearAll(final @NotNull MetricRegistry metricRegistry) {
         Preconditions.checkNotNull(metricRegistry);
-        synchronized (mutex){
+        synchronized (mutex) {
             metricNames.forEach(metricRegistry::remove);
             metricNames.clear();
         }

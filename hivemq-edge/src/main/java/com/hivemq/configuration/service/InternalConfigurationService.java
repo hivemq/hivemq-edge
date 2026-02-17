@@ -15,14 +15,14 @@
  */
 package com.hivemq.configuration.service;
 
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Map;
-
 public interface InternalConfigurationService {
 
-    @Nullable String get(@NotNull String key);
+    @Nullable
+    String get(@NotNull String key);
 
     void set(@NotNull String key, @NotNull String value);
 
@@ -36,6 +36,5 @@ public interface InternalConfigurationService {
 
     boolean isConfigSetByUser(@NotNull String key);
 
-    Map<String,String> getConfigsSetByUser();
-
+    Map<String, String> getConfigsSetByUser();
 }

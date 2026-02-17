@@ -15,6 +15,9 @@
  */
 package com.hivemq.mqtt.handler.auth;
 
+import static com.hivemq.mqtt.message.disconnect.DISCONNECT.SESSION_EXPIRY_NOT_SET;
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.logging.EventLog;
 import com.hivemq.mqtt.handler.connack.MqttConnacker;
@@ -36,9 +39,6 @@ import org.junit.jupiter.api.Timeout;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static com.hivemq.mqtt.message.disconnect.DISCONNECT.SESSION_EXPIRY_NOT_SET;
-import static org.junit.jupiter.api.Assertions.*;
-
 /**
  * @author Georg Held
  */
@@ -50,6 +50,7 @@ public class AuthInProgressMessageHandlerTest {
 
     private MqttConnacker connacker;
     private EmbeddedChannel channel;
+
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.initMocks(this);
@@ -76,7 +77,8 @@ public class AuthInProgressMessageHandlerTest {
     @Test
     @Timeout(5)
     public void test_handler_allows_DISCONNECT_messages() {
-        final DISCONNECT disconnect = new DISCONNECT(Mqtt5DisconnectReasonCode.NORMAL_DISCONNECTION,
+        final DISCONNECT disconnect = new DISCONNECT(
+                Mqtt5DisconnectReasonCode.NORMAL_DISCONNECTION,
                 null,
                 Mqtt5UserProperties.NO_USER_PROPERTIES,
                 null,
@@ -91,13 +93,21 @@ public class AuthInProgressMessageHandlerTest {
     @Test
     @Timeout(5)
     public void test_handler_disallows_publish() {
-        final PUBLISH publish = new PUBLISHFactory.Mqtt5Builder().withTopic("topic").withQoS(QoS.AT_LEAST_ONCE).withOnwardQos(QoS.AT_LEAST_ONCE).withPayload("payload".getBytes()).withHivemqId("hivemqId").build();
+        final PUBLISH publish = new PUBLISHFactory.Mqtt5Builder()
+                .withTopic("topic")
+                .withQoS(QoS.AT_LEAST_ONCE)
+                .withOnwardQos(QoS.AT_LEAST_ONCE)
+                .withPayload("payload".getBytes())
+                .withHivemqId("hivemqId")
+                .build();
 
         channel.writeInbound(publish);
         final CONNACK connack = channel.readOutbound();
 
         assertNull(channel.readInbound());
         assertEquals(Mqtt5ConnAckReasonCode.PROTOCOL_ERROR, connack.getReasonCode());
-        assertEquals("Client must not send a message other than AUTH or DISCONNECT during enhanced authentication", connack.getReasonString());
+        assertEquals(
+                "Client must not send a message other than AUTH or DISCONNECT during enhanced authentication",
+                connack.getReasonString());
     }
 }

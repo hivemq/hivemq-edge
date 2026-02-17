@@ -15,11 +15,10 @@
  */
 package com.hivemq.bootstrap.factories;
 
-import org.jetbrains.annotations.NotNull;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import org.jetbrains.annotations.NotNull;
 
 public class HandlerPackage {
-
 
     private final @NotNull ChannelInboundHandlerAdapter handler;
     private final @NotNull String handlerName;

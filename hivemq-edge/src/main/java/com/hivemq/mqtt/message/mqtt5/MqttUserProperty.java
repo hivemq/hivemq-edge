@@ -19,12 +19,11 @@ import com.google.common.base.Preconditions;
 import com.hivemq.codec.encoder.mqtt5.MqttBinaryData;
 import com.hivemq.codec.encoder.mqtt5.UnsignedDataTypes;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.general.UserProperty;
 import io.netty.buffer.ByteBuf;
-
 import java.nio.charset.StandardCharsets;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Silvio Giebl

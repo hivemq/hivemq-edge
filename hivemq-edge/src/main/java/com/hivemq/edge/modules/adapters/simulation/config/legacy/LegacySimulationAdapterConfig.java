@@ -17,10 +17,9 @@ package com.hivemq.edge.modules.adapters.simulation.config.legacy;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 public class LegacySimulationAdapterConfig {
 
@@ -31,8 +30,8 @@ public class LegacySimulationAdapterConfig {
     protected @NotNull String id;
 
     @JsonProperty("pollingIntervalMillis")
-    @JsonAlias(value = "publishingInterval") //-- Ensure we cater for properties created with legacy configuration
-    private int pollingIntervalMillis = 1000; //1 second
+    @JsonAlias(value = "publishingInterval") // -- Ensure we cater for properties created with legacy configuration
+    private int pollingIntervalMillis = 1000; // 1 second
 
     @JsonProperty("maxPollingErrorsBeforeRemoval")
     private int maxPollingErrorsBeforeRemoval = 10;
@@ -50,7 +49,7 @@ public class LegacySimulationAdapterConfig {
     private int maxDelay = 0;
 
     public @NotNull List<LegacySimulationPollingContext> getPollingContexts() {
-       return pollingContexts;
+        return pollingContexts;
     }
 
     public @NotNull String getId() {

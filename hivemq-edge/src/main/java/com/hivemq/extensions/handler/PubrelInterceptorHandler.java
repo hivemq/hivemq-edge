@@ -17,7 +17,6 @@ package com.hivemq.extensions.handler;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
 import com.hivemq.extension.sdk.api.interceptor.pubrel.PubrelInboundInterceptor;
@@ -41,13 +40,13 @@ import com.hivemq.util.Exceptions;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Yannick Weber
@@ -76,10 +75,10 @@ public class PubrelInterceptorHandler {
         this.executorService = executorService;
     }
 
-
     public void handleInboundPubrel(final @NotNull ChannelHandlerContext ctx, final @NotNull PUBREL pubrel) {
         final Channel channel = ctx.channel();
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final String clientId = clientConnection.getClientId();
         if (clientId == null) {
             return;
@@ -113,7 +112,8 @@ public class PubrelInterceptorHandler {
 
         for (final PubrelInboundInterceptor interceptor : interceptors) {
 
-            final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(interceptor.getClass().getClassLoader());
+            final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(
+                    interceptor.getClass().getClassLoader());
             if (extension == null) { // disabled extension would be null
                 context.finishInterceptor();
                 continue;
@@ -130,7 +130,8 @@ public class PubrelInterceptorHandler {
             final @NotNull ChannelPromise promise) {
 
         final Channel channel = ctx.channel();
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final String clientId = clientConnection.getClientId();
         if (clientId == null) {
             return;
@@ -164,7 +165,8 @@ public class PubrelInterceptorHandler {
 
         for (final PubrelOutboundInterceptor interceptor : interceptors) {
 
-            final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(interceptor.getClass().getClassLoader());
+            final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(
+                    interceptor.getClass().getClassLoader());
             if (extension == null) { // disabled extension would be null
                 context.finishInterceptor();
                 continue;
@@ -249,8 +251,10 @@ public class PubrelInterceptorHandler {
                 interceptor.onInboundPubrel(input, output);
             } catch (final Throwable e) {
                 log.warn(
-                        "Uncaught exception was thrown from extension with id \"{}\" on inbound PUBREL interception. " +
-                                "Extensions are responsible for their own exception handling.", extensionId, e);
+                        "Uncaught exception was thrown from extension with id \"{}\" on inbound PUBREL interception. "
+                                + "Extensions are responsible for their own exception handling.",
+                        extensionId,
+                        e);
                 output.markAsFailed();
                 Exceptions.rethrowError(e);
             }
@@ -339,8 +343,10 @@ public class PubrelInterceptorHandler {
                 interceptor.onOutboundPubrel(input, output);
             } catch (final Throwable e) {
                 log.warn(
-                        "Uncaught exception was thrown from extension with id \"{}\" on outbound PUBREL interception. " +
-                                "Extensions are responsible for their own exception handling.", extensionId, e);
+                        "Uncaught exception was thrown from extension with id \"{}\" on outbound PUBREL interception. "
+                                + "Extensions are responsible for their own exception handling.",
+                        extensionId,
+                        e);
                 output.markAsFailed();
                 Exceptions.rethrowError(e);
             }

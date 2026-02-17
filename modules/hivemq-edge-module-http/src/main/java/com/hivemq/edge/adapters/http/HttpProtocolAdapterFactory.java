@@ -26,8 +26,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Factory for creating HTTP protocol adapter instances.
  */
-public class HttpProtocolAdapterFactory
-        implements ProtocolAdapterFactory<HttpSpecificAdapterConfig> {
+public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpSpecificAdapterConfig> {
 
     final boolean writingEnabled;
 
@@ -46,5 +45,4 @@ public class HttpProtocolAdapterFactory
             final @NotNull ProtocolAdapterInput<HttpSpecificAdapterConfig> input) {
         return new HttpProtocolAdapter(adapterInformation, input);
     }
-
 }

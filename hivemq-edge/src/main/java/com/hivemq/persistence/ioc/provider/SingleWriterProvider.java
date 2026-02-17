@@ -15,14 +15,13 @@
  */
 package com.hivemq.persistence.ioc.provider;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.core.PersistencesService;
+import com.hivemq.persistence.InFileSingleWriter;
 import com.hivemq.persistence.InMemorySingleWriter;
 import com.hivemq.persistence.SingleWriterService;
-import com.hivemq.persistence.InFileSingleWriter;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
+import org.jetbrains.annotations.NotNull;
 
 public class SingleWriterProvider {
 
@@ -44,7 +43,7 @@ public class SingleWriterProvider {
         if (persistencesService.isFilePersistencesPresent()) {
             return singleWriterServiceProvider.get();
         } else {
-           return inMemorySingleWriterProvider.get();
+            return inMemorySingleWriterProvider.get();
         }
     }
 }

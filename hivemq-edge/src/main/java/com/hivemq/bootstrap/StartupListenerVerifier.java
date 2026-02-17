@@ -15,15 +15,14 @@
  */
 package com.hivemq.bootstrap;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.hivemq.configuration.service.entity.Listener;
 import com.hivemq.exceptions.UnrecoverableException;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * This class verifies if the listener startup was successful and gives
@@ -50,7 +49,8 @@ public class StartupListenerVerifier {
      */
     public void verifyAndPrint() throws UnrecoverableException {
         if (startupInformation.isEmpty()) {
-            log.error("No listener was configured. In order to operate properly, HiveMQ needs at least one listener. Shutting down HiveMQ");
+            log.error(
+                    "No listener was configured. In order to operate properly, HiveMQ needs at least one listener. Shutting down HiveMQ");
             throw new UnrecoverableException(false);
         }
 

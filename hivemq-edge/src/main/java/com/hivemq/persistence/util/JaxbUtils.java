@@ -13,21 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.persistence.util;
 
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
 import jakarta.xml.bind.Unmarshaller;
-import org.glassfish.jaxb.runtime.v2.JAXBContextFactory;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.io.File;
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
+import org.glassfish.jaxb.runtime.v2.JAXBContextFactory;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class JaxbUtils {
     private static final @NotNull Map<String, ?> DEFAULT_PROPERTIES = new HashMap<>();
@@ -36,7 +34,7 @@ public final class JaxbUtils {
     @SuppressWarnings("unchecked")
     public static <T> @NotNull T unmarshal(final @NotNull String xmlString, final @NotNull Class<T> clazz)
             throws JAXBException {
-        final JAXBContext jaxbContext = JAXB_CONTEXT_FACTORY.createContext(new Class[]{clazz}, DEFAULT_PROPERTIES);
+        final JAXBContext jaxbContext = JAXB_CONTEXT_FACTORY.createContext(new Class[] {clazz}, DEFAULT_PROPERTIES);
         final Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
         try (final StringReader stringReader = new StringReader(xmlString)) {
             return (T) unmarshaller.unmarshal(stringReader);
@@ -44,11 +42,10 @@ public final class JaxbUtils {
     }
 
     public static <T> void marshal(
-            final @NotNull T object,
-            final @NotNull File file,
-            final @Nullable MarshallerConsumer marshallerConsumer) throws JAXBException {
+            final @NotNull T object, final @NotNull File file, final @Nullable MarshallerConsumer marshallerConsumer)
+            throws JAXBException {
         final JAXBContext jaxbContext =
-                JAXB_CONTEXT_FACTORY.createContext(new Class[]{object.getClass()}, new HashMap<>());
+                JAXB_CONTEXT_FACTORY.createContext(new Class[] {object.getClass()}, new HashMap<>());
         final Marshaller marshaller = jaxbContext.createMarshaller();
         if (marshallerConsumer != null) {
             marshallerConsumer.consume(marshaller);

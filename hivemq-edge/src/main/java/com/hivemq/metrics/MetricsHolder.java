@@ -15,13 +15,12 @@
  */
 package com.hivemq.metrics;
 
+import static com.hivemq.metrics.HiveMQMetrics.*;
+
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.inject.Singleton;
-
-import static com.hivemq.metrics.HiveMQMetrics.*;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
@@ -49,8 +48,6 @@ public class MetricsHolder {
 
     private final @NotNull Counter storedWillMessagesCount;
     private final @NotNull Counter publishedWillMessagesCount;
-
-
 
     public MetricsHolder(final @NotNull MetricRegistry metricRegistry) {
 

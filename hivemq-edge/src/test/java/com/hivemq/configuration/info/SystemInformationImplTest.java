@@ -15,19 +15,18 @@
  */
 package com.hivemq.configuration.info;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.hivemq.HiveMQEdgeMain;
 import com.hivemq.configuration.EnvironmentVariables;
 import com.hivemq.configuration.SystemProperties;
 import com.hivemq.util.ManifestUtils;
+import java.io.File;
+import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
-
-import java.io.File;
-import java.util.Objects;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Christoph Schäbel
@@ -40,18 +39,17 @@ public class SystemInformationImplTest {
 
     private SystemInformation systemInformation;
 
-
     @Test
     public void test_getHiveMQVersion() {
         systemInformation = new SystemInformationImpl();
         systemInformation.init();
 
-        //check if there is a manifest file present (happens on jenkins) and use the value from the manifest file
-        final String valueFromManifest = ManifestUtils.getValueFromManifest(HiveMQEdgeMain.class, "HiveMQ-Edge-Version");
+        // check if there is a manifest file present (happens on jenkins) and use the value from the manifest file
+        final String valueFromManifest =
+                ManifestUtils.getValueFromManifest(HiveMQEdgeMain.class, "HiveMQ-Edge-Version");
 
         assertThat(Objects.requireNonNullElse(valueFromManifest, "Development Snapshot"))
                 .isEqualTo(systemInformation.getHiveMQVersion());
-
     }
 
     @Test
@@ -59,25 +57,29 @@ public class SystemInformationImplTest {
         systemInformation = new SystemInformationImpl(true);
         systemInformation.init();
 
-        //check if there is a manifest file present (happens on jenkins) and use the value from the manifest file
-        final String valueFromManifest = ManifestUtils.getValueFromManifest(HiveMQEdgeMain.class, "HiveMQ-Edge-Version");
+        // check if there is a manifest file present (happens on jenkins) and use the value from the manifest file
+        final String valueFromManifest =
+                ManifestUtils.getValueFromManifest(HiveMQEdgeMain.class, "HiveMQ-Edge-Version");
 
         assertThat(Objects.requireNonNullElse(valueFromManifest, "Development Snapshot"))
                 .isEqualTo(systemInformation.getHiveMQVersion());
     }
 
     @Test
-    public void test_getHiveMQHomeFolder_from_system_information_with_path(final uk.org.webcompere.systemstubs.properties.SystemProperties systemProperties) {
+    public void test_getHiveMQHomeFolder_from_system_information_with_path(
+            final uk.org.webcompere.systemstubs.properties.SystemProperties systemProperties) {
         systemProperties.set(SystemProperties.HIVEMQ_HOME, tempFolder.getAbsolutePath());
 
         systemInformation = new SystemInformationImpl();
         systemInformation.init();
 
-        assertThat(tempFolder.getAbsolutePath()).isEqualTo(systemInformation.getHiveMQHomeFolder().getAbsolutePath());
+        assertThat(tempFolder.getAbsolutePath())
+                .isEqualTo(systemInformation.getHiveMQHomeFolder().getAbsolutePath());
     }
 
     @Test
-    public void test_getHiveMQHomeFolder_environmentVariable(final uk.org.webcompere.systemstubs.environment.EnvironmentVariables environmentVariables) {
+    public void test_getHiveMQHomeFolder_environmentVariable(
+            final uk.org.webcompere.systemstubs.environment.EnvironmentVariables environmentVariables) {
         final var testfolder = new File(tempFolder, "home");
 
         environmentVariables.set(EnvironmentVariables.HIVEMQ_HOME, testfolder.getAbsolutePath());
@@ -85,21 +87,25 @@ public class SystemInformationImplTest {
         systemInformation = new SystemInformationImpl();
         systemInformation.init();
 
-        assertThat(testfolder.getAbsolutePath()).isEqualTo(systemInformation.getHiveMQHomeFolder().getAbsolutePath());
+        assertThat(testfolder.getAbsolutePath())
+                .isEqualTo(systemInformation.getHiveMQHomeFolder().getAbsolutePath());
     }
 
     @Test
-    public void test_getConfigFolder_default(final uk.org.webcompere.systemstubs.properties.SystemProperties systemProperties) {
+    public void test_getConfigFolder_default(
+            final uk.org.webcompere.systemstubs.properties.SystemProperties systemProperties) {
         systemProperties.set(SystemProperties.HIVEMQ_HOME, tempFolder.getAbsolutePath());
 
         systemInformation = new SystemInformationImpl();
         systemInformation.init();
 
-        assertThat(tempFolder.getAbsolutePath() + File.separator + "conf").isEqualTo(systemInformation.getConfigFolder().getAbsolutePath());
+        assertThat(tempFolder.getAbsolutePath() + File.separator + "conf")
+                .isEqualTo(systemInformation.getConfigFolder().getAbsolutePath());
     }
 
     @Test
-    public void test_getConfigFolder_property(final uk.org.webcompere.systemstubs.properties.SystemProperties systemProperties) {
+    public void test_getConfigFolder_property(
+            final uk.org.webcompere.systemstubs.properties.SystemProperties systemProperties) {
         final var testfolder = new File(tempFolder, "testconfig");
 
         systemProperties.set(SystemProperties.CONFIG_FOLDER, testfolder.getAbsolutePath());
@@ -107,11 +113,13 @@ public class SystemInformationImplTest {
         systemInformation = new SystemInformationImpl();
         systemInformation.init();
 
-        assertThat(testfolder.getAbsolutePath()).isEqualTo(systemInformation.getConfigFolder().getAbsolutePath());
+        assertThat(testfolder.getAbsolutePath())
+                .isEqualTo(systemInformation.getConfigFolder().getAbsolutePath());
     }
 
     @Test
-    public void test_getConfigFolder_environmentVariable(final uk.org.webcompere.systemstubs.environment.EnvironmentVariables environmentVariables) {
+    public void test_getConfigFolder_environmentVariable(
+            final uk.org.webcompere.systemstubs.environment.EnvironmentVariables environmentVariables) {
         final var testfolder = new File(tempFolder, "testconfig");
 
         environmentVariables.set(EnvironmentVariables.CONFIG_FOLDER, testfolder.getAbsolutePath());
@@ -119,21 +127,25 @@ public class SystemInformationImplTest {
         systemInformation = new SystemInformationImpl();
         systemInformation.init();
 
-        assertThat(testfolder.getAbsolutePath()).isEqualTo(systemInformation.getConfigFolder().getAbsolutePath());
+        assertThat(testfolder.getAbsolutePath())
+                .isEqualTo(systemInformation.getConfigFolder().getAbsolutePath());
     }
 
     @Test
-    public void test_getLogFolder_default(final uk.org.webcompere.systemstubs.properties.SystemProperties systemProperties) {
+    public void test_getLogFolder_default(
+            final uk.org.webcompere.systemstubs.properties.SystemProperties systemProperties) {
         systemProperties.remove(SystemProperties.LOG_FOLDER);
         systemProperties.set(SystemProperties.HIVEMQ_HOME, tempFolder.getAbsolutePath());
         systemInformation = new SystemInformationImpl();
         systemInformation.init();
 
-        assertThat(tempFolder.getAbsolutePath() + File.separator + "log").isEqualTo(systemInformation.getLogFolder().getAbsolutePath());
+        assertThat(tempFolder.getAbsolutePath() + File.separator + "log")
+                .isEqualTo(systemInformation.getLogFolder().getAbsolutePath());
     }
 
     @Test
-    public void test_getLogFolder_property(final uk.org.webcompere.systemstubs.properties.SystemProperties systemProperties) {
+    public void test_getLogFolder_property(
+            final uk.org.webcompere.systemstubs.properties.SystemProperties systemProperties) {
         final var testfolder = new File(tempFolder, "testlogs");
 
         systemProperties.set(SystemProperties.LOG_FOLDER, testfolder.getAbsolutePath());
@@ -141,12 +153,14 @@ public class SystemInformationImplTest {
         systemInformation = new SystemInformationImpl();
         systemInformation.init();
 
-        assertThat(testfolder.getAbsolutePath()).isEqualTo(systemInformation.getLogFolder().getAbsolutePath());
+        assertThat(testfolder.getAbsolutePath())
+                .isEqualTo(systemInformation.getLogFolder().getAbsolutePath());
     }
 
     @Test
-    public void test_getLogFolder_environmentVariable(final uk.org.webcompere.systemstubs.environment.EnvironmentVariables environmentVariables,
-                                                      final uk.org.webcompere.systemstubs.properties.SystemProperties systemProperties) {
+    public void test_getLogFolder_environmentVariable(
+            final uk.org.webcompere.systemstubs.environment.EnvironmentVariables environmentVariables,
+            final uk.org.webcompere.systemstubs.properties.SystemProperties systemProperties) {
         final var testfolder = new File(tempFolder, "testlogs");
 
         systemProperties.remove(SystemProperties.LOG_FOLDER);
@@ -155,11 +169,13 @@ public class SystemInformationImplTest {
         systemInformation = new SystemInformationImpl();
         systemInformation.init();
 
-        assertThat(testfolder.getAbsolutePath()).isEqualTo(systemInformation.getLogFolder().getAbsolutePath());
+        assertThat(testfolder.getAbsolutePath())
+                .isEqualTo(systemInformation.getLogFolder().getAbsolutePath());
     }
 
     @Test
-    public void test_getDataFolder_default(final uk.org.webcompere.systemstubs.properties.SystemProperties systemProperties) {
+    public void test_getDataFolder_default(
+            final uk.org.webcompere.systemstubs.properties.SystemProperties systemProperties) {
         systemProperties.set(SystemProperties.HIVEMQ_HOME, tempFolder.getAbsolutePath());
         systemInformation = new SystemInformationImpl();
         systemInformation.init();
@@ -169,7 +185,8 @@ public class SystemInformationImplTest {
     }
 
     @Test
-    public void test_getDataFolder_property(final uk.org.webcompere.systemstubs.properties.SystemProperties systemProperties) {
+    public void test_getDataFolder_property(
+            final uk.org.webcompere.systemstubs.properties.SystemProperties systemProperties) {
         final var testfolder = new File(tempFolder, "testdatas");
 
         systemProperties.set(SystemProperties.DATA_FOLDER, testfolder.getAbsolutePath());
@@ -182,7 +199,8 @@ public class SystemInformationImplTest {
     }
 
     @Test
-    public void test_getDataFolder_environmentVariable(final uk.org.webcompere.systemstubs.environment.EnvironmentVariables environmentVariables) {
+    public void test_getDataFolder_environmentVariable(
+            final uk.org.webcompere.systemstubs.environment.EnvironmentVariables environmentVariables) {
         final var testfolder = new File(tempFolder, "testdatas");
 
         environmentVariables.set(EnvironmentVariables.DATA_FOLDER, testfolder.getAbsolutePath());
@@ -200,8 +218,7 @@ public class SystemInformationImplTest {
         systemInformation = new SystemInformationImpl();
         systemInformation.init();
 
-        assertThat(systemInformation.getExtensionsFolder().exists())
-                .isTrue();
+        assertThat(systemInformation.getExtensionsFolder().exists()).isTrue();
     }
 
     @Test
@@ -209,17 +226,15 @@ public class SystemInformationImplTest {
         systemInformation = new SystemInformationImpl();
         systemInformation.init();
 
-        assertThat(systemInformation.getDataFolder().exists())
-                .isTrue();
+        assertThat(systemInformation.getDataFolder().exists()).isTrue();
     }
 
     @Test
-    public void test_create_log_folder_if_not_exists(){
+    public void test_create_log_folder_if_not_exists() {
         systemInformation = new SystemInformationImpl();
         systemInformation.init();
 
-        assertThat(systemInformation.getLogFolder().exists())
-                .isTrue();
+        assertThat(systemInformation.getLogFolder().exists()).isTrue();
     }
 
     @Test
@@ -227,8 +242,6 @@ public class SystemInformationImplTest {
         systemInformation = new SystemInformationImpl();
         systemInformation.init();
 
-        assertThat(systemInformation.getProcessorCount())
-                .isGreaterThan(0);
+        assertThat(systemInformation.getProcessorCount()).isGreaterThan(0);
     }
-
 }

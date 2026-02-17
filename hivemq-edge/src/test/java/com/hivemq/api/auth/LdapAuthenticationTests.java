@@ -15,6 +15,13 @@
  */
 package com.hivemq.api.auth;
 
+import static com.hivemq.api.auth.ApiRoles.ADMIN;
+import static com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection.TEST_PASSWORD;
+import static com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection.TEST_USERNAME;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.api.TestApiResource;
 import com.hivemq.api.TestPermitAllApiResource;
@@ -33,6 +40,11 @@ import com.hivemq.http.config.JaxrsHttpServerConfiguration;
 import com.hivemq.http.core.HttpUrlConnectionClient;
 import com.hivemq.logging.SecurityLog;
 import com.unboundid.ldap.sdk.SearchScope;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -41,19 +53,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import static com.hivemq.api.auth.ApiRoles.ADMIN;
-import static com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection.TEST_PASSWORD;
-import static com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection.TEST_USERNAME;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @Testcontainers
 public class LdapAuthenticationTests {
@@ -79,51 +78,48 @@ public class LdapAuthenticationTests {
         // Create LdapSimpleBind for LLDAP admin authentication
         // Note: The RDN should be just the user's identifier, the organizational unit
         // will be added from the rdns parameter (getBaseDn() returns "ou=people,{baseDn}")
-        final var ldapSimpleBind =
-                new LdapConnectionProperties.LdapSimpleBind(
-                        LLDAP_CONTAINER.getAdminRdns(),
-                        LLDAP_CONTAINER.getAdminPassword());
+        final var ldapSimpleBind = new LdapConnectionProperties.LdapSimpleBind(
+                LLDAP_CONTAINER.getAdminRdns(), LLDAP_CONTAINER.getAdminPassword());
 
         // Create connection properties for plain LDAP (no TLS for simplicity)
         // 5 second connect timeout
         // 10 second response timeout
-        final var ldapConnectionProperties =
-                new LdapConnectionProperties(new LdapConnectionProperties.LdapServers(
-                        new String[]{host}, new int[]{port}),
-                        TlsMode.NONE,
-                        null,
-                        5000,  // 5 second connect timeout
-                        10000, // 10 second response timeout
-                        1,
-                        "uid",
-                        LLDAP_CONTAINER.getBaseDn(),
-                        null,
-                        SearchScope.SUB,
-                        5,
-                        ADMIN,
-                        false,
-                        ldapSimpleBind,
-                        null);
+        final var ldapConnectionProperties = new LdapConnectionProperties(
+                new LdapConnectionProperties.LdapServers(new String[] {host}, new int[] {port}),
+                TlsMode.NONE,
+                null,
+                5000, // 5 second connect timeout
+                10000, // 10 second response timeout
+                1,
+                "uid",
+                LLDAP_CONTAINER.getBaseDn(),
+                null,
+                SearchScope.SUB,
+                5,
+                ADMIN,
+                false,
+                ldapSimpleBind,
+                null);
 
         // Create test user in LLDAP
-        new LdapTestConnection(ldapConnectionProperties).createTestUser(
-                LLDAP_CONTAINER.getAdminDn(),
-                LLDAP_CONTAINER.getAdminPassword(),
-                LLDAP_CONTAINER.getBaseDn());
+        new LdapTestConnection(ldapConnectionProperties)
+                .createTestUser(
+                        LLDAP_CONTAINER.getAdminDn(), LLDAP_CONTAINER.getAdminPassword(), LLDAP_CONTAINER.getBaseDn());
 
         final var config = new JaxrsHttpServerConfiguration();
-        //-- ensure we supplied our own test mapper as this can effect output
+        // -- ensure we supplied our own test mapper as this can effect output
         config.setObjectMapper(new ObjectMapper());
         config.setPort(TEST_HTTP_PORT);
 
         final Set<IAuthenticationHandler> authenticationHandlers = new HashSet<>();
-        authenticationHandlers.add(new BasicAuthenticationHandler(new LdapUsernameRolesProvider(ldapConnectionProperties, new SecurityLog())));
+        authenticationHandlers.add(new BasicAuthenticationHandler(
+                new LdapUsernameRolesProvider(ldapConnectionProperties, new SecurityLog())));
 
         final ApiConfigurationService apiConfigurationService = mock(ApiConfigurationService.class);
         when(apiConfigurationService.isEnforceApiAuth()).thenReturn(true);
 
         final ResourceConfig resourceConfig = new ResourceConfig();
-        resourceConfig.register(new ApiAuthenticationFeature(authenticationHandlers,apiConfigurationService));
+        resourceConfig.register(new ApiAuthenticationFeature(authenticationHandlers, apiConfigurationService));
         resourceConfig.register(TestApiResource.class);
         resourceConfig.register(TestPermitAllApiResource.class);
         resourceConfig.register(TestResourceLevelRolesApiResource.class);
@@ -135,57 +131,58 @@ public class LdapAuthenticationTests {
     // public static String getBaseDn() { return "ou=people," + LLDAP_CONTAINER.getBaseDn();}
 
     @AfterAll
-    public static void tearDown(){
+    public static void tearDown() {
         server.stopServer();
     }
 
-    protected static String getTestServerAddress(final @NotNull String protocol, final @NotNull int port, final @NotNull String uri){
+    protected static String getTestServerAddress(
+            final @NotNull String protocol, final @NotNull int port, final @NotNull String uri) {
         return String.format("%s://%s:%s/%s", protocol, "localhost", port, uri);
     }
 
     @Test
     public void testGetSecuredResourceWithoutCreds() throws IOException {
-        final var response =
-                HttpUrlConnectionClient.get(null,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertThat(response.getStatusCode())
-                .as("Resource should be denied")
-                .isEqualTo(401);
+        final var response = HttpUrlConnectionClient.get(
+                null, getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
+        assertThat(response.getStatusCode()).as("Resource should be denied").isEqualTo(401);
     }
 
     @Test
     public void testGetSecuredResourceWithInvalidUsername() throws IOException {
-        final var headers = Map.of(HttpConstants.AUTH_HEADER,
+        final var headers = Map.of(
+                HttpConstants.AUTH_HEADER,
                 BasicAuthenticationHandler.getBasicAuthenticationHeaderValue("testaWRONG", TEST_PASSWORD));
-        final var response =
-                HttpUrlConnectionClient.get(headers,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertThat(response.getStatusCode())
-                .as("Resource should be denied")
-                .isEqualTo(401);
+        final var response = HttpUrlConnectionClient.get(
+                headers,
+                getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"),
+                CONNECT_TIMEOUT,
+                READ_TIMEOUT);
+        assertThat(response.getStatusCode()).as("Resource should be denied").isEqualTo(401);
     }
 
     @Test
     public void testGetSecuredResourceWithInvalidPassword() throws IOException {
-        final var headers = Map.of(HttpConstants.AUTH_HEADER,
+        final var headers = Map.of(
+                HttpConstants.AUTH_HEADER,
                 BasicAuthenticationHandler.getBasicAuthenticationHeaderValue(TEST_USERNAME, "incorrect"));
-        final var response =
-                HttpUrlConnectionClient.get(headers,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertThat(response.getStatusCode())
-                .as("Resource should be denied")
-                .isEqualTo(401);
+        final var response = HttpUrlConnectionClient.get(
+                headers,
+                getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"),
+                CONNECT_TIMEOUT,
+                READ_TIMEOUT);
+        assertThat(response.getStatusCode()).as("Resource should be denied").isEqualTo(401);
     }
 
     @Test
     public void testGetSecuredResourceWithValidCreds() throws IOException {
-        final var headers = Map.of(HttpConstants.AUTH_HEADER,
+        final var headers = Map.of(
+                HttpConstants.AUTH_HEADER,
                 BasicAuthenticationHandler.getBasicAuthenticationHeaderValue(TEST_USERNAME, TEST_PASSWORD));
-        final var response =
-                HttpUrlConnectionClient.get(headers,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertThat(response.getStatusCode())
-                .as("Resource should be accepted")
-                .isEqualTo(200);
+        final var response = HttpUrlConnectionClient.get(
+                headers,
+                getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"),
+                CONNECT_TIMEOUT,
+                READ_TIMEOUT);
+        assertThat(response.getStatusCode()).as("Resource should be accepted").isEqualTo(200);
     }
 }

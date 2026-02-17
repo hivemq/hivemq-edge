@@ -17,18 +17,20 @@ package com.hivemq.api.model.samples;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.jetbrains.annotations.NotNull;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.jetbrains.annotations.NotNull;
 
 public class PayloadSample {
 
     @JsonProperty("payload")
-    @Schema(description = "The payload of the sample. The bytes are base64 encoded to ensure compatibility even if the payload is a arbitrary byte sequence.",
+    @Schema(
+            description =
+                    "The payload of the sample. The bytes are base64 encoded to ensure compatibility even if the payload is a arbitrary byte sequence.",
             requiredMode = Schema.RequiredMode.REQUIRED)
     private final @NotNull String payload;
 
     @JsonCreator
-    public PayloadSample( @JsonProperty("payload") final @NotNull String payload) {
+    public PayloadSample(@JsonProperty("payload") final @NotNull String payload) {
         this.payload = payload;
     }
 

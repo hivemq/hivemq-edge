@@ -17,9 +17,9 @@ package com.hivemq.api.model.components;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Bean to transport Link details across the API
@@ -28,7 +28,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public class Notification {
 
     public enum LEVEL {
-        NOTICE, WARNING, ERROR
+        NOTICE,
+        WARNING,
+        ERROR
     }
 
     @JsonProperty("level")
@@ -46,7 +48,6 @@ public class Notification {
     @JsonProperty("link")
     @Schema(description = "An associated link", nullable = true)
     private final @Nullable Link link;
-
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public Notification(

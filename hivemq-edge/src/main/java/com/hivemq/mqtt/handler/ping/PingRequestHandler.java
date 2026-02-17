@@ -21,11 +21,10 @@ import com.hivemq.mqtt.message.PINGRESP;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Christoph Schäbel
@@ -39,18 +38,26 @@ public class PingRequestHandler extends SimpleChannelInboundHandler<PINGREQ> {
     private static final PINGRESP PING_RESPONSE = new PINGRESP();
 
     @Inject
-    PingRequestHandler() {
-    }
+    PingRequestHandler() {}
 
     @Override
     protected void channelRead0(final ChannelHandlerContext ctx, final PINGREQ msg) throws Exception {
         if (log.isTraceEnabled()) {
-            log.trace("PingReq received for client {}.", ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getClientId());
+            log.trace(
+                    "PingReq received for client {}.",
+                    ctx.channel()
+                            .attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                            .get()
+                            .getClientId());
         }
         ctx.writeAndFlush(PING_RESPONSE);
         if (log.isTraceEnabled()) {
-            log.trace("PingResp sent for client {}.", ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getClientId());
+            log.trace(
+                    "PingResp sent for client {}.",
+                    ctx.channel()
+                            .attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                            .get()
+                            .getClientId());
         }
     }
-
 }

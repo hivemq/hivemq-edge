@@ -16,12 +16,10 @@
 package com.hivemq.extensions.services.auth;
 
 import com.google.common.collect.ImmutableMap;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.auth.provider.AuthorizerProvider;
 import com.hivemq.extensions.ExtensionPriorityComparator;
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensions;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Map;
@@ -29,6 +27,7 @@ import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @since 4.0.0

@@ -13,8 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.handler;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.bootstrap.ClientConnection;
@@ -47,6 +54,10 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.io.File;
+import java.time.Duration;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,19 +66,6 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 import util.IsolatedExtensionClassloaderUtil;
 import util.TestConfigurationBootstrap;
-
-import java.io.File;
-import java.time.Duration;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class PubackInterceptorHandlerTest {
 
@@ -81,6 +79,7 @@ public class PubackInterceptorHandlerTest {
     private @NotNull PluginTaskExecutor executor;
     private @NotNull EmbeddedChannel channel;
     private @NotNull PubackInterceptorHandler handler;
+
     @BeforeEach
     public void setUp() throws Exception {
         executor = new PluginTaskExecutor(new AtomicLong());
@@ -95,16 +94,13 @@ public class PubackInterceptorHandlerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv5);
         when(extension.getId()).thenReturn("extension");
 
-        final ConfigurationService configurationService =
-                new TestConfigurationBootstrap().getConfigurationService();
+        final ConfigurationService configurationService = new TestConfigurationBootstrap().getConfigurationService();
         final PluginOutPutAsyncer asyncer = new PluginOutputAsyncerImpl(mock(ShutdownHooks.class));
         final PluginTaskExecutorService pluginTaskExecutorService =
                 new PluginTaskExecutorServiceImpl(() -> executor, mock(ShutdownHooks.class));
 
-        handler = new PubackInterceptorHandler(configurationService,
-                asyncer,
-                hiveMQExtensions,
-                pluginTaskExecutorService);
+        handler = new PubackInterceptorHandler(
+                configurationService, asyncer, hiveMQExtensions, pluginTaskExecutorService);
         channel.pipeline().addLast("test1", new ChannelOutboundHandlerAdapter() {
             @Override
             public void write(
@@ -121,6 +117,7 @@ public class PubackInterceptorHandlerTest {
             }
         });
     }
+
     @AfterEach
     public void tearDown() throws Exception {
         executor.stop();
@@ -171,8 +168,7 @@ public class PubackInterceptorHandlerTest {
     @Timeout(5)
     public void test_inbound_modify() throws Exception {
         final PubackInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                TestModifyInboundInterceptor.class);
+                temporaryFolder.toPath(), TestModifyInboundInterceptor.class);
         final List<PubackInboundInterceptor> list = ImmutableList.of(interceptor);
 
         when(clientContext.getPubackInboundInterceptors()).thenReturn(list);
@@ -194,8 +190,7 @@ public class PubackInterceptorHandlerTest {
     @Timeout(5)
     public void test_inbound_plugin_null() throws Exception {
         final PubackInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                TestModifyInboundInterceptor.class);
+                temporaryFolder.toPath(), TestModifyInboundInterceptor.class);
         final List<PubackInboundInterceptor> list = ImmutableList.of(interceptor);
         when(clientContext.getPubackInboundInterceptors()).thenReturn(list);
         when(hiveMQExtensions.getExtensionForClassloader(any())).thenReturn(null);
@@ -215,9 +210,8 @@ public class PubackInterceptorHandlerTest {
     @Test
     @Timeout(10)
     public void test_inbound_timeout_failed() throws Exception {
-        final PubackInboundInterceptor interceptor =
-                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.toPath(),
-                        TestTimeoutFailedInboundInterceptor.class);
+        final PubackInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
+                temporaryFolder.toPath(), TestTimeoutFailedInboundInterceptor.class);
         final List<PubackInboundInterceptor> list = ImmutableList.of(interceptor);
 
         when(clientContext.getPubackInboundInterceptors()).thenReturn(list);
@@ -235,8 +229,7 @@ public class PubackInterceptorHandlerTest {
     @Timeout(5)
     public void test_inbound_exception() throws Exception {
         final PubackInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                TestExceptionInboundInterceptor.class);
+                temporaryFolder.toPath(), TestExceptionInboundInterceptor.class);
         final List<PubackInboundInterceptor> list = ImmutableList.of(interceptor);
 
         when(clientContext.getPubackInboundInterceptors()).thenReturn(list);
@@ -253,9 +246,8 @@ public class PubackInterceptorHandlerTest {
     @Test
     @Timeout(5)
     public void test_inbound_noPartialModificationWhenException() throws Exception {
-        final PubackInboundInterceptor interceptor =
-                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.toPath(),
-                        TestPartialModifiedInboundInterceptor.class);
+        final PubackInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
+                temporaryFolder.toPath(), TestPartialModifiedInboundInterceptor.class);
         final List<PubackInboundInterceptor> list = ImmutableList.of(interceptor);
 
         when(clientContext.getPubackInboundInterceptors()).thenReturn(list);
@@ -320,8 +312,7 @@ public class PubackInterceptorHandlerTest {
     @Timeout(5)
     public void test_outbound_modify() throws Exception {
         final PubackOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                TestModifyOutboundInterceptor.class);
+                temporaryFolder.toPath(), TestModifyOutboundInterceptor.class);
         final List<PubackOutboundInterceptor> list = ImmutableList.of(interceptor);
 
         when(clientContext.getPubackOutboundInterceptors()).thenReturn(list);
@@ -343,8 +334,7 @@ public class PubackInterceptorHandlerTest {
     @Timeout(5)
     public void test_outbound_plugin_null() throws Exception {
         final PubackOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                TestModifyOutboundInterceptor.class);
+                temporaryFolder.toPath(), TestModifyOutboundInterceptor.class);
         final List<PubackOutboundInterceptor> list = ImmutableList.of(interceptor);
         when(clientContext.getPubackOutboundInterceptors()).thenReturn(list);
         when(hiveMQExtensions.getExtensionForClassloader(any())).thenReturn(null);
@@ -364,9 +354,8 @@ public class PubackInterceptorHandlerTest {
     @Test
     @Timeout(10)
     public void test_outbound_timeout_failed() throws Exception {
-        final PubackOutboundInterceptor interceptor =
-                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.toPath(),
-                        TestTimeoutFailedOutboundInterceptor.class);
+        final PubackOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
+                temporaryFolder.toPath(), TestTimeoutFailedOutboundInterceptor.class);
         final List<PubackOutboundInterceptor> list = ImmutableList.of(interceptor);
 
         when(clientContext.getPubackOutboundInterceptors()).thenReturn(list);
@@ -385,8 +374,7 @@ public class PubackInterceptorHandlerTest {
     @Timeout(5)
     public void test_outbound_exception() throws Exception {
         final PubackOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                TestExceptionOutboundInterceptor.class);
+                temporaryFolder.toPath(), TestExceptionOutboundInterceptor.class);
         final List<PubackOutboundInterceptor> list = ImmutableList.of(interceptor);
 
         when(clientContext.getPubackOutboundInterceptors()).thenReturn(list);
@@ -402,9 +390,8 @@ public class PubackInterceptorHandlerTest {
     @Test
     @Timeout(5)
     public void test_outbound_noPartialModificationWhenException() throws Exception {
-        final PubackOutboundInterceptor interceptor =
-                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.toPath(),
-                        TestPartialModifiedOutboundInterceptor.class);
+        final PubackOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
+                temporaryFolder.toPath(), TestPartialModifiedOutboundInterceptor.class);
         final List<PubackOutboundInterceptor> list = ImmutableList.of(interceptor);
 
         when(clientContext.getPubackOutboundInterceptors()).thenReturn(list);

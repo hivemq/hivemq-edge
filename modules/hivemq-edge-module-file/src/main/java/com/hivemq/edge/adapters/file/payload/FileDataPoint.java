@@ -17,9 +17,8 @@ package com.hivemq.edge.adapters.file.payload;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.edge.adapters.file.tag.FileTag;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 public class FileDataPoint implements DataPoint {
 

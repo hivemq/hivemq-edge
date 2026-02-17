@@ -15,6 +15,9 @@
  */
 package com.hivemq.api.auth.provider.impl.ldap;
 
+import static com.hivemq.api.auth.ApiRoles.ADMIN;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection;
 import com.hivemq.api.auth.provider.impl.ldap.testcontainer.OpenLdapContainer;
 import com.hivemq.logging.SecurityLog;
@@ -28,17 +31,13 @@ import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.ldap.sdk.SimpleBindRequest;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-
-import static com.hivemq.api.auth.ApiRoles.ADMIN;
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Integration tests using OpenLDAP testcontainer.
@@ -85,7 +84,7 @@ class OpenLdapTest {
      */
     @Container
     private static final OpenLdapContainer OPENLDAP_CONTAINER = OpenLdapContainer.builder()
-            .withTls(true)  // Enable TLS for START_TLS testing
+            .withTls(true) // Enable TLS for START_TLS testing
             .withLdifFile("ldap/test-data.ldif")
             .build();
 
@@ -100,14 +99,12 @@ class OpenLdapTest {
 
         // Create LdapSimpleBind for OpenLDAP admin authentication
         // OpenLDAP admin DN: cn=admin,{baseDn}
-        final LdapConnectionProperties.LdapSimpleBind ldapSimpleBind =
-                new LdapConnectionProperties.LdapSimpleBind(
-                        OPENLDAP_CONTAINER.getAdminRdns(),
-                        OPENLDAP_CONTAINER.getAdminPassword());
+        final LdapConnectionProperties.LdapSimpleBind ldapSimpleBind = new LdapConnectionProperties.LdapSimpleBind(
+                OPENLDAP_CONTAINER.getAdminRdns(), OPENLDAP_CONTAINER.getAdminPassword());
 
         // Create connection properties
         connectionProperties = new LdapConnectionProperties(
-                new LdapConnectionProperties.LdapServers(new String[]{host}, new int[]{port}),
+                new LdapConnectionProperties.LdapServers(new String[] {host}, new int[] {port}),
                 TlsMode.NONE, // Plain LDAP for this test
                 null,
                 5000,
@@ -153,7 +150,8 @@ class OpenLdapTest {
         // Act - Connect and bind as admin
         final var testconnection = new LdapTestConnection(connectionProperties);
         try (final LDAPConnection connection = testconnection.createConnection()) {
-            final BindRequest bindRequest = new SimpleBindRequest(OPENLDAP_CONTAINER.getAdminDn(), OPENLDAP_CONTAINER.getAdminPassword());
+            final BindRequest bindRequest =
+                    new SimpleBindRequest(OPENLDAP_CONTAINER.getAdminDn(), OPENLDAP_CONTAINER.getAdminPassword());
             final BindResult bindResult = connection.bind(bindRequest);
 
             // Assert
@@ -188,7 +186,8 @@ class OpenLdapTest {
                     "ou=people," + OPENLDAP_CONTAINER.getBaseDn(),
                     SearchScope.ONE,
                     "(objectClass=inetOrgPerson)",
-                    SearchRequest.ALL_USER_ATTRIBUTES, SearchRequest.ALL_OPERATIONAL_ATTRIBUTES);
+                    SearchRequest.ALL_USER_ATTRIBUTES,
+                    SearchRequest.ALL_OPERATIONAL_ATTRIBUTES);
 
             final SearchResult searchResult = connection.search(searchRequest);
 
@@ -227,18 +226,18 @@ class OpenLdapTest {
 
         // Test bob
         final boolean bobAuth = ldapClient.authenticateUser("bob", "bob456".getBytes(StandardCharsets.UTF_8));
-        assertThat(bobAuth)
-                .as("Bob should authenticate with correct password")
-                .isTrue();
+        assertThat(bobAuth).as("Bob should authenticate with correct password").isTrue();
 
         // Test charlie
-        final boolean charlieAuth = ldapClient.authenticateUser("charlie", "charlie789".getBytes(StandardCharsets.UTF_8));
+        final boolean charlieAuth =
+                ldapClient.authenticateUser("charlie", "charlie789".getBytes(StandardCharsets.UTF_8));
         assertThat(charlieAuth)
                 .as("Charlie should authenticate with correct password")
                 .isTrue();
 
         // Test wrong password
-        final boolean wrongAuth = ldapClient.authenticateUser("alice", "wrongpassword".getBytes(StandardCharsets.UTF_8));
+        final boolean wrongAuth =
+                ldapClient.authenticateUser("alice", "wrongpassword".getBytes(StandardCharsets.UTF_8));
         assertThat(wrongAuth)
                 .as("Authentication should fail with wrong password")
                 .isFalse();
@@ -268,7 +267,8 @@ class OpenLdapTest {
             assertThat(searchResult.getResultCode()).isEqualTo(ResultCode.SUCCESS);
             assertThat(searchResult.getEntryCount()).isEqualTo(1);
 
-            final SearchResultEntry developersGroup = searchResult.getSearchEntries().getFirst();
+            final SearchResultEntry developersGroup =
+                    searchResult.getSearchEntries().getFirst();
 
             // Verify group members
             final String[] members = developersGroup.getAttributeValues("uniqueMember");
@@ -277,11 +277,9 @@ class OpenLdapTest {
                     .hasSize(2)
                     .contains(
                             "uid=alice,ou=people," + OPENLDAP_CONTAINER.getBaseDn(),
-                            "uid=bob,ou=people," + OPENLDAP_CONTAINER.getBaseDn()
-                    );
+                            "uid=bob,ou=people," + OPENLDAP_CONTAINER.getBaseDn());
 
-            assertThat(developersGroup.getAttributeValue("description"))
-                    .isEqualTo("Software Development Team");
+            assertThat(developersGroup.getAttributeValue("description")).isEqualTo("Software Development Team");
         }
     }
 
@@ -300,41 +298,30 @@ class OpenLdapTest {
             try (final LDAPConnectionPool pool = new LDAPConnectionPool(connection, 1, 5)) {
                 // Test 1: Search by UID
                 final SearchFilterDnResolver uidResolver = new SearchFilterDnResolver(
-                        pool,
-                        OPENLDAP_CONTAINER.getBaseDn(),
-                        "uid",
-                        null,
-                        SearchScope.SUB,
-                        5);
+                        pool, OPENLDAP_CONTAINER.getBaseDn(), "uid", null, SearchScope.SUB, 5);
 
                 String dn = uidResolver.resolveDn("alice");
-                assertThat(dn).as("Should resolve alice's DN by UID")
+                assertThat(dn)
+                        .as("Should resolve alice's DN by UID")
                         .isEqualTo("uid=alice,ou=people," + OPENLDAP_CONTAINER.getBaseDn());
 
                 // Test 2: Search by email
-                final SearchFilterDnResolver emailResolver = new SearchFilterDnResolver(pool,
-                        OPENLDAP_CONTAINER.getBaseDn(),
-                        "mail",
-                        null,
-                        SearchScope.SUB,
-                        5);
+                final SearchFilterDnResolver emailResolver = new SearchFilterDnResolver(
+                        pool, OPENLDAP_CONTAINER.getBaseDn(), "mail", null, SearchScope.SUB, 5);
 
                 dn = emailResolver.resolveDn("bob@example.org");
-                assertThat(dn).as("Should resolve bob's DN by email")
+                assertThat(dn)
+                        .as("Should resolve bob's DN by email")
                         .isEqualTo("uid=bob,ou=people," + OPENLDAP_CONTAINER.getBaseDn());
 
                 // Test 3: Search by common name
-                final SearchFilterDnResolver cnResolver = new SearchFilterDnResolver(pool,
-                        OPENLDAP_CONTAINER.getBaseDn(),
-                        "cn",
-                        null,
-                        SearchScope.SUB,
-                        5);
+                final SearchFilterDnResolver cnResolver = new SearchFilterDnResolver(
+                        pool, OPENLDAP_CONTAINER.getBaseDn(), "cn", null, SearchScope.SUB, 5);
 
                 dn = cnResolver.resolveDn("Charlie Chen");
-                assertThat(dn).as("Should resolve charlie's DN by common name")
+                assertThat(dn)
+                        .as("Should resolve charlie's DN by common name")
                         .isEqualTo("uid=charlie,ou=people," + OPENLDAP_CONTAINER.getBaseDn());
-
             }
         }
     }
@@ -352,10 +339,8 @@ class OpenLdapTest {
             connection.bind(OPENLDAP_CONTAINER.getAdminDn(), OPENLDAP_CONTAINER.getAdminPassword());
 
             // Search 1: Find all users with email ending in @example.org
-            final SearchRequest search1 = new SearchRequest(
-                    OPENLDAP_CONTAINER.getBaseDn(),
-                    SearchScope.SUB,
-                    "(mail=*@example.org)");
+            final SearchRequest search1 =
+                    new SearchRequest(OPENLDAP_CONTAINER.getBaseDn(), SearchScope.SUB, "(mail=*@example.org)");
 
             final SearchResult result1 = connection.search(search1);
             assertThat(result1.getEntryCount())
@@ -363,10 +348,8 @@ class OpenLdapTest {
                     .isEqualTo(4);
 
             // Search 2: Find users with uidNumber >= 10002
-            final SearchRequest search2 = new SearchRequest(
-                    OPENLDAP_CONTAINER.getBaseDn(),
-                    SearchScope.SUB,
-                    "(uidNumber>=10002)");
+            final SearchRequest search2 =
+                    new SearchRequest(OPENLDAP_CONTAINER.getBaseDn(), SearchScope.SUB, "(uidNumber>=10002)");
 
             final SearchResult result2 = connection.search(search2);
             assertThat(result2.getEntryCount())
@@ -375,9 +358,7 @@ class OpenLdapTest {
 
             // Search 3: Find all groups
             final SearchRequest search3 = new SearchRequest(
-                    "ou=groups," + OPENLDAP_CONTAINER.getBaseDn(),
-                    SearchScope.ONE,
-                    "(objectClass=groupOfUniqueNames)");
+                    "ou=groups," + OPENLDAP_CONTAINER.getBaseDn(), SearchScope.ONE, "(objectClass=groupOfUniqueNames)");
 
             final SearchResult result3 = connection.search(search3);
             assertThat(result3.getEntryCount())
@@ -389,8 +370,7 @@ class OpenLdapTest {
                     .map(entry -> entry.getAttributeValue("cn"))
                     .toList();
 
-            assertThat(groupNames)
-                    .containsExactlyInAnyOrder("developers", "administrators", "data-scientists");
+            assertThat(groupNames).containsExactlyInAnyOrder("developers", "administrators", "data-scientists");
         }
     }
 
@@ -467,14 +447,12 @@ class OpenLdapTest {
         // Note: Using acceptAnyCertificateForTesting to trust self-signed cert from OpenLDAP container
         // In production, use proper CA-signed certificates and validate them
         final LdapConnectionProperties.LdapSimpleBind ldapSimpleBind =
-                new LdapConnectionProperties.LdapSimpleBind(
-                        "cn=admin",
-                        OPENLDAP_CONTAINER.getAdminPassword());
+                new LdapConnectionProperties.LdapSimpleBind("cn=admin", OPENLDAP_CONTAINER.getAdminPassword());
 
         final LdapConnectionProperties startTlsProps = new LdapConnectionProperties(
-                new LdapConnectionProperties.LdapServers(new String[]{host}, new int[]{port}),
+                new LdapConnectionProperties.LdapServers(new String[] {host}, new int[] {port}),
                 TlsMode.START_TLS,
-                null,  // No truststore needed
+                null, // No truststore needed
                 5000,
                 10000,
                 1,
@@ -484,7 +462,7 @@ class OpenLdapTest {
                 SearchScope.SUB,
                 5,
                 ADMIN,
-                true,  // TEST ONLY: Accept any certificate
+                true, // TEST ONLY: Accept any certificate
                 ldapSimpleBind,
                 null);
 
@@ -495,7 +473,8 @@ class OpenLdapTest {
 
         try {
             // Authenticate alice over START_TLS
-            final boolean aliceAuth = startTlsClient.authenticateUser("alice", "alice123".getBytes(StandardCharsets.UTF_8));
+            final boolean aliceAuth =
+                    startTlsClient.authenticateUser("alice", "alice123".getBytes(StandardCharsets.UTF_8));
             assertThat(aliceAuth)
                     .as("Alice should authenticate with correct password over START_TLS")
                     .isTrue();
@@ -507,7 +486,8 @@ class OpenLdapTest {
                     .isTrue();
 
             // Verify wrong password fails even over START_TLS
-            final boolean wrongPasswordAuth = startTlsClient.authenticateUser("alice", "wrongpassword".getBytes(StandardCharsets.UTF_8));
+            final boolean wrongPasswordAuth =
+                    startTlsClient.authenticateUser("alice", "wrongpassword".getBytes(StandardCharsets.UTF_8));
             assertThat(wrongPasswordAuth)
                     .as("Authentication should fail with wrong password even over START_TLS")
                     .isFalse();
@@ -537,14 +517,12 @@ class OpenLdapTest {
         final int port = OPENLDAP_CONTAINER.getLdapPort();
 
         final LdapConnectionProperties.LdapSimpleBind ldapSimpleBind =
-                new LdapConnectionProperties.LdapSimpleBind(
-                        "cn=admin",
-                        OPENLDAP_CONTAINER.getAdminPassword());
+                new LdapConnectionProperties.LdapSimpleBind("cn=admin", OPENLDAP_CONTAINER.getAdminPassword());
 
         final LdapConnectionProperties startTlsProps = new LdapConnectionProperties(
-                new LdapConnectionProperties.LdapServers(new String[]{host}, new int[]{port}),
+                new LdapConnectionProperties.LdapServers(new String[] {host}, new int[] {port}),
                 TlsMode.START_TLS,
-                null,  // No truststore needed
+                null, // No truststore needed
                 5000,
                 10000,
                 1,
@@ -554,10 +532,9 @@ class OpenLdapTest {
                 SearchScope.SUB,
                 5,
                 ADMIN,
-                true,  // TEST ONLY: Accept any certificate
+                true, // TEST ONLY: Accept any certificate
                 ldapSimpleBind,
                 null);
-
 
         final LdapClient startTlsClient = new LdapClient(startTlsProps, new SecurityLog());
 
@@ -567,7 +544,8 @@ class OpenLdapTest {
         try {
             // Multiple authentication attempts to verify encryption stays active
             for (int i = 0; i < 3; i++) {
-                final boolean authenticated = startTlsClient.authenticateUser("alice", "alice123".getBytes(StandardCharsets.UTF_8));
+                final boolean authenticated =
+                        startTlsClient.authenticateUser("alice", "alice123".getBytes(StandardCharsets.UTF_8));
                 assertThat(authenticated)
                         .as("Authentication attempt %d should succeed over encrypted connection", i + 1)
                         .isTrue();
@@ -609,15 +587,13 @@ class OpenLdapTest {
         final int port = OPENLDAP_CONTAINER.getLdapPort();
 
         final LdapConnectionProperties.LdapSimpleBind ldapSimpleBind =
-                new LdapConnectionProperties.LdapSimpleBind(
-                        "cn=admin",
-                        OPENLDAP_CONTAINER.getAdminPassword());
+                new LdapConnectionProperties.LdapSimpleBind("cn=admin", OPENLDAP_CONTAINER.getAdminPassword());
 
         // Plain LDAP client
         final LdapConnectionProperties plainProps = new LdapConnectionProperties(
-                new LdapConnectionProperties.LdapServers(new String[]{host}, new int[]{port}),
+                new LdapConnectionProperties.LdapServers(new String[] {host}, new int[] {port}),
                 TlsMode.NONE,
-                null,  // No truststore needed
+                null, // No truststore needed
                 5000,
                 10000,
                 1,
@@ -627,7 +603,7 @@ class OpenLdapTest {
                 SearchScope.SUB,
                 5,
                 ADMIN,
-                true,  // TEST ONLY: Accept any certificate
+                true, // TEST ONLY: Accept any certificate
                 ldapSimpleBind,
                 null);
 
@@ -635,9 +611,9 @@ class OpenLdapTest {
 
         // START_TLS client
         final LdapConnectionProperties startTlsProps = new LdapConnectionProperties(
-                new LdapConnectionProperties.LdapServers(new String[]{host}, new int[]{port}),
+                new LdapConnectionProperties.LdapServers(new String[] {host}, new int[] {port}),
                 TlsMode.START_TLS,
-                null,  // No truststore needed
+                null, // No truststore needed
                 5000,
                 10000,
                 1,
@@ -647,7 +623,7 @@ class OpenLdapTest {
                 SearchScope.SUB,
                 5,
                 ADMIN,
-                true,  // TEST ONLY: Accept any certificate
+                true, // TEST ONLY: Accept any certificate
                 ldapSimpleBind,
                 null);
 
@@ -660,12 +636,12 @@ class OpenLdapTest {
             startTlsClient.start();
 
             // Both should authenticate successfully
-            final boolean plainAuth = plainClient.authenticateUser("alice", "alice123".getBytes(StandardCharsets.UTF_8));
-            final boolean startTlsAuth = startTlsClient.authenticateUser("alice", "alice123".getBytes(StandardCharsets.UTF_8));
+            final boolean plainAuth =
+                    plainClient.authenticateUser("alice", "alice123".getBytes(StandardCharsets.UTF_8));
+            final boolean startTlsAuth =
+                    startTlsClient.authenticateUser("alice", "alice123".getBytes(StandardCharsets.UTF_8));
 
-            assertThat(plainAuth)
-                    .as("Plain LDAP authentication should succeed")
-                    .isTrue();
+            assertThat(plainAuth).as("Plain LDAP authentication should succeed").isTrue();
 
             assertThat(startTlsAuth)
                     .as("START_TLS authentication should succeed")
@@ -705,12 +681,8 @@ class OpenLdapTest {
 
             try (final LDAPConnectionPool pool = new LDAPConnectionPool(connection, 1, 5)) {
                 // Test search operations over encrypted connection
-                final SearchFilterDnResolver resolver = new SearchFilterDnResolver(pool,
-                        OPENLDAP_CONTAINER.getBaseDn(),
-                        "uid",
-                        null,
-                        SearchScope.SUB,
-                        5);
+                final SearchFilterDnResolver resolver = new SearchFilterDnResolver(
+                        pool, OPENLDAP_CONTAINER.getBaseDn(), "uid", null, SearchScope.SUB, 5);
 
                 // Act - Perform searches over START_TLS
                 final String aliceDn = resolver.resolveDn("alice");
@@ -718,15 +690,17 @@ class OpenLdapTest {
                 final String charlieDn = resolver.resolveDn("charlie");
 
                 // Assert - All searches should work over encrypted connection
-                assertThat(aliceDn).as("Should resolve alice's DN over START_TLS")
+                assertThat(aliceDn)
+                        .as("Should resolve alice's DN over START_TLS")
                         .isEqualTo("uid=alice,ou=people," + OPENLDAP_CONTAINER.getBaseDn());
 
-                assertThat(bobDn).as("Should resolve bob's DN over START_TLS")
+                assertThat(bobDn)
+                        .as("Should resolve bob's DN over START_TLS")
                         .isEqualTo("uid=bob,ou=people," + OPENLDAP_CONTAINER.getBaseDn());
 
-                assertThat(charlieDn).as("Should resolve charlie's DN over START_TLS")
+                assertThat(charlieDn)
+                        .as("Should resolve charlie's DN over START_TLS")
                         .isEqualTo("uid=charlie,ou=people," + OPENLDAP_CONTAINER.getBaseDn());
-
             }
         }
     }

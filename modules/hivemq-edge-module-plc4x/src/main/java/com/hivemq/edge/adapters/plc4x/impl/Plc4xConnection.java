@@ -20,6 +20,12 @@ import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
 import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 import org.apache.plc4x.java.api.PlcConnection;
 import org.apache.plc4x.java.api.PlcDriverManager;
 import org.apache.plc4x.java.api.exceptions.PlcConnectionException;
@@ -33,13 +39,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
 
 public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
 
@@ -70,17 +69,18 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
     protected @NotNull String createConnectionString(final @NotNull T config) {
         final String queryString = connectionQueryStringProvider.getConnectionQueryString(config);
         if (queryString != null && !queryString.trim().isEmpty()) {
-            return String.format("%s://%s:%s?%s",
-                    getProtocol().trim(),
-                    config.getHost().trim(),
-                    config.getPort(),
-                    queryString.trim());
+            return String.format(
+                    "%s://%s:%s?%s",
+                    getProtocol().trim(), config.getHost().trim(), config.getPort(), queryString.trim());
         } else {
-            return String.format("%s://%s:%s", getProtocol().trim(), config.getHost().trim(), config.getPort());
+            return String.format(
+                    "%s://%s:%s", getProtocol().trim(), config.getHost().trim(), config.getPort());
         }
     }
 
-    void startConnection(final @NotNull EventService eventService, final @NotNull String adpaterId, final @NotNull String protocolId) throws Plc4xException {
+    void startConnection(
+            final @NotNull EventService eventService, final @NotNull String adpaterId, final @NotNull String protocolId)
+            throws Plc4xException {
         if (plcConnection == null) {
             synchronized (lock) {
                 if (plcConnection == null) {
@@ -91,10 +91,13 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
                     try {
                         plcConnection = CompletableFuture.supplyAsync(() -> {
                                     try {
-                                        // This is not working in all cases. An exception is thrown if PLC4X actually catches
-                                        // the connection problem. In many cases this call will simply get stuck. Afterwards
+                                        // This is not working in all cases. An exception is thrown if PLC4X actually
+                                        // catches
+                                        // the connection problem. In many cases this call will simply get stuck.
+                                        // Afterwards
                                         // a new connection CANNOT be opened.
-                                        return Optional.of(plcDriverManager.getConnectionManager()
+                                        return Optional.of(plcDriverManager
+                                                .getConnectionManager()
                                                 .getConnection(connectionString));
                                     } catch (final Throwable e) {
                                         log.info("Error encountered connecting to external device", e);
@@ -102,9 +105,10 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
                                     return Optional.<PlcConnection>empty();
                                 })
                                 .get(2_000, TimeUnit.MILLISECONDS)
-                                .orElseThrow(() -> new Plc4xException("Error encountered connecting to external device"));
+                                .orElseThrow(
+                                        () -> new Plc4xException("Error encountered connecting to external device"));
                     } catch (final TimeoutException te) {
-                        //PLC4X is stuck, no way to recover from this than to restart edge
+                        // PLC4X is stuck, no way to recover from this than to restart edge
 
                         eventService
                                 .createAdapterEvent(adpaterId, protocolId)
@@ -113,7 +117,8 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
                                 .fire();
 
                         log.error("Error encountered connecting to external device, restart of edge required", te);
-                        throw new Plc4xException("Error encountered connecting to external device, restart of edge required");
+                        throw new Plc4xException(
+                                "Error encountered connecting to external device, restart of edge required");
                     } catch (final Throwable e) {
                         log.error("Error encountered connecting to external device", e);
                         throw new Plc4xException("Error encountered connecting to external device");
@@ -166,16 +171,14 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
         final PlcReadRequest.Builder builder = plcConnection.readRequestBuilder();
         tags.forEach(tag -> builder.addTagAddress(tag.getName(), getTagAddressForSubscription(tag)));
         final PlcReadRequest readRequest = builder.build();
-        //Ok - seems the reads are not thread safe
+        // Ok - seems the reads are not thread safe
         synchronized (lock) {
             return readRequest.execute();
         }
     }
 
-
     public @NotNull CompletableFuture<? extends PlcSubscriptionResponse> subscribe(
-            final @NotNull Plc4xTag tag,
-            final @NotNull Consumer<PlcSubscriptionEvent> consumer) {
+            final @NotNull Plc4xTag tag, final @NotNull Consumer<PlcSubscriptionEvent> consumer) {
         lazyConnectionCheck();
         if (!plcConnection.getMetadata().isSubscribeSupported()) {
             return CompletableFuture.failedFuture(new Plc4xException("connection type cannot subscribe"));
@@ -185,24 +188,23 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
         }
         final PlcSubscriptionRequest.Builder builder = plcConnection.subscriptionRequestBuilder();
 
-        //TODO we're only registering for state change, could also register events
+        // TODO we're only registering for state change, could also register events
         builder.addChangeOfStateTagAddress(tag.getName(), getTagAddressForSubscription(tag));
         PlcSubscriptionRequest subscriptionRequest = builder.build();
         CompletableFuture<PlcSubscriptionResponse> future =
                 (CompletableFuture<PlcSubscriptionResponse>) subscriptionRequest.execute();
         @SuppressWarnings("unused")
-        final var unused = future
-                .whenComplete((plcSubscriptionResponse, throwable) -> {
-                    if (throwable != null) {
-                        log.warn("Connection subscription encountered an error;", throwable);
-                    } else {
-                        for (final String subscriptionName : plcSubscriptionResponse.getTagNames()) {
-                            final PlcSubscriptionHandle subscriptionHandle =
-                                    plcSubscriptionResponse.getSubscriptionHandle(subscriptionName);
-                            subscriptionHandle.register(consumer);
-                        }
-                    }
-                });
+        final var unused = future.whenComplete((plcSubscriptionResponse, throwable) -> {
+            if (throwable != null) {
+                log.warn("Connection subscription encountered an error;", throwable);
+            } else {
+                for (final String subscriptionName : plcSubscriptionResponse.getTagNames()) {
+                    final PlcSubscriptionHandle subscriptionHandle =
+                            plcSubscriptionResponse.getSubscriptionHandle(subscriptionName);
+                    subscriptionHandle.register(consumer);
+                }
+            }
+        });
         return future;
     }
 

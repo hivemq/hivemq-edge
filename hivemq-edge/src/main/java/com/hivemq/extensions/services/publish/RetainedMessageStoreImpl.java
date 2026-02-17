@@ -18,7 +18,6 @@ package com.hivemq.extensions.services.publish;
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.exception.DoNotImplementException;
 import com.hivemq.extension.sdk.api.services.general.IterationCallback;
 import com.hivemq.extension.sdk.api.services.publish.RetainedMessageStore;
@@ -35,7 +34,6 @@ import com.hivemq.extensions.services.PluginServiceRateLimitService;
 import com.hivemq.extensions.services.executor.GlobalManagedExtensionExecutorService;
 import com.hivemq.persistence.RetainedMessage;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Collection;
@@ -44,6 +42,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -59,10 +58,11 @@ public class RetainedMessageStoreImpl implements RetainedMessageStore {
     private final @NotNull AsyncIteratorFactory asyncIteratorFactory;
 
     @Inject
-    public RetainedMessageStoreImpl(final @NotNull RetainedMessagePersistence retainedMessagePersistence,
-                                    final @NotNull GlobalManagedExtensionExecutorService managedExtensionExecurotrService,
-                                    final @NotNull PluginServiceRateLimitService pluginServiceRateLimitService,
-                                    final @NotNull AsyncIteratorFactory asyncIteratorFactory) {
+    public RetainedMessageStoreImpl(
+            final @NotNull RetainedMessagePersistence retainedMessagePersistence,
+            final @NotNull GlobalManagedExtensionExecutorService managedExtensionExecurotrService,
+            final @NotNull PluginServiceRateLimitService pluginServiceRateLimitService,
+            final @NotNull AsyncIteratorFactory asyncIteratorFactory) {
         this.retainedMessagePersistence = retainedMessagePersistence;
         this.globalManagedExtensionExecutorService = managedExtensionExecurotrService;
         this.pluginServiceRateLimitService = pluginServiceRateLimitService;
@@ -80,7 +80,11 @@ public class RetainedMessageStoreImpl implements RetainedMessageStore {
             return CompletableFuture.failedFuture(PluginServiceRateLimitService.RATE_LIMIT_EXCEEDED_EXCEPTION);
         }
         final ListenableFuture<RetainedMessage> retainedMessageFuture = retainedMessagePersistence.get(topic);
-        return ListenableFutureConverter.toCompletable(retainedMessageFuture, (r) -> r == null ? Optional.empty() : Optional.of(new RetainedPublishImpl(topic, r)), false, globalManagedExtensionExecutorService);
+        return ListenableFutureConverter.toCompletable(
+                retainedMessageFuture,
+                (r) -> r == null ? Optional.empty() : Optional.of(new RetainedPublishImpl(topic, r)),
+                false,
+                globalManagedExtensionExecutorService);
     }
 
     /**
@@ -93,7 +97,8 @@ public class RetainedMessageStoreImpl implements RetainedMessageStore {
         if (pluginServiceRateLimitService.rateLimitExceeded()) {
             return CompletableFuture.failedFuture(PluginServiceRateLimitService.RATE_LIMIT_EXCEEDED_EXCEPTION);
         }
-        return ListenableFutureConverter.toCompletable(retainedMessagePersistence.remove(topic), globalManagedExtensionExecutorService);
+        return ListenableFutureConverter.toCompletable(
+                retainedMessagePersistence.remove(topic), globalManagedExtensionExecutorService);
     }
 
     /**
@@ -105,7 +110,8 @@ public class RetainedMessageStoreImpl implements RetainedMessageStore {
         if (pluginServiceRateLimitService.rateLimitExceeded()) {
             return CompletableFuture.failedFuture(PluginServiceRateLimitService.RATE_LIMIT_EXCEEDED_EXCEPTION);
         }
-        return ListenableFutureConverter.toCompletable(retainedMessagePersistence.clear(), globalManagedExtensionExecutorService);
+        return ListenableFutureConverter.toCompletable(
+                retainedMessagePersistence.clear(), globalManagedExtensionExecutorService);
     }
 
     /**
@@ -122,19 +128,20 @@ public class RetainedMessageStoreImpl implements RetainedMessageStore {
             return CompletableFuture.failedFuture(new DoNotImplementException(RetainedPublish.class.getSimpleName()));
         }
         final ListenableFuture<Void> persist = retainedMessagePersistence.persist(
-                retainedPublish.getTopic(),
-                RetainedPublishImpl.convert((RetainedPublishImpl) retainedPublish));
+                retainedPublish.getTopic(), RetainedPublishImpl.convert((RetainedPublishImpl) retainedPublish));
 
         return ListenableFutureConverter.toCompletable(persist, globalManagedExtensionExecutorService);
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> iterateAllRetainedMessages(final @NotNull IterationCallback<RetainedPublish> callback) {
+    public @NotNull CompletableFuture<Void> iterateAllRetainedMessages(
+            final @NotNull IterationCallback<RetainedPublish> callback) {
         return iterateAllRetainedMessages(callback, globalManagedExtensionExecutorService);
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> iterateAllRetainedMessages(final @NotNull IterationCallback<RetainedPublish> callback, final @NotNull Executor callbackExecutor) {
+    public @NotNull CompletableFuture<Void> iterateAllRetainedMessages(
+            final @NotNull IterationCallback<RetainedPublish> callback, final @NotNull Executor callbackExecutor) {
         Preconditions.checkNotNull(callback, "Callback cannot be null");
         Preconditions.checkNotNull(callbackExecutor, "Callback executor cannot be null");
 
@@ -142,8 +149,10 @@ public class RetainedMessageStoreImpl implements RetainedMessageStore {
             return CompletableFuture.failedFuture(PluginServiceRateLimitService.RATE_LIMIT_EXCEEDED_EXCEPTION);
         }
 
-        final FetchCallback<RetainedPublish> fetchCallback = new AllRetainedPublishesFetchCallBack(retainedMessagePersistence);
-        final AsyncIterator<RetainedPublish> asyncIterator = asyncIteratorFactory.createIterator(fetchCallback, new AllItemsItemCallback<>(callbackExecutor, callback));
+        final FetchCallback<RetainedPublish> fetchCallback =
+                new AllRetainedPublishesFetchCallBack(retainedMessagePersistence);
+        final AsyncIterator<RetainedPublish> asyncIterator = asyncIteratorFactory.createIterator(
+                fetchCallback, new AllItemsItemCallback<>(callbackExecutor, callback));
 
         asyncIterator.fetchAndIterate();
 
@@ -159,7 +168,8 @@ public class RetainedMessageStoreImpl implements RetainedMessageStore {
         return ListenableFutureConverter.toCompletable(settableFuture, globalManagedExtensionExecutorService);
     }
 
-    static class AllRetainedPublishesFetchCallBack extends AllItemsFetchCallback<RetainedPublish, Map<String, RetainedMessage>> {
+    static class AllRetainedPublishesFetchCallBack
+            extends AllItemsFetchCallback<RetainedPublish, Map<String, RetainedMessage>> {
 
         private final @NotNull RetainedMessagePersistence retainedMessagePersistence;
 
@@ -168,13 +178,17 @@ public class RetainedMessageStoreImpl implements RetainedMessageStore {
         }
 
         @Override
-        protected @NotNull ListenableFuture<MultipleChunkResult<Map<String, RetainedMessage>>> persistenceCall(final @NotNull ChunkCursor chunkCursor) {
+        protected @NotNull ListenableFuture<MultipleChunkResult<Map<String, RetainedMessage>>> persistenceCall(
+                final @NotNull ChunkCursor chunkCursor) {
             return retainedMessagePersistence.getAllLocalRetainedMessagesChunk(chunkCursor);
         }
 
         @Override
-        protected @NotNull Collection<RetainedPublish> transform(final @NotNull Map<String, RetainedMessage> stringRetainedMessageMap) {
-            return stringRetainedMessageMap.entrySet().stream().map(entry -> new RetainedPublishImpl(entry.getKey(), entry.getValue())).collect(Collectors.toUnmodifiableList());
+        protected @NotNull Collection<RetainedPublish> transform(
+                final @NotNull Map<String, RetainedMessage> stringRetainedMessageMap) {
+            return stringRetainedMessageMap.entrySet().stream()
+                    .map(entry -> new RetainedPublishImpl(entry.getKey(), entry.getValue()))
+                    .collect(Collectors.toUnmodifiableList());
         }
     }
 }

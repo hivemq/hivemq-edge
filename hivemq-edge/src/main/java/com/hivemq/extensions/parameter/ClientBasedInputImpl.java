@@ -15,13 +15,13 @@
  */
 package com.hivemq.extensions.parameter;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
 import com.hivemq.extension.sdk.api.parameter.ClientBasedInput;
 import com.hivemq.extensions.ExtensionInformationUtil;
 import com.hivemq.extensions.executor.task.PluginTaskInput;
 import io.netty.channel.Channel;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck

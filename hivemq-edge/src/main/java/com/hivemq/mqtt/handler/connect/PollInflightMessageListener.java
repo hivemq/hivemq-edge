@@ -15,10 +15,10 @@
  */
 package com.hivemq.mqtt.handler.connect;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.services.PublishPollService;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Lukas Brandl
@@ -27,10 +27,12 @@ public class PollInflightMessageListener implements ChannelFutureListener {
 
     @NotNull
     private final PublishPollService publishPollService;
+
     @NotNull
     private final String clientId;
 
-    public PollInflightMessageListener(final @NotNull PublishPollService publishPollService, final @NotNull String clientId) {
+    public PollInflightMessageListener(
+            final @NotNull PublishPollService publishPollService, final @NotNull String clientId) {
         this.publishPollService = publishPollService;
         this.clientId = clientId;
     }

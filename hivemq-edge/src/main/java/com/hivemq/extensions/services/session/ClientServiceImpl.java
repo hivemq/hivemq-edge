@@ -15,13 +15,13 @@
  */
 package com.hivemq.extensions.services.session;
 
+import static com.hivemq.persistence.clientsession.ClientSessionPersistenceImpl.DisconnectSource.EXTENSION;
+
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.disconnect.DisconnectReasonCode;
 import com.hivemq.extension.sdk.api.services.exception.NoSuchClientIdException;
 import com.hivemq.extension.sdk.api.services.general.IterationCallback;
@@ -41,7 +41,6 @@ import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import com.hivemq.persistence.clientsession.ClientSession;
 import com.hivemq.persistence.clientsession.ClientSessionPersistence;
 import com.hivemq.util.Exceptions;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Collection;
@@ -50,8 +49,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
-
-import static com.hivemq.persistence.clientsession.ClientSessionPersistenceImpl.DisconnectSource.EXTENSION;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @since 4.0.0
@@ -131,7 +130,8 @@ public class ClientServiceImpl implements ClientService {
         if (reasonCode != null) {
             Preconditions.checkArgument(
                     reasonCode != DisconnectReasonCode.CLIENT_IDENTIFIER_NOT_VALID,
-                    "Reason code %s must not be used for disconnect packets.", reasonCode);
+                    "Reason code %s must not be used for disconnect packets.",
+                    reasonCode);
             Preconditions.checkArgument(
                     Mqtt5DisconnectReasonCode.from(reasonCode).canBeSentByServer(),
                     "Reason code %s must not be used for outbound disconnect packets from the server to a client.",
@@ -145,9 +145,8 @@ public class ClientServiceImpl implements ClientService {
         final Mqtt5DisconnectReasonCode disconnectReasonCode =
                 reasonCode != null ? Mqtt5DisconnectReasonCode.valueOf(reasonCode.name()) : null;
 
-        final ListenableFuture<Boolean> disconnectFuture =
-                clientSessionPersistence.forceDisconnectClient(
-                        clientId, preventWillMessage, EXTENSION, disconnectReasonCode, reasonString);
+        final ListenableFuture<Boolean> disconnectFuture = clientSessionPersistence.forceDisconnectClient(
+                clientId, preventWillMessage, EXTENSION, disconnectReasonCode, reasonString);
 
         return ListenableFutureConverter.toCompletable(disconnectFuture, managedExtensionExecutorService);
     }
@@ -162,22 +161,25 @@ public class ClientServiceImpl implements ClientService {
         final SettableFuture<Boolean> setSessionSettableFuture = SettableFuture.create();
         final ListenableFuture<Boolean> setSessionFuture =
                 clientSessionPersistence.invalidateSession(clientId, EXTENSION);
-        Futures.addCallback(setSessionFuture, new FutureCallback<>() {
-            @Override
-            public void onSuccess(final @Nullable Boolean disconnected) {
-                if (disconnected == null) {
-                    setSessionSettableFuture.setException(new NoSuchClientIdException(clientId));
-                } else {
-                    setSessionSettableFuture.set(disconnected);
-                }
-            }
+        Futures.addCallback(
+                setSessionFuture,
+                new FutureCallback<>() {
+                    @Override
+                    public void onSuccess(final @Nullable Boolean disconnected) {
+                        if (disconnected == null) {
+                            setSessionSettableFuture.setException(new NoSuchClientIdException(clientId));
+                        } else {
+                            setSessionSettableFuture.set(disconnected);
+                        }
+                    }
 
-            @Override
-            public void onFailure(final @NotNull Throwable t) {
-                Exceptions.rethrowError(t);
-                setSessionSettableFuture.setException(t);
-            }
-        }, managedExtensionExecutorService);
+                    @Override
+                    public void onFailure(final @NotNull Throwable t) {
+                        Exceptions.rethrowError(t);
+                        setSessionSettableFuture.setException(t);
+                    }
+                },
+                managedExtensionExecutorService);
 
         return ListenableFutureConverter.toCompletable(setSessionSettableFuture, managedExtensionExecutorService);
     }
@@ -199,10 +201,8 @@ public class ClientServiceImpl implements ClientService {
         }
 
         final FetchCallback<SessionInformation> fetchCallback = new AllClientsFetchCallback(clientSessionPersistence);
-        final AsyncIterator<SessionInformation> asyncIterator =
-                asyncIteratorFactory.createIterator(
-                        fetchCallback,
-                        new AllItemsItemCallback<>(callbackExecutor, callback));
+        final AsyncIterator<SessionInformation> asyncIterator = asyncIteratorFactory.createIterator(
+                fetchCallback, new AllItemsItemCallback<>(callbackExecutor, callback));
 
         asyncIterator.fetchAndIterate();
 
@@ -228,13 +228,20 @@ public class ClientServiceImpl implements ClientService {
         }
 
         @Override
-        protected @NotNull ListenableFuture<MultipleChunkResult<Map<String, ClientSession>>> persistenceCall(final @NotNull ChunkCursor chunkCursor) {
+        protected @NotNull ListenableFuture<MultipleChunkResult<Map<String, ClientSession>>> persistenceCall(
+                final @NotNull ChunkCursor chunkCursor) {
             return clientSessionPersistence.getAllLocalClientsChunk(chunkCursor);
         }
 
         @Override
-        protected @NotNull Collection<SessionInformation> transform(final @NotNull Map<String, ClientSession> stringClientSessionMap) {
-            return stringClientSessionMap.entrySet().stream().map(entry -> new SessionInformationImpl(entry.getKey(), entry.getValue().getSessionExpiryIntervalSec(), entry.getValue().isConnected())).collect(Collectors.toUnmodifiableList());
+        protected @NotNull Collection<SessionInformation> transform(
+                final @NotNull Map<String, ClientSession> stringClientSessionMap) {
+            return stringClientSessionMap.entrySet().stream()
+                    .map(entry -> new SessionInformationImpl(
+                            entry.getKey(),
+                            entry.getValue().getSessionExpiryIntervalSec(),
+                            entry.getValue().isConnected()))
+                    .collect(Collectors.toUnmodifiableList());
         }
     }
 }

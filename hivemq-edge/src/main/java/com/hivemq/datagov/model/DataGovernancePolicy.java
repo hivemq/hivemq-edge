@@ -20,8 +20,6 @@ import com.hivemq.datagov.DataGovernanceContext;
 /**
  * @author Simon L Johnson
  */
-
-
 public interface DataGovernancePolicy extends DataGovernanceEntity {
 
     void execute(final DataGovernanceContext context, final DataGovernanceData input);

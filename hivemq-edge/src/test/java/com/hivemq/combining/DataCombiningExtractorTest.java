@@ -15,6 +15,9 @@
  */
 package com.hivemq.combining;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+
 import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.combining.model.DataCombining;
 import com.hivemq.combining.model.DataCombiningDestination;
@@ -24,14 +27,10 @@ import com.hivemq.combining.model.EntityReference;
 import com.hivemq.combining.model.EntityType;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.DataCombiningExtractor;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Test;
-
 import java.util.List;
 import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 
 class DataCombiningExtractorTest {
 
@@ -41,13 +40,18 @@ class DataCombiningExtractorTest {
     private final @NotNull DataCombiningExtractor dataCombiningExtractor =
             new DataCombiningExtractor(configFileReaderWriter);
 
-    private final @NotNull DataCombiner defaultCombinerInstance = new DataCombiner(generatedUuid,
+    private final @NotNull DataCombiner defaultCombinerInstance = new DataCombiner(
+            generatedUuid,
             "name",
             null,
-            List.of(new EntityReference(EntityType.EDGE_BROKER, UUID.randomUUID().toString())),
-            List.of(new DataCombining(UUID.randomUUID(),
-                    new DataCombiningSources(new DataIdentifierReference("#",
-                            DataIdentifierReference.Type.TOPIC_FILTER), List.of(), List.of("#")),
+            List.of(new EntityReference(
+                    EntityType.EDGE_BROKER, UUID.randomUUID().toString())),
+            List.of(new DataCombining(
+                    UUID.randomUUID(),
+                    new DataCombiningSources(
+                            new DataIdentifierReference("#", DataIdentifierReference.Type.TOPIC_FILTER),
+                            List.of(),
+                            List.of("#")),
                     new DataCombiningDestination(null, "dest", "{}"),
                     List.of())));
 
@@ -59,16 +63,20 @@ class DataCombiningExtractorTest {
         assertThat(allCombiners).hasSize(1).containsExactly(allCombiners.get(0));
     }
 
-
     @Test
     void test_update_whenPresent_thenUpdated() {
-        final DataCombiner updatedDataCombiner = new DataCombiner(generatedUuid,
+        final DataCombiner updatedDataCombiner = new DataCombiner(
+                generatedUuid,
                 "update",
                 null,
-                List.of(new EntityReference(EntityType.EDGE_BROKER, UUID.randomUUID().toString())),
-                List.of(new DataCombining(UUID.randomUUID(),
-                        new DataCombiningSources(new DataIdentifierReference("#",
-                                DataIdentifierReference.Type.TOPIC_FILTER), List.of(), List.of("#")),
+                List.of(new EntityReference(
+                        EntityType.EDGE_BROKER, UUID.randomUUID().toString())),
+                List.of(new DataCombining(
+                        UUID.randomUUID(),
+                        new DataCombiningSources(
+                                new DataIdentifierReference("#", DataIdentifierReference.Type.TOPIC_FILTER),
+                                List.of(),
+                                List.of("#")),
                         new DataCombiningDestination(null, "dest", "{}"),
                         List.of())));
 
@@ -80,17 +88,23 @@ class DataCombiningExtractorTest {
 
     @Test
     void test_update_whenNotPresent_thenReturnFalse() {
-        final DataCombiner updatedDataCombiner = new DataCombiner(generatedUuid,
+        final DataCombiner updatedDataCombiner = new DataCombiner(
+                generatedUuid,
                 "update",
                 null,
-                List.of(new EntityReference(EntityType.EDGE_BROKER, UUID.randomUUID().toString())),
-                List.of(new DataCombining(UUID.randomUUID(),
-                        new DataCombiningSources(new DataIdentifierReference("#",
-                                DataIdentifierReference.Type.TOPIC_FILTER), List.of(), List.of("#")),
+                List.of(new EntityReference(
+                        EntityType.EDGE_BROKER, UUID.randomUUID().toString())),
+                List.of(new DataCombining(
+                        UUID.randomUUID(),
+                        new DataCombiningSources(
+                                new DataIdentifierReference("#", DataIdentifierReference.Type.TOPIC_FILTER),
+                                List.of(),
+                                List.of("#")),
                         new DataCombiningDestination(null, "dest", "{}"),
                         List.of())));
 
-        assertThat(dataCombiningExtractor.updateDataCombiner(updatedDataCombiner)).isFalse();
+        assertThat(dataCombiningExtractor.updateDataCombiner(updatedDataCombiner))
+                .isFalse();
     }
 
     @Test
@@ -100,6 +114,5 @@ class DataCombiningExtractorTest {
 
         dataCombiningExtractor.deleteDataCombiner(defaultCombinerInstance.id());
         assertThat(dataCombiningExtractor.getAllCombiners()).hasSize(0);
-
     }
 }

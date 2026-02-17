@@ -19,12 +19,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import io.swagger.v3.oas.annotations.media.Schema;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The API representation of a Protocol Adapter type.
@@ -34,47 +33,65 @@ public class ProtocolAdapter {
     @JsonProperty("id")
     @Schema(description = "The id assigned to the protocol adapter type")
     private final @NotNull String id;
+
     @JsonProperty("protocol")
     @Schema(description = "The supported protocol")
     private final @NotNull String protocol;
+
     @JsonProperty("name")
     @Schema(description = "The name of the adapter")
     private final @NotNull String name;
+
     @JsonProperty("description")
     @Schema(description = "The description")
     private final @NotNull String description;
+
     @JsonProperty("url")
     @Schema(description = "The url of the adapter")
     private final @NotNull String url;
+
     @JsonProperty("version")
     @Schema(description = "The installed version of the adapter")
     private final @NotNull String version;
+
     @JsonProperty("logoUrl")
     @Schema(description = "The logo of the adapter")
     private final @NotNull String logoUrl;
+
     @JsonProperty("provisioningUrl")
     @Schema(description = "The provisioning url of the adapter")
     private final @NotNull String provisioningUrl;
+
     @JsonProperty("author")
     @Schema(description = "The author of the adapter")
     private final @NotNull String author;
+
     @JsonProperty("installed")
     @Schema(description = "Is the adapter installed?")
     private final @NotNull Boolean installed;
+
     @JsonProperty("category")
     @Schema(description = "The category of the adapter")
     private final @NotNull ProtocolAdapterCategory category;
+
     @JsonProperty("tags")
     @Schema(description = "The search tags associated with this adapter")
     private final @NotNull List<String> tags;
+
     @JsonProperty("capabilities")
     @Schema(description = "The capabilities of this adapter")
     private final @NotNull Set<Capability> capabilities;
+
     @JsonProperty("configSchema")
-    @Schema(description = "JSONSchema in the 'https://json-schema.org/draft/2020-12/schema' format, which describes the configuration requirements for the adapter.")
+    @Schema(
+            description =
+                    "JSONSchema in the 'https://json-schema.org/draft/2020-12/schema' format, which describes the configuration requirements for the adapter.")
     private final @NotNull JsonNode configSchema;
+
     @JsonProperty("uiSchema")
-    @Schema(description = "UISchema (see https://rjsf-team.github.io/react-jsonschema-form/docs/api-reference/uiSchema/), which describes the UI rendering of the configuration for the adapter.")
+    @Schema(
+            description =
+                    "UISchema (see https://rjsf-team.github.io/react-jsonschema-form/docs/api-reference/uiSchema/), which describes the UI rendering of the configuration for the adapter.")
     private final @NotNull JsonNode uiSchema;
 
     public ProtocolAdapter(
@@ -181,10 +198,14 @@ public class ProtocolAdapter {
     }
 
     public enum Capability {
-        @Schema(description = "The adapter is able to read tags or values from the connected device") READ,
-        @Schema(description = "The adapter is able to discover tags from the connected device") DISCOVER,
-        @Schema(description = "The adapter is able to write data to the connected device") WRITE,
-        @Schema(description = "The adapter is able to be used a data source for combination") COMBINE;
+        @Schema(description = "The adapter is able to read tags or values from the connected device")
+        READ,
+        @Schema(description = "The adapter is able to discover tags from the connected device")
+        DISCOVER,
+        @Schema(description = "The adapter is able to write data to the connected device")
+        WRITE,
+        @Schema(description = "The adapter is able to be used a data source for combination")
+        COMBINE;
 
         public static @NotNull Capability from(final ProtocolAdapterCapability capability) {
             return switch (capability) {

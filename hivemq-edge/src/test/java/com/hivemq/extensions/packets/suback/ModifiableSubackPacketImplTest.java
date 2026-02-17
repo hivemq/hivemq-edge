@@ -15,23 +15,20 @@
  */
 package com.hivemq.extensions.packets.suback;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.packets.subscribe.SubackReasonCode;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import util.TestConfigurationBootstrap;
-
 import java.util.Arrays;
 import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import util.TestConfigurationBootstrap;
 
 /**
  * @author Robin Atherton
@@ -40,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ModifiableSubackPacketImplTest {
 
     private @NotNull ConfigurationService configurationService;
+
     @BeforeEach
     public void setUp() {
         configurationService = new TestConfigurationBootstrap().getConfigurationService();
@@ -98,7 +96,9 @@ public class ModifiableSubackPacketImplTest {
                 new ModifiableSubackPacketImpl(packet, configurationService);
 
         assertThatThrownBy(() -> modifiablePacket.setReasonCodes(ImmutableList.of(
-                SubackReasonCode.GRANTED_QOS_1, SubackReasonCode.NOT_AUTHORIZED, SubackReasonCode.QUOTA_EXCEEDED)))
+                        SubackReasonCode.GRANTED_QOS_1,
+                        SubackReasonCode.NOT_AUTHORIZED,
+                        SubackReasonCode.QUOTA_EXCEEDED)))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -126,8 +126,7 @@ public class ModifiableSubackPacketImplTest {
         final ModifiableSubackPacketImpl modifiablePacket =
                 new ModifiableSubackPacketImpl(packet, configurationService);
 
-        assertThatThrownBy(() -> modifiablePacket.setReasonCodes(null))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> modifiablePacket.setReasonCodes(null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -162,7 +161,9 @@ public class ModifiableSubackPacketImplTest {
     @Test
     public void setReasonString_null() {
         final SubackPacketImpl packet = new SubackPacketImpl(
-                ImmutableList.of(SubackReasonCode.GRANTED_QOS_2), "reason", 1,
+                ImmutableList.of(SubackReasonCode.GRANTED_QOS_2),
+                "reason",
+                1,
                 UserPropertiesImpl.of(ImmutableList.of()));
         final ModifiableSubackPacketImpl modifiablePacket =
                 new ModifiableSubackPacketImpl(packet, configurationService);

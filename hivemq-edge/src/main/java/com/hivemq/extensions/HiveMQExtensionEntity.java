@@ -15,17 +15,15 @@
  */
 package com.hivemq.extensions;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Georg Held
  */
-
 @XmlType(propOrder = {})
 @XmlRootElement(name = "hivemq-extension")
 public class HiveMQExtensionEntity {
@@ -55,12 +53,15 @@ public class HiveMQExtensionEntity {
     @XmlElement(name = "author")
     private String author;
 
+    public HiveMQExtensionEntity() {}
 
-    public HiveMQExtensionEntity() {
-    }
-
-    public HiveMQExtensionEntity(final @NotNull String id, final @NotNull String name, final @NotNull String version,
-                                 final int priority, final int startPriority, final @Nullable String author) {
+    public HiveMQExtensionEntity(
+            final @NotNull String id,
+            final @NotNull String name,
+            final @NotNull String version,
+            final int priority,
+            final int startPriority,
+            final @Nullable String author) {
         this.id = id;
         this.name = name;
         this.version = version;

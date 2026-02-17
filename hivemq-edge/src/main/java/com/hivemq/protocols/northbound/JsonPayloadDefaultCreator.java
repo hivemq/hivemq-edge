@@ -26,28 +26,27 @@ import com.hivemq.edge.modules.adapters.data.AbstractProtocolAdapterJsonPayload;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterMultiPublishJsonPayload;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterPublisherJsonPayload;
 import com.hivemq.edge.modules.adapters.data.TagSample;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @Singleton
 public class JsonPayloadDefaultCreator implements JsonPayloadCreator {
 
     @Inject
-    JsonPayloadDefaultCreator() {
-    }
+    JsonPayloadDefaultCreator() {}
 
     @Override
     public @NotNull List<byte[]> convertToJson(
             final @NotNull List<DataPoint> dataPoints,
             final @NotNull PollingContext pollingContext,
             final @NotNull ObjectMapper objectMapper) {
-        final List<AbstractProtocolAdapterJsonPayload> payloads = convertAdapterSampleToPublishes(dataPoints, pollingContext);
+        final List<AbstractProtocolAdapterJsonPayload> payloads =
+                convertAdapterSampleToPublishes(dataPoints, pollingContext);
         final List<byte[]> jsonPayloadsAsBytes = new ArrayList<>();
         payloads.forEach(payload -> {
             try {
@@ -58,7 +57,6 @@ public class JsonPayloadDefaultCreator implements JsonPayloadCreator {
         });
         return jsonPayloadsAsBytes;
     }
-
 
     public byte @NotNull [] convertToJson(
             final @NotNull AbstractProtocolAdapterJsonPayload data, final @NotNull ObjectMapper objectMapper)
@@ -73,17 +71,17 @@ public class JsonPayloadDefaultCreator implements JsonPayloadCreator {
     public @NotNull List<AbstractProtocolAdapterJsonPayload> convertAdapterSampleToPublishes(
             final @NotNull List<DataPoint> dataPoints, final PollingContext pollingContext) {
         final List<AbstractProtocolAdapterJsonPayload> list = new ArrayList<>();
-        //-- Only include the timestamp if the settings say so
+        // -- Only include the timestamp if the settings say so
         final Long timestamp = pollingContext.getIncludeTimestamp() ? System.currentTimeMillis() : null;
-        if (dataPoints.size() > 1 &&
-                pollingContext.getMessageHandlingOptions() == MessageHandlingOptions.MQTTMessagePerSubscription) {
-            //-- Put all derived samples into a single MQTT message
+        if (dataPoints.size() > 1
+                && pollingContext.getMessageHandlingOptions() == MessageHandlingOptions.MQTTMessagePerSubscription) {
+            // -- Put all derived samples into a single MQTT message
             final AbstractProtocolAdapterJsonPayload payload =
                     createMultiPublishPayload(timestamp, dataPoints, pollingContext.getIncludeTagNames());
             decoratePayloadMessage(payload, pollingContext);
             list.add(payload);
         } else {
-            //-- Put all derived samples into individual publish messages
+            // -- Put all derived samples into individual publish messages
             dataPoints.stream()
                     .map(dp -> createPublishPayload(timestamp, dp, pollingContext.getIncludeTagNames()))
                     .map(pp -> decoratePayloadMessage(pp, pollingContext))
@@ -99,8 +97,11 @@ public class JsonPayloadDefaultCreator implements JsonPayloadCreator {
 
     protected @NotNull AbstractProtocolAdapterJsonPayload createMultiPublishPayload(
             final @Nullable Long timestamp, final List<DataPoint> dataPoint, final boolean includeTagName) {
-        return new ProtocolAdapterMultiPublishJsonPayload(timestamp,
-                dataPoint.stream().map(dp -> createTagSample(dp, includeTagName)).collect(Collectors.toList()));
+        return new ProtocolAdapterMultiPublishJsonPayload(
+                timestamp,
+                dataPoint.stream()
+                        .map(dp -> createTagSample(dp, includeTagName))
+                        .collect(Collectors.toList()));
     }
 
     protected static TagSample createTagSample(final @NotNull DataPoint dataPoint, final boolean includeTagName) {

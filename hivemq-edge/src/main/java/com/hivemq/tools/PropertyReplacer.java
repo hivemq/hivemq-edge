@@ -21,7 +21,8 @@ import java.util.Vector;
 
 public class PropertyReplacer {
 
-    private static void parsePropertyString(String value, Vector fragments, Vector propertyRefs) throws IllegalStateException {
+    private static void parsePropertyString(String value, Vector fragments, Vector propertyRefs)
+            throws IllegalStateException {
         int prev = 0;
         int pos;
         while ((pos = value.indexOf("$", prev)) >= 0) {
@@ -42,8 +43,7 @@ public class PropertyReplacer {
             } else {
                 int endName = value.indexOf('}', pos);
                 if (endName < 0) {
-                    throw new IllegalStateException("Syntax error in property: "
-                            + value);
+                    throw new IllegalStateException("Syntax error in property: " + value);
                 }
                 String propertyName = value.substring(pos + 2, endName);
                 fragments.addElement(null);
@@ -74,9 +74,7 @@ public class PropertyReplacer {
                 if (keys != null) {
                     replacement = keys.get(propertyName);
                 }
-                fragment = (replacement != null)
-                        ? replacement.toString()
-                        : "${" + propertyName + "}";
+                fragment = (replacement != null) ? replacement.toString() : "${" + propertyName + "}";
             }
             sb.append(fragment);
         }

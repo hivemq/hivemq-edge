@@ -15,15 +15,11 @@
  */
 package com.hivemq.edge.utils;
 
-import org.jetbrains.annotations.NotNull;
 import io.netty.util.internal.MacAddressUtil;
-
-import java.net.NetworkInterface;
-import java.nio.charset.StandardCharsets;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -33,14 +29,14 @@ public class HiveMQEdgeEnvironmentUtils {
     private static volatile UUID sessionToken;
     private static Object lock = new Object();
 
-    public static @NotNull String generateInstallationToken(){
+    public static @NotNull String generateInstallationToken() {
         return HiveMQEdgeEnvironmentUtils.getDefaultMachineId();
     }
 
-    public static @NotNull String getSessionToken(){
-        if(sessionToken == null){
-            synchronized (lock){
-                if(sessionToken == null){
+    public static @NotNull String getSessionToken() {
+        if (sessionToken == null) {
+            synchronized (lock) {
+                if (sessionToken == null) {
                     sessionToken = UUID.randomUUID();
                 }
             }
@@ -60,11 +56,11 @@ public class HiveMQEdgeEnvironmentUtils {
         return map;
     }
 
-    public static String getDefaultMachineId(){
+    public static String getDefaultMachineId() {
         try {
-            return MacAddressUtil.formatAddress(
-                    MacAddressUtil.defaultMachineId()).toUpperCase();
-        } catch(Exception e){
+            return MacAddressUtil.formatAddress(MacAddressUtil.defaultMachineId())
+                    .toUpperCase();
+        } catch (Exception e) {
         }
         return "<unknown>";
     }

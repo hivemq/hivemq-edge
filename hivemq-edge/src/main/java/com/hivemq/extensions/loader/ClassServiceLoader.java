@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.loader;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.annotations.ReadOnly;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.io.BufferedReader;
@@ -30,9 +28,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Enumeration;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A Service loader implementation which is similar to the JDK default {@link java.util.ServiceLoader}.
@@ -50,8 +48,7 @@ public class ClassServiceLoader {
     private static final String META_INF_SERVICES = "META-INF/services/";
 
     @Inject
-    public ClassServiceLoader() {
-    }
+    public ClassServiceLoader() {}
 
     /**
      * Loads all classes defined in the <code>META-INF/services/CLASS_TO_LOAD</code> file. The classes
@@ -79,8 +76,8 @@ public class ClassServiceLoader {
         while (urls.hasMoreElements()) {
             final URL url = urls.nextElement();
             try (final InputStream is = url.openStream();
-                 final InputStreamReader isr = new InputStreamReader(is, UTF_8);
-                 final BufferedReader r = new BufferedReader((isr))) {
+                    final InputStreamReader isr = new InputStreamReader(is, UTF_8);
+                    final BufferedReader r = new BufferedReader((isr))) {
                 // read until the stream is empty
                 while (true) {
                     String line = r.readLine();

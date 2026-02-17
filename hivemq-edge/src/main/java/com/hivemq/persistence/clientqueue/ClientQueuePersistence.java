@@ -18,11 +18,10 @@ package com.hivemq.persistence.clientqueue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.MessageWithID;
 import com.hivemq.mqtt.message.publish.PUBLISH;
-
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Lukas Brandl
@@ -92,7 +91,6 @@ public interface ClientQueuePersistence {
     @NotNull
     ListenableFuture<ImmutableList<PUBLISH>> peek(
             @NotNull String queueId, boolean shared, long byteLimit, final int maxMessages);
-
 
     /**
      * Read publishes and pubrels that are in-flight.
@@ -182,7 +180,6 @@ public interface ClientQueuePersistence {
     @NotNull
     ListenableFuture<Void> removeShared(@NotNull String sharedSubscription, @NotNull String uniqueId);
 
-
     /**
      * Remove the in-flight marker of a PUBLISH which has the same unique ID as the one that is provided.
      * This way the PUBLISH will be return by future calls of {@link ClientQueuePersistence#readNew(String, boolean,
@@ -215,7 +212,6 @@ public interface ClientQueuePersistence {
      */
     @NotNull
     ListenableFuture<Void> removeAllQos0Messages(@NotNull String queueId, boolean shared);
-
 
     /**
      * Notify that the client is connected and publishes are available

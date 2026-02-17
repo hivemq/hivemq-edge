@@ -19,20 +19,21 @@ import com.google.common.collect.ImmutableList;
 import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.combining.DataCombinerEntity;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public class DataCombiningExtractor implements ReloadableExtractor<List<@NotNull DataCombinerEntity>, List<@NotNull DataCombiner>> {
+public class DataCombiningExtractor
+        implements ReloadableExtractor<List<@NotNull DataCombinerEntity>, List<@NotNull DataCombiner>> {
 
-    private volatile @NotNull List<DataCombinerEntity> config = List.of();;
-    private volatile @Nullable Consumer<List<@NotNull DataCombiner>> consumer = cfg -> log.debug("No consumer registered yet");
+    private volatile @NotNull List<DataCombinerEntity> config = List.of();
+    ;
+    private volatile @Nullable Consumer<List<@NotNull DataCombiner>> consumer =
+            cfg -> log.debug("No consumer registered yet");
     private final @NotNull ConfigFileReaderWriter configFileReaderWriter;
 
     public DataCombiningExtractor(@NotNull final ConfigFileReaderWriter configFileReaderWriter) {
@@ -53,17 +54,17 @@ public class DataCombiningExtractor implements ReloadableExtractor<List<@NotNull
 
     public synchronized boolean updateDataCombiner(final @NotNull DataCombiner dataCombiner) {
         final var updated = new AtomicBoolean(false);
-        final var newConfigs = config
-                .stream()
+        final var newConfigs = config.stream()
                 .map(oldInstance -> {
-                    if(oldInstance.getId().equals(dataCombiner.id())) {
+                    if (oldInstance.getId().equals(dataCombiner.id())) {
                         updated.set(true);
                         return dataCombiner.toPersistence();
                     } else {
                         return oldInstance;
                     }
-                }).toList();
-        if(updated.get()) {
+                })
+                .toList();
+        if (updated.get()) {
             replaceConfigsAndTriggerWrite(newConfigs);
             return true;
         }
@@ -89,8 +90,10 @@ public class DataCombiningExtractor implements ReloadableExtractor<List<@NotNull
     }
 
     public Optional<DataCombiner> getCombinerById(final @NotNull UUID id) {
-        return config.stream().filter(oldInstance -> oldInstance.getId().equals(id))
-                .findFirst().map(DataCombiner::fromPersistence);
+        return config.stream()
+                .filter(oldInstance -> oldInstance.getId().equals(id))
+                .findFirst()
+                .map(DataCombiner::fromPersistence);
     }
 
     public @NotNull List<DataCombiner> getAllCombiners() {
@@ -99,13 +102,15 @@ public class DataCombiningExtractor implements ReloadableExtractor<List<@NotNull
 
     public synchronized boolean deleteDataCombiner(final @NotNull UUID dataCombinerId) {
         var removed = new AtomicBoolean(false);
-        var newConfigs = config.stream().filter(combiner -> {
-            if(combiner.getId().equals(dataCombinerId)) {
-                removed.set(true);
-                return false;
-            }
-            return true;
-        }).toList();
+        var newConfigs = config.stream()
+                .filter(combiner -> {
+                    if (combiner.getId().equals(dataCombinerId)) {
+                        removed.set(true);
+                        return false;
+                    }
+                    return true;
+                })
+                .toList();
         replaceConfigsAndTriggerWrite(newConfigs);
         return removed.get();
     }
@@ -118,7 +123,7 @@ public class DataCombiningExtractor implements ReloadableExtractor<List<@NotNull
 
     private void notifyConsumer() {
         final var consumer = this.consumer;
-        if(consumer != null) {
+        if (consumer != null) {
             consumer.accept(config.stream().map(DataCombiner::fromPersistence).toList());
         }
     }

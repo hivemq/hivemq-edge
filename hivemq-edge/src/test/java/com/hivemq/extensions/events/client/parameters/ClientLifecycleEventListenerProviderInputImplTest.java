@@ -15,14 +15,13 @@
  */
 package com.hivemq.extensions.events.client.parameters;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author Florian Limpöck
@@ -32,8 +31,10 @@ public class ClientLifecycleEventListenerProviderInputImplTest {
 
     @Test
     public void test_construction_client_null() {
-    
-        assertThrows(NullPointerException.class, () -> new ClientLifecycleEventListenerProviderInputImpl(null, new EmbeddedChannel()));
+
+        assertThrows(
+                NullPointerException.class,
+                () -> new ClientLifecycleEventListenerProviderInputImpl(null, new EmbeddedChannel()));
     }
 
     @Test
@@ -42,10 +43,10 @@ public class ClientLifecycleEventListenerProviderInputImplTest {
         final ClientConnection clientConnection = new ClientConnection(channel, null);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
-        final ClientLifecycleEventListenerProviderInputImpl successfulInput = new ClientLifecycleEventListenerProviderInputImpl("client", channel);
+        final ClientLifecycleEventListenerProviderInputImpl successfulInput =
+                new ClientLifecycleEventListenerProviderInputImpl("client", channel);
         assertNotNull(successfulInput);
         assertNotNull(successfulInput.getClientInformation());
         assertNotNull(successfulInput.getConnectionInformation());
-
     }
 }

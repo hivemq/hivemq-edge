@@ -18,19 +18,18 @@ package com.hivemq.throttling.ioc;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.throttling.GlobalTrafficShaperExecutorShutdownHook;
 import com.hivemq.util.ThreadFactoryUtil;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A provider which creates the Global Traffic Shaper for HiveMQ.
@@ -47,8 +46,9 @@ public class GlobalTrafficShapingProvider implements Provider<GlobalTrafficShapi
     private final @NotNull RestrictionsConfigurationService restrictionsConfigurationService;
 
     @Inject
-    GlobalTrafficShapingProvider(final @NotNull ShutdownHooks registry,
-                                 final @NotNull RestrictionsConfigurationService restrictionsConfigurationService) {
+    GlobalTrafficShapingProvider(
+            final @NotNull ShutdownHooks registry,
+            final @NotNull RestrictionsConfigurationService restrictionsConfigurationService) {
 
         this.registry = registry;
         this.restrictionsConfigurationService = restrictionsConfigurationService;
@@ -58,9 +58,11 @@ public class GlobalTrafficShapingProvider implements Provider<GlobalTrafficShapi
     public @NotNull GlobalTrafficShapingHandler get() {
 
         final ThreadFactory threadFactory = ThreadFactoryUtil.create("global-traffic-shaper-executor-%d");
-        final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(threadFactory);
+        final ScheduledExecutorService scheduledExecutorService =
+                Executors.newSingleThreadScheduledExecutor(threadFactory);
 
-        final GlobalTrafficShaperExecutorShutdownHook shutdownHook = new GlobalTrafficShaperExecutorShutdownHook(scheduledExecutorService);
+        final GlobalTrafficShaperExecutorShutdownHook shutdownHook =
+                new GlobalTrafficShaperExecutorShutdownHook(scheduledExecutorService);
         registry.add(shutdownHook);
 
         final long incomingLimit = restrictionsConfigurationService.incomingLimit();

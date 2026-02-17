@@ -15,17 +15,16 @@
  */
 package com.hivemq.protocols;
 
-
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
+import org.jetbrains.annotations.NotNull;
 
 // internal view on a writing context.
 public interface InternalWritingContext extends WritingContext {
 
-   @NotNull
-   FieldMapping getFieldMapping();
+    @NotNull
+    FieldMapping getFieldMapping();
 
-   @NotNull
+    @NotNull
     String getSchema();
 }

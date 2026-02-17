@@ -15,6 +15,10 @@
  */
 package com.hivemq.mqtt.handler;
 
+import static com.hivemq.mqtt.message.publish.PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 import com.codahale.metrics.Counter;
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.bootstrap.ClientConnection;
@@ -35,10 +39,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestChannelAttribute;
-
-import static com.hivemq.mqtt.message.publish.PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * @author Lukas Brandl
@@ -65,13 +65,15 @@ public class DropOutgoingPublishesHandlerTest {
     PublishPayloadPersistence publishPayloadPersistence;
 
     private DropOutgoingPublishesHandler handler;
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         when(ctx.channel()).thenReturn(channel);
         final ClientConnection clientConnection = new ClientConnection(channel, null);
         clientConnection.setClientId("clientId");
-        when(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)).thenReturn(new TestChannelAttribute<>(clientConnection));
+        when(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME))
+                .thenReturn(new TestChannelAttribute<>(clientConnection));
         InternalConfigurations.NOT_WRITABLE_QUEUE_SIZE.set(0);
         handler = new DropOutgoingPublishesHandler(publishPayloadPersistence, messageDroppedService);
     }
@@ -81,7 +83,7 @@ public class DropOutgoingPublishesHandlerTest {
         final SettableFuture<PublishStatus> future = SettableFuture.create();
         final PUBLISH publish = new PUBLISHFactory.Mqtt3Builder()
                 .withHivemqId("hivemqId")
-                .withPayload(new byte[]{0})
+                .withPayload(new byte[] {0})
                 .withTopic("topic")
                 .withQoS(QoS.AT_MOST_ONCE)
                 .withOnwardQos(QoS.AT_MOST_ONCE)
@@ -90,7 +92,8 @@ public class DropOutgoingPublishesHandlerTest {
                 .withPersistence(publishPayloadPersistence)
                 .build();
 
-        final PublishWithFuture publishWithFuture = new PublishWithFuture(publish, future, false, publishPayloadPersistence);
+        final PublishWithFuture publishWithFuture =
+                new PublishWithFuture(publish, future, false, publishPayloadPersistence);
         final boolean messageDropped = handler.checkChannelNotWritable(ctx, publishWithFuture, promise);
         assertTrue(messageDropped);
         assertEquals(PublishStatus.CHANNEL_NOT_WRITABLE, future.get());
@@ -103,7 +106,7 @@ public class DropOutgoingPublishesHandlerTest {
         final SettableFuture<PublishStatus> future = SettableFuture.create();
         final PUBLISH publish = new PUBLISHFactory.Mqtt3Builder()
                 .withHivemqId("hivemqId")
-                .withPayload(new byte[]{0})
+                .withPayload(new byte[] {0})
                 .withTopic("topic")
                 .withQoS(QoS.AT_LEAST_ONCE)
                 .withOnwardQos(QoS.AT_LEAST_ONCE)
@@ -111,7 +114,8 @@ public class DropOutgoingPublishesHandlerTest {
                 .withPublishId(1L)
                 .withPersistence(publishPayloadPersistence)
                 .build();
-        final PublishWithFuture publishWithFuture = new PublishWithFuture(publish, future, false, publishPayloadPersistence);
+        final PublishWithFuture publishWithFuture =
+                new PublishWithFuture(publish, future, false, publishPayloadPersistence);
         final boolean messageDropped = handler.checkChannelNotWritable(ctx, publishWithFuture, promise);
         assertFalse(messageDropped);
         assertFalse(future.isDone()); // will be set in the Ordered topic handler
@@ -126,7 +130,7 @@ public class DropOutgoingPublishesHandlerTest {
         final SettableFuture<PublishStatus> future = SettableFuture.create();
         final PUBLISH publish = new PUBLISHFactory.Mqtt3Builder()
                 .withHivemqId("hivemqId")
-                .withPayload(new byte[]{0})
+                .withPayload(new byte[] {0})
                 .withTopic("topic")
                 .withQoS(QoS.AT_MOST_ONCE)
                 .withOnwardQos(QoS.AT_MOST_ONCE)
@@ -134,7 +138,8 @@ public class DropOutgoingPublishesHandlerTest {
                 .withPublishId(1L)
                 .withPersistence(publishPayloadPersistence)
                 .build();
-        final PublishWithFuture publishWithFuture = new PublishWithFuture(publish, future, false, publishPayloadPersistence);
+        final PublishWithFuture publishWithFuture =
+                new PublishWithFuture(publish, future, false, publishPayloadPersistence);
         final boolean messageDropped = handler.checkChannelNotWritable(ctx, publishWithFuture, promise);
         assertFalse(messageDropped);
         assertFalse(future.isDone()); // will be set in the Ordered topic handler

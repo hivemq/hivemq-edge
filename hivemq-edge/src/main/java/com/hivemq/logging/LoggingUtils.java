@@ -17,13 +17,12 @@ package com.hivemq.logging;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.entity.Listener;
-import org.jetbrains.annotations.NotNull;
 import io.netty.channel.Channel;
+import org.jetbrains.annotations.NotNull;
 
 public final class LoggingUtils {
 
-    private LoggingUtils() {
-    }
+    private LoggingUtils() {}
 
     /**
      * Append listeners readableName and port to any message
@@ -34,7 +33,8 @@ public final class LoggingUtils {
      */
     public static @NotNull String appendListenerToMessage(
             final @NotNull Channel channel, final @NotNull String message) {
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         if (clientConnection != null) {
             final Listener listener = clientConnection.getConnectedListener();
             if (listener != null) {
@@ -45,5 +45,4 @@ public final class LoggingUtils {
         }
         return message;
     }
-
 }

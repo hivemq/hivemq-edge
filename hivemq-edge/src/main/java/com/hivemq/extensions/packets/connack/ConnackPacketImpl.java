@@ -15,21 +15,20 @@
  */
 package com.hivemq.extensions.packets.connack;
 
+import static com.hivemq.mqtt.message.connack.CONNACK.KEEP_ALIVE_NOT_SET;
+import static com.hivemq.mqtt.message.connack.CONNACK.SESSION_EXPIRY_NOT_SET;
+
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.connack.ConnackPacket;
 import com.hivemq.extension.sdk.api.packets.connect.ConnackReasonCode;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.connack.CONNACK;
-
 import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.Optional;
-
-import static com.hivemq.mqtt.message.connack.CONNACK.KEEP_ALIVE_NOT_SET;
-import static com.hivemq.mqtt.message.connack.CONNACK.SESSION_EXPIRY_NOT_SET;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -116,7 +115,9 @@ public class ConnackPacketImpl implements ConnackPacket {
                 connack.getReceiveMaximum(),
                 connack.getMaximumPacketSize(),
                 connack.getTopicAliasMaximum(),
-                (connack.getMaximumQoS() == null) ? null : connack.getMaximumQoS().toQos(),
+                (connack.getMaximumQoS() == null)
+                        ? null
+                        : connack.getMaximumQoS().toQos(),
                 connack.isRetainAvailable(),
                 connack.isWildcardSubscriptionAvailable(),
                 connack.isSharedSubscriptionAvailable(),
@@ -237,32 +238,48 @@ public class ConnackPacketImpl implements ConnackPacket {
             return false;
         }
         final ConnackPacketImpl that = (ConnackPacketImpl) o;
-        return (reasonCode == that.reasonCode) &&
-                (sessionPresent == that.sessionPresent) &&
-                (sessionExpiryInterval == that.sessionExpiryInterval) &&
-                (serverKeepAlive == that.serverKeepAlive) &&
-                Objects.equals(assignedClientId, that.assignedClientId) &&
-                Objects.equals(authenticationMethod, that.authenticationMethod) &&
-                Objects.equals(authenticationData, that.authenticationData) &&
-                (receiveMaximum == that.receiveMaximum) &&
-                (maximumPacketSize == that.maximumPacketSize) &&
-                (topicAliasMaximum == that.topicAliasMaximum) &&
-                (maximumQos == that.maximumQos) &&
-                (retainAvailable == that.retainAvailable) &&
-                (wildCardSubscriptionAvailable == that.wildCardSubscriptionAvailable) &&
-                (sharedSubscriptionsAvailable == that.sharedSubscriptionsAvailable) &&
-                (subscriptionIdentifiersAvailable == that.subscriptionIdentifiersAvailable) &&
-                Objects.equals(responseInformation, that.responseInformation) &&
-                Objects.equals(serverReference, that.serverReference) &&
-                Objects.equals(reasonString, that.reasonString) &&
-                userProperties.equals(that.userProperties);
+        return (reasonCode == that.reasonCode)
+                && (sessionPresent == that.sessionPresent)
+                && (sessionExpiryInterval == that.sessionExpiryInterval)
+                && (serverKeepAlive == that.serverKeepAlive)
+                && Objects.equals(assignedClientId, that.assignedClientId)
+                && Objects.equals(authenticationMethod, that.authenticationMethod)
+                && Objects.equals(authenticationData, that.authenticationData)
+                && (receiveMaximum == that.receiveMaximum)
+                && (maximumPacketSize == that.maximumPacketSize)
+                && (topicAliasMaximum == that.topicAliasMaximum)
+                && (maximumQos == that.maximumQos)
+                && (retainAvailable == that.retainAvailable)
+                && (wildCardSubscriptionAvailable == that.wildCardSubscriptionAvailable)
+                && (sharedSubscriptionsAvailable == that.sharedSubscriptionsAvailable)
+                && (subscriptionIdentifiersAvailable == that.subscriptionIdentifiersAvailable)
+                && Objects.equals(responseInformation, that.responseInformation)
+                && Objects.equals(serverReference, that.serverReference)
+                && Objects.equals(reasonString, that.reasonString)
+                && userProperties.equals(that.userProperties);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(reasonCode, sessionPresent, sessionExpiryInterval, serverKeepAlive, assignedClientId,
-                authenticationMethod, authenticationData, receiveMaximum, maximumPacketSize, topicAliasMaximum,
-                maximumQos, retainAvailable, wildCardSubscriptionAvailable, sharedSubscriptionsAvailable,
-                subscriptionIdentifiersAvailable, responseInformation, serverReference, reasonString, userProperties);
+        return Objects.hash(
+                reasonCode,
+                sessionPresent,
+                sessionExpiryInterval,
+                serverKeepAlive,
+                assignedClientId,
+                authenticationMethod,
+                authenticationData,
+                receiveMaximum,
+                maximumPacketSize,
+                topicAliasMaximum,
+                maximumQos,
+                retainAvailable,
+                wildCardSubscriptionAvailable,
+                sharedSubscriptionsAvailable,
+                subscriptionIdentifiersAvailable,
+                responseInformation,
+                serverReference,
+                reasonString,
+                userProperties);
     }
 }

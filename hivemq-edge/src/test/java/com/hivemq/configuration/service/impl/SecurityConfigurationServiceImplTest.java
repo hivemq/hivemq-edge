@@ -15,6 +15,9 @@
  */
 package com.hivemq.configuration.service.impl;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.MockitoAnnotations.initMocks;
+
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -23,24 +26,24 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import util.LogbackCapturingAppender;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.MockitoAnnotations.initMocks;
-
 /**
  * @author Waldemar Ruck
  * @since 4.0
  */
 public class SecurityConfigurationServiceImplTest {
 
-    private final SecurityConfigurationServiceImpl securityConfigurationService = new SecurityConfigurationServiceImpl();
+    private final SecurityConfigurationServiceImpl securityConfigurationService =
+            new SecurityConfigurationServiceImpl();
 
     private LogbackCapturingAppender logCapture;
+
     @BeforeEach
     public void setup() {
         initMocks(this);
         final Logger logger = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
         logCapture = LogbackCapturingAppender.Factory.weaveInto(logger);
     }
+
     @AfterEach
     public void tearDown() throws Exception {
         LogbackCapturingAppender.Factory.cleanUp();
@@ -62,19 +65,27 @@ public class SecurityConfigurationServiceImplTest {
         securityConfigurationService.setAllowRequestProblemInformation(false);
         assertTrue(logCapture.isLogCaptured());
         assertEquals(Level.DEBUG, logCapture.getLastCapturedLog().getLevel());
-        assertEquals("Setting allow-problem-information to false", logCapture.getLastCapturedLog().getFormattedMessage());
+        assertEquals(
+                "Setting allow-problem-information to false",
+                logCapture.getLastCapturedLog().getFormattedMessage());
 
         securityConfigurationService.setAllowServerAssignedClientId(false);
         assertEquals(Level.DEBUG, logCapture.getLastCapturedLog().getLevel());
-        assertEquals("Setting allow server assigned client identifier to false", logCapture.getLastCapturedLog().getFormattedMessage());
+        assertEquals(
+                "Setting allow server assigned client identifier to false",
+                logCapture.getLastCapturedLog().getFormattedMessage());
 
         securityConfigurationService.setPayloadFormatValidation(true);
         assertEquals(Level.DEBUG, logCapture.getLastCapturedLog().getLevel());
-        assertEquals("Setting payload format validation to true", logCapture.getLastCapturedLog().getFormattedMessage());
+        assertEquals(
+                "Setting payload format validation to true",
+                logCapture.getLastCapturedLog().getFormattedMessage());
 
         securityConfigurationService.setValidateUTF8(false);
         assertEquals(Level.DEBUG, logCapture.getLastCapturedLog().getLevel());
-        assertEquals("Setting validate UTF-8 to false", logCapture.getLastCapturedLog().getFormattedMessage());
+        assertEquals(
+                "Setting validate UTF-8 to false",
+                logCapture.getLastCapturedLog().getFormattedMessage());
 
         assertFalse(securityConfigurationService.allowRequestProblemInformation());
         assertFalse(securityConfigurationService.allowServerAssignedClientId());

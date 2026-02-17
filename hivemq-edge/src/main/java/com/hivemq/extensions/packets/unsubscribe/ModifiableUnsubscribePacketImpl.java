@@ -18,12 +18,11 @@ package com.hivemq.extensions.packets.unsubscribe;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.packets.unsubscribe.ModifiableUnsubscribePacket;
 import com.hivemq.extensions.packets.general.ModifiableUserPropertiesImpl;
-
 import java.util.List;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Robin Atherton
@@ -39,12 +38,12 @@ public class ModifiableUnsubscribePacketImpl implements ModifiableUnsubscribePac
     private boolean modified = false;
 
     public ModifiableUnsubscribePacketImpl(
-            final @NotNull UnsubscribePacketImpl packet,
-            final @NotNull ConfigurationService configurationService) {
+            final @NotNull UnsubscribePacketImpl packet, final @NotNull ConfigurationService configurationService) {
 
         topicFilters = packet.topicFilters;
         userProperties = new ModifiableUserPropertiesImpl(
-                packet.userProperties.asInternalList(), configurationService.securityConfiguration().validateUTF8());
+                packet.userProperties.asInternalList(),
+                configurationService.securityConfiguration().validateUTF8());
         packetIdentifier = packet.packetIdentifier;
 
         this.configurationService = configurationService;

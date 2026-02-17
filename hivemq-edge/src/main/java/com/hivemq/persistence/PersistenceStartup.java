@@ -17,17 +17,14 @@ package com.hivemq.persistence;
 
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.configuration.service.InternalConfigurations;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PersistenceStartup implements HiveMQShutdownHook {
 
@@ -43,7 +40,8 @@ public class PersistenceStartup implements HiveMQShutdownHook {
 
     public PersistenceStartup() {
         persistenceStartExecutor = Executors.newFixedThreadPool(FILE_PERSISTENCE_COUNT);
-        environmentCreateExecutor = Executors.newFixedThreadPool(InternalConfigurations.PERSISTENCE_STARTUP_THREAD_POOL_SIZE.get());
+        environmentCreateExecutor =
+                Executors.newFixedThreadPool(InternalConfigurations.PERSISTENCE_STARTUP_THREAD_POOL_SIZE.get());
         filePersistenceList = new ArrayList<>(FILE_PERSISTENCE_COUNT);
         start = System.currentTimeMillis();
     }
@@ -85,12 +83,12 @@ public class PersistenceStartup implements HiveMQShutdownHook {
         environmentCreateExecutor.shutdown();
 
         try {
-            if (!persistenceStartExecutor.awaitTermination(InternalConfigurations.PERSISTENCE_STARTUP_SHUTDOWN_TIMEOUT_SEC.get(),
-                    TimeUnit.SECONDS)) {
+            if (!persistenceStartExecutor.awaitTermination(
+                    InternalConfigurations.PERSISTENCE_STARTUP_SHUTDOWN_TIMEOUT_SEC.get(), TimeUnit.SECONDS)) {
                 persistenceStartExecutor.shutdownNow();
             }
-            if (!environmentCreateExecutor.awaitTermination(InternalConfigurations.PERSISTENCE_STARTUP_SHUTDOWN_TIMEOUT_SEC.get(),
-                    TimeUnit.SECONDS)) {
+            if (!environmentCreateExecutor.awaitTermination(
+                    InternalConfigurations.PERSISTENCE_STARTUP_SHUTDOWN_TIMEOUT_SEC.get(), TimeUnit.SECONDS)) {
                 environmentCreateExecutor.shutdownNow();
             }
         } catch (final InterruptedException e) {
@@ -107,7 +105,5 @@ public class PersistenceStartup implements HiveMQShutdownHook {
         } catch (final Throwable e) {
             log.error("Closing file persistence failed", e);
         }
-
-
     }
 }

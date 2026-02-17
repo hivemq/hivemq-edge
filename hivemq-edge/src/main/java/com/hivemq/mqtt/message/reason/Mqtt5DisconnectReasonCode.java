@@ -15,12 +15,11 @@
  */
 package com.hivemq.mqtt.message.reason;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.disconnect.DisconnectReasonCode;
 import com.hivemq.extension.sdk.api.packets.general.DisconnectedReasonCode;
-
 import java.util.EnumSet;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * MQTT Reason Codes that can be used in DISCONNECT packets according to the MQTT 5 specification.
@@ -28,7 +27,6 @@ import java.util.EnumSet;
  * @author Silvio Giebl
  */
 public enum Mqtt5DisconnectReasonCode implements Mqtt5ReasonCode {
-
     NORMAL_DISCONNECTION(0x00),
     DISCONNECT_WITH_WILL_MESSAGE(0x04),
     UNSPECIFIED_ERROR(MqttCommonReasonCode.UNSPECIFIED_ERROR),
@@ -135,11 +133,20 @@ public enum Mqtt5DisconnectReasonCode implements Mqtt5ReasonCode {
         return DISCONNECTED_LOOKUP[reasonCode.ordinal()];
     }
 
-    private static final @NotNull EnumSet<Mqtt5DisconnectReasonCode> BY_CLIENT =
-            EnumSet.of(NORMAL_DISCONNECTION, DISCONNECT_WITH_WILL_MESSAGE, UNSPECIFIED_ERROR, PROTOCOL_ERROR,
-                    IMPLEMENTATION_SPECIFIC_ERROR, TOPIC_FILTER_INVALID, TOPIC_NAME_INVALID, RECEIVE_MAXIMUM_EXCEEDED,
-                    TOPIC_ALIAS_INVALID, PACKET_TOO_LARGE, MESSAGE_RATE_TOO_HIGH, QUOTA_EXCEEDED,
-                    ADMINISTRATIVE_ACTION);
+    private static final @NotNull EnumSet<Mqtt5DisconnectReasonCode> BY_CLIENT = EnumSet.of(
+            NORMAL_DISCONNECTION,
+            DISCONNECT_WITH_WILL_MESSAGE,
+            UNSPECIFIED_ERROR,
+            PROTOCOL_ERROR,
+            IMPLEMENTATION_SPECIFIC_ERROR,
+            TOPIC_FILTER_INVALID,
+            TOPIC_NAME_INVALID,
+            RECEIVE_MAXIMUM_EXCEEDED,
+            TOPIC_ALIAS_INVALID,
+            PACKET_TOO_LARGE,
+            MESSAGE_RATE_TOO_HIGH,
+            QUOTA_EXCEEDED,
+            ADMINISTRATIVE_ACTION);
 
     @Override
     public boolean canBeSentByServer() {
