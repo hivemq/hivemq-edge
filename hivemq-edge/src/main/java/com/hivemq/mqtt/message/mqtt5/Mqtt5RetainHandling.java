@@ -27,7 +27,6 @@ import org.jetbrains.annotations.Nullable;
  * @since 4.0.0
  */
 public enum Mqtt5RetainHandling {
-
     SEND(0),
     SEND_IF_SUBSCRIPTION_DOES_NOT_EXIST(1),
     DO_NOT_SEND(2);
@@ -57,5 +56,4 @@ public enum Mqtt5RetainHandling {
     public static Mqtt5RetainHandling fromCode(final int code) {
         return (code >= 0 && code < VALUES.length) ? VALUES[code] : null;
     }
-
 }

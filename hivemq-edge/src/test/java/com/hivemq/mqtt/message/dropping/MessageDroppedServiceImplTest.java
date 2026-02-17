@@ -15,6 +15,9 @@
  */
 package com.hivemq.mqtt.message.dropping;
 
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.logging.EventLog;
 import com.hivemq.metrics.MetricsHolder;
@@ -22,9 +25,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 /**
  * @author Georg Held
@@ -39,6 +39,7 @@ public class MessageDroppedServiceImplTest {
     private EventLog eventLog;
 
     private MessageDroppedService messageDroppedService;
+
     @BeforeEach
     public void setUp() throws Exception {
 
@@ -57,20 +58,21 @@ public class MessageDroppedServiceImplTest {
     public void test_publish_inbound_intercepted() {
         messageDroppedService.extensionPrevented(clientId, topic, qos);
         verify(eventLog, times(1)).messageDropped(clientId, topic, qos, "Extension prevented onward delivery");
-
     }
 
     @Test
     public void test_qos0_memory_exceeded() {
         messageDroppedService.qos0MemoryExceeded(clientId, topic, qos, 1111, 1000);
-        verify(eventLog, times(1)).messageDropped(clientId, topic, qos, "The QoS 0 memory limit exceeded, size: 1,111 bytes, max: 1,000 bytes");
-
+        verify(eventLog, times(1))
+                .messageDropped(
+                        clientId, topic, qos, "The QoS 0 memory limit exceeded, size: 1,111 bytes, max: 1,000 bytes");
     }
 
     @Test
     public void test_qos0_memory_exceeded_shared() {
         messageDroppedService.qos0MemoryExceededShared(clientId, topic, qos, 1111, 1000);
-        verify(eventLog, times(1)).sharedSubscriptionMessageDropped(clientId, topic, qos, "The QoS 0 memory limit exceeded, size: 1,111 bytes, max: 1,000 bytes");
-
+        verify(eventLog, times(1))
+                .sharedSubscriptionMessageDropped(
+                        clientId, topic, qos, "The QoS 0 memory limit exceeded, size: 1,111 bytes, max: 1,000 bytes");
     }
 }

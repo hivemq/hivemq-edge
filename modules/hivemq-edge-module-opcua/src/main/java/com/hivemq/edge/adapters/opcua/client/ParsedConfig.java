@@ -24,6 +24,13 @@ import com.hivemq.edge.adapters.opcua.config.Truststore;
 import com.hivemq.edge.adapters.opcua.config.X509Auth;
 import com.hivemq.edge.adapters.opcua.security.CertificateTrustListManager;
 import com.hivemq.edge.adapters.opcua.util.KeystoreUtil;
+import java.io.File;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import org.eclipse.milo.opcua.sdk.client.identity.AnonymousProvider;
 import org.eclipse.milo.opcua.sdk.client.identity.CompositeProvider;
 import org.eclipse.milo.opcua.sdk.client.identity.IdentityProvider;
@@ -38,17 +45,12 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
-public record ParsedConfig(boolean tlsEnabled, KeystoreUtil.KeyPairWithChain keyPairWithChain,
-                           CertificateValidator clientCertificateValidator, IdentityProvider identityProvider,
-                           @Nullable String applicationUri) {
+public record ParsedConfig(
+        boolean tlsEnabled,
+        KeystoreUtil.KeyPairWithChain keyPairWithChain,
+        CertificateValidator clientCertificateValidator,
+        IdentityProvider identityProvider,
+        @Nullable String applicationUri) {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(ParsedConfig.class);
 
@@ -58,7 +60,9 @@ public record ParsedConfig(boolean tlsEnabled, KeystoreUtil.KeyPairWithChain key
         CertificateValidator certValidator = null;
         if (tlsEnabled) {
             final var truststore = adapterConfig.getTls().truststore();
-            final var certOptional = getTrustedCerts(truststore).map(trustedCerts ->  createServerCertificateValidator(trustedCerts, adapterConfig.getTls().tlsChecks()));
+            final var certOptional = getTrustedCerts(truststore)
+                    .map(trustedCerts -> createServerCertificateValidator(
+                            trustedCerts, adapterConfig.getTls().tlsChecks()));
             if (certOptional.isEmpty()) {
                 return Failure.of("Failed to create certificate validator, check truststore configuration");
             }
@@ -83,7 +87,8 @@ public record ParsedConfig(boolean tlsEnabled, KeystoreUtil.KeyPairWithChain key
 
         // Determine Application URI with priority: configured > certificate SAN > default
         final String applicationUri;
-        if (adapterConfig.getApplicationUri() != null && !adapterConfig.getApplicationUri().isBlank()) {
+        if (adapterConfig.getApplicationUri() != null
+                && !adapterConfig.getApplicationUri().isBlank()) {
             // Priority 1: Use configured override
             applicationUri = adapterConfig.getApplicationUri();
             log.info("Using configured Application URI override: {}", applicationUri);
@@ -99,14 +104,16 @@ public record ParsedConfig(boolean tlsEnabled, KeystoreUtil.KeyPairWithChain key
             }
         }
 
-        return Success.of(new ParsedConfig(tlsEnabled, keyPairWithChain, certValidator, identityProvider.get(), applicationUri));
+        return Success.of(
+                new ParsedConfig(tlsEnabled, keyPairWithChain, certValidator, identityProvider.get(), applicationUri));
     }
 
     private static @NotNull Optional<List<X509Certificate>> getTrustedCerts(@Nullable final Truststore truststore) {
         if (truststore != null && !truststore.path().isBlank()) {
             final File truststoreFile = new File(truststore.path());
             if (!truststoreFile.exists() || !truststoreFile.canRead()) {
-                log.error("Truststore configuration is not valid. Truststore file does not exist or is not readable: {}",
+                log.error(
+                        "Truststore configuration is not valid. Truststore file does not exist or is not readable: {}",
                         truststoreFile.getPath());
                 return Optional.empty();
             }
@@ -125,24 +132,36 @@ public record ParsedConfig(boolean tlsEnabled, KeystoreUtil.KeyPairWithChain key
         return Optional.of(KeystoreUtil.getCertificatesFromDefaultTruststore());
     }
 
-    private static @NotNull CertificateValidator createServerCertificateValidator(final @NotNull List<X509Certificate> trustedCerts, final @NotNull TlsChecks tlsChecks) {
+    private static @NotNull CertificateValidator createServerCertificateValidator(
+            final @NotNull List<X509Certificate> trustedCerts, final @NotNull TlsChecks tlsChecks) {
         return switch (tlsChecks) {
-            case NONE -> new DefaultClientCertificateValidator(new CertificateTrustListManager(trustedCerts),
-                    Set.of(),
-                    new MemoryCertificateQuarantine());
-            case APPLICATION_URI -> new DefaultClientCertificateValidator(new CertificateTrustListManager(trustedCerts),
-                    ValidationCheck.NO_OPTIONAL_CHECKS,
-                    new MemoryCertificateQuarantine());
-            case STANDARD -> new DefaultClientCertificateValidator(new CertificateTrustListManager(trustedCerts),
-                    Set.of(ValidationCheck.APPLICATION_URI, ValidationCheck.VALIDITY, ValidationCheck.REVOCATION, ValidationCheck.REVOCATION_LISTS),
-                    new MemoryCertificateQuarantine());
-            case ALL -> new DefaultClientCertificateValidator(new CertificateTrustListManager(trustedCerts),
-                    ValidationCheck.ALL_OPTIONAL_CHECKS,
-                    new MemoryCertificateQuarantine());
+            case NONE ->
+                new DefaultClientCertificateValidator(
+                        new CertificateTrustListManager(trustedCerts), Set.of(), new MemoryCertificateQuarantine());
+            case APPLICATION_URI ->
+                new DefaultClientCertificateValidator(
+                        new CertificateTrustListManager(trustedCerts),
+                        ValidationCheck.NO_OPTIONAL_CHECKS,
+                        new MemoryCertificateQuarantine());
+            case STANDARD ->
+                new DefaultClientCertificateValidator(
+                        new CertificateTrustListManager(trustedCerts),
+                        Set.of(
+                                ValidationCheck.APPLICATION_URI,
+                                ValidationCheck.VALIDITY,
+                                ValidationCheck.REVOCATION,
+                                ValidationCheck.REVOCATION_LISTS),
+                        new MemoryCertificateQuarantine());
+            case ALL ->
+                new DefaultClientCertificateValidator(
+                        new CertificateTrustListManager(trustedCerts),
+                        ValidationCheck.ALL_OPTIONAL_CHECKS,
+                        new MemoryCertificateQuarantine());
         };
     }
 
-    private static @NotNull Optional<KeystoreUtil.KeyPairWithChain> getKeyPairWithChain(final @NotNull Keystore keystore) {
+    private static @NotNull Optional<KeystoreUtil.KeyPairWithChain> getKeyPairWithChain(
+            final @NotNull Keystore keystore) {
         final File keystoreFile = new File(keystore.path());
         if (!keystoreFile.exists()) {
             log.error("Keystore file {} does not exist", keystoreFile.getAbsolutePath());
@@ -152,10 +171,8 @@ public record ParsedConfig(boolean tlsEnabled, KeystoreUtil.KeyPairWithChain key
             log.error("Keystore file {} is not readable", keystoreFile.getAbsolutePath());
             return Optional.empty();
         }
-        return Optional.of(KeystoreUtil.getKeysFromKeystore("JKS",
-                keystore.path(),
-                keystore.password(),
-                keystore.privateKeyPassword()));
+        return Optional.of(KeystoreUtil.getKeysFromKeystore(
+                "JKS", keystore.path(), keystore.password(), keystore.privateKeyPassword()));
     }
 
     private static @NotNull Optional<IdentityProvider> createIdentityProvider(
@@ -163,7 +180,8 @@ public record ParsedConfig(boolean tlsEnabled, KeystoreUtil.KeyPairWithChain key
             final @Nullable KeystoreUtil.KeyPairWithChain keyPairWithChain,
             final @Nullable Auth auth) {
         if (log.isDebugEnabled()) {
-            log.debug("Configuring Authentication with auth {} tlsEnabled {} and keyPairWithChain {}",
+            log.debug(
+                    "Configuring Authentication with auth {} tlsEnabled {} and keyPairWithChain {}",
                     auth != null,
                     tlsEnabled,
                     keyPairWithChain != null);
@@ -188,8 +206,8 @@ public record ParsedConfig(boolean tlsEnabled, KeystoreUtil.KeyPairWithChain key
                 if (log.isDebugEnabled()) {
                     log.debug("X509 authentication is enabled");
                 }
-                identityProviders.add(new X509IdentityProvider(Arrays.asList(keyPairWithChain.certificateChain()),
-                        keyPairWithChain.privateKey()));
+                identityProviders.add(new X509IdentityProvider(
+                        Arrays.asList(keyPairWithChain.certificateChain()), keyPairWithChain.privateKey()));
             }
 
             final BasicAuth basicAuth = auth.basicAuth();
@@ -203,7 +221,9 @@ public record ParsedConfig(boolean tlsEnabled, KeystoreUtil.KeyPairWithChain key
 
         if (identityProviders.size() == 1) {
             final IdentityProvider singleProvider = identityProviders.get(0);
-            log.info("Using single identity provider: {}", singleProvider.getClass().getSimpleName());
+            log.info(
+                    "Using single identity provider: {}",
+                    singleProvider.getClass().getSimpleName());
             return Optional.of(singleProvider);
         }
 

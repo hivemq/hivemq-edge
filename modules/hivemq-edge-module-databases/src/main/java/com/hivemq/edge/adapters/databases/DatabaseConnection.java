@@ -18,31 +18,32 @@ package com.hivemq.edge.adapters.databases;
 import com.hivemq.edge.adapters.databases.config.DatabaseType;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Properties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Properties;
 
 public class DatabaseConnection {
     private static final @NotNull Logger log = LoggerFactory.getLogger(DatabaseConnection.class);
     private final @NotNull HikariConfig config;
     private @Nullable HikariDataSource ds;
 
-    public DatabaseConnection(final @NotNull DatabaseType dbType,
-                              final @NotNull String server,
-                              final @NotNull Integer port,
-                              final @NotNull String database,
-                              final @NotNull String username,
-                              final @NotNull String password,
-                              final int connectionTimeout,
-                              final boolean encrypt) {
+    public DatabaseConnection(
+            final @NotNull DatabaseType dbType,
+            final @NotNull String server,
+            final @NotNull Integer port,
+            final @NotNull String database,
+            final @NotNull String username,
+            final @NotNull String password,
+            final int connectionTimeout,
+            final boolean encrypt) {
 
         config = new HikariConfig();
 
-        switch (dbType){
+        switch (dbType) {
             case POSTGRESQL -> {
                 config.setDataSourceClassName("org.postgresql.ds.PGSimpleDataSource");
                 config.addDataSourceProperty("serverName", server);
@@ -53,11 +54,9 @@ public class DatabaseConnection {
                 config.setConnectionTimeout(connectionTimeout * 2000L);
             }
             case MYSQL -> {
-                config.setJdbcUrl(String.format("jdbc:mariadb://%s:%s/%s?allowPublicKeyRetrieval=true&useSSL=%s",
-                        server,
-                        port,
-                        database,
-                        encrypt));
+                config.setJdbcUrl(String.format(
+                        "jdbc:mariadb://%s:%s/%s?allowPublicKeyRetrieval=true&useSSL=%s",
+                        server, port, database, encrypt));
                 config.addDataSourceProperty("user", username);
                 config.addDataSourceProperty("password", password);
                 config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");

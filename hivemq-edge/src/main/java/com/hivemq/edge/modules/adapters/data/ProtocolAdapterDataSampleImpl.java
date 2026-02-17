@@ -20,12 +20,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A protocol adapter sample, is a sampled measurement taken at a point in time. It can encapsulate more than one
@@ -38,9 +37,7 @@ public class ProtocolAdapterDataSampleImpl implements ProtocolAdapterDataSample 
     private final @NotNull Long timestamp = System.currentTimeMillis();
     final @NotNull Map<String, List<DataPoint>> tagNameToDataPoints = new ConcurrentHashMap<>();
 
-
-    public ProtocolAdapterDataSampleImpl() {
-    }
+    public ProtocolAdapterDataSampleImpl() {}
 
     @Override
     @JsonIgnore
@@ -68,7 +65,6 @@ public class ProtocolAdapterDataSampleImpl implements ProtocolAdapterDataSample 
                 return dataPoints;
             }
         });
-
     }
 
     @Override
@@ -76,5 +72,4 @@ public class ProtocolAdapterDataSampleImpl implements ProtocolAdapterDataSample 
     public @NotNull Map<String, List<DataPoint>> getDataPoints() {
         return tagNameToDataPoints;
     }
-
 }

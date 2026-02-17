@@ -15,16 +15,15 @@
  */
 package com.hivemq.persistence;
 
+import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENCE_BUCKET_COUNT;
+import static com.hivemq.configuration.service.InternalConfigurations.SINGLE_WRITER_INTERVAL_TO_CHECK_PENDING_TASKS_AND_SCHEDULE_MSEC;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.util.Exceptions;
 import com.hivemq.util.ThreadFactoryUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 import java.util.SplittableRandom;
@@ -35,9 +34,9 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENCE_BUCKET_COUNT;
-import static com.hivemq.configuration.service.InternalConfigurations.SINGLE_WRITER_INTERVAL_TO_CHECK_PENDING_TASKS_AND_SCHEDULE_MSEC;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Lukas Brandl
@@ -89,22 +88,22 @@ public class InFileSingleWriter implements SingleWriterService {
             producers[i] = new ProducerQueuesImpl(this, amountOfQueues);
         }
 
-        final ThreadFactory checkThreadFactory =
-                new ThreadFactoryBuilder().setNameFormat("single-writer-scheduled-check-%d").build();
+        final ThreadFactory checkThreadFactory = new ThreadFactoryBuilder()
+                .setNameFormat("single-writer-scheduled-check-%d")
+                .build();
         checkScheduler = Executors.newSingleThreadScheduledExecutor(checkThreadFactory);
     }
 
     @PostConstruct
     public void postConstruct() {
         // Periodically check if there are pending tasks in the queues
-        checkScheduler.scheduleAtFixedRate(() -> {
+        checkScheduler.scheduleAtFixedRate(
+                () -> {
                     try {
 
                         if (runningThreadsCount.getAndIncrement() == 0 && !singleWriterExecutor.isShutdown()) {
-                            singleWriterExecutor.submit(new SingleWriterTask(nonemptyQueueCounter,
-                                    globalTaskCount,
-                                    runningThreadsCount,
-                                    producers));
+                            singleWriterExecutor.submit(new SingleWriterTask(
+                                    nonemptyQueueCounter, globalTaskCount, runningThreadsCount, producers));
                         } else {
                             runningThreadsCount.decrementAndGet();
                         }
@@ -131,10 +130,8 @@ public class InFileSingleWriter implements SingleWriterService {
         nonemptyQueueCounter.incrementAndGet();
 
         if (runningThreadsCount.getAndIncrement() < threadPoolSize) {
-            singleWriterExecutor.submit(new SingleWriterTask(nonemptyQueueCounter,
-                    globalTaskCount,
-                    runningThreadsCount,
-                    producers));
+            singleWriterExecutor.submit(
+                    new SingleWriterTask(nonemptyQueueCounter, globalTaskCount, runningThreadsCount, producers));
         } else {
             runningThreadsCount.decrementAndGet();
         }
@@ -202,7 +199,7 @@ public class InFileSingleWriter implements SingleWriterService {
                 log.trace("Finished single writer shutdown in {} ms", (System.currentTimeMillis() - start));
             }
         } catch (final InterruptedException e) {
-            //ignore
+            // ignore
         }
         singleWriterExecutor.shutdownNow();
         checkScheduler.shutdownNow();
@@ -269,8 +266,10 @@ public class InFileSingleWriter implements SingleWriterService {
                     surplus -= 100;
 
                     if (surplus > 0) { // Normalize to a 100% sum
-                        // We reduce the probability of all persistences that are not at the minimum, be a portion of the overhead.
-                        // The portion is based on there portion of the sum of all probabilities, ignoring those with minimum probability.
+                        // We reduce the probability of all persistences that are not at the minimum, be a portion of
+                        // the overhead.
+                        // The portion is based on there portion of the sum of all probabilities, ignoring those with
+                        // minimum probability.
                         for (int i = 0; i < probabilities.length; i++) {
                             if (probabilities[i] > MIN_PROBABILITY_IN_PERCENT) {
                                 probabilities[i] -= surplus / (sumWithoutMins / probabilities[i]);
@@ -293,7 +292,8 @@ public class InFileSingleWriter implements SingleWriterService {
             } catch (final Throwable t) {
                 // Exceptions in the executed tasks, are passed to there result future.
                 // So we only end up here if there is an exception in the probability calculation.
-                // We decrement the running thread count so that a new thread will start running, as soon as a new task is added to any queue.
+                // We decrement the running thread count so that a new thread will start running, as soon as a new task
+                // is added to any queue.
                 runningThreadsCount.decrementAndGet();
                 Exceptions.rethrowError("Exception in single writer executor. ", t);
             }

@@ -15,11 +15,10 @@
  */
 package com.hivemq.configuration.entity.bridge;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.xml.bind.annotation.*;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 @XmlRootElement(name = "remote-broker")
@@ -97,12 +96,12 @@ public class RemoteBrokerEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final RemoteBrokerEntity that = (RemoteBrokerEntity) o;
-        return getPort() == that.getPort() &&
-                Objects.equals(getHost(), that.getHost()) &&
-                Objects.equals(getMqtt(), that.getMqtt()) &&
-                Objects.equals(getAuthentication(), that.getAuthentication()) &&
-                Objects.equals(getBridgeWebsocketConfig(), that.getBridgeWebsocketConfig()) &&
-                Objects.equals(getTls(), that.getTls());
+        return getPort() == that.getPort()
+                && Objects.equals(getHost(), that.getHost())
+                && Objects.equals(getMqtt(), that.getMqtt())
+                && Objects.equals(getAuthentication(), that.getAuthentication())
+                && Objects.equals(getBridgeWebsocketConfig(), that.getBridgeWebsocketConfig())
+                && Objects.equals(getTls(), that.getTls());
     }
 
     @Override

@@ -27,10 +27,9 @@ import com.hivemq.edge.api.model.ISA95ApiBean;
 import com.hivemq.uns.UnifiedNamespaceService;
 import com.hivemq.uns.config.ISA95;
 import com.hivemq.util.ErrorResponseUtil;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -63,25 +62,28 @@ public class UnsResourceImpl extends AbstractApi implements UnsApi {
 
         final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
 
-        //-- Ensure we apply all validation
+        // -- Ensure we apply all validation
         ApiErrorUtils.validateRequiredEntity(errorMessages, "isa95", isa95);
-        if(!ApiValidation.validAlphaNumericSpacesAndDashes(isa95.getEnterprise(), true)){
-            ApiErrorUtils.addValidationError(errorMessages, "enterprise", "Must be a valid alpha-numeric string with spaces");
+        if (!ApiValidation.validAlphaNumericSpacesAndDashes(isa95.getEnterprise(), true)) {
+            ApiErrorUtils.addValidationError(
+                    errorMessages, "enterprise", "Must be a valid alpha-numeric string with spaces");
         }
-        if(!ApiValidation.validAlphaNumericSpacesAndDashes(isa95.getArea(), true)){
+        if (!ApiValidation.validAlphaNumericSpacesAndDashes(isa95.getArea(), true)) {
             ApiErrorUtils.addValidationError(errorMessages, "area", "Must be a valid alpha-numeric string with spaces");
         }
-        if(!ApiValidation.validAlphaNumericSpacesAndDashes(isa95.getSite(), true)){
+        if (!ApiValidation.validAlphaNumericSpacesAndDashes(isa95.getSite(), true)) {
             ApiErrorUtils.addValidationError(errorMessages, "site", "Must be a valid alpha-numeric string with spaces");
         }
-        if(!ApiValidation.validAlphaNumericSpacesAndDashes(isa95.getProductionLine(), true)){
-            ApiErrorUtils.addValidationError(errorMessages, "productionLine", "Must be a valid alpha-numeric string with spaces");
+        if (!ApiValidation.validAlphaNumericSpacesAndDashes(isa95.getProductionLine(), true)) {
+            ApiErrorUtils.addValidationError(
+                    errorMessages, "productionLine", "Must be a valid alpha-numeric string with spaces");
         }
-        if(!ApiValidation.validAlphaNumericSpacesAndDashes(isa95.getWorkCell(), true)){
-            ApiErrorUtils.addValidationError(errorMessages, "workCell", "Must be a valid alpha-numeric string with spaces");
+        if (!ApiValidation.validAlphaNumericSpacesAndDashes(isa95.getWorkCell(), true)) {
+            ApiErrorUtils.addValidationError(
+                    errorMessages, "workCell", "Must be a valid alpha-numeric string with spaces");
         }
 
-        if(ApiErrorUtils.hasRequestErrors(errorMessages)){
+        if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
             return ErrorResponseUtil.errorResponse(new ValidationError(errorMessages.toErrorList()));
         } else {
             unifiedNamespaceService.setISA95(ISA95.unconvert(isa95));

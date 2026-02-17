@@ -20,60 +20,64 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
-
 @SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
 @JsonPropertyOrder({"minValue", "maxValue", "subscriptions"})
-public class SimulationSpecificAdapterConfig
-        implements ProtocolSpecificAdapterConfig {
+public class SimulationSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
     @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
-    @ModuleConfigField(title = "Identifier",
-                       description = "Unique identifier for this protocol adapter",
-                       format = ModuleConfigField.FieldType.IDENTIFIER,
-                       required = true,
-                       stringPattern = ID_REGEX,
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
+    @ModuleConfigField(
+            title = "Identifier",
+            description = "Unique identifier for this protocol adapter",
+            format = ModuleConfigField.FieldType.IDENTIFIER,
+            required = true,
+            stringPattern = ID_REGEX,
+            stringMinLength = 1,
+            stringMaxLength = 1024)
     private @Nullable String id;
 
     @JsonProperty(value = "simulationToMqtt")
-    @ModuleConfigField(title = "simulationToMqtt",
-                       description = "Define Simulations to create MQTT messages.",
-                       required = true)
+    @ModuleConfigField(
+            title = "simulationToMqtt",
+            description = "Define Simulations to create MQTT messages.",
+            required = true)
     private final @NotNull SimulationToMqttConfig simulationToMqttConfig;
 
     @JsonProperty("minValue")
-    @ModuleConfigField(title = "Min. Generated Value",
-                       description = "Minimum value of the generated decimal number",
-                       numberMin = 0,
-                       defaultValue = "0")
+    @ModuleConfigField(
+            title = "Min. Generated Value",
+            description = "Minimum value of the generated decimal number",
+            numberMin = 0,
+            defaultValue = "0")
     private final int minValue;
 
     @JsonProperty("maxValue")
-    @ModuleConfigField(title = "Max. Generated Value (Excl.)",
-                       description = "Maximum value of the generated decimal number (excluded)",
-                       numberMax = 1000,
-                       defaultValue = "1000")
+    @ModuleConfigField(
+            title = "Max. Generated Value (Excl.)",
+            description = "Maximum value of the generated decimal number (excluded)",
+            numberMax = 1000,
+            defaultValue = "1000")
     private final int maxValue;
 
     @JsonProperty("minDelay")
-    @ModuleConfigField(title = "Minimum of delay",
-                       description = "Minimum of artificial delay before the polling method generates a value",
-                       numberMin = 0,
-                       defaultValue = "0")
+    @ModuleConfigField(
+            title = "Minimum of delay",
+            description = "Minimum of artificial delay before the polling method generates a value",
+            numberMin = 0,
+            defaultValue = "0")
     private final int minDelay;
 
     @JsonProperty("maxDelay")
-    @ModuleConfigField(title = "Maximum of delay",
-                       description = "Maximum of artificial delay before the polling method generates a value",
-                       numberMin = 0,
-                       defaultValue = "0")
+    @ModuleConfigField(
+            title = "Maximum of delay",
+            description = "Maximum of artificial delay before the polling method generates a value",
+            numberMin = 0,
+            defaultValue = "0")
     private final int maxDelay;
 
     @JsonCreator
@@ -113,42 +117,37 @@ public class SimulationSpecificAdapterConfig
 
     @Override
     public String toString() {
-        return "SimulationSpecificAdapterConfig{" +
-                "id='" +
-                id +
-                '\'' +
-                ", simulationToMqttConfig=" +
-                simulationToMqttConfig +
-                ", minValue=" +
-                minValue +
-                ", maxValue=" +
-                maxValue +
-                ", minDelay=" +
-                minDelay +
-                ", maxDelay=" +
-                maxDelay +
-                '}';
+        return "SimulationSpecificAdapterConfig{" + "id='"
+                + id
+                + '\''
+                + ", simulationToMqttConfig="
+                + simulationToMqttConfig
+                + ", minValue="
+                + minValue
+                + ", maxValue="
+                + maxValue
+                + ", minDelay="
+                + minDelay
+                + ", maxDelay="
+                + maxDelay
+                + '}';
     }
 
     @Override
     public boolean equals(final Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         final SimulationSpecificAdapterConfig that = (SimulationSpecificAdapterConfig) o;
-        return getMinValue() == that.getMinValue() &&
-                getMaxValue() == that.getMaxValue() &&
-                getMinDelay() == that.getMinDelay() &&
-                getMaxDelay() == that.getMaxDelay() &&
-                Objects.equals(id, that.id) &&
-                Objects.equals(getSimulationToMqttConfig(), that.getSimulationToMqttConfig());
+        return getMinValue() == that.getMinValue()
+                && getMaxValue() == that.getMaxValue()
+                && getMinDelay() == that.getMinDelay()
+                && getMaxDelay() == that.getMaxDelay()
+                && Objects.equals(id, that.id)
+                && Objects.equals(getSimulationToMqttConfig(), that.getSimulationToMqttConfig());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id,
-                getSimulationToMqttConfig(),
-                getMinValue(),
-                getMaxValue(),
-                getMinDelay(),
-                getMaxDelay());
+        return Objects.hash(
+                id, getSimulationToMqttConfig(), getMinValue(), getMaxValue(), getMinDelay(), getMaxDelay());
     }
 }

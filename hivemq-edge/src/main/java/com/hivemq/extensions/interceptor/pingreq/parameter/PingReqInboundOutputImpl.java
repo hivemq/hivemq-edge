@@ -15,12 +15,11 @@
  */
 package com.hivemq.extensions.interceptor.pingreq.parameter;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.pingreq.parameter.PingReqInboundOutput;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
 import com.hivemq.extensions.executor.task.AbstractAsyncOutput;
-
 import java.util.function.Supplier;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Robin Atherton

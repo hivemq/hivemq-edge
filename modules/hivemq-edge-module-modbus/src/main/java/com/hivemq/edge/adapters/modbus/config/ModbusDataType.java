@@ -17,9 +17,8 @@ package com.hivemq.edge.adapters.modbus.config;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.jetbrains.annotations.NotNull;
-
 import java.nio.charset.StandardCharsets;
+import org.jetbrains.annotations.NotNull;
 
 public enum ModbusDataType {
     BOOL("BOOL", 1),
@@ -49,7 +48,8 @@ public enum ModbusDataType {
         final byte b6 = buffi.readByte();
         final byte b7 = buffi.readByte();
         final byte b8 = buffi.readByte();
-        return Unpooled.wrappedBuffer(new byte[]{b7, b8, b5, b6, b3, b4, b1, b2}).readUnsignedInt();
+        return Unpooled.wrappedBuffer(new byte[] {b7, b8, b5, b6, b3, b4, b1, b2})
+                .readUnsignedInt();
     }
 
     @Override
@@ -72,7 +72,7 @@ public enum ModbusDataType {
                     final byte b2 = buff.readByte();
                     final byte b3 = buff.readByte();
                     final byte b4 = buff.readByte();
-                    yield Unpooled.wrappedBuffer(new byte[]{b4, b3, b2, b1}).readInt();
+                    yield Unpooled.wrappedBuffer(new byte[] {b4, b3, b2, b1}).readInt();
                 } else {
                     yield buff.readInt();
                 }
@@ -84,7 +84,7 @@ public enum ModbusDataType {
                     final byte b2 = buff.readByte();
                     final byte b3 = buff.readByte();
                     final byte b4 = buff.readByte();
-                    yield Unpooled.wrappedBuffer(new byte[]{b3, b4, b1, b2}).readUnsignedInt();
+                    yield Unpooled.wrappedBuffer(new byte[] {b3, b4, b1, b2}).readUnsignedInt();
                 } else {
                     yield buff.readUnsignedInt();
                 }
@@ -98,7 +98,7 @@ public enum ModbusDataType {
                     final byte b2 = buff.readByte();
                     final byte b3 = buff.readByte();
                     final byte b4 = buff.readByte();
-                    yield Unpooled.wrappedBuffer(new byte[]{b3, b4, b1, b2}).readFloat();
+                    yield Unpooled.wrappedBuffer(new byte[] {b3, b4, b1, b2}).readFloat();
                 } else {
                     yield buff.readFloat();
                 }

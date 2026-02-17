@@ -17,12 +17,7 @@ package com.hivemq.http.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.sun.net.httpserver.HttpsConfigurator;
-import org.apache.commons.lang3.tuple.Pair;
-
-import javax.net.ssl.SSLContext;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,6 +25,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import javax.net.ssl.SSLContext;
+import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Configuration for the HTTP & Jaxrs layer with reasonable defaults.
@@ -49,9 +48,11 @@ public class JaxrsHttpServerConfiguration {
     protected @NotNull String host = DEFAULT_HOSTNAME;
     protected @NotNull String protocol = HTTP_PROTOCOL;
     protected @NotNull Set<Class<?>> resourceClasses = new HashSet<>();
-    protected @NotNull List<Pair<String, String>> staticResources = new ArrayList<>(){{
-        add(Pair.of(DEFAULT_STATIC_ROOT_CONTEXT, DEFAULT_STATIC_ROOT));
-    }};
+    protected @NotNull List<Pair<String, String>> staticResources = new ArrayList<>() {
+        {
+            add(Pair.of(DEFAULT_STATIC_ROOT_CONTEXT, DEFAULT_STATIC_ROOT));
+        }
+    };
     protected int httpThreadPoolShutdownTimeoutSeconds = 2;
     protected int httpThreadPoolSize = 2;
     protected @Nullable ExecutorService httpThreadPoolExecutor;
@@ -153,7 +154,7 @@ public class JaxrsHttpServerConfiguration {
         this.httpThreadPoolShutdownTimeoutSeconds = httpThreadPoolShutdownTimeoutSeconds;
     }
 
-    public void addStaticResource(final @NotNull Pair<String, String> res){
+    public void addStaticResource(final @NotNull Pair<String, String> res) {
         staticResources.add(res);
     }
 
@@ -161,7 +162,7 @@ public class JaxrsHttpServerConfiguration {
         return exceptionMappers;
     }
 
-    public void addExceptionMappers(ExceptionMapper... mappers){
+    public void addExceptionMappers(ExceptionMapper... mappers) {
         exceptionMappers.addAll(Arrays.asList(mappers));
     }
 

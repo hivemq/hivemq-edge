@@ -24,9 +24,7 @@ public class ProtocolAdapterFactoryInputImpl implements ProtocolAdapterFactoryIn
     private final boolean writingEnabled;
     private final @NotNull EventService eventService;
 
-    public ProtocolAdapterFactoryInputImpl(
-            final boolean writingEnabled,
-            final @NotNull EventService eventService) {
+    public ProtocolAdapterFactoryInputImpl(final boolean writingEnabled, final @NotNull EventService eventService) {
         this.writingEnabled = writingEnabled;
         this.eventService = eventService;
     }

@@ -57,12 +57,11 @@ import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.mqtt.services.PrePublishProcessorService;
 import com.hivemq.util.Exceptions;
 import jakarta.inject.Inject;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
 
@@ -106,17 +105,23 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
                 interceptors.bridgeInboundInterceptorProviders();
         if (providerMap.isEmpty()) {
             if (log.isTraceEnabled()) {
-                log.trace("No inbound interceptors registered for bridge '{}', topic '{}', proceeding with direct publish",
-                        bridge.getId(), publish.getTopic());
+                log.trace(
+                        "No inbound interceptors registered for bridge '{}', topic '{}', proceeding with direct publish",
+                        bridge.getId(),
+                        publish.getTopic());
             }
-            return Futures.transform(prePublishProcessorService.publish(publish, executorService, bridge.getClientId()),
+            return Futures.transform(
+                    prePublishProcessorService.publish(publish, executorService, bridge.getClientId()),
                     (Function<? super PublishingResult, PublishReturnCode>) PublishingResult::getPublishReturnCode,
                     MoreExecutors.directExecutor());
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("Processing {} inbound interceptor(s) for bridge '{}', topic '{}'",
-                    providerMap.size(), bridge.getId(), publish.getTopic());
+            log.debug(
+                    "Processing {} inbound interceptor(s) for bridge '{}', topic '{}'",
+                    providerMap.size(),
+                    bridge.getId(),
+                    publish.getTopic());
         }
 
         final SettableFuture<PublishReturnCode> resultFuture = SettableFuture.create();
@@ -133,21 +138,18 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
         final ExtensionParameterHolder<BridgePublishInboundOutputImpl> outputHolder =
                 new ExtensionParameterHolder<>(output);
 
-        final PublishInboundInterceptorContext context = new PublishInboundInterceptorContext(bridge,
-                providerMap.size(),
-                publish,
-                inputHolder,
-                outputHolder,
-                resultFuture,
-                executorService);
+        final PublishInboundInterceptorContext context = new PublishInboundInterceptorContext(
+                bridge, providerMap.size(), publish, inputHolder, outputHolder, resultFuture, executorService);
 
         for (final BridgePublishInboundInterceptorProvider interceptorProvider : providerMap.values()) {
-            final HiveMQExtension extension =
-                    hiveMQExtensions.getExtensionForClassloader(interceptorProvider.getClass().getClassLoader());
+            final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(
+                    interceptorProvider.getClass().getClassLoader());
             if (extension == null) { // disabled extension would be null
                 if (log.isTraceEnabled()) {
-                    log.trace("Skipping disabled/unregistered inbound interceptor for bridge '{}', topic '{}'",
-                            bridge.getId(), publish.getTopic());
+                    log.trace(
+                            "Skipping disabled/unregistered inbound interceptor for bridge '{}', topic '{}'",
+                            bridge.getId(),
+                            publish.getTopic());
                 }
                 context.finishInterceptor();
                 continue;
@@ -156,8 +158,11 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
                     new BridgeInboundProviderInputImpl(serverInformation, bridgeInfo);
 
             if (log.isTraceEnabled()) {
-                log.trace("Executing inbound interceptor from extension '{}' for bridge '{}', topic '{}'",
-                        extension.getId(), bridge.getId(), publish.getTopic());
+                log.trace(
+                        "Executing inbound interceptor from extension '{}' for bridge '{}', topic '{}'",
+                        extension.getId(),
+                        bridge.getId(),
+                        publish.getTopic());
             }
 
             final BridgeInboundInterceptorTask task =
@@ -176,15 +181,20 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
                 interceptors.bridgeOutboundInterceptorProviders();
         if (providerMap.isEmpty()) {
             if (log.isTraceEnabled()) {
-                log.trace("No outbound interceptors registered for bridge '{}', topic '{}', proceeding with direct forward",
-                        bridge.getId(), publish.getTopic());
+                log.trace(
+                        "No outbound interceptors registered for bridge '{}', topic '{}', proceeding with direct forward",
+                        bridge.getId(),
+                        publish.getTopic());
             }
             return Futures.immediateFuture(new InterceptorResult(InterceptorOutcome.SUCCESS, publish));
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("Processing {} outbound interceptor(s) for bridge '{}', topic '{}'",
-                    providerMap.size(), bridge.getId(), publish.getTopic());
+            log.debug(
+                    "Processing {} outbound interceptor(s) for bridge '{}', topic '{}'",
+                    providerMap.size(),
+                    bridge.getId(),
+                    publish.getTopic());
         }
 
         final SettableFuture<InterceptorResult> resultFuture = SettableFuture.create();
@@ -201,7 +211,8 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
         final ExtensionParameterHolder<BridgePublishOutboundOutputImpl> outputHolder =
                 new ExtensionParameterHolder<>(output);
 
-        final PublishOutboundInterceptorContext context = new PublishOutboundInterceptorContext(bridge,
+        final PublishOutboundInterceptorContext context = new PublishOutboundInterceptorContext(
+                bridge,
                 providerMap.size(),
                 publish,
                 inputHolder,
@@ -211,26 +222,33 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
                 messageDroppedService);
 
         for (final BridgePublishOutboundInterceptorProvider interceptorProvider : providerMap.values()) {
-            final HiveMQExtension extension =
-                    hiveMQExtensions.getExtensionForClassloader(interceptorProvider.getClass().getClassLoader());
+            final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(
+                    interceptorProvider.getClass().getClassLoader());
             if (extension == null) { // disabled extension would be null
                 if (log.isTraceEnabled()) {
-                    log.trace("Skipping disabled/unregistered outbound interceptor for bridge '{}', topic '{}'",
-                            bridge.getId(), publish.getTopic());
+                    log.trace(
+                            "Skipping disabled/unregistered outbound interceptor for bridge '{}', topic '{}'",
+                            bridge.getId(),
+                            publish.getTopic());
                 }
                 context.finishInterceptor();
                 continue;
             }
 
             if (log.isTraceEnabled()) {
-                log.trace("Executing outbound interceptor from extension '{}' for bridge '{}', topic '{}'",
-                        extension.getId(), bridge.getId(), publish.getTopic());
+                log.trace(
+                        "Executing outbound interceptor from extension '{}' for bridge '{}', topic '{}'",
+                        extension.getId(),
+                        bridge.getId(),
+                        publish.getTopic());
             }
 
-            pluginTaskExecutorService.handlePluginInOutTaskExecution(context,
+            pluginTaskExecutorService.handlePluginInOutTaskExecution(
+                    context,
                     inputHolder,
                     outputHolder,
-                    new BridgeOutboundInterceptorTask(interceptorProvider,
+                    new BridgeOutboundInterceptorTask(
+                            interceptorProvider,
                             new BridgeOutboundProviderInputImpl(serverInformation, bridgeInfo),
                             extension.getId()));
         }
@@ -238,9 +256,10 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
         return resultFuture;
     }
 
-    private record BridgeInboundInterceptorTask(@NotNull BridgePublishInboundInterceptorProvider interceptorProvider,
-                                                @NotNull BridgeInboundProviderInput providerInput,
-                                                @NotNull String extensionId)
+    private record BridgeInboundInterceptorTask(
+            @NotNull BridgePublishInboundInterceptorProvider interceptorProvider,
+            @NotNull BridgeInboundProviderInput providerInput,
+            @NotNull String extensionId)
             implements PluginInOutTask<BridgePublishInboundInputImpl, BridgePublishInboundOutputImpl> {
 
         @Override
@@ -251,7 +270,8 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
             if (output.isPreventDelivery()) {
                 // it's already prevented so no further interceptors must be called.
                 if (log.isTraceEnabled()) {
-                    log.trace("Skipping inbound interceptor execution from extension '{}' as delivery is already prevented",
+                    log.trace(
+                            "Skipping inbound interceptor execution from extension '{}' as delivery is already prevented",
                             extensionId);
                 }
                 return output;
@@ -266,17 +286,22 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
 
                     if (log.isDebugEnabled()) {
                         final long durationMicros = (System.nanoTime() - startTime) / 1000;
-                        log.debug("Inbound interceptor from extension '{}' completed in {} μs", extensionId, durationMicros);
+                        log.debug(
+                                "Inbound interceptor from extension '{}' completed in {} μs",
+                                extensionId,
+                                durationMicros);
                     }
                 } else {
                     if (log.isDebugEnabled()) {
-                        log.debug("Inbound interceptor provider from extension '{}' returned null interceptor", extensionId);
+                        log.debug(
+                                "Inbound interceptor provider from extension '{}' returned null interceptor",
+                                extensionId);
                     }
                 }
             } catch (final Throwable e) {
                 log.warn(
-                        "Uncaught exception was thrown from extension with id \"{}\" on MQTT bridge inbound PUBLISH interception " +
-                                "for topic '{}'. Extensions are responsible for their own exception handling.",
+                        "Uncaught exception was thrown from extension with id \"{}\" on MQTT bridge inbound PUBLISH interception "
+                                + "for topic '{}'. Extensions are responsible for their own exception handling.",
                         extensionId,
                         input.getPublishPacket().getTopic(),
                         e);
@@ -292,9 +317,10 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
         }
     }
 
-    private record BridgeOutboundInterceptorTask(@NotNull BridgePublishOutboundInterceptorProvider interceptorProvider,
-                                                 @NotNull BridgeOutboundProviderInput providerInput,
-                                                 @NotNull String extensionId)
+    private record BridgeOutboundInterceptorTask(
+            @NotNull BridgePublishOutboundInterceptorProvider interceptorProvider,
+            @NotNull BridgeOutboundProviderInput providerInput,
+            @NotNull String extensionId)
             implements PluginInOutTask<BridgePublishOutboundInputImpl, BridgePublishOutboundOutputImpl> {
 
         @Override
@@ -305,7 +331,8 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
             if (output.isPreventDelivery()) {
                 // it's already prevented so no further interceptors must be called.
                 if (log.isTraceEnabled()) {
-                    log.trace("Skipping outbound interceptor execution from extension '{}' as delivery is already prevented",
+                    log.trace(
+                            "Skipping outbound interceptor execution from extension '{}' as delivery is already prevented",
                             extensionId);
                 }
                 return output;
@@ -321,17 +348,22 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
 
                     if (log.isDebugEnabled()) {
                         final long durationMicros = (System.nanoTime() - startTime) / 1000;
-                        log.debug("Outbound interceptor from extension '{}' completed in {} μs", extensionId, durationMicros);
+                        log.debug(
+                                "Outbound interceptor from extension '{}' completed in {} μs",
+                                extensionId,
+                                durationMicros);
                     }
                 } else {
                     if (log.isDebugEnabled()) {
-                        log.debug("Outbound interceptor provider from extension '{}' returned null interceptor", extensionId);
+                        log.debug(
+                                "Outbound interceptor provider from extension '{}' returned null interceptor",
+                                extensionId);
                     }
                 }
             } catch (final Throwable e) {
                 log.warn(
-                        "Uncaught exception was thrown from extension with id \"{}\" on MQTT bridge outbound PUBLISH interception " +
-                                "for topic '{}'. Extensions are responsible for their own exception handling.",
+                        "Uncaught exception was thrown from extension with id \"{}\" on MQTT bridge outbound PUBLISH interception "
+                                + "for topic '{}'. Extensions are responsible for their own exception handling.",
                         extensionId,
                         input.getPublishPacket().getTopic(),
                         e);
@@ -411,19 +443,26 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
             final BridgePublishOutboundOutputImpl output = outputHolder.get();
             if (output.isPreventDelivery()) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Outbound message delivery prevented by interceptor for bridge '{}', topic '{}'",
-                            bridge.getId(), publish.getTopic());
+                    log.debug(
+                            "Outbound message delivery prevented by interceptor for bridge '{}', topic '{}'",
+                            bridge.getId(),
+                            publish.getTopic());
                 }
-                messageDroppedService.extensionPrevented(bridge.getClientId(),
+                messageDroppedService.extensionPrevented(
+                        bridge.getClientId(),
                         publish.getTopic(),
                         publish.getQoS().getQosNumber());
                 resultFuture.set(new InterceptorResult(InterceptorOutcome.DROP, null));
             } else {
                 if (log.isTraceEnabled()) {
-                    log.trace("All {} outbound interceptor(s) completed successfully for bridge '{}', topic '{}'",
-                            interceptorCount, bridge.getId(), publish.getTopic());
+                    log.trace(
+                            "All {} outbound interceptor(s) completed successfully for bridge '{}', topic '{}'",
+                            interceptorCount,
+                            bridge.getId(),
+                            publish.getTopic());
                 }
-                resultFuture.set(new InterceptorResult(InterceptorOutcome.SUCCESS,
+                resultFuture.set(new InterceptorResult(
+                        InterceptorOutcome.SUCCESS,
                         PUBLISHFactory.merge(inputHolder.get().getPublishPacket(), publish)));
             }
         }
@@ -491,29 +530,33 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
             final BridgePublishInboundOutputImpl output = outputHolder.get();
             if (output.isPreventDelivery()) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Inbound message delivery prevented by interceptor for bridge '{}', topic '{}'",
-                            bridge.getId(), publish.getTopic());
+                    log.debug(
+                            "Inbound message delivery prevented by interceptor for bridge '{}', topic '{}'",
+                            bridge.getId(),
+                            publish.getTopic());
                 }
                 dropMessage(output);
                 resultFuture.set(PublishReturnCode.FAILED);
             } else {
                 if (log.isTraceEnabled()) {
-                    log.trace("All {} inbound interceptor(s) completed successfully for bridge '{}', topic '{}', proceeding with publish",
-                            interceptorCount, bridge.getId(), publish.getTopic());
+                    log.trace(
+                            "All {} inbound interceptor(s) completed successfully for bridge '{}', topic '{}', proceeding with publish",
+                            interceptorCount,
+                            bridge.getId(),
+                            publish.getTopic());
                 }
-                final PUBLISH finalPublish = PUBLISHFactory.merge(inputHolder.get().getPublishPacket(), publish);
-                resultFuture.setFuture(Futures.transform(prePublishProcessorService.publish(finalPublish,
-                                executorService,
-                                bridge.getClientId()),
+                final PUBLISH finalPublish =
+                        PUBLISHFactory.merge(inputHolder.get().getPublishPacket(), publish);
+                resultFuture.setFuture(Futures.transform(
+                        prePublishProcessorService.publish(finalPublish, executorService, bridge.getClientId()),
                         (Function<? super PublishingResult, PublishReturnCode>) PublishingResult::getPublishReturnCode,
                         MoreExecutors.directExecutor()));
             }
         }
 
         private void dropMessage(final @NotNull BridgePublishInboundOutputImpl output) {
-            messageDroppedService.extensionPrevented(bridge.getClientId(),
-                    publish.getTopic(),
-                    publish.getQoS().getQosNumber());
+            messageDroppedService.extensionPrevented(
+                    bridge.getClientId(), publish.getTopic(), publish.getQoS().getQosNumber());
         }
     }
 }

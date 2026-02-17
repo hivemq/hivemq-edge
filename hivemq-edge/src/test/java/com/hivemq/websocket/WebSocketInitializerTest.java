@@ -15,26 +15,26 @@
  */
 package com.hivemq.websocket;
 
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.google.common.collect.Lists;
 import com.hivemq.configuration.service.entity.MqttWebsocketListener;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import util.DummyHandler;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class WebSocketInitializerTest {
 
     private EmbeddedChannel channel;
 
     private MqttWebsocketListener mqttWebsocketListener;
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -63,7 +63,6 @@ public class WebSocketInitializerTest {
         assertTrue(handlerNames.contains(WEBSOCKET_BINARY_FRAME_HANDLER));
         assertTrue(handlerNames.contains(WEBSOCKET_TEXT_FRAME_HANDLER));
         assertTrue(handlerNames.contains(MQTT_WEBSOCKET_ENCODER));
-
     }
 
     @Test

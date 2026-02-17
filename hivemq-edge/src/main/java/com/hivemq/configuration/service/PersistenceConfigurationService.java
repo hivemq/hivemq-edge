@@ -27,7 +27,8 @@ public interface PersistenceConfigurationService {
      *
      * @return the persistence mode.
      */
-    @NotNull PersistenceMode getMode();
+    @NotNull
+    PersistenceMode getMode();
 
     /**
      * Set the persistence mode.

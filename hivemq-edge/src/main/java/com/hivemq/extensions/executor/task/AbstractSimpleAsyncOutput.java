@@ -17,14 +17,13 @@ package com.hivemq.extensions.executor.task;
 
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.SettableFuture;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.async.Async;
 import com.hivemq.extension.sdk.api.async.SimpleAsyncOutput;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
-
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Yannick Weber

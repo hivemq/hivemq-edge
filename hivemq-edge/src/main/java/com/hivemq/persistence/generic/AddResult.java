@@ -15,10 +15,9 @@
  */
 package com.hivemq.persistence.generic;
 
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Optional;
 
 public record AddResult(PutStatus putStatus, Optional<String> errorMessage) {
 
@@ -26,13 +25,11 @@ public record AddResult(PutStatus putStatus, Optional<String> errorMessage) {
         return new AddResult(PutStatus.SUCCESS, null);
     }
 
-    public static @NotNull AddResult failed(
-            final @NotNull PutStatus putStatus) {
+    public static @NotNull AddResult failed(final @NotNull PutStatus putStatus) {
         return new AddResult(putStatus, null);
     }
 
-    public static @NotNull AddResult failed(
-            final @NotNull PutStatus putStatus, final @Nullable String errorMessage) {
+    public static @NotNull AddResult failed(final @NotNull PutStatus putStatus, final @Nullable String errorMessage) {
         return new AddResult(putStatus, Optional.ofNullable(errorMessage));
     }
 
@@ -49,6 +46,4 @@ public record AddResult(PutStatus putStatus, Optional<String> errorMessage) {
         ALREADY_EXISTS(),
         ADAPTER_MISSING()
     }
-
-
 }

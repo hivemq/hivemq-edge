@@ -15,6 +15,10 @@
  */
 package com.hivemq.mqtt.topic.tree;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.mqtt.message.QoS;
@@ -22,21 +26,16 @@ import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
 import com.hivemq.mqtt.topic.SubscriberWithQoS;
 import com.hivemq.mqtt.topic.SubscriptionFlag;
+import java.util.Set;
+import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Set;
-import java.util.function.Predicate;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 public class TestGetSubscribersFromTopicWithFilterTopicTreeImpl {
 
     private LocalTopicTree topicTree;
+
     @BeforeEach
     public void setUp() {
         topicTree = new LocalTopicTree(new MetricsHolder(new MetricRegistry()));
@@ -45,7 +44,8 @@ public class TestGetSubscribersFromTopicWithFilterTopicTreeImpl {
     @Test
     public void test_empty_topic_tree_get_subscribers() throws Exception {
 
-        final Set<SubscriberWithIdentifiers> any = topicTree.findTopicSubscribers("any").getSubscribers();
+        final Set<SubscriberWithIdentifiers> any =
+                topicTree.findTopicSubscribers("any").getSubscribers();
         assertTrue(any.isEmpty());
     }
 
@@ -197,7 +197,6 @@ public class TestGetSubscribersFromTopicWithFilterTopicTreeImpl {
         assertEquals(0, subscribers.size());
     }
 
-
     @Test
     public void test_qos_subscriptions_multiple_subscribers() throws Exception {
         topicTree.addTopic("subscriber", new Topic("topic", QoS.AT_MOST_ONCE), (byte) 0, null);
@@ -310,7 +309,6 @@ public class TestGetSubscribersFromTopicWithFilterTopicTreeImpl {
         assertEquals(3, subscribers.size());
     }
 
-
     @Test
     public void get_shared_subscriber() {
         final byte sharedFlag = SubscriptionFlag.getDefaultFlags(true, false, false);
@@ -339,7 +337,6 @@ public class TestGetSubscribersFromTopicWithFilterTopicTreeImpl {
         topicTree.addTopic("sub1", new Topic("#", QoS.AT_LEAST_ONCE), sharedFlag, "group1");
         topicTree.addTopic("sub2", new Topic("#", QoS.AT_LEAST_ONCE), notSharedFlag, null);
         topicTree.addTopic("sub1", new Topic("#", QoS.AT_LEAST_ONCE), notSharedFlag, null);
-
 
         final Set<String> subscribers = topicTree.getSubscribersForTopic("topic", getMatchAllFilter(), false);
         assertEquals(2, subscribers.size());

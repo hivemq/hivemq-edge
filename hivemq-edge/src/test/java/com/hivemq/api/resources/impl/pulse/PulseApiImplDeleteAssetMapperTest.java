@@ -1,20 +1,24 @@
 /*
- *  Copyright 2019-present HiveMQ GmbH
+ * Copyright 2019-present HiveMQ GmbH
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
 package com.hivemq.api.resources.impl.pulse;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.pulse.AssetMapperNotFoundError;
@@ -33,17 +37,11 @@ import com.hivemq.pulse.asset.PulseAgentAsset;
 import com.hivemq.pulse.asset.PulseAgentAssetMapping;
 import com.hivemq.pulse.asset.PulseAgentAssetMappingStatus;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 public class PulseApiImplDeleteAssetMapperTest extends AbstractPulseApiImplTest {
     @Test
@@ -68,7 +66,8 @@ public class PulseApiImplDeleteAssetMapperTest extends AbstractPulseApiImplTest 
     public void whenCombinerFound_thenReturnsOK() {
         final UUID id = UUID.randomUUID();
         final UUID mappingId = UUID.randomUUID();
-        final PulseAgentAsset asset = new PulseAgentAsset.Builder().id(UUID.randomUUID())
+        final PulseAgentAsset asset = new PulseAgentAsset.Builder()
+                .id(UUID.randomUUID())
                 .name("Test Asset")
                 .description("A test asset")
                 .topic("test/topic")
@@ -79,15 +78,22 @@ public class PulseApiImplDeleteAssetMapperTest extends AbstractPulseApiImplTest 
                         .build())
                 .build();
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of(asset.toPersistence()));
-        when(assetMappingExtractor.getCombinerById(any())).thenReturn(Optional.of(new DataCombiner(id,
-                "name",
-                "description",
-                List.of(new EntityReference(EntityType.PULSE_AGENT, UUID.randomUUID().toString())),
-                List.of(new DataCombining(mappingId,
-                        new DataCombiningSources(new DataIdentifierReference(UUID.randomUUID().toString(),
-                                DataIdentifierReference.Type.PULSE_ASSET), List.of(), List.of()),
-                        new DataCombiningDestination(asset.getId().toString(), "test/topic", "{}"),
-                        List.of())))));
+        when(assetMappingExtractor.getCombinerById(any()))
+                .thenReturn(Optional.of(new DataCombiner(
+                        id,
+                        "name",
+                        "description",
+                        List.of(new EntityReference(
+                                EntityType.PULSE_AGENT, UUID.randomUUID().toString())),
+                        List.of(new DataCombining(
+                                mappingId,
+                                new DataCombiningSources(
+                                        new DataIdentifierReference(
+                                                UUID.randomUUID().toString(), DataIdentifierReference.Type.PULSE_ASSET),
+                                        List.of(),
+                                        List.of()),
+                                new DataCombiningDestination(asset.getId().toString(), "test/topic", "{}"),
+                                List.of())))));
         try (final Response response = pulseApi.deleteAssetMapper(id)) {
             assertThat(response.getStatus()).isEqualTo(200);
             final ArgumentCaptor<UUID> dataCombinerArgumentCaptor = ArgumentCaptor.forClass(UUID.class);
@@ -99,7 +105,8 @@ public class PulseApiImplDeleteAssetMapperTest extends AbstractPulseApiImplTest 
                     pulseEntityArgumentCaptor.getValue().getPulseAssetsEntity().getPulseAssetEntities();
             assertThat(pulseAssetEntities).isNotNull();
             assertThat(pulseAssetEntities).hasSize(1);
-            final PulseAssetMappingEntity pulseAssetMappingEntity = pulseAssetEntities.getFirst().getMapping();
+            final PulseAssetMappingEntity pulseAssetMappingEntity =
+                    pulseAssetEntities.getFirst().getMapping();
             assertThat(pulseAssetMappingEntity.getId()).isNull();
             assertThat(pulseAssetMappingEntity.getStatus()).isEqualTo(PulseAssetMappingStatus.UNMAPPED);
         }

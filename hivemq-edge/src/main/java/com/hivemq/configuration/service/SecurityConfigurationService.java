@@ -21,11 +21,11 @@ package com.hivemq.configuration.service;
  */
 public interface SecurityConfigurationService {
 
-
     /**
      * Default values
      */
     boolean ALLOW_SERVER_ASSIGNED_CLIENT_ID_DEFAULT = true;
+
     boolean VALIDATE_UTF_8_DEFAULT = true;
     boolean PAYLOAD_FORMAT_VALIDATION_DEFAULT = false;
     boolean ALLOW_REQUEST_PROBLEM_INFORMATION_DEFAULT = true;

@@ -13,18 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.loader;
 
 import com.google.common.collect.ImmutableCollection;
 import com.hivemq.annotations.ReadOnly;
 import com.hivemq.embedded.EmbeddedExtension;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensionEvent;
-
 import java.nio.file.Path;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The extension loader is responsible for searching extension implementations
@@ -50,7 +48,8 @@ public interface ExtensionLoader {
      *                                            of the folder
      */
     @ReadOnly
-    @NotNull ImmutableCollection<HiveMQExtensionEvent> loadExtensions(final @NotNull Path extensionFolder, boolean permissive);
+    @NotNull
+    ImmutableCollection<HiveMQExtensionEvent> loadExtensions(final @NotNull Path extensionFolder, boolean permissive);
 
     /**
      * Loads a single extension.
@@ -58,7 +57,9 @@ public interface ExtensionLoader {
      * @param extensionFolder a valid extension folder.
      * @return An Optional of a loaded extension. Empty if loading fails or extension <id> already known.
      */
-    @Nullable HiveMQExtensionEvent processSingleExtensionFolder(final @NotNull Path extensionFolder);
+    @Nullable
+    HiveMQExtensionEvent processSingleExtensionFolder(final @NotNull Path extensionFolder);
 
-    @Nullable HiveMQExtensionEvent loadEmbeddedExtension(@NotNull EmbeddedExtension extensionMain);
+    @Nullable
+    HiveMQExtensionEvent loadEmbeddedExtension(@NotNull EmbeddedExtension extensionMain);
 }

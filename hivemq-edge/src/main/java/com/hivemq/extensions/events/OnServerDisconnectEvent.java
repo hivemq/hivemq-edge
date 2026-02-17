@@ -16,11 +16,11 @@
 package com.hivemq.extensions.events;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.general.DisconnectedReasonCode;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.disconnect.DISCONNECT;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The event to fire when the server sends a disconnect to a client or closes a clients channel.
@@ -49,7 +49,8 @@ public class OnServerDisconnectEvent {
         if (disconnect != null) {
             this.reasonCode = disconnect.getReasonCode().toDisconnectedReasonCode();
             this.reasonString = disconnect.getReasonString();
-            this.userProperties = UserPropertiesImpl.of(disconnect.getUserProperties().asList());
+            this.userProperties =
+                    UserPropertiesImpl.of(disconnect.getUserProperties().asList());
         } else {
             this.reasonCode = null;
             this.reasonString = null;

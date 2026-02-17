@@ -16,10 +16,9 @@
 package com.hivemq.mqttsn.services;
 
 import com.hivemq.bootstrap.netty.BroadcastChannelCreatedListener;
-import org.jetbrains.annotations.NotNull;
 import io.netty.channel.Channel;
-
 import jakarta.inject.Inject;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -35,7 +34,7 @@ public class UdpChannelCreatedListener implements BroadcastChannelCreatedListene
 
     @Override
     public void notifyChannelCreated(final Channel channel) {
-        if(gatewayBroadcastService.needsStarting()){
+        if (gatewayBroadcastService.needsStarting()) {
             gatewayBroadcastService.startBroadcast(channel);
         }
     }

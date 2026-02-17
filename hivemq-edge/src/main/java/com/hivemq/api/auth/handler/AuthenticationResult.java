@@ -25,12 +25,17 @@ import org.jetbrains.annotations.NotNull;
 public class AuthenticationResult {
 
     enum STATUS {
-        ALLOWED, DENIED, INSUFFICIENT_INFORMATION }
+        ALLOWED,
+        DENIED,
+        INSUFFICIENT_INFORMATION
+    }
+
     private ApiPrincipal principal;
     private STATUS status;
     private final IAuthenticationHandler authenticationHandler;
 
-    public AuthenticationResult(final @NotNull STATUS status, final @NotNull IAuthenticationHandler authenticationHandler) {
+    public AuthenticationResult(
+            final @NotNull STATUS status, final @NotNull IAuthenticationHandler authenticationHandler) {
         Preconditions.checkNotNull(status);
         Preconditions.checkNotNull(authenticationHandler);
         this.authenticationHandler = authenticationHandler;
@@ -53,30 +58,30 @@ public class AuthenticationResult {
         this.principal = principal;
     }
 
-    public boolean isSuccess(){
+    public boolean isSuccess() {
         return status == STATUS.ALLOWED;
     }
 
     public String getAuthenticationMethod() {
         return authenticationHandler.getMethod();
-//        return authenticationHandlers.stream().map(s -> s.getMethod()).collect(Collectors.joining(","));
+        //        return authenticationHandlers.stream().map(s -> s.getMethod()).collect(Collectors.joining(","));
     }
 
     public IAuthenticationHandler getAuthenticationHandler() {
         return authenticationHandler;
     }
 
-    public static AuthenticationResult denied(final @NotNull IAuthenticationHandler authenticationHandler){
+    public static AuthenticationResult denied(final @NotNull IAuthenticationHandler authenticationHandler) {
         Preconditions.checkNotNull(authenticationHandler);
         return new AuthenticationResult(STATUS.DENIED, authenticationHandler);
     }
 
-    public static AuthenticationResult allowed(final @NotNull IAuthenticationHandler authenticationHandler){
+    public static AuthenticationResult allowed(final @NotNull IAuthenticationHandler authenticationHandler) {
         Preconditions.checkNotNull(authenticationHandler);
         return new AuthenticationResult(STATUS.ALLOWED, authenticationHandler);
     }
 
-    public static AuthenticationResult noinfo(final @NotNull IAuthenticationHandler authenticationHandler){
+    public static AuthenticationResult noinfo(final @NotNull IAuthenticationHandler authenticationHandler) {
         Preconditions.checkNotNull(authenticationHandler);
         return new AuthenticationResult(STATUS.INSUFFICIENT_INFORMATION, authenticationHandler);
     }

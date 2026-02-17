@@ -15,10 +15,11 @@
  */
 package com.hivemq.extensions.packets.disconnect;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.common.base.Preconditions;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.annotations.ThreadSafe;
 import com.hivemq.extension.sdk.api.packets.disconnect.DisconnectReasonCode;
 import com.hivemq.extension.sdk.api.packets.disconnect.ModifiableInboundDisconnectPacket;
@@ -26,12 +27,10 @@ import com.hivemq.extensions.packets.general.ModifiableUserPropertiesImpl;
 import com.hivemq.extensions.services.builder.PluginBuilderUtil;
 import com.hivemq.mqtt.message.disconnect.DISCONNECT;
 import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
-
 import java.util.Objects;
 import java.util.Optional;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Robin Atherton
@@ -60,7 +59,8 @@ public class ModifiableInboundDisconnectPacketImpl implements ModifiableInboundD
         sessionExpiryInterval = packet.sessionExpiryInterval;
         serverReference = packet.serverReference;
         userProperties = new ModifiableUserPropertiesImpl(
-                packet.userProperties.asInternalList(), configurationService.securityConfiguration().validateUTF8());
+                packet.userProperties.asInternalList(),
+                configurationService.securityConfiguration().validateUTF8());
 
         this.configurationService = configurationService;
         this.originalSessionExpiryInterval = originalSessionExpiryInterval;
@@ -76,7 +76,8 @@ public class ModifiableInboundDisconnectPacketImpl implements ModifiableInboundD
         Preconditions.checkNotNull(reasonCode, "Reason code must never be null");
         Preconditions.checkArgument(
                 reasonCode != DisconnectReasonCode.CLIENT_IDENTIFIER_NOT_VALID,
-                "Reason code %s must not be used for disconnect packets.", reasonCode);
+                "Reason code %s must not be used for disconnect packets.",
+                reasonCode);
         Preconditions.checkArgument(
                 Mqtt5DisconnectReasonCode.from(reasonCode).canBeSentByClient(),
                 "Reason code %s must not be used for inbound disconnect packets from a client to the server.",
@@ -95,7 +96,8 @@ public class ModifiableInboundDisconnectPacketImpl implements ModifiableInboundD
 
     @Override
     public void setReasonString(final @Nullable String reasonString) {
-        PluginBuilderUtil.checkReasonString(reasonString, configurationService.securityConfiguration().validateUTF8());
+        PluginBuilderUtil.checkReasonString(
+                reasonString, configurationService.securityConfiguration().validateUTF8());
         if (Objects.equals(this.reasonString, reasonString)) {
             return;
         }
@@ -105,8 +107,9 @@ public class ModifiableInboundDisconnectPacketImpl implements ModifiableInboundD
 
     @Override
     public @NotNull Optional<Long> getSessionExpiryInterval() {
-        return (sessionExpiryInterval == DISCONNECT.SESSION_EXPIRY_NOT_SET) ? Optional.empty() :
-                Optional.of(sessionExpiryInterval);
+        return (sessionExpiryInterval == DISCONNECT.SESSION_EXPIRY_NOT_SET)
+                ? Optional.empty()
+                : Optional.of(sessionExpiryInterval);
     }
 
     @Override
@@ -117,7 +120,8 @@ public class ModifiableInboundDisconnectPacketImpl implements ModifiableInboundD
         } else {
             interval = sessionExpiryInterval;
             checkArgument(interval >= 0, "Session expiry interval must be greater than 0");
-            final long configuredMaximum = configurationService.mqttConfiguration().maxSessionExpiryInterval();
+            final long configuredMaximum =
+                    configurationService.mqttConfiguration().maxSessionExpiryInterval();
             checkArgument(
                     interval < configuredMaximum,
                     "Session expiry interval must not be greater than the configured maximum of " + configuredMaximum);

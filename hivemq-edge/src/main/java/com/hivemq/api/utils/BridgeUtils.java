@@ -27,15 +27,15 @@ import com.hivemq.edge.api.model.BridgeSubscription;
 import com.hivemq.edge.api.model.LocalBridgeSubscription;
 import com.hivemq.edge.api.model.Status;
 import com.hivemq.edge.api.model.WebsocketConfiguration;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.stream.Collectors;
 
 public class BridgeUtils {
 
     public static @NotNull Bridge convert(final @NotNull MqttBridge mqttBridge, final @NotNull Status status) {
-        return new Bridge().id(mqttBridge.getId())
+        return new Bridge()
+                .id(mqttBridge.getId())
                 .host(mqttBridge.getHost())
                 .port(mqttBridge.getPort())
                 .clientId(mqttBridge.getClientId())
@@ -45,15 +45,12 @@ public class BridgeUtils {
                 .username(mqttBridge.getUsername())
                 .password(mqttBridge.getPassword())
                 .loopPreventionEnabled(mqttBridge.isLoopPreventionEnabled())
-                .loopPreventionHopCount(mqttBridge.getLoopPreventionHopCount() < 1 ?
-                        0 :
-                        mqttBridge.getLoopPreventionHopCount())
-                .remoteSubscriptions(mqttBridge.getRemoteSubscriptions()
-                        .stream()
+                .loopPreventionHopCount(
+                        mqttBridge.getLoopPreventionHopCount() < 1 ? 0 : mqttBridge.getLoopPreventionHopCount())
+                .remoteSubscriptions(mqttBridge.getRemoteSubscriptions().stream()
                         .map(BridgeUtils::convertRemoteSubscription)
                         .collect(Collectors.toList()))
-                .localSubscriptions(mqttBridge.getLocalSubscriptions()
-                        .stream()
+                .localSubscriptions(mqttBridge.getLocalSubscriptions().stream()
                         .map(BridgeUtils::convertLocalSubscription)
                         .collect(Collectors.toList()))
                 .tlsConfiguration(convertTls(mqttBridge.getBridgeTls()))
@@ -62,15 +59,16 @@ public class BridgeUtils {
                 .persist(mqttBridge.isPersist());
     }
 
-    public static @Nullable LocalBridgeSubscription convertLocalSubscription(final @Nullable LocalSubscription localSubscription) {
+    public static @Nullable LocalBridgeSubscription convertLocalSubscription(
+            final @Nullable LocalSubscription localSubscription) {
         if (localSubscription == null) {
             return null;
         }
-        return new LocalBridgeSubscription().filters(localSubscription.getFilters())
+        return new LocalBridgeSubscription()
+                .filters(localSubscription.getFilters())
                 .destination(localSubscription.getDestination())
                 .excludes(localSubscription.getExcludes())
-                .customUserProperties(localSubscription.getCustomUserProperties()
-                        .stream()
+                .customUserProperties(localSubscription.getCustomUserProperties().stream()
                         .map(BridgeUtils::convertProperty)
                         .collect(Collectors.toList()))
                 .preserveRetain(localSubscription.isPreserveRetain())
@@ -78,26 +76,27 @@ public class BridgeUtils {
                 .queueLimit(localSubscription.getQueueLimit());
     }
 
-    public static @Nullable BridgeSubscription convertRemoteSubscription(final @Nullable RemoteSubscription remoteSubscription) {
+    public static @Nullable BridgeSubscription convertRemoteSubscription(
+            final @Nullable RemoteSubscription remoteSubscription) {
         if (remoteSubscription == null) {
             return null;
         }
-        return new BridgeSubscription().filters(remoteSubscription.getFilters())
+        return new BridgeSubscription()
+                .filters(remoteSubscription.getFilters())
                 .destination(remoteSubscription.getDestination())
-                .customUserProperties(remoteSubscription.getCustomUserProperties()
-                        .stream()
+                .customUserProperties(remoteSubscription.getCustomUserProperties().stream()
                         .map(BridgeUtils::convertProperty)
                         .collect(Collectors.toList()))
                 .preserveRetain(remoteSubscription.isPreserveRetain())
                 .maxQoS(BridgeSubscription.MaxQoSEnum.fromValue(remoteSubscription.getMaxQoS()));
     }
 
-    public static @Nullable BridgeCustomUserProperty convertProperty(final @Nullable CustomUserProperty customUserProperty) {
+    public static @Nullable BridgeCustomUserProperty convertProperty(
+            final @Nullable CustomUserProperty customUserProperty) {
         if (customUserProperty == null) {
             return null;
         }
         return new BridgeCustomUserProperty().key(customUserProperty.getKey()).value(customUserProperty.getValue());
-
     }
 
     public static com.hivemq.edge.api.model.@Nullable TlsConfiguration convertTls(final @Nullable BridgeTls tls) {
@@ -105,7 +104,8 @@ public class BridgeUtils {
             return null;
         }
 
-        return new com.hivemq.edge.api.model.TlsConfiguration().enabled(true)
+        return new com.hivemq.edge.api.model.TlsConfiguration()
+                .enabled(true)
                 .keystorePath(tls.getKeystorePath())
                 .keystorePassword(tls.getKeystorePassword())
                 .privateKeyPassword(tls.getPrivateKeyPassword())
@@ -124,7 +124,8 @@ public class BridgeUtils {
         if (bridgeWebsocketConfig == null) {
             return null;
         }
-        return new WebsocketConfiguration().enabled(true)
+        return new WebsocketConfiguration()
+                .enabled(true)
                 .serverPath(bridgeWebsocketConfig.getPath())
                 .subProtocol(bridgeWebsocketConfig.getSubProtocol());
     }

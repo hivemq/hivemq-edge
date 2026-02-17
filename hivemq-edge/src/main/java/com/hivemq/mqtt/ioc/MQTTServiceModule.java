@@ -33,18 +33,23 @@ import org.jetbrains.annotations.NotNull;
 public interface MQTTServiceModule {
 
     @Binds
-    @NotNull PrePublishProcessorService prePublishProcessorService(@NotNull PrePublishProcessorServiceImpl prePublishProcessorService);
+    @NotNull
+    PrePublishProcessorService prePublishProcessorService(
+            @NotNull PrePublishProcessorServiceImpl prePublishProcessorService);
 
     @Binds
-    @NotNull InternalPublishService internalPublishService(@NotNull InternalPublishServiceImpl internalPublishService);
+    @NotNull
+    InternalPublishService internalPublishService(@NotNull InternalPublishServiceImpl internalPublishService);
 
     @Binds
-    @NotNull PublishDistributor publishDistributor(@NotNull PublishDistributorImpl publishDistributor);
+    @NotNull
+    PublishDistributor publishDistributor(@NotNull PublishDistributorImpl publishDistributor);
 
     @Binds
-    @NotNull TopicAliasLimiter topicAliasLimiter(@NotNull TopicAliasLimiterImpl topicAliasLimiter);
+    @NotNull
+    TopicAliasLimiter topicAliasLimiter(@NotNull TopicAliasLimiterImpl topicAliasLimiter);
 
     @Binds
-    @NotNull PublishPollService publishPollService(@NotNull PublishPollServiceImpl publishPollService);
-
+    @NotNull
+    PublishPollService publishPollService(@NotNull PublishPollServiceImpl publishPollService);
 }

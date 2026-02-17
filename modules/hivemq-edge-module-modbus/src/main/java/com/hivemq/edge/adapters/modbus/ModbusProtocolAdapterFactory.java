@@ -23,8 +23,7 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 
-public class ModbusProtocolAdapterFactory
-        implements ProtocolAdapterFactory<ModbusSpecificAdapterConfig> {
+public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<ModbusSpecificAdapterConfig> {
 
     final boolean writingEnabled;
 
@@ -43,5 +42,4 @@ public class ModbusProtocolAdapterFactory
             final @NotNull ProtocolAdapterInput<ModbusSpecificAdapterConfig> input) {
         return new ModbusProtocolAdapter(adapterInformation, input);
     }
-
 }

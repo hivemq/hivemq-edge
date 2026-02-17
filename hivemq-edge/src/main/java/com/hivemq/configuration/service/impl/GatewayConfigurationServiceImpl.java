@@ -42,5 +42,4 @@ public class GatewayConfigurationServiceImpl implements DynamicConfigurationServ
     public void setConfigurationExportEnabled(final boolean configurationExportEnabled) {
         this.configurationExportEnabled = configurationExportEnabled;
     }
-
 }

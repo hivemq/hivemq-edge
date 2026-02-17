@@ -28,7 +28,6 @@ public class TopicFilterPojo {
     private final @NotNull String topicFilter;
     private final @Nullable DataUrl schema;
 
-
     public TopicFilterPojo(
             final @NotNull String topicFilter, final @NotNull String description, final @Nullable DataUrl schema) {
         this.description = description;
@@ -36,19 +35,20 @@ public class TopicFilterPojo {
         this.schema = schema;
     }
 
-    public static @NotNull TopicFilterPojo fromModel(
-            final @NotNull TopicFilter topicFilter) {
+    public static @NotNull TopicFilterPojo fromModel(final @NotNull TopicFilter topicFilter) {
         if (topicFilter.getSchema() == null || topicFilter.getSchema().isBlank()) {
             return new TopicFilterPojo(topicFilter.getTopicFilter(), topicFilter.getDescription(), null);
         } else {
-            return new TopicFilterPojo(topicFilter.getTopicFilter(),
+            return new TopicFilterPojo(
+                    topicFilter.getTopicFilter(),
                     topicFilter.getDescription(),
                     DataUrl.create(topicFilter.getSchema()));
         }
     }
 
     public @NotNull TopicFilter toModel() {
-        return new TopicFilter().topicFilter(this.topicFilter)
+        return new TopicFilter()
+                .topicFilter(this.topicFilter)
                 .description(this.description)
                 .schema(this.schema != null ? this.schema.toString() : null);
     }
@@ -65,7 +65,8 @@ public class TopicFilterPojo {
         return schema;
     }
 
-    // IMPORTANT: Only use filter for equals and hashcode as we do not care about the description and these methods are used for removal
+    // IMPORTANT: Only use filter for equals and hashcode as we do not care about the description and these methods are
+    // used for removal
     @Override
     public boolean equals(final @Nullable Object o) {
         if (this == o) {

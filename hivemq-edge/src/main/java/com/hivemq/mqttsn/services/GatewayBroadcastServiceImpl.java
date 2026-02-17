@@ -19,13 +19,8 @@ import com.google.common.base.Preconditions;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.MqttsnConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slj.mqtt.sn.codec.MqttsnCodecs;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.net.InetAddress;
@@ -41,6 +36,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slj.mqtt.sn.codec.MqttsnCodecs;
 
 /**
  *
@@ -50,15 +49,15 @@ public class GatewayBroadcastServiceImpl implements IGatewayBroadcastService {
 
     private static final Logger logger = LoggerFactory.getLogger(GatewayBroadcastServiceImpl.class);
 
-    private final @NotNull ScheduledExecutorService scheduledExecutorService
-            = Executors.newScheduledThreadPool(1);
+    private final @NotNull ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
     final @NotNull MqttsnConfigurationService mqttsnConfigurationService;
     private volatile ScheduledFuture task;
     private volatile Object mutex = new Object();
 
     @Inject
-    public GatewayBroadcastServiceImpl(final @NotNull MqttsnConfigurationService mqttsnConfigurationService,
-                                       final @NotNull ShutdownHooks shutdownHooks) {
+    public GatewayBroadcastServiceImpl(
+            final @NotNull MqttsnConfigurationService mqttsnConfigurationService,
+            final @NotNull ShutdownHooks shutdownHooks) {
 
         this.mqttsnConfigurationService = mqttsnConfigurationService;
         shutdownHooks.add(new HiveMQShutdownHook() {
@@ -82,10 +81,8 @@ public class GatewayBroadcastServiceImpl implements IGatewayBroadcastService {
             try {
                 int seconds = mqttsnConfigurationService.getDiscoveryBroadcastIntervalSeconds();
                 logger.trace("Scheduling MQTT-SN broadcast task to every {}s, starting in {}s", seconds, seconds * 2);
-                task = scheduledExecutorService.scheduleAtFixedRate(new BroadcastTask(channel),
-                        seconds * 2L,
-                        seconds,
-                        TimeUnit.SECONDS);
+                task = scheduledExecutorService.scheduleAtFixedRate(
+                        new BroadcastTask(channel), seconds * 2L, seconds, TimeUnit.SECONDS);
             } catch (final RejectedExecutionException rejectedExecutionException) {
                 // can be ignored, can happen during Shutdown
             }
@@ -95,7 +92,7 @@ public class GatewayBroadcastServiceImpl implements IGatewayBroadcastService {
     public void stopBroadcast() {
         synchronized (mutex) {
             try {
-                if(task != null){
+                if (task != null) {
                     task.cancel(true);
                 }
             } finally {
@@ -120,31 +117,31 @@ public class GatewayBroadcastServiceImpl implements IGatewayBroadcastService {
         @Override
         public void run() {
             try {
-                logger.trace("Firing an MQTT-SN broadcast packet to {} address(es)",
-                        mqttsnConfigurationService.getDiscoveryBroadcastAddresses().size());
+                logger.trace(
+                        "Firing an MQTT-SN broadcast packet to {} address(es)",
+                        mqttsnConfigurationService
+                                .getDiscoveryBroadcastAddresses()
+                                .size());
 
-                ChannelFuture future = channel.writeAndFlush(
-                        MqttsnCodecs.MQTTSN_CODEC_VERSION_1_2.createMessageFactory().createAdvertise(
+                ChannelFuture future = channel.writeAndFlush(MqttsnCodecs.MQTTSN_CODEC_VERSION_1_2
+                        .createMessageFactory()
+                        .createAdvertise(
                                 mqttsnConfigurationService.getGatewayId(),
                                 mqttsnConfigurationService.getDiscoveryBroadcastIntervalSeconds()));
 
-            } catch(Exception e){
+            } catch (Exception e) {
                 logger.warn("An error occurred firing MQTT-SN Broadcast packet", e);
             }
         }
     }
 
-    public static List<InetAddress> getBroadcastAddresses(boolean ignoreLoopBack)
-            throws SocketException {
+    public static List<InetAddress> getBroadcastAddresses(boolean ignoreLoopBack) throws SocketException {
         return NetworkInterface.networkInterfaces()
                 .filter(n -> !ignoreLoopBack || notLoopBack(n))
-                .map(networkInterface ->
-                        networkInterface.getInterfaceAddresses()
-                                .stream()
-                                .map(InterfaceAddress::getBroadcast)
-                                .filter(Objects::nonNull)
-                                .findFirst()
-                )
+                .map(networkInterface -> networkInterface.getInterfaceAddresses().stream()
+                        .map(InterfaceAddress::getBroadcast)
+                        .filter(Objects::nonNull)
+                        .findFirst())
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());

@@ -15,21 +15,11 @@
  */
 package com.hivemq.embedded.internal;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.hivemq.api.config.ApiListener;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.entity.Listener;
-import org.apache.commons.io.FileUtils;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-import org.junit.jupiter.api.io.TempDir;
-import util.RandomPortGenerator;
-
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -40,9 +30,17 @@ import java.nio.charset.StandardCharsets;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import util.RandomPortGenerator;
 
 /**
  * This test suite is for testing the embedded HiveMQ server when HTTPS is enabled for the Admin API.
@@ -84,6 +82,7 @@ public class EmbeddedHiveMQImplHttpsTest {
     private @NotNull File conf;
     private int randomPort;
     private int randomApiPort;
+
     @BeforeEach
     public void setUp() throws Exception {
         data = new File(tmp, "data");
@@ -100,37 +99,36 @@ public class EmbeddedHiveMQImplHttpsTest {
         final @NotNull File keystoreFile = new File("src/test/resources/keystores/hivemqtest.jks");
         assertThat(keystoreFile.exists()).as("The test keystore is not found").isTrue();
 
-        final @NotNull String configXmlString = "" +
-                "<hivemq>\n" +
-                "    <mqtt-listeners>\n" +
-                "        <tcp-listener>\n" +
-                "            <port>" +
-                randomPort +
-                "</port>\n" +
-                "            <bind-address>0.0.0.0</bind-address>\n" +
-                "        </tcp-listener>\n" +
-                "    </mqtt-listeners>\n" +
-                "    <admin-api>\n" +
-                "        <enabled>true</enabled>\n" +
-                "        <listeners>\n" +
-                "            <https-listener>\n" +
-                "                <port>" +
-                randomApiPort +
-                "</port>\n" +
-                "                <bind-address>0.0.0.0</bind-address>\n" +
-                "                <tls>\n" +
-                "                    <keystore>\n" +
-                "                        <path>" +
-                keystoreFile.getAbsolutePath() +
-                "</path>\n" +
-                "                        <password>12345678</password>\n" +
-                "                        <private-key-password>12345678</private-key-password>\n" +
-                "                    </keystore>\n" +
-                "                </tls>\n" +
-                "            </https-listener>\n" +
-                "        </listeners>\n" +
-                "    </admin-api>\n" +
-                "</hivemq>";
+        final @NotNull String configXmlString = "" + "<hivemq>\n"
+                + "    <mqtt-listeners>\n"
+                + "        <tcp-listener>\n"
+                + "            <port>"
+                + randomPort
+                + "</port>\n"
+                + "            <bind-address>0.0.0.0</bind-address>\n"
+                + "        </tcp-listener>\n"
+                + "    </mqtt-listeners>\n"
+                + "    <admin-api>\n"
+                + "        <enabled>true</enabled>\n"
+                + "        <listeners>\n"
+                + "            <https-listener>\n"
+                + "                <port>"
+                + randomApiPort
+                + "</port>\n"
+                + "                <bind-address>0.0.0.0</bind-address>\n"
+                + "                <tls>\n"
+                + "                    <keystore>\n"
+                + "                        <path>"
+                + keystoreFile.getAbsolutePath()
+                + "</path>\n"
+                + "                        <password>12345678</password>\n"
+                + "                        <private-key-password>12345678</private-key-password>\n"
+                + "                    </keystore>\n"
+                + "                </tls>\n"
+                + "            </https-listener>\n"
+                + "        </listeners>\n"
+                + "    </admin-api>\n"
+                + "</hivemq>";
         FileUtils.write(new File(conf, "config.xml"), configXmlString, StandardCharsets.UTF_8);
     }
 
@@ -142,28 +140,46 @@ public class EmbeddedHiveMQImplHttpsTest {
 
             final ConfigurationService configurationService = embeddedHiveMQ.bootstrapConfig();
 
-            final List<Listener> mqttListeners = configurationService.listenerConfiguration().getListeners();
-            assertThat(mqttListeners.size()).as("The listener count should be 1").isOne();
-            assertThat(mqttListeners.get(0).getPort()).as("The MQTT port should match").isEqualTo(randomPort);
+            final List<Listener> mqttListeners =
+                    configurationService.listenerConfiguration().getListeners();
+            assertThat(mqttListeners.size())
+                    .as("The listener count should be 1")
+                    .isOne();
+            assertThat(mqttListeners.get(0).getPort())
+                    .as("The MQTT port should match")
+                    .isEqualTo(randomPort);
 
-            final List<ApiListener> apiListeners = configurationService.apiConfiguration().getListeners();
-            assertThat(apiListeners.size()).as("The API listener count should be 1").isOne();
-            assertThat(apiListeners.get(0).getPort()).as("The Admin API port should match").isEqualTo(randomApiPort);
+            final List<ApiListener> apiListeners =
+                    configurationService.apiConfiguration().getListeners();
+            assertThat(apiListeners.size())
+                    .as("The API listener count should be 1")
+                    .isOne();
+            assertThat(apiListeners.get(0).getPort())
+                    .as("The Admin API port should match")
+                    .isEqualTo(randomApiPort);
 
             HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
             final SSLContext sslContext = SSLContext.getInstance("SSL");
-            sslContext.init(null, new TrustManager[]{new CustomTrustManager()}, new java.security.SecureRandom());
-            final HttpClient httpClient =
-                    HttpClient.newBuilder().sslContext(sslContext).followRedirects(HttpClient.Redirect.NEVER).build();
-            final HttpRequest httpRequest =
-                    HttpRequest.newBuilder().uri(URI.create("https://localhost:" + randomApiPort + "/")).GET().build();
+            sslContext.init(null, new TrustManager[] {new CustomTrustManager()}, new java.security.SecureRandom());
+            final HttpClient httpClient = HttpClient.newBuilder()
+                    .sslContext(sslContext)
+                    .followRedirects(HttpClient.Redirect.NEVER)
+                    .build();
+            final HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .uri(URI.create("https://localhost:" + randomApiPort + "/"))
+                    .GET()
+                    .build();
 
             final HttpResponse<String> httpResponse =
                     httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            assertThat(httpResponse.statusCode()).as("The status code should be 307").isEqualTo(307);
+            assertThat(httpResponse.statusCode())
+                    .as("The status code should be 307")
+                    .isEqualTo(307);
             HttpHeaders httpHeaders = httpResponse.headers();
             List<String> locations = httpHeaders.allValues("Location");
-            assertThat(locations.size()).as("Location should exist in the response headers").isOne();
+            assertThat(locations.size())
+                    .as("Location should exist in the response headers")
+                    .isOne();
             assertThat(locations.get(0)).as("Location should be relative").isEqualTo("app/");
             assertThat(httpResponse.body()).as("Body should be empty").isEqualTo("");
 
@@ -174,13 +190,11 @@ public class EmbeddedHiveMQImplHttpsTest {
     private static class CustomTrustManager implements X509TrustManager {
         @Override
         public void checkClientTrusted(final X509Certificate @NotNull [] chain, final @NotNull String authType)
-                throws CertificateException {
-        }
+                throws CertificateException {}
 
         @Override
         public void checkServerTrusted(final X509Certificate @NotNull [] chain, final @NotNull String authType)
-                throws CertificateException {
-        }
+                throws CertificateException {}
 
         @Override
         public X509Certificate[] getAcceptedIssuers() {

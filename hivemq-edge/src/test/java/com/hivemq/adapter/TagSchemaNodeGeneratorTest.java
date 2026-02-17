@@ -32,7 +32,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-
 /**
  * @author Jochen Mader
  */
@@ -42,7 +41,7 @@ public class TagSchemaNodeGeneratorTest {
     private static final @NotNull ObjectMapper mapper = new ObjectMapper();
 
     @BeforeAll
-    static void beforeStart(){
+    static void beforeStart() {
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.setSerializationInclusion(JsonInclude.Include.ALWAYS);
@@ -56,13 +55,14 @@ public class TagSchemaNodeGeneratorTest {
         final JsonNode propertiesNode = node.get("properties");
         final JsonNode definition = findFirstChild(propertiesNode, "definition");
         final JsonNode definitionProperties = findFirstChild(definition, "properties");
-        Assertions.assertTrue(hasImmediateChild(definitionProperties, "address"), "TagDefintiion should have an address type");
+        Assertions.assertTrue(
+                hasImmediateChild(definitionProperties, "address"), "TagDefintiion should have an address type");
     }
 
-    private static JsonNode findFirstChild(final @NotNull JsonNode parent, final @NotNull String nodeName){
+    private static JsonNode findFirstChild(final @NotNull JsonNode parent, final @NotNull String nodeName) {
         Preconditions.checkNotNull(parent);
         JsonNode child = parent.get(nodeName);
-        if(child != null){
+        if (child != null) {
             return child;
         } else {
             for (final JsonNode jsonNode : parent) {
@@ -74,7 +74,7 @@ public class TagSchemaNodeGeneratorTest {
         return null;
     }
 
-    private static boolean hasImmediateChild(final @NotNull JsonNode parent, final @NotNull String nodeName){
+    private static boolean hasImmediateChild(final @NotNull JsonNode parent, final @NotNull String nodeName) {
         Preconditions.checkNotNull(parent);
         return parent.get(nodeName) != null;
     }
@@ -94,7 +94,10 @@ public class TagSchemaNodeGeneratorTest {
         @ModuleConfigField(title = "Definition")
         final @NotNull TestTagDefinition definition;
 
-        public TestTag(final @com.hivemq.extension.sdk.api.annotations.NotNull String name, final @com.hivemq.extension.sdk.api.annotations.NotNull String description, final @com.hivemq.extension.sdk.api.annotations.NotNull TestTagDefinition definition) {
+        public TestTag(
+                final @com.hivemq.extension.sdk.api.annotations.NotNull String name,
+                final @com.hivemq.extension.sdk.api.annotations.NotNull String description,
+                final @com.hivemq.extension.sdk.api.annotations.NotNull TestTagDefinition definition) {
             this.name = name;
             this.description = description;
             this.definition = definition;
@@ -122,7 +125,6 @@ public class TagSchemaNodeGeneratorTest {
         @ModuleConfigField(title = "Address")
         private final @NotNull String address;
 
-
         @JsonProperty(value = "dataType")
         @ModuleConfigField(title = "Data Type")
         private final @NotNull DataType dataType;
@@ -133,10 +135,9 @@ public class TagSchemaNodeGeneratorTest {
         }
     }
 
-    public enum DataType{
+    public enum DataType {
         INT,
         INT32,
         INT64
     }
-
 }

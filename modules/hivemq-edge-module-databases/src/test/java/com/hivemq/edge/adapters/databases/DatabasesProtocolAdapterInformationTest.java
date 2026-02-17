@@ -15,11 +15,10 @@
  */
 package com.hivemq.edge.adapters.databases;
 
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.regex.Pattern;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 class DatabasesProtocolAdapterInformationTest {
 
@@ -28,7 +27,6 @@ class DatabasesProtocolAdapterInformationTest {
         final DatabasesProtocolAdapterInformation information = new DatabasesProtocolAdapterInformation();
         assertFalse(information.getProtocolId().contains(" "));
     }
-
 
     @Test
     void getProtocolId_MustBeAlphaNummercialOrUnderscore() {

@@ -16,21 +16,22 @@
 package com.hivemq.edge.modules.adapters.impl;
 
 import com.google.common.collect.ImmutableSet;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.EdgeServices;
 import com.hivemq.extension.sdk.api.services.Services;
 import com.hivemq.extension.sdk.api.services.builder.Builders;
-
 import java.net.URL;
 import java.net.URLClassLoader;
+import org.jetbrains.annotations.NotNull;
 
-//This is a parent first class loader
+// This is a parent first class loader
 public class IsolatedModuleClassloader extends URLClassLoader {
 
-    private static final @NotNull ImmutableSet<String> RESTRICTED_CLASSES = new ImmutableSet.Builder<String>().add(
-            Services.class.getCanonicalName(),
-            Builders.class.getCanonicalName(),
-            EdgeServices.class.getCanonicalName()).build();
+    private static final @NotNull ImmutableSet<String> RESTRICTED_CLASSES = new ImmutableSet.Builder<String>()
+            .add(
+                    Services.class.getCanonicalName(),
+                    Builders.class.getCanonicalName(),
+                    EdgeServices.class.getCanonicalName())
+            .build();
 
     public IsolatedModuleClassloader(final URL @NotNull [] classpath, final @NotNull ClassLoader parent) {
         super(classpath, parent);

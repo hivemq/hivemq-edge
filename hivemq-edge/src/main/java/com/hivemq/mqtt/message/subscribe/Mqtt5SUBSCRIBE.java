@@ -29,7 +29,8 @@ public interface Mqtt5SUBSCRIBE {
     /**
      * @return a List of topics and their corresponding QoS the SUBSCRIBE message contains
      */
-    @NotNull ImmutableList<Topic> getTopics();
+    @NotNull
+    ImmutableList<Topic> getTopics();
 
     int getSubscriptionIdentifier();
 }

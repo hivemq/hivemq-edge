@@ -19,11 +19,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.ext.Provider;
+import org.jetbrains.annotations.NotNull;
 
 @Provider
 @Produces(MediaType.APPLICATION_JSON)

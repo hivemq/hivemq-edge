@@ -15,6 +15,9 @@
  */
 package com.hivemq.bootstrap.netty.ioc;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.hivemq.bootstrap.netty.NettyUdpConfiguration;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
@@ -22,19 +25,17 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.jupiter.api.Assertions.*;
-
 public class NettyUdpConfigurationProviderTest {
 
     private NettyUdpConfiguration nettyConfiguration;
+
     @BeforeEach
     public void setUp() throws Exception {
 
         final NettyUdpConfigurationProvider provider = new NettyUdpConfigurationProvider();
         nettyConfiguration = provider.get();
     }
+
     @AfterEach
     public void tearDown() throws Exception {
         nettyConfiguration.getChildEventLoopGroup().shutdownGracefully();
@@ -43,8 +44,7 @@ public class NettyUdpConfigurationProviderTest {
     @Test
     public void test_nio_is_used() {
 
-        assertThat(nettyConfiguration.getChildEventLoopGroup())
-                .isInstanceOf(NioEventLoopGroup.class);
+        assertThat(nettyConfiguration.getChildEventLoopGroup()).isInstanceOf(NioEventLoopGroup.class);
 
         assertEquals(NioDatagramChannel.class, nettyConfiguration.getServerSocketChannelClass());
     }
@@ -52,8 +52,10 @@ public class NettyUdpConfigurationProviderTest {
     @Test
     public void test_thread_names_for_nio_are_set() throws Exception {
 
-        final String childThreadName = nettyConfiguration.getChildEventLoopGroup().submit(() -> Thread.currentThread().getName()).get();
+        final String childThreadName = nettyConfiguration
+                .getChildEventLoopGroup()
+                .submit(() -> Thread.currentThread().getName())
+                .get();
         assertTrue(childThreadName.startsWith("hivemq-eventloop-child-"));
-
     }
 }

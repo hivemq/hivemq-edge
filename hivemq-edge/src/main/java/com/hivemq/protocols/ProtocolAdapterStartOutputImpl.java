@@ -16,10 +16,9 @@
 package com.hivemq.protocols;
 
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.concurrent.CompletableFuture;
 
 public class ProtocolAdapterStartOutputImpl implements ProtocolAdapterStartOutput {
 

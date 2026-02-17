@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.metrics;
+
+import static com.hivemq.protocols.ProtocolAdapterMetrics.PROTOCOL_ADAPTER_PREFIX;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
-
-import static com.hivemq.protocols.ProtocolAdapterMetrics.PROTOCOL_ADAPTER_PREFIX;
 
 /**
  * This class holds a constant {@link HiveMQMetric} for every metric which is provided by HiveMQ
@@ -213,4 +212,3 @@ public class HiveMQMetrics {
     public static final HiveMQMetric<Gauge<Number>> ASSET_MAPPERS_COUNT_CURRENT =
             HiveMQMetric.gaugeValue(HIVEMQ_PREFIX + "pulse.asset-mappers.current");
 }
-

@@ -15,14 +15,11 @@
  */
 package com.hivemq.extensions.services.executor;
 
+import static com.hivemq.configuration.service.InternalConfigurations.MANAGED_EXTENSION_EXECUTOR_SHUTDOWN_TIMEOUT_SEC;
+
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.InternalConfigurations;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.util.ThreadFactoryUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Collection;
@@ -37,8 +34,10 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import static com.hivemq.configuration.service.InternalConfigurations.MANAGED_EXTENSION_EXECUTOR_SHUTDOWN_TIMEOUT_SEC;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Florian Limpöck
@@ -59,7 +58,7 @@ public class GlobalManagedExtensionExecutorService implements ScheduledExecutorS
         this.shutdownHooks = shutdownHooks;
     }
 
-    @Inject //method injection, this gets called once after instantiation
+    @Inject // method injection, this gets called once after instantiation
     public void postConstruct() {
 
         final ThreadFactory threadFactory = ThreadFactoryUtil.create("managed-extension-executor-%d");
@@ -75,10 +74,11 @@ public class GlobalManagedExtensionExecutorService implements ScheduledExecutorS
 
         scheduledThreadPoolExecutor.allowCoreThreadTimeOut(true);
 
-        //for instrumentation (metrics)
+        // for instrumentation (metrics)
         scheduledExecutorService = scheduledThreadPoolExecutor;
 
-        shutdownHooks.add(new ManagedPluginExecutorShutdownHook(this, MANAGED_EXTENSION_EXECUTOR_SHUTDOWN_TIMEOUT_SEC.get()));
+        shutdownHooks.add(
+                new ManagedPluginExecutorShutdownHook(this, MANAGED_EXTENSION_EXECUTOR_SHUTDOWN_TIMEOUT_SEC.get()));
     }
 
     public int getCorePoolSize() {

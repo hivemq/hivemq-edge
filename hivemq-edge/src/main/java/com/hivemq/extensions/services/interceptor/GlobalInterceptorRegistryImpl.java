@@ -16,13 +16,12 @@
 package com.hivemq.extensions.services.interceptor;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.connack.ConnackOutboundInterceptorProvider;
 import com.hivemq.extension.sdk.api.interceptor.connect.ConnectInboundInterceptorProvider;
 import com.hivemq.extension.sdk.api.services.interceptor.GlobalInterceptorRegistry;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Lukas Brandl
@@ -40,8 +39,10 @@ public class GlobalInterceptorRegistryImpl implements GlobalInterceptorRegistry 
     }
 
     @Override
-    public void setConnectInboundInterceptorProvider(final @NotNull ConnectInboundInterceptorProvider connectInboundInterceptorProvider) {
-        Preconditions.checkNotNull(connectInboundInterceptorProvider, "Connect interceptor provider must never be null");
+    public void setConnectInboundInterceptorProvider(
+            final @NotNull ConnectInboundInterceptorProvider connectInboundInterceptorProvider) {
+        Preconditions.checkNotNull(
+                connectInboundInterceptorProvider, "Connect interceptor provider must never be null");
         interceptors.addConnectInboundInterceptorProvider(connectInboundInterceptorProvider);
     }
 

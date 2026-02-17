@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.loader;
 
 import com.google.common.collect.ImmutableMap;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.builder.Builders;
-
 import java.util.function.Supplier;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Defines all dependencies which are accessible via {@link Builders} in an extension.

@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.loader;
-
-import com.google.common.collect.ImmutableMap;
-import org.jetbrains.annotations.NotNull;
-import com.hivemq.extension.sdk.api.services.builder.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+
+import com.google.common.collect.ImmutableMap;
+import com.hivemq.extension.sdk.api.services.builder.*;
+import java.util.function.Supplier;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @since 4.0.0
@@ -40,6 +38,7 @@ public class ExtensionBuilderDependenciesImplTest {
     private final @NotNull WillPublishBuilder willPublishBuilder = mock(WillPublishBuilder.class);
 
     private @NotNull ExtensionBuilderDependenciesImpl extensionBuilderDependencies;
+
     @BeforeEach
     public void before() {
         extensionBuilderDependencies = new ExtensionBuilderDependenciesImpl(

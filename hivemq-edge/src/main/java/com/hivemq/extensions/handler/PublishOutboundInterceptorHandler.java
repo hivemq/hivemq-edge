@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.handler;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
@@ -43,13 +41,13 @@ import com.hivemq.util.Exceptions;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Lukas Brandl
@@ -87,7 +85,8 @@ public class PublishOutboundInterceptorHandler {
             final @NotNull ChannelPromise promise) {
 
         final Channel channel = ctx.channel();
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final String clientId = clientConnection.getClientId();
         if (clientId == null) {
             return;
@@ -116,19 +115,13 @@ public class PublishOutboundInterceptorHandler {
         final PublishOutboundOutputImpl output = new PublishOutboundOutputImpl(asyncer, modifiablePacket);
         final ExtensionParameterHolder<PublishOutboundOutputImpl> outputHolder = new ExtensionParameterHolder<>(output);
 
-        final PublishOutboundInterceptorContext context = new PublishOutboundInterceptorContext(clientId,
-                interceptors.size(),
-                ctx,
-                promise,
-                publish,
-                inputHolder,
-                outputHolder,
-                messageDroppedService);
+        final PublishOutboundInterceptorContext context = new PublishOutboundInterceptorContext(
+                clientId, interceptors.size(), ctx, promise, publish, inputHolder, outputHolder, messageDroppedService);
 
         for (final PublishOutboundInterceptor interceptor : interceptors) {
 
-            final HiveMQExtension extension =
-                    hiveMQExtensions.getExtensionForClassloader(interceptor.getClass().getClassLoader());
+            final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(
+                    interceptor.getClass().getClassLoader());
             if (extension == null) { // disabled extension would be null
                 context.finishInterceptor();
                 continue;
@@ -201,13 +194,13 @@ public class PublishOutboundInterceptorHandler {
         @Override
         public void run() {
             if (outputHolder.get().isPreventDelivery()) {
-                messageDroppedService.extensionPrevented(getIdentifier(),
-                        publish.getTopic(),
-                        publish.getQoS().getQosNumber());
+                messageDroppedService.extensionPrevented(
+                        getIdentifier(), publish.getTopic(), publish.getQoS().getQosNumber());
                 promise.setSuccess();
                 ctx.fireUserEventTriggered(new PublishDroppedEvent(publish));
             } else {
-                final PUBLISH mergedPublish = PUBLISHFactory.merge(inputHolder.get().getPublishPacket(), publish);
+                final PUBLISH mergedPublish =
+                        PUBLISHFactory.merge(inputHolder.get().getPublishPacket(), publish);
                 ctx.writeAndFlush(mergedPublish, promise);
             }
         }
@@ -237,9 +230,11 @@ public class PublishOutboundInterceptorHandler {
             try {
                 interceptor.onOutboundPublish(input, output);
             } catch (final Throwable e) {
-                log.warn("Uncaught exception was thrown from extension with id \"{}\" on outbound PUBLISH interception. " +
-                                "Extensions are responsible for their own exception handling.",
-                        extensionId, e);
+                log.warn(
+                        "Uncaught exception was thrown from extension with id \"{}\" on outbound PUBLISH interception. "
+                                + "Extensions are responsible for their own exception handling.",
+                        extensionId,
+                        e);
                 output.forciblyPreventPublishDelivery();
                 Exceptions.rethrowError(e);
             }

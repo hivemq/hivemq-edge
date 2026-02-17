@@ -15,13 +15,12 @@
  */
 package com.hivemq.extensions.interceptor.subscribe.parameter;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.subscribe.parameter.SubscribeInboundOutput;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
 import com.hivemq.extensions.executor.task.AbstractAsyncOutput;
 import com.hivemq.extensions.packets.subscribe.ModifiableSubscribePacketImpl;
-
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck

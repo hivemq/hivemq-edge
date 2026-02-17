@@ -17,16 +17,13 @@ package com.hivemq.configuration.entity.combining;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.configuration.entity.adapter.fieldmapping.InstructionEntity;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 // JAXB can not handle records ... :-(
 public class DataCombiningEntity {
@@ -49,8 +46,7 @@ public class DataCombiningEntity {
     private @NotNull List<InstructionEntity> instructions;
 
     // no-arg for jaxb
-    public DataCombiningEntity() {
-    }
+    public DataCombiningEntity() {}
 
     public DataCombiningEntity(
             final @NotNull UUID id,
@@ -85,17 +81,16 @@ public class DataCombiningEntity {
 
     @Override
     public @NotNull String toString() {
-        return "DataCombiningEntity{" +
-                "destination='" +
-                destination +
-                '\'' +
-                ", id=" +
-                id +
-                ", sources=" +
-                sources +
-                ", instructions=" +
-                instructions +
-                '}';
+        return "DataCombiningEntity{" + "destination='"
+                + destination
+                + '\''
+                + ", id="
+                + id
+                + ", sources="
+                + sources
+                + ", instructions="
+                + instructions
+                + '}';
     }
 
     @Override
@@ -104,10 +99,10 @@ public class DataCombiningEntity {
         if (o == null || getClass() != o.getClass()) return false;
 
         final DataCombiningEntity that = (DataCombiningEntity) o;
-        return id.equals(that.id) &&
-                sources.equals(that.sources) &&
-                destination.equals(that.destination) &&
-                instructions.equals(that.instructions);
+        return id.equals(that.id)
+                && sources.equals(that.sources)
+                && destination.equals(that.destination)
+                && instructions.equals(that.instructions);
     }
 
     @Override

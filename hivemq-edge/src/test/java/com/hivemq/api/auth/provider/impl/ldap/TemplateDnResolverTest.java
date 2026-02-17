@@ -15,10 +15,10 @@
  */
 package com.hivemq.api.auth.provider.impl.ldap;
 
-import org.junit.jupiter.api.Test;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for {@link TemplateDnResolver}.
@@ -27,32 +27,21 @@ class TemplateDnResolverTest {
 
     @Test
     void testOpenLdapTemplate() {
-        final TemplateDnResolver resolver = new TemplateDnResolver(
-                "uid",
-                "ou=people,dc=example,dc=com"
-        );
+        final TemplateDnResolver resolver = new TemplateDnResolver("uid", "ou=people,dc=example,dc=com");
 
-        assertThat(resolver.resolveDn("jdoe"))
-                .isEqualTo("uid=jdoe,ou=people,dc=example,dc=com");
+        assertThat(resolver.resolveDn("jdoe")).isEqualTo("uid=jdoe,ou=people,dc=example,dc=com");
     }
 
     @Test
     void testActiveDirectoryTemplate() {
-        final TemplateDnResolver resolver = new TemplateDnResolver(
-                "cn",
-                "cn=Users,dc=company,dc=com"
-        );
+        final TemplateDnResolver resolver = new TemplateDnResolver("cn", "cn=Users,dc=company,dc=com");
 
-        assertThat(resolver.resolveDn("John Doe"))
-                .isEqualTo("cn=John Doe,cn=Users,dc=company,dc=com");
+        assertThat(resolver.resolveDn("John Doe")).isEqualTo("cn=John Doe,cn=Users,dc=company,dc=com");
     }
 
     @Test
     void testEmailBasedTemplate() {
-        final TemplateDnResolver resolver = new TemplateDnResolver(
-                "mail",
-                "ou=staff,dc=company,dc=com"
-        );
+        final TemplateDnResolver resolver = new TemplateDnResolver("mail", "ou=staff,dc=company,dc=com");
 
         assertThat(resolver.resolveDn("jdoe@company.com"))
                 .isEqualTo("mail=jdoe@company.com,ou=staff,dc=company,dc=com");
@@ -60,24 +49,16 @@ class TemplateDnResolverTest {
 
     @Test
     void testCustomAttributeTemplate() {
-        final TemplateDnResolver resolver = new TemplateDnResolver(
-                "employeeNumber",
-                "ou=employees,dc=corp,dc=com"
-        );
+        final TemplateDnResolver resolver = new TemplateDnResolver("employeeNumber", "ou=employees,dc=corp,dc=com");
 
-        assertThat(resolver.resolveDn("12345"))
-                .isEqualTo("employeeNumber=12345,ou=employees,dc=corp,dc=com");
+        assertThat(resolver.resolveDn("12345")).isEqualTo("employeeNumber=12345,ou=employees,dc=corp,dc=com");
     }
 
     @Test
     void testMultipleOuTemplate() {
-        final TemplateDnResolver resolver = new TemplateDnResolver(
-                "uid",
-                "ou=engineering,ou=staff,dc=company,dc=com"
-        );
+        final TemplateDnResolver resolver = new TemplateDnResolver("uid", "ou=engineering,ou=staff,dc=company,dc=com");
 
-        assertThat(resolver.resolveDn("jdoe"))
-                .isEqualTo("uid=jdoe,ou=engineering,ou=staff,dc=company,dc=com");
+        assertThat(resolver.resolveDn("jdoe")).isEqualTo("uid=jdoe,ou=engineering,ou=staff,dc=company,dc=com");
     }
 
     @Test
@@ -103,10 +84,7 @@ class TemplateDnResolverTest {
 
     @Test
     void testResolveDnRejectsEmptyUsername() {
-        final TemplateDnResolver resolver = new TemplateDnResolver(
-                "uid",
-                "dc=example,dc=com"
-        );
+        final TemplateDnResolver resolver = new TemplateDnResolver("uid", "dc=example,dc=com");
 
         assertThatThrownBy(() -> resolver.resolveDn(""))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -115,10 +93,7 @@ class TemplateDnResolverTest {
 
     @Test
     void testResolveDnRejectsBlankUsername() {
-        final TemplateDnResolver resolver = new TemplateDnResolver(
-                "uid",
-                "dc=example,dc=com"
-        );
+        final TemplateDnResolver resolver = new TemplateDnResolver("uid", "dc=example,dc=com");
 
         assertThatThrownBy(() -> resolver.resolveDn("   "))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -136,10 +111,7 @@ class TemplateDnResolverTest {
     @Test
     void testGetBaseDn() {
         final String baseDn = "dc=example,dc=com";
-        final TemplateDnResolver resolver = new TemplateDnResolver(
-                "uid={username},ou=people,{baseDn}",
-                baseDn
-        );
+        final TemplateDnResolver resolver = new TemplateDnResolver("uid={username},ou=people,{baseDn}", baseDn);
 
         assertThat(resolver.getBaseDn()).isEqualTo(baseDn);
     }

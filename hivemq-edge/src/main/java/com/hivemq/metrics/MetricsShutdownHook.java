@@ -17,11 +17,10 @@ package com.hivemq.metrics;
 
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.metrics.jmx.JmxReporterBootstrap;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Lukas Brandl
@@ -39,7 +38,7 @@ public class MetricsShutdownHook implements HiveMQShutdownHook {
         this.jmxReporterBootstrap = jmxReporterBootstrap;
     }
 
-    @Inject //method injection, this gets called once after instantiation
+    @Inject // method injection, this gets called once after instantiation
     public void postConstruct() {
         shutdownHooks.add(this);
     }

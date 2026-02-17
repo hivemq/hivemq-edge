@@ -16,16 +16,15 @@
 package com.hivemq.statistics;
 
 import com.hivemq.configuration.info.SystemInformation;
-import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Random ID used for the anonymous statistics to correlate multiple information sets to one HiveMQ installation
@@ -44,7 +43,7 @@ public class HivemqId {
         this.systemInformation = systemInformation;
     }
 
-    @Inject //method injection, this gets called once after instantiation
+    @Inject // method injection, this gets called once after instantiation
     void postConstruct() {
         readId();
     }
@@ -66,7 +65,7 @@ public class HivemqId {
             try {
                 final String hivemqId = FileUtils.readFileToString(file, StandardCharsets.UTF_8);
 
-                //prevent manipulation
+                // prevent manipulation
                 if (hivemqId.length() != 36) {
                     return;
                 }
@@ -77,7 +76,6 @@ public class HivemqId {
                 log.trace("original exception");
             }
         }
-
     }
 
     public String getHivemqId() {

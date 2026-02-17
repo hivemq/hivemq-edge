@@ -19,8 +19,6 @@ import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.encoder.EncoderFactory;
 import com.hivemq.codec.encoder.MqttEncoder;
 import com.hivemq.configuration.service.SecurityConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.Message;
 import com.hivemq.mqtt.message.PINGREQ;
@@ -28,6 +26,8 @@ import com.hivemq.mqtt.message.connect.CONNECT;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;
 import com.hivemq.mqtt.message.unsubscribe.UNSUBSCRIBE;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Abdullah Imal

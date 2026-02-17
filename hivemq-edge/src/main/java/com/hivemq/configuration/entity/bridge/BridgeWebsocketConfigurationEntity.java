@@ -15,20 +15,12 @@
  */
 package com.hivemq.configuration.entity.bridge;
 
-import com.hivemq.configuration.entity.listener.tls.KeystoreEntity;
-import com.hivemq.configuration.entity.listener.tls.TruststoreEntity;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
-import jakarta.xml.bind.annotation.XmlElementRef;
-import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 @XmlRootElement(name = "websocket")
@@ -73,9 +65,9 @@ public class BridgeWebsocketConfigurationEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final BridgeWebsocketConfigurationEntity that = (BridgeWebsocketConfigurationEntity) o;
-        return isEnabled() == that.isEnabled() &&
-                Objects.equals(getServerPath(), that.getServerPath()) &&
-                Objects.equals(getSubProtocol(), that.getSubProtocol());
+        return isEnabled() == that.isEnabled()
+                && Objects.equals(getServerPath(), that.getServerPath())
+                && Objects.equals(getSubProtocol(), that.getSubProtocol());
     }
 
     @Override

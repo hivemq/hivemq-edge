@@ -98,7 +98,7 @@ public class SearchFilterDnResolver implements UserDnResolver {
                     false, // Types only = false (we want the full entry)
                     filter,
                     "1.1" // Return no attributes, we only need the DN
-            );
+                    );
 
             log.debug("Searching for user DN with uidAttribute: {} in base: {}", uidAttribute, searchBase);
 
@@ -106,22 +106,23 @@ public class SearchFilterDnResolver implements UserDnResolver {
 
             if (searchResult.getResultCode() != ResultCode.SUCCESS) {
                 throw new DnResolutionException(
-                        "LDAP search failed with result code: " + searchResult.getResultCode() +
-                        ", diagnostic message: " + searchResult.getDiagnosticMessage(),
+                        "LDAP search failed with result code: " + searchResult.getResultCode()
+                                + ", diagnostic message: " + searchResult.getDiagnosticMessage(),
                         username);
             }
 
             final var entryCount = searchResult.getEntryCount();
             if (entryCount == 0) {
                 log.debug("No LDAP entry found for username: {} with uidAttribute: {}", username, uidAttribute);
-                throw new DnResolutionException(
-                        "No LDAP entry found for username: " + username,
-                        username);
+                throw new DnResolutionException("No LDAP entry found for username: " + username, username);
             }
 
             if (entryCount > 1) {
-                log.warn("Multiple LDAP entries ({}) found for username: {} with uidAttribute: {}. Using first result.",
-                        entryCount, username, uidAttribute);
+                log.warn(
+                        "Multiple LDAP entries ({}) found for username: {} with uidAttribute: {}. Using first result.",
+                        entryCount,
+                        username,
+                        uidAttribute);
             }
 
             final var entry = searchResult.getSearchEntries().getFirst();
@@ -134,15 +135,10 @@ public class SearchFilterDnResolver implements UserDnResolver {
             if (e.getResultCode() == ResultCode.TIME_LIMIT_EXCEEDED) {
                 log.error("LDAP search timed out after {} seconds for username: {}", timeoutSeconds, username);
                 throw new DnResolutionException(
-                        "LDAP search timed out after " + timeoutSeconds + " seconds",
-                        username,
-                        e);
+                        "LDAP search timed out after " + timeoutSeconds + " seconds", username, e);
             }
             log.error("LDAP search failed for username: {}, error: {}", username, e.getMessage());
-            throw new DnResolutionException(
-                    "LDAP search failed: " + e.getMessage(),
-                    username,
-                    e);
+            throw new DnResolutionException("LDAP search failed: " + e.getMessage(), username, e);
         }
     }
 
@@ -194,9 +190,7 @@ public class SearchFilterDnResolver implements UserDnResolver {
         }
 
         public DnResolutionException(
-                final @NotNull String message,
-                final @NotNull String username,
-                final @NotNull Throwable cause) {
+                final @NotNull String message, final @NotNull String username, final @NotNull Throwable cause) {
             super(message, cause);
             this.username = username;
         }
@@ -212,7 +206,6 @@ public class SearchFilterDnResolver implements UserDnResolver {
         if (requiredObjectClass == null) {
             return keyFilter;
         }
-        return Filter.createANDFilter(keyFilter,
-                Filter.createEqualityFilter("objectClass", requiredObjectClass));
+        return Filter.createANDFilter(keyFilter, Filter.createEqualityFilter("objectClass", requiredObjectClass));
     }
 }

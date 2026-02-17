@@ -15,18 +15,17 @@
  */
 package com.hivemq.persistence;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.google.common.collect.ImmutableList;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
-
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Daniel Krüger
@@ -35,6 +34,7 @@ public class InMemoryProducerQueuesTest {
 
     @NotNull
     private InMemoryProducerQueues producerQueues;
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -61,7 +61,8 @@ public class InMemoryProducerQueuesTest {
     }
 
     @Test
-    public void test_submit_whenManyThreadsSubmitConcurrently_thenOnlyOneThreadWorksConcurrently() throws InterruptedException {
+    public void test_submit_whenManyThreadsSubmitConcurrently_thenOnlyOneThreadWorksConcurrently()
+            throws InterruptedException {
 
         final LinkedList<Integer> list = new LinkedList<>();
         list.add(0);
@@ -89,7 +90,7 @@ public class InMemoryProducerQueuesTest {
             thread.start();
         }
 
-        //wait for all threads to finish their submissions
+        // wait for all threads to finish their submissions
         for (final Thread thread : threads) {
             thread.join();
         }
@@ -97,5 +98,4 @@ public class InMemoryProducerQueuesTest {
         // 4 threads with 10_000 adds = 40_000
         assertEquals(40_000, (int) list.getFirst());
     }
-
 }

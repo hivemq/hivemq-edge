@@ -18,13 +18,12 @@ package com.hivemq.mqtt.message.unsubscribe;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.packets.unsubscribe.UnsubscribePacketImpl;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttMessageWithUserProperties;
-
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * The MQTT UNSUBSCRIBE message
@@ -38,24 +37,25 @@ public class UNSUBSCRIBE extends MqttMessageWithUserProperties implements Mqtt3U
 
     private final ImmutableList<String> topics;
 
-    //MQTT 3
+    // MQTT 3
     public UNSUBSCRIBE(final @NotNull ImmutableList<String> topics) {
         this(topics, 0);
     }
 
-    //MQTT 3
+    // MQTT 3
     public UNSUBSCRIBE(final @NotNull ImmutableList<String> topics, final int packetIdentifier) {
         this(topics, packetIdentifier, Mqtt5UserProperties.NO_USER_PROPERTIES);
     }
 
-    //MQTT 3
+    // MQTT 3
     public UNSUBSCRIBE(final @NotNull List<String> topics, final int packetIdentifier) {
         this(ImmutableList.copyOf(topics), packetIdentifier, Mqtt5UserProperties.NO_USER_PROPERTIES);
     }
 
-    //MQTT 5
+    // MQTT 5
     public UNSUBSCRIBE(
-            final @NotNull ImmutableList<String> topicFilters, final int packetIdentifier,
+            final @NotNull ImmutableList<String> topicFilters,
+            final int packetIdentifier,
             final Mqtt5UserProperties userProperties) {
         super(userProperties);
 

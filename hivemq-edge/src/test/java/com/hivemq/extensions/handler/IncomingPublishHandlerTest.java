@@ -13,14 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.handler;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 import com.google.common.collect.Lists;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.async.Async;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extension.sdk.api.interceptor.publish.PublishInboundInterceptor;
@@ -54,23 +58,10 @@ import com.hivemq.mqtt.message.reason.Mqtt5PubAckReasonCode;
 import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;
 import com.hivemq.mqtt.services.PublishPollService;
 import com.hivemq.persistence.qos.IncomingMessageFlowPersistence;
-
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.rules.TemporaryFolder;
-import org.mockito.Mockito;
-import util.IsolatedExtensionClassloaderUtil;
-import util.TestConfigurationBootstrap;
-import util.TestMessageUtil;
-
 import java.io.File;
 import java.nio.channels.ClosedChannelException;
 import java.time.Duration;
@@ -79,12 +70,16 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mockito;
+import util.IsolatedExtensionClassloaderUtil;
+import util.TestConfigurationBootstrap;
+import util.TestMessageUtil;
 
 /**
  * @since 4.0.0
@@ -104,7 +99,7 @@ public class IncomingPublishHandlerTest {
     private @NotNull EmbeddedChannel channel;
     private @NotNull AtomicReference<Message> messageAtomicReference;
     private @NotNull ClientConnection clientConnection;
-    
+
     @BeforeEach
     public void setUp() throws Exception {
         dropLatch = new CountDownLatch(1);
@@ -121,15 +116,15 @@ public class IncomingPublishHandlerTest {
 
         final MessageDroppedService messageDroppedService = new TestDropService(dropLatch);
 
-        final ConfigurationService configurationService =
-                new TestConfigurationBootstrap().getConfigurationService();
+        final ConfigurationService configurationService = new TestConfigurationBootstrap().getConfigurationService();
 
         messageAtomicReference = new AtomicReference<>();
         final PluginAuthorizerService pluginAuthorizerService = new TestAuthService(messageAtomicReference);
 
         final PluginTaskExecutorService pluginTaskExecutorService =
                 new PluginTaskExecutorServiceImpl(() -> executor, mock(ShutdownHooks.class));
-        final IncomingPublishHandler incomingPublishHandler = new IncomingPublishHandler(pluginTaskExecutorService,
+        final IncomingPublishHandler incomingPublishHandler = new IncomingPublishHandler(
+                pluginTaskExecutorService,
                 asyncer,
                 hiveMQExtensions,
                 messageDroppedService,
@@ -137,7 +132,8 @@ public class IncomingPublishHandlerTest {
                 mqttServerDisconnector,
                 configurationService);
 
-        final PublishFlowHandler publishFlowHandler = new PublishFlowHandler(mock(PublishPollService.class),
+        final PublishFlowHandler publishFlowHandler = new PublishFlowHandler(
+                mock(PublishPollService.class),
                 mock(IncomingMessageFlowPersistence.class),
                 mock(OrderedTopicService.class),
                 incomingPublishHandler,
@@ -145,6 +141,7 @@ public class IncomingPublishHandlerTest {
         channel.pipeline().addFirst(publishFlowHandler);
         channel.pipeline().context(PublishFlowHandler.class);
     }
+
     @AfterEach
     public void tearDown() {
         executor.stop();
@@ -213,7 +210,8 @@ public class IncomingPublishHandlerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setExtensionClientContext(clientContext);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv3_1_1);
 
-        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class))).thenReturn(extension);
+        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
+                .thenReturn(extension);
 
         channel.writeInbound(TestMessageUtil.createFullMqtt5Publish());
 
@@ -243,7 +241,8 @@ public class IncomingPublishHandlerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setExtensionClientContext(clientContext);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv3_1_1);
 
-        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class))).thenReturn(extension);
+        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
+                .thenReturn(extension);
 
         channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_LEAST_ONCE));
 
@@ -273,7 +272,8 @@ public class IncomingPublishHandlerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setExtensionClientContext(clientContext);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv3_1_1);
 
-        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class))).thenReturn(extension);
+        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
+                .thenReturn(extension);
 
         channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_MOST_ONCE));
 
@@ -305,7 +305,8 @@ public class IncomingPublishHandlerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setExtensionClientContext(clientContext);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
 
-        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class))).thenReturn(extension);
+        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
+                .thenReturn(extension);
 
         channel.writeInbound(TestMessageUtil.createFullMqtt5Publish());
 
@@ -335,7 +336,8 @@ public class IncomingPublishHandlerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setExtensionClientContext(clientContext);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
 
-        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class))).thenReturn(extension);
+        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
+                .thenReturn(extension);
 
         channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_LEAST_ONCE));
 
@@ -365,7 +367,8 @@ public class IncomingPublishHandlerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setExtensionClientContext(clientContext);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
 
-        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class))).thenReturn(extension);
+        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
+                .thenReturn(extension);
 
         channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_MOST_ONCE));
 
@@ -394,7 +397,8 @@ public class IncomingPublishHandlerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setExtensionClientContext(clientContext);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
 
-        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class))).thenReturn(extension);
+        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
+                .thenReturn(extension);
 
         channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_MOST_ONCE));
 
@@ -422,7 +426,8 @@ public class IncomingPublishHandlerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setExtensionClientContext(clientContext);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
 
-        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class))).thenReturn(extension);
+        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
+                .thenReturn(extension);
 
         channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_MOST_ONCE));
 
@@ -449,7 +454,8 @@ public class IncomingPublishHandlerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setExtensionClientContext(clientContext);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv3_1_1);
 
-        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class))).thenReturn(extension);
+        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
+                .thenReturn(extension);
 
         channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_MOST_ONCE));
 
@@ -476,7 +482,8 @@ public class IncomingPublishHandlerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setExtensionClientContext(clientContext);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv3_1_1);
 
-        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class))).thenReturn(extension);
+        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
+                .thenReturn(extension);
 
         channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_MOST_ONCE));
 
@@ -507,7 +514,8 @@ public class IncomingPublishHandlerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setExtensionClientContext(clientContext);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
 
-        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class))).thenReturn(extension);
+        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
+                .thenReturn(extension);
 
         channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_LEAST_ONCE));
 
@@ -539,7 +547,8 @@ public class IncomingPublishHandlerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setExtensionClientContext(clientContext);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
 
-        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class))).thenReturn(extension);
+        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
+                .thenReturn(extension);
 
         channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_LEAST_ONCE));
 
@@ -578,7 +587,8 @@ public class IncomingPublishHandlerTest {
             public void write(
                     final @NotNull ChannelHandlerContext ctx,
                     final @NotNull Object msg,
-                    final @NotNull ChannelPromise promise) throws Exception {
+                    final @NotNull ChannelPromise promise)
+                    throws Exception {
 
                 if (msg instanceof PUBACK) {
                     pubackLatch.countDown();
@@ -588,7 +598,8 @@ public class IncomingPublishHandlerTest {
             }
         });
 
-        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class))).thenReturn(extension);
+        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
+                .thenReturn(extension);
 
         channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_LEAST_ONCE));
 
@@ -621,7 +632,8 @@ public class IncomingPublishHandlerTest {
             public void write(
                     final @NotNull ChannelHandlerContext ctx,
                     final @NotNull Object msg,
-                    final @NotNull ChannelPromise promise) throws Exception {
+                    final @NotNull ChannelPromise promise)
+                    throws Exception {
 
                 if (msg instanceof PUBACK) {
                     pubackLatch.countDown();
@@ -631,7 +643,8 @@ public class IncomingPublishHandlerTest {
             }
         });
 
-        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class))).thenReturn(extension);
+        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
+                .thenReturn(extension);
 
         channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_LEAST_ONCE));
 
@@ -646,9 +659,9 @@ public class IncomingPublishHandlerTest {
 
     private List<PublishInboundInterceptor> getIsolatedInterceptor() throws Exception {
         final Class<?>[] classes = {
-                TestInterceptorPrevent.class, TestInterceptorChangeTopic.class,
-                TestInterceptorPreventWithReasonCode.class, TestInterceptorThrowsException.class,
-                TestInterceptorTimeout.class
+            TestInterceptorPrevent.class, TestInterceptorChangeTopic.class,
+            TestInterceptorPreventWithReasonCode.class, TestInterceptorThrowsException.class,
+            TestInterceptorTimeout.class
         };
 
         final IsolatedExtensionClassloader cl1 =
@@ -680,8 +693,7 @@ public class IncomingPublishHandlerTest {
 
         @Override
         public void onInboundPublish(
-                final @NotNull PublishInboundInput input,
-                final @NotNull PublishInboundOutput output) {
+                final @NotNull PublishInboundInput input, final @NotNull PublishInboundOutput output) {
             System.out.println("INTERCEPT " + System.currentTimeMillis());
             output.getPublishPacket().setTopic(input.getPublishPacket().getTopic() + "modified");
         }
@@ -691,8 +703,7 @@ public class IncomingPublishHandlerTest {
 
         @Override
         public void onInboundPublish(
-                final @NotNull PublishInboundInput input,
-                final @NotNull PublishInboundOutput output) {
+                final @NotNull PublishInboundInput input, final @NotNull PublishInboundOutput output) {
             output.preventPublishDelivery();
         }
     }
@@ -701,8 +712,7 @@ public class IncomingPublishHandlerTest {
 
         @Override
         public void onInboundPublish(
-                final @NotNull PublishInboundInput input,
-                final @NotNull PublishInboundOutput output) {
+                final @NotNull PublishInboundInput input, final @NotNull PublishInboundOutput output) {
             output.preventPublishDelivery(AckReasonCode.UNSPECIFIED_ERROR, "reason");
         }
     }
@@ -711,8 +721,7 @@ public class IncomingPublishHandlerTest {
 
         @Override
         public void onInboundPublish(
-                final @NotNull PublishInboundInput input,
-                final @NotNull PublishInboundOutput output) {
+                final @NotNull PublishInboundInput input, final @NotNull PublishInboundOutput output) {
             final Async<PublishInboundOutput> async = output.async(Duration.ofMillis(10), TimeoutFallback.FAILURE);
             try {
                 Thread.sleep(100);
@@ -727,8 +736,7 @@ public class IncomingPublishHandlerTest {
 
         @Override
         public void onInboundPublish(
-                final @NotNull PublishInboundInput input,
-                final @NotNull PublishInboundOutput output) {
+                final @NotNull PublishInboundInput input, final @NotNull PublishInboundOutput output) {
             throw new NullPointerException();
         }
     }
@@ -747,20 +755,16 @@ public class IncomingPublishHandlerTest {
                 final @NotNull String topic,
                 final int qos,
                 final long currentMemory,
-                final long maxMemory) {
-        }
+                final long maxMemory) {}
 
         @Override
-        public void queueFull(final @NotNull String clientId, final @NotNull String topic, final int qos) {
-        }
+        public void queueFull(final @NotNull String clientId, final @NotNull String topic, final int qos) {}
 
         @Override
-        public void queueFullShared(final @NotNull String sharedId, final @NotNull String topic, final int qos) {
-        }
+        public void queueFullShared(final @NotNull String sharedId, final @NotNull String topic, final int qos) {}
 
         @Override
-        public void notWritable(final @NotNull String clientId, final @NotNull String topic, final int qos) {
-        }
+        public void notWritable(final @NotNull String clientId, final @NotNull String topic, final int qos) {}
 
         @Override
         public void extensionPrevented(final @NotNull String clientId, final @NotNull String topic, final int qos) {
@@ -772,13 +776,10 @@ public class IncomingPublishHandlerTest {
                 final @NotNull String clientId,
                 final @NotNull String topic,
                 final @NotNull String reason,
-                final int qos) {
-
-        }
+                final int qos) {}
 
         @Override
-        public void failed(final @NotNull String clientId, final @NotNull String topic, final int qos) {
-        }
+        public void failed(final @NotNull String clientId, final @NotNull String topic, final int qos) {}
 
         @Override
         public void publishMaxPacketSizeExceeded(
@@ -786,20 +787,17 @@ public class IncomingPublishHandlerTest {
                 final @NotNull String topic,
                 final int qos,
                 final long maximumPacketSize,
-                final long packetSize) {
-        }
+                final long packetSize) {}
 
         @Override
         public void messageMaxPacketSizeExceeded(
                 final @NotNull String clientId,
                 final @NotNull String messageType,
                 final long maximumPacketSize,
-                final long packetSize) {
-        }
+                final long packetSize) {}
 
         @Override
-        public void failedShared(final @NotNull String group, final @NotNull String topic, final int qos) {
-        }
+        public void failedShared(final @NotNull String group, final @NotNull String topic, final int qos) {}
 
         @Override
         public void qos0MemoryExceededShared(
@@ -807,8 +805,7 @@ public class IncomingPublishHandlerTest {
                 final @NotNull String topic,
                 final int qos,
                 final long currentMemory,
-                final long maxMemory) {
-        }
+                final long maxMemory) {}
     }
 
     private static class TestAuthService implements PluginAuthorizerService {

@@ -15,12 +15,12 @@
  */
 package com.hivemq.extensions.auth;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.EnhancedAuthenticator;
 import com.hivemq.extension.sdk.api.auth.parameter.AuthenticatorProviderInput;
 import com.hivemq.extension.sdk.api.packets.auth.AuthReasonCode;
 import com.hivemq.extensions.client.ClientAuthenticators;
 import com.hivemq.extensions.services.auth.WrappedAuthenticatorProvider;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Silvio Giebl

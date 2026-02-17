@@ -19,7 +19,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.internal.RecyclableArrayList;
-
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -35,8 +34,7 @@ public class UdpChannel extends AbstractChannel {
 
     protected final UdpServerChannel channel;
     protected final InetSocketAddress remote;
-    protected final ConcurrentLinkedQueue<ByteBuf>
-            buffers = new ConcurrentLinkedQueue<>();
+    protected final ConcurrentLinkedQueue<ByteBuf> buffers = new ConcurrentLinkedQueue<>();
     protected boolean reading = false;
     protected volatile boolean open = true;
 
@@ -154,8 +152,6 @@ public class UdpChannel extends AbstractChannel {
 
     @Override
     public String toString() {
-        return "UdpChannel{" + System.identityHashCode(this) +
-                ", remote=" + remote +
-                '}';
+        return "UdpChannel{" + System.identityHashCode(this) + ", remote=" + remote + '}';
     }
 }

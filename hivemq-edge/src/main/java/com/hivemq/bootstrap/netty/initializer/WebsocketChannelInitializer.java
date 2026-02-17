@@ -15,16 +15,15 @@
  */
 package com.hivemq.bootstrap.netty.initializer;
 
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.NON_SSL_HANDLER;
+
 import com.hivemq.bootstrap.netty.ChannelDependencies;
 import com.hivemq.configuration.service.entity.MqttWebsocketListener;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.security.ssl.NonSslHandler;
 import com.hivemq.websocket.WebSocketInitializer;
 import io.netty.channel.Channel;
-
 import jakarta.inject.Provider;
-
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.NON_SSL_HANDLER;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
@@ -33,12 +32,14 @@ public class WebsocketChannelInitializer extends AbstractChannelInitializer<Chan
 
     @NotNull
     private final MqttWebsocketListener mqttWebsocketListener;
+
     @NotNull
     private final Provider<NonSslHandler> nonSslHandlerProvider;
 
-    public WebsocketChannelInitializer(final @NotNull ChannelDependencies channelDependencies,
-                                       final @NotNull MqttWebsocketListener mqttWebsocketListener,
-                                       final @NotNull Provider<NonSslHandler> nonSslHandlerProvider) {
+    public WebsocketChannelInitializer(
+            final @NotNull ChannelDependencies channelDependencies,
+            final @NotNull MqttWebsocketListener mqttWebsocketListener,
+            final @NotNull Provider<NonSslHandler> nonSslHandlerProvider) {
         super(channelDependencies, mqttWebsocketListener);
         this.mqttWebsocketListener = mqttWebsocketListener;
         this.nonSslHandlerProvider = nonSslHandlerProvider;

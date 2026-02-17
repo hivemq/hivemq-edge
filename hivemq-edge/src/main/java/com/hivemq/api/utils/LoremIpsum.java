@@ -47,11 +47,12 @@ package com.hivemq.api.utils;
  * @version 1.0
  */
 public class LoremIpsum {
-    public static final String LOREM_IPSUM = "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.";
+    public static final String LOREM_IPSUM =
+            "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.";
     private String[] loremIpsumWords;
 
     public LoremIpsum() {
-        this.loremIpsumWords = LOREM_IPSUM.split( "\\s" );
+        this.loremIpsumWords = LOREM_IPSUM.split("\\s");
     }
 
     /**
@@ -60,7 +61,7 @@ public class LoremIpsum {
      * @return 50 words of lorem ipsum text
      */
     public String getWords() {
-        return getWords( 50 );
+        return getWords(50);
     }
 
     /**
@@ -69,8 +70,8 @@ public class LoremIpsum {
      * @param amount Amount of words
      * @return Lorem ipsum text
      */
-    public String getWords( int amount ) {
-        return getWords( amount, 0 );
+    public String getWords(int amount) {
+        return getWords(amount, 0);
     }
 
     /**
@@ -81,23 +82,23 @@ public class LoremIpsum {
      * @return Lorem ipsum text
      * @throws IndexOutOfBoundsException If startIndex is < 0 or > 49
      */
-    public String getWords( int amount, int startIndex ) {
-        if ( startIndex < 0 || startIndex > 49 ) {
-            throw new IndexOutOfBoundsException( "startIndex must be >= 0 and < 50" );
+    public String getWords(int amount, int startIndex) {
+        if (startIndex < 0 || startIndex > 49) {
+            throw new IndexOutOfBoundsException("startIndex must be >= 0 and < 50");
         }
 
         int word = startIndex;
         StringBuilder lorem = new StringBuilder();
 
-        for( int i = 0; i < amount; i++ ) {
-            if ( word == 50 ) {
+        for (int i = 0; i < amount; i++) {
+            if (word == 50) {
                 word = 0;
             }
 
-            lorem.append( loremIpsumWords[ word ] );
+            lorem.append(loremIpsumWords[word]);
 
-            if ( i < amount - 1 ) {
-                lorem.append( ' ' );
+            if (i < amount - 1) {
+                lorem.append(' ');
             }
 
             word++;
@@ -112,7 +113,7 @@ public class LoremIpsum {
      * @return Lorem ipsum paragraphs
      */
     public String getParagraphs() {
-        return getParagraphs( 2 );
+        return getParagraphs(2);
     }
 
     /**
@@ -121,21 +122,21 @@ public class LoremIpsum {
      * @param amount Amount of paragraphs
      * @return Lorem ipsum paragraphs
      */
-    public String getParagraphs( int amount ) {
+    public String getParagraphs(int amount) {
         StringBuilder lorem = new StringBuilder();
 
-        for( int i = 0; i < amount; i++ ) {
-            lorem.append( LOREM_IPSUM );
+        for (int i = 0; i < amount; i++) {
+            lorem.append(LOREM_IPSUM);
 
-            if ( i < amount - 1 ) {
-                lorem.append( "\n\n" );
+            if (i < amount - 1) {
+                lorem.append("\n\n");
             }
         }
 
         return lorem.toString();
     }
 
-    public static String generate(int words){
+    public static String generate(int words) {
         LoremIpsum loremIpsum = new LoremIpsum();
         return loremIpsum.getWords(words);
     }

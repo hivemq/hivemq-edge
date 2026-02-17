@@ -15,6 +15,8 @@
  */
 package com.hivemq.edge.impl.remote;
 
+import static java.util.Objects.requireNonNull;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.edge.model.HiveMQEdgeRemoteConfiguration;
 import com.hivemq.edge.model.HiveMQEdgeRemoteConnectivityException;
@@ -23,11 +25,6 @@ import com.hivemq.edge.model.HiveMQEdgeRemoteServices;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.http.core.HttpResponse;
 import com.hivemq.http.core.HttpUrlConnectionClient;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,8 +37,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import static java.util.Objects.requireNonNull;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HiveMQEdgeHttpServiceImpl {
 
@@ -140,13 +139,15 @@ public class HiveMQEdgeHttpServiceImpl {
         try {
             remoteServices = httpGet(serviceDiscoveryEndpoint, HiveMQEdgeRemoteServices.class);
             if (logger.isTraceEnabled()) {
-                logger.trace("Successfully established connection to remote service provider {}, online -> {}",
+                logger.trace(
+                        "Successfully established connection to remote service provider {}, online -> {}",
                         serviceDiscoveryEndpoint,
                         remoteServices);
             }
         } catch (final HiveMQEdgeRemoteConnectivityException e) {
             hasConnectivity = false;
-            logger.debug("Connection to http provider {} could not be established, using offline information",
+            logger.debug(
+                    "Connection to http provider {} could not be established, using offline information",
                     serviceDiscoveryEndpoint);
         }
     }
@@ -157,8 +158,8 @@ public class HiveMQEdgeHttpServiceImpl {
                     HttpUrlConnectionClient.head(Map.of(), services.getConfigEndpoint(), readTimeoutMillis);
             hasConnectivity = !response.isError();
             if (logger.isTraceEnabled()) {
-                logger.trace("Successfully established connection to http provider {}, online",
-                        serviceDiscoveryEndpoint);
+                logger.trace(
+                        "Successfully established connection to http provider {}, online", serviceDiscoveryEndpoint);
             }
             if (hasConnectivity && activateUsage) {
                 fireEvent(new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.EDGE_PING), false);
@@ -235,8 +236,7 @@ public class HiveMQEdgeHttpServiceImpl {
     }
 
     private void sendUsageEvent(
-            final @NotNull HiveMQEdgeRemoteEvent event,
-            final @NotNull AtomicInteger usageErrorCount)
+            final @NotNull HiveMQEdgeRemoteEvent event, final @NotNull AtomicInteger usageErrorCount)
             throws HiveMQEdgeRemoteConnectivityException {
         final HiveMQEdgeRemoteServices services = remoteServices;
         if (services != null && isValidUri(services.getUsageEndpoint())) {
@@ -348,13 +348,11 @@ public class HiveMQEdgeHttpServiceImpl {
             final String jsonBody = mapper.writeValueAsString(jsonPostObject);
             try (final InputStream is = new ByteArrayInputStream(jsonBody.getBytes())) {
                 final long start = System.currentTimeMillis();
-                final HttpResponse response = HttpUrlConnectionClient.post(POST_CONTENT_TYPE_HEADER,
-                        url,
-                        is,
-                        connectTimeoutMillis,
-                        readTimeoutMillis);
+                final HttpResponse response = HttpUrlConnectionClient.post(
+                        POST_CONTENT_TYPE_HEADER, url, is, connectTimeoutMillis, readTimeoutMillis);
                 if (logger.isTraceEnabled()) {
-                    logger.trace("Post to http service object {} -> {} in {}",
+                    logger.trace(
+                            "Post to http service object {} -> {} in {}",
                             url,
                             response.getStatusCode(),
                             System.currentTimeMillis() - start);
@@ -371,22 +369,20 @@ public class HiveMQEdgeHttpServiceImpl {
             throw new HiveMQEdgeRemoteConnectivityException("Remote service [" + url + "] failed to respond <null>");
         }
         if (response.isError()) {
-            throw new HiveMQEdgeRemoteConnectivityException("Remote service [" +
-                    response.getRequestUrl() +
-                    "] failed (" +
-                    response.getStatusCode() +
-                    " - " +
-                    response.getStatusMessage() +
-                    ")");
+            throw new HiveMQEdgeRemoteConnectivityException("Remote service [" + response.getRequestUrl()
+                    + "] failed ("
+                    + response.getStatusCode()
+                    + " - "
+                    + response.getStatusMessage()
+                    + ")");
         }
         if (response.getContentLength() <= 0) {
-            throw new HiveMQEdgeRemoteConnectivityException("Remote service [" +
-                    response.getRequestUrl() +
-                    "] failed with no expected content (" +
-                    response.getStatusCode() +
-                    " - " +
-                    response.getStatusMessage() +
-                    ")");
+            throw new HiveMQEdgeRemoteConnectivityException("Remote service [" + response.getRequestUrl()
+                    + "] failed with no expected content ("
+                    + response.getStatusCode()
+                    + " - "
+                    + response.getStatusMessage()
+                    + ")");
         }
     }
 }

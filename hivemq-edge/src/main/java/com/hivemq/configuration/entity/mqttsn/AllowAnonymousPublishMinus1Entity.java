@@ -16,7 +16,6 @@
 package com.hivemq.configuration.entity.mqttsn;
 
 import com.hivemq.configuration.entity.DisabledEntity;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlRootElement;
@@ -26,6 +25,4 @@ import jakarta.xml.bind.annotation.XmlRootElement;
  */
 @XmlRootElement(name = "allow-anonymous-publish-minus-one")
 @XmlAccessorType(XmlAccessType.NONE)
-public class AllowAnonymousPublishMinus1Entity extends DisabledEntity {
-
-}
+public class AllowAnonymousPublishMinus1Entity extends DisabledEntity {}

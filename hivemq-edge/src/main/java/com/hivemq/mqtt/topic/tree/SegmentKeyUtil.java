@@ -20,8 +20,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class SegmentKeyUtil {
 
-    private SegmentKeyUtil() {
-    }
+    private SegmentKeyUtil() {}
 
     public static String segmentKey(final String topic, final int length) {
         checkNotNull(topic, "Topic must not be null");

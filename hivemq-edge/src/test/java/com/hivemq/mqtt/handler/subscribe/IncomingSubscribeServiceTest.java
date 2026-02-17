@@ -15,6 +15,10 @@
  */
 package com.hivemq.mqtt.handler.subscribe;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -23,7 +27,6 @@ import com.google.common.util.concurrent.Futures;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.parameter.TopicPermission;
 import com.hivemq.extension.sdk.api.packets.auth.DefaultAuthorizationBehaviour;
 import com.hivemq.extensions.packets.general.ModifiableDefaultPermissionsImpl;
@@ -46,19 +49,15 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.util.concurrent.ImmediateEventExecutor;
+import java.util.HashSet;
+import java.util.Queue;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestConfigurationBootstrap;
-
-import java.util.HashSet;
-import java.util.Queue;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
 @SuppressWarnings("ALL")
 public class IncomingSubscribeServiceTest {
@@ -97,25 +96,35 @@ public class IncomingSubscribeServiceTest {
     private IncomingSubscribeService incomingSubscribeService;
 
     private @NotNull ClientConnection clientConnection;
+
     @BeforeEach
     public void setUp() throws Exception {
 
         MockitoAnnotations.initMocks(this);
-        incomingSubscribeService = new IncomingSubscribeService(clientSessionSubscriptionPersistence, retainedMessagePersistence, sharedSubscriptionService, retainedMessagesSender, mqttConfigurationService, restrictionsConfigurationService, new MqttServerDisconnectorImpl(eventLog), mock(IMqttsnTopicRegistry.class));
+        incomingSubscribeService = new IncomingSubscribeService(
+                clientSessionSubscriptionPersistence,
+                retainedMessagePersistence,
+                sharedSubscriptionService,
+                retainedMessagesSender,
+                mqttConfigurationService,
+                restrictionsConfigurationService,
+                new MqttServerDisconnectorImpl(eventLog),
+                mock(IMqttsnTopicRegistry.class));
 
         channel = new EmbeddedChannel();
         clientConnection = new ClientConnection(channel, null);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientId("client");
 
-        when(clientSessionSubscriptionPersistence.addSubscription(anyString(), any(Topic.class))).thenReturn(Futures.immediateFuture(null));
-        when(clientSessionSubscriptionPersistence.addSubscriptions(anyString(), any(ImmutableSet.class))).thenReturn(Futures.<Void>immediateFuture(null));
+        when(clientSessionSubscriptionPersistence.addSubscription(anyString(), any(Topic.class)))
+                .thenReturn(Futures.immediateFuture(null));
+        when(clientSessionSubscriptionPersistence.addSubscriptions(anyString(), any(ImmutableSet.class)))
+                .thenReturn(Futures.<Void>immediateFuture(null));
         when(ctx.channel()).thenReturn(channel);
         when(ctx.writeAndFlush(any())).thenReturn(channelFuture);
         when(ctx.executor()).thenReturn(ImmediateEventExecutor.INSTANCE);
         when(restrictionsConfigurationService.maxTopicLength()).thenReturn(65535);
     }
-
 
     @Test
     public void test_subscribe_single_and_acknowledge() throws Exception {
@@ -132,14 +141,15 @@ public class IncomingSubscribeServiceTest {
 
         final SUBACK response = (SUBACK) objects.element();
         assertEquals(1, response.getReasonCodes().size());
-        assertEquals((byte) QoS.AT_LEAST_ONCE.getQosNumber(), response.getReasonCodes().get(0).getCode());
+        assertEquals(
+                (byte) QoS.AT_LEAST_ONCE.getQosNumber(),
+                response.getReasonCodes().get(0).getCode());
 
         verify(clientSessionSubscriptionPersistence).addSubscription(eq("client"), same(topic));
     }
 
     @Test
     public void test_subscribe_three_and_acknowledge() throws Exception {
-
 
         final Topic topic1 = new Topic("test1", QoS.AT_LEAST_ONCE);
         final Topic topic2 = new Topic("test2", QoS.AT_MOST_ONCE);
@@ -155,9 +165,15 @@ public class IncomingSubscribeServiceTest {
 
         final SUBACK response = (SUBACK) objects.element();
         assertEquals(3, response.getReasonCodes().size());
-        assertEquals((byte) QoS.AT_LEAST_ONCE.getQosNumber(), response.getReasonCodes().get(0).getCode());
-        assertEquals((byte) QoS.AT_MOST_ONCE.getQosNumber(), response.getReasonCodes().get(1).getCode());
-        assertEquals((byte) QoS.EXACTLY_ONCE.getQosNumber(), response.getReasonCodes().get(2).getCode());
+        assertEquals(
+                (byte) QoS.AT_LEAST_ONCE.getQosNumber(),
+                response.getReasonCodes().get(0).getCode());
+        assertEquals(
+                (byte) QoS.AT_MOST_ONCE.getQosNumber(),
+                response.getReasonCodes().get(1).getCode());
+        assertEquals(
+                (byte) QoS.EXACTLY_ONCE.getQosNumber(),
+                response.getReasonCodes().get(2).getCode());
 
         verify(clientSessionSubscriptionPersistence).addSubscriptions(eq("client"), any(ImmutableSet.class));
     }
@@ -178,16 +194,21 @@ public class IncomingSubscribeServiceTest {
 
         final SUBACK response = (SUBACK) objects.element();
         assertEquals(3, response.getReasonCodes().size());
-        assertEquals((byte) QoS.AT_LEAST_ONCE.getQosNumber(), response.getReasonCodes().get(0).getCode());
-        assertEquals((byte) QoS.AT_MOST_ONCE.getQosNumber(), response.getReasonCodes().get(1).getCode());
-        assertEquals((byte) QoS.EXACTLY_ONCE.getQosNumber(), response.getReasonCodes().get(2).getCode());
+        assertEquals(
+                (byte) QoS.AT_LEAST_ONCE.getQosNumber(),
+                response.getReasonCodes().get(0).getCode());
+        assertEquals(
+                (byte) QoS.AT_MOST_ONCE.getQosNumber(),
+                response.getReasonCodes().get(1).getCode());
+        assertEquals(
+                (byte) QoS.EXACTLY_ONCE.getQosNumber(),
+                response.getReasonCodes().get(2).getCode());
 
         verify(clientSessionSubscriptionPersistence).addSubscriptions(eq("client"), any(ImmutableSet.class));
     }
 
     @Test
     public void test_subscribe_batched_to_non_batched_with_same_filter_and_acknowledge() throws Exception {
-
 
         final Topic topic1 = new Topic("test", QoS.EXACTLY_ONCE);
         final Topic topic2 = new Topic("test", QoS.AT_LEAST_ONCE);
@@ -203,16 +224,21 @@ public class IncomingSubscribeServiceTest {
 
         final SUBACK response = (SUBACK) objects.element();
         assertEquals(3, response.getReasonCodes().size());
-        assertEquals((byte) QoS.EXACTLY_ONCE.getQosNumber(), response.getReasonCodes().get(0).getCode());
-        assertEquals((byte) QoS.AT_LEAST_ONCE.getQosNumber(), response.getReasonCodes().get(1).getCode());
-        assertEquals((byte) QoS.AT_MOST_ONCE.getQosNumber(), response.getReasonCodes().get(2).getCode());
+        assertEquals(
+                (byte) QoS.EXACTLY_ONCE.getQosNumber(),
+                response.getReasonCodes().get(0).getCode());
+        assertEquals(
+                (byte) QoS.AT_LEAST_ONCE.getQosNumber(),
+                response.getReasonCodes().get(1).getCode());
+        assertEquals(
+                (byte) QoS.AT_MOST_ONCE.getQosNumber(),
+                response.getReasonCodes().get(2).getCode());
 
         verify(clientSessionSubscriptionPersistence).addSubscription(eq("client"), same(topic3));
     }
 
     @Test
     public void test_subscribe_batched_to_batched_with_same_filter_and_acknowledge() throws Exception {
-
 
         final Topic topic1 = new Topic("test1", QoS.EXACTLY_ONCE);
         final Topic topic2 = new Topic("test2", QoS.AT_LEAST_ONCE);
@@ -230,9 +256,15 @@ public class IncomingSubscribeServiceTest {
 
         final SUBACK response = (SUBACK) objects.element();
         assertEquals(3, response.getReasonCodes().size());
-        assertEquals((byte) QoS.EXACTLY_ONCE.getQosNumber(), response.getReasonCodes().get(0).getCode());
-        assertEquals((byte) QoS.AT_LEAST_ONCE.getQosNumber(), response.getReasonCodes().get(1).getCode());
-        assertEquals((byte) QoS.AT_MOST_ONCE.getQosNumber(), response.getReasonCodes().get(2).getCode());
+        assertEquals(
+                (byte) QoS.EXACTLY_ONCE.getQosNumber(),
+                response.getReasonCodes().get(0).getCode());
+        assertEquals(
+                (byte) QoS.AT_LEAST_ONCE.getQosNumber(),
+                response.getReasonCodes().get(1).getCode());
+        assertEquals(
+                (byte) QoS.AT_MOST_ONCE.getQosNumber(),
+                response.getReasonCodes().get(2).getCode());
 
         verify(clientSessionSubscriptionPersistence).addSubscriptions(eq("client"), eq(persistedTopics));
     }
@@ -240,7 +272,10 @@ public class IncomingSubscribeServiceTest {
     @Test
     public void test_subscription_metric() throws Exception {
 
-        final SUBSCRIBE subscribe = new SUBSCRIBE(ImmutableList.copyOf(Lists.newArrayList(new Topic("t1", QoS.AT_LEAST_ONCE), new Topic("t2", QoS.AT_LEAST_ONCE))), 1);
+        final SUBSCRIBE subscribe = new SUBSCRIBE(
+                ImmutableList.copyOf(
+                        Lists.newArrayList(new Topic("t1", QoS.AT_LEAST_ONCE), new Topic("t2", QoS.AT_LEAST_ONCE))),
+                1);
 
         incomingSubscribeService.processSubscribe(ctx, subscribe, false);
     }
@@ -248,11 +283,12 @@ public class IncomingSubscribeServiceTest {
     @Test
     public void test_send_invalid_subscribe_message() throws Exception {
 
-        final SUBSCRIBE subscribe = new SUBSCRIBE(ImmutableList.copyOf(Lists.newArrayList(new Topic("not/#/allowed", QoS.AT_LEAST_ONCE))), 1);
+        final SUBSCRIBE subscribe = new SUBSCRIBE(
+                ImmutableList.copyOf(Lists.newArrayList(new Topic("not/#/allowed", QoS.AT_LEAST_ONCE))), 1);
 
         incomingSubscribeService.processSubscribe(ctx, subscribe, false);
 
-        //We need to make sure we got disconnected
+        // We need to make sure we got disconnected
         assertFalse(channel.isActive());
         verify(eventLog).clientWasDisconnected(any(Channel.class), anyString());
     }
@@ -362,7 +398,6 @@ public class IncomingSubscribeServiceTest {
         verify(clientSessionSubscriptionPersistence, never()).addSubscriptions(any(), any());
     }
 
-
     @Test
     public void test_subscribe_single_authorized() throws Exception {
 
@@ -371,7 +406,10 @@ public class IncomingSubscribeServiceTest {
         final SUBSCRIBE subscribe = new SUBSCRIBE(ImmutableList.copyOf(Lists.newArrayList(topic)), 10);
 
         final ModifiableDefaultPermissionsImpl permissions = new ModifiableDefaultPermissionsImpl();
-        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService()).topicFilter("#").type(TopicPermission.PermissionType.ALLOW).build());
+        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService())
+                .topicFilter("#")
+                .type(TopicPermission.PermissionType.ALLOW)
+                .build());
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setAuthPermissions(permissions);
 
@@ -380,7 +418,9 @@ public class IncomingSubscribeServiceTest {
         final SUBACK response = channel.readOutbound();
 
         assertEquals(1, response.getReasonCodes().size());
-        assertEquals((byte) QoS.AT_LEAST_ONCE.getQosNumber(), response.getReasonCodes().get(0).getCode());
+        assertEquals(
+                (byte) QoS.AT_LEAST_ONCE.getQosNumber(),
+                response.getReasonCodes().get(0).getCode());
 
         verify(clientSessionSubscriptionPersistence).addSubscription(eq("client"), same(topic));
     }
@@ -393,7 +433,10 @@ public class IncomingSubscribeServiceTest {
         final SUBSCRIBE subscribe = new SUBSCRIBE(ImmutableList.copyOf(Lists.newArrayList(topic)), 10);
 
         final ModifiableDefaultPermissionsImpl permissions = new ModifiableDefaultPermissionsImpl();
-        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService()).topicFilter("#").type(TopicPermission.PermissionType.DENY).build());
+        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService())
+                .topicFilter("#")
+                .type(TopicPermission.PermissionType.DENY)
+                .build());
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setAuthPermissions(permissions);
 
@@ -402,7 +445,8 @@ public class IncomingSubscribeServiceTest {
         final SUBACK response = channel.readOutbound();
 
         assertEquals(1, response.getReasonCodes().size());
-        assertEquals(Mqtt5SubAckReasonCode.NOT_AUTHORIZED, response.getReasonCodes().get(0));
+        assertEquals(
+                Mqtt5SubAckReasonCode.NOT_AUTHORIZED, response.getReasonCodes().get(0));
 
         verify(clientSessionSubscriptionPersistence, never()).addSubscription(eq("client"), same(topic));
     }
@@ -417,7 +461,10 @@ public class IncomingSubscribeServiceTest {
         final SUBSCRIBE subscribe = new SUBSCRIBE(ImmutableList.copyOf(Lists.newArrayList(topic1, topic2, topic3)), 10);
 
         final ModifiableDefaultPermissionsImpl permissions = new ModifiableDefaultPermissionsImpl();
-        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService()).topicFilter("#").type(TopicPermission.PermissionType.ALLOW).build());
+        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService())
+                .topicFilter("#")
+                .type(TopicPermission.PermissionType.ALLOW)
+                .build());
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setAuthPermissions(permissions);
 
@@ -425,9 +472,15 @@ public class IncomingSubscribeServiceTest {
 
         final SUBACK response = channel.readOutbound();
         assertEquals(3, response.getReasonCodes().size());
-        assertEquals((byte) QoS.AT_LEAST_ONCE.getQosNumber(), response.getReasonCodes().get(0).getCode());
-        assertEquals((byte) QoS.AT_MOST_ONCE.getQosNumber(), response.getReasonCodes().get(1).getCode());
-        assertEquals((byte) QoS.EXACTLY_ONCE.getQosNumber(), response.getReasonCodes().get(2).getCode());
+        assertEquals(
+                (byte) QoS.AT_LEAST_ONCE.getQosNumber(),
+                response.getReasonCodes().get(0).getCode());
+        assertEquals(
+                (byte) QoS.AT_MOST_ONCE.getQosNumber(),
+                response.getReasonCodes().get(1).getCode());
+        assertEquals(
+                (byte) QoS.EXACTLY_ONCE.getQosNumber(),
+                response.getReasonCodes().get(2).getCode());
 
         verify(clientSessionSubscriptionPersistence).addSubscriptions(eq("client"), any(ImmutableSet.class));
     }
@@ -443,7 +496,10 @@ public class IncomingSubscribeServiceTest {
         final SUBSCRIBE subscribe = new SUBSCRIBE(ImmutableList.copyOf(Lists.newArrayList(topic1, topic2, topic3)), 10);
 
         final ModifiableDefaultPermissionsImpl permissions = new ModifiableDefaultPermissionsImpl();
-        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService()).topicFilter("#").type(TopicPermission.PermissionType.DENY).build());
+        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService())
+                .topicFilter("#")
+                .type(TopicPermission.PermissionType.DENY)
+                .build());
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setAuthPermissions(permissions);
 
@@ -451,12 +507,17 @@ public class IncomingSubscribeServiceTest {
 
         final SUBACK response = channel.readOutbound();
         assertEquals(3, response.getReasonCodes().size());
-        assertEquals(Mqtt5SubAckReasonCode.NOT_AUTHORIZED, response.getReasonCodes().get(0));
-        assertEquals(Mqtt5SubAckReasonCode.NOT_AUTHORIZED, response.getReasonCodes().get(1));
-        assertEquals(Mqtt5SubAckReasonCode.NOT_AUTHORIZED, response.getReasonCodes().get(2));
-        assertEquals("Not authorized to subscribe to topic 'test1' with QoS '1'. " +
-                "Not authorized to subscribe to topic 'test2' with QoS '0'. " +
-                "Not authorized to subscribe to topic 'test3' with QoS '2'. ", response.getReasonString());
+        assertEquals(
+                Mqtt5SubAckReasonCode.NOT_AUTHORIZED, response.getReasonCodes().get(0));
+        assertEquals(
+                Mqtt5SubAckReasonCode.NOT_AUTHORIZED, response.getReasonCodes().get(1));
+        assertEquals(
+                Mqtt5SubAckReasonCode.NOT_AUTHORIZED, response.getReasonCodes().get(2));
+        assertEquals(
+                "Not authorized to subscribe to topic 'test1' with QoS '1'. "
+                        + "Not authorized to subscribe to topic 'test2' with QoS '0'. "
+                        + "Not authorized to subscribe to topic 'test3' with QoS '2'. ",
+                response.getReasonString());
 
         verify(clientSessionSubscriptionPersistence).addSubscriptions(eq("client"), captor.capture());
         assertEquals(0, captor.getValue().size());
@@ -471,11 +532,18 @@ public class IncomingSubscribeServiceTest {
         final Topic topic3 = new Topic("test3", QoS.EXACTLY_ONCE);
         final Topic topic4 = new Topic("test4", QoS.EXACTLY_ONCE);
 
-        final SUBSCRIBE subscribe = new SUBSCRIBE(ImmutableList.copyOf(Lists.newArrayList(topic1, topic2, topic3, topic4)), 10);
+        final SUBSCRIBE subscribe =
+                new SUBSCRIBE(ImmutableList.copyOf(Lists.newArrayList(topic1, topic2, topic3, topic4)), 10);
 
         final ModifiableDefaultPermissionsImpl permissions = new ModifiableDefaultPermissionsImpl();
-        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService()).topicFilter("test1").type(TopicPermission.PermissionType.ALLOW).build());
-        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService()).topicFilter("test4").type(TopicPermission.PermissionType.ALLOW).build());
+        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService())
+                .topicFilter("test1")
+                .type(TopicPermission.PermissionType.ALLOW)
+                .build());
+        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService())
+                .topicFilter("test4")
+                .type(TopicPermission.PermissionType.ALLOW)
+                .build());
         permissions.setDefaultBehaviour(DefaultAuthorizationBehaviour.DENY);
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setAuthPermissions(permissions);
@@ -484,12 +552,18 @@ public class IncomingSubscribeServiceTest {
 
         final SUBACK response = channel.readOutbound();
         assertEquals(4, response.getReasonCodes().size());
-        assertEquals(Mqtt5SubAckReasonCode.GRANTED_QOS_1, response.getReasonCodes().get(0));
-        assertEquals(Mqtt5SubAckReasonCode.NOT_AUTHORIZED, response.getReasonCodes().get(1));
-        assertEquals(Mqtt5SubAckReasonCode.NOT_AUTHORIZED, response.getReasonCodes().get(2));
-        assertEquals(Mqtt5SubAckReasonCode.GRANTED_QOS_2, response.getReasonCodes().get(3));
-        assertEquals("Not authorized to subscribe to topic 'test2' with QoS '0'. " +
-                "Not authorized to subscribe to topic 'test3' with QoS '2'. ", response.getReasonString());
+        assertEquals(
+                Mqtt5SubAckReasonCode.GRANTED_QOS_1, response.getReasonCodes().get(0));
+        assertEquals(
+                Mqtt5SubAckReasonCode.NOT_AUTHORIZED, response.getReasonCodes().get(1));
+        assertEquals(
+                Mqtt5SubAckReasonCode.NOT_AUTHORIZED, response.getReasonCodes().get(2));
+        assertEquals(
+                Mqtt5SubAckReasonCode.GRANTED_QOS_2, response.getReasonCodes().get(3));
+        assertEquals(
+                "Not authorized to subscribe to topic 'test2' with QoS '0'. "
+                        + "Not authorized to subscribe to topic 'test3' with QoS '2'. ",
+                response.getReasonString());
 
         verify(clientSessionSubscriptionPersistence).addSubscriptions(eq("client"), captor.capture());
         assertEquals(2, captor.getValue().size());
@@ -525,19 +599,24 @@ public class IncomingSubscribeServiceTest {
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setAuthPermissions(null);
 
-        incomingSubscribeService.processSubscribe(ctx, subscribe,
-                new Mqtt5SubAckReasonCode[]{Mqtt5SubAckReasonCode.GRANTED_QOS_1, null, null},
-                new String[3], true);
+        incomingSubscribeService.processSubscribe(
+                ctx,
+                subscribe,
+                new Mqtt5SubAckReasonCode[] {Mqtt5SubAckReasonCode.GRANTED_QOS_1, null, null},
+                new String[3],
+                true);
 
         final SUBACK response = channel.readOutbound();
 
         assertEquals(3, response.getReasonCodes().size());
-        assertEquals(Mqtt5SubAckReasonCode.GRANTED_QOS_1, response.getReasonCodes().get(0));
-        assertEquals(Mqtt5SubAckReasonCode.NOT_AUTHORIZED, response.getReasonCodes().get(1));
-        assertEquals(Mqtt5SubAckReasonCode.NOT_AUTHORIZED, response.getReasonCodes().get(2));
+        assertEquals(
+                Mqtt5SubAckReasonCode.GRANTED_QOS_1, response.getReasonCodes().get(0));
+        assertEquals(
+                Mqtt5SubAckReasonCode.NOT_AUTHORIZED, response.getReasonCodes().get(1));
+        assertEquals(
+                Mqtt5SubAckReasonCode.NOT_AUTHORIZED, response.getReasonCodes().get(2));
 
         verify(clientSessionSubscriptionPersistence).addSubscriptions(eq("client"), authorizedTopicsCaptor.capture());
         assertEquals(1, authorizedTopicsCaptor.getValue().size());
     }
-
 }

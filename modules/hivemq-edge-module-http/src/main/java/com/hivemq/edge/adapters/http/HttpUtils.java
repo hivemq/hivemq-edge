@@ -15,9 +15,8 @@
  */
 package com.hivemq.edge.adapters.http;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.net.URL;
+import org.jetbrains.annotations.NotNull;
 
 public class HttpUtils {
     public static boolean validHttpOrHttpsUrl(final @NotNull String url) {

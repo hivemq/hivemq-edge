@@ -15,9 +15,9 @@
  */
 package com.hivemq.extensions.packets.general;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.packets.general.MqttVersion;
 import com.hivemq.mqtt.message.ProtocolVersion;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Georg Held

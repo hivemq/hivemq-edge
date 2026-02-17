@@ -34,7 +34,7 @@ public class TopicFilterUpdateResult {
     }
 
     public static @NotNull TopicFilterUpdateResult failed(final @NotNull TopicFilterUpdateStatus putStatus) {
-        return new TopicFilterUpdateResult(putStatus,  null);
+        return new TopicFilterUpdateResult(putStatus, null);
     }
 
     public static @NotNull TopicFilterUpdateResult failed(
@@ -46,11 +46,9 @@ public class TopicFilterUpdateResult {
         return dataPolicyUpdateStatus;
     }
 
-
     public @Nullable String getErrorMessage() {
         return errorMessage;
     }
-
 
     public enum TopicFilterUpdateStatus {
         SUCCESS(),

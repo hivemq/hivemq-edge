@@ -13,22 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.loader;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.collect.ImmutableMap;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.EdgeServices;
 import com.hivemq.extension.sdk.api.services.Services;
 import com.hivemq.extension.sdk.api.services.builder.Builders;
 import com.hivemq.extensions.exception.ExtensionLoadingException;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.lang.reflect.Field;
 import java.util.function.Supplier;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class ExtensionStaticInitializerImpl implements ExtensionStaticInitializer {
@@ -61,8 +59,8 @@ public class ExtensionStaticInitializerImpl implements ExtensionStaticInitialize
         initializeBuilders(pluginId, classLoader);
     }
 
-    private void initializeServices(
-            final @NotNull String pluginId, final @NotNull ClassLoader classLoader) throws ExtensionLoadingException {
+    private void initializeServices(final @NotNull String pluginId, final @NotNull ClassLoader classLoader)
+            throws ExtensionLoadingException {
         try {
             final Class<?> servicesClass = classLoader.loadClass(SERVICES_CLASS);
             final Field servicesField = servicesClass.getDeclaredField("services");
@@ -75,8 +73,8 @@ public class ExtensionStaticInitializerImpl implements ExtensionStaticInitialize
         }
     }
 
-    private void initializeEdgeServices(
-            final @NotNull String pluginId, final @NotNull ClassLoader classLoader) throws ExtensionLoadingException {
+    private void initializeEdgeServices(final @NotNull String pluginId, final @NotNull ClassLoader classLoader)
+            throws ExtensionLoadingException {
         try {
             final Class<?> servicesClass = classLoader.loadClass(EDGE_SERVICES_CLASS);
             final Field servicesField = servicesClass.getDeclaredField("edgeServices");
@@ -89,8 +87,8 @@ public class ExtensionStaticInitializerImpl implements ExtensionStaticInitialize
         }
     }
 
-    private void initializeBuilders(
-            final @NotNull String pluginId, final @NotNull ClassLoader classLoader) throws ExtensionLoadingException {
+    private void initializeBuilders(final @NotNull String pluginId, final @NotNull ClassLoader classLoader)
+            throws ExtensionLoadingException {
         try {
             final Class<?> buildersClass = classLoader.loadClass(BUILDERS_CLASS);
             final Field buildersField = buildersClass.getDeclaredField("builders");

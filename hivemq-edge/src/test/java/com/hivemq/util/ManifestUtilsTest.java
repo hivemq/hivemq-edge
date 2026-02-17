@@ -15,12 +15,11 @@
  */
 package com.hivemq.util;
 
-import com.hivemq.HiveMQEdgeMain;
-import org.junit.jupiter.api.Test;
-
-import java.net.URL;
-
 import static org.junit.jupiter.api.Assertions.assertNull;
+
+import com.hivemq.HiveMQEdgeMain;
+import java.net.URL;
+import org.junit.jupiter.api.Test;
 
 public class ManifestUtilsTest {
 

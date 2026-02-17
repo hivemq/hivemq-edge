@@ -15,8 +15,8 @@
  */
 package com.hivemq.mqtt.handler.publish;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import static com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl.SharedSubscription;
+
 import com.hivemq.extension.sdk.api.auth.parameter.TopicPermission;
 import com.hivemq.extension.sdk.api.packets.auth.DefaultAuthorizationBehaviour;
 import com.hivemq.extension.sdk.api.packets.auth.ModifiableDefaultPermissions;
@@ -28,27 +28,23 @@ import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.topic.InvalidTopicException;
 import com.hivemq.mqtt.topic.PermissionTopicMatcherUtils;
 import com.hivemq.util.Topics;
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.List;
-
-import static com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl.SharedSubscription;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class DefaultPermissionsEvaluator {
 
-    private DefaultPermissionsEvaluator() {
-    }
+    private DefaultPermissionsEvaluator() {}
 
     public static boolean checkWillPublish(
-            final @Nullable ModifiableDefaultPermissions permissions,
-            final @NotNull MqttWillPublish willPublish) {
+            final @Nullable ModifiableDefaultPermissions permissions, final @NotNull MqttWillPublish willPublish) {
 
         return checkPublish(permissions, willPublish.getTopic(), willPublish.getQos(), willPublish.isRetain());
     }
 
     public static boolean checkPublish(
-            final @Nullable ModifiableDefaultPermissions permissions,
-            final @NotNull PUBLISH publish) {
+            final @Nullable ModifiableDefaultPermissions permissions, final @NotNull PUBLISH publish) {
 
         return checkPublish(permissions, publish.getTopic(), publish.getQoS(), publish.isRetain());
     }
@@ -60,7 +56,7 @@ public final class DefaultPermissionsEvaluator {
             final boolean retain) {
 
         if (permissions == null) {
-            //no permissions set -> default to DENY
+            // no permissions set -> default to DENY
             return false;
         }
 
@@ -87,11 +83,10 @@ public final class DefaultPermissionsEvaluator {
     }
 
     public static boolean checkSubscription(
-            final @Nullable ModifiableDefaultPermissions permissions,
-            final @NotNull Topic subscription) {
+            final @Nullable ModifiableDefaultPermissions permissions, final @NotNull Topic subscription) {
 
         if (permissions == null) {
-            //no permissions set -> default to ALLOW
+            // no permissions set -> default to ALLOW
             return true;
         }
 
@@ -127,8 +122,14 @@ public final class DefaultPermissionsEvaluator {
         }
         for (final TopicPermission topicPermission : permissions.asList()) {
 
-            final boolean isImplied = implied(topicPermission, stripedTopic, splitTopic, subscription.getQoS(),
-                    TopicPermission.MqttActivity.SUBSCRIBE, isShared, sharedGroup);
+            final boolean isImplied = implied(
+                    topicPermission,
+                    stripedTopic,
+                    splitTopic,
+                    subscription.getQoS(),
+                    TopicPermission.MqttActivity.SUBSCRIBE,
+                    isShared,
+                    sharedGroup);
 
             if (isImplied) {
                 return topicPermission.getType() == TopicPermission.PermissionType.ALLOW;
@@ -147,7 +148,7 @@ public final class DefaultPermissionsEvaluator {
             final boolean retain) {
 
         if (activity == TopicPermission.MqttActivity.PUBLISH) {
-            //retained
+            // retained
             if (retain && (topicPermission.getPublishRetain() == TopicPermission.Retain.NOT_RETAINED)) {
                 return false;
             }
@@ -176,9 +177,9 @@ public final class DefaultPermissionsEvaluator {
             return false;
         }
 
-        if (sharedGroup != null &&
-                (!"#".equals(topicPermission.getSharedGroup()) &&
-                        !sharedGroup.equals(topicPermission.getSharedGroup()))) {
+        if (sharedGroup != null
+                && (!"#".equals(topicPermission.getSharedGroup())
+                        && !sharedGroup.equals(topicPermission.getSharedGroup()))) {
             return false;
         }
 
@@ -192,18 +193,18 @@ public final class DefaultPermissionsEvaluator {
             final @NotNull QoS messageQoS,
             final @NotNull TopicPermission.MqttActivity activity) {
 
-        //activity
-        if (topicPermission.getActivity() != TopicPermission.MqttActivity.ALL &&
-                topicPermission.getActivity() != activity) {
+        // activity
+        if (topicPermission.getActivity() != TopicPermission.MqttActivity.ALL
+                && topicPermission.getActivity() != activity) {
             return false;
         }
 
-        //qos
+        // qos
         if (!qosImplied(topicPermission, messageQoS)) {
             return false;
         }
 
-        //topic
+        // topic
         return topicImplied(topicPermission, stripedTopic, splitTopic);
     }
 
@@ -217,17 +218,17 @@ public final class DefaultPermissionsEvaluator {
 
         switch (qos) {
             case AT_MOST_ONCE:
-                return (permissionQos == TopicPermission.Qos.ZERO ||
-                        permissionQos == TopicPermission.Qos.ZERO_ONE ||
-                        permissionQos == TopicPermission.Qos.ZERO_TWO);
+                return (permissionQos == TopicPermission.Qos.ZERO
+                        || permissionQos == TopicPermission.Qos.ZERO_ONE
+                        || permissionQos == TopicPermission.Qos.ZERO_TWO);
             case AT_LEAST_ONCE:
-                return (permissionQos == TopicPermission.Qos.ONE ||
-                        permissionQos == TopicPermission.Qos.ZERO_ONE ||
-                        permissionQos == TopicPermission.Qos.ONE_TWO);
+                return (permissionQos == TopicPermission.Qos.ONE
+                        || permissionQos == TopicPermission.Qos.ZERO_ONE
+                        || permissionQos == TopicPermission.Qos.ONE_TWO);
             case EXACTLY_ONCE:
-                return (permissionQos == TopicPermission.Qos.TWO ||
-                        permissionQos == TopicPermission.Qos.ZERO_TWO ||
-                        permissionQos == TopicPermission.Qos.ONE_TWO);
+                return (permissionQos == TopicPermission.Qos.TWO
+                        || permissionQos == TopicPermission.Qos.ZERO_TWO
+                        || permissionQos == TopicPermission.Qos.ONE_TWO);
         }
 
         return false;
@@ -241,14 +242,17 @@ public final class DefaultPermissionsEvaluator {
         try {
             if (topicPermission instanceof InternalTopicPermission) {
                 final InternalTopicPermission internalTopicPermission = (InternalTopicPermission) topicPermission;
-                return PermissionTopicMatcherUtils.matches(StringUtils.stripEnd(topicPermission.getTopicFilter(), "/"),
+                return PermissionTopicMatcherUtils.matches(
+                        StringUtils.stripEnd(topicPermission.getTopicFilter(), "/"),
                         ((InternalTopicPermission) topicPermission).getSplitTopic(),
                         !internalTopicPermission.containsWildcardCharacter(),
-                        internalTopicPermission.endsWithWildcard(), internalTopicPermission.isRootWildcard(),
-                        topic, splitTopic);
+                        internalTopicPermission.endsWithWildcard(),
+                        internalTopicPermission.isRootWildcard(),
+                        topic,
+                        splitTopic);
             }
 
-            //fallback, should never be needed
+            // fallback, should never be needed
             return false;
         } catch (final InvalidTopicException e) {
             return false;

@@ -17,18 +17,17 @@ package com.hivemq.extensions.packets.publish;
 
 import com.google.common.primitives.ImmutableIntArray;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.packets.publish.PayloadFormatIndicator;
 import com.hivemq.extension.sdk.api.packets.publish.PublishPacket;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.publish.PUBLISH;
-
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -98,13 +97,15 @@ public class PublishPacketImpl implements PublishPacket {
                 (publish.getPayload() == null) ? null : ByteBuffer.wrap(publish.getPayload()),
                 publish.isRetain(),
                 publish.getMessageExpiryInterval(),
-                (publish.getPayloadFormatIndicator() == null) ? null :
-                        publish.getPayloadFormatIndicator().toPayloadFormatIndicator(),
+                (publish.getPayloadFormatIndicator() == null)
+                        ? null
+                        : publish.getPayloadFormatIndicator().toPayloadFormatIndicator(),
                 publish.getContentType(),
                 publish.getResponseTopic(),
                 publish.getCorrelationData() == null ? null : ByteBuffer.wrap(publish.getCorrelationData()),
-                (publish.getSubscriptionIdentifiers() == null) ? ImmutableIntArray.of() :
-                        publish.getSubscriptionIdentifiers(),
+                (publish.getSubscriptionIdentifiers() == null)
+                        ? ImmutableIntArray.of()
+                        : publish.getSubscriptionIdentifiers(),
                 UserPropertiesImpl.of(publish.getUserProperties().asList()),
                 publish.getTimestamp());
     }
@@ -196,22 +197,22 @@ public class PublishPacketImpl implements PublishPacket {
             return false;
         }
         final PublishPacketImpl that = (PublishPacketImpl) o;
-        return that.canEqual(this) &&
-                topic.equals(that.topic) &&
-                (qos == that.qos) &&
-                (onwardQos == that.onwardQos) &&
-                (packetId == that.packetId) &&
-                (dupFlag == that.dupFlag) &&
-                Objects.equals(payload, that.payload) &&
-                (retain == that.retain) &&
-                (messageExpiryInterval == that.messageExpiryInterval) &&
-                (payloadFormatIndicator == that.payloadFormatIndicator) &&
-                Objects.equals(contentType, that.contentType) &&
-                Objects.equals(responseTopic, that.responseTopic) &&
-                Objects.equals(correlationData, that.correlationData) &&
-                subscriptionIdentifiers.equals(that.subscriptionIdentifiers) &&
-                userProperties.equals(that.userProperties) &&
-                timestamp == that.timestamp;
+        return that.canEqual(this)
+                && topic.equals(that.topic)
+                && (qos == that.qos)
+                && (onwardQos == that.onwardQos)
+                && (packetId == that.packetId)
+                && (dupFlag == that.dupFlag)
+                && Objects.equals(payload, that.payload)
+                && (retain == that.retain)
+                && (messageExpiryInterval == that.messageExpiryInterval)
+                && (payloadFormatIndicator == that.payloadFormatIndicator)
+                && Objects.equals(contentType, that.contentType)
+                && Objects.equals(responseTopic, that.responseTopic)
+                && Objects.equals(correlationData, that.correlationData)
+                && subscriptionIdentifiers.equals(that.subscriptionIdentifiers)
+                && userProperties.equals(that.userProperties)
+                && timestamp == that.timestamp;
     }
 
     protected boolean canEqual(final @Nullable Object o) {
@@ -220,8 +221,21 @@ public class PublishPacketImpl implements PublishPacket {
 
     @Override
     public int hashCode() {
-        return Objects.hash(topic, qos, onwardQos, packetId, dupFlag, payload, retain, messageExpiryInterval,
-                payloadFormatIndicator, contentType, responseTopic, correlationData, subscriptionIdentifiers,
-                userProperties, timestamp);
+        return Objects.hash(
+                topic,
+                qos,
+                onwardQos,
+                packetId,
+                dupFlag,
+                payload,
+                retain,
+                messageExpiryInterval,
+                payloadFormatIndicator,
+                contentType,
+                responseTopic,
+                correlationData,
+                subscriptionIdentifiers,
+                userProperties,
+                timestamp);
     }
 }

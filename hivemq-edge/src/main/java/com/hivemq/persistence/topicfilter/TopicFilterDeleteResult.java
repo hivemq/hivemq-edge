@@ -46,11 +46,9 @@ public class TopicFilterDeleteResult {
         return dataPolicyUpdateStatus;
     }
 
-
     public @Nullable String getErrorMessage() {
         return errorMessage;
     }
-
 
     public enum TopicFilterDeleteStatus {
         SUCCESS(),

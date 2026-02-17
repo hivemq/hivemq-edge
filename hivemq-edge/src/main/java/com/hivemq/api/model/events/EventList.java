@@ -19,9 +19,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.api.model.ItemsResponse;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -29,8 +28,7 @@ import java.util.List;
 public class EventList extends ItemsResponse<Event> {
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public EventList(
-            @JsonProperty("items") final @NotNull List<@NotNull Event> items) {
+    public EventList(@JsonProperty("items") final @NotNull List<@NotNull Event> items) {
         super(items);
     }
 }

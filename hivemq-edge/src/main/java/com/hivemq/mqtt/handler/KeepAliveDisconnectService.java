@@ -18,13 +18,10 @@ package com.hivemq.mqtt.handler;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.InternalConfigurations;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import com.hivemq.util.ReasonStrings;
 import io.netty.channel.Channel;
-import org.jctools.queues.MpscLinkedQueue;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.concurrent.Executors;
@@ -32,6 +29,8 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jctools.queues.MpscLinkedQueue;
+import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class KeepAliveDisconnectService {
@@ -43,8 +42,8 @@ public class KeepAliveDisconnectService {
     private final AtomicInteger submittedTasks = new AtomicInteger();
 
     @Inject
-    public KeepAliveDisconnectService(final @NotNull MqttServerDisconnector mqttServerDisconnector,
-                                      final @NotNull ShutdownHooks shutdownHooks) {
+    public KeepAliveDisconnectService(
+            final @NotNull MqttServerDisconnector mqttServerDisconnector, final @NotNull ShutdownHooks shutdownHooks) {
         this.mqttServerDisconnector = mqttServerDisconnector;
         this.disconnectBatch = InternalConfigurations.DISCONNECT_KEEP_ALIVE_BATCH;
         shutdownHooks.add(new HiveMQShutdownHook() {
@@ -83,7 +82,8 @@ public class KeepAliveDisconnectService {
                     }
                     i++;
                     channel.eventLoop().execute(() -> {
-                        mqttServerDisconnector.disconnect(channel,
+                        mqttServerDisconnector.disconnect(
+                                channel,
                                 "Client with ID {} and IP {} disconnected. The client was idle for too long without sending an MQTT control packet",
                                 "Client was idle for too long",
                                 Mqtt5DisconnectReasonCode.KEEP_ALIVE_TIMEOUT,

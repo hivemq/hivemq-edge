@@ -16,9 +16,9 @@
 package com.hivemq.extensions.executor.task;
 
 import com.google.common.util.concurrent.SettableFuture;
+import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 
 /**
  * @author Christoph Schäbel
@@ -32,9 +32,7 @@ public class DefaultPluginTaskOutput implements PluginTaskOutput {
         return INSTANCE;
     }
 
-    private DefaultPluginTaskOutput() {
-    }
-
+    private DefaultPluginTaskOutput() {}
 
     @Override
     public boolean isAsync() {
@@ -43,7 +41,7 @@ public class DefaultPluginTaskOutput implements PluginTaskOutput {
 
     @Override
     public void markAsAsync() {
-        //noop
+        // noop
     }
 
     @Override
@@ -53,12 +51,12 @@ public class DefaultPluginTaskOutput implements PluginTaskOutput {
 
     @Override
     public void markAsTimedOut() {
-        //noop
+        // noop
     }
 
     @Override
     public void resetAsyncStatus() {
-        //noop
+        // noop
     }
 
     @Nullable

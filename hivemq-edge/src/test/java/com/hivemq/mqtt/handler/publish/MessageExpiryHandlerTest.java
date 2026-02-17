@@ -15,9 +15,11 @@
  */
 package com.hivemq.mqtt.handler.publish;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.InternalConfigurations;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.event.PublishDroppedEvent;
 import com.hivemq.mqtt.event.PubrelDroppedEvent;
 import com.hivemq.mqtt.message.ProtocolVersion;
@@ -27,6 +29,9 @@ import com.hivemq.mqtt.message.pubrel.PUBREL;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,12 +39,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.LogbackCapturingAppender;
 import util.TestMessageUtil;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Florian Limpöck
@@ -53,6 +52,7 @@ public class MessageExpiryHandlerTest {
     private EmbeddedChannel channel;
 
     LogbackCapturingAppender logCapture;
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -66,6 +66,7 @@ public class MessageExpiryHandlerTest {
         when(ctx.channel()).thenReturn(channel);
         logCapture = LogbackCapturingAppender.Factory.weaveInto(MessageExpiryHandler.log);
     }
+
     @AfterEach
     public void tearDown() throws Exception {
         LogbackCapturingAppender.Factory.cleanUp();
@@ -213,7 +214,6 @@ public class MessageExpiryHandlerTest {
         channel.writeOutbound(pubrel);
         assertTrue(droppedEventFiredLatch.await(5, TimeUnit.SECONDS));
         assertEquals(0L, pubrel.getMessageExpiryInterval().longValue());
-
     }
 
     @Test

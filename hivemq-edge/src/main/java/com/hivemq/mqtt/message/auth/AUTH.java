@@ -16,12 +16,12 @@
 package com.hivemq.mqtt.message.auth;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttMessageWithUserProperties;
 import com.hivemq.mqtt.message.reason.Mqtt5AuthReasonCode;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * AUTH Packet is used for the authentication.
@@ -45,11 +45,12 @@ public class AUTH extends MqttMessageWithUserProperties.MqttMessageWithReasonCod
     @Nullable
     private final byte[] authData;
 
-    public AUTH(final @NotNull String authMethod,
-                final @Nullable byte[] authData,
-                final @NotNull Mqtt5AuthReasonCode reasonCode,
-                final @NotNull Mqtt5UserProperties userProperties,
-                final @Nullable String reasonString) {
+    public AUTH(
+            final @NotNull String authMethod,
+            final @Nullable byte[] authData,
+            final @NotNull Mqtt5AuthReasonCode reasonCode,
+            final @NotNull Mqtt5UserProperties userProperties,
+            final @Nullable String reasonString) {
 
         super(reasonCode, reasonString, userProperties);
 

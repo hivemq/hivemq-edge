@@ -16,10 +16,9 @@
 package com.hivemq.extensions.iteration;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
@@ -34,7 +33,8 @@ public interface AsyncIterator<V> {
     /**
      * @return a future that completes when the iteration is finished
      */
-    @NotNull CompletableFuture<Void> getFinishedFuture();
+    @NotNull
+    CompletableFuture<Void> getFinishedFuture();
 
     /**
      * Callback for every item that is iterated

@@ -15,27 +15,26 @@
  */
 package com.hivemq.extensions.executor;
 
+import static org.mockito.Mockito.*;
+
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.InternalConfigurations;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
 import com.hivemq.extensions.executor.task.*;
 import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
+import jakarta.inject.Provider;
+import java.util.Iterator;
+import java.util.List;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import jakarta.inject.Provider;
-import java.util.Iterator;
-import java.util.List;
-
-import static org.mockito.Mockito.*;
 
 /**
  * @author Christoph Schäbel
@@ -53,15 +52,15 @@ public class PluginTaskExecutorServiceImplTest {
 
     @Mock
     IsolatedExtensionClassloader classloader;
+
     @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
 
         InternalConfigurations.EXTENSION_TASK_QUEUE_EXECUTOR_THREADS_COUNT.set(2);
 
-        executorService =
-                new PluginTaskExecutorServiceImpl(new ExecutorProvider(Lists.newArrayList(executor1, executor2)),
-                        mock(ShutdownHooks.class));
+        executorService = new PluginTaskExecutorServiceImpl(
+                new ExecutorProvider(Lists.newArrayList(executor1, executor2)), mock(ShutdownHooks.class));
     }
 
     @Test
@@ -71,8 +70,7 @@ public class PluginTaskExecutorServiceImplTest {
                 new TestPluginInOutContext(getIdForBucket(0)),
                 TestPluginTaskInput::new,
                 TestPluginTaskOutput::new,
-                new TestPluginInOutTask(classloader)
-        );
+                new TestPluginInOutTask(classloader));
 
         verify(executor1, times(1)).handlePluginTaskExecution(any(PluginTaskExecution.class));
 
@@ -80,11 +78,9 @@ public class PluginTaskExecutorServiceImplTest {
                 new TestPluginInOutContext(getIdForBucket(1)),
                 TestPluginTaskInput::new,
                 TestPluginTaskOutput::new,
-                new TestPluginInOutTask(classloader)
-        );
+                new TestPluginInOutTask(classloader));
 
         verify(executor2, times(1)).handlePluginTaskExecution(any(PluginTaskExecution.class));
-
     }
 
     @Test
@@ -93,19 +89,16 @@ public class PluginTaskExecutorServiceImplTest {
         executorService.handlePluginInTaskExecution(
                 new TestPluginInContext(getIdForBucket(0)),
                 TestPluginTaskInput::new,
-                new TestPluginInTask(classloader)
-        );
+                new TestPluginInTask(classloader));
 
         verify(executor1, times(1)).handlePluginTaskExecution(any(PluginTaskExecution.class));
 
         executorService.handlePluginInTaskExecution(
                 new TestPluginInContext(getIdForBucket(1)),
                 TestPluginTaskInput::new,
-                new TestPluginInTask(classloader)
-        );
+                new TestPluginInTask(classloader));
 
         verify(executor2, times(1)).handlePluginTaskExecution(any(PluginTaskExecution.class));
-
     }
 
     @Test
@@ -114,19 +107,16 @@ public class PluginTaskExecutorServiceImplTest {
         executorService.handlePluginOutTaskExecution(
                 new TestPluginOutContext(getIdForBucket(0)),
                 TestPluginTaskOutput::new,
-                new TestPluginOutTask(classloader)
-        );
+                new TestPluginOutTask(classloader));
 
         verify(executor1, times(1)).handlePluginTaskExecution(any(PluginTaskExecution.class));
 
         executorService.handlePluginOutTaskExecution(
                 new TestPluginOutContext(getIdForBucket(1)),
                 TestPluginTaskOutput::new,
-                new TestPluginOutTask(classloader)
-        );
+                new TestPluginOutTask(classloader));
 
         verify(executor2, times(1)).handlePluginTaskExecution(any(PluginTaskExecution.class));
-
     }
 
     private String getIdForBucket(final int index) {
@@ -160,9 +150,7 @@ public class PluginTaskExecutorServiceImplTest {
         }
     }
 
-    private static class TestPluginTaskInput implements PluginTaskInput {
-
-    }
+    private static class TestPluginTaskInput implements PluginTaskInput {}
 
     private static class TestPluginInOutContext extends PluginInOutTaskContext<TestPluginTaskOutput> {
 
@@ -171,9 +159,7 @@ public class PluginTaskExecutorServiceImplTest {
         }
 
         @Override
-        public void pluginPost(final @NotNull TestPluginTaskOutput pluginOutput) {
-
-        }
+        public void pluginPost(final @NotNull TestPluginTaskOutput pluginOutput) {}
     }
 
     private static class TestPluginOutContext extends PluginOutTaskContext<TestPluginTaskOutput> {
@@ -183,9 +169,7 @@ public class PluginTaskExecutorServiceImplTest {
         }
 
         @Override
-        public void pluginPost(final @NotNull TestPluginTaskOutput pluginOutput) {
-
-        }
+        public void pluginPost(final @NotNull TestPluginTaskOutput pluginOutput) {}
     }
 
     private static class TestPluginInContext extends PluginInTaskContext {
@@ -193,7 +177,6 @@ public class PluginTaskExecutorServiceImplTest {
         TestPluginInContext(final @NotNull String identifier) {
             super(identifier);
         }
-
     }
 
     private static class TestPluginTaskOutput implements PluginTaskOutput {
@@ -214,14 +197,10 @@ public class PluginTaskExecutorServiceImplTest {
         }
 
         @Override
-        public void markAsTimedOut() {
-
-        }
+        public void markAsTimedOut() {}
 
         @Override
-        public void resetAsyncStatus() {
-
-        }
+        public void resetAsyncStatus() {}
 
         @Nullable
         @Override
@@ -233,7 +212,6 @@ public class PluginTaskExecutorServiceImplTest {
         public @NotNull TimeoutFallback getTimeoutFallback() {
             return TimeoutFallback.FAILURE;
         }
-
     }
 
     private static class TestPluginInOutTask implements PluginInOutTask<TestPluginTaskInput, TestPluginTaskOutput> {
@@ -287,14 +265,11 @@ public class PluginTaskExecutorServiceImplTest {
         }
 
         @Override
-        public void accept(final TestPluginTaskInput testPluginTaskInput) {
-
-        }
+        public void accept(final TestPluginTaskInput testPluginTaskInput) {}
 
         @Override
         public @NotNull IsolatedExtensionClassloader getPluginClassLoader() {
             return classloader;
         }
     }
-
 }

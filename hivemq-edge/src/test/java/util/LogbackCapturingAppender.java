@@ -20,7 +20,6 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.AppenderBase;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -47,15 +46,13 @@ public final class LogbackCapturingAppender extends AppenderBase<ILoggingEvent> 
 
         private static final List<LogbackCapturingAppender> ALL = new ArrayList<LogbackCapturingAppender>();
 
-        private Factory() {
-        }
+        private Factory() {}
 
         public static LogbackCapturingAppender weaveInto(final org.slf4j.Logger sl4jLogger) {
             final LogbackCapturingAppender appender = new LogbackCapturingAppender(sl4jLogger);
             ALL.add(appender);
             return appender;
         }
-
 
         public static void cleanUp() {
             for (final LogbackCapturingAppender appender : ALL) {
@@ -111,6 +108,5 @@ public final class LogbackCapturingAppender extends AppenderBase<ILoggingEvent> 
 
     private void cleanUp() {
         log.detachAppender(this);
-
     }
 }

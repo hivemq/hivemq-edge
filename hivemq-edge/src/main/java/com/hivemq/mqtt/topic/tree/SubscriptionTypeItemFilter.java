@@ -15,11 +15,10 @@
  */
 package com.hivemq.mqtt.topic.tree;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.subscription.SubscriptionType;
 import com.hivemq.mqtt.topic.SubscriberWithQoS;
-
 import java.util.function.Predicate;
+import org.jetbrains.annotations.NotNull;
 
 public class SubscriptionTypeItemFilter implements Predicate<SubscriberWithQoS> {
 
@@ -39,7 +38,7 @@ public class SubscriptionTypeItemFilter implements Predicate<SubscriberWithQoS> 
             case SHARED:
                 return subscriber.isSharedSubscription();
         }
-        //to support potential new types
+        // to support potential new types
         return false;
     }
 }

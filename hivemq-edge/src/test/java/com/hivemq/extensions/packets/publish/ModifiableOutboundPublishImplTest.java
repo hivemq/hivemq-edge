@@ -13,29 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.packets.publish;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.ImmutableIntArray;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.packets.publish.PayloadFormatIndicator;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import util.TestConfigurationBootstrap;
-
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import util.TestConfigurationBootstrap;
 
 /**
  * @author Lukas Brandl
@@ -44,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ModifiableOutboundPublishImplTest {
 
     private @NotNull ConfigurationService configurationService;
+
     @BeforeEach
     public void setUp() throws Exception {
         configurationService = new TestConfigurationBootstrap().getConfigurationService();
@@ -128,8 +125,7 @@ public class ModifiableOutboundPublishImplTest {
         final ModifiableOutboundPublishImpl modifiablePacket =
                 new ModifiableOutboundPublishImpl(packet, configurationService);
 
-        assertThatThrownBy(() -> modifiablePacket.setTopic(null))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> modifiablePacket.setTopic(null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -153,8 +149,7 @@ public class ModifiableOutboundPublishImplTest {
         final ModifiableOutboundPublishImpl modifiablePacket =
                 new ModifiableOutboundPublishImpl(packet, configurationService);
 
-        assertThatThrownBy(() -> modifiablePacket.setTopic(""))
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> modifiablePacket.setTopic("")).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -179,8 +174,7 @@ public class ModifiableOutboundPublishImplTest {
                 new ModifiableOutboundPublishImpl(packet, configurationService);
 
         configurationService.restrictionsConfiguration().setMaxTopicLength(10);
-        assertThatThrownBy(() -> modifiablePacket.setTopic("topic123456"))
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> modifiablePacket.setTopic("topic123456")).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -342,8 +336,7 @@ public class ModifiableOutboundPublishImplTest {
         final ModifiableOutboundPublishImpl modifiablePacket =
                 new ModifiableOutboundPublishImpl(packet, configurationService);
 
-        assertThatThrownBy(() -> modifiablePacket.setPayload(null))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> modifiablePacket.setPayload(null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -769,7 +762,6 @@ public class ModifiableOutboundPublishImplTest {
 
         assertTrue(modifiablePacket.isModified());
         assertEquals(Optional.of("responseTopic"), modifiablePacket.getResponseTopic());
-
     }
 
     @Test
@@ -1131,7 +1123,8 @@ public class ModifiableOutboundPublishImplTest {
         modifiablePacket.getUserProperties().addUserProperty("testName", "testValue");
 
         assertTrue(modifiablePacket.isModified());
-        assertEquals(Optional.of("testValue"), modifiablePacket.getUserProperties().getFirst("testName"));
+        assertEquals(
+                Optional.of("testValue"), modifiablePacket.getUserProperties().getFirst("testName"));
     }
 
     @Test

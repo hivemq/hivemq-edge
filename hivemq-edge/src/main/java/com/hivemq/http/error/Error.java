@@ -15,17 +15,16 @@
  */
 package com.hivemq.http.error;
 
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.joining;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
-
-import static java.util.Arrays.stream;
-import static java.util.stream.Collectors.joining;
 
 public class Error {
     public static final @NotNull String REQUIRED_FIELD_MISSING_TITLE = "Required field missing";
@@ -48,8 +47,7 @@ public class Error {
         this.detail = detail;
     }
 
-    public Error(
-            final @JsonProperty("detail") @NotNull String detail) {
+    public Error(final @JsonProperty("detail") @NotNull String detail) {
         this.detail = detail;
         this.parameter = null;
     }
@@ -59,7 +57,8 @@ public class Error {
     }
 
     public static @NotNull Error atLeastOneMissingField(final @NotNull String... fields) {
-        final String fieldsConcat = stream(fields).map(field -> "'" + field + "'").collect(joining(", "));
+        final String fieldsConcat =
+                stream(fields).map(field -> "'" + field + "'").collect(joining(", "));
         return new Error(AT_LEAST_ONE_FIELD_MISSING_TITLE, fieldsConcat);
     }
 
@@ -71,7 +70,8 @@ public class Error {
             final @NotNull List<String> unknownVariables, final @NotNull String field) {
 
         return new Error(
-                String.format("Field '%s' contains unknown variables: [%s].", field, String.join(", ", unknownVariables)),
+                String.format(
+                        "Field '%s' contains unknown variables: [%s].", field, String.join(", ", unknownVariables)),
                 field);
     }
 
@@ -85,10 +85,7 @@ public class Error {
     public static @NotNull Error unsupportedType(
             final @NotNull String expectedType, final @NotNull String actualType, final @NotNull String field) {
         return new Error(
-                String.format("Unsupported type '%s'. Expected type was '%s'.",
-                        actualType,
-                        expectedType),
-                field);
+                String.format("Unsupported type '%s'. Expected type was '%s'.", actualType, expectedType), field);
     }
 
     public static @NotNull Error unsupportedValue(
@@ -96,42 +93,32 @@ public class Error {
             final @NotNull String actualValue,
             final @NotNull String field) {
         return new Error(
-                String.format("Unsupported value '%s'. Supported values are %s.",
-                        actualValue,
-                        supportedTypes),
-                field);
+                String.format("Unsupported value '%s'. Supported values are %s.", actualValue, supportedTypes), field);
     }
 
     public static @NotNull Error illegalValue(
             final @NotNull String field, final @NotNull String value, final @NotNull String errorMessage) {
-        return new Error(
-                String.format("Illegal value '%s'. %s", value, errorMessage),
-                field);
+        return new Error(String.format("Illegal value '%s'. %s", value, errorMessage), field);
     }
 
-    public static @NotNull Error illegalValue(
-            final @NotNull String field, final @NotNull String errorMessage) {
-        return new Error(
-                String.format("Illegal value: %s", errorMessage),
-                field);
+    public static @NotNull Error illegalValue(final @NotNull String field, final @NotNull String errorMessage) {
+        return new Error(String.format("Illegal value: %s", errorMessage), field);
     }
 
     public static @NotNull Error functionsMustBePaired(
             final @NotNull String presentFunction, final @NotNull String missingFunction) {
         return new Error(
-                String.format("If '%s' function is present in the pipeline, '%s' function must be present as well.",
-                        presentFunction,
-                        missingFunction),
+                String.format(
+                        "If '%s' function is present in the pipeline, '%s' function must be present as well.",
+                        presentFunction, missingFunction),
                 "function");
     }
 
-    public static @NotNull Error atMostOneFunction(
-            final @NotNull String function, final @NotNull List<String> fields) {
+    public static @NotNull Error atMostOneFunction(final @NotNull String function, final @NotNull List<String> fields) {
         return new Error(
-                String.format("The pipeline must contain at most one '%s' function, but %d were found at %s.",
-                        function,
-                        fields.size(),
-                        fields),
+                String.format(
+                        "The pipeline must contain at most one '%s' function, but %d were found at %s.",
+                        function, fields.size(), fields),
                 "function");
     }
 
@@ -140,10 +127,9 @@ public class Error {
             final @NotNull String falseFieldFunctionId,
             final @NotNull String mustAfterField) {
         return new Error(
-                String.format("The operation at '%s' with the functionId '%s' must be after a '%s' operation.",
-                        falseField,
-                        falseFieldFunctionId,
-                        mustAfterField),
+                String.format(
+                        "The operation at '%s' with the functionId '%s' must be after a '%s' operation.",
+                        falseField, falseFieldFunctionId, mustAfterField),
                 "function");
     }
 
@@ -152,10 +138,9 @@ public class Error {
             final @NotNull String falseFieldFunctionId,
             final @NotNull String mustBeforeField) {
         return new Error(
-                String.format("The operation at '%s' with the functionId '%s' must be before a '%s' operation.",
-                        falseField,
-                        falseFieldFunctionId,
-                        mustBeforeField),
+                String.format(
+                        "The operation at '%s' with the functionId '%s' must be before a '%s' operation.",
+                        falseField, falseFieldFunctionId, mustBeforeField),
                 "function");
     }
 
@@ -169,13 +154,6 @@ public class Error {
 
     @Override
     public String toString() {
-        return "Error{" +
-            "detail='" +
-            getDetail() +
-            '\'' +
-            ", parameter='" +
-            parameter +
-            '\'' +
-            '}';
+        return "Error{" + "detail='" + getDetail() + '\'' + ", parameter='" + parameter + '\'' + '}';
     }
 }

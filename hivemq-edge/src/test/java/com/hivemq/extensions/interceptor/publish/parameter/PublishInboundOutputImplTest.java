@@ -15,21 +15,18 @@
  */
 package com.hivemq.extensions.interceptor.publish.parameter;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extension.sdk.api.packets.publish.AckReasonCode;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
 import com.hivemq.extensions.packets.publish.ModifiablePublishPacketImpl;
 import com.hivemq.extensions.packets.publish.PublishPacketImpl;
-import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import java.time.Duration;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Florian Limpöck
@@ -111,7 +108,8 @@ public class PublishInboundOutputImplTest {
 
         final PublishInboundOutputImpl output = new PublishInboundOutputImpl(asyncer, modifiablePacket);
 
-        assertThatThrownBy(() -> output.async(Duration.ofSeconds(10), TimeoutFallback.SUCCESS, AckReasonCode.SUCCESS, "reason"))
+        assertThatThrownBy(() ->
+                        output.async(Duration.ofSeconds(10), TimeoutFallback.SUCCESS, AckReasonCode.SUCCESS, "reason"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -122,7 +120,8 @@ public class PublishInboundOutputImplTest {
 
         final PublishInboundOutputImpl output = new PublishInboundOutputImpl(asyncer, modifiablePacket);
 
-        assertThatThrownBy(() -> output.async(Duration.ofSeconds(10), TimeoutFallback.FAILURE, AckReasonCode.SUCCESS, "reason"))
+        assertThatThrownBy(() ->
+                        output.async(Duration.ofSeconds(10), TimeoutFallback.FAILURE, AckReasonCode.SUCCESS, "reason"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -133,7 +132,8 @@ public class PublishInboundOutputImplTest {
 
         final PublishInboundOutputImpl output = new PublishInboundOutputImpl(asyncer, modifiablePacket);
 
-        assertThatThrownBy(() -> output.async(Duration.ofSeconds(10), TimeoutFallback.SUCCESS, AckReasonCode.NOT_AUTHORIZED, "reason"))
+        assertThatThrownBy(() -> output.async(
+                        Duration.ofSeconds(10), TimeoutFallback.SUCCESS, AckReasonCode.NOT_AUTHORIZED, "reason"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -187,8 +187,7 @@ public class PublishInboundOutputImplTest {
         final PublishInboundOutputImpl output = new PublishInboundOutputImpl(asyncer, modifiablePacket);
 
         output.preventPublishDelivery();
-        assertThatThrownBy(() -> output.preventPublishDelivery())
-                .isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> output.preventPublishDelivery()).isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
@@ -263,8 +262,7 @@ public class PublishInboundOutputImplTest {
 
         final PublishInboundOutputImpl output = new PublishInboundOutputImpl(asyncer, modifiablePacket);
 
-        assertThatThrownBy(() -> output.preventPublishDelivery(null))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> output.preventPublishDelivery(null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test

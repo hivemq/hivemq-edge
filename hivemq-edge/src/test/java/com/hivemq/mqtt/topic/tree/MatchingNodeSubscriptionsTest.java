@@ -15,14 +15,14 @@
  */
 package com.hivemq.mqtt.topic.tree;
 
-import com.codahale.metrics.Counter;
-import com.hivemq.mqtt.topic.SubscriberWithQoS;
-import org.junit.jupiter.api.Test;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsIterableContaining.hasItem;
 import static org.hamcrest.core.IsIterableContaining.hasItems;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import com.codahale.metrics.Counter;
+import com.hivemq.mqtt.topic.SubscriberWithQoS;
+import org.junit.jupiter.api.Test;
 
 public class MatchingNodeSubscriptionsTest {
 
@@ -34,8 +34,11 @@ public class MatchingNodeSubscriptionsTest {
         subscriptions.addSubscriber(new SubscriberWithQoS("sub1", 0, (byte) 0, null, 0, null), "topic", counters, 16);
         subscriptions.addSubscriber(new SubscriberWithQoS("sub2", 0, (byte) 0, null, 0, null), "topic", counters, 16);
         assertEquals(2, subscriptions.getSubscriberCount());
-        assertThat(subscriptions.getSubscribers(), hasItems(new SubscriberWithQoS("sub1", 0, (byte) 0, null, 0, null),
-                new SubscriberWithQoS("sub2", 0, (byte) 0, null, 0, null)));
+        assertThat(
+                subscriptions.getSubscribers(),
+                hasItems(
+                        new SubscriberWithQoS("sub1", 0, (byte) 0, null, 0, null),
+                        new SubscriberWithQoS("sub2", 0, (byte) 0, null, 0, null)));
     }
 
     @Test
@@ -44,8 +47,11 @@ public class MatchingNodeSubscriptionsTest {
         subscriptions.addSubscriber(new SubscriberWithQoS("sub1", 0, (byte) 0, null, 0, null), "topic", counters, 0);
         subscriptions.addSubscriber(new SubscriberWithQoS("sub2", 0, (byte) 0, null, 0, null), "topic", counters, 0);
         assertEquals(2, subscriptions.getSubscriberCount());
-        assertThat(subscriptions.getSubscribers(), hasItems(new SubscriberWithQoS("sub1", 0, (byte) 0, null, 0, null),
-                new SubscriberWithQoS("sub2", 0, (byte) 0, null, 0, null)));
+        assertThat(
+                subscriptions.getSubscribers(),
+                hasItems(
+                        new SubscriberWithQoS("sub1", 0, (byte) 0, null, 0, null),
+                        new SubscriberWithQoS("sub2", 0, (byte) 0, null, 0, null)));
     }
 
     @Test
@@ -66,5 +72,4 @@ public class MatchingNodeSubscriptionsTest {
         subscriptions.removeSubscriber("sub1", null, null, counters);
         assertEquals(1, subscriptions.getSubscriberCount());
     }
-
 }

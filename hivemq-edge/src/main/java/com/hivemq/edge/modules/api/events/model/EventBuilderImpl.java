@@ -24,10 +24,9 @@ import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
 import com.hivemq.api.model.core.PayloadImpl;
 import com.hivemq.edge.model.TypeIdentifierImpl;
+import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.function.Consumer;
 
 public class EventBuilderImpl implements EventBuilder {
 
@@ -45,7 +44,6 @@ public class EventBuilderImpl implements EventBuilder {
         this.fireConsumer = fireConsumer;
     }
 
-
     @Override
     public @NotNull EventBuilder withSeverity(final EventImpl.@NotNull SEVERITY severity) {
         this.severity = severity;
@@ -60,14 +58,13 @@ public class EventBuilderImpl implements EventBuilder {
 
     @Override
     public @NotNull EventBuilder withPayload(
-            final Payload.@NotNull ContentType contentType,
-            final @NotNull String content) {
+            final Payload.@NotNull ContentType contentType, final @NotNull String content) {
         this.payload = PayloadImpl.from(contentType, content);
         return this;
     }
 
     @Override
-    public @NotNull EventBuilder withPayload( final @NotNull Object data) {
+    public @NotNull EventBuilder withPayload(final @NotNull Object data) {
         this.payload = PayloadImpl.fromObject(OBJECT_MAPPER, data);
         return this;
     }
@@ -94,7 +91,8 @@ public class EventBuilderImpl implements EventBuilder {
         Preconditions.checkNotNull(severity);
         Preconditions.checkNotNull(message);
 
-        return new EventImpl(TypeIdentifierImpl.generate(TypeIdentifier.Type.EVENT),
+        return new EventImpl(
+                TypeIdentifierImpl.generate(TypeIdentifier.Type.EVENT),
                 severity,
                 message,
                 payload,

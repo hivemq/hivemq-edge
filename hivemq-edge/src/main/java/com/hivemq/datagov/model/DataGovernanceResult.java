@@ -15,10 +15,9 @@
  */
 package com.hivemq.datagov.model;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -31,27 +30,35 @@ public interface DataGovernanceResult {
         PENDING(false);
 
         private final boolean error;
-        STATUS(final boolean error){
+
+        STATUS(final boolean error) {
             this.error = error;
         }
 
-        public boolean isError(){
+        public boolean isError() {
             return error;
         }
-        public boolean isSuccess(){
+
+        public boolean isSuccess() {
             return this == SUCCESS;
         }
     }
 
-    @NotNull STATUS getStatus();
-    @NotNull List<DataGovernanceError> getErrors();
+    @NotNull
+    STATUS getStatus();
+
+    @NotNull
+    List<DataGovernanceError> getErrors();
 
     Optional<String> getMessage();
+
     DataGovernanceData getOutput();
 
     void setStatus(@NotNull STATUS status);
-    void addError(@NotNull DataGovernanceError error, boolean fatal);
-    void setMessage(@NotNull String message);
-    boolean hasErrors();
 
+    void addError(@NotNull DataGovernanceError error, boolean fatal);
+
+    void setMessage(@NotNull String message);
+
+    boolean hasErrors();
 }

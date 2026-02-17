@@ -15,6 +15,11 @@
  */
 package com.hivemq.mqtt.handler.connect;
 
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MQTT_MESSAGE_BARRIER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.logging.EventLog;
@@ -29,18 +34,12 @@ import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import util.DummyHandler;
 import util.TestMessageUtil;
-
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MQTT_MESSAGE_BARRIER;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Christoph Schäbel
@@ -49,6 +48,7 @@ public class MessageBarrierTest {
 
     private EmbeddedChannel channel;
     private MessageBarrier messageBarrier;
+
     @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
@@ -68,7 +68,10 @@ public class MessageBarrierTest {
     @Test
     public void test_connect_sent() {
 
-        channel.writeInbound(new CONNECT.Mqtt3Builder().withProtocolVersion(ProtocolVersion.MQTTv3_1_1).withClientIdentifier("clientID").build());
+        channel.writeInbound(new CONNECT.Mqtt3Builder()
+                .withProtocolVersion(ProtocolVersion.MQTTv3_1_1)
+                .withClientIdentifier("clientID")
+                .build());
         assertTrue(messageBarrier.getConnectReceived());
     }
 
@@ -77,13 +80,15 @@ public class MessageBarrierTest {
 
         channel.writeInbound(TestMessageUtil.createMqtt3Publish());
         assertFalse(channel.isActive());
-
     }
 
     @Test
     public void test_queue_messages_after_connect() {
 
-        channel.writeInbound(new CONNECT.Mqtt3Builder().withProtocolVersion(ProtocolVersion.MQTTv3_1_1).withClientIdentifier("clientID").build());
+        channel.writeInbound(new CONNECT.Mqtt3Builder()
+                .withProtocolVersion(ProtocolVersion.MQTTv3_1_1)
+                .withClientIdentifier("clientID")
+                .build());
 
         channel.writeInbound(TestMessageUtil.createMqtt3Publish());
         channel.writeInbound(new SUBSCRIBE(ImmutableList.of(), 1));
@@ -99,7 +104,10 @@ public class MessageBarrierTest {
     @Test
     public void test_messages_not_sent_on_connack_fail() {
 
-        channel.writeInbound(new CONNECT.Mqtt3Builder().withProtocolVersion(ProtocolVersion.MQTTv3_1_1).withClientIdentifier("clientID").build());
+        channel.writeInbound(new CONNECT.Mqtt3Builder()
+                .withProtocolVersion(ProtocolVersion.MQTTv3_1_1)
+                .withClientIdentifier("clientID")
+                .build());
 
         channel.writeInbound(TestMessageUtil.createMqtt3Publish());
         channel.writeInbound(new SUBSCRIBE(ImmutableList.of(), 1));
@@ -124,7 +132,10 @@ public class MessageBarrierTest {
     @Test
     public void test_messages_sent_on_connack_success() {
 
-        channel.writeInbound(new CONNECT.Mqtt3Builder().withProtocolVersion(ProtocolVersion.MQTTv3_1_1).withClientIdentifier("clientID").build());
+        channel.writeInbound(new CONNECT.Mqtt3Builder()
+                .withProtocolVersion(ProtocolVersion.MQTTv3_1_1)
+                .withClientIdentifier("clientID")
+                .build());
 
         channel.writeInbound(TestMessageUtil.createMqtt3Publish());
         channel.writeInbound(new SUBSCRIBE(ImmutableList.of(), 1));
@@ -149,5 +160,4 @@ public class MessageBarrierTest {
         assertEquals(2, counter.get());
         assertFalse(channel.pipeline().names().contains(MQTT_MESSAGE_BARRIER));
     }
-
 }

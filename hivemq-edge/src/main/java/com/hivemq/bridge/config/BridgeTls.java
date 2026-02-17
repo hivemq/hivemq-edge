@@ -15,11 +15,10 @@
  */
 package com.hivemq.bridge.config;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.List;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class BridgeTls {
 
@@ -150,33 +149,32 @@ public class BridgeTls {
 
     @Override
     public String toString() {
-        return "BridgeTls{" +
-                "keystorePath='" +
-                keystorePath +
-                '\'' +
-                ", keystorePassword='" +
-                keystorePassword +
-                '\'' +
-                ", privateKeyPassword=HIDDEN" +
-                ", truststorePath='" +
-                truststorePath +
-                '\'' +
-                ", truststorePassword=HIDDEN" +
-                ", protocols=" +
-                protocols +
-                ", cipherSuites=" +
-                cipherSuites +
-                ", keystoreType='" +
-                keystoreType +
-                '\'' +
-                ", truststoreType='" +
-                truststoreType +
-                '\'' +
-                ", verifyHostname=" +
-                verifyHostname +
-                ", handshakeTimeout=" +
-                handshakeTimeout +
-                '}';
+        return "BridgeTls{" + "keystorePath='"
+                + keystorePath
+                + '\''
+                + ", keystorePassword='"
+                + keystorePassword
+                + '\''
+                + ", privateKeyPassword=HIDDEN"
+                + ", truststorePath='"
+                + truststorePath
+                + '\''
+                + ", truststorePassword=HIDDEN"
+                + ", protocols="
+                + protocols
+                + ", cipherSuites="
+                + cipherSuites
+                + ", keystoreType='"
+                + keystoreType
+                + '\''
+                + ", truststoreType='"
+                + truststoreType
+                + '\''
+                + ", verifyHostname="
+                + verifyHostname
+                + ", handshakeTimeout="
+                + handshakeTimeout
+                + '}';
     }
 
     public static class Builder {
@@ -248,7 +246,8 @@ public class BridgeTls {
         }
 
         public @NotNull BridgeTls build() {
-            return new BridgeTls(keystorePath,
+            return new BridgeTls(
+                    keystorePath,
                     keystorePassword,
                     privateKeyPassword,
                     truststorePath,

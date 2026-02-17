@@ -15,9 +15,9 @@
  */
 package com.hivemq.extensions.packets.subscribe;
 
-import org.jetbrains.annotations.NotNull;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**

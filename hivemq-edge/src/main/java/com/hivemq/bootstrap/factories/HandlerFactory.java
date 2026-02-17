@@ -29,6 +29,4 @@ public interface HandlerFactory {
             final @NotNull MqttServerDisconnector mqttServerDisconnector,
             final @NotNull IncomingPublishDropper incomingPublishDropper,
             final @NotNull ConfigurationService configurationService);
-
-
 }

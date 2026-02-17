@@ -15,27 +15,26 @@
  */
 package com.hivemq.extensions.executor;
 
-import com.google.common.util.concurrent.SettableFuture;
-import com.hivemq.common.shutdown.ShutdownHooks;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import com.hivemq.extension.sdk.api.async.Async;
-import com.hivemq.extension.sdk.api.async.TimeoutFallback;
-import com.hivemq.extensions.executor.task.PluginTaskOutput;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-
-import java.time.Duration;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+
+import com.google.common.util.concurrent.SettableFuture;
+import com.hivemq.common.shutdown.ShutdownHooks;
+import com.hivemq.extension.sdk.api.async.Async;
+import com.hivemq.extension.sdk.api.async.TimeoutFallback;
+import com.hivemq.extensions.executor.task.PluginTaskOutput;
+import java.time.Duration;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 /**
  * @author Christoph Schäbel
@@ -43,11 +42,11 @@ import static org.mockito.Mockito.verify;
 @SuppressWarnings("NullabilityAnnotations")
 public class PluginOutputAsyncerImplTest {
 
-
     private PluginOutPutAsyncer asyncer;
 
     @Mock
     private ShutdownHooks shutdownHooks;
+
     @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
@@ -67,11 +66,9 @@ public class PluginOutputAsyncerImplTest {
 
         asyncOutput.resume();
 
-
         assertEquals(Async.Status.DONE, asyncOutput.getStatus());
         assertTrue(asyncOutput.getOutput().getAsyncFuture().isDone());
     }
-
 
     @Test
     public void test_output_timeout() throws Exception {
@@ -83,21 +80,20 @@ public class PluginOutputAsyncerImplTest {
         assertNotNull(asyncOutput.getOutput());
         assertEquals(Async.Status.RUNNING, asyncOutput.getStatus());
 
-        //wait for timeout
+        // wait for timeout
         Thread.sleep(200);
 
         assertEquals(Async.Status.CANCELED, asyncOutput.getStatus());
         assertTrue(asyncOutput.getOutput().getAsyncFuture().isDone());
     }
 
-
     @Test
     public void test_shutdown_hook() {
 
         final ScheduledExecutorService scheduledExecutorService = mock(ScheduledExecutorService.class);
 
-        final PluginOutputAsyncerImpl.PluginOutputAsyncerShutdownHook shutdownHook
-                = new PluginOutputAsyncerImpl.PluginOutputAsyncerShutdownHook(scheduledExecutorService);
+        final PluginOutputAsyncerImpl.PluginOutputAsyncerShutdownHook shutdownHook =
+                new PluginOutputAsyncerImpl.PluginOutputAsyncerShutdownHook(scheduledExecutorService);
 
         shutdownHook.run();
 
@@ -126,14 +122,10 @@ public class PluginOutputAsyncerImplTest {
         }
 
         @Override
-        public void markAsTimedOut() {
-
-        }
+        public void markAsTimedOut() {}
 
         @Override
-        public void resetAsyncStatus() {
-
-        }
+        public void resetAsyncStatus() {}
 
         @Nullable
         @Override
@@ -146,5 +138,4 @@ public class PluginOutputAsyncerImplTest {
             return TimeoutFallback.FAILURE;
         }
     }
-
 }

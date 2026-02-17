@@ -16,11 +16,10 @@
 package com.hivemq.edge;
 
 import com.hivemq.HiveMQEdgeMain;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.util.ManifestUtils;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class VersionProvider {
@@ -30,7 +29,7 @@ public class VersionProvider {
     @Inject
     public VersionProvider() {
         final String versionFromManifest = ManifestUtils.getValueFromManifest(HiveMQEdgeMain.class, "HiveMQ-Version");
-        if(versionFromManifest!=null) {
+        if (versionFromManifest != null) {
             version = versionFromManifest;
         } else {
             version = "Development Snapshot";
@@ -40,6 +39,4 @@ public class VersionProvider {
     public synchronized @NotNull String getVersion() {
         return this.version;
     }
-
-
 }

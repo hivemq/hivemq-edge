@@ -15,6 +15,8 @@
  */
 package com.hivemq.security.ssl;
 
+import static io.netty.channel.ChannelHandler.Sharable;
+
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.bootstrap.netty.ChannelHandlerNames;
 import io.netty.channel.Channel;
@@ -22,12 +24,9 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import javax.net.ssl.SSLSession;
-
-import static io.netty.channel.ChannelHandler.Sharable;
 
 /**
  * @author Florian Limpöck
@@ -37,8 +36,7 @@ import static io.netty.channel.ChannelHandler.Sharable;
 public class SslParameterHandler extends ChannelInboundHandlerAdapter {
 
     @Inject
-    public SslParameterHandler() {
-    }
+    public SslParameterHandler() {}
 
     @Override
     public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) throws Exception {
@@ -52,7 +50,8 @@ public class SslParameterHandler extends ChannelInboundHandlerAdapter {
         final SslHandler sslHandler = (SslHandler) channel.pipeline().get(ChannelHandlerNames.SSL_HANDLER);
         final SSLSession session = sslHandler.engine().getSession();
 
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         clientConnection.setAuthCipherSuite(session.getCipherSuite());
         clientConnection.setAuthProtocol(session.getProtocol());
 

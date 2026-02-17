@@ -13,8 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions;
+
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.Mockito.mock;
 
 import com.hivemq.extension.sdk.api.ExtensionMain;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
@@ -26,20 +29,15 @@ import com.hivemq.extensions.config.HiveMQExtensionXMLReader;
 import com.hivemq.extensions.parameter.ExtensionStartOutputImpl;
 import com.hivemq.extensions.parameter.ExtensionStartStopInputImpl;
 import com.hivemq.extensions.parameter.ExtensionStopOutputImpl;
+import java.io.File;
+import java.util.Collections;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 import util.TestExtensionUtil;
-
-import java.io.File;
-import java.util.Collections;
-import java.util.Optional;
-
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.mockito.Mockito.mock;
 
 /**
  * @author Georg Held
@@ -59,35 +57,28 @@ public class HiveMQExtensionExtensionTest extends AbstractExtensionTest {
     private ExtensionStartOutputImpl extensionStartOutput;
     private ExtensionStopOutputImpl extensionStopOutput;
     private ExtensionStartStopInputImpl extensionStartStopInput;
+
     @BeforeEach
     public void setUp() throws Exception {
-        var extensionFolder = new File(tmpFolder,"extension");
+        var extensionFolder = new File(tmpFolder, "extension");
         extensionFolder.mkdir();
-        final File validExtensionFolder =
-                TestExtensionUtil.createValidExtension(extensionFolder, "id");
+        final File validExtensionFolder = TestExtensionUtil.createValidExtension(extensionFolder, "id");
         final Optional<HiveMQExtensionEntity> extensionEntityFromXML =
                 HiveMQExtensionXMLReader.getExtensionEntityFromXML(validExtensionFolder.toPath(), true);
         assertTrue(extensionEntityFromXML.isPresent());
         final HiveMQExtensionEntity hiveMQExtensionEntity = extensionEntityFromXML.get();
 
-        startExtension = new HiveMQExtensionImpl(hiveMQExtensionEntity,
-                validExtensionFolder.toPath(),
-                new StartTestExtension(),
-                true);
-        stopExtension = new HiveMQExtensionImpl(hiveMQExtensionEntity,
-                validExtensionFolder.toPath(),
-                new StopTestExtension(),
-                true);
-        reasonExtension = new HiveMQExtensionImpl(hiveMQExtensionEntity,
-                validExtensionFolder.toPath(),
-                new ReasonTestExtension(),
-                true);
+        startExtension = new HiveMQExtensionImpl(
+                hiveMQExtensionEntity, validExtensionFolder.toPath(), new StartTestExtension(), true);
+        stopExtension = new HiveMQExtensionImpl(
+                hiveMQExtensionEntity, validExtensionFolder.toPath(), new StopTestExtension(), true);
+        reasonExtension = new HiveMQExtensionImpl(
+                hiveMQExtensionEntity, validExtensionFolder.toPath(), new ReasonTestExtension(), true);
 
         extensionStartOutput = new ExtensionStartOutputImpl();
         extensionStopOutput = new ExtensionStopOutputImpl();
-        extensionStartStopInput = new ExtensionStartStopInputImpl(startExtension,
-                Collections.singletonMap(startExtension.getId(), startExtension),
-                serverInformation);
+        extensionStartStopInput = new ExtensionStartStopInputImpl(
+                startExtension, Collections.singletonMap(startExtension.getId(), startExtension), serverInformation);
     }
 
     @Test
@@ -126,8 +117,7 @@ public class HiveMQExtensionExtensionTest extends AbstractExtensionTest {
         }
 
         @Override
-        public void extensionStop(final @NotNull ExtensionStopInput input, final @NotNull ExtensionStopOutput output) {
-        }
+        public void extensionStop(final @NotNull ExtensionStopInput input, final @NotNull ExtensionStopOutput output) {}
     }
 
     public static class StopTestExtension implements ExtensionMain {
@@ -136,8 +126,7 @@ public class HiveMQExtensionExtensionTest extends AbstractExtensionTest {
 
         @Override
         public void extensionStart(
-                final @NotNull ExtensionStartInput input, final @NotNull ExtensionStartOutput output) {
-        }
+                final @NotNull ExtensionStartInput input, final @NotNull ExtensionStartOutput output) {}
 
         @Override
         public void extensionStop(final @NotNull ExtensionStopInput input, final @NotNull ExtensionStopOutput output) {
@@ -156,7 +145,6 @@ public class HiveMQExtensionExtensionTest extends AbstractExtensionTest {
         }
 
         @Override
-        public void extensionStop(final @NotNull ExtensionStopInput input, final @NotNull ExtensionStopOutput output) {
-        }
+        public void extensionStop(final @NotNull ExtensionStopInput input, final @NotNull ExtensionStopOutput output) {}
     }
 }

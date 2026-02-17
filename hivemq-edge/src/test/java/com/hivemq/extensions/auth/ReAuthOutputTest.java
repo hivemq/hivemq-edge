@@ -15,6 +15,11 @@
  */
 package com.hivemq.extensions.auth;
 
+import static com.hivemq.extensions.auth.AuthenticationState.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extension.sdk.api.packets.general.DisconnectedReasonCode;
 import com.hivemq.extensions.auth.parameter.ModifiableClientSettingsImpl;
@@ -23,20 +28,14 @@ import com.hivemq.extensions.packets.general.ModifiableDefaultPermissionsImpl;
 import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import com.hivemq.util.Bytes;
 import com.hivemq.util.ReasonStrings;
+import java.nio.ByteBuffer;
+import java.time.Duration;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import java.nio.ByteBuffer;
-import java.time.Duration;
-import java.util.List;
-
-import static com.hivemq.extensions.auth.AuthenticationState.*;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Florian Limpöck
@@ -47,11 +46,12 @@ public class ReAuthOutputTest {
     private PluginOutPutAsyncer asyncer;
 
     private ReAuthOutput authTaskOutput;
+
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        authTaskOutput = new ReAuthOutput(asyncer, true, new ModifiableDefaultPermissionsImpl(),
-                new ModifiableClientSettingsImpl(10, null), 30);
+        authTaskOutput = new ReAuthOutput(
+                asyncer, true, new ModifiableDefaultPermissionsImpl(), new ModifiableClientSettingsImpl(10, null), 30);
     }
 
     @Test
@@ -79,7 +79,6 @@ public class ReAuthOutputTest {
         authTaskOutput = new ReAuthOutput(authTaskOutput);
 
         assertEquals(3, authTaskOutput.getOutboundUserProperties().asList().size());
-
     }
 
     @Test
@@ -178,16 +177,13 @@ public class ReAuthOutputTest {
 
         assertEquals(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED, authTaskOutput.getReasonCode());
         assertEquals(ReasonStrings.RE_AUTH_FAILED_EXTENSION_TIMEOUT, authTaskOutput.getReasonString());
-
     }
 
     @Test
     @Timeout(5)
     public void test_async_null() {
 
-        assertThatThrownBy(() -> authTaskOutput.async(null))
-                .isInstanceOf(NullPointerException.class);
-
+        assertThatThrownBy(() -> authTaskOutput.async(null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -199,7 +195,6 @@ public class ReAuthOutputTest {
 
         assertEquals(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED, authTaskOutput.getReasonCode());
         assertEquals(ReasonStrings.RE_AUTH_FAILED_EXTENSION_TIMEOUT, authTaskOutput.getReasonString());
-
     }
 
     @Test
@@ -212,7 +207,6 @@ public class ReAuthOutputTest {
 
         assertEquals(Mqtt5DisconnectReasonCode.BAD_AUTHENTICATION_METHOD, authTaskOutput.getReasonCode());
         assertEquals(ReasonStrings.RE_AUTH_FAILED_EXTENSION_TIMEOUT, authTaskOutput.getReasonString());
-
     }
 
     @Test
@@ -224,7 +218,6 @@ public class ReAuthOutputTest {
 
         assertEquals(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED, authTaskOutput.getReasonCode());
         assertEquals("Failed by me", authTaskOutput.getReasonString());
-
     }
 
     @Test
@@ -232,9 +225,11 @@ public class ReAuthOutputTest {
     public void test_async_success_reason_code() {
 
         assertThatThrownBy(() -> authTaskOutput.async(
-                Duration.ofSeconds(10), TimeoutFallback.SUCCESS, DisconnectedReasonCode.SUCCESS, "Failed by me"))
+                        Duration.ofSeconds(10),
+                        TimeoutFallback.SUCCESS,
+                        DisconnectedReasonCode.SUCCESS,
+                        "Failed by me"))
                 .isInstanceOf(IllegalArgumentException.class);
-
     }
 
     @Test
@@ -247,7 +242,5 @@ public class ReAuthOutputTest {
 
         assertEquals(Mqtt5DisconnectReasonCode.SERVER_BUSY, authTaskOutput.getReasonCode());
         assertEquals("Failed by me", authTaskOutput.getReasonString());
-
     }
-
 }

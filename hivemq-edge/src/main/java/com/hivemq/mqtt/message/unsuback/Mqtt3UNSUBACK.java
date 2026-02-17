@@ -27,5 +27,4 @@ public interface Mqtt3UNSUBACK {
     ImmutableList<Mqtt5UnsubAckReasonCode> getReasonCodes();
 
     int getPacketIdentifier();
-
 }

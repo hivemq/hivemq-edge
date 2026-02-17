@@ -29,14 +29,12 @@ import com.hivemq.edge.adapters.file.config.FileSpecificAdapterConfig;
 import com.hivemq.edge.adapters.file.convertion.MappingException;
 import com.hivemq.edge.adapters.file.payload.FileDataPoint;
 import com.hivemq.edge.adapters.file.tag.FileTag;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.LoggerFactory;
 
 public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
 
@@ -55,7 +53,7 @@ public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
         this.adapterId = adapterId;
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
-        this.tags = input.getTags().stream().map(tag -> (FileTag)tag).toList();
+        this.tags = input.getTags().stream().map(tag -> (FileTag) tag).toList();
         this.protocolAdapterState = input.getProtocolAdapterState();
     }
 
@@ -83,15 +81,13 @@ public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
         protocolAdapterStopOutput.stoppedSuccessfully();
     }
 
-
     @Override
     public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
         return adapterInformation;
     }
 
     @Override
-    public void poll(
-            final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
+    public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         String absolutePathToFle = "";
         try {
             for (final FileTag fileTag : tags) {
@@ -100,10 +96,8 @@ public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
                 final var length = path.toFile().length();
                 final var limit = 64_000; // not a constant to have a more compact code example
                 if (length > limit) {
-                    pollingOutput.fail(String.format("File '%s' of size '%d' exceeds the limit '%d'.",
-                            path.toAbsolutePath(),
-                            length,
-                            limit));
+                    pollingOutput.fail(String.format(
+                            "File '%s' of size '%d' exceeds the limit '%d'.", path.toAbsolutePath(), length, limit));
                     return;
                 }
                 final var fileContentArray = Files.readAllBytes(path);
@@ -114,7 +108,8 @@ public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
             LOG.warn("An exception occurred while reading the file '{}'.", absolutePathToFle, e);
             pollingOutput.fail(e, "An exception occurred while reading the file '" + absolutePathToFle + "'.");
         } catch (final MappingException e) {
-            LOG.warn("An exception occurred while converting the data in file '{}' to a payload '{}'.",
+            LOG.warn(
+                    "An exception occurred while converting the data in file '{}' to a payload '{}'.",
                     absolutePathToFle,
                     e.getMessage());
             pollingOutput.fail(e, "An exception occurred while reading the file '" + absolutePathToFle + "'.");

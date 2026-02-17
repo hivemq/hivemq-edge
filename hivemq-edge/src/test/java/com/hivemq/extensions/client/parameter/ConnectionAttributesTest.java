@@ -13,44 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.client.parameter;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.exception.LimitExceededException;
 import com.hivemq.mqtt.handler.publish.PublishFlushHandler;
 import io.netty.channel.Channel;
-import org.apache.commons.lang3.RandomUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import util.TestChannelAttribute;
-
 import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.apache.commons.lang3.RandomUtils;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import util.TestChannelAttribute;
 
 public class ConnectionAttributesTest {
 
     private @NotNull ConnectionAttributes connectionAttributes;
     private @NotNull ClientConnection clientConnection;
     private @NotNull Channel channel;
+
     @BeforeEach
     public void setUp() {
         connectionAttributes = new ConnectionAttributes(1000);
         channel = mock(Channel.class);
         clientConnection = new ClientConnection(channel, mock(PublishFlushHandler.class));
-        when(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)).thenReturn(new TestChannelAttribute<>(clientConnection));
+        when(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME))
+                .thenReturn(new TestChannelAttribute<>(clientConnection));
     }
 
     @Test
@@ -134,8 +133,7 @@ public class ConnectionAttributesTest {
         final String key = null;
         final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes());
 
-        assertThatThrownBy(() -> connectionAttributes.put(key, value))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> connectionAttributes.put(key, value)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -144,8 +142,7 @@ public class ConnectionAttributesTest {
         final String key = "test.key";
         final ByteBuffer value = null;
 
-        assertThatThrownBy(() -> connectionAttributes.put(key, value))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> connectionAttributes.put(key, value)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -181,9 +178,7 @@ public class ConnectionAttributesTest {
         assertTrue(returnValue1.isPresent());
         assertEquals(value, returnValue1.get());
 
-        assertThatThrownBy(() -> returnValue1.get().put(0, (byte) 10))
-                .isInstanceOf(ReadOnlyBufferException.class);
-
+        assertThatThrownBy(() -> returnValue1.get().put(0, (byte) 10)).isInstanceOf(ReadOnlyBufferException.class);
     }
 
     @Test
@@ -191,13 +186,13 @@ public class ConnectionAttributesTest {
     public void test_get_null_key() {
         final String key = null;
 
-        assertThatThrownBy(() -> connectionAttributes.get(key))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> connectionAttributes.get(key)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
     public void test_getAll() {
-        final ImmutableMap<String, ByteBuffer> values = ImmutableMap.of("test.key1",
+        final ImmutableMap<String, ByteBuffer> values = ImmutableMap.of(
+                "test.key1",
                 ByteBuffer.wrap("test.value1".getBytes()),
                 "test.key2",
                 ByteBuffer.wrap("test.value2".getBytes()));
@@ -221,7 +216,8 @@ public class ConnectionAttributesTest {
 
     @Test
     public void test_getAll_immutable() {
-        final ImmutableMap<String, ByteBuffer> values = ImmutableMap.of("test.key1",
+        final ImmutableMap<String, ByteBuffer> values = ImmutableMap.of(
+                "test.key1",
                 ByteBuffer.wrap("test.value1".getBytes()),
                 "test.key2",
                 ByteBuffer.wrap("test.value2".getBytes()));
@@ -279,8 +275,7 @@ public class ConnectionAttributesTest {
     public void test_remove_null_key() {
         final String key = null;
 
-        assertThatThrownBy(() -> connectionAttributes.remove(key))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> connectionAttributes.remove(key)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -307,8 +302,10 @@ public class ConnectionAttributesTest {
 
     @Test
     public void test_limit_exceeded() {
-    
-        assertThrows(LimitExceededException.class, () -> connectionAttributes.put("key", ByteBuffer.wrap(RandomUtils.nextBytes(1001))));
+
+        assertThrows(
+                LimitExceededException.class,
+                () -> connectionAttributes.put("key", ByteBuffer.wrap(RandomUtils.nextBytes(1001))));
     }
 
     @Test

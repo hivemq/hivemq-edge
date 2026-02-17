@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions;
 
 import com.google.common.collect.ImmutableCollection;
@@ -22,18 +21,17 @@ import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.embedded.EmbeddedExtension;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extensions.loader.ExtensionLifecycleHandler;
 import com.hivemq.extensions.loader.ExtensionLoader;
 import com.hivemq.extensions.services.auth.Authenticators;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Christoph Schäbel
@@ -91,21 +89,22 @@ public class ExtensionBootstrapImpl implements ExtensionBootstrap {
 
         // start them if needed
         final ImmutableList<HiveMQExtensionEvent> allExtensions = extensionEventBuilder.build();
-        return lifecycleHandler.handleExtensionEvents(allExtensions)
+        return lifecycleHandler
+                .handleExtensionEvents(allExtensions)
                 .thenAccept(((v) -> authenticators.checkAuthenticationSafetyAndLifeness()));
     }
 
     @Override
     public void stopExtensionSystem() {
-        final ImmutableList<HiveMQExtensionEvent> events = hiveMQExtensions.getEnabledHiveMQExtensions()
-                .values()
-                .stream()
-                .map(extension -> new HiveMQExtensionEvent(HiveMQExtensionEvent.Change.DISABLE,
-                        extension.getId(),
-                        extension.getStartPriority(),
-                        extension.getExtensionFolderPath(),
-                        extension.isEmbedded()))
-                .collect(ImmutableList.toImmutableList());
+        final ImmutableList<HiveMQExtensionEvent> events =
+                hiveMQExtensions.getEnabledHiveMQExtensions().values().stream()
+                        .map(extension -> new HiveMQExtensionEvent(
+                                HiveMQExtensionEvent.Change.DISABLE,
+                                extension.getId(),
+                                extension.getStartPriority(),
+                                extension.getExtensionFolderPath(),
+                                extension.isEmbedded()))
+                        .collect(ImmutableList.toImmutableList());
 
         // stop extensions
         // not checking for authenticator safety

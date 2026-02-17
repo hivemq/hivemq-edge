@@ -17,13 +17,12 @@ package com.hivemq.extensions.packets.unsubscribe;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.unsubscribe.UnsubscribePacket;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.unsubscribe.UNSUBSCRIBE;
-
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Robin Atherton
@@ -77,9 +76,9 @@ public class UnsubscribePacketImpl implements UnsubscribePacket {
             return false;
         }
         final UnsubscribePacketImpl that = (UnsubscribePacketImpl) o;
-        return topicFilters.equals(that.topicFilters) &&
-                userProperties.equals(that.userProperties) &&
-                (packetIdentifier == that.packetIdentifier);
+        return topicFilters.equals(that.topicFilters)
+                && userProperties.equals(that.userProperties)
+                && (packetIdentifier == that.packetIdentifier);
     }
 
     @Override

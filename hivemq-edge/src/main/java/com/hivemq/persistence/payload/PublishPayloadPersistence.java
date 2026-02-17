@@ -15,11 +15,10 @@
  */
 package com.hivemq.persistence.payload;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import com.hivemq.mqtt.message.publish.PUBLISH;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.mqtt.message.publish.PUBLISH;
 
 /**
  * @author Lukas Brandl
@@ -74,5 +73,6 @@ public interface PublishPayloadPersistence {
      */
     void closeDB();
 
-    @NotNull ImmutableMap<Long, Integer> getReferenceCountersAsMap();
+    @NotNull
+    ImmutableMap<Long, Integer> getReferenceCountersAsMap();
 }

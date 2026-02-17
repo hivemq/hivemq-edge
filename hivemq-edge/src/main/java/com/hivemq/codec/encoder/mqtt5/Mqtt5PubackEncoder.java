@@ -16,20 +16,21 @@
 package com.hivemq.codec.encoder.mqtt5;
 
 import com.hivemq.configuration.service.SecurityConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.mqtt.message.puback.PUBACK;
 import com.hivemq.mqtt.message.reason.Mqtt5PubAckReasonCode;
-
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Waldemar Ruck
  * @since 4.0
  */
 @Singleton
-public class Mqtt5PubackEncoder extends Mqtt5MessageWithUserPropertiesEncoder.Mqtt5MessageWithIdAndOmissibleReasonCodeEncoder<PUBACK, Mqtt5PubAckReasonCode> {
+public class Mqtt5PubackEncoder
+        extends Mqtt5MessageWithUserPropertiesEncoder.Mqtt5MessageWithIdAndOmissibleReasonCodeEncoder<
+                PUBACK, Mqtt5PubAckReasonCode> {
 
     private static final int FIXED_HEADER = MessageType.PUBACK.ordinal() << 4;
 
@@ -45,7 +46,8 @@ public class Mqtt5PubackEncoder extends Mqtt5MessageWithUserPropertiesEncoder.Mq
     }
 
     @Override
-    @NotNull Mqtt5PubAckReasonCode getDefaultReasonCode() {
+    @NotNull
+    Mqtt5PubAckReasonCode getDefaultReasonCode() {
         return Mqtt5PubAckReasonCode.SUCCESS;
     }
 }

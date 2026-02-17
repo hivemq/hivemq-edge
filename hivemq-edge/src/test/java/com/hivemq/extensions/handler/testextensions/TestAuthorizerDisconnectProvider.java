@@ -13,18 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.handler.testextensions;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.Authorizer;
 import com.hivemq.extension.sdk.api.auth.SubscriptionAuthorizer;
 import com.hivemq.extension.sdk.api.auth.parameter.AuthorizerProviderInput;
 import com.hivemq.extension.sdk.api.auth.parameter.SubscriptionAuthorizerInput;
 import com.hivemq.extension.sdk.api.auth.parameter.SubscriptionAuthorizerOutput;
 import com.hivemq.extension.sdk.api.services.auth.provider.AuthorizerProvider;
-
 import java.util.concurrent.CountDownLatch;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Test extension used in PluginAuthorizerServiceImplTest

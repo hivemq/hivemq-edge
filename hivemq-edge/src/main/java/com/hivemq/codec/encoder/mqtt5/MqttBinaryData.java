@@ -15,13 +15,12 @@
  */
 package com.hivemq.codec.encoder.mqtt5;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.util.Utf8Utils;
 import io.netty.buffer.ByteBuf;
-
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Utility for decoding, encoding and checking binary data.
@@ -33,8 +32,7 @@ public final class MqttBinaryData {
     private static final int MAX_LENGTH = 65_535;
     private static final int EMPTY_LENGTH = 2;
 
-    private MqttBinaryData() {
-    }
+    private MqttBinaryData() {}
 
     /**
      * Decodes binary data from the given byte buffer at the current reader index.

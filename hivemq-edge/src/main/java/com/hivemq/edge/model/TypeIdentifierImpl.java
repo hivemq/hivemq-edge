@@ -18,12 +18,11 @@ package com.hivemq.edge.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import java.util.Objects;
 import java.util.UUID;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
@@ -31,16 +30,18 @@ import java.util.UUID;
 public class TypeIdentifierImpl implements TypeIdentifier {
 
     @JsonProperty("type")
-    @Schema(description = "The type of the associated object/entity",
-            required = true)
+    @Schema(description = "The type of the associated object/entity", required = true)
     private final @NotNull TypeIdentifier.Type type;
 
     @JsonProperty("identifier")
-    @Schema(description = "The identifier associated with the object, a combination of type and identifier is used to uniquely identify an object in the system")
+    @Schema(
+            description =
+                    "The identifier associated with the object, a combination of type and identifier is used to uniquely identify an object in the system")
     private final @NotNull String identifier;
 
-    public TypeIdentifierImpl(@NotNull @JsonProperty("type") final TypeIdentifier.Type type,
-                              @NotNull @JsonProperty("identifier") final String identifier) {
+    public TypeIdentifierImpl(
+            @NotNull @JsonProperty("type") final TypeIdentifier.Type type,
+            @NotNull @JsonProperty("identifier") final String identifier) {
         Preconditions.checkNotNull(type);
         Preconditions.checkNotNull(identifier);
         this.type = type;
@@ -79,7 +80,6 @@ public class TypeIdentifierImpl implements TypeIdentifier {
         return Objects.hash(type, identifier);
     }
 
-
     public static TypeIdentifier create(@NotNull TypeIdentifier.Type type, @NotNull String identifier) {
         Preconditions.checkNotNull(type);
         Preconditions.checkNotNull(identifier);
@@ -90,9 +90,8 @@ public class TypeIdentifierImpl implements TypeIdentifier {
      * Generate a globally unique type identifier in the namespace supplied
      * @return The generated ID
      */
-    public static TypeIdentifier generate(final @NotNull TypeIdentifier.Type type){
+    public static TypeIdentifier generate(final @NotNull TypeIdentifier.Type type) {
         Preconditions.checkNotNull(type);
         return new TypeIdentifierImpl(type, UUID.randomUUID().toString());
     }
-
 }

@@ -20,12 +20,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterHttpHeader;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class MtConnectAdapterTagDefinition implements TagDefinition {
     private static final int DEFAULT_HTTP_CONNECT_TIMEOUT_SECONDS = 5;
@@ -37,32 +36,36 @@ public class MtConnectAdapterTagDefinition implements TagDefinition {
     private final @NotNull List<MtConnectAdapterHttpHeader> httpHeaders;
 
     @JsonProperty(value = "url", required = true)
-    @ModuleConfigField(title = "URL",
-                       description = "The url of the HTTP request you would like to make",
-                       format = ModuleConfigField.FieldType.URI,
-                       required = true)
+    @ModuleConfigField(
+            title = "URL",
+            description = "The url of the HTTP request you would like to make",
+            format = ModuleConfigField.FieldType.URI,
+            required = true)
     private final @NotNull String url;
 
     @JsonProperty(value = "enableSchemaValidation")
-    @ModuleConfigField(title = "Enable Schema Validation",
-                       description = "Enable the MTConnect schema validation",
-                       format = ModuleConfigField.FieldType.BOOLEAN,
-                       defaultValue = "false")
+    @ModuleConfigField(
+            title = "Enable Schema Validation",
+            description = "Enable the MTConnect schema validation",
+            format = ModuleConfigField.FieldType.BOOLEAN,
+            defaultValue = "false")
     private final boolean enableSchemaValidation;
 
     @JsonProperty(value = "includeNull")
-    @ModuleConfigField(title = "Include Null",
-                       description = "Include null objects in the JSON output",
-                       format = ModuleConfigField.FieldType.BOOLEAN,
-                       defaultValue = "false")
+    @ModuleConfigField(
+            title = "Include Null",
+            description = "Include null objects in the JSON output",
+            format = ModuleConfigField.FieldType.BOOLEAN,
+            defaultValue = "false")
     private final boolean includeNull;
 
     @JsonProperty("httpConnectTimeoutSeconds")
-    @ModuleConfigField(title = "HTTP Connection Timeout",
-                       description = "Timeout (in seconds) to allow the underlying HTTP connection to be established",
-                       defaultValue = DEFAULT_HTTP_CONNECT_TIMEOUT_SECONDS + "",
-                       numberMin = MIN_HTTP_CONNECT_TIMEOUT_SECONDS,
-                       numberMax = MAX_HTTP_CONNECT_TIMEOUT_SECONDS)
+    @ModuleConfigField(
+            title = "HTTP Connection Timeout",
+            description = "Timeout (in seconds) to allow the underlying HTTP connection to be established",
+            defaultValue = DEFAULT_HTTP_CONNECT_TIMEOUT_SECONDS + "",
+            numberMin = MIN_HTTP_CONNECT_TIMEOUT_SECONDS,
+            numberMax = MAX_HTTP_CONNECT_TIMEOUT_SECONDS)
     private final int httpConnectTimeoutSeconds;
 
     @JsonCreator

@@ -17,7 +17,6 @@ package com.hivemq.extensions.packets.subscribe;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.ThreadSafe;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.packets.subscribe.ModifiableSubscription;
@@ -25,6 +24,7 @@ import com.hivemq.extension.sdk.api.packets.subscribe.RetainHandling;
 import com.hivemq.extensions.services.builder.PluginBuilderUtil;
 import com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl;
 import com.hivemq.util.Topics;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -44,8 +44,7 @@ public class ModifiableSubscriptionImpl implements ModifiableSubscription {
     private boolean modified = false;
 
     public ModifiableSubscriptionImpl(
-            final @NotNull SubscriptionImpl subscription,
-            final @NotNull ConfigurationService configurationService) {
+            final @NotNull SubscriptionImpl subscription, final @NotNull ConfigurationService configurationService) {
 
         topicFilter = subscription.topicFilter;
         qos = subscription.qos;
@@ -65,12 +64,16 @@ public class ModifiableSubscriptionImpl implements ModifiableSubscription {
     public void setTopicFilter(final @NotNull String topicFilter) {
         Preconditions.checkNotNull(topicFilter, "Topic filter must never be null");
         Preconditions.checkArgument(
-                topicFilter.length() <= configurationService.restrictionsConfiguration().maxTopicLength(),
-                "Topic filter length must not exceed '" +
-                        configurationService.restrictionsConfiguration().maxTopicLength() + "' characters, but has '" +
-                        topicFilter.length() + "' characters");
-        Preconditions.checkArgument(!(!configurationService.mqttConfiguration().wildcardSubscriptionsEnabled() &&
-                Topics.containsWildcard(topicFilter)), "Wildcard characters '+' or '#' are not allowed");
+                topicFilter.length()
+                        <= configurationService.restrictionsConfiguration().maxTopicLength(),
+                "Topic filter length must not exceed '"
+                        + configurationService.restrictionsConfiguration().maxTopicLength()
+                        + "' characters, but has '" + topicFilter.length()
+                        + "' characters");
+        Preconditions.checkArgument(
+                !(!configurationService.mqttConfiguration().wildcardSubscriptionsEnabled()
+                        && Topics.containsWildcard(topicFilter)),
+                "Wildcard characters '+' or '#' are not allowed");
 
         if (this.topicFilter.equals(topicFilter)) {
             return;
@@ -111,7 +114,8 @@ public class ModifiableSubscriptionImpl implements ModifiableSubscription {
 
     @Override
     public void setQos(final @NotNull Qos qos) {
-        PluginBuilderUtil.checkQos(qos, configurationService.mqttConfiguration().maximumQos().getQosNumber());
+        PluginBuilderUtil.checkQos(
+                qos, configurationService.mqttConfiguration().maximumQos().getQosNumber());
         if (this.qos.getQosNumber() == qos.getQosNumber()) {
             return;
         }

@@ -15,6 +15,8 @@
  */
 package com.hivemq.extensions.packets.general;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import com.hivemq.extension.sdk.api.packets.connect.ConnackReasonCode;
 import com.hivemq.extension.sdk.api.packets.disconnect.DisconnectReasonCode;
 import com.hivemq.extension.sdk.api.packets.general.DisconnectedReasonCode;
@@ -22,14 +24,11 @@ import com.hivemq.mqtt.message.reason.Mqtt5ConnAckReasonCode;
 import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
 /**
  * @author Florian Limpöck
  * @since 4.0.0
  */
 public class DisconnectedReasonCodeTest {
-
 
     @Test
     public void test_all_disconnect_codes_exist() {

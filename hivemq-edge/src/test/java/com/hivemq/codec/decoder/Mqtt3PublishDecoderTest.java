@@ -15,6 +15,9 @@
  */
 package com.hivemq.codec.decoder;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.google.common.primitives.Bytes;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.ConfigurationService;
@@ -31,13 +34,11 @@ import org.mockito.MockitoAnnotations;
 import util.TestConfigurationBootstrap;
 import util.TestMqttDecoder;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.*;
-
 @SuppressWarnings("NullabilityAnnotations")
 public class Mqtt3PublishDecoderTest {
 
     private EmbeddedChannel channel;
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -70,7 +71,7 @@ public class Mqtt3PublishDecoderTest {
         assertEquals(0, publish.getPacketIdentifier());
         assertArrayEquals(payload.getBytes(UTF_8), publish.getPayload());
 
-        //Make sure we didn't get disconnected for some reason
+        // Make sure we didn't get disconnected for some reason
         assertTrue(channel.isActive());
 
         assertNotNull(publish.getHivemqId());
@@ -103,10 +104,9 @@ public class Mqtt3PublishDecoderTest {
         assertEquals(1, publish.getPacketIdentifier());
         assertArrayEquals(payload.getBytes(UTF_8), publish.getPayload());
 
-        //Make sure we didn't get disconnected for some reason
+        // Make sure we didn't get disconnected for some reason
         assertTrue(channel.isActive());
     }
-
 
     @Test
     public void test_valid_pub_qos_2() {
@@ -132,7 +132,7 @@ public class Mqtt3PublishDecoderTest {
         assertEquals(1, publish.getPacketIdentifier());
         assertArrayEquals(payload.getBytes(UTF_8), publish.getPayload());
 
-        //Make sure we didn't get disconnected for some reason
+        // Make sure we didn't get disconnected for some reason
         assertTrue(channel.isActive());
     }
 
@@ -159,7 +159,7 @@ public class Mqtt3PublishDecoderTest {
         assertEquals(0, publish.getPacketIdentifier());
         assertArrayEquals(payload.getBytes(UTF_8), publish.getPayload());
 
-        //Make sure we didn't get disconnected for some reason
+        // Make sure we didn't get disconnected for some reason
         assertTrue(channel.isActive());
     }
 
@@ -171,7 +171,6 @@ public class Mqtt3PublishDecoderTest {
 
         channel = new EmbeddedChannel(TestMqttDecoder.create(fullConfig));
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(new ClientConnection(channel, null));
-
 
         final String topic = "topic";
         final String payload = "payload";
@@ -214,7 +213,7 @@ public class Mqtt3PublishDecoderTest {
         assertEquals(1, publish.getPacketIdentifier());
         assertArrayEquals(payload.getBytes(UTF_8), publish.getPayload());
 
-        //Make sure we didn't get disconnected for some reason
+        // Make sure we didn't get disconnected for some reason
         assertTrue(channel.isActive());
     }
 
@@ -234,7 +233,7 @@ public class Mqtt3PublishDecoderTest {
 
         assertNull(publish);
 
-        //We got disconnected because an invalid qos was received
+        // We got disconnected because an invalid qos was received
         assertFalse(channel.isActive());
     }
 
@@ -254,7 +253,7 @@ public class Mqtt3PublishDecoderTest {
 
         assertNull(publish);
 
-        //We got disconnected because an invalid qos was received
+        // We got disconnected because an invalid qos was received
         assertFalse(channel.isActive());
     }
 
@@ -275,7 +274,7 @@ public class Mqtt3PublishDecoderTest {
 
         assertNull(publish);
 
-        //We got disconnected because an invalid qos was received
+        // We got disconnected because an invalid qos was received
         assertFalse(channel.isActive());
     }
 
@@ -296,7 +295,7 @@ public class Mqtt3PublishDecoderTest {
 
         assertNull(publish);
 
-        //We got disconnected because an invalid qos was received
+        // We got disconnected because an invalid qos was received
         assertFalse(channel.isActive());
     }
 
@@ -316,10 +315,9 @@ public class Mqtt3PublishDecoderTest {
 
         assertNull(publish);
 
-        //We got disconnected because an invalid qos was received
+        // We got disconnected because an invalid qos was received
         assertFalse(channel.isActive());
     }
-
 
     @Test
     public void test_invalid_topic_wildcard_topic_level() {
@@ -337,7 +335,7 @@ public class Mqtt3PublishDecoderTest {
 
         assertNull(publish);
 
-        //We got disconnected because an invalid qos was received
+        // We got disconnected because an invalid qos was received
         assertFalse(channel.isActive());
     }
 
@@ -350,7 +348,7 @@ public class Mqtt3PublishDecoderTest {
         final ByteBuf buf = Unpooled.buffer();
         buf.writeByte(0b0011_0000);
 
-        buf.writeBytes(new byte[]{(byte) 0x88, (byte) 0x80, 4});
+        buf.writeBytes(new byte[] {(byte) 0x88, (byte) 0x80, 4});
 
         buf.writeShort(topic.getBytes(UTF_8).length);
         buf.writeBytes(topic.getBytes(UTF_8));
@@ -366,7 +364,7 @@ public class Mqtt3PublishDecoderTest {
         assertEquals(0, publish.getPacketIdentifier());
         assertArrayEquals(payload.getBytes(UTF_8), publish.getPayload());
 
-        //Make sure we didn't get disconnected for some reason
+        // Make sure we didn't get disconnected for some reason
         assertTrue(channel.isActive());
     }
 
@@ -390,7 +388,7 @@ public class Mqtt3PublishDecoderTest {
 
         assertNull(publish);
 
-        //Make sure we did get disconnected
+        // Make sure we did get disconnected
         assertFalse(channel.isActive());
     }
 
@@ -413,7 +411,7 @@ public class Mqtt3PublishDecoderTest {
 
         assertNull(publish);
 
-        //Make sure we did get disconnected
+        // Make sure we did get disconnected
         assertFalse(channel.isActive());
     }
 
@@ -436,7 +434,7 @@ public class Mqtt3PublishDecoderTest {
 
         assertNull(publish);
 
-        //Make sure we did get disconnected
+        // Make sure we did get disconnected
         assertFalse(channel.isActive());
     }
 
@@ -461,7 +459,7 @@ public class Mqtt3PublishDecoderTest {
 
         assertNull(publish);
 
-        //Make sure we did get disconnected
+        // Make sure we did get disconnected
         assertFalse(channel.isActive());
     }
 
@@ -486,7 +484,7 @@ public class Mqtt3PublishDecoderTest {
 
         assertNull(publish);
 
-        //Make sure we did get disconnected
+        // Make sure we did get disconnected
         assertFalse(channel.isActive());
     }
 }

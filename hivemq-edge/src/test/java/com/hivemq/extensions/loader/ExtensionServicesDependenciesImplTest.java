@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.loader;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableMap;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.events.EventRegistry;
 import com.hivemq.extension.sdk.api.services.ManagedExtensionExecutorService;
 import com.hivemq.extension.sdk.api.services.admin.AdminService;
@@ -33,21 +35,20 @@ import com.hivemq.extension.sdk.api.services.session.ClientService;
 import com.hivemq.extension.sdk.api.services.subscription.SubscriptionStore;
 import com.hivemq.extensions.HiveMQExtensions;
 import com.hivemq.extensions.services.executor.GlobalManagedExtensionExecutorService;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import util.IsolatedExtensionClassloaderUtil;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-
 public class ExtensionServicesDependenciesImplTest {
 
     private @NotNull ExtensionServicesDependenciesImpl extensionServicesDependencies;
+
     @BeforeEach
     public void before() {
-        extensionServicesDependencies = new ExtensionServicesDependenciesImpl(new MetricRegistry(),
+        extensionServicesDependencies = new ExtensionServicesDependenciesImpl(
+                new MetricRegistry(),
                 mock(InitializerRegistry.class),
                 mock(RetainedMessageStore.class),
                 mock(ClientService.class),

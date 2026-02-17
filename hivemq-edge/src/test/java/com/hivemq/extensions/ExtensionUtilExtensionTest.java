@@ -13,18 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.File;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 import util.TestExtensionUtil;
-
-import java.io.File;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Georg Held
@@ -88,7 +86,7 @@ public class ExtensionUtilExtensionTest extends AbstractExtensionTest {
 
         assertTrue(new File(validExtensionFolder, "DISABLED").exists());
     }
-    
+
     File newFolder(String name) {
         File folder = new File(this.folder, name);
         folder.mkdir();

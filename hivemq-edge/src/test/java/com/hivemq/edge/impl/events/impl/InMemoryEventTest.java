@@ -15,25 +15,24 @@
  */
 package com.hivemq.edge.impl.events.impl;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.edge.impl.events.InMemoryEventImpl;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.junit.jupiter.api.Test;
-
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.Test;
 
 public class InMemoryEventTest {
 
@@ -46,7 +45,8 @@ public class InMemoryEventTest {
         final int startsAt = Integer.valueOf(list.getFirst().getMessage());
         for (int i = 0; i < list.size(); i++) {
             final Event event = list.get(i);
-            assertEquals((asc ? (startsAt + i) : (startsAt - i)),
+            assertEquals(
+                    (asc ? (startsAt + i) : (startsAt - i)),
                     (int) Integer.valueOf(event.getMessage()),
                     "The event messages weren't entirely contiguous");
         }
@@ -55,7 +55,8 @@ public class InMemoryEventTest {
     private static void fill(final @NotNull InMemoryEventImpl impl, final int count) {
         final int initialSize = impl.readEvents(null, null).size();
         for (int i = 0; i < count; i++) {
-            new EventBuilderImpl(impl::storeEvent).withMessage(String.valueOf(initialSize + i))
+            new EventBuilderImpl(impl::storeEvent)
+                    .withMessage(String.valueOf(initialSize + i))
                     .withSeverity(EventImpl.SEVERITY.INFO)
                     .withTimestamp(timestampCounter++)
                     .fire();
@@ -68,31 +69,31 @@ public class InMemoryEventTest {
 
         List<Event> events = impl.readEvents(null, null);
 
-        //-- Test empty list is not null
+        // -- Test empty list is not null
         assertNotNull(events, "Event list should not be null event when empty");
 
-        //-- Add events within bounds
+        // -- Add events within bounds
         fill(impl, 10);
         events = impl.readEvents(null, null);
         assertEquals(10, events.size(), "Should be 10 events");
 
-        //-- Check first 10 are contiguous (9-0)
+        // -- Check first 10 are contiguous (9-0)
         contiguous(events, false);
 
-        //-- Add another
+        // -- Add another
         fill(impl, 1);
         events = impl.readEvents(null, null);
         assertEquals(10, events.size(), "Should still be 10 events");
 
-        //-- Check still contiguous having added(10-1)
+        // -- Check still contiguous having added(10-1)
         contiguous(events, false);
 
-        //-- Add to 1000
+        // -- Add to 1000
         fill(impl, 989);
         events = impl.readEvents(null, null);
         assertEquals(10, events.size(), "Should still be 10 events");
 
-        //-- Check still contiguous having added to 1000 (998-989)
+        // -- Check still contiguous having added to 1000 (998-989)
         contiguous(events, false);
     }
 
@@ -102,10 +103,10 @@ public class InMemoryEventTest {
 
         List<Event> events = impl.readEvents(null, null);
 
-        //-- Test empty list is not null
+        // -- Test empty list is not null
         assertNotNull(events, "Event list should not be null event when empty");
 
-        //-- Add events within bounds
+        // -- Add events within bounds
         fill(impl, 10);
         events = impl.readEvents(null, null);
         assertEquals(10, events.size(), "Should be 10 events");
@@ -113,13 +114,13 @@ public class InMemoryEventTest {
 
         final List<Event> head = events.subList(0, 2);
 
-        //-- Capture the head 2 of the 10, and compare to limited query, to ensure we're limiting from the correct end
+        // -- Capture the head 2 of the 10, and compare to limited query, to ensure we're limiting from the correct end
 
-        //Check limits
+        // Check limits
         events = impl.readEvents(null, 2);
         assertEquals(head, events, "Limited query should match the head of the full search");
 
-        //-- Check still contiguous having added to
+        // -- Check still contiguous having added to
         contiguous(events, false);
     }
 
@@ -131,13 +132,13 @@ public class InMemoryEventTest {
         List<Event> events = impl.readEvents(null, 5);
         assertEquals(5, events.size(), "Should be limited to 5 events");
 
-        //-- Check still since timestamp
+        // -- Check still since timestamp
         events = impl.readEvents(events.get(events.size() - 1).getTimestamp(), null);
         System.err.println(events);
         assertEquals(4, events.size(), "Should be same 4 events (excl.)");
         long latestTimestamp = events.get(0).getTimestamp();
 
-        //-- Add a new one since the last epoch and query by timestamp (should only return 1)
+        // -- Add a new one since the last epoch and query by timestamp (should only return 1)
         fill(impl, 1);
         events = impl.readEvents(latestTimestamp, null);
         assertEquals(1, events.size(), "Epoch query should only return 1 match");
@@ -160,7 +161,8 @@ public class InMemoryEventTest {
                     startLatch.await();
                     for (int i = 0; i < eventsPerThread; i++) {
                         final int eventNum = eventCounter.getAndIncrement();
-                        new EventBuilderImpl(impl::storeEvent).withMessage(String.valueOf(eventNum))
+                        new EventBuilderImpl(impl::storeEvent)
+                                .withMessage(String.valueOf(eventNum))
                                 .withSeverity(EventImpl.SEVERITY.INFO)
                                 .withTimestamp(System.currentTimeMillis())
                                 .fire();
@@ -241,7 +243,8 @@ public class InMemoryEventTest {
                     startLatch.await();
                     for (int i = 0; i < operationsPerThread; i++) {
                         final int eventNum = eventCounter.getAndIncrement();
-                        new EventBuilderImpl(impl::storeEvent).withMessage(String.valueOf(eventNum))
+                        new EventBuilderImpl(impl::storeEvent)
+                                .withMessage(String.valueOf(eventNum))
                                 .withSeverity(EventImpl.SEVERITY.INFO)
                                 .withTimestamp(System.currentTimeMillis())
                                 .fire();
@@ -315,7 +318,8 @@ public class InMemoryEventTest {
                     for (int i = 0; i < eventsPerThread; i++) {
                         final int eventNum = eventCounter.getAndIncrement();
                         // Include thread ID in message to verify no data corruption
-                        new EventBuilderImpl(impl::storeEvent).withMessage(threadId + "-" + eventNum)
+                        new EventBuilderImpl(impl::storeEvent)
+                                .withMessage(threadId + "-" + eventNum)
                                 .withSeverity(EventImpl.SEVERITY.INFO)
                                 .withTimestamp(System.currentTimeMillis())
                                 .fire();

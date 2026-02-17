@@ -15,16 +15,17 @@
  */
 package com.hivemq.persistence.topicfilter;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.hivemq.edge.api.model.TopicFilter;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class TopicFilterTest {
 
     @Test
     void fromTopicFilterModel_emptyString_nullSchema() {
-        final TopicFilterPojo topicFilter = TopicFilterPojo.fromModel(new TopicFilter().topicFilter("a").description( "b").schema(""));
+        final TopicFilterPojo topicFilter = TopicFilterPojo.fromModel(
+                new TopicFilter().topicFilter("a").description("b").schema(""));
         assertEquals("a", topicFilter.getTopicFilter());
         assertEquals("b", topicFilter.getDescription());
         assertNull(topicFilter.getSchema());

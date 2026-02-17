@@ -21,12 +21,12 @@ import com.hivemq.bootstrap.netty.ChannelDependencies;
 import com.hivemq.codec.transcoder.ITranscodingContext;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.handler.connack.MqttConnacker;
 import com.hivemq.mqttsn.IMqttsnTopicRegistry;
 import com.hivemq.mqttsn.MqttsnClientConnection;
 import com.hivemq.mqttsn.MqttsnConnectionHelper;
 import io.netty.channel.ChannelHandlerContext;
+import org.jetbrains.annotations.NotNull;
 import org.slj.mqtt.sn.spi.IMqttsnCodec;
 import org.slj.mqtt.sn.spi.IMqttsnMessageFactory;
 
@@ -38,8 +38,9 @@ public class NettyPipelineTranscodingContext implements ITranscodingContext {
     private final @NotNull ChannelHandlerContext channelHandlerContext;
     private final @NotNull ChannelDependencies channelDependencies;
 
-    public NettyPipelineTranscodingContext(final @NotNull ChannelHandlerContext channelHandlerContext,
-                                           final @NotNull ChannelDependencies channelDependencies) {
+    public NettyPipelineTranscodingContext(
+            final @NotNull ChannelHandlerContext channelHandlerContext,
+            final @NotNull ChannelDependencies channelDependencies) {
         this.channelHandlerContext = channelHandlerContext;
         this.channelDependencies = channelDependencies;
     }
@@ -49,7 +50,9 @@ public class NettyPipelineTranscodingContext implements ITranscodingContext {
     }
 
     public MqttsnClientConnection getClientConnection() {
-        final ClientConnection clientConnection = channelHandlerContext.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection = channelHandlerContext
+                .attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                .get();
         Preconditions.checkNotNull(clientConnection);
         return (MqttsnClientConnection) clientConnection;
     }
@@ -70,11 +73,11 @@ public class NettyPipelineTranscodingContext implements ITranscodingContext {
         return channelDependencies.getMqttConnacker();
     }
 
-    public IMqttsnCodec getCodec(){
+    public IMqttsnCodec getCodec() {
         return MqttsnConnectionHelper.getCodecForConnection(getClientConnection());
     }
 
-    public IMqttsnMessageFactory getMessageFactory(){
+    public IMqttsnMessageFactory getMessageFactory() {
         return MqttsnConnectionHelper.getMessageFactoryForConnection(getClientConnection());
     }
 }

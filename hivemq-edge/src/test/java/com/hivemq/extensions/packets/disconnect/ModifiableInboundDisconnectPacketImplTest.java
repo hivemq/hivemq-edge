@@ -15,22 +15,19 @@
  */
 package com.hivemq.extensions.packets.disconnect;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.packets.disconnect.DisconnectReasonCode;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
+import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import util.TestConfigurationBootstrap;
-
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Robin Atherton
@@ -39,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ModifiableInboundDisconnectPacketImplTest {
 
     private @NotNull ConfigurationService configurationService;
+
     @BeforeEach
     public void setUp() throws Exception {
         configurationService = new TestConfigurationBootstrap().getConfigurationService();
@@ -93,8 +91,7 @@ public class ModifiableInboundDisconnectPacketImplTest {
         final ModifiableInboundDisconnectPacketImpl modifiablePacket =
                 new ModifiableInboundDisconnectPacketImpl(packet, configurationService, 5);
 
-        assertThatThrownBy(() -> modifiablePacket.setReasonCode(null))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> modifiablePacket.setReasonCode(null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test

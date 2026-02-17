@@ -31,5 +31,4 @@ public interface IAuthenticationHandler {
     void decorateResponse(final AuthenticationResult result, final Response.ResponseBuilder builder);
 
     String getMethod();
-
 }

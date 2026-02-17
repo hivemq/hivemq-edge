@@ -16,9 +16,8 @@
 package util;
 
 import com.hivemq.configuration.service.entity.Tls;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.ArrayList;
+import org.jetbrains.annotations.NotNull;
 
 public final class TlsTestUtil {
 
@@ -38,6 +37,5 @@ public final class TlsTestUtil {
                 .withProtocols(new ArrayList<>());
     }
 
-    private TlsTestUtil() {
-    }
+    private TlsTestUtil() {}
 }

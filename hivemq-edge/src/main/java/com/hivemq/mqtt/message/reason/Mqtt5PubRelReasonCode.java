@@ -15,9 +15,9 @@
  */
 package com.hivemq.mqtt.message.reason;
 
+import com.hivemq.extension.sdk.api.packets.pubrel.PubrelReasonCode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.extension.sdk.api.packets.pubrel.PubrelReasonCode;
 
 /**
  * MQTT Reason Codes that can be used in PUBREL packets according to the MQTT 5 specification.
@@ -25,7 +25,6 @@ import com.hivemq.extension.sdk.api.packets.pubrel.PubrelReasonCode;
  * @author Silvio Giebl
  */
 public enum Mqtt5PubRelReasonCode implements Mqtt5ReasonCode {
-
     SUCCESS(MqttCommonReasonCode.SUCCESS),
     PACKET_IDENTIFIER_NOT_FOUND(MqttCommonReasonCode.PACKET_IDENTIFIER_NOT_FOUND);
 

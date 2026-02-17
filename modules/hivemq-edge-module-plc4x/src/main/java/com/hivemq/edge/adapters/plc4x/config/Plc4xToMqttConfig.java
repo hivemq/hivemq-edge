@@ -18,36 +18,40 @@ package com.hivemq.edge.adapters.plc4x.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Objects;
+import org.jetbrains.annotations.Nullable;
 
 public abstract class Plc4xToMqttConfig {
 
     @JsonProperty("pollingIntervalMillis")
-    @ModuleConfigField(title = "Polling Interval [ms]",
-                       description = "Time in millisecond that this endpoint will be polled",
-                       numberMin = 1,
-                       defaultValue = "1000")
+    @ModuleConfigField(
+            title = "Polling Interval [ms]",
+            description = "Time in millisecond that this endpoint will be polled",
+            numberMin = 1,
+            defaultValue = "1000")
     private final int pollingIntervalMillis;
 
     @JsonProperty("maxPollingErrorsBeforeRemoval")
-    @ModuleConfigField(title = "Max. Polling Errors",
-                       description = "Max. errors polling the endpoint before the polling daemon is stopped (-1 for unlimited retries)",
-                       numberMin = -1,
-                       defaultValue = "10")
+    @ModuleConfigField(
+            title = "Max. Polling Errors",
+            description =
+                    "Max. errors polling the endpoint before the polling daemon is stopped (-1 for unlimited retries)",
+            numberMin = -1,
+            defaultValue = "10")
     private final int maxPollingErrorsBeforeRemoval;
 
     @JsonProperty("publishChangedDataOnly")
-    @ModuleConfigField(title = "Only publish data items that have changed since last poll",
-                       defaultValue = "true",
-                       format = ModuleConfigField.FieldType.BOOLEAN)
+    @ModuleConfigField(
+            title = "Only publish data items that have changed since last poll",
+            defaultValue = "true",
+            format = ModuleConfigField.FieldType.BOOLEAN)
     private final boolean publishChangedDataOnly;
 
     @JsonCreator
     public Plc4xToMqttConfig(
             @JsonProperty(value = "pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
-            @JsonProperty(value = "maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
+            @JsonProperty(value = "maxPollingErrorsBeforeRemoval")
+                    final @Nullable Integer maxPollingErrorsBeforeRemoval,
             @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly) {
         this.pollingIntervalMillis = Objects.requireNonNullElse(pollingIntervalMillis, 1000);
         this.maxPollingErrorsBeforeRemoval = Objects.requireNonNullElse(maxPollingErrorsBeforeRemoval, 10);

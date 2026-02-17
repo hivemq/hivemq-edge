@@ -15,9 +15,14 @@
  */
 package com.hivemq.extensions.services.builder;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.packets.connect.WillPublishPacket;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.packets.general.UserProperties;
@@ -30,22 +35,15 @@ import com.hivemq.extensions.packets.publish.PublishPacketImpl;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.util.Bytes;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import util.TestConfigurationBootstrap;
-import util.TestMessageUtil;
-
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import util.TestConfigurationBootstrap;
+import util.TestMessageUtil;
 
 /**
  * @author Florian Limpöck
@@ -55,6 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class WillPublishBuilderImplTest {
 
     private WillPublishBuilderImpl willPublishBuilder;
+
     @BeforeEach
     public void setUp() throws Exception {
         final ConfigurationService service = new TestConfigurationBootstrap().getConfigurationService();
@@ -66,7 +65,8 @@ public class WillPublishBuilderImplTest {
 
         final PublishPacket testPublishPacket = new PublishPacketImpl(TestMessageUtil.createFullMqtt5Publish());
 
-        final WillPublishPacket willPublishPacket = willPublishBuilder.fromPublish(testPublishPacket).build();
+        final WillPublishPacket willPublishPacket =
+                willPublishBuilder.fromPublish(testPublishPacket).build();
 
         assertEquals(testPublishPacket.getQos(), willPublishPacket.getQos());
         assertEquals(testPublishPacket.getRetain(), willPublishPacket.getRetain());
@@ -82,7 +82,6 @@ public class WillPublishBuilderImplTest {
         assertEquals(
                 testPublishPacket.getUserProperties().asList().size(),
                 willPublishPacket.getUserProperties().asList().size());
-
     }
 
     @Test
@@ -91,7 +90,6 @@ public class WillPublishBuilderImplTest {
         final TestPublishPacket testPublishPacket = new TestPublishPacket();
         assertThatThrownBy(() -> willPublishBuilder.fromPublish(testPublishPacket))
                 .isInstanceOf(DoNotImplementException.class);
-
     }
 
     @Test
@@ -99,29 +97,33 @@ public class WillPublishBuilderImplTest {
 
         final Publish publish = new PublishBuilderImpl(new TestConfigurationBootstrap().getConfigurationService())
                 .topic("topic")
-                .payload(ByteBuffer.wrap(new byte[]{1, 2, 3}))
+                .payload(ByteBuffer.wrap(new byte[] {1, 2, 3}))
                 .qos(Qos.EXACTLY_ONCE)
                 .retain(true)
                 .contentType("TYPE")
-                .correlationData(ByteBuffer.wrap(new byte[]{1, 2, 3, 4}))
+                .correlationData(ByteBuffer.wrap(new byte[] {1, 2, 3, 4}))
                 .responseTopic("responseTopic")
                 .messageExpiryInterval(10)
                 .payloadFormatIndicator(PayloadFormatIndicator.UTF_8)
-                .userProperty("key", "value").build();
+                .userProperty("key", "value")
+                .build();
 
-        final WillPublishPacket willPublishPacket = willPublishBuilder.fromPublish(publish).build();
+        final WillPublishPacket willPublishPacket =
+                willPublishBuilder.fromPublish(publish).build();
 
         assertEquals("topic", publish.getTopic());
-        assertArrayEquals(new byte[]{1, 2, 3}, publish.getPayload().get().array());
+        assertArrayEquals(new byte[] {1, 2, 3}, publish.getPayload().get().array());
         assertEquals(2, publish.getQos().getQosNumber());
         assertTrue(publish.getRetain());
         assertEquals("TYPE", publish.getContentType().get());
-        assertArrayEquals(new byte[]{1, 2, 3, 4}, publish.getCorrelationData().get().array());
+        assertArrayEquals(
+                new byte[] {1, 2, 3, 4}, publish.getCorrelationData().get().array());
         assertEquals("responseTopic", publish.getResponseTopic().get());
         assertEquals(10L, publish.getMessageExpiryInterval().get().longValue());
-        assertEquals(PayloadFormatIndicator.UTF_8, publish.getPayloadFormatIndicator().get());
+        assertEquals(
+                PayloadFormatIndicator.UTF_8,
+                publish.getPayloadFormatIndicator().get());
         assertEquals("value", publish.getUserProperties().getFirst("key").get());
-
 
         assertEquals(publish.getQos(), willPublishPacket.getQos());
         assertEquals(publish.getRetain(), willPublishPacket.getRetain());
@@ -135,8 +137,8 @@ public class WillPublishBuilderImplTest {
         assertEquals(publish.getContentType(), willPublishPacket.getContentType());
         assertEquals(publish.getPayload(), willPublishPacket.getPayload());
         assertEquals(
-                publish.getUserProperties().asList().size(), willPublishPacket.getUserProperties().asList().size());
-
+                publish.getUserProperties().asList().size(),
+                willPublishPacket.getUserProperties().asList().size());
     }
 
     @Test
@@ -144,13 +146,14 @@ public class WillPublishBuilderImplTest {
 
         final PublishPacket testPublishPacket = new PublishPacketImpl(TestMessageUtil.createFullMqtt5Publish());
 
-        final WillPublishPacket willPublishPacket1 = willPublishBuilder.fromPublish(testPublishPacket).build();
+        final WillPublishPacket willPublishPacket1 =
+                willPublishBuilder.fromPublish(testPublishPacket).build();
 
         final WillPublishBuilderImpl builder =
                 new WillPublishBuilderImpl(new TestConfigurationBootstrap().getConfigurationService());
 
-        final WillPublishPacket willPublishPacket2 = builder.fromWillPublish(willPublishPacket1).build();
-
+        final WillPublishPacket willPublishPacket2 =
+                builder.fromWillPublish(willPublishPacket1).build();
 
         assertEquals(willPublishPacket1.getQos(), willPublishPacket2.getQos());
         assertEquals(willPublishPacket1.getRetain(), willPublishPacket2.getRetain());
@@ -168,7 +171,6 @@ public class WillPublishBuilderImplTest {
         assertEquals(
                 willPublishPacket1.getUserProperties().asList().size(),
                 willPublishPacket2.getUserProperties().asList().size());
-
     }
 
     @Test
@@ -176,11 +178,11 @@ public class WillPublishBuilderImplTest {
 
         final WillPublishPacket willPublishPacket = willPublishBuilder
                 .topic("topic")
-                .payload(ByteBuffer.wrap(new byte[]{1, 2, 3}))
+                .payload(ByteBuffer.wrap(new byte[] {1, 2, 3}))
                 .qos(Qos.EXACTLY_ONCE)
                 .retain(true)
                 .contentType("TYPE")
-                .correlationData(ByteBuffer.wrap(new byte[]{1, 2, 3, 4}))
+                .correlationData(ByteBuffer.wrap(new byte[] {1, 2, 3, 4}))
                 .responseTopic("responseTopic")
                 .messageExpiryInterval(10)
                 .payloadFormatIndicator(PayloadFormatIndicator.UTF_8)
@@ -189,16 +191,19 @@ public class WillPublishBuilderImplTest {
                 .build();
 
         assertEquals("topic", willPublishPacket.getTopic());
-        assertArrayEquals(new byte[]{1, 2, 3}, Bytes.getBytesFromReadOnlyBuffer(willPublishPacket.getPayload()));
+        assertArrayEquals(new byte[] {1, 2, 3}, Bytes.getBytesFromReadOnlyBuffer(willPublishPacket.getPayload()));
         assertEquals(2, willPublishPacket.getQos().getQosNumber());
         assertTrue(willPublishPacket.getRetain());
         assertEquals("TYPE", willPublishPacket.getContentType().get());
         assertArrayEquals(
-                new byte[]{1, 2, 3, 4}, Bytes.getBytesFromReadOnlyBuffer(willPublishPacket.getCorrelationData()));
+                new byte[] {1, 2, 3, 4}, Bytes.getBytesFromReadOnlyBuffer(willPublishPacket.getCorrelationData()));
         assertEquals("responseTopic", willPublishPacket.getResponseTopic().get());
         assertEquals(10L, willPublishPacket.getMessageExpiryInterval().get().longValue());
-        assertEquals(PayloadFormatIndicator.UTF_8, willPublishPacket.getPayloadFormatIndicator().get());
-        assertEquals("value", willPublishPacket.getUserProperties().getFirst("key").get());
+        assertEquals(
+                PayloadFormatIndicator.UTF_8,
+                willPublishPacket.getPayloadFormatIndicator().get());
+        assertEquals(
+                "value", willPublishPacket.getUserProperties().getFirst("key").get());
         assertEquals(123, willPublishPacket.getWillDelay());
     }
 
@@ -216,8 +221,7 @@ public class WillPublishBuilderImplTest {
         final ConfigurationService service = new TestConfigurationBootstrap().getConfigurationService();
         service.mqttConfiguration().setRetainedMessagesEnabled(false);
         willPublishBuilder = new WillPublishBuilderImpl(service);
-        assertThatThrownBy(() -> willPublishBuilder.retain(true))
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> willPublishBuilder.retain(true)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -225,140 +229,148 @@ public class WillPublishBuilderImplTest {
         final ConfigurationService service = new TestConfigurationBootstrap().getConfigurationService();
         service.restrictionsConfiguration().setMaxTopicLength(5);
         willPublishBuilder = new WillPublishBuilderImpl(service);
-        assertThatThrownBy(() -> willPublishBuilder.topic("123456"))
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> willPublishBuilder.topic("123456")).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void test_response_topic_validation_utf_8_should_not() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.responseTopic("topic" + '\u0001'));
     }
 
     @Test
     public void test_response_topic_validation_utf_8_must_not() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.responseTopic("topic" + '\uD800'));
     }
 
     @Test
     public void test_content_type_validation_utf_8_should_not() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.contentType("topic" + '\u0001'));
     }
 
     @Test
     public void test_content_type_validation_utf_8_must_not() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.contentType("topic" + '\uD800'));
     }
 
     @Test
     public void test_user_property_name_validation_utf_8_should_not() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.userProperty("topic" + '\u0001', "val"));
     }
 
     @Test
     public void test_user_property_name_validation_utf_8_must_not() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.userProperty("topic" + '\uD800', "val"));
     }
 
     @Test
     public void test_user_property_value_validation_utf_8_should_not() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.userProperty("key", "val" + '\u0001'));
     }
 
     @Test
     public void test_user_property_value_validation_utf_8_must_not() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.userProperty("key", "val" + '\uD800'));
     }
 
     @Test
     public void test_qos_null() {
-    
+
         assertThrows(NullPointerException.class, () -> willPublishBuilder.qos(null));
     }
 
     @Test
     public void test_topic_null() {
-    
+
         assertThrows(NullPointerException.class, () -> willPublishBuilder.topic(null));
     }
 
     @Test
     public void test_topic_empty() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.topic(""));
     }
 
     @Test
     public void test_topic_invalid() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.topic("asd" + '\u0000'));
     }
 
     @Test
     public void test_topic_malformed_should_not() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.topic("asd" + '\u0001'));
     }
 
     @Test
     public void test_topic_malformed_must_not() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.topic("asd" + '\uD800'));
     }
 
     @Test
     public void test_from_invalid_publish_impl() {
-    
+
         assertThrows(DoNotImplementException.class, () -> willPublishBuilder.fromPublish(new TestPublish()));
     }
 
     @Test
     public void test_from_invalid_will_publish_impl() {
-    
-        assertThrows(DoNotImplementException.class, () -> willPublishBuilder.fromWillPublish(new TestWillPublishPacket()));
+
+        assertThrows(
+                DoNotImplementException.class, () -> willPublishBuilder.fromWillPublish(new TestWillPublishPacket()));
     }
 
     @Test
     public void test_user_property_name_null() {
-    
+
         assertThrows(NullPointerException.class, () -> willPublishBuilder.userProperty(null, "val"));
     }
 
     @Test
     public void test_user_property_value_null() {
-    
+
         assertThrows(NullPointerException.class, () -> willPublishBuilder.userProperty("name", null));
     }
 
     @Test
     public void test_user_property_name_too_long() {
-    
-        assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.userProperty(RandomStringUtils.randomAlphanumeric(65536), "val"));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> willPublishBuilder.userProperty(RandomStringUtils.randomAlphanumeric(65536), "val"));
     }
 
     @Test
     public void test_user_property_value_too_long() {
-    
-        assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.userProperty("name", RandomStringUtils.randomAlphanumeric(65536)));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> willPublishBuilder.userProperty("name", RandomStringUtils.randomAlphanumeric(65536)));
     }
 
     @Test
     public void test_response_topic_too_long() {
-    
-        assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.responseTopic(RandomStringUtils.randomAlphanumeric(65536)));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> willPublishBuilder.responseTopic(RandomStringUtils.randomAlphanumeric(65536)));
     }
 
     @Test
     public void test_content_type_too_long() {
-    
-        assertThrows(IllegalArgumentException.class, () -> willPublishBuilder.contentType(RandomStringUtils.randomAlphanumeric(65536)));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> willPublishBuilder.contentType(RandomStringUtils.randomAlphanumeric(65536)));
     }
 
     class TestPublishPacket implements PublishPacket {

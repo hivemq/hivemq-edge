@@ -16,10 +16,9 @@
 package com.hivemq.configuration.service.impl;
 
 import com.hivemq.configuration.service.ModuleConfigurationService;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.HashMap;
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 public class ModuleConfigurationServiceImpl implements ModuleConfigurationService {
 

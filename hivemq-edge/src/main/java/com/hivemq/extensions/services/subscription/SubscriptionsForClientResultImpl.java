@@ -15,11 +15,10 @@
  */
 package com.hivemq.extensions.services.subscription;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.subscription.SubscriptionsForClientResult;
 import com.hivemq.extension.sdk.api.services.subscription.TopicSubscription;
-
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
@@ -47,9 +46,8 @@ public class SubscriptionsForClientResultImpl implements SubscriptionsForClientR
 
     @Override
     public String toString() {
-        return "SubscriptionsForClientResult{" +
-                "clientId='" + clientId + '\'' +
-                ", topicSubscriptions=" + topicSubscriptions +
-                "}\n";
+        return "SubscriptionsForClientResult{" + "clientId='"
+                + clientId + '\'' + ", topicSubscriptions="
+                + topicSubscriptions + "}\n";
     }
 }

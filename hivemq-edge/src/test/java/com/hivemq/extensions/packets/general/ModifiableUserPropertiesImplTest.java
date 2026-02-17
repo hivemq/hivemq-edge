@@ -15,26 +15,24 @@
  */
 package com.hivemq.extensions.packets.general;
 
+import static com.hivemq.extensions.services.builder.PluginBuilderUtil.UTF_8_STRING_MAX_LENGTH;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.google.common.collect.ImmutableList;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.packets.general.UserProperty;
 import com.hivemq.extension.sdk.api.services.exception.DoNotImplementException;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
+import java.util.List;
+import java.util.Optional;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.util.List;
-import java.util.Optional;
-
-import static com.hivemq.extensions.services.builder.PluginBuilderUtil.UTF_8_STRING_MAX_LENGTH;
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Georg Held
@@ -43,13 +41,15 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ModifiableUserPropertiesImplTest {
 
     private @NotNull ModifiableUserPropertiesImpl filledProps;
+
     @BeforeEach
     public void setUp() throws Exception {
-        filledProps = new ModifiableUserPropertiesImpl(ImmutableList.of(
-                MqttUserProperty.of("one", "one"),
-                MqttUserProperty.of("one", "two"),
-                MqttUserProperty.of("two", "two")
-        ), true);
+        filledProps = new ModifiableUserPropertiesImpl(
+                ImmutableList.of(
+                        MqttUserProperty.of("one", "one"),
+                        MqttUserProperty.of("one", "two"),
+                        MqttUserProperty.of("two", "two")),
+                true);
     }
 
     @Test
@@ -95,113 +95,128 @@ public class ModifiableUserPropertiesImplTest {
 
     @Test
     public void test_add_null_name() {
-    
+
         assertThrows(NullPointerException.class, () -> filledProps.addUserProperty(null, "val"));
     }
 
     @Test
     public void test_add_null_value() {
-    
+
         assertThrows(NullPointerException.class, () -> filledProps.addUserProperty("name", null));
     }
 
     @Test
     public void test_add_name_malformed() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> filledProps.addUserProperty("name" + '\u0001', "val"));
     }
 
     @Test
     public void test_add_name_to_long() {
-    
-        assertThrows(IllegalArgumentException.class, () -> filledProps.addUserProperty(RandomStringUtils.randomAlphanumeric(UTF_8_STRING_MAX_LENGTH + 1), "value"));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> filledProps.addUserProperty(
+                        RandomStringUtils.randomAlphanumeric(UTF_8_STRING_MAX_LENGTH + 1), "value"));
     }
 
     @Test
     public void test_add_value_malformed() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> filledProps.addUserProperty("name", "val" + '\u0001'));
     }
 
     @Test
     public void test_add_value_to_long() {
-    
-        assertThrows(IllegalArgumentException.class, () -> filledProps.addUserProperty("name", RandomStringUtils.randomAlphanumeric(UTF_8_STRING_MAX_LENGTH + 1)));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> filledProps.addUserProperty(
+                        "name", RandomStringUtils.randomAlphanumeric(UTF_8_STRING_MAX_LENGTH + 1)));
     }
 
     @Test
     public void test_add_null_user_property() {
-    
+
         assertThrows(NullPointerException.class, () -> filledProps.addUserProperty(null));
     }
 
     @Test
     public void test_add_bad_user_property_impl() {
         assertThatThrownBy(() -> filledProps.addUserProperty(new UserProperty() {
-            @Override
-            public @NotNull String getName() {
-                return "name";
-            }
+                    @Override
+                    public @NotNull String getName() {
+                        return "name";
+                    }
 
-            @Override
-            public @NotNull String getValue() {
-                return "value";
-            }
-        })).isInstanceOf(DoNotImplementException.class);
+                    @Override
+                    public @NotNull String getValue() {
+                        return "value";
+                    }
+                }))
+                .isInstanceOf(DoNotImplementException.class);
     }
 
     @Test
     public void test_remove_property_null_name() {
-    
+
         assertThrows(NullPointerException.class, () -> filledProps.removeUserProperty(null, "val"));
     }
 
     @Test
     public void test_remove_property_null_value() {
-    
+
         assertThrows(NullPointerException.class, () -> filledProps.removeUserProperty("name", null));
     }
 
     @Test
     public void test_remove_property_name_malformed() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> filledProps.removeUserProperty("name" + '\u0001', "val"));
     }
 
     @Test
     public void test_remove_property_name_to_long() {
-    
-        assertThrows(IllegalArgumentException.class, () -> filledProps.removeUserProperty(RandomStringUtils.randomAlphanumeric(UTF_8_STRING_MAX_LENGTH + 1), "value"));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> filledProps.removeUserProperty(
+                        RandomStringUtils.randomAlphanumeric(UTF_8_STRING_MAX_LENGTH + 1), "value"));
     }
 
     @Test
     public void test_remove_property_value_malformed() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> filledProps.removeUserProperty("name", "val" + '\u0001'));
     }
 
     @Test
     public void test_remove_property_value_to_long() {
-    
-        assertThrows(IllegalArgumentException.class, () -> filledProps.removeUserProperty("name", RandomStringUtils.randomAlphanumeric(UTF_8_STRING_MAX_LENGTH + 1)));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> filledProps.removeUserProperty(
+                        "name", RandomStringUtils.randomAlphanumeric(UTF_8_STRING_MAX_LENGTH + 1)));
     }
 
     @Test
     public void test_remove_name_null() {
-    
+
         assertThrows(NullPointerException.class, () -> filledProps.removeName(null));
     }
 
     @Test
     public void test_remove_name_malformed() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> filledProps.removeName("name" + '\u0001'));
     }
 
     @Test
     public void test_remove_name_to_long() {
-    
-        assertThrows(IllegalArgumentException.class, () -> filledProps.removeName(RandomStringUtils.randomAlphanumeric(UTF_8_STRING_MAX_LENGTH + 1)));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> filledProps.removeName(RandomStringUtils.randomAlphanumeric(UTF_8_STRING_MAX_LENGTH + 1)));
     }
 
     @Test
@@ -236,21 +251,20 @@ public class ModifiableUserPropertiesImplTest {
 
     @Test
     public void test_get_key_null() {
-    
+
         assertThrows(NullPointerException.class, () -> filledProps.getAllForName(null));
     }
 
     @Test
     public void test_get_first_null() {
-    
+
         assertThrows(NullPointerException.class, () -> filledProps.getFirst(null));
     }
 
     @Test
     public void copy_noChanges() {
-        final ImmutableList<MqttUserProperty> list = ImmutableList.of(
-                MqttUserProperty.of("name1", "value1"),
-                MqttUserProperty.of("name2", "value2"));
+        final ImmutableList<MqttUserProperty> list =
+                ImmutableList.of(MqttUserProperty.of("name1", "value1"), MqttUserProperty.of("name2", "value2"));
         final ModifiableUserPropertiesImpl modifiableUserProperties = new ModifiableUserPropertiesImpl(list, true);
 
         final UserPropertiesImpl copy = modifiableUserProperties.copy();
@@ -260,18 +274,16 @@ public class ModifiableUserPropertiesImplTest {
 
     @Test
     public void copy_changes() {
-        final ImmutableList<MqttUserProperty> list = ImmutableList.of(
-                MqttUserProperty.of("name1", "value1"),
-                MqttUserProperty.of("name2", "value2"));
+        final ImmutableList<MqttUserProperty> list =
+                ImmutableList.of(MqttUserProperty.of("name1", "value1"), MqttUserProperty.of("name2", "value2"));
         final ModifiableUserPropertiesImpl modifiableUserProperties = new ModifiableUserPropertiesImpl(list, true);
 
         modifiableUserProperties.removeName("name1");
         modifiableUserProperties.addUserProperty("name3", "value3");
         final UserPropertiesImpl copy = modifiableUserProperties.copy();
 
-        final ImmutableList<MqttUserProperty> expectedList = ImmutableList.of(
-                MqttUserProperty.of("name2", "value2"),
-                MqttUserProperty.of("name3", "value3"));
+        final ImmutableList<MqttUserProperty> expectedList =
+                ImmutableList.of(MqttUserProperty.of("name2", "value2"), MqttUserProperty.of("name3", "value3"));
         assertEquals(expectedList, copy.asInternalList());
     }
 

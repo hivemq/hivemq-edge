@@ -83,6 +83,4 @@ public interface Mqtt3PUBLISH extends Message {
      * dereferences the payload of the publish message
      */
     void dereferencePayload();
-
-
 }

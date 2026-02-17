@@ -19,15 +19,14 @@ import com.google.common.base.Preconditions;
 import com.hivemq.annotations.ReadOnly;
 import com.hivemq.configuration.entity.mqttsn.BroadcastAddress;
 import com.hivemq.configuration.service.MqttsnConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqttsn.MqttsnTopicAlias;
-import org.slj.mqtt.sn.MqttsnConstants;
-
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jetbrains.annotations.NotNull;
+import org.slj.mqtt.sn.MqttsnConstants;
 
 /**
  * @author Simon L Johnson
@@ -49,7 +48,8 @@ public class MqttsnConfigurationServiceImpl implements MqttsnConfigurationServic
 
     @Override
     @ReadOnly
-    @NotNull  public Map<Integer, MqttsnTopicAlias> getPredefinedTopicAliases() {
+    @NotNull
+    public Map<Integer, MqttsnTopicAlias> getPredefinedTopicAliases() {
         return predefinedTopicAliases;
     }
 
@@ -145,4 +145,3 @@ public class MqttsnConfigurationServiceImpl implements MqttsnConfigurationServic
         this.gatewayId = gatewayId;
     }
 }
-

@@ -15,27 +15,6 @@
  */
 package com.hivemq.bootstrap.netty.initializer;
 
-import com.google.common.base.Preconditions;
-import com.hivemq.bootstrap.ClientConnection;
-import com.hivemq.bootstrap.factories.HandlerPackage;
-import com.hivemq.bootstrap.netty.ChannelDependencies;
-import com.hivemq.codec.decoder.MQTTMessageDecoder;
-import com.hivemq.configuration.service.InternalConfigurations;
-import com.hivemq.configuration.service.RestrictionsConfigurationService;
-import com.hivemq.configuration.service.entity.Listener;
-import org.jetbrains.annotations.NotNull;
-import com.hivemq.mqtt.handler.connect.MessageBarrier;
-import com.hivemq.mqtt.handler.publish.PublishFlushHandler;
-import com.hivemq.security.exception.SslException;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.handler.timeout.IdleStateHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.TimeUnit;
-
 import static com.hivemq.bootstrap.netty.ChannelHandlerNames.ALL_CHANNELS_GROUP_HANDLER;
 import static com.hivemq.bootstrap.netty.ChannelHandlerNames.CLIENT_LIFECYCLE_EVENT_HANDLER;
 import static com.hivemq.bootstrap.netty.ChannelHandlerNames.CONNECTION_LIMITER;
@@ -58,6 +37,26 @@ import static com.hivemq.bootstrap.netty.ChannelHandlerNames.PLUGIN_INITIALIZER_
 import static com.hivemq.bootstrap.netty.ChannelHandlerNames.PUBLISH_FLUSH_HANDLER;
 import static com.hivemq.logging.LoggingUtils.appendListenerToMessage;
 
+import com.google.common.base.Preconditions;
+import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.bootstrap.factories.HandlerPackage;
+import com.hivemq.bootstrap.netty.ChannelDependencies;
+import com.hivemq.codec.decoder.MQTTMessageDecoder;
+import com.hivemq.configuration.service.InternalConfigurations;
+import com.hivemq.configuration.service.RestrictionsConfigurationService;
+import com.hivemq.configuration.service.entity.Listener;
+import com.hivemq.mqtt.handler.connect.MessageBarrier;
+import com.hivemq.mqtt.handler.publish.PublishFlushHandler;
+import com.hivemq.security.exception.SslException;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.handler.timeout.IdleStateHandler;
+import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public abstract class AbstractChannelInitializer<T extends Channel> extends ChannelInitializer<T> {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractChannelInitializer.class);
@@ -71,7 +70,8 @@ public abstract class AbstractChannelInitializer<T extends Channel> extends Chan
             final @NotNull ChannelDependencies channelDependencies, final @NotNull Listener listener) {
         this.channelDependencies = channelDependencies;
         this.listener = listener;
-        final boolean incomingEnabled = channelDependencies.getRestrictionsConfigurationService().incomingLimit() > 0;
+        final boolean incomingEnabled =
+                channelDependencies.getRestrictionsConfigurationService().incomingLimit() > 0;
         final boolean outgoingEnabled = InternalConfigurations.OUTGOING_BANDWIDTH_THROTTLING_DEFAULT_BYTES_PER_SEC > 0;
         legacyNettyShutdown = InternalConfigurations.NETTY_SHUTDOWN_LEGACY;
         throttlingEnabled = incomingEnabled || outgoingEnabled;
@@ -83,8 +83,8 @@ public abstract class AbstractChannelInitializer<T extends Channel> extends Chan
         Preconditions.checkNotNull(ch, "Channel must never be null");
 
         if (!legacyNettyShutdown && channelDependencies.getShutdownHooks().isShuttingDown()) {
-            //during shutting down, we dont want new clients to create any pipeline,
-            //and we dont want to read from their socket
+            // during shutting down, we dont want new clients to create any pipeline,
+            // and we dont want to read from their socket
             ch.config().setAutoRead(false);
             ch.close();
             return;
@@ -104,11 +104,12 @@ public abstract class AbstractChannelInitializer<T extends Channel> extends Chan
         ch.pipeline().addLast(MQTT_MESSAGE_DECODER, new MQTTMessageDecoder(channelDependencies));
         ch.pipeline().addLast(MQTT_MESSAGE_ENCODER, channelDependencies.getMqttMessageEncoder());
         addNoConnectIdleHandler(ch);
-        //MQTT_5_FLOW_CONTROL_HANDLER is added here after CONNECT
+        // MQTT_5_FLOW_CONTROL_HANDLER is added here after CONNECT
         ch.pipeline()
                 .addLast(MQTT_MESSAGE_BARRIER, new MessageBarrier(channelDependencies.getMqttServerDisconnector()));
 
-        final HandlerPackage handlerPackage = channelDependencies.getHandlerProvider().get();
+        final HandlerPackage handlerPackage =
+                channelDependencies.getHandlerProvider().get();
         if (handlerPackage != null) {
             ch.pipeline().addLast(handlerPackage.getHandlerName(), handlerPackage.getHandler());
         }
@@ -118,7 +119,7 @@ public abstract class AbstractChannelInitializer<T extends Channel> extends Chan
 
         ch.pipeline().addLast(INTERCEPTOR_HANDLER, channelDependencies.getInterceptorHandler());
 
-        //MQTT_PUBLISH_FLOW_HANDLER is added here after CONNECT
+        // MQTT_PUBLISH_FLOW_HANDLER is added here after CONNECT
         ch.pipeline().addLast(MESSAGE_EXPIRY_HANDLER, channelDependencies.getPublishMessageExpiryHandler());
 
         ch.pipeline().addLast(MQTT_SUBSCRIBE_HANDLER, channelDependencies.getSubscribeHandler());
@@ -131,7 +132,6 @@ public abstract class AbstractChannelInitializer<T extends Channel> extends Chan
         ch.pipeline().addLast(CONNECTION_LIMITER, channelDependencies.getConnectionLimiterHandler());
         ch.pipeline().addLast(MQTT_CONNECT_HANDLER, channelDependencies.getConnectHandler());
 
-
         ch.pipeline().addLast(MQTT_PINGREQ_HANDLER, channelDependencies.getPingRequestHandler());
         ch.pipeline().addLast(MQTT_UNSUBSCRIBE_HANDLER, channelDependencies.getUnsubscribeHandler());
         ch.pipeline().addLast(MQTT_DISCONNECT_HANDLER, channelDependencies.getDisconnectHandler());
@@ -143,7 +143,7 @@ public abstract class AbstractChannelInitializer<T extends Channel> extends Chan
 
     protected void addNoConnectIdleHandler(final @NotNull Channel ch) {
 
-        //get timeout value from internal config
+        // get timeout value from internal config
         final RestrictionsConfigurationService restrictionsConfig =
                 channelDependencies.getRestrictionsConfigurationService();
 
@@ -154,7 +154,8 @@ public abstract class AbstractChannelInitializer<T extends Channel> extends Chan
 
             ch.pipeline().addAfter(MQTT_MESSAGE_ENCODER, NEW_CONNECTION_IDLE_HANDLER, idleStateHandler);
             ch.pipeline()
-                    .addAfter(NEW_CONNECTION_IDLE_HANDLER,
+                    .addAfter(
+                            NEW_CONNECTION_IDLE_HANDLER,
                             NO_CONNECT_IDLE_EVENT_HANDLER,
                             channelDependencies.getNoConnectIdleHandler());
         }
@@ -166,21 +167,27 @@ public abstract class AbstractChannelInitializer<T extends Channel> extends Chan
     public void exceptionCaught(final @NotNull ChannelHandlerContext ctx, final @NotNull Throwable cause)
             throws Exception {
         if (cause instanceof SslException) {
-            final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
-            log.error("{}. Disconnecting client {} ",
+            final ClientConnection clientConnection =
+                    ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+            log.error(
+                    "{}. Disconnecting client {} ",
                     cause.getMessage(),
                     clientConnection.getChannelIP().orElse("UNKNOWN"));
             log.debug("Original exception:", cause);
-            final String eventLogMessage = appendListenerToMessage(ctx.channel(),
+            final String eventLogMessage = appendListenerToMessage(
+                    ctx.channel(),
                     cause.getMessage() != null ? cause.getMessage() : "TLS connection initialization failed");
-            //We need to close the channel because the initialization wasn't successful
-            channelDependencies.getMqttServerDisconnector().logAndClose(ctx.channel(), null,  //already logged
-                    eventLogMessage);
+            // We need to close the channel because the initialization wasn't successful
+            channelDependencies
+                    .getMqttServerDisconnector()
+                    .logAndClose(
+                            ctx.channel(),
+                            null, // already logged
+                            eventLogMessage);
         } else {
 
-            //Just use the default handler
+            // Just use the default handler
             super.exceptionCaught(ctx, cause);
         }
     }
-
 }

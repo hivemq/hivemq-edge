@@ -15,16 +15,15 @@
  */
 package com.hivemq.extensions.events.client.parameters;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import util.TestMessageUtil;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author Florian Limpöck
@@ -34,7 +33,7 @@ public class ConnectionStartInputImplTest {
 
     @Test
     public void test_construction_client_null() {
-    
+
         assertThrows(NullPointerException.class, () -> new ConnectionStartInputImpl(null, new EmbeddedChannel()));
     }
 
@@ -44,7 +43,8 @@ public class ConnectionStartInputImplTest {
         ClientConnection clientConnection = new ClientConnection(channel, null);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
-        final ConnectionStartInputImpl input = new ConnectionStartInputImpl(TestMessageUtil.createFullMqtt5Connect(), channel);
+        final ConnectionStartInputImpl input =
+                new ConnectionStartInputImpl(TestMessageUtil.createFullMqtt5Connect(), channel);
         assertEquals(input, input.get());
         assertNotNull(input.getClientInformation());
         assertNotNull(input.getConnectionInformation());

@@ -17,13 +17,12 @@ package com.hivemq.configuration.service.impl.listener;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.service.entity.*;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The default implementation of the listener configuration service.
@@ -42,10 +41,11 @@ public class ListenerConfigurationServiceImpl implements ListenerConfigurationSe
 
     @Override
     public <T extends Listener> void addListener(final @NotNull T listener) {
-        if (listener.getClass().equals(MqttTcpListener.class) || listener.getClass().equals(MqttTlsTcpListener.class) ||
-                listener.getClass().equals(MqttWebsocketListener.class) ||
-                listener.getClass().equals(MqttTlsWebsocketListener.class) || listener.getClass().equals(
-                MqttsnUdpListener.class)) {
+        if (listener.getClass().equals(MqttTcpListener.class)
+                || listener.getClass().equals(MqttTlsTcpListener.class)
+                || listener.getClass().equals(MqttWebsocketListener.class)
+                || listener.getClass().equals(MqttTlsWebsocketListener.class)
+                || listener.getClass().equals(MqttsnUdpListener.class)) {
 
             log.debug(
                     "Adding {} on bind address {} and port {}. Name: {}.",
@@ -93,7 +93,6 @@ public class ListenerConfigurationServiceImpl implements ListenerConfigurationSe
         return filterListeners(MqttsnUdpListener.class);
     }
 
-
     public void clear() {
         listeners.clear();
     }
@@ -101,7 +100,7 @@ public class ListenerConfigurationServiceImpl implements ListenerConfigurationSe
     private <T extends Listener> @NotNull ImmutableList<T> filterListeners(final @NotNull Class<T> clazz) {
         final ImmutableList.Builder<T> builder = ImmutableList.builder();
         for (final Listener listener : listeners) {
-            //We're interested in the actual class, not subclasses!
+            // We're interested in the actual class, not subclasses!
             if (listener.getClass().equals(clazz)) {
                 builder.add(clazz.cast(listener));
             }

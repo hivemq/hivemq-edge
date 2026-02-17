@@ -26,7 +26,8 @@ public class LegacyS7AdapterConfig extends LegacyPlc4xAdapterConfig {
     private int port = 102;
 
     @JsonProperty(value = "controllerType", required = true)
-    private @NotNull S7SpecificAdapterConfig.ControllerType controllerType = S7SpecificAdapterConfig.ControllerType.S7_300;
+    private @NotNull S7SpecificAdapterConfig.ControllerType controllerType =
+            S7SpecificAdapterConfig.ControllerType.S7_300;
 
     @JsonProperty("remoteRack")
     private @NotNull Integer remoteRack = 0;
@@ -43,9 +44,7 @@ public class LegacyS7AdapterConfig extends LegacyPlc4xAdapterConfig {
     @JsonProperty("remoteTsap")
     private @NotNull Integer remoteTsap = 0;
 
-
-    public LegacyS7AdapterConfig() {
-    }
+    public LegacyS7AdapterConfig() {}
 
     @Override
     public int getPort() {
@@ -75,5 +74,4 @@ public class LegacyS7AdapterConfig extends LegacyPlc4xAdapterConfig {
     public S7SpecificAdapterConfig.ControllerType getControllerType() {
         return controllerType;
     }
-
 }

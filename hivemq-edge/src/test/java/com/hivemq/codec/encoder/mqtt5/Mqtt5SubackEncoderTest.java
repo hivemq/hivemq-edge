@@ -24,10 +24,9 @@ import com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode;
 import com.hivemq.mqtt.message.suback.SUBACK;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import java.util.Arrays;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.Arrays;
 
 /**
  * @author Florian Limpöck
@@ -43,33 +42,56 @@ public class Mqtt5SubackEncoderTest extends AbstractMqtt5EncoderTest {
     @Test
     public void encode_simple() {
         final byte[] expected = {
-                // fixed header
-                //   type, flags
-                (byte) 0b1001_0000,
-                //   remaining length
-                28,
-                // variable header
-                //   packet identifier
-                0, 3,
-                //   properties
-                24,
-                //     reason string
-                0x1F, 0, 7, 's', 'u', 'c', 'c', 'e', 's', 's',
-                //     user properties
-                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e',
-                // payload
-                0x00
+            // fixed header
+            //   type, flags
+            (byte) 0b1001_0000,
+            //   remaining length
+            28,
+            // variable header
+            //   packet identifier
+            0,
+            3,
+            //   properties
+            24,
+            //     reason string
+            0x1F,
+            0,
+            7,
+            's',
+            'u',
+            'c',
+            'c',
+            'e',
+            's',
+            's',
+            //     user properties
+            0x26,
+            0,
+            4,
+            't',
+            'e',
+            's',
+            't',
+            0,
+            5,
+            'v',
+            'a',
+            'l',
+            'u',
+            'e',
+            // payload
+            0x00
         };
 
         final MqttUserProperty mqttUserProperty = new MqttUserProperty("test", "value");
 
-        final SUBACK subAck = new SUBACK(3,
+        final SUBACK subAck = new SUBACK(
+                3,
                 ImmutableList.of(Mqtt5SubAckReasonCode.GRANTED_QOS_0),
                 "success",
                 Mqtt5UserProperties.of(mqttUserProperty));
 
         encodeTestBufferSize(expected, subAck);
-
     }
 
     @Test
@@ -79,28 +101,29 @@ public class Mqtt5SubackEncoderTest extends AbstractMqtt5EncoderTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setRequestProblemInformation(false);
 
         final byte[] expected = {
-                // fixed header
-                //   type, flags
-                (byte) 0b1001_0000,
-                //   remaining length
-                4,
-                // variable header
-                //   packet identifier
-                0, 3,
-                //   properties
-                0,
-                // payload
-                0x00
+            // fixed header
+            //   type, flags
+            (byte) 0b1001_0000,
+            //   remaining length
+            4,
+            // variable header
+            //   packet identifier
+            0,
+            3,
+            //   properties
+            0,
+            // payload
+            0x00
         };
 
         final MqttUserProperty mqttUserProperty = new MqttUserProperty("test", "value");
 
-        final SUBACK subAck = new SUBACK(3,
+        final SUBACK subAck = new SUBACK(
+                3,
                 ImmutableList.of(Mqtt5SubAckReasonCode.GRANTED_QOS_0),
                 "reason",
                 Mqtt5UserProperties.of(mqttUserProperty));
         encodeTestBufferSize(expected, subAck);
-
     }
 
     @Test
@@ -109,26 +132,27 @@ public class Mqtt5SubackEncoderTest extends AbstractMqtt5EncoderTest {
         testMessageEncoder.getSecurityConfigurationService().setAllowRequestProblemInformation(false);
 
         final byte[] expected = {
-                // fixed header
-                //   type, flags
-                (byte) 0b1001_0000,
-                //   remaining length
-                4,
-                // variable header
-                //   packet identifier
-                0, 3,
-                //   properties
-                0,
-                // payload
-                0x00
+            // fixed header
+            //   type, flags
+            (byte) 0b1001_0000,
+            //   remaining length
+            4,
+            // variable header
+            //   packet identifier
+            0,
+            3,
+            //   properties
+            0,
+            // payload
+            0x00
         };
 
-        final SUBACK subAck = new SUBACK(3,
+        final SUBACK subAck = new SUBACK(
+                3,
                 ImmutableList.of(Mqtt5SubAckReasonCode.GRANTED_QOS_0),
                 "reason",
                 Mqtt5UserProperties.NO_USER_PROPERTIES);
         encodeTestBufferSize(expected, subAck);
-
     }
 
     @Test
@@ -138,98 +162,167 @@ public class Mqtt5SubackEncoderTest extends AbstractMqtt5EncoderTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setRequestProblemInformation(false);
 
         final byte[] expected = {
-                // fixed header
-                //   type, flags
-                (byte) 0b1001_0000,
-                //   remaining length
-                4,
-                // variable header
-                //   packet identifier
-                0, 3,
-                //   properties
-                0,
-                // payload
-                0x00
+            // fixed header
+            //   type, flags
+            (byte) 0b1001_0000,
+            //   remaining length
+            4,
+            // variable header
+            //   packet identifier
+            0,
+            3,
+            //   properties
+            0,
+            // payload
+            0x00
         };
 
         final MqttUserProperty mqttUserProperty = new MqttUserProperty("test", "value");
 
-        final SUBACK subAck = new SUBACK(3,
+        final SUBACK subAck = new SUBACK(
+                3,
                 ImmutableList.of(Mqtt5SubAckReasonCode.GRANTED_QOS_0),
                 null,
                 Mqtt5UserProperties.of(mqttUserProperty));
         encodeTestBufferSize(expected, subAck);
-
     }
 
     @Test
     public void encode_multiple_user_props() {
         final byte[] expected = {
-                // fixed header
-                //   type, flags
-                (byte) 0b1001_0000,
-                //   remaining length
-                56,
-                // variable header
-                //   packet identifier
-                0, 3,
-                //   properties
-                52,
-                //     reason string
-                0x1F, 0, 7, 's', 'u', 'c', 'c', 'e', 's', 's',
-                //     user properties
-                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e', //
-                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e', //
-                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e',
-                // payload
-                0x00
+            // fixed header
+            //   type, flags
+            (byte) 0b1001_0000,
+            //   remaining length
+            56,
+            // variable header
+            //   packet identifier
+            0,
+            3,
+            //   properties
+            52,
+            //     reason string
+            0x1F,
+            0,
+            7,
+            's',
+            'u',
+            'c',
+            'c',
+            'e',
+            's',
+            's',
+            //     user properties
+            0x26,
+            0,
+            4,
+            't',
+            'e',
+            's',
+            't',
+            0,
+            5,
+            'v',
+            'a',
+            'l',
+            'u',
+            'e', //
+            0x26,
+            0,
+            4,
+            't',
+            'e',
+            's',
+            't',
+            0,
+            5,
+            'v',
+            'a',
+            'l',
+            'u',
+            'e', //
+            0x26,
+            0,
+            4,
+            't',
+            'e',
+            's',
+            't',
+            0,
+            5,
+            'v',
+            'a',
+            'l',
+            'u',
+            'e',
+            // payload
+            0x00
         };
 
         final MqttUserProperty mqttUserProperty = new MqttUserProperty("test", "value");
 
-        final SUBACK subAck = new SUBACK(3,
+        final SUBACK subAck = new SUBACK(
+                3,
                 ImmutableList.of(Mqtt5SubAckReasonCode.GRANTED_QOS_0),
                 "success",
                 Mqtt5UserProperties.of(mqttUserProperty, mqttUserProperty, mqttUserProperty));
 
         encodeTestBufferSize(expected, subAck);
-
     }
 
     @Test
     public void encode_all_reason_codes() {
         byte[] expected = {
-                // fixed header
-                //   type, flags
-                (byte) 0b1001_0000,
-                //   remaining length
-                39,
-                // variable header
-                //   packet identifier
-                0, 3,
-                //   properties
-                24,
-                //     reason string
-                0x1F, 0, 7, 's', 'u', 'c', 'c', 'e', 's', 's',
-                //     user properties
-                0x26, 0, 4, 't', 'e', 's', 't', 0, 5, 'v', 'a', 'l', 'u', 'e',
-                // payload
+            // fixed header
+            //   type, flags
+            (byte) 0b1001_0000,
+            //   remaining length
+            39,
+            // variable header
+            //   packet identifier
+            0,
+            3,
+            //   properties
+            24,
+            //     reason string
+            0x1F,
+            0,
+            7,
+            's',
+            'u',
+            'c',
+            'c',
+            'e',
+            's',
+            's',
+            //     user properties
+            0x26,
+            0,
+            4,
+            't',
+            'e',
+            's',
+            't',
+            0,
+            5,
+            'v',
+            'a',
+            'l',
+            'u',
+            'e',
+            // payload
         };
 
-
         for (final Mqtt5SubAckReasonCode mqtt5SubAckReasonCode : Mqtt5SubAckReasonCode.values()) {
-            expected = Bytes.concat(expected, new byte[]{(byte) mqtt5SubAckReasonCode.getCode()});
+            expected = Bytes.concat(expected, new byte[] {(byte) mqtt5SubAckReasonCode.getCode()});
         }
 
         final MqttUserProperty mqttUserProperty = new MqttUserProperty("test", "value");
 
-        final SUBACK subAck = new SUBACK(3,
-                Arrays.asList(Mqtt5SubAckReasonCode.values()),
-                "success",
-                Mqtt5UserProperties.of(mqttUserProperty));
+        final SUBACK subAck = new SUBACK(
+                3, Arrays.asList(Mqtt5SubAckReasonCode.values()), "success", Mqtt5UserProperties.of(mqttUserProperty));
 
         encodeTestBufferSize(expected, subAck);
-
     }
 
     @Test
@@ -255,7 +348,7 @@ public class Mqtt5SubackEncoderTest extends AbstractMqtt5EncoderTest {
         // remaining length userpropertiesLength + 2 bytes ID + 1 byte length + 1 byte reason code
         expected.writeByte(userPropertiesLength + 2 + 1 + 1);
         // packet identifier
-        expected.writeBytes(new byte[]{0, 3});
+        expected.writeBytes(new byte[] {0, 3});
         // properties length
         expected.writeByte(userPropertiesLength);
         // user properties
@@ -290,7 +383,7 @@ public class Mqtt5SubackEncoderTest extends AbstractMqtt5EncoderTest {
         // remaining length 2 bytes ID + 1 byte length + 1 byte reason code
         expected.writeByte(4);
         // packet identifier
-        expected.writeBytes(new byte[]{0, 3});
+        expected.writeBytes(new byte[] {0, 3});
         // no properties
         expected.writeByte(0);
         // reason code
@@ -302,5 +395,4 @@ public class Mqtt5SubackEncoderTest extends AbstractMqtt5EncoderTest {
         encodeTestBufferSize(expected.array(), suback);
         expected.release();
     }
-
 }

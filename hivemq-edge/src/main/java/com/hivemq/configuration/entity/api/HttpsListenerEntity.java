@@ -15,14 +15,12 @@
  */
 package com.hivemq.configuration.entity.api;
 
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElementRef;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.Objects;
-
+import org.jetbrains.annotations.NotNull;
 
 @XmlRootElement(name = "https-listener")
 @XmlAccessorType(XmlAccessType.NONE)

@@ -15,8 +15,8 @@
  */
 package com.hivemq.mqtt.message.subscribe;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.QoS;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -35,5 +35,4 @@ public interface Mqtt3Topic {
      */
     @NotNull
     QoS getQoS();
-
 }

@@ -28,5 +28,4 @@ public class Mqtt5PayloadFormatIndicatorTest {
                 Mqtt5PayloadFormatIndicator::fromCode,
                 null);
     }
-
 }

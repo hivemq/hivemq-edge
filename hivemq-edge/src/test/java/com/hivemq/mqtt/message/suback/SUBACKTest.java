@@ -15,17 +15,16 @@
  */
 package com.hivemq.mqtt.message.suback;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.extension.sdk.api.packets.subscribe.SubackReasonCode;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.extensions.packets.suback.SubackPacketImpl;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode;
-import org.junit.jupiter.api.Test;
-
 import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Robin Atherton
@@ -49,6 +48,8 @@ public class SUBACKTest {
                 suback.getReasonCodes());
         assertEquals(packet.getReasonString(), Optional.ofNullable(suback.getReasonString()));
         assertEquals(packet.getPacketIdentifier(), suback.getPacketIdentifier());
-        assertEquals(packet.getUserProperties().asInternalList(), suback.getUserProperties().asList());
+        assertEquals(
+                packet.getUserProperties().asInternalList(),
+                suback.getUserProperties().asList());
     }
 }

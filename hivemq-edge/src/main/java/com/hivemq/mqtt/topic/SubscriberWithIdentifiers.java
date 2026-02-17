@@ -15,15 +15,14 @@
  */
 package com.hivemq.mqtt.topic;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.ImmutableIntArray;
+import com.hivemq.util.Bytes;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.util.Bytes;
-
-import java.util.Objects;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SubscriberWithIdentifiers implements Comparable<SubscriberWithIdentifiers> {
 
@@ -36,10 +35,7 @@ public class SubscriberWithIdentifiers implements Comparable<SubscriberWithIdent
     private final @Nullable String topicFilter;
 
     public SubscriberWithIdentifiers(
-            final @NotNull String subscriber,
-            final int qos,
-            final byte flags,
-            final @Nullable String sharedName) {
+            final @NotNull String subscriber, final int qos, final byte flags, final @Nullable String sharedName) {
 
         checkNotNull(subscriber, "Subscriber must not be null");
 
@@ -53,7 +49,8 @@ public class SubscriberWithIdentifiers implements Comparable<SubscriberWithIdent
 
     public SubscriberWithIdentifiers(
             final @NotNull String subscriber,
-            final int qos, final byte flags,
+            final int qos,
+            final byte flags,
             final @Nullable String sharedName,
             final @NotNull ImmutableList<Integer> subscriptionIdentifier,
             final @Nullable String topicFilter) {
@@ -76,8 +73,9 @@ public class SubscriberWithIdentifiers implements Comparable<SubscriberWithIdent
         flags = subscriberWithQoS.getFlags();
         sharedName = subscriberWithQoS.getSharedName();
         final Integer subscriptionIdentifiers = subscriberWithQoS.getSubscriptionIdentifier();
-        this.subscriptionIdentifiers =
-                (subscriptionIdentifiers == null) ? ImmutableIntArray.of() : ImmutableIntArray.of(subscriptionIdentifiers);
+        this.subscriptionIdentifiers = (subscriptionIdentifiers == null)
+                ? ImmutableIntArray.of()
+                : ImmutableIntArray.of(subscriptionIdentifiers);
         topicFilter = subscriberWithQoS.getTopicFilter();
     }
 
@@ -139,12 +137,12 @@ public class SubscriberWithIdentifiers implements Comparable<SubscriberWithIdent
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final SubscriberWithIdentifiers that = (SubscriberWithIdentifiers) o;
-        return qos == that.qos &&
-                flags == that.flags &&
-                Objects.equals(subscriber, that.subscriber) &&
-                Objects.equals(sharedName, that.sharedName) &&
-                Objects.equals(subscriptionIdentifiers, that.subscriptionIdentifiers) &&
-                Objects.equals(topicFilter, that.topicFilter);
+        return qos == that.qos
+                && flags == that.flags
+                && Objects.equals(subscriber, that.subscriber)
+                && Objects.equals(sharedName, that.sharedName)
+                && Objects.equals(subscriptionIdentifiers, that.subscriptionIdentifiers)
+                && Objects.equals(topicFilter, that.topicFilter);
     }
 
     @Override
@@ -154,22 +152,21 @@ public class SubscriberWithIdentifiers implements Comparable<SubscriberWithIdent
 
     @Override
     public String toString() {
-        return "SubscriberWithIdentifiers{" +
-                "subscriber='" +
-                subscriber +
-                '\'' +
-                ", qos=" +
-                qos +
-                ", flags=" +
-                flags +
-                ", sharedName='" +
-                sharedName +
-                '\'' +
-                ", subscriptionIdentifiers=" +
-                subscriptionIdentifiers +
-                ", topicFilter='" +
-                topicFilter +
-                '\'' +
-                '}';
+        return "SubscriberWithIdentifiers{" + "subscriber='"
+                + subscriber
+                + '\''
+                + ", qos="
+                + qos
+                + ", flags="
+                + flags
+                + ", sharedName='"
+                + sharedName
+                + '\''
+                + ", subscriptionIdentifiers="
+                + subscriptionIdentifiers
+                + ", topicFilter='"
+                + topicFilter
+                + '\''
+                + '}';
     }
 }

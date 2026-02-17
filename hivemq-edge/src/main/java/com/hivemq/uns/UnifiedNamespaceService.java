@@ -16,10 +16,9 @@
 package com.hivemq.uns;
 
 import com.hivemq.client.mqtt.datatypes.MqttTopic;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.uns.config.ISA95;
-
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -33,5 +32,4 @@ public interface UnifiedNamespaceService {
     Map<String, String> getTopicReplacements(@NotNull ISA95 isa95);
 
     MqttTopic prefixISA95(MqttTopic topic);
-
 }

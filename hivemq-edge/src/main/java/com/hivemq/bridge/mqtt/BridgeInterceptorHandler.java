@@ -18,18 +18,19 @@ package com.hivemq.bridge.mqtt;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.bridge.config.MqttBridge;
+import com.hivemq.mqtt.message.publish.PUBLISH;
+import java.util.concurrent.ExecutorService;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.mqtt.message.publish.PUBLISH;
-
-import java.util.concurrent.ExecutorService;
 
 public interface BridgeInterceptorHandler {
 
-    @NotNull ListenableFuture<PublishReturnCode> interceptOrDelegateInbound(
+    @NotNull
+    ListenableFuture<PublishReturnCode> interceptOrDelegateInbound(
             @NotNull PUBLISH publish, @NotNull ExecutorService executorService, @NotNull MqttBridge bridge);
 
-    @NotNull ListenableFuture<InterceptorResult> interceptOrDelegateOutbound(
+    @NotNull
+    ListenableFuture<InterceptorResult> interceptOrDelegateOutbound(
             final @NotNull PUBLISH publish,
             final @NotNull ExecutorService executorService,
             final @NotNull MqttBridge bridge);

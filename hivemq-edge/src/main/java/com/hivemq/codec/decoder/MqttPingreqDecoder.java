@@ -16,17 +16,16 @@
 package com.hivemq.codec.decoder;
 
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.PINGREQ;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import com.hivemq.util.ReasonStrings;
 import io.netty.buffer.ByteBuf;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -47,10 +46,11 @@ public class MqttPingreqDecoder extends MqttDecoder<PINGREQ> {
 
         final ProtocolVersion protocolVersion = clientConnection.getProtocolVersion();
 
-        //Pingreq of MQTTv5 is equal to MQTTv3_1_1
+        // Pingreq of MQTTv5 is equal to MQTTv3_1_1
         if (protocolVersion == ProtocolVersion.MQTTv5 || protocolVersion == ProtocolVersion.MQTTv3_1_1) {
             if (!validateHeader(header)) {
-                serverDisconnector.disconnect(clientConnection.getChannel(),
+                serverDisconnector.disconnect(
+                        clientConnection.getChannel(),
                         "A client (IP: {}) sent a PINGREQ with an invalid fixed header. Disconnecting client.",
                         "Sent a PINGREQ with invalid fixed header",
                         Mqtt5DisconnectReasonCode.MALFORMED_PACKET,

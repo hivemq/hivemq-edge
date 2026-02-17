@@ -16,20 +16,21 @@
 package com.hivemq.codec.encoder.mqtt5;
 
 import com.hivemq.configuration.service.SecurityConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.mqtt.message.pubrel.PUBREL;
 import com.hivemq.mqtt.message.reason.Mqtt5PubRelReasonCode;
-
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Waldemar Ruck
  * @since 4.0
  */
 @Singleton
-public class Mqtt5PubrelEncoder extends Mqtt5MessageWithUserPropertiesEncoder.Mqtt5MessageWithIdAndOmissibleReasonCodeEncoder<PUBREL, Mqtt5PubRelReasonCode> {
+public class Mqtt5PubrelEncoder
+        extends Mqtt5MessageWithUserPropertiesEncoder.Mqtt5MessageWithIdAndOmissibleReasonCodeEncoder<
+                PUBREL, Mqtt5PubRelReasonCode> {
 
     private static final int FIXED_HEADER = MessageType.PUBREL.ordinal() << 4 | 0b0010;
 
@@ -45,7 +46,8 @@ public class Mqtt5PubrelEncoder extends Mqtt5MessageWithUserPropertiesEncoder.Mq
     }
 
     @Override
-    @NotNull Mqtt5PubRelReasonCode getDefaultReasonCode() {
+    @NotNull
+    Mqtt5PubRelReasonCode getDefaultReasonCode() {
         return Mqtt5PubRelReasonCode.SUCCESS;
     }
 }

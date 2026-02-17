@@ -18,30 +18,30 @@ package com.hivemq.edge.modules.adapters.simulation.tag;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.Tag;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
 
 public class SimulationTag implements Tag {
 
     @JsonProperty(value = "name", required = true)
-    @ModuleConfigField(title = "name",
-                       description = "name of the tag to be used in mappings",
-                       format = ModuleConfigField.FieldType.MQTT_TAG,
-                       required = true)
+    @ModuleConfigField(
+            title = "name",
+            description = "name of the tag to be used in mappings",
+            format = ModuleConfigField.FieldType.MQTT_TAG,
+            required = true)
     private final @NotNull String name;
 
     @JsonProperty(value = "description")
-    @ModuleConfigField(title = "description",
-                       description = "A human readable description of the tag")
+    @ModuleConfigField(title = "description", description = "A human readable description of the tag")
     private final @NotNull String description;
 
     @JsonProperty(value = "definition", required = true)
-    @ModuleConfigField(title = "definition",
-                       description = "The simulation adapter doesn't currently support any custom definition",
-                       readOnly = true,
-                       required = true)
+    @ModuleConfigField(
+            title = "definition",
+            description = "The simulation adapter doesn't currently support any custom definition",
+            readOnly = true,
+            required = true)
     private final @NotNull SimulationTagDefinition definition;
 
     public SimulationTag(
@@ -70,16 +70,15 @@ public class SimulationTag implements Tag {
 
     @Override
     public String toString() {
-        return "SimulationTag{" +
-                "name='" +
-                name +
-                '\'' +
-                ", description='" +
-                description +
-                '\'' +
-                ", definition=" +
-                definition +
-                '}';
+        return "SimulationTag{" + "name='"
+                + name
+                + '\''
+                + ", description='"
+                + description
+                + '\''
+                + ", definition="
+                + definition
+                + '}';
     }
 
     @Override
@@ -87,9 +86,9 @@ public class SimulationTag implements Tag {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final SimulationTag opcuaTag = (SimulationTag) o;
-        return Objects.equals(name, opcuaTag.name) &&
-                Objects.equals(description, opcuaTag.description) &&
-                Objects.equals(definition, opcuaTag.definition);
+        return Objects.equals(name, opcuaTag.name)
+                && Objects.equals(description, opcuaTag.description)
+                && Objects.equals(definition, opcuaTag.definition);
     }
 
     @Override

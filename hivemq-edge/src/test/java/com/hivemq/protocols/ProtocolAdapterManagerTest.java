@@ -15,6 +15,16 @@
  */
 package com.hivemq.protocols;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
@@ -41,23 +51,12 @@ import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 class ProtocolAdapterManagerTest {
 
@@ -101,12 +100,12 @@ class ProtocolAdapterManagerTest {
         final EventBuilder eventBuilder = new EventBuilderImpl(mock());
 
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
-        when(protocolAdapterWritingService.startWritingAsync(any(),
-                any(),
-                any())).thenReturn(CompletableFuture.completedFuture(true));
+        when(protocolAdapterWritingService.startWritingAsync(any(), any(), any()))
+                .thenReturn(CompletableFuture.completedFuture(true));
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
         final var adapterState = new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol");
-        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(
+                mock(),
                 protocolAdapterWritingService,
                 protocolAdapterPollingService,
                 mock(),
@@ -131,7 +130,8 @@ class ProtocolAdapterManagerTest {
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
         final var adapterState = new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol");
 
-        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(
+                mock(),
                 protocolAdapterWritingService,
                 protocolAdapterPollingService,
                 mock(),
@@ -150,18 +150,18 @@ class ProtocolAdapterManagerTest {
     }
 
     @Test
-    void test_startWriting_adapterFailedStart_resourcesCleanedUp() throws Exception{
+    void test_startWriting_adapterFailedStart_resourcesCleanedUp() throws Exception {
         final EventBuilder eventBuilder = new EventBuilderImpl(mock());
 
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
-        when(protocolAdapterWritingService
-                .startWritingAsync(any(), any(), any()))
+        when(protocolAdapterWritingService.startWritingAsync(any(), any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(true));
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
         final var adapterState = new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol");
 
-        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(
+                mock(),
                 protocolAdapterWritingService,
                 protocolAdapterPollingService,
                 mock(),
@@ -176,8 +176,8 @@ class ProtocolAdapterManagerTest {
 
         assertThat(adapterWrapper.getRuntimeStatus()).isEqualTo(ProtocolAdapterState.RuntimeStatus.STOPPED);
         verify(remoteService).fireUsageEvent(any());
-        verify(protocolAdapterWritingService).stopWriting(eq((WritingProtocolAdapter) adapterWrapper.getAdapter()),
-                any());
+        verify(protocolAdapterWritingService)
+                .stopWriting(eq((WritingProtocolAdapter) adapterWrapper.getAdapter()), any());
     }
 
     @Test
@@ -187,12 +187,12 @@ class ProtocolAdapterManagerTest {
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
-        when(protocolAdapterWritingService.startWritingAsync(any(),
-                any(),
-                any())).thenReturn(CompletableFuture.completedFuture(true));
+        when(protocolAdapterWritingService.startWritingAsync(any(), any(), any()))
+                .thenReturn(CompletableFuture.completedFuture(true));
 
         final var adapterState = new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol");
-        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(
+                mock(),
                 protocolAdapterWritingService,
                 protocolAdapterPollingService,
                 mock(),
@@ -206,8 +206,8 @@ class ProtocolAdapterManagerTest {
         protocolAdapterManager.startAsync(adapterWrapper).get();
 
         assertThat(adapterWrapper.getRuntimeStatus()).isEqualTo(ProtocolAdapterState.RuntimeStatus.STOPPED);
-        verify(protocolAdapterWritingService).stopWriting(eq((WritingProtocolAdapter) adapterWrapper.getAdapter()),
-                any());
+        verify(protocolAdapterWritingService)
+                .stopWriting(eq((WritingProtocolAdapter) adapterWrapper.getAdapter()), any());
     }
 
     @Test
@@ -218,7 +218,8 @@ class ProtocolAdapterManagerTest {
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
         final var adapterState = new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol");
-        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(
+                mock(),
                 protocolAdapterWritingService,
                 protocolAdapterPollingService,
                 mock(),
@@ -244,7 +245,8 @@ class ProtocolAdapterManagerTest {
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
         final var adapterState = new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol");
-        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(mock(),
+        final ProtocolAdapterWrapper adapterWrapper = new ProtocolAdapterWrapper(
+                mock(),
                 protocolAdapterWritingService,
                 protocolAdapterPollingService,
                 mock(),
@@ -257,7 +259,8 @@ class ProtocolAdapterManagerTest {
 
         adapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
 
-        assertThatThrownBy(() -> protocolAdapterManager.stopAsync(adapterWrapper, false).get())
+        assertThatThrownBy(() ->
+                        protocolAdapterManager.stopAsync(adapterWrapper, false).get())
                 .rootCause()
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("failed");
@@ -323,12 +326,14 @@ class ProtocolAdapterManagerTest {
         }
 
         @Override
-        public @org.jetbrains.annotations.NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthbound() {
+        public @org.jetbrains.annotations.NotNull Class<? extends ProtocolSpecificAdapterConfig>
+                configurationClassNorthbound() {
             return null;
         }
 
         @Override
-        public @org.jetbrains.annotations.NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
+        public @org.jetbrains.annotations.NotNull Class<? extends ProtocolSpecificAdapterConfig>
+                configurationClassNorthAndSouthbound() {
             return null;
         }
 
@@ -349,10 +354,7 @@ class ProtocolAdapterManagerTest {
         }
 
         @Override
-        public void write(
-                final @NotNull WritingInput writingInput, final @NotNull WritingOutput writingOutput) {
-
-        }
+        public void write(final @NotNull WritingInput writingInput, final @NotNull WritingOutput writingOutput) {}
 
         @Override
         public @NotNull Class<? extends WritingPayload> getMqttPayloadClass() {

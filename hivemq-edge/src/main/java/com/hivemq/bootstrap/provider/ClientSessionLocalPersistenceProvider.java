@@ -19,7 +19,6 @@ import com.hivemq.bootstrap.factories.ClientSessionLocalPersistenceFactory;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
 import com.hivemq.configuration.service.PersistenceMode;
 import com.hivemq.exceptions.UnrecoverableException;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.logging.EventLog;
 import com.hivemq.metrics.MetricsHolder;
@@ -28,11 +27,10 @@ import com.hivemq.persistence.local.ClientSessionLocalPersistence;
 import com.hivemq.persistence.local.memory.ClientSessionMemoryLocalPersistence;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.util.LocalPersistenceFileUtil;
+import jakarta.inject.Inject;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import jakarta.inject.Inject;
-
 
 public class ClientSessionLocalPersistenceProvider {
 
@@ -82,12 +80,7 @@ public class ClientSessionLocalPersistenceProvider {
             throw new UnrecoverableException();
         }
 
-
-        return persistenceFactory.buildClientSessionLocalPersistence(localPersistenceFileUtil,
-                payloadPersistence,
-                eventLog,
-                metricsHolder,
-                persistenceStartup
-                );
+        return persistenceFactory.buildClientSessionLocalPersistence(
+                localPersistenceFileUtil, payloadPersistence, eventLog, metricsHolder, persistenceStartup);
     }
 }

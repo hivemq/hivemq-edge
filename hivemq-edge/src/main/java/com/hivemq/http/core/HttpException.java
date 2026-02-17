@@ -20,14 +20,13 @@ public class HttpException extends Exception {
     private String responseMessage;
     private int responseCode;
 
-    private HttpException() {
-    }
+    private HttpException() {}
 
-    public HttpException(int responseCode, String responseMessage){
+    public HttpException(int responseCode, String responseMessage) {
         this(responseCode, responseMessage, null);
     }
 
-    public HttpException(int responseCode, String responseMessage, Throwable cause){
+    public HttpException(int responseCode, String responseMessage, Throwable cause) {
         super(responseMessage, cause);
         this.responseCode = responseCode;
         setResponseMessage(responseMessage);

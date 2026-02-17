@@ -15,14 +15,13 @@
  */
 package com.hivemq.bootstrap;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.hivemq.configuration.service.entity.Listener;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Optional;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 @Immutable
 public class ListenerStartupInformation {
@@ -34,9 +33,11 @@ public class ListenerStartupInformation {
 
     private final Optional<Throwable> exception;
 
-    private ListenerStartupInformation(final int port, final boolean successful,
-                                       final @NotNull Listener originalListener,
-                                       final @Nullable Throwable exception) {
+    private ListenerStartupInformation(
+            final int port,
+            final boolean successful,
+            final @NotNull Listener originalListener,
+            final @Nullable Throwable exception) {
 
         checkNotNull(originalListener, "Original Listener must not be null");
 
@@ -62,11 +63,13 @@ public class ListenerStartupInformation {
         return originalListener;
     }
 
-    public static ListenerStartupInformation successfulListenerStartup(final int port, final @NotNull Listener originalListener) {
+    public static ListenerStartupInformation successfulListenerStartup(
+            final int port, final @NotNull Listener originalListener) {
         return new ListenerStartupInformation(port, true, originalListener, null);
     }
 
-    public static ListenerStartupInformation failedListenerStartup(final int port, final @NotNull Listener originalListener, final @Nullable Throwable exception) {
+    public static ListenerStartupInformation failedListenerStartup(
+            final int port, final @NotNull Listener originalListener, final @Nullable Throwable exception) {
         return new ListenerStartupInformation(port, false, originalListener, exception);
     }
 }

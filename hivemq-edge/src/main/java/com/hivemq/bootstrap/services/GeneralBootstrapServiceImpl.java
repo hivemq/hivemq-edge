@@ -79,6 +79,4 @@ public class GeneralBootstrapServiceImpl implements GeneralBootstrapService {
     public @NotNull EdgeCoreFactoryService edgeCoreFactoryService() {
         return edgeCoreFactoryService;
     }
-
-
 }

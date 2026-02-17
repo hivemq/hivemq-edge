@@ -23,16 +23,15 @@ import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationSpecificAdapterConfig;
 import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTag;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.EnumSet;
 import java.util.List;
+import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SimulationProtocolAdapterInformation implements ProtocolAdapterInformation {
 
@@ -42,8 +41,7 @@ public class SimulationProtocolAdapterInformation implements ProtocolAdapterInfo
 
     public static final int CURRENT_CONFIG_VERSION = 1;
 
-    private SimulationProtocolAdapterInformation() {
-    }
+    private SimulationProtocolAdapterInformation() {}
 
     @Override
     public @NotNull String getProtocolName() {
@@ -102,9 +100,8 @@ public class SimulationProtocolAdapterInformation implements ProtocolAdapterInfo
 
     @Override
     public @Nullable String getUiSchema() {
-        try (final InputStream is = this.getClass()
-                .getClassLoader()
-                .getResourceAsStream("simulation-adapter-ui-schema.json")) {
+        try (final InputStream is =
+                this.getClass().getClassLoader().getResourceAsStream("simulation-adapter-ui-schema.json")) {
             if (is == null) {
                 log.warn("The UISchema for the Simulation Adapter could not be loaded from resources: Not found.");
                 return null;
@@ -120,7 +117,6 @@ public class SimulationProtocolAdapterInformation implements ProtocolAdapterInfo
     public int getCurrentConfigVersion() {
         return CURRENT_CONFIG_VERSION;
     }
-
 
     @Override
     public @NotNull Class<? extends Tag> tagConfigurationClass() {

@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.embedded.internal;
 
 import com.hivemq.embedded.EmbeddedExtension;
 import com.hivemq.embedded.EmbeddedHiveMQ;
 import com.hivemq.embedded.EmbeddedHiveMQBuilder;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.io.File;
 import java.nio.file.Path;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Georg Held
@@ -77,5 +75,4 @@ public class EmbeddedHiveMQBuilderImpl implements EmbeddedHiveMQBuilder {
 
         return new EmbeddedHiveMQImpl(confFile, dataFile, extensionsFile, licenseFile);
     }
-
 }

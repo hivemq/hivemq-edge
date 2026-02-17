@@ -15,14 +15,13 @@
  */
 package com.hivemq.edge.adapters.opcua.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 
 class AuthDeserializerTest {
 

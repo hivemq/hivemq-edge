@@ -15,10 +15,9 @@
  */
 package com.hivemq.persistence.domain;
 
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Optional;
 
 public class DomainTagAddResult {
 
@@ -27,19 +26,20 @@ public class DomainTagAddResult {
     private final @NotNull Optional<String> adapterIdOfOwningAdapter;
 
     public DomainTagAddResult(
-            final @NotNull DomainTagPutStatus dataPolicyPutStatus, final @Nullable String adapterIdOfOwningAdapter, final @Nullable String errorMessage) {
+            final @NotNull DomainTagPutStatus dataPolicyPutStatus,
+            final @Nullable String adapterIdOfOwningAdapter,
+            final @Nullable String errorMessage) {
         this.dataPolicyPutStatus = dataPolicyPutStatus;
         this.errorMessage = Optional.ofNullable(errorMessage);
         this.adapterIdOfOwningAdapter = Optional.ofNullable(adapterIdOfOwningAdapter);
     }
 
     public static @NotNull DomainTagAddResult success() {
-        return new DomainTagAddResult(DomainTagPutStatus.SUCCESS, null,null);
+        return new DomainTagAddResult(DomainTagPutStatus.SUCCESS, null, null);
     }
 
     public static @NotNull DomainTagAddResult failed(
-            final @NotNull DomainTagPutStatus putStatus,
-            final @NotNull String adapterIdOfOwningAdapter) {
+            final @NotNull DomainTagPutStatus putStatus, final @NotNull String adapterIdOfOwningAdapter) {
         return new DomainTagAddResult(putStatus, adapterIdOfOwningAdapter, null);
     }
 
@@ -67,6 +67,4 @@ public class DomainTagAddResult {
         ALREADY_EXISTS(),
         ADAPTER_MISSING()
     }
-
-
 }

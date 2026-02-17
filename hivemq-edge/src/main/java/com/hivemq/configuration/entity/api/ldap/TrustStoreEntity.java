@@ -19,10 +19,9 @@ import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
 
 /**
  * XML entity for LDAP TLS/SSL configuration.
@@ -65,9 +64,9 @@ public class TrustStoreEntity {
             return false;
         }
         final TrustStoreEntity that = (TrustStoreEntity) o;
-        return Objects.equals(trustStorePath, that.trustStorePath) &&
-                Objects.equals(trustStorePassword, that.trustStorePassword) &&
-                Objects.equals(trustStoreType, that.trustStoreType);
+        return Objects.equals(trustStorePath, that.trustStorePath)
+                && Objects.equals(trustStorePassword, that.trustStorePassword)
+                && Objects.equals(trustStoreType, that.trustStoreType);
     }
 
     @Override

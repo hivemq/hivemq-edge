@@ -16,10 +16,10 @@
 package com.hivemq.extensions.executor.task;
 
 import com.google.common.util.concurrent.SettableFuture;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.async.AsyncOutput;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Georg Held

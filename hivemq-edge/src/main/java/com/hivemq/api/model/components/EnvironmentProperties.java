@@ -16,7 +16,6 @@
 package com.hivemq.api.model.components;
 
 import com.hivemq.api.model.MappedPropertiesResponse;
-
 import java.util.Map;
 
 /**
@@ -27,6 +26,4 @@ public class EnvironmentProperties extends MappedPropertiesResponse<String> {
     public EnvironmentProperties(final Map<String, String> properties) {
         super(properties);
     }
-
-
 }

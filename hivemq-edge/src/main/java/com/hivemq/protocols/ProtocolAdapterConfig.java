@@ -19,13 +19,12 @@ import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.persistence.mappings.SouthboundMapping;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
 
 public class ProtocolAdapterConfig {
 
@@ -103,18 +102,19 @@ public class ProtocolAdapterConfig {
     public boolean equals(final Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         final ProtocolAdapterConfig that = (ProtocolAdapterConfig) o;
-        return getConfigVersion() == that.getConfigVersion() &&
-                Objects.equals(getAdapterConfig(), that.getAdapterConfig()) &&
-                Objects.equals(getTags(), that.getTags()) &&
-                Objects.equals(getAdapterId(), that.getAdapterId()) &&
-                Objects.equals(getProtocolId(), that.getProtocolId()) &&
-                Objects.equals(getSouthboundMappings(), that.getSouthboundMappings()) &&
-                Objects.equals(getNorthboundMappings(), that.getNorthboundMappings());
+        return getConfigVersion() == that.getConfigVersion()
+                && Objects.equals(getAdapterConfig(), that.getAdapterConfig())
+                && Objects.equals(getTags(), that.getTags())
+                && Objects.equals(getAdapterId(), that.getAdapterId())
+                && Objects.equals(getProtocolId(), that.getProtocolId())
+                && Objects.equals(getSouthboundMappings(), that.getSouthboundMappings())
+                && Objects.equals(getNorthboundMappings(), that.getNorthboundMappings());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getAdapterConfig(),
+        return Objects.hash(
+                getAdapterConfig(),
                 getTags(),
                 getAdapterId(),
                 getProtocolId(),
@@ -125,23 +125,22 @@ public class ProtocolAdapterConfig {
 
     @Override
     public String toString() {
-        return "ProtocolAdapterConfig{" +
-                "adapterConfig=" +
-                adapterConfig +
-                ", tags=" +
-                tags +
-                ", adapterId='" +
-                adapterId +
-                '\'' +
-                ", protocolId='" +
-                protocolId +
-                '\'' +
-                ", configVersion=" +
-                configVersion +
-                ", southboundMappings=" +
-                southboundMappings +
-                ", northboundMappings=" +
-                northboundMappings +
-                '}';
+        return "ProtocolAdapterConfig{" + "adapterConfig="
+                + adapterConfig
+                + ", tags="
+                + tags
+                + ", adapterId='"
+                + adapterId
+                + '\''
+                + ", protocolId='"
+                + protocolId
+                + '\''
+                + ", configVersion="
+                + configVersion
+                + ", southboundMappings="
+                + southboundMappings
+                + ", northboundMappings="
+                + northboundMappings
+                + '}';
     }
 }

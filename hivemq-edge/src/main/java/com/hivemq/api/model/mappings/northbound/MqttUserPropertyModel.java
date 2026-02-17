@@ -19,10 +19,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
 
 @Schema(name = "MqttUserProperty")
 public class MqttUserPropertyModel {
@@ -36,8 +35,9 @@ public class MqttUserPropertyModel {
     private final @NotNull String value;
 
     @JsonCreator
-    public MqttUserPropertyModel(@JsonProperty(value = "name", required = true) final @NotNull String name,
-                                 @JsonProperty(value = "value", required = true) final @NotNull String value) {
+    public MqttUserPropertyModel(
+            @JsonProperty(value = "name", required = true) final @NotNull String name,
+            @JsonProperty(value = "value", required = true) final @NotNull String value) {
         this.name = name;
         this.value = value;
     }
@@ -80,9 +80,6 @@ public class MqttUserPropertyModel {
 
     @Override
     public @NotNull String toString() {
-        return "MqttUserProperty{" +
-                "name='" + name + '\'' +
-                ", value='" + value + '\'' +
-                '}';
+        return "MqttUserProperty{" + "name='" + name + '\'' + ", value='" + value + '\'' + '}';
     }
 }

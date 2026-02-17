@@ -26,5 +26,4 @@ public class HiveMQEdgeStartupException extends RuntimeException {
     public HiveMQEdgeStartupException(@NotNull Exception cause) {
         super(cause);
     }
-
 }

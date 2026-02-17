@@ -15,12 +15,12 @@
  */
 package com.hivemq.extensions.packets.general;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-
 import static com.hivemq.extension.sdk.api.packets.general.MqttVersion.*;
 import static com.hivemq.mqtt.message.ProtocolVersion.*;
 import static org.junit.jupiter.api.Assertions.assertSame;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * @author Georg Held

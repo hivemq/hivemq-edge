@@ -16,13 +16,12 @@
 package com.hivemq.configuration.entity;
 
 import com.hivemq.configuration.entity.mqtt.*;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElementRef;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Dominik Obermaier
@@ -39,7 +38,8 @@ public class MqttConfigEntity {
     private @NotNull RetainedMessagesConfigEntity retainedMessagesConfigEntity = new RetainedMessagesConfigEntity();
 
     @XmlElementRef(required = false)
-    private @NotNull WildcardSubscriptionsConfigEntity wildcardSubscriptionsConfigEntity = new WildcardSubscriptionsConfigEntity();
+    private @NotNull WildcardSubscriptionsConfigEntity wildcardSubscriptionsConfigEntity =
+            new WildcardSubscriptionsConfigEntity();
 
     @XmlElementRef(required = false)
     private @NotNull QoSConfigEntity qoSConfigEntity = new QoSConfigEntity();
@@ -54,10 +54,12 @@ public class MqttConfigEntity {
     private @NotNull SessionExpiryConfigEntity sessionExpiryConfigEntity = new SessionExpiryConfigEntity();
 
     @XmlElementRef(required = false)
-    private @NotNull SubscriptionIdentifierConfigEntity subscriptionIdentifierConfigEntity = new SubscriptionIdentifierConfigEntity();
+    private @NotNull SubscriptionIdentifierConfigEntity subscriptionIdentifierConfigEntity =
+            new SubscriptionIdentifierConfigEntity();
 
     @XmlElementRef(required = false)
-    private @NotNull SharedSubscriptionsConfigEntity sharedSubscriptionsConfigEntity = new SharedSubscriptionsConfigEntity();
+    private @NotNull SharedSubscriptionsConfigEntity sharedSubscriptionsConfigEntity =
+            new SharedSubscriptionsConfigEntity();
 
     @XmlElementRef(required = false)
     private @NotNull KeepAliveConfigEntity keepAliveConfigEntity = new KeepAliveConfigEntity();
@@ -121,23 +123,24 @@ public class MqttConfigEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final MqttConfigEntity that = (MqttConfigEntity) o;
-        return Objects.equals(getQueuedMessagesConfigEntity(), that.getQueuedMessagesConfigEntity()) &&
-                Objects.equals(getRetainedMessagesConfigEntity(), that.getRetainedMessagesConfigEntity()) &&
-                Objects.equals(getWildcardSubscriptionsConfigEntity(), that.getWildcardSubscriptionsConfigEntity()) &&
-                Objects.equals(getQoSConfigEntity(), that.getQoSConfigEntity()) &&
-                Objects.equals(getTopicAliasConfigEntity(), that.getTopicAliasConfigEntity()) &&
-                Objects.equals(getMessageExpiryConfigEntity(), that.getMessageExpiryConfigEntity()) &&
-                Objects.equals(getSessionExpiryConfigEntity(), that.getSessionExpiryConfigEntity()) &&
-                Objects.equals(getSubscriptionIdentifierConfigEntity(), that.getSubscriptionIdentifierConfigEntity()) &&
-                Objects.equals(getSharedSubscriptionsConfigEntity(), that.getSharedSubscriptionsConfigEntity()) &&
-                Objects.equals(getKeepAliveConfigEntity(), that.getKeepAliveConfigEntity()) &&
-                Objects.equals(getPacketsConfigEntity(), that.getPacketsConfigEntity()) &&
-                Objects.equals(getReceiveMaximumConfigEntity(), that.getReceiveMaximumConfigEntity());
+        return Objects.equals(getQueuedMessagesConfigEntity(), that.getQueuedMessagesConfigEntity())
+                && Objects.equals(getRetainedMessagesConfigEntity(), that.getRetainedMessagesConfigEntity())
+                && Objects.equals(getWildcardSubscriptionsConfigEntity(), that.getWildcardSubscriptionsConfigEntity())
+                && Objects.equals(getQoSConfigEntity(), that.getQoSConfigEntity())
+                && Objects.equals(getTopicAliasConfigEntity(), that.getTopicAliasConfigEntity())
+                && Objects.equals(getMessageExpiryConfigEntity(), that.getMessageExpiryConfigEntity())
+                && Objects.equals(getSessionExpiryConfigEntity(), that.getSessionExpiryConfigEntity())
+                && Objects.equals(getSubscriptionIdentifierConfigEntity(), that.getSubscriptionIdentifierConfigEntity())
+                && Objects.equals(getSharedSubscriptionsConfigEntity(), that.getSharedSubscriptionsConfigEntity())
+                && Objects.equals(getKeepAliveConfigEntity(), that.getKeepAliveConfigEntity())
+                && Objects.equals(getPacketsConfigEntity(), that.getPacketsConfigEntity())
+                && Objects.equals(getReceiveMaximumConfigEntity(), that.getReceiveMaximumConfigEntity());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getQueuedMessagesConfigEntity(),
+        return Objects.hash(
+                getQueuedMessagesConfigEntity(),
                 getRetainedMessagesConfigEntity(),
                 getWildcardSubscriptionsConfigEntity(),
                 getQoSConfigEntity(),

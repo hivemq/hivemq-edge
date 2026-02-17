@@ -13,8 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.handler;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.common.shutdown.ShutdownHooks;
@@ -43,6 +49,10 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.io.File;
+import java.nio.channels.ClosedChannelException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,18 +61,6 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 import util.IsolatedExtensionClassloaderUtil;
-
-import java.io.File;
-import java.nio.channels.ClosedChannelException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Robin Atherton
@@ -80,6 +78,7 @@ public class PingInterceptorHandlerTest {
 
     private @NotNull PluginTaskExecutor executor;
     private @NotNull EmbeddedChannel channel;
+
     @BeforeEach
     public void setUp() throws Exception {
         isTriggered.set(false);
@@ -115,6 +114,7 @@ public class PingInterceptorHandlerTest {
             }
         });
     }
+
     @AfterEach
     public void tearDown() {
         executor.stop();
@@ -125,16 +125,14 @@ public class PingInterceptorHandlerTest {
     @Timeout(5)
     public void test_pingreq_channel_closed() {
         channel.close();
-        assertThatThrownBy(() -> channel.writeInbound(new PINGREQ()))
-                .isInstanceOf(ClosedChannelException.class);
+        assertThatThrownBy(() -> channel.writeInbound(new PINGREQ())).isInstanceOf(ClosedChannelException.class);
     }
 
     @Test
     @Timeout(5)
     public void test_pingresp_channel_closed() {
         channel.close();
-        assertThatThrownBy(() -> channel.writeOutbound(new PINGRESP()))
-                .isInstanceOf(ClosedChannelException.class);
+        assertThatThrownBy(() -> channel.writeOutbound(new PINGRESP())).isInstanceOf(ClosedChannelException.class);
     }
 
     @Test
@@ -143,13 +141,13 @@ public class PingInterceptorHandlerTest {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
         final PingReqInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                SimplePingReqTestInterceptor.class);
+                temporaryFolder.toPath(), SimplePingReqTestInterceptor.class);
         clientContext.addPingReqInboundInterceptor(interceptor);
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setExtensionClientContext(clientContext);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv3_1);
-        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class))).thenReturn(extension);
+        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
+                .thenReturn(extension);
 
         channel.writeInbound(new PINGREQ());
         PINGREQ pingreq = channel.readInbound();
@@ -169,13 +167,13 @@ public class PingInterceptorHandlerTest {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
         final PingReqInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                AdvancedPingReqTestInterceptor.class);
+                temporaryFolder.toPath(), AdvancedPingReqTestInterceptor.class);
         clientContext.addPingReqInboundInterceptor(interceptor);
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setExtensionClientContext(clientContext);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv3_1);
-        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class))).thenReturn(extension);
+        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
+                .thenReturn(extension);
 
         channel.writeInbound(new PINGREQ());
         PINGREQ pingreq = channel.readInbound();
@@ -195,13 +193,13 @@ public class PingInterceptorHandlerTest {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
         final PingRespOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                SimplePingRespTestInterceptor.class);
+                temporaryFolder.toPath(), SimplePingRespTestInterceptor.class);
         clientContext.addPingRespOutboundInterceptor(interceptor);
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setExtensionClientContext(clientContext);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv3_1);
-        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class))).thenReturn(extension);
+        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
+                .thenReturn(extension);
 
         channel.writeOutbound(new PINGRESP());
         PINGRESP pingresp = channel.readOutbound();
@@ -221,13 +219,13 @@ public class PingInterceptorHandlerTest {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());
         final PingRespOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                AdvancedPingRespTestInterceptor.class);
+                temporaryFolder.toPath(), AdvancedPingRespTestInterceptor.class);
         clientContext.addPingRespOutboundInterceptor(interceptor);
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setExtensionClientContext(clientContext);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv3_1);
-        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class))).thenReturn(extension);
+        when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
+                .thenReturn(extension);
 
         channel.writeOutbound(new PINGRESP());
         PINGRESP pingresp = channel.readOutbound();
@@ -269,8 +267,8 @@ public class PingInterceptorHandlerTest {
         public void onInboundPingReq(
                 final @NotNull PingReqInboundInput pingReqInboundInput,
                 final @NotNull PingReqInboundOutput pingReqInboundOutput) {
-            System.out.println(
-                    "Intercepted PINGREQ for client: " + pingReqInboundInput.getClientInformation().getClientId());
+            System.out.println("Intercepted PINGREQ for client: "
+                    + pingReqInboundInput.getClientInformation().getClientId());
             isTriggered.set(true);
         }
     }
@@ -281,8 +279,8 @@ public class PingInterceptorHandlerTest {
         public void onOutboundPingResp(
                 final @NotNull PingRespOutboundInput pingRespOutboundInput,
                 final @NotNull PingRespOutboundOutput pingRespOutboundOutput) {
-            System.out.println("Intercepted PINGRESP for client: " +
-                    pingRespOutboundInput.getClientInformation().getClientId());
+            System.out.println("Intercepted PINGRESP for client: "
+                    + pingRespOutboundInput.getClientInformation().getClientId());
             isTriggered.set(true);
         }
     }

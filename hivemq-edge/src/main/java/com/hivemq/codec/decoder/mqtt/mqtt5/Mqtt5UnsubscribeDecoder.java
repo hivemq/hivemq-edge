@@ -15,13 +15,13 @@
  */
 package com.hivemq.codec.decoder.mqtt.mqtt5;
 
+import static com.hivemq.mqtt.message.mqtt5.MessageProperties.USER_PROPERTY;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.decoder.mqtt.AbstractMqttDecoder;
 import com.hivemq.codec.encoder.mqtt5.MqttVariableByteInteger;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
@@ -30,12 +30,11 @@ import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import com.hivemq.mqtt.message.unsubscribe.UNSUBSCRIBE;
 import com.hivemq.util.ReasonStrings;
 import io.netty.buffer.ByteBuf;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Objects;
-
-import static com.hivemq.mqtt.message.mqtt5.MessageProperties.USER_PROPERTY;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -84,7 +83,8 @@ public class Mqtt5UnsubscribeDecoder extends AbstractMqttDecoder<UNSUBSCRIBE> {
 
             final int propertyIdentifier = buf.readByte();
             if (propertyIdentifier == USER_PROPERTY) {
-                userPropertiesBuilder = readUserProperty(clientConnection, buf, userPropertiesBuilder, MessageType.UNSUBSCRIBE);
+                userPropertiesBuilder =
+                        readUserProperty(clientConnection, buf, userPropertiesBuilder, MessageType.UNSUBSCRIBE);
                 if (userPropertiesBuilder == null) {
                     return null;
                 }
@@ -100,7 +100,8 @@ public class Mqtt5UnsubscribeDecoder extends AbstractMqttDecoder<UNSUBSCRIBE> {
         }
 
         if (!buf.isReadable()) {
-            disconnector.disconnect(clientConnection.getChannel(),
+            disconnector.disconnect(
+                    clientConnection.getChannel(),
                     "A client (IP: {}) sent an UNSUBSCRIBE without topic filters. This is not allowed. Disconnecting client.",
                     "Sent UNSUBSCRIBE without topic filters",
                     Mqtt5DisconnectReasonCode.PROTOCOL_ERROR,
@@ -127,9 +128,11 @@ public class Mqtt5UnsubscribeDecoder extends AbstractMqttDecoder<UNSUBSCRIBE> {
     private int decodePacketIdentifier(final @NotNull ClientConnection clientConnection, final @NotNull ByteBuf buf) {
         final int packetIdentifier = buf.readUnsignedShort();
         if (packetIdentifier == 0) {
-            disconnector.disconnect(clientConnection.getChannel(),
+            disconnector.disconnect(
+                    clientConnection.getChannel(),
                     "A client (IP: {}) sent an UNSUBSCRIBE with message id = '0'. This is not allowed. Disconnecting client.",
-                    "Sent UNSUBSCRIBE with message id = '0'", Mqtt5DisconnectReasonCode.PROTOCOL_ERROR,
+                    "Sent UNSUBSCRIBE with message id = '0'",
+                    Mqtt5DisconnectReasonCode.PROTOCOL_ERROR,
                     ReasonStrings.DISCONNECT_PROTOCOL_ERROR_UNSUBSCRIBE_PACKET_ID_0);
         }
 

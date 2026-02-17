@@ -15,6 +15,10 @@
  */
 package com.hivemq.persistence;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
@@ -32,38 +36,49 @@ import org.junit.jupiter.api.Timeout;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 public class PersistenceShutdownHookTest {
 
     @Mock
     private ClientSessionPersistence clientSessionPersistence;
+
     @Mock
     private ClientSessionSubscriptionPersistence clientSessionSubscriptionPersistence;
+
     @Mock
     private IncomingMessageFlowPersistence incomingMessageFlowPersistence;
+
     @Mock
     private RetainedMessagePersistence retainedMessagePersistence;
+
     @Mock
     private ListeningExecutorService persistenceExecutorService;
+
     @Mock
     private ListeningScheduledExecutorService persistenceScheduledExecutorService;
+
     @Mock
     private SingleWriterService singleWriterService;
+
     @Mock
     private PublishPayloadPersistence payloadPersistence;
+
     @Mock
     private ClientQueuePersistence clientQueuePersistence;
 
     private PersistenceShutdownHook persistenceShutdownHook;
+
     @BeforeEach
     public void init() {
         MockitoAnnotations.initMocks(this);
-        persistenceShutdownHook = new PersistenceShutdownHook(clientSessionPersistence, clientSessionSubscriptionPersistence,
-                incomingMessageFlowPersistence, retainedMessagePersistence, payloadPersistence,
-                clientQueuePersistence, persistenceExecutorService, persistenceScheduledExecutorService,
+        persistenceShutdownHook = new PersistenceShutdownHook(
+                clientSessionPersistence,
+                clientSessionSubscriptionPersistence,
+                incomingMessageFlowPersistence,
+                retainedMessagePersistence,
+                payloadPersistence,
+                clientQueuePersistence,
+                persistenceExecutorService,
+                persistenceScheduledExecutorService,
                 singleWriterService);
 
         when(clientSessionPersistence.closeDB()).thenReturn(Futures.immediateFuture(null));
@@ -97,14 +112,14 @@ public class PersistenceShutdownHookTest {
         final long start = System.currentTimeMillis();
         persistenceShutdownHook.run();
 
-        //check that it took less than this test's safety timeout to complete the run
+        // check that it took less than this test's safety timeout to complete the run
         assertTrue(start + 15000 > System.currentTimeMillis());
     }
 
     @Test
     public void test_exception() throws Exception {
-        when(retainedMessagePersistence.closeDB()).thenReturn(Futures.immediateFailedFuture(new RuntimeException("test")));
+        when(retainedMessagePersistence.closeDB())
+                .thenReturn(Futures.immediateFailedFuture(new RuntimeException("test")));
         persistenceShutdownHook.run();
     }
-
 }

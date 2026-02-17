@@ -20,12 +20,11 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
+import jakarta.inject.Singleton;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import jakarta.inject.Singleton;
-import java.util.Map;
 
 @Singleton
 public class InternalConfigurationServiceImpl implements InternalConfigurationService {
@@ -33,8 +32,6 @@ public class InternalConfigurationServiceImpl implements InternalConfigurationSe
     private static final @NotNull Logger log = LoggerFactory.getLogger(InternalConfigurationServiceImpl.class);
 
     private final @NotNull Map<String, String> values = Maps.newConcurrentMap();
-
-
 
     @Override
     public @NotNull String get(final @NotNull String key) {
@@ -64,7 +61,8 @@ public class InternalConfigurationServiceImpl implements InternalConfigurationSe
             return Double.parseDouble(value);
         } catch (final NumberFormatException ex) {
             final String defaultValue = InternalConfigurations.DEFAULT_VALUES.get(key);
-            Preconditions.checkState(defaultValue != null,
+            Preconditions.checkState(
+                    defaultValue != null,
                     "Illegal format for internal configuration " + key + " and no default value available");
             log.debug("Illegal format for internal configuration {} using default value {}", key, defaultValue);
             set(key, defaultValue);
@@ -79,12 +77,12 @@ public class InternalConfigurationServiceImpl implements InternalConfigurationSe
             return Integer.parseInt(value);
         } catch (final NumberFormatException ex) {
             final String defaultValue = InternalConfigurations.DEFAULT_VALUES.get(key);
-            Preconditions.checkState(defaultValue != null,
-                    "Illegal format for internal configuration '" +
-                            key +
-                            "' with set value '" +
-                            get(key) +
-                            "' and no default value available");
+            Preconditions.checkState(
+                    defaultValue != null,
+                    "Illegal format for internal configuration '" + key
+                            + "' with set value '"
+                            + get(key)
+                            + "' and no default value available");
             log.debug("Illegal format for internal configuration {} using default value {}", key, defaultValue);
             set(key, defaultValue);
             return Integer.parseInt(defaultValue);
@@ -98,7 +96,8 @@ public class InternalConfigurationServiceImpl implements InternalConfigurationSe
             return Long.parseLong(value);
         } catch (final NumberFormatException ex) {
             final String defaultValue = InternalConfigurations.DEFAULT_VALUES.get(key);
-            Preconditions.checkState(defaultValue != null,
+            Preconditions.checkState(
+                    defaultValue != null,
                     "Illegal format for internal configuration " + key + " and no default value available");
             log.debug("Illegal format for internal configuration {} using default value {}", key, defaultValue);
             set(key, defaultValue);

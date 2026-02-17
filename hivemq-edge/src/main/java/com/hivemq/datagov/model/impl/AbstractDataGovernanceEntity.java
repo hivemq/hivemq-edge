@@ -17,9 +17,8 @@ package com.hivemq.datagov.model.impl;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.datagov.model.DataGovernanceEntity;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson

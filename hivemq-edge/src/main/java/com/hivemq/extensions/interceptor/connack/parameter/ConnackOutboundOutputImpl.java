@@ -15,13 +15,12 @@
  */
 package com.hivemq.extensions.interceptor.connack.parameter;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.connack.parameter.ConnackOutboundOutput;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
 import com.hivemq.extensions.executor.task.AbstractAsyncOutput;
 import com.hivemq.extensions.packets.connack.ModifiableConnackPacketImpl;
-
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck

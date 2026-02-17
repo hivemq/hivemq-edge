@@ -15,7 +15,6 @@
  */
 package com.hivemq.bootstrap.ioc;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.persistence.ScheduledCleanUpService;
 import com.hivemq.persistence.clientqueue.ClientQueueLocalPersistence;
@@ -27,8 +26,8 @@ import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.persistence.retained.RetainedMessageLocalPersistence;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
 import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
-
 import jakarta.inject.Inject;
+import org.jetbrains.annotations.NotNull;
 
 public class Persistences {
 

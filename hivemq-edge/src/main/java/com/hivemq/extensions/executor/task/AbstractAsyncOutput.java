@@ -16,13 +16,12 @@
 package com.hivemq.extensions.executor.task;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.async.Async;
 import com.hivemq.extension.sdk.api.async.AsyncOutput;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
-
 import java.time.Duration;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel

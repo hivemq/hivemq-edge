@@ -1,27 +1,25 @@
 /*
- *  Copyright 2019-present HiveMQ GmbH
+ * Copyright 2019-present HiveMQ GmbH
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
 package com.hivemq.pulse.asset;
 
 import com.hivemq.configuration.entity.pulse.PulseAssetEntity;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Objects;
 import java.util.UUID;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class PulseAgentAsset {
     private @NotNull UUID id;
@@ -60,7 +58,8 @@ public class PulseAgentAsset {
     }
 
     public static @NotNull PulseAgentAsset fromPersistence(final @NotNull PulseAssetEntity entity) {
-        return new PulseAgentAsset(entity.getId(),
+        return new PulseAgentAsset(
+                entity.getId(),
                 entity.getName(),
                 entity.getDescription(),
                 entity.getTopic(),
@@ -77,12 +76,12 @@ public class PulseAgentAsset {
         if (!(o instanceof final PulseAgentAsset that)) {
             return false;
         }
-        return Objects.equals(name, that.name) &&
-                Objects.equals(id, that.id) &&
-                Objects.equals(description, that.description) &&
-                Objects.equals(topic, that.topic) &&
-                Objects.equals(schema, that.schema) &&
-                Objects.equals(mapping, that.mapping);
+        return Objects.equals(name, that.name)
+                && Objects.equals(id, that.id)
+                && Objects.equals(description, that.description)
+                && Objects.equals(topic, that.topic)
+                && Objects.equals(schema, that.schema)
+                && Objects.equals(mapping, that.mapping);
     }
 
     @Override
@@ -219,7 +218,8 @@ public class PulseAgentAsset {
         }
 
         public @NotNull PulseAgentAsset build() {
-            return new PulseAgentAsset(Objects.requireNonNull(id),
+            return new PulseAgentAsset(
+                    Objects.requireNonNull(id),
                     Objects.requireNonNull(name),
                     description,
                     Objects.requireNonNull(topic),

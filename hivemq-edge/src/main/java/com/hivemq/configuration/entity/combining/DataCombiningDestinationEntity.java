@@ -17,10 +17,9 @@ package com.hivemq.configuration.entity.combining;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.xml.bind.annotation.XmlElement;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
 
 public class DataCombiningDestinationEntity {
 
@@ -37,13 +36,10 @@ public class DataCombiningDestinationEntity {
     private @NotNull String schema;
 
     // no-arg for jaxb
-    public DataCombiningDestinationEntity() {
-    }
+    public DataCombiningDestinationEntity() {}
 
     public DataCombiningDestinationEntity(
-            @Nullable final String assetId,
-            @NotNull final String topic,
-            @NotNull final String schema) {
+            @Nullable final String assetId, @NotNull final String topic, @NotNull final String schema) {
         Objects.requireNonNull(topic, "topic must not be null");
         Objects.requireNonNull(schema, "schema must not be null");
         this.assetId = assetId;
@@ -69,9 +65,9 @@ public class DataCombiningDestinationEntity {
         if (!(o instanceof final DataCombiningDestinationEntity that)) {
             return false;
         }
-        return Objects.equals(assetId, that.assetId) &&
-                Objects.equals(topic, that.topic) &&
-                Objects.equals(schema, that.schema);
+        return Objects.equals(assetId, that.assetId)
+                && Objects.equals(topic, that.topic)
+                && Objects.equals(schema, that.schema);
     }
 
     @Override

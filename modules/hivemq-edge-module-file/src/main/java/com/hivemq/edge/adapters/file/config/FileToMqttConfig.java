@@ -18,31 +18,34 @@ package com.hivemq.edge.adapters.file.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.List;
 import java.util.Objects;
+import org.jetbrains.annotations.Nullable;
 
 public class FileToMqttConfig {
 
     @JsonProperty("pollingIntervalMillis")
-    @ModuleConfigField(title = "Polling Interval [ms]",
-                       description = "Time in millisecond that this endpoint will be polled",
-                       numberMin = 1,
-                       defaultValue = "1000")
+    @ModuleConfigField(
+            title = "Polling Interval [ms]",
+            description = "Time in millisecond that this endpoint will be polled",
+            numberMin = 1,
+            defaultValue = "1000")
     private final int pollingIntervalMillis;
 
     @JsonProperty("maxPollingErrorsBeforeRemoval")
-    @ModuleConfigField(title = "Max. Polling Errors",
-                       description = "Max. errors polling the endpoint before the polling daemon is stopped (-1 for unlimited retries)",
-                       numberMin = -1,
-                       defaultValue = "10")
+    @ModuleConfigField(
+            title = "Max. Polling Errors",
+            description =
+                    "Max. errors polling the endpoint before the polling daemon is stopped (-1 for unlimited retries)",
+            numberMin = -1,
+            defaultValue = "10")
     private final int maxPollingErrorsBeforeRemoval;
 
     @JsonCreator
     public FileToMqttConfig(
             @JsonProperty(value = "pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
-            @JsonProperty(value = "maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
+            @JsonProperty(value = "maxPollingErrorsBeforeRemoval")
+                    final @Nullable Integer maxPollingErrorsBeforeRemoval,
             @JsonProperty(value = "fileToMqttMappings") final @Nullable List<FileToMqttMapping> mappings) {
         this.pollingIntervalMillis = Objects.requireNonNullElse(pollingIntervalMillis, 1000);
         this.maxPollingErrorsBeforeRemoval = Objects.requireNonNullElse(maxPollingErrorsBeforeRemoval, 10);
@@ -59,8 +62,8 @@ public class FileToMqttConfig {
     @Override
     public boolean equals(final Object o) {
         if (!(o instanceof FileToMqttConfig that)) return false;
-        return getPollingIntervalMillis() == that.getPollingIntervalMillis() &&
-                getMaxPollingErrorsBeforeRemoval() == that.getMaxPollingErrorsBeforeRemoval();
+        return getPollingIntervalMillis() == that.getPollingIntervalMillis()
+                && getMaxPollingErrorsBeforeRemoval() == that.getMaxPollingErrorsBeforeRemoval();
     }
 
     @Override

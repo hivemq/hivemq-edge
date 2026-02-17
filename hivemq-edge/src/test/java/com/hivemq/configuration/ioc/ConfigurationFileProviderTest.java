@@ -15,6 +15,13 @@
  */
 package com.hivemq.configuration.ioc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.LoggingEvent;
@@ -22,6 +29,7 @@ import ch.qos.logback.core.Appender;
 import com.hivemq.configuration.SystemProperties;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.ConfigurationFile;
+import java.io.File;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,15 +39,6 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class ConfigurationFileProviderTest {
 
@@ -92,7 +91,7 @@ public class ConfigurationFileProviderTest {
 
         assertTrue(configurationFile.file().isPresent());
 
-        //No warning / error is logged
+        // No warning / error is logged
         verify(mockAppender, never()).doAppend(captorLoggingEvent.capture());
     }
 
@@ -178,7 +177,7 @@ public class ConfigurationFileProviderTest {
         assertTrue(config.setWritable(false));
 
         final ConfigurationFile configurationFile = ConfigurationFileProvider.get(systemInformation);
-        //It's just a warning when the file is not writable
+        // It's just a warning when the file is not writable
         assertTrue(configurationFile.file().isPresent());
 
         verifyLogStatementContains("config.xml is read only and cannot be written by HiveMQ");

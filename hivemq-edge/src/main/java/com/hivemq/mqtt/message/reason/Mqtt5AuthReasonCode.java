@@ -15,9 +15,9 @@
  */
 package com.hivemq.mqtt.message.reason;
 
+import com.hivemq.extension.sdk.api.packets.auth.AuthReasonCode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.extension.sdk.api.packets.auth.AuthReasonCode;
 
 /**
  * MQTT Reason Codes that can be used in AUTH packets according to the MQTT 5 specification.
@@ -25,7 +25,6 @@ import com.hivemq.extension.sdk.api.packets.auth.AuthReasonCode;
  * @author Silvio Giebl
  */
 public enum Mqtt5AuthReasonCode implements Mqtt5ReasonCode {
-
     SUCCESS(MqttCommonReasonCode.SUCCESS),
     CONTINUE_AUTHENTICATION(0x18),
     REAUTHENTICATE(0x19);
