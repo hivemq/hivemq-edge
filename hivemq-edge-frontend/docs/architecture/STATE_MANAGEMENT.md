@@ -280,7 +280,7 @@ Standard React `useState` and `useReducer` are used for state that is:
 
 **Problem:** Node positions are the only data that exist in `localStorage` and nowhere else. The backend has no concept of canvas positions — it stores adapters, bridges, and combiners as entities, but has no fields for `x`, `y` coordinates. When the workspace loads, backend entities are converted into React Flow nodes and their positions are set from the `localStorage` state.
 
-**Root cause:** There is no stable, unique identifier linking a node in localStorage to a backend entity. Adapter IDs are user-defined strings (e.g., `my-opcua-adapter`). If a user renames an adapter or if the backend regenerates its identifier, the localStorage entry becomes orphaned and the position is lost.
+**Root cause:** There is no stable, unique identifier linking a node in localStorage to a backend entity. Adapter IDs are user-defined strings (for example, `my-opcua-adapter`). If a user renames an adapter or if the backend regenerates its identifier, the localStorage entry becomes orphaned and the position is lost.
 
 **Consequence:** Any feature that needs to read or set node positions programmatically (backend-triggered layout, preset management, multi-device onboarding) must work around this gap. Position presets stored in `layoutConfig.presets` share the same fragility.
 

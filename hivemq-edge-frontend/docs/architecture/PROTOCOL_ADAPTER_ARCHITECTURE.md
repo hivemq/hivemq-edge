@@ -221,7 +221,7 @@ Two-layer validation:
 
 **Custom Validation** (business rules):
 - Unique adapter ID check
-- Cross-field validation (e.g., minValue < maxValue)
+- Cross-field validation (for example, minValue < maxValue)
 - Conditional field requirements
 
 ### 6. API Submission
@@ -427,7 +427,7 @@ export const customUniqueAdapterValidate = (
 Backend should implement validation for:
 - `minValue < maxValue` (Simulation adapter)
 - `startIdx <= endIdx` (Modbus address ranges)
-- Conditional requirements (e.g., certificate required when TLS enabled)
+- Conditional requirements (for example, certificate required when TLS enabled)
 
 ---
 

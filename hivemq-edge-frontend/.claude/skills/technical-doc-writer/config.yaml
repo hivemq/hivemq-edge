@@ -1,0 +1,80 @@
+# Technical Documentation Reviewer — Configuration
+
+scope:
+  # Default target path when no argument is provided
+  default_target: docs/
+
+  # Files to exclude from review (glob patterns)
+  exclude:
+    - '**/INDEX.md' # Structural navigation files, no frontmatter required
+    - '**/.tasks/**' # Task-specific working documents, not permanent docs
+
+  # Apply Tier 1 rules only (skip advisory Tier 2 checks)
+  # Set to true for quick scans
+  strict_only: false
+
+rules:
+  # Tier 1 — always flag
+  passive_voice: true
+  modal_verbs: true
+  future_will: true
+  ing_verb_forms: true
+  please_in_instructions: true
+  gender_pronouns: true
+  incorrect_article: true
+  optional_plural_s: true
+  click_on: true
+  eg_abbreviation: true
+  non_descriptive_links: true
+  noun_clusters: true
+
+  # Tier 2 — advisory
+  sentence_length: true
+  sentence_length_proxy_chars: 180 # Lines > this are flagged as candidates
+  ambiguous_pronouns: true
+  terminology_consistency: true
+  parallel_list_items: true
+
+frontmatter:
+  # Required fields in YAML frontmatter block
+  required_fields:
+    - title
+    - author
+    - last_updated
+    - purpose
+    - audience
+    - maintained_at
+
+  # Files exempt from frontmatter check
+  exempt_patterns:
+    - '**/INDEX.md'
+    - '**/README.md'
+
+terminology:
+  # Canonical terms and their non-canonical variants to watch for
+  # format: canonical: [variant1, variant2]
+  canonical_terms:
+    'protocol adapter': ['adapter plugin', 'connector', 'protocol plugin']
+    'MQTT broker': ['message broker']
+    'combiner': ['data combiner', 'combining node']
+    'northbound mapping': ['northbound subscription', 'tag mapping']
+    'topic filter': ['topic selector', 'topic matcher']
+    'behavior policy': ['behaviour policy']
+    'dry-run': ['dry run', 'dryrun']
+    'React Query': ['react query', 'TanStack Query']
+
+reporting:
+  # Show line numbers in findings
+  show_line_numbers: true
+
+  # Max findings per rule per file before truncating with "... and N more"
+  max_findings_per_rule: 5
+
+  # Include suggestions alongside each finding
+  show_suggestions: true
+
+# Metadata
+version: '1.0.0'
+last_updated: '2026-02-17'
+guidelines_version: 'HiveMQ Technical Documentation Writing Guidelines v1.0'
+maintainer: 'Edge Frontend Team'
