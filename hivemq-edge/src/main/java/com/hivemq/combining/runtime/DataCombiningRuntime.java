@@ -44,31 +44,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hivemq.combining.model.DataIdentifierReference.Type.TAG;
-import static com.hivemq.combining.model.DataIdentifierReference.Type.TOPIC_FILTER;
 import static com.hivemq.combining.runtime.SourceSanitizer.sanitize;
 
-/// `DataCombiningRuntime` manages a **datacombing**, i.e. a mapping, which is part of a **combiner**,
-/// that assembles inputs (which can be tags or topic-filters) into a destination message.
-/// `start()` subscribes to all the inputs (tags and topic-filters), including the primary/trigger.
-/// This is done with `subscribe()`, which creates an `InternalTagSubscription` or `InternalTopicFilterSubscription`.
-/// Tags are subscribed to the `TagManager` with a `TagConsumer` and its `accept()` method.
-/// `TopicFilters` are subscribed to the `TopicTree` with a `QueueConsumer` and its `process()` method.
-/// These methods (`accept()` and `process()`) store the value in the `values` hash-map.
+/// `DataCombiningRuntime` manages a **combiner mapping** (aka "datacombing"),
+/// that assembles inputs, which can be tags or topic-filters, into a destination message.
+/// `start()` subscribes to all the inputs (tags and topic-filters), including the trigger (aka primary).
+/// When values arrive (via `accept()` or `process()`), they are stored in the concurrent hashmap `values`.
 /// When the trigger arrives, the `assembleAndPublish()` method is called which assembles all inputs into an object
 /// and calls the `dataCombiningPublishingService` to turn that into a message and publish that to the target topic.
-///
-/// Questions:
-/// What is the purpose of the `transformationService`?
-/// What is the purpose of the `clientQueuePersistence`?
-/// What is the purpose of the `singleWriterService`?
-/// How does the subscription of topic filters actually work?
-///
-/// Resolved Questions:
-/// Why are we not directly setting the values into a `inputValuesAsDictObject` when they arrive?
-/// Firstly because inputValuesAsDictObject is not concurrent, values arriving at the same time would cause corruption.
-/// Secondly we want to delay converting values or messages to JSON until we really need it (see `Values` below).
-
 public class DataCombiningRuntime {
 
     private static final Logger log = LoggerFactory.getLogger(DataCombiningRuntime.class);
@@ -76,10 +59,10 @@ public class DataCombiningRuntime {
     private final @NotNull DataCombining dataCombining;
     private final @NotNull LocalTopicTree localTopicTree;
     private final @NotNull TagManager tagManager;
-    private final @NotNull ClientQueuePersistence clientQueuePersistence;
-    private final @NotNull SingleWriterService singleWriterService;
+    private final @NotNull ClientQueuePersistence clientQueuePersistence; // what is the purpose of this?
+    private final @NotNull SingleWriterService singleWriterService; // what is the purpose of this?
     private final @NotNull DataCombiningPublishService dataCombiningPublishService;
-    private final @NotNull DataCombiningTransformationService dataCombiningTransformationService;
+    private final @NotNull DataCombiningTransformationService dataCombiningTransformationService; // what is the purpose of this
 
     private final @NotNull ObjectMapper mapper;
     private final @NotNull List<InternalSubscription> subscriptions;
@@ -107,7 +90,7 @@ public class DataCombiningRuntime {
         this.values = new ConcurrentHashMap<>();
     }
 
-    ///   `starts()` subscribes to all inputs
+    /// `starts()` subscribes to all inputs
     public void start() {
         log.debug("Starting data combining {}", dataCombining.id());
 
@@ -131,7 +114,7 @@ public class DataCombiningRuntime {
         subscribe(trigger, true, providesValue);
     }
 
-    ///   `stop()` unsubscribes all `subscriptions` again
+    /// `stop()` unsubscribes all `subscriptions` again
     public void stop() {
         log.debug("Stoping data combining {}", dataCombining.id());
 
@@ -140,7 +123,7 @@ public class DataCombiningRuntime {
         dataCombiningTransformationService.removeScriptForDataCombining(dataCombining);
     }
 
-    ///   `assembleAndPublish` is what it really is all about, assembling values and publishing a new, combined message
+    /// `assembleAndPublish` is what it really is all about, assembling values and publishing a new, combined message
     public void assembleAndPublish() {
         log.debug("Triggering data combining {}", dataCombining.id());
         final ObjectNode inputValuesAsDictObject = mapper.createObjectNode();
@@ -154,14 +137,14 @@ public class DataCombiningRuntime {
                 dataCombining);
     }
 
-    ///  `Value` represents values to be used in the combining (`assempleAndPublish`) as JsonNodes.
-    ///  It is created holding the `RawValue` (either tag value or topic-filter payload).
-    ///  It converts the raw value to a `JsonNode` when requested (lazily) and caches the result of the conversion.
-    ///  That way we only convert raw values when needed,
-    ///  so we don't convert raw values that are overwritten by other raw values before a trigger arrives.
-    ///  And we also don't convert a raw value multiple times,
-    ///  so we convert raw values that don't change while multiple triggers arrive only once.
-    ///  There are two concrete implementations for `RawValue`, for tags and for topic-filters.
+    /// `Value` represents values to be used in the combining (`assempleAndPublish`) as JsonNodes.
+    /// It is created holding the `RawValue` (either tag value or topic-filter payload).
+    /// It converts the raw value to a `JsonNode` when requested (lazily) and caches the result of the conversion.
+    /// That way we only convert raw values when needed,
+    /// so we don't convert raw values that are overwritten by other raw values before a trigger arrives.
+    /// And we also don't convert a raw value multiple times,
+    /// so we convert raw values that don't change while multiple triggers arrive only once.
+    /// There are two concrete implementations for `RawValue`, for tags and for topic-filters.
     public final class Value {
         @Nullable RawValue value;
         @Nullable JsonNode jsonNode;
@@ -216,9 +199,9 @@ public class DataCombiningRuntime {
         }
     }
 
-    ///  `subscribe` subscribes the input (tag or topic filter).
-    ///  It does this by creating either a `InternalSubscriptionTag` or `InternalSubscriptionTopicFilter`.
-    ///  It remembers all subscriptions in `subscriptions`, so that we can unsubscribe them again on `close()`.
+    /// `subscribe` subscribes the input (tag or topic filter).
+    /// It does this by creating either a `InternalSubscriptionTag` or `InternalSubscriptionTopicFilter`.
+    /// It remembers all subscriptions in `subscriptions`, so that we can unsubscribe them again on `close()`.
     public void subscribe(
             final @NotNull DataIdentifierReference ref,
             final boolean isTrigger,
@@ -226,10 +209,10 @@ public class DataCombiningRuntime {
         log.debug("Starting {} consumer for {}", ref.type(), ref.id());
         switch (ref.type()) {
             case TAG -> {
-                    subscriptions.add(new InternalSubscriptionTag(ref.id(), isTrigger, providesValue));
+                    subscriptions.add(new InternalSubscriptionTag(ref, isTrigger, providesValue));
             }
             case TOPIC_FILTER -> {
-                    subscriptions.add(new InternalSubscriptionTopicFilter(ref.id(), isTrigger, providesValue));
+                    subscriptions.add(new InternalSubscriptionTopicFilter(ref, isTrigger, providesValue));
             }
             case PULSE_ASSET -> {
                 log.error("Pulse Assets shouldn't be input to data combining in Edge {}", ref.id());
@@ -242,25 +225,28 @@ public class DataCombiningRuntime {
         void unSubscribe();
     }
 
+    /// Tags are subscribed to the `TagManager` with a `TagConsumer` and its `accept()` method.
     public final class InternalSubscriptionTag implements InternalSubscription {
         private final TagConsumer consumer;
 
         public InternalSubscriptionTag(
-                final @NotNull String tagName,
+                final @NotNull DataIdentifierReference ref,
                 final boolean isTrigger,
                 final boolean providesValue) {
 
             this.consumer = new TagConsumer() {
                 @Override
                 public @NotNull String getTagName() {
-                    return tagName;
+                    /// TODO(mschoene) this must become `sanitized(ref)`!
+                    /// so that `tagManager` knows which tag is meant (if there are multiple with the same tagname)
+                    /// I presume such a change has been made to tag manager in Sam's epic
+                    return ref.id();
                 }
 
                 @Override
                 public void accept(final @NotNull List<DataPoint> dataPoints) {
                     if (providesValue && !dataPoints.isEmpty()) {
-                        String propertyName = sanitize(new DataIdentifierReference(tagName, TAG));
-                        values.put(propertyName, new Value(new RawValueTag(dataPoints.getLast())));
+                        values.put(sanitize(ref), new Value(new RawValueTag(dataPoints.getLast())));
                     }
                     if (isTrigger) {
                         assembleAndPublish();
@@ -276,6 +262,7 @@ public class DataCombiningRuntime {
         }
     }
 
+    /// `TopicFilters` are subscribed to the `TopicTree` with a `QueueConsumer` and its `process()` method.
     public final class InternalSubscriptionTopicFilter implements InternalSubscription {
         private final @NotNull String subscriber;
         private final @NotNull String topicFilter;
@@ -283,14 +270,18 @@ public class DataCombiningRuntime {
         private final @NotNull QueueConsumer consumer;
 
         InternalSubscriptionTopicFilter(
-                final @NotNull String topicFilter,
+                final @NotNull DataIdentifierReference ref,
                 final boolean isTrigger,
                 final boolean providesValue) {
             this.subscriber = dataCombining.id().toString() + "#";
-            this.topicFilter = topicFilter;
+            this.topicFilter = ref.id();
             this.sharedName = dataCombining.id().toString();
             String queueId = dataCombining.id().toString() + "/" + topicFilter;
 
+            /// TODO(mschoene) figure out, how the subscription of topic filters actually works?
+            /// I'm puzzled, because the consumer is not **directly** added to the topic tree
+            /// So I presume that there must be some connection via the `subscriber` and `queueId`?
+            /// And then what is the `sharedName` for?
             localTopicTree.addTopic(subscriber,
                     new Topic(topicFilter, QoS.EXACTLY_ONCE, false, true),
                     SubscriptionFlag.getDefaultFlags(true, true, false),
@@ -300,8 +291,7 @@ public class DataCombiningRuntime {
                 @Override
                 public void process(final @NotNull PUBLISH message) {
                     if (providesValue) {
-                        String propertyName = sanitize(new DataIdentifierReference(topicFilter, TOPIC_FILTER));
-                        values.put(propertyName, new Value(new RawValueTopicFilter(message.getPayload())));
+                        values.put(sanitize(ref), new Value(new RawValueTopicFilter(message.getPayload())));
                     }
                     if (isTrigger) {
                         assembleAndPublish();
