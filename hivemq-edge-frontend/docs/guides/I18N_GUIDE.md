@@ -1077,7 +1077,7 @@ return (
 | **Namespace** | Logical grouping of translations (translation, components, schemas, datahub) |
 | **Translation Key** | Hierarchical dot-notation path to a translation string |
 | **Interpolation** | Inserting dynamic values into translation strings using `{{ variable }}` |
-| **Context** | Conditional translation variations based on a context value (e.g., success/error) |
+| **Context** | Conditional translation variations based on a context value (for example, success/error) |
 | **Pluralization** | Different translation forms based on count (`_zero`, `_one`, `_other`) |
 | **Pseudo Translation** | Testing technique that transforms text to identify untranslated strings |
 | **Missing Key Handler** | Callback invoked when a translation key doesn't exist |

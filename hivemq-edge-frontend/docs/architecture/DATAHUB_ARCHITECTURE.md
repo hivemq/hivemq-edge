@@ -290,7 +290,7 @@ describe('PolicySummaryReport', () => {
 |-------|---------|----------|
 | **Missing individual GET intercept** | Canvas never loads, timeout on `rf__wrapper` | Add `cy.intercept('GET', '.../policies/**')` |
 | **Check Policy disabled** | Button unclickable in test | Select policy node first: `datahubDesignerPage.designer.selectNode('DATA_POLICY')` |
-| **Invalid fixture structure** | Validation fails unexpectedly | Verify fixture matches OpenAPI schema exactly (e.g., `clientIdRegex` not `clientFilter`) |
+| **Invalid fixture structure** | Validation fails unexpectedly | Verify fixture matches OpenAPI schema exactly (for example, `clientIdRegex` not `clientFilter`) |
 
 ---
 

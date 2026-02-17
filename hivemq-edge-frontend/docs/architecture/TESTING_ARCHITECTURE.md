@@ -349,7 +349,7 @@ describe('Button', () => {
 
 **What to test:**
 - User registration/login flows
-- Multi-step wizards (e.g., adapter creation)
+- Multi-step wizards (for example, adapter creation)
 - Navigation and routing
 - Data persistence across pages
 - Error handling and recovery
@@ -597,7 +597,7 @@ module.exports = {
 
 ### Deque Axe DevTools (Manual)
 
-**Developers should also use:**
+**Developers must also use:**
 
 - **Browser Extension:** Deque Axe DevTools
 - **When:** During development for real-time feedback

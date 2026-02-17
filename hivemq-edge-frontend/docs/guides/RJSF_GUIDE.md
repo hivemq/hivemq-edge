@@ -325,7 +325,7 @@ fields={{
 ```
 
 **Difference from Widgets:**
-- **Widget:** Replaces just the input element (e.g., text input → dropdown)
+- **Widget:** Replaces just the input element (for example, text input → dropdown)
 - **Field:** Replaces the entire field including label, description, validation display
 
 **Usage in uiSchema:**

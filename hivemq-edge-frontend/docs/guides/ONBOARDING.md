@@ -11,7 +11,7 @@ maintained_at: "docs/guides/ONBOARDING.md"
 
 Welcome to the HiveMQ Edge frontend team. This guide takes you from zero to a running development environment.
 
-**Read this top to bottom.** Don't skip steps — several are easy to miss and will cause confusing failures later.
+**Read this top to bottom.** Don't skip steps — several are easy to miss and cause confusing failures later.
 
 ---
 
@@ -69,7 +69,7 @@ Branch names follow the pattern `feat/{LINEAR-ID}/{description}`. Example: `feat
 
 ## Prerequisites
 
-You need two things installed before anything else: **Node.js 22** and **pnpm 10**. Both version requirements are enforced — the wrong versions will cause `pnpm install` to fail with a clear error.
+You need two things installed before anything else: **Node.js 22** and **pnpm 10**. Both version requirements are enforced — the wrong versions cause `pnpm install` to fail with a clear error.
 
 ### Node.js 22
 
@@ -107,7 +107,7 @@ brew install node@22
 
 ### pnpm 10
 
-The project uses **pnpm 10** as its package manager. npm and yarn will not work — the lockfile format is incompatible.
+The project uses **pnpm 10** as its package manager. npm and yarn do not work — the lockfile format is incompatible.
 
 **Install pnpm:**
 
@@ -172,7 +172,7 @@ This installs all frontend dependencies from `pnpm-lock.yaml`. It should complet
 ## Configure Your Local Environment
 
 > [!CAUTION]
-> **This step is mandatory.** Without a `.env.local` file, `pnpm dev` will start but the application will not function — API calls will fail with no useful error message.
+> **This step is mandatory.** Without a `.env.local` file, `pnpm dev` starts but the application does not function — API calls fail with no useful error message.
 
 The application uses Vite's environment file system. Your personal, local configuration goes in `.env.local` at the root of `hivemq-edge-frontend/`. This file is gitignored and never committed.
 

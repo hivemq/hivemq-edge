@@ -92,7 +92,7 @@ Boards covering domain entity relationships, engineering practices, and cross-cu
 
 Quick reference for finding the board most relevant to a given documentation area.
 
-| Documentation Area | Most Relevant Board(s) |
+| Documentation Area | Most Relevant Boards |
 |--------------------|------------------------|
 | [Workspace Architecture](../architecture/WORKSPACE_ARCHITECTURE.md) | Workspace deconstructed, Alternative Workspace as ETL Designer |
 | [DataHub Architecture](../architecture/DATAHUB_ARCHITECTURE.md) | DataHub – Edge Integration, Resource Handling Revamp, FSM User-Facing Strings |

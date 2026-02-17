@@ -252,10 +252,10 @@ describe('[Feature] - Documentation Screenshots', () => {
 All documentation screenshots must use 1280×720. Set it in `beforeEach`, not once at the top of the file — Cypress resets the viewport between tests.
 
 **`cy_interceptCoreE2E()` is mandatory.**
-Without it, the auth wall or config loading will block the page from rendering. This helper sets up all the baseline intercepts the app needs to boot.
+Without it, the auth wall or config loading blocks the page from rendering. This helper sets up all the baseline intercepts the app needs to boot.
 
 **Mock every API call the page makes.**
-If any API call is not intercepted, the page will show a loading state or error in the screenshot. Use the browser's Network tab (in headed mode) to discover what the page calls.
+If any API call is not intercepted, the page shows a loading state or error in the screenshot. Use the browser's Network tab (in headed mode) to discover what the page calls.
 
 **`cy.wait(800)` after `cy.visit()` is acceptable here.**
 This is an exception to the general "no arbitrary waits" rule. Screenshot tests are not functional tests — we are waiting for visual stability (CSS transitions, canvas layout), not for a specific DOM state. 800ms is the established minimum; increase to 1200ms for complex canvas pages.
