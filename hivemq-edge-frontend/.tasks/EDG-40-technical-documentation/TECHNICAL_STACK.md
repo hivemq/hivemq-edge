@@ -49,6 +49,7 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 **Node.js 22** - Required runtime version
 
 **Rationale:** pnpm provides:
+
 - Fast, disk-efficient package management
 - Strict dependency resolution
 - Monorepo support
@@ -60,10 +61,12 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 ### UI Framework & Components
 
 #### Core React
+
 - **react 18.3.1** - UI library
 - **react-dom 18.3.1** - DOM renderer
 
 #### Component Library
+
 - **@chakra-ui/react 2.8.2** - Component library with custom theming
 - **@chakra-ui/icons 2.1.1** - Icon components
 - **@chakra-ui/theme-tools 2.2.9** - Theme customization utilities
@@ -75,6 +78,7 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 **Custom Theme:** `src/modules/Theme/themeHiveMQ.ts`
 
 **Design Patterns:**
+
 - Button variants: `primary`, `outline`, `ghost`, `danger`
 - Custom color schemes
 - Responsive breakpoints
@@ -82,14 +86,17 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 ### State Management
 
 #### Server State
+
 - **@tanstack/react-query 5.85.5** - Async state management, caching, synchronization
 - **@tanstack/react-query-devtools 5.85.5** - DevTools for debugging queries
 
 #### Client State
+
 - **zustand 4.4.7** - Lightweight state management
   - Used for: Workspace state, DataHub drafts, UI state
 
 #### Form State
+
 - **react-hook-form 7.43.9** - Performant form state management with validation
 
 ### Routing
@@ -101,12 +108,14 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 ### Data Visualization
 
 #### Canvas & Node Graphs
+
 - **@xyflow/react 12.8.4** (React Flow) - Node-based graph editor for workspace topology
 - **@dagrejs/dagre 1.1.5** - Directed graph layout algorithms
 - **elkjs 0.9.1** - Eclipse Layout Kernel for automatic layout
 - **webcola 3.4.0** - Constraint-based layout
 
 #### Charts & Diagrams
+
 - **@nivo/bar 0.88.0** - Bar charts
 - **@nivo/chord 0.88.0** - Chord diagrams
 - **@nivo/line 0.88.0** - Line charts
@@ -123,6 +132,7 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 ### Forms & Schema Validation
 
 #### JSON Schema Forms
+
 - **@rjsf/core 5.24.13** - JSON Schema form generator (core)
 - **@rjsf/chakra-ui 5.24.13** - Chakra UI widgets for RJSF
 - **@rjsf/utils 5.24.13** - Utilities for RJSF
@@ -134,6 +144,7 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 ### Rich Text Editing
 
 #### Tiptap (Headless Editor)
+
 - **@tiptap/react 2.9.1** - React integration
 - **@tiptap/extension-document 2.9.1** - Document node
 - **@tiptap/extension-paragraph 2.9.1** - Paragraph node
@@ -153,15 +164,18 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 ### Protocols & Communication
 
 #### HTTP Client
+
 - **axios 1.13.5** - Promise-based HTTP client
   - API communication with HiveMQ Edge backend
   - Interceptors for auth, error handling
 
 #### MQTT
+
 - **mqtt 5.10.1** - MQTT protocol implementation
 - **mqtt-match 3.0.0** - MQTT topic matching utilities
 
 #### Protocol Buffers
+
 - **protobufjs 7.2.6** - Protocol buffers support
 
 ### Internationalization (i18n)
@@ -170,6 +184,7 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 - **react-i18next 14.1.3** - React bindings for i18next
 
 **Translation Files:**
+
 - `src/locales/en/translation.json` - Main translations
 - `src/extensions/datahub/locales/en/datahub.json` - DataHub-specific translations
 
@@ -178,23 +193,28 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 ### Utilities
 
 #### Date & Time
+
 - **luxon 3.3.0** - DateTime handling (Moment.js successor)
 
 #### IDs & Data
+
 - **uuid 9.0.1** - UUID generation
 - **ts-pattern 5.3.1** - Pattern matching for TypeScript
 - **immutable-json-patch 6.0.2** - JSON patch operations
 
 #### React Hooks
+
 - **@uidotdev/usehooks 2.4.1** - Custom React hooks collection
 - **react-hotkeys-hook 4.5.0** - Keyboard shortcuts
 - **react-dropzone 14.2.3** - File upload handling
 
 #### UI Utilities
+
 - **react-icons 5.3.0** - Icon library (Lucide, React Icons, etc.)
 - **@atlaskit/pragmatic-drag-and-drop 1.3.0** - Drag and drop primitives
 
 #### Data Handling
+
 - **xlsx 0.20.3** (SheetJS) - Spreadsheet reading/writing
 - **@tanstack/react-table 8.9.3** - Headless table utilities
 - **react-accessible-treeview 2.9.1** - Accessible tree view component
@@ -213,6 +233,7 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 ### Testing Framework
 
 #### Cypress (Component & E2E Testing)
+
 - **cypress 15.8.2** - Test runner
 - **@cypress/code-coverage 3.13.11** - Code coverage reporting
 - **cypress-axe 1.7.0** - Accessibility testing
@@ -227,12 +248,14 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 **Configuration:** `cypress.config.ts`
 
 **Custom Commands:**
+
 - `cy.mountWithProviders()` - Mount with React providers
 - `cy.getByTestId()` - Select by data-testid
 - `cy.checkAccessibility()` - Run axe accessibility checks
 - `cy.injectAxe()` - Inject axe-core
 
 #### Vitest (Unit Testing)
+
 - **vitest 3.2.4** - Fast unit test framework
 - **@vitest/ui 3.2.4** - Test UI
 - **@vitest/coverage-v8 3.2.4** - V8 coverage provider
@@ -242,22 +265,26 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 **Configuration:** `vitest.config.ts`
 
 #### Testing Library
+
 - **@testing-library/react 16.2.0** - React testing utilities
 - **@testing-library/jest-dom 6.6.4** - Custom matchers
 
 #### API Mocking
+
 - **msw 2.7.0** - Mock Service Worker for API mocking
 - **@mswjs/data 0.16.2** - Data modeling for MSW
 
 **Handlers Location:** `src/api/hooks/__handlers__/`
 
 #### Visual Regression Testing
+
 - **@percy/cli 1.28.5** - Percy command-line interface
 - **@percy/cypress 3.1.7** - Percy integration for Cypress
 
 ### Linting & Code Quality
 
 #### ESLint (9.26.0) - Flat Config
+
 - **@eslint/js 9.26.0** - ESLint JavaScript rules
 - **typescript-eslint 8.32.1** - TypeScript rules and parser
 - **eslint-plugin-react 7.37.5** - React-specific rules
@@ -271,6 +298,7 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 **Configuration:** `eslint.config.mjs` (flat config format)
 
 **Key Rules:**
+
 - Strict TypeScript checking
 - React hooks validation
 - Consistent type imports: `import type { ... }`
@@ -278,6 +306,7 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 - No unnecessary Cypress waits
 
 #### Prettier (3.5.3) - Code Formatting
+
 - **Configuration:** `.prettierrc.cjs`
 - **Settings:**
   - Single quotes
@@ -287,6 +316,7 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
   - ES5 trailing commas
 
 #### Stylelint (16.14.1) - CSS Linting
+
 - **stylelint-config-standard 37.0.0** - Standard CSS rules
 - **stylelint-config-standard-scss 14.0.0** - SCSS rules
 
@@ -295,6 +325,7 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 ### Code Generation
 
 #### OpenAPI Client Generation
+
 - **openapi-typescript-codegen 0.25.0** - Generate TypeScript client from OpenAPI specs
 
 **Command:** `pnpm dev:openAPI`
@@ -304,6 +335,7 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 **Source:** `../hivemq-edge-openapi/dist/bundle.yaml`
 
 #### Chakra UI Types
+
 - **@chakra-ui/cli 2.4.1** - Generate Chakra UI theme types
 
 **Command:** `pnpm dev:chakra:types`
@@ -311,11 +343,13 @@ The HiveMQ Edge Frontend is a modern React-based single-page application built w
 ### Coverage & Reporting
 
 #### Coverage Tools
+
 - **nyc 17.1.0** - Istanbul command-line interface
 - **@istanbuljs/nyc-config-typescript 1.0.2** - TypeScript configuration for NYC
 - **vite-plugin-istanbul 7.2.1** - Istanbul plugin for Vite
 
 #### Test Reporters
+
 - **mocha-junit-reporter 2.2.1** - JUnit XML reports for CI
 - **mochawesome 7.1.4** - HTML/JSON test reports
 - **mochawesome-merge 5.0.0** - Merge multiple mochawesome reports
@@ -356,6 +390,7 @@ pnpm bundle:size            # Analyze bundle size with vite-bundle-visualizer
 **Build Output:** `dist/` directory
 
 **Build Process:**
+
 1. TypeScript compilation check (`tsc`)
 2. Vite build (bundling, optimization, tree-shaking)
 3. Source map generation
@@ -425,6 +460,7 @@ pnpm cypress:percy          # Run tests with Percy visual testing
 ```
 
 **Process:**
+
 1. Runs E2E tests with Percy enabled
 2. Runs component tests with Percy enabled
 3. Finalizes Percy build
@@ -446,6 +482,7 @@ pnpm test:ui                # Run with Vitest UI
 ### Repository Structure
 
 The frontend is part of a **monorepo** located at `../` (parent directory). The repository includes:
+
 - `hivemq-edge/` - Backend Java application
 - `hivemq-edge-frontend/` - Frontend React application (this codebase)
 - `hivemq-edge-openapi/` - OpenAPI specifications
@@ -458,11 +495,13 @@ The frontend is part of a **monorepo** located at `../` (parent directory). The 
 **Trigger:** Push to main/master, pull requests, manual dispatch
 
 **Strategy:** Path-based change detection
+
 - Only runs frontend checks when `hivemq-edge-frontend/**` or `.github/**` changes
 - Parallel execution for frontend, backend, and OpenAPI checks
 - Concurrency control: cancels in-progress runs for same PR/ref
 
 **Jobs:**
+
 1. **check-for-changes** - Detects which parts of monorepo changed
 2. **check-frontend** - Calls `check-frontend.yml` (conditional)
 3. **check-backend** - Calls `check-backend.yml` (conditional)
@@ -478,10 +517,12 @@ The frontend is part of a **monorepo** located at `../` (parent directory). The 
 **Working Directory:** `./hivemq-edge-frontend/`
 
 **Secrets Required:**
+
 - `SONAR_TOKEN` - SonarQube/SonarCloud authentication
 - `PERCY_TOKEN` - Percy visual regression testing
 
 ##### Job 1: Linting
+
 ```yaml
 - Run Prettier: pnpm lint:prettier
 - Run ESLint: pnpm lint:eslint
@@ -490,6 +531,7 @@ The frontend is part of a **monorepo** located at `../` (parent directory). The 
 **Quality Gate:** Max 0 warnings allowed in ESLint
 
 ##### Job 2: Unit Tests
+
 ```yaml
 - Run Vitest with coverage: pnpm test:coverage
 - Upload coverage artifact: lcov-vitest
@@ -498,6 +540,7 @@ The frontend is part of a **monorepo** located at `../` (parent directory). The 
 **Output:** `coverage-vitest/lcov.info`
 
 ##### Job 3: Build Instrumented (for E2E coverage)
+
 ```yaml
 - Build with Istanbul instrumentation
 - Environment: VITE_COVERAGE=true
@@ -508,6 +551,7 @@ The frontend is part of a **monorepo** located at `../` (parent directory). The 
 **Note:** 8GB memory required due to TypeScript compiler + Istanbul instrumentation overhead
 
 ##### Job 4: Build Production (clean)
+
 ```yaml
 - Build without instrumentation: pnpm run build --base=/
 - Upload artifact: application-clean
@@ -516,6 +560,7 @@ The frontend is part of a **monorepo** located at `../` (parent directory). The 
 **Output:** Clean production build in `dist/`
 
 ##### Job 5: Lighthouse Performance
+
 ```yaml
 - Downloads: application-clean artifact
 - Runs Lighthouse audits
@@ -524,12 +569,14 @@ The frontend is part of a **monorepo** located at `../` (parent directory). The 
 ```
 
 **Metrics Audited:**
+
 - Performance score
 - Accessibility
 - Best practices
 - SEO
 
 ##### Job 6: Percy Prepare
+
 ```yaml
 - Generates parallel execution nonce
 - Coordinates parallel Percy builds
@@ -541,19 +588,20 @@ The frontend is part of a **monorepo** located at `../` (parent directory). The 
 
 **Matrix Configuration:**
 
-| Job Name | Type | Spec Pattern | Description |
-|----------|------|--------------|-------------|
-| E2E-Adapters | E2E | `./cypress/e2e/adapters/**/*` | Adapter configuration tests |
-| E2E-Workspace | E2E | `./cypress/e2e/workspace/**/*` | Workspace canvas tests |
-| E2E-Core | E2E | `./cypress/e2e/!(adapters\|workspace)/**/*` | Other E2E tests |
-| Components | Component | `./src/components/**/*` | Shared components |
-| Extensions | Component | `./src/extensions/**/*` | DataHub extension |
-| Workspace | Component | `./src/modules/Workspace/**/*` | Workspace module |
-| Mappings | Component | `./src/modules/Mappings/**/*` | Mappings module |
-| Pulse | Component | `./src/modules/Pulse/**/*` | Pulse module |
-| Modules | Component | `./src/modules/!(Workspace\|Mappings\|Pulse)/**/*` | Other modules |
+| Job Name      | Type      | Spec Pattern                                       | Description                 |
+| ------------- | --------- | -------------------------------------------------- | --------------------------- |
+| E2E-Adapters  | E2E       | `./cypress/e2e/adapters/**/*`                      | Adapter configuration tests |
+| E2E-Workspace | E2E       | `./cypress/e2e/workspace/**/*`                     | Workspace canvas tests      |
+| E2E-Core      | E2E       | `./cypress/e2e/!(adapters\|workspace)/**/*`        | Other E2E tests             |
+| Components    | Component | `./src/components/**/*`                            | Shared components           |
+| Extensions    | Component | `./src/extensions/**/*`                            | DataHub extension           |
+| Workspace     | Component | `./src/modules/Workspace/**/*`                     | Workspace module            |
+| Mappings      | Component | `./src/modules/Mappings/**/*`                      | Mappings module             |
+| Pulse         | Component | `./src/modules/Pulse/**/*`                         | Pulse module                |
+| Modules       | Component | `./src/modules/!(Workspace\|Mappings\|Pulse)/**/*` | Other modules               |
 
 **Execution:**
+
 ```yaml
 - Downloads: application-instrumented artifact
 - Starts preview server: pnpm preview --port 3000
@@ -562,12 +610,14 @@ The frontend is part of a **monorepo** located at `../` (parent directory). The 
 ```
 
 **Artifacts Uploaded:**
+
 - **On Failure:** `cypress-{target}-videos` - Video recordings of failing tests
 - **Always:** `lcov-cypress-{target}` - Coverage for each test group
 
 **Continue-on-Error:** True (allows all matrix jobs to complete even if some fail)
 
 ##### Job 8: SonarQube Analysis
+
 ```yaml
 - Depends on: cypress_matrix, unit_tests
 - Runs even if: some tests failed (success() || failure())
@@ -579,6 +629,7 @@ The frontend is part of a **monorepo** located at `../` (parent directory). The 
 **SonarCloud Project:** `hivemq:edge-frontend`
 
 **Coverage Sources:**
+
 1. Vitest unit tests (`lcov-vitest`)
 2. Cypress E2E-Adapters (`lcov-cypress-E2E-Adapters`)
 3. Cypress E2E-Workspace (`lcov-cypress-E2E-Workspace`)
@@ -591,6 +642,7 @@ The frontend is part of a **monorepo** located at `../` (parent directory). The 
 10. Cypress Modules (`lcov-cypress-Modules`)
 
 **Quality Metrics:**
+
 - Code coverage percentage
 - Code smells
 - Bugs
@@ -599,6 +651,7 @@ The frontend is part of a **monorepo** located at `../` (parent directory). The 
 - Duplications
 
 ##### Job 9: Percy Finalize
+
 ```yaml
 - Depends on: cypress_matrix
 - Finalizes parallel Percy build
@@ -606,6 +659,7 @@ The frontend is part of a **monorepo** located at `../` (parent directory). The 
 ```
 
 **Percy Workflow:**
+
 1. Percy Prepare generates nonce
 2. All 9 Cypress jobs run with same nonce (parallel)
 3. Percy Finalize aggregates all screenshots and completes build
@@ -675,6 +729,7 @@ flowchart TD
 The `pnpm build` command generates:
 
 - **Static Assets:** `dist/` directory
+
   - Bundled and minified JavaScript
   - CSS files
   - Assets (images, fonts, etc.)
@@ -702,6 +757,7 @@ The `pnpm build` command generates:
 ### Quality Gates
 
 **Pipeline Fails If:**
+
 - ESLint has any warnings
 - Prettier formatting issues
 - TypeScript compilation errors
@@ -710,6 +766,7 @@ The `pnpm build` command generates:
 - Build fails
 
 **Pipeline Warnings (Continue-on-Error):**
+
 - SonarCloud gate failures (informational)
 - Percy token missing (visual tests skip)
 
@@ -718,11 +775,13 @@ The `pnpm build` command generates:
 ### Environment Variables
 
 **Required in CI:**
+
 - `SONAR_TOKEN` - SonarCloud authentication
 - `PERCY_TOKEN` - Percy visual regression testing
 - `GITHUB_TOKEN` - GitHub API access (provided by Actions)
 
 **Build-time:**
+
 - `VITE_COVERAGE=true` - Enable Istanbul instrumentation
 - `NODE_OPTIONS="--max_old_space_size=8192"` - Memory allocation for build
 
@@ -731,6 +790,7 @@ The `pnpm build` command generates:
 ### Custom Actions
 
 **setup_node** (`.github/actions/setup_node`)
+
 - Sets up Node.js 22
 - Installs pnpm 10
 - Caches dependencies
@@ -740,17 +800,17 @@ The `pnpm build` command generates:
 
 ## Configuration Files
 
-| File | Purpose |
-|------|---------|
-| `vite.config.ts` | Vite build configuration, dev server, proxy |
-| `tsconfig.json` | Root TypeScript configuration |
-| `tsconfig.app.json` | App-specific TypeScript settings |
-| `tsconfig.node.json` | Node scripts TypeScript settings |
-| `eslint.config.mjs` | ESLint flat config with all rules |
-| `.prettierrc.cjs` | Prettier formatting rules |
-| `cypress.config.ts` | Cypress test configuration |
-| `vitest.config.ts` | Vitest unit test configuration |
-| `package.json` | Dependencies, scripts, project metadata |
+| File                 | Purpose                                     |
+| -------------------- | ------------------------------------------- |
+| `vite.config.ts`     | Vite build configuration, dev server, proxy |
+| `tsconfig.json`      | Root TypeScript configuration               |
+| `tsconfig.app.json`  | App-specific TypeScript settings            |
+| `tsconfig.node.json` | Node scripts TypeScript settings            |
+| `eslint.config.mjs`  | ESLint flat config with all rules           |
+| `.prettierrc.cjs`    | Prettier formatting rules                   |
+| `cypress.config.ts`  | Cypress test configuration                  |
+| `vitest.config.ts`   | Vitest unit test configuration              |
+| `package.json`       | Dependencies, scripts, project metadata     |
 
 ---
 
@@ -773,12 +833,14 @@ import { workspacePage } from '@cypr/pages'
 ## Key Architectural Patterns
 
 ### API Client Generation
+
 - OpenAPI specs → TypeScript client
 - Location: `src/api/__generated__/`
 - Never manually edit generated files
 - React Query hooks wrap generated client: `src/api/hooks/`
 
 ### Testing Strategy
+
 - **Component Tests:** Cypress component testing for UI components
 - **E2E Tests:** Cypress for full user flows
 - **Unit Tests:** Vitest for utility functions, hooks
@@ -786,12 +848,14 @@ import { workspacePage } from '@cypr/pages'
 - **Coverage:** Combined coverage from all test types
 
 ### State Management Strategy
+
 - **Server State:** React Query (caching, synchronization)
 - **Client State:** Zustand stores (workspace, DataHub, UI)
 - **Form State:** React Hook Form
 - **URL State:** React Router params/search
 
 ### Code Quality Gates
+
 - **TypeScript:** Strict mode, no `any` types
 - **ESLint:** Max 0 warnings in CI
 - **Prettier:** Automatic formatting
@@ -813,6 +877,7 @@ import { workspacePage } from '@cypr/pages'
 ### Dependency Update Policy
 
 **TODO:** Document the policy for:
+
 - Regular dependency updates schedule
 - Security patch policy
 - Major version upgrade approval process
@@ -824,6 +889,7 @@ import { workspacePage } from '@cypr/pages'
 ### Pending Updates
 
 **TODO:** Track routine dependency updates:
+
 - Minor version updates
 - Patch version updates
 - Security updates
@@ -833,6 +899,7 @@ import { workspacePage } from '@cypr/pages'
 ### Planned Upgrades
 
 **TODO:** Track major version upgrades being considered:
+
 - Research phase upgrades
 - Approved but not started
 - In-progress upgrades
@@ -847,6 +914,7 @@ import { workspacePage } from '@cypr/pages'
 **Status:** Deprecated - No longer maintained
 
 **Current Implementation:**
+
 - Package: `openapi-typescript-codegen@0.25.0`
 - Command: `pnpm dev:openAPI`
 - Configuration: Direct invocation in `package.json` scripts
@@ -857,6 +925,7 @@ import { workspacePage } from '@cypr/pages'
 **Migration Target:** `@hey-api/openapi-ts`
 
 **Action Required:**
+
 - Analyze current generated code structure
 - Evaluate `@hey-api/openapi-ts` compatibility
 - Identify breaking changes in generated API
@@ -866,6 +935,7 @@ import { workspacePage } from '@cypr/pages'
 **Migration Document:** TODO - Create `.tasks/{task-id}-openapi-codegen-migration/`
 
 **Impact:**
+
 - Generated client code structure may change
 - React Query hooks in `src/api/hooks/` may need updates
 - Type definitions may change
@@ -878,6 +948,7 @@ import { workspacePage } from '@cypr/pages'
 **Status:** Major version upgrade available
 
 **Current Implementation:**
+
 - Package: `@chakra-ui/react@2.8.2`
 - Custom theme: `src/modules/Theme/themeHiveMQ.ts`
 - Widespread usage across all UI components
@@ -886,6 +957,7 @@ import { workspacePage } from '@cypr/pages'
 **Migration Target:** Chakra UI v3
 
 **Known Breaking Changes:**
+
 - Component API changes
 - Theme structure updates
 - Style prop modifications
@@ -893,6 +965,7 @@ import { workspacePage } from '@cypr/pages'
 - ColorScheme → ColorPalette naming
 
 **Action Required:**
+
 - Comprehensive component audit
 - Migration plan for custom theme
 - Update all component usage
@@ -902,11 +975,13 @@ import { workspacePage } from '@cypr/pages'
 **Migration Document:** TODO - Create `.tasks/{task-id}-chakra-ui-v3-migration/`
 
 **Resources:**
+
 - MCP Tool: `mcp__chakra-ui__v2_to_v3_code_review` (available for migration guidance)
 - Official migration guides
 - Community migration examples
 
 **Impact:**
+
 - High - Affects every component in the application
 - Requires thorough testing
 - May require design review for visual changes

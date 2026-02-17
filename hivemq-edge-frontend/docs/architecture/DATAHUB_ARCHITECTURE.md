@@ -1,21 +1,23 @@
+---
+title: "DataHub Architecture"
+author: "Edge Frontend Team"
+last_updated: "2026-02-16"
+purpose: "Architecture overview for the DataHub policy designer extension"
+audience: "Developers and AI agents working on DataHub features"
+maintained_at: "docs/architecture/DATAHUB_ARCHITECTURE.md"
+---
+
 # DataHub Architecture
-
-**Last Updated:** 2026-02-13
-
-**Purpose:** Complete architecture reference for the DataHub extension including state management, data flow, and implementation patterns.
-
-**Audience:** Developers and AI agents working on DataHub features
 
 ---
 
 ## Table of Contents
 
 - [Overview](#overview)
-- [Core Concepts](#core-concepts)
-- [State Management](#state-management)
-- [Component Architecture](#component-architecture)
-- [Data Flow](#data-flow)
+- [Code Structure](#code-structure)
+- [Key Design & Implementation Decisions](#key-design--implementation-decisions)
 - [Testing](#testing)
+- [Common Issues & Solutions](#common-issues--solutions)
 - [Glossary](#glossary)
 - [Related Documentation](#related-documentation)
 
@@ -23,887 +25,284 @@
 
 ## Overview
 
-The DataHub extension is a self-contained module for creating and managing MQTT data and behavior policies using a visual node-based editor.
+> [!CAUTION]
+> The Data Hub UI has been redesigned from scratch for integration within CCV2. This is likely to mean that the Data Hub Designer as described in this document is now "abandonware"
 
-**Key Features:**
-- Visual policy designer using React Flow
-- State management with Zustand
-- JSON Schema-based validation
-- Real-time dry-run validation
-- Resource management (schemas and scripts)
+### What is it?
 
-**Module Location:** `src/extensions/datahub/`
+DataHub is a self-contained extension module providing a **visual policy designer** for creating MQTT data and behavior policies. Users build policies by dragging nodes onto a React Flow canvas, connecting them to define data transformations or client behavior rules, then validating and publishing to the backend.
 
-### Policy Designer Interface
+**Location:** `src/extensions/datahub/`
 
-The core user interface for creating and editing policies is the visual designer canvas:
+### Key Features
 
-**Figure 1: Policy Designer - Empty State**
+- **Visual Policy Designer** - React Flow canvas with drag-and-drop node toolbox
+- **Two Policy Types** - Data policies (transform MQTT messages) and Behavior policies (define client state machines)
+- **Dry-Run Validation** - Test policy configuration before publishing
+- **Resource Management** - Reusable schemas (JSON/Protobuf) and scripts (JavaScript functions)
+- **Side Panel Reports** - Validation results displayed in right-side drawer
 
-![Empty policy designer canvas showing toolbox on left with available nodes, toolbar at top with validation and publishing controls, and clean React Flow workspace in the center](../assets/screenshots/datahub/datahub-designer-canvas-empty.png)
+![DataHub policy designer showing empty canvas with toolbox on left and toolbar at top](../assets/screenshots/datahub/datahub-designer-canvas-empty.png)
 
-**Interface Components:**
+_Empty policy designer - Users drag nodes from left toolbox onto canvas to build policies_
 
-1. **Toolbox (Left):** Drag-and-drop library of available nodes
-   - Data Policy nodes: Topic Filter, Validator, Schema, Operation, Function
-   - Behavior Policy nodes: Client Filter, Transition, State
+### Why This Architecture?
 
-2. **Canvas (Center):** React Flow workspace for visual policy construction
-   - Nodes represent policy components
-   - Edges represent data flow or state transitions
-   - Supports pan, zoom, and multi-selection
+**React Flow:** Provides professional node-based editor without building from scratch. Supports pan, zoom, selection, and custom node types.
 
-3. **Toolbar (Top):** Action controls
-   - **Check Policy:** Validate current policy configuration
-   - **Publish:** Save policy to backend
-   - **Clear:** Reset canvas to empty state
+**Zustand Stores:** Separate concerns - draft store for canvas state, checks store for validation state.
 
-Users start with a clean canvas (shown above) and drag nodes from the toolbox to construct their policies visually.
+**Validation-then-Publish Flow:** Prevents invalid policies from reaching backend. Users see all errors before attempting publish.
 
-**Related Files:**
-- Designer: `src/extensions/datahub/components/pages/PolicyEditor.tsx`
-- Toolbox: `src/extensions/datahub/components/controls/DesignerToolbox.tsx`
-- Canvas: React Flow with custom nodes and edges
+**Self-Contained Module:** Own routing, translations, API hooks. Can be developed and tested independently.
 
 ---
 
-## Core Concepts
+## Code Structure
 
-### Policy Types
-
-```mermaid
-%%{init: {'theme':'base', 'themeVariables': {
-  'primaryColor':'#0066CC',
-  'primaryTextColor':'#FFFFFF',
-  'primaryBorderColor':'#003D7A',
-  'secondaryColor':'#28A745',
-  'secondaryTextColor':'#FFFFFF',
-  'secondaryBorderColor':'#1E7E34'
-}}}%%
-graph LR
-    A[Policy Types] --> B[Data Policy]
-    A --> C[Behavior Policy]
-
-    B --> D[Transform MQTT Messages]
-    B --> E[Validators & Schemas]
-    B --> F[Operations & Functions]
-
-    C --> G[Define Client Behavior]
-    C --> H[State Transitions]
-    C --> I[Event Handlers]
-
-    style A fill:#0066CC,stroke:#003D7A,color:#FFFFFF
-    style B fill:#28A745,stroke:#1E7E34,color:#FFFFFF
-    style C fill:#7B3FF2,stroke:#5A2FB3,color:#FFFFFF
-    style D fill:#E8F5E9,stroke:#28A745,color:#2E7D32
-    style E fill:#E8F5E9,stroke:#28A745,color:#2E7D32
-    style F fill:#E8F5E9,stroke:#28A745,color:#2E7D32
-    style G fill:#F3E5F5,stroke:#7B3FF2,color:#6A1B9A
-    style H fill:#F3E5F5,stroke:#7B3FF2,color:#6A1B9A
-    style I fill:#F3E5F5,stroke:#7B3FF2,color:#6A1B9A
-```
-
-**1. Data Policies** (`DataHubNodeType.DATA_POLICY`)
-- Apply data transformation on MQTT messages
-- Include validators, schemas, operations, functions
-- Match messages via topic filters
-
-**2. Behavior Policies** (`DataHubNodeType.BEHAVIOR_POLICY`)
-- Define behavior of MQTT clients
-- Include state transitions, events, client filters
-- React to client lifecycle events
-
-**Type Definitions:**
-- `src/extensions/datahub/types.ts`
-- `src/api/__generated__/` (OpenAPI-generated)
-
----
-
-## State Management
-
-### Architecture Overview
-
-```mermaid
-%%{init: {'theme':'base', 'themeVariables': {
-  'primaryColor':'#0066CC',
-  'primaryTextColor':'#FFFFFF',
-  'primaryBorderColor':'#003D7A',
-  'edgeLabelBackground':'transparent',
-  'lineColor':'#555555'
-}}}%%
-flowchart TD
-    A[React Flow Canvas] -->|node/edge changes| B[useDataHubDraftStore]
-    B -->|canvas state| A
-
-    C[User Actions] -->|select node| D[ToolboxSelectionListener]
-    D -->|setNode| E[usePolicyChecksStore]
-
-    F[Check Policy Button] -->|trigger| G[usePolicyDryRun]
-    G -->|setReport| E
-
-    E -->|validation results| H[DryRunPanelController]
-    H -->|display| I[PolicySummaryReport]
-    H -->|display| J[PolicyErrorReport]
-
-    K[Publish Button] -->|extract resources| E
-    K -->|mutations| L[API Layer]
-
-    style A fill:#0066CC,stroke:#003D7A,color:#FFFFFF
-    style B fill:#7B3FF2,stroke:#5A2FB3,color:#FFFFFF
-    style C fill:#E67E22,stroke:#D35400,color:#FFFFFF
-    style D fill:#0066CC,stroke:#003D7A,color:#FFFFFF
-    style E fill:#7B3FF2,stroke:#5A2FB3,color:#FFFFFF
-    style F fill:#E67E22,stroke:#D35400,color:#FFFFFF
-    style G fill:#28A745,stroke:#1E7E34,color:#FFFFFF
-    style H fill:#0066CC,stroke:#003D7A,color:#FFFFFF
-    style I fill:#0066CC,stroke:#003D7A,color:#FFFFFF
-    style J fill:#0066CC,stroke:#003D7A,color:#FFFFFF
-    style K fill:#E67E22,stroke:#D35400,color:#FFFFFF
-    style L fill:#6C757D,stroke:#495057,color:#FFFFFF
-```
-
-**Color Legend:**
-- **Purple** - Zustand stores (state management)
-- **Blue** - React components (UI)
-- **Orange** - User actions (buttons/interactions)
-- **Green** - Validation logic (policy dry-run hook)
-- **Gray** - External system (API layer)
-
-### 1. Draft Store (`useDataHubDraftStore`)
-
-**Location:** `src/extensions/datahub/hooks/useDataHubDraftStore.ts`
-
-**Purpose:** Manages the visual canvas state and policy metadata
-
-**State Interface:**
-```typescript
-interface WorkspaceState {
-  nodes: Node[]              // React Flow nodes
-  edges: Edge[]              // React Flow edges
-  status: DesignerStatus     // DRAFT | LOADED | MODIFIED
-  name: string               // Policy name
-  type: DataHubNodeType      // DATA_POLICY | BEHAVIOR_POLICY
-}
-```
-
-**Key Actions:**
-- `onNodesChange()` - Handle React Flow node updates
-- `onEdgesChange()` - Handle React Flow edge updates
-- `onConnect()` - Handle new edge connections
-- `onAddNodes()` - Add nodes to canvas
-- `onUpdateNodes()` - Update node data
-- `reset()` - Clear all state
-- `isDirty()` - Check if canvas has unsaved changes
-- `isPolicyInDraft()` - Check if policy node exists
-
-**Designer Status:**
-- `DRAFT` - New policy being created
-- `LOADED` - Existing policy loaded for editing
-- `MODIFIED` - Loaded policy with unsaved changes
-
-**Related:** [State Management Guide](../guides/STATE_MANAGEMENT_GUIDE.md) _(TODO)_
-
-### 2. Policy Checks Store (`usePolicyChecksStore`)
-
-**Location:** `src/extensions/datahub/hooks/usePolicyChecksStore.ts`
-
-**Purpose:** Manages validation state and dry-run results
-
-**State Interface:**
-```typescript
-interface PolicyCheckState {
-  node: Node | undefined           // Currently selected node
-  report: DryRunResults[]          // Validation results
-  status: PolicyDryRunStatus       // IDLE | RUNNING | SUCCESS | FAILURE
-}
-```
-
-**Key Actions:**
-- `initReport()` - Start validation (set status to RUNNING)
-- `setReport(report)` - Store validation results and determine SUCCESS/FAILURE
-- `getErrors()` - Extract failed results as ProblemDetailsExtended[]
-- `setNode(node)` - Track selected node
-- `reset()` - Clear validation state
-
-**Status Determination:**
-```typescript
-setReport: (report: DryRunResults<unknown, never>[]) => {
-  const failedResults = report.filter((result) => !!result.error)
-  set({
-    report: report,
-    status: failedResults.length
-      ? PolicyDryRunStatus.FAILURE
-      : PolicyDryRunStatus.SUCCESS,
-  })
-}
-```
-
-**Validation States:**
-- `IDLE` - No validation in progress
-- `RUNNING` - Validation in progress
-- `SUCCESS` - Validation passed, policy ready to publish
-- `FAILURE` - Validation failed, errors present
-
----
-
-## Component Architecture
-
-### Designer Page Structure
-
-```mermaid
-%%{init: {'theme':'base', 'themeVariables': {
-  'primaryColor':'#0066CC',
-  'primaryTextColor':'#FFFFFF',
-  'primaryBorderColor':'#003D7A',
-  'edgeLabelBackground':'transparent',
-  'lineColor':'#555555'
-}}}%%
-graph TD
-    A[PolicyEditor] --> B[Designer Canvas]
-    A --> C[Toolbar]
-    A --> D[DryRunPanelController]
-
-    B --> E[React Flow]
-    B --> F[ToolboxSelectionListener]
-
-    C --> G[ToolbarDryRun Check Policy]
-    C --> H[ToolbarPublish]
-
-    D --> I[PolicySummaryReport]
-    D --> J[PolicyErrorReport]
-
-    style A fill:#0066CC,stroke:#003D7A,color:#FFFFFF
-    style B fill:#0066CC,stroke:#003D7A,color:#FFFFFF
-    style C fill:#0066CC,stroke:#003D7A,color:#FFFFFF
-    style D fill:#0066CC,stroke:#003D7A,color:#FFFFFF
-    style E fill:#0066CC,stroke:#003D7A,color:#FFFFFF
-    style F fill:#0066CC,stroke:#003D7A,color:#FFFFFF
-    style G fill:#0066CC,stroke:#003D7A,color:#FFFFFF
-    style H fill:#0066CC,stroke:#003D7A,color:#FFFFFF
-    style I fill:#28A745,stroke:#1E7E34,color:#FFFFFF
-    style J fill:#DC3545,stroke:#B02A37,color:#FFFFFF
-```
-
-**Color Legend:**
-- **Blue** - React components (all UI components)
-- **Green** - Success report component
-- **Red** - Error report component
-
-The diagram above shows the logical component structure. The actual designer interface (Figure 1, Overview section) implements this structure with the PolicyEditor component containing the canvas, toolbar, and validation panel.
-
-### Key Components
-
-#### 1. ToolboxSelectionListener
-
-**Location:** `src/extensions/datahub/components/controls/ToolboxSelectionListener.tsx`
-
-**Purpose:** Synchronizes React Flow selection state with usePolicyChecksStore
-
-**Flow:**
-1. User clicks on a policy node in React Flow canvas
-2. Component detects selection change via React Flow events
-3. Calls `setNode(node)` to store selected node
-4. Toolbar buttons read selected node to determine enabled state
-
-**Why This Matters:** The Check Policy button requires a selected node to be enabled
-
-#### 2. ToolbarDryRun (Check Policy Button)
-
-**Location:** `src/extensions/datahub/components/toolbar/ToolbarDryRun.tsx`
-
-**Button State:**
-```typescript
-isDisabled={!selectedNode || !isPolicyEditable}
-```
-
-**Enablement Rules:**
-- ✅ Policy node (DATA_POLICY or BEHAVIOR_POLICY) is selected
-- ✅ Policy is editable (DRAFT or MODIFIED status)
-- ❌ No node selected
-- ❌ Policy is already published (not editable)
-
-**Testing Pattern:**
-```typescript
-// ❌ WRONG - Button will be disabled
-datahubDesignerPage.toolbar.checkPolicy.click()
-
-// ✅ CORRECT - Select node first
-datahubDesignerPage.designer.selectNode('DATA_POLICY')
-datahubDesignerPage.toolbar.checkPolicy.click()
-```
-
-#### 3. DryRunPanelController
-
-**Location:** `src/extensions/datahub/components/controls/DryRunPanelController.tsx`
-
-**Structure:**
-```
-Drawer (right side panel)
-├─ DrawerHeader: "Report on policy validity"
-├─ DrawerBody
-│  └─ Card
-│     ├─ CardHeader: <PolicySummaryReport status={status} />
-│     └─ CardBody: <PolicyErrorReport errors={getErrors()} />
-└─ DrawerFooter
-   ├─ <ToolbarPublish /> (only if SUCCESS)
-   └─ Close button
-```
-
-**Display Logic:**
-- Shows SUCCESS summary when all validations pass
-- Shows FAILURE error list when validations fail
-- Provides "Publish" button only on success
-- Errors include "Show in designer" and "Open configuration" actions
-
-#### 4. PolicySummaryReport
-
-**Location:** `src/extensions/datahub/components/helpers/PolicySummaryReport.tsx`
-
-**Current Implementation:** Simple Alert component with status-based styling
-
-**Future Enhancement:** Detailed resource breakdown showing:
-- Policy details (ID, type, matching criteria)
-- Resource count (schemas, scripts)
-- Creation vs. modification status
-- JSON payload preview
-
-**Related:** [Design Guide](../guides/DESIGN_GUIDE.md) _(TODO)_
-
-#### 5. PolicyErrorReport
-
-**Location:** `src/extensions/datahub/components/helpers/PolicyErrorReport.tsx`
-
-**Structure:** Chakra UI Accordion with per-error items
-
-**Each Error Shows:**
-- Node type (translated)
-- Error detail message
-- "Show in designer" button (fits view to node)
-- "Open configuration" button (opens node editor)
-
-**UX Pattern:** Expandable sections with actionable buttons
-
----
-
-## Data Flow
-
-### Validation Workflow
-
-```mermaid
-%%{init: {'theme':'base', 'themeVariables': {
-  'primaryColor':'#0066CC',
-  'primaryTextColor':'#FFFFFF',
-  'primaryBorderColor':'#003D7A',
-  'secondaryColor':'#28A745',
-  'secondaryTextColor':'#FFFFFF',
-  'tertiaryColor':'#DC3545',
-  'tertiaryTextColor':'#FFFFFF',
-  'actorBkg':'#E3F2FD',
-  'actorTextColor':'#01579B',
-  'actorLineColor':'#0066CC',
-  'noteBkgColor':'#FFF3E0',
-  'noteTextColor':'#E65100'
-}}}%%
-sequenceDiagram
-    participant U as User
-    participant C as Canvas
-    participant L as ToolboxSelectionListener
-    participant B as Check Button
-    participant V as usePolicyDryRun
-    participant S as usePolicyChecksStore
-    participant D as DryRunPanel
-
-    U->>C: Click policy node
-    C->>L: Selection event
-    L->>S: setNode(node)
-
-    U->>B: Click Check Policy
-    B->>S: initReport()
-    S-->>D: status = RUNNING
-
-    B->>V: Validate policy
-    V->>V: Process nodes & edges
-    V->>V: Build DryRunResults[]
-    V->>S: setReport(results)
-    S->>S: Determine SUCCESS/FAILURE
-    S-->>D: Update status & report
-
-    D->>U: Show results
-
-    Note over S,D: SUCCESS: Show summary + Publish button
-    Note over S,D: FAILURE: Show error list
-
-    rect rgba(255, 243, 224, 0.3)
-        Note right of U: User initiates validation
-    end
-
-    rect rgba(227, 242, 253, 0.3)
-        Note right of V: Policy processing
-    end
-
-    rect rgba(232, 245, 233, 0.3)
-        Note right of D: Results display
-    end
-```
-
-### DryRunResults Structure
-
-**Critical Understanding:** The report array contains validation results for each node PLUS a final summary item
-
-```typescript
-interface DryRunResults<T, R = never> {
-  node: Node                           // Designer node being validated
-  data?: T                             // Serialized data for this node
-  error?: ProblemDetailsExtended       // Validation error (if any)
-  resources?: DryRunResults<R>[]       // Nested resources (schemas, scripts)
-}
-```
-
-**Report Array Structure:**
-
-```typescript
-report: DryRunResults[] = [
-  // Per-node validation items (one per designer node)
-  { node: topicFilterNode, data: {...}, error?: ProblemDetails },
-  { node: validatorNode, data: {...}, error?: ProblemDetails },
-  { node: schemaNode1, data: PolicySchema, error?: ProblemDetails },
-  { node: operationNode, data: {...}, error?: ProblemDetails },
-  { node: scriptNode1, data: Script, error?: ProblemDetails },
-  { node: policyNode, data: {...}, error?: ProblemDetails },
-
-  // FINAL SUMMARY ITEM (last in array) - Complete policy validation
-  {
-    node: policyNode,                    // Reference to policy node
-    data: DataPolicy | BehaviorPolicy,   // COMPLETE policy JSON
-    error: undefined,                    // No error on success
-    resources: [                         // ALL resources needed
-      {
-        node: schemaNode1,
-        data: PolicySchema,              // Complete schema definition
-        error: undefined
-      },
-      {
-        node: scriptNode1,
-        data: Script,                    // Complete script definition
-        error: undefined
-      }
-    ]
-  }
-]
-```
-
-**Key Distinctions:**
-
-| Per-Node Items | Final Summary Item |
-|----------------|-------------------|
-| One per designer node | One per policy (last in array) |
-| Validates individual node | Validates complete policy |
-| May have errors | Only present if policy valid |
-| Partial data | Complete JSON payload |
-| No resources array | Contains ALL resources |
-| Used for error reporting | Used for publishing |
-
-**Accessing the Final Summary:**
-
-```typescript
-const finalSummary = [...report].pop()  // Last item
-const policyPayload = finalSummary.data // Complete policy JSON
-const allResources = finalSummary.resources // All schemas + scripts
-```
-
-**Why This Matters:**
-- **Error Display:** Use per-node items to show which nodes have issues
-- **Success Summary:** Use final item exclusively - has complete policy
-- **Publishing:** Final item contains everything needed for API calls
-
-### Publishing Workflow
-
-```mermaid
-%%{init: {'theme':'base', 'themeVariables': {
-  'primaryColor':'#0066CC',
-  'primaryTextColor':'#FFFFFF',
-  'primaryBorderColor':'#003D7A',
-  'edgeLabelBackground':'transparent',
-  'lineColor':'#555555'
-}}}%%
-flowchart TD
-    A[User Clicks Publish] --> B{Extract Resources}
-    B -->|Filter report| C[Get Schemas DRAFT/MODIFIED]
-    B -->|Filter report| D[Get Scripts DRAFT/MODIFIED]
-
-    C --> E{Deduplicate by ID}
-    D --> E
-
-    E --> F[Publish Resources First]
-    F -->|Create/Update| G[POST/PUT Schemas]
-    F -->|Create/Update| H[POST/PUT Scripts]
-
-    G --> I{All Resources Published?}
-    H --> I
-
-    I -->|Yes| J{Policy Status?}
-    I -->|No| K[Show Error]
-
-    J -->|DRAFT| L[POST Create Policy]
-    J -->|MODIFIED| M[PUT Update Policy]
-
-    L --> N[Navigate to Published]
-    M --> N
-    N --> O[Reset Validation State]
-
-    style A fill:#E67E22,stroke:#D35400,color:#FFFFFF
-    style B fill:#F9A825,stroke:#F57F17,color:#FFFFFF
-    style C fill:#F9A825,stroke:#F57F17,color:#FFFFFF
-    style D fill:#F9A825,stroke:#F57F17,color:#FFFFFF
-    style E fill:#F9A825,stroke:#F57F17,color:#FFFFFF
-    style F fill:#0066CC,stroke:#003D7A,color:#FFFFFF
-    style G fill:#7B3FF2,stroke:#5A2FB3,color:#FFFFFF
-    style H fill:#7B3FF2,stroke:#5A2FB3,color:#FFFFFF
-    style I fill:#F9A825,stroke:#F57F17,color:#FFFFFF
-    style J fill:#F9A825,stroke:#F57F17,color:#FFFFFF
-    style K fill:#DC3545,stroke:#B02A37,color:#FFFFFF
-    style L fill:#7B3FF2,stroke:#5A2FB3,color:#FFFFFF
-    style M fill:#7B3FF2,stroke:#5A2FB3,color:#FFFFFF
-    style N fill:#0066CC,stroke:#003D7A,color:#FFFFFF
-    style O fill:#0066CC,stroke:#003D7A,color:#FFFFFF
-```
-
-**Color Legend:**
-- **Orange** - User action (publish button click)
-- **Yellow** - Decision points and data processing
-- **Blue** - Actions and state updates
-- **Purple** - API calls (HTTP requests)
-- **Red** - Error state
-
-**Publishing Steps:**
-
-1. **Extract Resources from Report**
-   - Filter for SCHEMA and FUNCTION nodes
-   - Only include DRAFT or MODIFIED versions
-   - Deduplicate by ID
-
-2. **Publish Resources First**
-   - Create schemas: `createSchema.mutateAsync()`
-   - Create scripts: `createScript.mutateAsync()`
-   - Update draft nodes to published versions
-
-3. **Publish Main Policy**
-   - Determine CREATE (DRAFT) or UPDATE (MODIFIED)
-   - Call appropriate mutation
-   - Data Policy: `createDataPolicy` or `updateDataPolicy`
-   - Behavior Policy: `createBehaviorPolicy` or `updateBehaviorPolicy`
-
-4. **Navigate to Published**
-   - Reset validation state
-   - Navigate to `/datahub/{type}/{id}`
-
-**Component:** `src/extensions/datahub/components/toolbar/ToolbarPublish.tsx`
-
-**Related:** [API Patterns](../api/REACT_QUERY_PATTERNS.md) _(TODO)_
-
----
-
-## Testing
-
-### Component Testing
-
-**Test Pattern:** All DataHub components follow standard Cypress component testing
-
-**Required Tests:**
-1. Component rendering
-2. User interactions
-3. State management
-4. **Accessibility** (mandatory last test)
-
-**Example:**
-```typescript
-describe('PolicySummaryReport', () => {
-  it('should render success state', () => {
-    cy.mountWithProviders(<PolicySummaryReport status="SUCCESS" />)
-    cy.contains('Policy validation successful')
-  })
-
-  it('should be accessible', () => {
-    cy.injectAxe()
-    cy.mountWithProviders(<PolicySummaryReport status="SUCCESS" />)
-    cy.checkAccessibility()
-  })
-})
-```
-
-**Related:** [Testing Guide](../guides/TESTING_GUIDE.md) _(TODO)_
-
-### E2E Testing
-
-**Critical MSW Intercept Requirements:**
-
-DataHub E2E tests require BOTH list and individual resource intercepts:
-
-```typescript
-// Data policies
-cy.intercept('GET', '/api/v1/data-hub/data-validation/policies')      // List
-cy.intercept('GET', '/api/v1/data-hub/data-validation/policies/**')   // Individual
-
-// Behavior policies
-cy.intercept('GET', '/api/v1/data-hub/behavior-validation/policies')     // List
-cy.intercept('GET', '/api/v1/data-hub/behavior-validation/policies/**')  // Individual ⚠️ CRITICAL
-```
-
-**Common Mistake:** Missing individual GET intercept causes 404 → canvas never loads
-
-**Symptom:**
-```
-Expected to find element: `[role="application"][data-testid="rf__wrapper"]`,
-but never found it.
-```
-
-**E2E Test Pattern:**
-
-```typescript
-// 1. Create policy in MSW database
-mswDB.behaviourPolicy.create({
-  id: mockBehaviorPolicy.id,
-  json: JSON.stringify({ ...mockBehaviorPolicy, createdAt, lastUpdatedAt }),
-})
-
-// 2. Navigate to edit
-datahubPage.policiesTable.action(0, 'edit').click()
-
-// 3. Verify URL changed (proves navigation worked)
-cy.url().should('contain', '/datahub/BEHAVIOR_POLICY/test-behavior-policy')
-
-// 4. Select node (triggers ToolboxSelectionListener)
-datahubDesignerPage.designer.selectNode('BEHAVIOR_POLICY')
-
-// 5. Trigger validation
-datahubDesignerPage.toolbar.checkPolicy.click()
-
-// 6. Wait for completion
-datahubDesignerPage.toolbar.checkPolicy.should('not.be.disabled')
-
-// 7. Open results
-datahubDesignerPage.dryRunPanel.statusBadge.click()
-datahubDesignerPage.dryRunPanel.drawer.should('be.visible')
-```
-
-**Fixture Requirements:**
-
-All fixtures must match exact API response structure:
-
-**Behavior Policy Example:**
-```json
-{
-  "id": "test-behavior-policy",
-  "matching": {
-    "clientIdRegex": "client/example/1"  // ✅ Correct field name
-  },
-  "behavior": {
-    "id": "Mqtt.events",
-    "arguments": null
-  },
-  "onTransitions": [  // ✅ Correct field name
-    {
-      "fromState": "Initial",
-      "toState": "Connected",
-      "Mqtt.OnInboundConnect": {
-        "pipeline": [
-          {
-            "functionId": "System.log",  // ✅ Must exist in mocks
-            "id": "action-test1",
-            "arguments": {
-              "level": "INFO",
-              "message": "Client connected"
-            }
-          }
-        ]
-      }
-    }
-  ]
-}
-```
-
-**Common Mistakes:**
-- ❌ `matching.clientFilter` (should be `clientIdRegex`)
-- ❌ `transitions` (should be `onTransitions`)
-- ❌ Invalid function IDs (must exist in `MOCK_DATAHUB_FUNCTIONS`)
-
-**Page Objects:** `cypress/pages/DataHub/DesignerPage.ts`
-
-**Related:** [Cypress Guide](../guides/CYPRESS_GUIDE.md) _(TODO)_
-
----
-
-## Node Types and Resources
-
-### Resource Management Interface
-
-DataHub policies reference reusable resources like schemas and scripts. These resources are managed through dedicated list views:
-
-**Figure 2: Schema Table - Empty State**
-
-![Schema table showing "No schemas found" message with create button, demonstrating the empty state before any schemas are defined](../assets/screenshots/datahub/datahub-schema-table-empty-state.png)
-
-**Figure 3: Schema Table - With Data**
-
-![Schema table displaying a single schema entry showing schema ID, type (JSON), version number, and creation timestamp with action buttons](../assets/screenshots/datahub/datahub-schema-table-with-data.png)
-
-**Resource Tables:**
-
-1. **Schema Table** (`/datahub/schemas`)
-   - Lists all JSON and Protobuf schemas
-   - Displays: Schema ID, Type, Version, Creation Date
-   - Actions: Edit, Delete, View Details
-   - Component: `src/extensions/datahub/components/pages/SchemaTable.tsx`
-
-2. **Script Table** (`/datahub/scripts`)
-   - Lists all custom JavaScript functions
-   - Displays: Script ID, Function Count, Version, Modified Date
-   - Actions: Edit, Delete, Test
-   - Component: `src/extensions/datahub/components/pages/ScriptTable.tsx`
-
-3. **Policy Tables**
-   - Data Policies: `/datahub/data-policies`
-   - Behavior Policies: `/datahub/behavior-policies`
-   - Displays: Policy ID, Matching Criteria, Status, Last Updated
-   - Actions: Edit, Clone, Delete, Test
-
-**Empty State Pattern:**
-
-All resource tables follow the same empty state pattern (Figure 2):
-- Clear "No [resources] found" message
-- Prominent "Create" button
-- Helpful description text explaining the resource type
-
-**With Data Pattern:**
-
-When resources exist (Figure 3):
-- Tabular display with sortable columns
-- Version expansion for schemas/scripts with multiple versions
-- Row actions for common operations
-- Pagination for large datasets
-
-### Resource Working Versions
-
-```typescript
-enum ResourceWorkingVersion {
-  DRAFT = 'DRAFT',          // New resource being created
-  MODIFIED = 'MODIFIED',    // Existing resource being updated
-  // ... numeric versions for published resources (1, 2, 3, etc.)
-}
-```
-
-**Version Status Indicates Publishing Action:**
-- `DRAFT` → Will CREATE new version
-- `MODIFIED` → Will UPDATE existing version
-- Numeric version → Already published (no action needed)
-
-### Node Data Interfaces
-
-**Resource Node:**
-```typescript
-interface ResourceState {
-  version: ResourceWorkingVersion | number
-  name?: string
-  // ... type-specific properties
-}
-```
-
-**Policy Node:**
-```typescript
-interface PolicyData {
-  id: string
-  // ... type-specific properties
-}
-```
-
-**Node Types:**
-- `DATA_POLICY` - Data transformation policy
-- `BEHAVIOR_POLICY` - Client behavior policy
-- `TOPIC_FILTER` - MQTT topic matcher
-- `VALIDATOR` - Message validator
-- `SCHEMA` - JSON/Protobuf schema resource
-- `OPERATION` - Data operation
-- `FUNCTION` - Custom script resource
-- `CLIENT_FILTER` - Client ID matcher
-
-**Location:** `src/extensions/datahub/types.ts`
-
----
-
-## Internationalization
-
-**Translation Files:**
-- Main: `src/extensions/datahub/locales/en/datahub.json`
-- Type definitions: `src/extensions/datahub/locales/en/translation.json`
-
-**Key Sections:**
-- `workspace.nodes.type_*` - Node type names
-- `workspace.dryRun.report.*` - Validation report text
-- `publish.*` - Publishing messages
-- `resource.*` - Resource-specific text
-
-**Pattern:** All user-facing text uses `t('datahub:key.path')`
-
-**Related:** [I18n Guide](../guides/I18N_GUIDE.md) _(TODO)_
-
----
-
-## Directory Structure
+### Directory Layout
 
 ```
 src/extensions/datahub/
 ├── api/
-│   └── hooks/              # React Query hooks for DataHub APIs
+│   └── hooks/              # React Query hooks (useGetPolicies, useDryRun)
 ├── components/
-│   ├── controls/           # Canvas controls and listeners
-│   ├── helpers/            # Reusable helper components
-│   ├── pages/              # Page-level components
-│   └── toolbar/            # Toolbar action buttons
+│   ├── controls/           # Canvas controls (ToolboxSelectionListener)
+│   ├── helpers/            # Report components (PolicySummaryReport, PolicyErrorReport)
+│   ├── pages/              # Page components (PolicyEditor, SchemaTable, ScriptTable)
+│   └── toolbar/            # Action buttons (ToolbarDryRun, ToolbarPublish)
 ├── designer/
-│   └── mappings/           # Node type mappings and factories
-├── hooks/                  # Zustand stores and custom hooks
-├── locales/                # i18n translations
+│   └── mappings/           # Node type factories and mappings
+├── hooks/                  # Zustand stores (useDataHubDraftStore, usePolicyChecksStore)
+├── locales/                # i18n translations (en/datahub.json)
 ├── types.ts                # TypeScript type definitions
 ├── routes.tsx              # DataHub routing configuration
 └── utils/                  # Utility functions
 ```
 
+### Key Components
+
+| Component | File Path | Purpose |
+|-----------|-----------|---------|
+| **PolicyEditor** | `components/pages/PolicyEditor.tsx` | Main designer page with canvas and toolbar |
+| **ToolboxSelectionListener** | `components/controls/ToolboxSelectionListener.tsx` | Syncs React Flow selection to Zustand store |
+| **ToolbarDryRun** | `components/toolbar/ToolbarDryRun.tsx` | Check Policy button, triggers validation |
+| **ToolbarPublish** | `components/toolbar/ToolbarPublish.tsx` | Publish button, creates/updates policy and resources |
+| **DryRunPanelController** | `components/controls/DryRunPanelController.tsx` | Right-side drawer showing validation results |
+| **PolicySummaryReport** | `components/helpers/PolicySummaryReport.tsx` | Success summary in validation drawer |
+| **PolicyErrorReport** | `components/helpers/PolicyErrorReport.tsx` | Error list with actions (show in canvas, open config) |
+| **SchemaTable** | `components/pages/SchemaTable.tsx` | List view for JSON/Protobuf schemas |
+| **ScriptTable** | `components/pages/ScriptTable.tsx` | List view for JavaScript functions |
+
+### Integration Points
+
+**API Endpoints:**
+- Data policies: `/api/v1/data-hub/data-validation/policies`
+- Behavior policies: `/api/v1/data-hub/behavior-validation/policies`
+- Schemas: `/api/v1/data-hub/schemas`
+- Scripts: `/api/v1/data-hub/scripts`
+- Dry-run: Policy-specific endpoints for validation
+
+**Router:**
+- Routes defined in `routes.tsx`
+- Mounted at `/datahub/*` in main app router
+- See: `src/modules/App/App.tsx`
+
+**Shared Components:**
+- Uses Chakra UI from app-level theme
+- React Flow from `@xyflow/react`
+- RJSF for node configuration forms
+
+**API Client:**
+- Generated from OpenAPI spec in `src/api/__generated__/`
+- See: [OpenAPI Integration](../api/OPENAPI_INTEGRATION.md)
+
 ---
 
-## Key Implementation Insights
+## Key Design & Implementation Decisions
 
-### 1. Report Structure is Consistent
+### 1. React Flow Canvas
 
-The last item in `report[]` is always the main policy with complete data:
+**What:** Professional node-based editor for visual policy construction.
 
-```typescript
-const finalSummary = [...report].pop()
-const { data: policyPayload, resources } = finalSummary
+**Why:** Provides pan, zoom, selection, custom nodes out-of-box. Avoids building canvas system from scratch.
+
+**Where:**
+- Main usage: `components/pages/PolicyEditor.tsx`
+- Custom nodes: `designer/mappings/` directory
+- Node types defined in `types.ts`
+
+**How:**
+- Users drag node types from toolbox onto canvas
+- Nodes can be connected via edges
+- Custom node components render based on node type
+- Canvas state managed by Zustand draft store
+
+**Key Pattern:** All nodes share common structure but render differently based on `DataHubNodeType`.
+
+### 2. Dual Zustand Stores
+
+**What:** Two separate stores - one for canvas draft, one for validation state.
+
+**Why:** Separation of concerns. Canvas changes shouldn't affect validation state until user triggers validation.
+
+**Where:**
+- Draft: `hooks/useDataHubDraftStore.ts`
+- Checks: `hooks/usePolicyChecksStore.ts`
+
+**How:**
+
+| Store | Responsibility | Key Actions |
+|-------|----------------|-------------|
+| **useDataHubDraftStore** | Canvas state (nodes, edges, policy metadata) | `onNodesChange`, `onEdgesChange`, `onConnect`, `reset` |
+| **usePolicyChecksStore** | Validation state and dry-run results | `initReport`, `setReport`, `getErrors`, `setNode` |
+
+**Key Pattern:** Toolbar buttons read from both stores - draft for canvas state, checks for selected node and validation status.
+
+### 3. JSON Schema Forms (RJSF)
+
+**What:** Dynamic forms for configuring node properties based on JSON schemas.
+
+**Why:** Node configuration varies by type. RJSF generates forms from schema without custom form code per node type.
+
+**Where:**
+- Node edit modals throughout DataHub
+- Schema definitions in `src/api/schemas/` _(generated)_
+
+**How:**
+- Each node type has associated JSON schema
+- Double-click node → opens modal with RJSF form
+- Form validates input against schema
+- See: [RJSF Guide](../guides/RJSF_GUIDE.md)
+
+**Key Pattern:** Node data conforms to JSON schema, enabling backend validation and type safety.
+
+### 4. Validation-then-Publish Flow
+
+**What:** Two-stage workflow - validate policy first, then publish if valid.
+
+**Why:** Prevents invalid policies from reaching backend. User sees all errors before attempting to publish.
+
+**Where:**
+- Validation trigger: `components/toolbar/ToolbarDryRun.tsx`
+- Validation logic: `api/hooks/DataHubPolicyHooks/usePolicyDryRun.ts`
+- Publish logic: `components/toolbar/ToolbarPublish.tsx`
+
+**How:**
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {
+  'primaryColor':'#0066CC',
+  'primaryTextColor':'#FFFFFF',
+  'primaryBorderColor':'#003D7A',
+  'edgeLabelBackground':'transparent',
+  'lineColor':'#555555'
+}}}%%
+flowchart LR
+    A[User Clicks Check Policy] --> B[usePolicyDryRun]
+    B --> C{All Valid?}
+    C -->|Yes| D[Show Success + Publish Button]
+    C -->|No| E[Show Errors with Actions]
+    D --> F[User Clicks Publish]
+    F --> G[Create/Update Resources]
+    G --> H[Create/Update Policy]
+    H --> I[Navigate to Published]
 ```
 
-### 2. Resource Deduplication Required
+**Key Pattern:** Report array contains per-node validation items PLUS final summary with complete policy JSON.
 
-Same schema/script can appear multiple times in the graph. Publishing logic deduplicates by ID.
+### 5. Side Panel for Validation Reports
 
-### 3. Version Status Determines Action
+**What:** Right-side drawer showing validation results and errors.
 
-Check `node.data.version` to determine if resource needs CREATE or UPDATE:
-- `DRAFT` → POST (create)
-- `MODIFIED` → PUT (update)
-- Numeric → No action (already published)
+**Why:** Keeps canvas visible while showing detailed validation feedback. Users can act on errors (show in canvas, open config).
 
-### 4. Nested Resources Structure
+**Where:** `components/controls/DryRunPanelController.tsx`
 
-Resources are nested within main policy result, reflecting dependency relationship.
+**How:**
+- Opens on validation completion
+- Shows PolicySummaryReport (success) or PolicyErrorReport (errors)
+- Error items have action buttons to navigate to problem nodes
+- Publish button only shown on success
 
-### 5. Designer Status Affects Publishing
+**Key Pattern:** Drawer is part of layout, not blocking modal. Canvas remains interactive.
 
-- `DesignerStatus.DRAFT` → Create new policy
-- `DesignerStatus.MODIFIED` → Update existing policy
+---
 
-### 6. Node Selection Required for Actions
+## Testing
 
-Toolbar buttons (Check, Publish) require a policy node to be selected. This is enforced by `ToolboxSelectionListener`.
+### Component Testing Requirements
+
+**Wrapper:** Standard Cypress mounting with providers.
+
+**Key Patterns:**
+- All DataHub components follow standard component test structure
+- MSW handlers in `api/hooks/**/__handlers__/` for API mocking
+- Accessibility test required as final test in each suite
+
+**Example:**
+```typescript
+describe('PolicySummaryReport', () => {
+  it('should render success state', () => {
+    cy.mountWithProviders(<PolicySummaryReport status={PolicyDryRunStatus.SUCCESS} />)
+    cy.contains('Policy validation successful')
+  })
+
+  it('should be accessible', () => {
+    cy.injectAxe()
+    cy.mountWithProviders(<PolicySummaryReport status={PolicyDryRunStatus.SUCCESS} />)
+    cy.checkAccessibility()  // NOT cy.checkA11y()
+  })
+})
+```
+
+**See:** [Testing Guide](../guides/TESTING_GUIDE.md) for general patterns.
+
+### E2E Testing Requirements
+
+**Critical Setup:**
+1. **BOTH list AND individual resource intercepts required:**
+   ```typescript
+   // Data policies
+   cy.intercept('GET', '/api/v1/data-hub/data-validation/policies')      // List
+   cy.intercept('GET', '/api/v1/data-hub/data-validation/policies/**')   // Individual ⚠️
+
+   // Behavior policies
+   cy.intercept('GET', '/api/v1/data-hub/behavior-validation/policies')     // List
+   cy.intercept('GET', '/api/v1/data-hub/behavior-validation/policies/**')  // Individual ⚠️
+   ```
+
+2. **MSW database entries:**
+   - Create policy in MSW database before navigation
+   - Fixtures must match exact API structure
+
+3. **Node selection before actions:**
+   - Select policy node BEFORE clicking Check Policy
+   - Button disabled if no node selected
+
+**Page Objects:** `cypress/pages/DataHub/DesignerPage.ts`
+
+**See:** [Cypress Guide](../guides/CYPRESS_GUIDE.md) for E2E patterns.
+
+### Specific Gotchas
+
+| Issue | Symptom | Solution |
+|-------|---------|----------|
+| **Missing individual GET intercept** | Canvas never loads, timeout on `rf__wrapper` | Add `cy.intercept('GET', '.../policies/**')` |
+| **Check Policy disabled** | Button unclickable in test | Select policy node first: `datahubDesignerPage.designer.selectNode('DATA_POLICY')` |
+| **Invalid fixture structure** | Validation fails unexpectedly | Verify fixture matches OpenAPI schema exactly (e.g., `clientIdRegex` not `clientFilter`) |
+
+---
+
+## Common Issues & Solutions
+
+| Issue | Symptom | Solution | Reference |
+|-------|---------|----------|-----------|
+| **Validation button disabled** | Can't click Check Policy | Must select policy node first. ToolboxSelectionListener syncs selection. | `components/controls/ToolboxSelectionListener.tsx` |
+| **Report array confusion** | Using wrong data for publish | Last item in report array is final summary with complete policy. Use `[...report].pop()`. | See usePolicyDryRun hook |
+| **Resources not publishing** | Policy created but schemas/scripts missing | Resources must be published BEFORE policy. Check version status (DRAFT/MODIFIED). | `components/toolbar/ToolbarPublish.tsx` |
+| **Fixture validation fails** | E2E tests fail on load | Fixture field names must match API exactly. Check OpenAPI spec. | `src/api/__generated__/` |
+| **Canvas won't load in E2E** | Timeout waiting for React Flow | Missing individual policy GET intercept. Add wildcard intercept. | See E2E Testing section above |
 
 ---
 
@@ -911,37 +310,39 @@ Toolbar buttons (Check, Publish) require a policy node to be selected. This is e
 
 | Term | Definition |
 |------|------------|
-| **Data Policy** | MQTT data transformation pipeline with validators and operations |
-| **Behavior Policy** | Client state machine defining allowed behaviors and transitions |
-| **Draft Store** | Zustand store managing canvas state (nodes, edges, metadata) |
-| **Policy Checks Store** | Zustand store managing validation state and dry-run results |
-| **Dry-Run** | Validation of policy without publishing (check if valid) |
-| **Publishing** | Creating/updating policy and resources via API |
-| **Designer Status** | State of policy (DRAFT, LOADED, MODIFIED) |
-| **Policy Dry-Run Status** | Validation state (IDLE, RUNNING, SUCCESS, FAILURE) |
-| **Resource** | Schema or Script node that policy depends on |
-| **Final Summary** | Last item in report array containing complete policy JSON |
-| **Per-Node Items** | Report entries for each designer node with validation results |
+| **Data Policy** | MQTT data transformation pipeline with validators, schemas, and operations |
+| **Behavior Policy** | Client state machine defining allowed behaviors and event-based transitions |
+| **Dry-Run** | Validation of policy configuration without publishing to backend |
+| **Draft Store** | Zustand store managing canvas state (nodes, edges, policy metadata) |
+| **Checks Store** | Zustand store managing validation state and dry-run results |
+| **Final Summary** | Last item in report array containing complete policy JSON for publishing |
+| **Resource** | Reusable schema or script node that policies depend on |
+| **Working Version** | Resource status (DRAFT, MODIFIED, or numeric version) determining publish action |
 
 ---
 
 ## Related Documentation
 
 **Architecture:**
-- [State Management](./STATE_MANAGEMENT.md) _(TODO)_
-- [Testing Architecture](./TESTING_ARCHITECTURE.md) _(TODO)_
-- [Data Flow](./DATA_FLOW.md) _(TODO)_
 - [Workspace Architecture](./WORKSPACE_ARCHITECTURE.md)
+- [State Management](./STATE_MANAGEMENT.md)
+- [Data Flow](./DATA_FLOW.md)
 
 **Guides:**
-- [Testing Guide](../guides/TESTING_GUIDE.md) _(TODO)_
-- [Cypress Guide](../guides/CYPRESS_GUIDE.md) _(TODO)_
-- [Design Guide](../guides/DESIGN_GUIDE.md) _(TODO)_
-- [I18n Guide](../guides/I18N_GUIDE.md) _(TODO)_
+- [Testing Guide](../guides/TESTING_GUIDE.md)
+- [Cypress Guide](../guides/CYPRESS_GUIDE.md)
+- [RJSF Guide](../guides/RJSF_GUIDE.md)
+- [Design Guide](../guides/DESIGN_GUIDE.md)
 
 **API:**
-- [React Query Patterns](../api/REACT_QUERY_PATTERNS.md) _(TODO)_
-- [OpenAPI Integration](../api/OPENAPI_INTEGRATION.md) _(TODO)_
+- [React Query Patterns](../api/REACT_QUERY_PATTERNS.md)
+- [OpenAPI Integration](../api/OPENAPI_INTEGRATION.md)
 
 **Technical:**
 - [Technical Stack](../technical/TECHNICAL_STACK.md)
+
+**Design References (Miro):**
+- [DataHub – Edge Integration](https://miro.com/app/board/uXjVN7kkrF8=) — integration concept, RJSF node editors, OpenAPI constraints
+- [DataHub Designer – Resource Handling Revamp](https://miro.com/app/board/uXjVJnfJQVg=) — Plan A vs Plan B for schema/script resource editing
+- [DataHub Designer – FSM User-Facing Strings](https://miro.com/app/board/uXjVGKMvdqc=) — behaviour model FSMs, event/guard naming, UX copy
+- [Reference Materials](../technical/REFERENCE_MATERIALS.md) — full board catalogue

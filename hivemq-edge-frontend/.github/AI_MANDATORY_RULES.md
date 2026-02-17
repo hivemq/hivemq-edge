@@ -438,6 +438,48 @@ stateDiagram-v2
 
 ---
 
+## ⛔ RULE 10: RUN PRETTIER ON ALL MARKDOWN FILES YOU WRITE
+
+**Trigger**: You have written or modified any `.md` file.
+
+**Mandatory Action**:
+
+```bash
+pnpm prettier --write "docs/**/*.md" ".tasks/**/*.md"
+```
+
+**Why**: The IDE does not automatically apply Prettier on save for markdown files. AI agents write markdown constantly — every doc written without Prettier creates lint failures in CI and pollutes git diffs with whitespace noise.
+
+**What Prettier fixes in markdown**:
+
+- Table column alignment
+- Heading spacing
+- Code fence consistency
+- Trailing spaces
+- List formatting
+- Line length wrapping
+
+**When to run it**:
+
+- After writing any new `.md` file
+- After making edits to an existing `.md` file
+- **Always before committing** — treat it as part of the commit sanity check
+
+**You do NOT need to run it on**:
+
+- Files in `node_modules/` (excluded by `.prettierignore`)
+- Files in `src/` (TypeScript/TSX, handled separately)
+
+**Example failure pattern**:
+
+- AI writes `OVERVIEW.md` with misaligned table separators
+- `pnpm lint:prettier` fails in CI
+- Developer has to fix AI's formatting in a separate commit
+
+**Time wasted without this rule**: 5-15 minutes per doc × every session
+
+---
+
 ## 📋 CHECKLIST: BEFORE YOU SAY "DONE"
 
 When you think you're done with a task:
@@ -449,6 +491,7 @@ When you think you're done with a task:
 - [ ] Documentation is in `.tasks/`, not in code
 - [ ] All diagrams use Mermaid (not ASCII art)
 - [ ] Mermaid diagrams use WCAG AA compliant colors (4.5:1 contrast minimum)
+- [ ] Ran prettier on all markdown files you wrote (see RULE 10)
 - [ ] You followed all guidelines referenced by the user
 - [ ] If user repeated an instruction, you re-read and executed it correctly
 

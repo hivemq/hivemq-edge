@@ -1,3 +1,12 @@
+---
+title: "Technical Stack"
+author: "Edge Frontend Team"
+last_updated: "2026-02-13"
+purpose: "Complete reference for the frontend toolchain, dependencies, scripts, and CI/CD pipeline"
+audience: "Developers, AI agents"
+maintained_at: "docs/technical/TECHNICAL_STACK.md"
+---
+
 # HiveMQ Edge Frontend - Technical Stack
 
 **Last Updated:** 2026-02-13
@@ -810,36 +819,6 @@ import { workspacePage } from '@cypr/pages'
 
 ---
 
-### Dependency Update Policy
-
-**TODO:** Document the policy for:
-- Regular dependency updates schedule
-- Security patch policy
-- Major version upgrade approval process
-- Testing requirements before updates
-- Documentation requirements for breaking changes
-
----
-
-### Pending Updates
-
-**TODO:** Track routine dependency updates:
-- Minor version updates
-- Patch version updates
-- Security updates
-
----
-
-### Planned Upgrades
-
-**TODO:** Track major version upgrades being considered:
-- Research phase upgrades
-- Approved but not started
-- In-progress upgrades
-- Benefits and trade-offs analysis
-
----
-
 ### Deprecations & Required Migrations
 
 #### openapi-typescript-codegen (Current: 0.25.0)
@@ -863,7 +842,7 @@ import { workspacePage } from '@cypr/pages'
 - Plan migration strategy for React Query hooks
 - Create migration document
 
-**Migration Document:** TODO - Create `.tasks/{task-id}-openapi-codegen-migration/`
+**Migration Document:** To be created in `.tasks/{issue-id}-openapi-codegen-migration/` when migration is approved
 
 **Impact:**
 - Generated client code structure may change
@@ -899,7 +878,7 @@ import { workspacePage } from '@cypr/pages'
 - Test all UI interactions
 - Update testing patterns
 
-**Migration Document:** TODO - Create `.tasks/{task-id}-chakra-ui-v3-migration/`
+**Migration Document:** To be created in `.tasks/{issue-id}-chakra-ui-v3-migration/` when migration is approved
 
 **Resources:**
 - MCP Tool: `mcp__chakra-ui__v2_to_v3_code_review` (available for migration guidance)

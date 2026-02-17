@@ -19,6 +19,7 @@ This document describes how to regenerate and update screenshots **without editi
 ```
 
 **To update the screenshot:**
+
 1. Regenerate `datahub-schema-table-empty-state.png` with same name
 2. Copy to `docs/assets/screenshots/datahub/`
 3. **Done!** - No documentation edits needed
@@ -37,6 +38,7 @@ pnpm cypress:run:e2e --spec "cypress/e2e/datahub/datahub-documentation-screensho
 ```
 
 **Output location:**
+
 ```
 cypress/screenshots/datahub-documentation-screenshots.spec.cy.ts/
 ├── datahub-designer-canvas-empty.png
@@ -55,6 +57,7 @@ cp cypress/screenshots/datahub-documentation-screenshots.spec.cy.ts/*.png \
 ```
 
 **Result:**
+
 ```
 docs/assets/screenshots/datahub/
 ├── datahub-designer-canvas-empty.png          # Updated ✅
@@ -76,6 +79,7 @@ open docs/architecture/DATAHUB_ARCHITECTURE.md
 ```
 
 The documentation automatically shows updated screenshots because:
+
 - Filenames are the same
 - Paths haven't changed
 - Markdown references are stable
@@ -87,10 +91,12 @@ The documentation automatically shows updated screenshots because:
 ### Scenario: DataHub UI Updated
 
 **What happens:**
+
 1. Developer updates DataHub UI (new button, layout change, etc.)
 2. Current screenshots become outdated
 
 **How to update:**
+
 ```bash
 # 1. Run test (captures new UI)
 pnpm cypress:run:e2e --spec "cypress/e2e/datahub/datahub-documentation-screenshots.spec.cy.ts"
@@ -113,17 +119,20 @@ cp cypress/screenshots/datahub-documentation-screenshots.spec.cy.ts/*.png \
 **Example:** Test now captures `datahub-validation-report-success.png`
 
 **Step 1: Run test (generates new file)**
+
 ```bash
 pnpm cypress:run:e2e --spec "cypress/e2e/datahub/datahub-documentation-screenshots.spec.cy.ts"
 ```
 
 **Step 2: Copy to docs**
+
 ```bash
 cp cypress/screenshots/datahub-documentation-screenshots.spec.cy.ts/datahub-validation-report-success.png \
    docs/assets/screenshots/datahub/
 ```
 
 **Step 3: Add to documentation** (this step DOES require editing)
+
 ```markdown
 **Figure 4: Validation Success Report**
 
@@ -132,6 +141,7 @@ cp cypress/screenshots/datahub-documentation-screenshots.spec.cy.ts/datahub-vali
 
 **Step 4: Update screenshot index**
 Edit `docs/assets/screenshots/INDEX.md`:
+
 ```markdown
 | `datahub-validation-report-success.png` | Validation success panel | **DATAHUB_ARCHITECTURE.md** (Figure 4) | Test source |
 ```
@@ -168,6 +178,7 @@ echo "Documentation automatically reflects updated screenshots!"
 ```
 
 **Usage:**
+
 ```bash
 # Run test, then copy
 pnpm cypress:run:e2e --spec "cypress/e2e/datahub/datahub-documentation-screenshots.spec.cy.ts"
@@ -177,6 +188,7 @@ pnpm cypress:run:e2e --spec "cypress/e2e/datahub/datahub-documentation-screensho
 ### Combined Script
 
 **Add to package.json:**
+
 ```json
 {
   "scripts": {
@@ -186,6 +198,7 @@ pnpm cypress:run:e2e --spec "cypress/e2e/datahub/datahub-documentation-screensho
 ```
 
 **Usage:**
+
 ```bash
 # One command to regenerate and copy
 pnpm docs:screenshots:update
@@ -223,6 +236,7 @@ git commit -m "docs: update DataHub screenshots for UI changes"
 **Symptom:** All screenshots show "Privacy Settings" cookie consent
 
 **Fix:** Update test to dismiss modal before capturing:
+
 ```typescript
 beforeEach(() => {
   // ... existing setup ...
@@ -242,6 +256,7 @@ beforeEach(() => {
 **Cause:** Something is blocking the UI (modal, loading spinner, etc.)
 
 **Fix:** Add proper wait conditions in test:
+
 ```typescript
 it('should capture schema table', () => {
   cy.visit('/datahub/schemas')
@@ -259,11 +274,13 @@ it('should capture schema table', () => {
 **Symptom:** "Cannot resolve directory '..'"
 
 **Check:**
+
 1. Filename matches exactly (including `datahub-` prefix)
 2. Path is relative from markdown file location
 3. File actually exists
 
 **Verify:**
+
 ```bash
 cd docs/architecture
 ls -la ../assets/screenshots/datahub/datahub-schema-table-empty-state.png
@@ -314,12 +331,14 @@ cp cypress/screenshots/datahub-documentation-screenshots.spec.cy.ts/*.png docs/a
 **Issue:** Privacy/cookie consent modal appears before content loads
 
 **Next Steps:**
+
 1. Check how other E2E tests dismiss the modal
 2. Update `beforeEach()` in screenshot test to dismiss modal
 3. Re-run test to capture actual content
 4. Copy updated screenshots to docs
 
 **Example from other tests to check:**
+
 ```bash
 # Search for how other tests handle modals
 grep -r "Privacy\|cookie\|consent\|Accept all" cypress/e2e/
@@ -343,6 +362,7 @@ cp cypress/screenshots/datahub-documentation-screenshots.spec.cy.ts/*.png \
 ```
 
 **Documentation automatically shows updated screenshots because:**
+
 - ✅ Filenames are stable (same names)
 - ✅ Paths are stable (relative paths)
 - ✅ Markdown references unchanged
