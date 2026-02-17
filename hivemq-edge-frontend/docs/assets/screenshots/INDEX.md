@@ -1,6 +1,6 @@
 # Screenshot Index
 
-**Last Updated:** 2026-02-13
+**Last Updated:** 2026-02-16
 
 This directory contains screenshots organized by feature/domain for use across multiple documentation files.
 
@@ -41,6 +41,24 @@ screenshots/
 - Add screenshots to `docs/architecture/DATAHUB_ARCHITECTURE.md`
 - Create `designer-canvas-with-nodes.png` with example policy nodes
 - Create validation workflow screenshots
+
+---
+
+## Combiner
+
+**Total:** 9 screenshots
+
+| Screenshot | Description | Used In | Test Source |
+|------------|-------------|---------|-------------|
+| `combiner-tabs-navigation.png` | Combiner form drawer showing tab navigation (Configuration, Sources, Mappings) | **docs/walkthroughs/RJSF_COMBINER.md** | `cypress/e2e/mappings/combiner-documentation-screenshots.spec.cy.ts` |
+| `combiner-mapping-table.png` | Mapping table with 3 example mappings showing summaries | **docs/walkthroughs/RJSF_COMBINER.md** | `src/modules/Mappings/combiner/DataCombiningTableField.spec.cy.tsx` |
+| `combiner-empty-state.png` | Empty mapping table with "No data received yet" message | **docs/walkthroughs/RJSF_COMBINER.md** | `src/modules/Mappings/combiner/DataCombiningTableField.spec.cy.tsx` |
+| `combiner-primary-select.png` | Primary data key selector dropdown showing tag and topic filter options | **docs/walkthroughs/RJSF_COMBINER.md** | `src/modules/Mappings/combiner/PrimarySelect.spec.cy.tsx` |
+| `combiner-native-form-flat.png` | Native RJSF form showing flat vertical list of all fields | **docs/walkthroughs/RJSF_COMBINER.md** | `src/modules/Mappings/CombinerMappingManager.spec.cy.tsx` |
+| `combiner-mapping-drawer.png` | Mappings tab with empty table (drawer closed) | **docs/walkthroughs/RJSF_COMBINER.md** | `cypress/e2e/mappings/combiner-documentation-screenshots.spec.cy.ts` |
+| `combiner-mapping-drawer-open.png` | Mapping editor drawer open showing sources, destination, schemas | **docs/walkthroughs/RJSF_COMBINER.md** | `cypress/e2e/mappings/combiner-documentation-screenshots.spec.cy.ts` |
+| `combiner-entity-select.png` | Multi-select dropdown showing entity options with metadata (icon, description, tag count) | **docs/walkthroughs/RJSF_COMBINER.md** | `src/modules/Mappings/combiner/CombinedEntitySelect.spec.cy.tsx` |
+| `combiner-editor-field.png` | Full editor field showing split layout (sources left, destination right) | **docs/walkthroughs/RJSF_COMBINER.md** | `src/modules/Mappings/combiner/DataCombiningEditorField.spec.cy.tsx` |
 
 ---
 

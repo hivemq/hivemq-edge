@@ -223,4 +223,75 @@ describe('DataCombiningTableField', () => {
       })
     })
   })
+
+  describe('Screenshots for documentation', () => {
+    it('should capture empty state', () => {
+      cy.mountWithProviders(
+        <CustomFormTesting
+          schema={mockDataCombiningTableSchema}
+          uiSchema={mockDataCombiningTableUISchema}
+          formData={{
+            items: [],
+          }}
+        />
+      )
+
+      cy.wait(300) // Stabilize render
+
+      // Screenshot: Empty table with "No data received yet" message
+      cy.screenshot('combiner-empty-state', {
+        overwrite: true,
+        capture: 'viewport',
+      })
+    })
+
+    it('should capture table with mappings', () => {
+      cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter_OPCUA] })
+      cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [mockAdapter_OPCUA] })
+
+      // Create multiple mappings for better visual
+      const mockMapping2: DataCombining = {
+        ...mockPrimary,
+        id: 'mapping-2',
+        sources: {
+          ...mockPrimary.sources,
+          primary: { id: 'pressure/sensor2', type: DataIdentifierReference.type.TAG },
+        },
+        destination: {
+          topic: formatTopicString('factory/sensors'),
+        },
+      }
+
+      const mockMapping3: DataCombining = {
+        ...mockPrimary,
+        id: 'mapping-3',
+        sources: {
+          ...mockPrimary.sources,
+          primary: { id: 'flow/pump1', type: DataIdentifierReference.type.TAG },
+        },
+        destination: {
+          topic: formatTopicString('factory/pumps'),
+        },
+      }
+
+      cy.mountWithProviders(
+        <CustomFormTesting
+          schema={mockDataCombiningTableSchema}
+          uiSchema={mockDataCombiningTableUISchema}
+          formData={{
+            items: [mockPrimary, mockMapping2, mockMapping3],
+          }}
+          formContext={{ entities: MOCK_ASSET_MAPPER.sources.items }}
+        />
+      )
+
+      cy.wait(300) // Stabilize render
+
+      // Screenshot: Table with 3 mappings showing summaries
+      cy.screenshot('combiner-mapping-table', {
+        overwrite: true,
+        capture: 'viewport',
+      })
+    })
+  })
 })

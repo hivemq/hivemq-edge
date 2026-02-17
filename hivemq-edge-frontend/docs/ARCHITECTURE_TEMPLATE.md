@@ -88,16 +88,14 @@ graph TD
 
 **Architecture:**
 - [Related Architecture Doc 1](./OTHER_DOC.md)
-- [Related Architecture Doc 2](./OTHER_DOC.md) _(TODO)_
 
 **Guides:**
-- [Testing Guide](../guides/TESTING_GUIDE.md) _(TODO)_
-- [Cypress Guide](../guides/CYPRESS_GUIDE.md) _(TODO)_
-- [Design Guide](../guides/DESIGN_GUIDE.md) _(TODO)_
+- [Testing Guide](../guides/TESTING_GUIDE.md)
+- [Cypress Guide](../guides/CYPRESS_GUIDE.md)
+- [Design Guide](../guides/DESIGN_GUIDE.md)
 
 **API:**
-- [React Query Patterns](../api/REACT_QUERY_PATTERNS.md) _(TODO)_
-- [OpenAPI Integration](../api/OPENAPI_INTEGRATION.md) _(TODO)_
+- [React Query Patterns](../api/REACT_QUERY_PATTERNS.md)
 
 **Technical:**
 - [Technical Stack](../technical/TECHNICAL_STACK.md)
@@ -149,7 +147,7 @@ graph TD
 
 **Links:**
 - Internal docs: Relative paths from current file
-- Use `_(TODO)_` suffix for not-yet-created docs
+- Only link to documents that exist (no TODO markers)
 - External links: Use full URLs
 - Reference to `.tasks/` directory: **NEVER** - integrate content instead
 
@@ -179,7 +177,7 @@ graph TD
 - Group by category: Architecture, Guides, API, Technical
 - Bold category labels
 - Use relative paths
-- Mark incomplete docs with `_(TODO)_`
+- Only link to existing documents (no TODO markers or broken links)
 
 **Cross-References:**
 - Use descriptive link text, not "click here"

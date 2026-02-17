@@ -11,11 +11,13 @@
 ### Task Identifier Format
 
 **Before (BusinessMap):**
+
 - Card numbers: `38943`, `33168`, `37542`
 - No consistent prefix
 - URL: `https://businessmap.io/c/57/{card-id}`
 
 **After (Linear):**
+
 - Issue identifiers: `EDG-40`, `EDG-38`, `EDG-35`
 - Team prefix + issue number
 - URL: `https://linear.app/hivemq/issue/{issue-id}/...`
@@ -26,12 +28,13 @@
 
 **Examples:**
 
-| System | Issue/Card | Directory Name |
-|--------|-----------|----------------|
-| BusinessMap | Card 38943 | `.tasks/38943-mapping-ownership-review/` |
-| Linear | Issue EDG-40 | `.tasks/EDG-40-technical-documentation/` |
+| System      | Issue/Card   | Directory Name                           |
+| ----------- | ------------ | ---------------------------------------- |
+| BusinessMap | Card 38943   | `.tasks/38943-mapping-ownership-review/` |
+| Linear      | Issue EDG-40 | `.tasks/EDG-40-technical-documentation/` |
 
 **Key Rules:**
+
 - Use the Linear issue identifier (e.g., `EDG-40`)
 - Include the team prefix (e.g., `EDG`, not just `40`)
 - Use hyphens throughout (no slashes)
@@ -40,10 +43,12 @@
 ### Branch Naming
 
 **Git branches may include slashes:**
+
 - `feat/EDG-40/technical-documentation` ✅
 - `fix/EDG-38/readonly-schemas` ✅
 
 **Task directories use hyphens:**
+
 - `.tasks/EDG-40-technical-documentation/` ✅
 - `.tasks/EDG-38-readonly-schemas/` ✅
 
@@ -54,18 +59,22 @@
 The following files were updated to reflect the Linear migration:
 
 1. **`.github/AI_MANDATORY_RULES.md`**
+
    - Rule 7: Task Documentation Structure & Naming
    - Examples updated to use Linear issue identifiers
 
 2. **`CLAUDE.md`**
+
    - Task Documentation section updated
    - Added Linear pattern explanation
 
 3. **`.tasks/README.md`**
+
    - Integration section updated
    - Examples updated to Linear patterns
 
 4. **`.tasks/PULL_REQUEST_TEMPLATE.md`**
+
    - Updated URL patterns from BusinessMap to Linear
    - Updated instructions for getting issue URLs
 
@@ -87,6 +96,7 @@ The following files were updated to reflect the Linear migration:
 ### When Referencing Issues
 
 Use Linear issue identifiers in all documentation:
+
 - ✅ "Working on EDG-40"
 - ✅ "See EDG-38 for context"
 - ❌ "Working on card 40"
@@ -116,6 +126,7 @@ mcp__linear-server__get_issue({ id: "EDG-40" })
 **Do NOT update historical task directories that reference BusinessMap.**
 
 These are historical records:
+
 - `.tasks/38943-mapping-ownership-review/` (completed)
 - `.tasks/33168-duplicate-combiner/` (completed)
 - `.tasks/37542-code-coverage/` (completed)
@@ -129,11 +140,13 @@ Keep their references to BusinessMap unchanged for historical accuracy.
 ### New PR Template Format
 
 **Old:**
+
 ```markdown
 **Kanban Ticket:** https://businessmap.io/c/57/33168
 ```
 
 **New:**
+
 ```markdown
 **Linear Issue:** https://linear.app/hivemq/issue/EDG-33/duplicate-combiner-detection
 ```
@@ -141,10 +154,12 @@ Keep their references to BusinessMap unchanged for historical accuracy.
 ### Getting Issue URLs for PRs
 
 **With Linear MCP:**
+
 1. Use `mcp__linear-server__get_issue(id: "EDG-40")`
 2. Copy the `url` field from response
 
 **Manually:**
+
 1. Open issue in Linear
 2. Copy URL from browser address bar
 3. Format: `https://linear.app/hivemq/issue/{ISSUE-ID}/...`
@@ -173,10 +188,12 @@ git checkout -b feat/EDG-40/technical-documentation
 ### Linking to Issues
 
 **In Markdown:**
+
 ```markdown
 This fixes the issue described in EDG-40.
 
 See related work:
+
 - EDG-38: Read-only schema handling
 - EDG-35: Tag rendering improvements
 
@@ -184,6 +201,7 @@ See related work:
 ```
 
 **In Commit Messages:**
+
 ```bash
 git commit -m "feat(docs): add technical documentation
 
@@ -203,6 +221,7 @@ Linear: https://linear.app/hivemq/issue/EDG-40/..."
 ### Q: What if a branch name has slashes but task directory can't?
 
 **A:** Use slashes in branch names, hyphens in directory names:
+
 - Branch: `feat/EDG-40/technical-documentation`
 - Directory: `.tasks/EDG-40-technical-documentation/`
 
@@ -213,6 +232,7 @@ Linear: https://linear.app/hivemq/issue/EDG-40/..."
 ### Q: Should commit messages reference Linear?
 
 **A:** Yes, include the Linear issue identifier and optionally the full URL:
+
 ```
 feat: implement feature
 
@@ -241,6 +261,7 @@ Linear: https://linear.app/hivemq/issue/EDG-40/...
 
 **Last Updated:** February 16, 2026
 **Related Documents:**
+
 - `.github/AI_MANDATORY_RULES.md` - Rule 7
 - `CLAUDE.md` - Task Documentation section
 - `.tasks/README.md` - Task system overview

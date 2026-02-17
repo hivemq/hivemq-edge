@@ -132,6 +132,24 @@ describe('DataCombiningEditorField', () => {
     // TODO[NVL] add the tests
   })
 
+  it('should capture screenshot for documentation', () => {
+    cy.mountWithProviders(
+      <CustomFormTesting
+        schema={mockDataCombiningTableSchema}
+        uiSchema={mockDataCombiningTableUISchema}
+        formData={mockFormData}
+      />
+    )
+
+    cy.wait(500) // Stabilize render and allow schema loaders to show
+
+    // Screenshot: Full editor field showing split layout (sources left, destination right)
+    cy.screenshot('combiner-editor-field', {
+      overwrite: true,
+      capture: 'viewport',
+    })
+  })
+
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(
