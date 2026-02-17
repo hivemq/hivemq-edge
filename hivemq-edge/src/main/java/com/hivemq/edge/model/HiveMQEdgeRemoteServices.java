@@ -16,42 +16,71 @@
 package com.hivemq.edge.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.InputStream;
 
 /**
  * Defines endpoints to access for various remoteable interactions
- * @author Simon L Johnson
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class HiveMQEdgeRemoteServices {
 
-    private String usageEndpoint;
-    private String configEndpoint;
+    private static final @NotNull String LOCAL_ENDPOINTS_FILE = "/ext/remote-endpoints.txt";
+    private static final @NotNull String FALLBACK_CONFIG_ENDPOINT =
+            "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/hivemq-edge/src/main/resources/hivemq-edge-configuration.json";
+    private static final @NotNull String FALLBACK_USAGE_ENDPOINT = "https://analytics.hivemq.com/edge/v1";
+    private static final @NotNull String DEFAULT_CONFIG_ENDPOINT;
+    private static final @NotNull String DEFAULT_USAGE_ENDPOINT;
+
+    static {
+        String configEndpoint = FALLBACK_CONFIG_ENDPOINT;
+        String usageEndpoint = FALLBACK_USAGE_ENDPOINT;
+        try (final InputStream is = HiveMQEdgeRemoteServices.class.getResourceAsStream(LOCAL_ENDPOINTS_FILE)) {
+            if (is != null) {
+                final HiveMQEdgeRemoteServices localServices =
+                        new ObjectMapper().readValue(is, HiveMQEdgeRemoteServices.class);
+                configEndpoint = localServices.getConfigEndpoint();
+                usageEndpoint = localServices.getUsageEndpoint();
+            }
+        } catch (final Throwable ignored) {
+            // no-op
+        }
+        DEFAULT_CONFIG_ENDPOINT = configEndpoint;
+        DEFAULT_USAGE_ENDPOINT = usageEndpoint;
+    }
+
+    private @NotNull String usageEndpoint = DEFAULT_USAGE_ENDPOINT;
+    private @NotNull String configEndpoint = DEFAULT_CONFIG_ENDPOINT;
 
     public HiveMQEdgeRemoteServices() {
     }
 
-    public void setUsageEndpoint(final String usageEndpoint) {
-        this.usageEndpoint = usageEndpoint;
-    }
-
-    public void setConfigEndpoint(final String configEndpoint) {
-        this.configEndpoint = configEndpoint;
-    }
-
-    public String getUsageEndpoint() {
+    public @NotNull String getUsageEndpoint() {
         return usageEndpoint;
     }
 
-    public String getConfigEndpoint() {
+    public void setUsageEndpoint(final @Nullable String usageEndpoint) {
+        this.usageEndpoint = usageEndpoint != null ? usageEndpoint.trim() : DEFAULT_USAGE_ENDPOINT;
+    }
+
+    public @NotNull String getConfigEndpoint() {
         return configEndpoint;
     }
 
+    public void setConfigEndpoint(final @Nullable String configEndpoint) {
+        this.configEndpoint = configEndpoint != null ? configEndpoint.trim() : DEFAULT_CONFIG_ENDPOINT;
+    }
+
     @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("HiveMQEdgeRemoteServices{");
-        sb.append("usageEndpoint='").append(usageEndpoint).append('\'');
-        sb.append(", configEndpoint='").append(configEndpoint).append('\'');
-        sb.append('}');
-        return sb.toString();
+    public @NotNull String toString() {
+        return "HiveMQEdgeRemoteServices{" +
+                "usageEndpoint='" +
+                usageEndpoint +
+                "', configEndpoint='" +
+                configEndpoint +
+                "'}";
     }
 }
