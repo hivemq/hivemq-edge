@@ -41,6 +41,7 @@ public enum ContentType {
 
     @SuppressWarnings("ImmutableEnumChecker")
     private final @NotNull Function<byte[], Object> mapperFunction;
+
     private final @NotNull String mimeTypeRepresentation;
 
     ContentType(final @NotNull Function<byte[], Object> mapperFunction, final @NotNull String mimeTypeRepresentation) {

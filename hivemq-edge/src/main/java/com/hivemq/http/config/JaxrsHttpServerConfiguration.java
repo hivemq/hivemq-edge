@@ -48,7 +48,8 @@ public class JaxrsHttpServerConfiguration {
     protected @NotNull String host = DEFAULT_HOSTNAME;
     protected @NotNull String protocol = HTTP_PROTOCOL;
     protected @NotNull Set<Class<?>> resourceClasses = new HashSet<>();
-    protected @NotNull List<Pair<String, String>> staticResources = new ArrayList<>(List.of(Pair.of(DEFAULT_STATIC_ROOT_CONTEXT, DEFAULT_STATIC_ROOT)));
+    protected @NotNull List<Pair<String, String>> staticResources =
+            new ArrayList<>(List.of(Pair.of(DEFAULT_STATIC_ROOT_CONTEXT, DEFAULT_STATIC_ROOT)));
     protected int httpThreadPoolShutdownTimeoutSeconds = 2;
     protected int httpThreadPoolSize = 2;
     protected @Nullable ExecutorService httpThreadPoolExecutor;

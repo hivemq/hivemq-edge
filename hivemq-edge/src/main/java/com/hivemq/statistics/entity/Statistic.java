@@ -44,6 +44,7 @@ public class Statistic {
 
     @SuppressWarnings("UnusedVariable")
     private boolean overloadProtection;
+
     private long connectionThrottling;
     private long bandwithIncoming;
     private String javaVendor;

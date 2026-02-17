@@ -68,7 +68,8 @@ public class JsonSchemaGenerator {
         return jsonSchemaGenerator
                 .collectTypeInfo(parsed)
                 .thenApply(info -> {
-                    if (info.arrayDimensions() != null && !info.arrayDimensions().isEmpty()) {
+                    if (info.arrayDimensions() != null
+                            && !info.arrayDimensions().isEmpty()) {
                         return createJsonSchemaForArrayType(info.dataType(), info.arrayDimensions());
                     } else if (info.nestedFields() == null
                             || info.nestedFields().isEmpty()) {
@@ -89,8 +90,7 @@ public class JsonSchemaGenerator {
                     final NodeId dataTypeNodeId = uaVariableNode.getDataType();
                     final DataType dataType = tree.getDataType(dataTypeNodeId);
                     final UInteger[] dimensions = uaVariableNode.getArrayDimensions();
-                    final List<UInteger> dimensionsList =
-                            dimensions != null ? List.of(dimensions) : null;
+                    final List<UInteger> dimensionsList = dimensions != null ? List.of(dimensions) : null;
 
                     if (dataType == null) {
                         throw new RuntimeException(
@@ -212,7 +212,8 @@ public class JsonSchemaGenerator {
 
         if (builtinDataType != OpcUaDataType.ExtensionObject && fieldType.customDataType() == null) {
             populatePropertiesForBuiltinType(nestedPropertiesNode, builtinDataType, MAPPER);
-        } else if (fieldType.arrayDimensions() != null && !fieldType.arrayDimensions().isEmpty()) {
+        } else if (fieldType.arrayDimensions() != null
+                && !fieldType.arrayDimensions().isEmpty()) {
             populatePropertiesForArray(nestedPropertiesNode, builtinDataType, MAPPER, fieldType.arrayDimensions());
         } else {
             nestedPropertiesNode.set(TYPE, new TextNode(OBJECT_DATA_TYPE));

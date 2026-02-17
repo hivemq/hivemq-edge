@@ -162,7 +162,7 @@ public class BuiltinJsonSchema {
                 nestedPropertiesNode.set(Constants.MAXIMUM_KEY_WORD, new ShortNode(UByte.MAX_VALUE));
             }
             case String, Guid, ByteString, XmlElement, NodeId, ExpandedNodeId, LocalizedText ->
-                    nestedPropertiesNode.set(TYPE, new TextNode(STRING_DATA_TYPE));
+                nestedPropertiesNode.set(TYPE, new TextNode(STRING_DATA_TYPE));
             case DateTime -> {
                 nestedPropertiesNode.set(TYPE, new TextNode(STRING_DATA_TYPE));
                 nestedPropertiesNode.set("format", new TextNode(DATETIME_DATA_TYPE));
@@ -227,7 +227,7 @@ public class BuiltinJsonSchema {
                 nestedPropertiesNode.set("required", requiredAttributes);
             }
             case ExtensionObject, DataValue, Variant, DiagnosticInfo ->
-                    throw new RuntimeException("unsupported builtin data type '" + builtinDataType.name() + "'");
+                throw new RuntimeException("unsupported builtin data type '" + builtinDataType.name() + "'");
         }
     }
 

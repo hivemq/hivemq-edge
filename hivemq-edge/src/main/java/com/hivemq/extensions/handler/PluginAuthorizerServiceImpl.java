@@ -269,7 +269,8 @@ public class PluginAuthorizerServiceImpl implements PluginAuthorizerService {
 
         final AllTopicsProcessedTask allTopicsProcessedTask = new AllTopicsProcessedTask(
                 msg, listenableFutures, ctx, mqttServerDisconnector, incomingSubscribeService);
-        var unused = Futures.whenAllComplete(listenableFutures).run(allTopicsProcessedTask, MoreExecutors.directExecutor());
+        var unused =
+                Futures.whenAllComplete(listenableFutures).run(allTopicsProcessedTask, MoreExecutors.directExecutor());
     }
 
     private @NotNull ClientAuthorizers getClientAuthorizers(final @NotNull ChannelHandlerContext ctx) {

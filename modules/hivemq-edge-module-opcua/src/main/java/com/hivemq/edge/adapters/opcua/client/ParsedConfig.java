@@ -205,8 +205,8 @@ public record ParsedConfig(
                 if (log.isDebugEnabled()) {
                     log.debug("X509 authentication is enabled");
                 }
-                identityProviders.add(new X509IdentityProvider(
-                        keyPairWithChain.certificateChain(), keyPairWithChain.privateKey()));
+                identityProviders.add(
+                        new X509IdentityProvider(keyPairWithChain.certificateChain(), keyPairWithChain.privateKey()));
             }
 
             final BasicAuth basicAuth = auth.basicAuth();
