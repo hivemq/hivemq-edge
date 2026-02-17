@@ -56,39 +56,12 @@ class LdapUsernameRolesProviderNoRulesLldapIntegrationTest {
 
         // Create LdapSimpleBind for LLDAP admin authentication
         // LLDAP admin DN: uid=admin
-<<<<<<< HEAD:hivemq-edge/src/test/java/com/hivemq/api/auth/LdapUsernameRolesProviderNoRulesLldapIntegrationTest.java
-        final var ldapSimpleBind =
-                new LdapConnectionProperties.LdapSimpleBind(
-                        LLDAP_CONTAINER.getAdminRdns(),
-                        LLDAP_CONTAINER.getAdminPassword());
-=======
         final var ldapSimpleBind = new LdapConnectionProperties.LdapSimpleBind(
-                "uid=" + LLDAP_CONTAINER.getAdminUsername(), LLDAP_CONTAINER.getAdminPassword());
->>>>>>> 3b5a8d561b490ac337936d1c7002f8fa3f2c9fb8:hivemq-edge/src/test/java/com/hivemq/api/auth/LdapUsernameRolesProviderIntegrationTest.java
+                LLDAP_CONTAINER.getAdminRdns(), LLDAP_CONTAINER.getAdminPassword());
 
         // Create connection properties for plain LDAP (no TLS for simplicity)
         // 5 second connect timeout
         // 10 second response timeout
-<<<<<<< HEAD:hivemq-edge/src/test/java/com/hivemq/api/auth/LdapUsernameRolesProviderNoRulesLldapIntegrationTest.java
-        final var ldapConnectionProperties =
-                new LdapConnectionProperties(
-                        new LdapConnectionProperties.LdapServers(new String[]{host}, new int[]{port}),
-                        TlsMode.NONE,
-                        null,
-                        5000,  // 5 second connect timeout
-                        10000, // 10 second response timeout
-                        1,
-                        "uid",       // uidAttribute
-                        LLDAP_CONTAINER.getBaseDn(), // rdns
-                        null,
-                        null,
-                        SearchScope.SUB,
-                        5,
-                        ADMIN,  // assignedRole
-                        false,
-                        ldapSimpleBind,
-                        null);
-=======
         final var ldapConnectionProperties = new LdapConnectionProperties(
                 new LdapConnectionProperties.LdapServers(new String[] {host}, new int[] {port}),
                 TlsMode.NONE,
@@ -97,14 +70,15 @@ class LdapUsernameRolesProviderNoRulesLldapIntegrationTest {
                 10000, // 10 second response timeout
                 1,
                 "uid", // uidAttribute
-                getBaseDn(), // rdns
+                LLDAP_CONTAINER.getBaseDn(), // rdns
+                null,
                 null,
                 SearchScope.SUB,
                 5,
                 ADMIN, // assignedRole
                 false,
-                ldapSimpleBind);
->>>>>>> 3b5a8d561b490ac337936d1c7002f8fa3f2c9fb8:hivemq-edge/src/test/java/com/hivemq/api/auth/LdapUsernameRolesProviderIntegrationTest.java
+                ldapSimpleBind,
+                null);
 
         // Create test user in LLDAP
         new LdapTestConnection(ldapConnectionProperties)
