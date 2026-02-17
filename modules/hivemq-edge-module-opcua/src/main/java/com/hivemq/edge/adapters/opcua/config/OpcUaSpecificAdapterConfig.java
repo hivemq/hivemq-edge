@@ -15,6 +15,9 @@
  */
 package com.hivemq.edge.adapters.opcua.config;
 
+import static java.util.Objects.requireNonNullElse;
+import static java.util.Objects.requireNonNullElseGet;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -22,71 +25,78 @@ import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.Constants;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
-
-import static java.util.Objects.requireNonNullElse;
-import static java.util.Objects.requireNonNullElseGet;
 
 public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
-    @ModuleConfigField(title = "Identifier",
-                       description = "Unique identifier for this protocol adapter",
-                       format = ModuleConfigField.FieldType.IDENTIFIER,
-                       required = true,
-                       stringPattern = Constants.ID_REGEX,
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
+    @ModuleConfigField(
+            title = "Identifier",
+            description = "Unique identifier for this protocol adapter",
+            format = ModuleConfigField.FieldType.IDENTIFIER,
+            required = true,
+            stringPattern = Constants.ID_REGEX,
+            stringMinLength = 1,
+            stringMaxLength = 1024)
     private @Nullable String id;
 
     @JsonProperty(value = "uri", required = true)
-    @ModuleConfigField(title = "OPC UA Server URI",
-                       description = "URI of the OPC UA server to connect to",
-                       format = ModuleConfigField.FieldType.URI,
-                       required = true)
+    @ModuleConfigField(
+            title = "OPC UA Server URI",
+            description = "URI of the OPC UA server to connect to",
+            format = ModuleConfigField.FieldType.URI,
+            required = true)
     private final @NotNull String uri;
 
     @JsonProperty("overrideUri")
-    @ModuleConfigField(title = "Override server returned endpoint URI",
-                       description = "Overrides the endpoint URI returned from the OPC UA server with the hostname and port from the specified URI.",
-                       format = ModuleConfigField.FieldType.BOOLEAN,
-                       defaultValue = "false")
+    @ModuleConfigField(
+            title = "Override server returned endpoint URI",
+            description =
+                    "Overrides the endpoint URI returned from the OPC UA server with the hostname and port from the specified URI.",
+            format = ModuleConfigField.FieldType.BOOLEAN,
+            defaultValue = "false")
     private final boolean overrideUri;
 
     @JsonProperty("applicationUri")
-    @ModuleConfigField(title = "Application URI Override",
-                       description = "Overrides the Application URI used for OPC UA client identification. If not specified, the URI from the certificate SAN extension is used, or the default URI 'urn:hivemq:edge:client' as fallback.")
+    @ModuleConfigField(
+            title = "Application URI Override",
+            description =
+                    "Overrides the Application URI used for OPC UA client identification. If not specified, the URI from the certificate SAN extension is used, or the default URI 'urn:hivemq:edge:client' as fallback.")
     private final @Nullable String applicationUri;
 
     @JsonProperty("auth")
-    @ModuleConfigField(title = "Authentication Configuration",
-                       description = "Select the authentication mode to use for connecting.")
+    @ModuleConfigField(
+            title = "Authentication Configuration",
+            description = "Select the authentication mode to use for connecting.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private final @Nullable Auth auth;
 
     @JsonProperty("tls")
-    @ModuleConfigField(title = "TLS Configuration",
-                       description = "Configure TLS for use with X509 or connecting to a TLS enabled OPC UA server.")
+    @ModuleConfigField(
+            title = "TLS Configuration",
+            description = "Configure TLS for use with X509 or connecting to a TLS enabled OPC UA server.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private final @NotNull Tls tls;
 
     @JsonProperty("security")
-    @ModuleConfigField(title = "Message Security Configuration",
-                       description = "Configure how the security of PC UA messages should be treated.")
+    @ModuleConfigField(
+            title = "Message Security Configuration",
+            description = "Configure how the security of PC UA messages should be treated.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private final @NotNull Security security;
 
     @JsonProperty(value = "opcuaToMqtt")
-    @ModuleConfigField(title = "OPC UA To MQTT Config",
-                       description = "The configuration for a data stream from OPC UA to MQTT")
+    @ModuleConfigField(
+            title = "OPC UA To MQTT Config",
+            description = "The configuration for a data stream from OPC UA to MQTT")
     private final @NotNull OpcUaToMqttConfig opcuaToMqttConfig;
 
     @JsonProperty(value = "connectionOptions")
-    @ModuleConfigField(title = "Options for connection handling",
-                       description = "Controls how heartbeats and reconnects are handled")
+    @ModuleConfigField(
+            title = "Options for connection handling",
+            description = "Controls how heartbeats and reconnects are handled")
     private final @NotNull ConnectionOptions connectionOptions;
 
     @JsonCreator
@@ -108,7 +118,6 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
         this.security = requireNonNullElse(security, new Security(Constants.DEFAULT_SECURITY_POLICY));
         this.connectionOptions = requireNonNullElseGet(connectionOptions, ConnectionOptions::defaultConnectionOptions);
     }
-
 
     public @NotNull String getUri() {
         return uri;
@@ -146,20 +155,21 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (!(o instanceof OpcUaSpecificAdapterConfig that)) return false;
-        return getOverrideUri().equals(that.getOverrideUri()) &&
-                Objects.equals(id, that.id) &&
-                Objects.equals(getUri(), that.getUri()) &&
-                Objects.equals(getApplicationUri(), that.getApplicationUri()) &&
-                Objects.equals(getAuth(), that.getAuth()) &&
-                Objects.equals(getTls(), that.getTls()) &&
-                Objects.equals(getSecurity(), that.getSecurity()) &&
-                Objects.equals(getOpcuaToMqttConfig(), that.getOpcuaToMqttConfig()) &&
-                Objects.equals(connectionOptions, that.connectionOptions);
+        return getOverrideUri().equals(that.getOverrideUri())
+                && Objects.equals(id, that.id)
+                && Objects.equals(getUri(), that.getUri())
+                && Objects.equals(getApplicationUri(), that.getApplicationUri())
+                && Objects.equals(getAuth(), that.getAuth())
+                && Objects.equals(getTls(), that.getTls())
+                && Objects.equals(getSecurity(), that.getSecurity())
+                && Objects.equals(getOpcuaToMqttConfig(), that.getOpcuaToMqttConfig())
+                && Objects.equals(connectionOptions, that.connectionOptions);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id,
+        return Objects.hash(
+                id,
                 getUri(),
                 getOverrideUri(),
                 getApplicationUri(),
@@ -172,28 +182,27 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
 
     @Override
     public String toString() {
-        return "OpcUaSpecificAdapterConfig{" +
-                "id='" +
-                id +
-                '\'' +
-                ", uri='" +
-                uri +
-                '\'' +
-                ", overrideUri=" +
-                overrideUri +
-                ", applicationUri='" +
-                applicationUri +
-                '\'' +
-                ", auth=" +
-                auth +
-                ", tls=" +
-                tls +
-                ", security=" +
-                security +
-                ", opcuaToMqttConfig=" +
-                opcuaToMqttConfig +
-                ", connectionOptions=" +
-                connectionOptions +
-                '}';
+        return "OpcUaSpecificAdapterConfig{" + "id='"
+                + id
+                + '\''
+                + ", uri='"
+                + uri
+                + '\''
+                + ", overrideUri="
+                + overrideUri
+                + ", applicationUri='"
+                + applicationUri
+                + '\''
+                + ", auth="
+                + auth
+                + ", tls="
+                + tls
+                + ", security="
+                + security
+                + ", opcuaToMqttConfig="
+                + opcuaToMqttConfig
+                + ", connectionOptions="
+                + connectionOptions
+                + '}';
     }
 }

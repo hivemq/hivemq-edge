@@ -1,19 +1,18 @@
 /*
- *  Copyright 2019-present HiveMQ GmbH
+ * Copyright 2019-present HiveMQ GmbH
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
 package com.hivemq.configuration.entity.pulse;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -30,15 +29,16 @@ import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlType;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "managed-asset", propOrder = {"id", "name", "description", "topic", "schema", "mapping"})
+@XmlType(
+        name = "managed-asset",
+        propOrder = {"id", "name", "description", "topic", "schema", "mapping"})
 public class PulseAssetEntity implements EntityValidatable {
 
     @JsonProperty(value = "id", required = true)
@@ -121,12 +121,12 @@ public class PulseAssetEntity implements EntityValidatable {
         if (!(o instanceof final PulseAssetEntity that)) {
             return false;
         }
-        return Objects.equals(name, that.name) &&
-                Objects.equals(id, that.id) &&
-                Objects.equals(description, that.description) &&
-                Objects.equals(topic, that.topic) &&
-                Objects.equals(schema, that.schema) &&
-                Objects.equals(mapping, that.mapping);
+        return Objects.equals(name, that.name)
+                && Objects.equals(id, that.id)
+                && Objects.equals(description, that.description)
+                && Objects.equals(topic, that.topic)
+                && Objects.equals(schema, that.schema)
+                && Objects.equals(mapping, that.mapping);
     }
 
     @Override
@@ -236,24 +236,23 @@ public class PulseAssetEntity implements EntityValidatable {
 
     @Override
     public @NotNull String toString() {
-        return "PulseAssetEntity{" +
-                "id=" +
-                id +
-                ", name='" +
-                name +
-                '\'' +
-                ", description='" +
-                description +
-                '\'' +
-                ", topic='" +
-                topic +
-                '\'' +
-                ", schema='" +
-                schema +
-                '\'' +
-                ", mapping=" +
-                mapping +
-                '}';
+        return "PulseAssetEntity{" + "id="
+                + id
+                + ", name='"
+                + name
+                + '\''
+                + ", description='"
+                + description
+                + '\''
+                + ", topic='"
+                + topic
+                + '\''
+                + ", schema='"
+                + schema
+                + '\''
+                + ", mapping="
+                + mapping
+                + '}';
     }
 
     public static class Builder {
@@ -295,7 +294,8 @@ public class PulseAssetEntity implements EntityValidatable {
         }
 
         public @NotNull PulseAssetEntity build() {
-            return new PulseAssetEntity(Objects.requireNonNull(id),
+            return new PulseAssetEntity(
+                    Objects.requireNonNull(id),
                     Objects.requireNonNull(name),
                     description,
                     Objects.requireNonNull(topic),

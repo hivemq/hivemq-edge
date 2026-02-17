@@ -15,23 +15,24 @@
  */
 package com.hivemq.codec.encoder;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.connack.CONNACK;
 import com.hivemq.mqtt.message.connack.Mqtt3ConnAckReturnCode;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import util.encoder.TestMessageEncoder;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 public class Mqtt3ConnackEncoderTest {
 
     private @NotNull EmbeddedChannel channel;
     private @NotNull ClientConnection clientConnection;
+
     @BeforeEach
     public void setUp() throws Exception {
         channel = new EmbeddedChannel(new TestMessageEncoder());
@@ -49,19 +50,19 @@ public class Mqtt3ConnackEncoderTest {
 
         final ByteBuf buf = channel.readOutbound();
 
-        //Fixed header
+        // Fixed header
         assertEquals(0b0010_0000, buf.readByte());
-        //Length
+        // Length
         assertEquals(0b0000_0010, buf.readByte());
-        //Flags
+        // Flags
         assertEquals(0b0000_0000, buf.readByte());
-        //Accepted
+        // Accepted
         assertEquals(0b0000_0000, buf.readByte());
 
-        //Nothing more to read
+        // Nothing more to read
         assertFalse(buf.isReadable());
 
-        //Let's make sure we weren't disconnected
+        // Let's make sure we weren't disconnected
         assertTrue(channel.isActive());
     }
 
@@ -75,19 +76,19 @@ public class Mqtt3ConnackEncoderTest {
 
         final ByteBuf buf = channel.readOutbound();
 
-        //Fixed header
+        // Fixed header
         assertEquals(0b0010_0000, buf.readByte());
-        //Length
+        // Length
         assertEquals(0b0000_0010, buf.readByte());
-        //Flags
+        // Flags
         assertEquals(0b0000_0001, buf.readByte());
-        //Accepted
+        // Accepted
         assertEquals(0b0000_0000, buf.readByte());
 
-        //Nothing more to read
+        // Nothing more to read
         assertFalse(buf.isReadable());
 
-        //Let's make sure we weren't disconnected
+        // Let's make sure we weren't disconnected
         assertTrue(channel.isActive());
     }
 
@@ -101,19 +102,19 @@ public class Mqtt3ConnackEncoderTest {
 
         final ByteBuf buf = channel.readOutbound();
 
-        //Fixed header
+        // Fixed header
         assertEquals(0b0010_0000, buf.readByte());
-        //Length
+        // Length
         assertEquals(0b0000_0010, buf.readByte());
-        //Flags
+        // Flags
         assertEquals(0b0000_0000, buf.readByte());
-        //Accepted
+        // Accepted
         assertEquals(0b0000_0000, buf.readByte());
 
-        //Nothing more to read
+        // Nothing more to read
         assertFalse(buf.isReadable());
 
-        //Let's make sure we weren't disconnected
+        // Let's make sure we weren't disconnected
         assertTrue(channel.isActive());
     }
 }

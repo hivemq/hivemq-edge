@@ -15,16 +15,15 @@
  */
 package com.hivemq.extensions.auth;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.auth.parameter.EnhancedAuthInput;
 import com.hivemq.extension.sdk.api.packets.auth.AuthPacket;
 import com.hivemq.extensions.packets.auth.AuthPacketImpl;
 import com.hivemq.extensions.parameter.ClientBasedInputImpl;
 import com.hivemq.mqtt.message.auth.AUTH;
 import io.netty.channel.Channel;
-
 import java.util.function.Supplier;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Daniel Krüger

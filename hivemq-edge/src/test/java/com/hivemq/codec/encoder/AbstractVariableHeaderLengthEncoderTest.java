@@ -15,16 +15,16 @@
  */
 package com.hivemq.codec.encoder;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.encoder.mqtt3.AbstractVariableHeaderLengthEncoder;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Christoph Schäbel
@@ -32,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class AbstractVariableHeaderLengthEncoderTest {
 
     private TestAbstractVariableHeaderLengthEncoder encoder;
+
     @BeforeEach
     public void before() {
         encoder = new TestAbstractVariableHeaderLengthEncoder();
@@ -117,9 +118,7 @@ public class AbstractVariableHeaderLengthEncoderTest {
         }
 
         @Override
-        public void encode(@NotNull ClientConnection clientConnection, @NotNull PUBLISH msg, @NotNull ByteBuf out) {
-
-        }
+        public void encode(@NotNull ClientConnection clientConnection, @NotNull PUBLISH msg, @NotNull ByteBuf out) {}
 
         @Override
         public int bufferSize(final @NotNull ClientConnection clientConnection, final @NotNull PUBLISH msg) {
@@ -131,5 +130,4 @@ public class AbstractVariableHeaderLengthEncoderTest {
             return 0;
         }
     }
-
 }

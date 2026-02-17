@@ -15,11 +15,11 @@
  */
 package com.hivemq.extensions.interceptor.disconnect.parameter;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.disconnect.parameter.DisconnectOutboundOutput;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
 import com.hivemq.extensions.executor.task.AbstractSimpleAsyncOutput;
 import com.hivemq.extensions.packets.disconnect.ModifiableOutboundDisconnectPacketImpl;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Robin Atherton

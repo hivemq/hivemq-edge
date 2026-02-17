@@ -16,7 +16,6 @@
 package com.hivemq.extensions.client.parameter;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
 import com.hivemq.extension.sdk.api.client.parameter.InitializerInput;
@@ -24,6 +23,7 @@ import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 import com.hivemq.extensions.ExtensionInformationUtil;
 import com.hivemq.extensions.executor.task.PluginTaskInput;
 import io.netty.channel.Channel;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -40,9 +40,10 @@ public class InitializerInputImpl implements InitializerInput, PluginTaskInput {
     @NotNull
     private final ClientInformation clientInformation;
 
-    public InitializerInputImpl(final @NotNull ServerInformation serverInformation,
-                                final @NotNull Channel channel,
-                                final @NotNull String clientId) {
+    public InitializerInputImpl(
+            final @NotNull ServerInformation serverInformation,
+            final @NotNull Channel channel,
+            final @NotNull String clientId) {
         Preconditions.checkNotNull(channel, "channel must never be null");
         Preconditions.checkNotNull(clientId, "client id must never be null");
         Preconditions.checkNotNull(serverInformation, "server information must never be null");

@@ -15,13 +15,11 @@
  */
 package com.hivemq.mqtt.topic;
 
-import org.junit.jupiter.api.Test;
-
+import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.HashSet;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Dominik Obermaier
@@ -34,25 +32,27 @@ public class SubscriberWithQoSTest {
         new SubscriberWithQoS("subscriber", 1, (byte) 0, null, 0, null);
         new SubscriberWithQoS("subscriber", 2, (byte) 0, null, 0, null);
 
-        //No exception was thrown, so this was successful
+        // No exception was thrown, so this was successful
     }
 
     @Test
     public void test_subscriber_null() {
-    
+
         assertThrows(NullPointerException.class, () -> new SubscriberWithQoS(null, 0, (byte) 0, null, 0, null));
     }
 
     @Test
     public void test_subscriber_qos_below_zero() {
-    
-        assertThrows(IllegalArgumentException.class, () -> new SubscriberWithQoS("subscriber", -1, (byte) 0, null, 0, null));
+
+        assertThrows(
+                IllegalArgumentException.class, () -> new SubscriberWithQoS("subscriber", -1, (byte) 0, null, 0, null));
     }
 
     @Test
     public void test_subscriber_qos_higher_than_two() {
-    
-        assertThrows(IllegalArgumentException.class, () -> new SubscriberWithQoS("subscriber", 3, (byte) 0, null, 0, null));
+
+        assertThrows(
+                IllegalArgumentException.class, () -> new SubscriberWithQoS("subscriber", 3, (byte) 0, null, 0, null));
     }
 
     @Test
@@ -69,7 +69,6 @@ public class SubscriberWithQoSTest {
         assertFalse(subscriber2.isRetainAsPublished());
         assertTrue(subscriber2.isNoLocal());
     }
-
 
     @Test
     public void test_equals() throws Exception {
@@ -98,7 +97,6 @@ public class SubscriberWithQoSTest {
 
         subs.add(new SubscriberWithQoS("sub", 2, (byte) 0, null, 0, null));
         assertEquals(4, subs.size());
-
     }
 
     @Test
@@ -106,7 +104,6 @@ public class SubscriberWithQoSTest {
         final SubscriberWithQoS subscriber1 = new SubscriberWithQoS("subscriber1", 1, (byte) 14, null, 0, null);
         final SubscriberWithQoS subscriber2 = new SubscriberWithQoS("subscriber1", 2, (byte) 14, null, 0, null);
         final SubscriberWithQoS subscriber3 = new SubscriberWithQoS("subscriber2", 2, (byte) 14, null, 0, null);
-
 
         assertEquals(0, subscriber1.compareTo(subscriber1));
         assertEquals(0, subscriber2.compareTo(subscriber2));

@@ -16,15 +16,15 @@
 package com.hivemq.api.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.jetbrains.annotations.NotNull;
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 public abstract class ItemsResponse<T> {
 
     @JsonProperty("items")
-    @Schema(description = "List of result items that are returned by this endpoint",
+    @Schema(
+            description = "List of result items that are returned by this endpoint",
             requiredMode = Schema.RequiredMode.REQUIRED)
     private final @NotNull List<@NotNull T> items;
 

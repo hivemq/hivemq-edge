@@ -15,9 +15,10 @@
  */
 package com.hivemq.codec.encoder;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.SecurityConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.PINGRESP;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.QoS;
@@ -34,15 +35,13 @@ import com.hivemq.mqtt.message.suback.SUBACK;
 import com.hivemq.mqtt.message.unsuback.UNSUBACK;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.nio.charset.StandardCharsets;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import util.TestMessageUtil;
 import util.encoder.TestMessageEncoder;
-
-import java.nio.charset.StandardCharsets;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MQTTMessageEncoderTest {
 
@@ -53,6 +52,7 @@ public class MQTTMessageEncoderTest {
 
     @Mock
     private @NotNull SecurityConfigurationService securityConfigurationService;
+
     @BeforeEach
     public void setUp() throws Exception {
         channel = new EmbeddedChannel(new TestMessageEncoder(messageDroppedService, securityConfigurationService));
@@ -108,7 +108,6 @@ public class MQTTMessageEncoderTest {
         assertTrue(buf.readableBytes() > 0);
     }
 
-
     @Test
     public void test_suback_encoded() {
 
@@ -116,7 +115,6 @@ public class MQTTMessageEncoderTest {
         final ByteBuf buf = channel.readOutbound();
         assertTrue(buf.readableBytes() > 0);
     }
-
 
     @Test
     public void test_unsuback_encoded() {
@@ -126,11 +124,11 @@ public class MQTTMessageEncoderTest {
         assertTrue(buf.readableBytes() > 0);
     }
 
-
     @Test
     public void test_publish_encoded() {
 
-        final PUBLISH publish = TestMessageUtil.createMqtt3Publish("clusterid", "topic", QoS.EXACTLY_ONCE, "payload".getBytes(StandardCharsets.UTF_8), true);
+        final PUBLISH publish = TestMessageUtil.createMqtt3Publish(
+                "clusterid", "topic", QoS.EXACTLY_ONCE, "payload".getBytes(StandardCharsets.UTF_8), true);
         channel.writeOutbound(publish);
         final ByteBuf buf = channel.readOutbound();
         assertTrue(buf.readableBytes() > 0);

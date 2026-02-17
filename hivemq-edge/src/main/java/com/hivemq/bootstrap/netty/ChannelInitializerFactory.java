@@ -43,5 +43,4 @@ public interface ChannelInitializerFactory {
      */
     @NotNull
     AbstractChannelInitializer getChannelInitializer(final @NotNull Listener listener);
-
 }

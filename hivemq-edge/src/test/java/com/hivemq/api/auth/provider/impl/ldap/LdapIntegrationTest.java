@@ -15,6 +15,12 @@
  */
 package com.hivemq.api.auth.provider.impl.ldap;
 
+import static com.hivemq.api.auth.ApiRoles.ADMIN;
+import static com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection.TEST_PASSWORD;
+import static com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection.TEST_USERNAME;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection;
 import com.hivemq.api.auth.provider.impl.ldap.testcontainer.LldapContainer;
 import com.hivemq.logging.SecurityLog;
@@ -26,21 +32,13 @@ import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.ldap.sdk.SimpleBindRequest;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyStore;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-
-import java.io.File;
-import java.nio.charset.StandardCharsets;
-import java.security.KeyStore;
-
-import static com.hivemq.api.auth.ApiRoles.ADMIN;
-import static com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection.TEST_PASSWORD;
-import static com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection.TEST_USERNAME;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Integration test for secure LDAP authentication using LLDAP testcontainer with TLS.
@@ -63,9 +61,8 @@ class LdapIntegrationTest {
     private static final String LDAP_DN_TEMPLATE = "uid={username},ou=people,{baseDn}";
 
     @Container
-    private static final LldapContainer LLDAP_CONTAINER = LldapContainer.builder()
-            .withLdaps()
-            .build();
+    private static final LldapContainer LLDAP_CONTAINER =
+            LldapContainer.builder().withLdaps().build();
 
     private static LdapClient ldapClient;
     private static LdapConnectionProperties ldapConnectionProperties;
@@ -80,25 +77,26 @@ class LdapIntegrationTest {
         // LLDAP admin DN: uid=admin,ou=people,{baseDn}
         // Note: The RDN should be just the user's identifier, the organizational unit
         // will be added from the rdns parameter in LdapConnectionProperties
-        final LdapConnectionProperties.LdapSimpleBind ldapSimpleBind =
-                new LdapConnectionProperties.LdapSimpleBind(
-                        "uid=" + LLDAP_CONTAINER.getAdminUsername(),
-                        LLDAP_CONTAINER.getAdminPassword());
+        final LdapConnectionProperties.LdapSimpleBind ldapSimpleBind = new LdapConnectionProperties.LdapSimpleBind(
+                "uid=" + LLDAP_CONTAINER.getAdminUsername(), LLDAP_CONTAINER.getAdminPassword());
 
         // Create connection properties for LDAPS
         ldapConnectionProperties = new LdapConnectionProperties(
-                new LdapConnectionProperties.LdapServers(new String[]{host}, new int[]{port}),
+                new LdapConnectionProperties.LdapServers(new String[] {host}, new int[] {port}),
                 TlsMode.LDAPS,
-                new LdapConnectionProperties.TrustStore(LLDAP_CONTAINER.getTrustStoreFile().getAbsolutePath(), LldapContainer.KEYSTORE_PASSWORD, KeyStore.getDefaultType()),
+                new LdapConnectionProperties.TrustStore(
+                        LLDAP_CONTAINER.getTrustStoreFile().getAbsolutePath(),
+                        LldapContainer.KEYSTORE_PASSWORD,
+                        KeyStore.getDefaultType()),
                 10000, // 10 second connect timeout
                 30000, // 30 second response timeout
                 1,
-                "uid",    // uidAttribute
-                "ou=people," + LLDAP_CONTAINER.getBaseDn(),  // rdns
+                "uid", // uidAttribute
+                "ou=people," + LLDAP_CONTAINER.getBaseDn(), // rdns
                 null,
                 SearchScope.SUB,
                 5,
-                ADMIN,  // assignedRole
+                ADMIN, // assignedRole
                 false,
                 ldapSimpleBind);
 
@@ -107,10 +105,9 @@ class LdapIntegrationTest {
         ldapClient.start();
 
         // Create test user in LLDAP (using direct connection for admin operations)
-        new LdapTestConnection(ldapConnectionProperties).createTestUser(
-                LLDAP_CONTAINER.getAdminDn(),
-                LLDAP_CONTAINER.getAdminPassword(),
-                LLDAP_CONTAINER.getBaseDn());
+        new LdapTestConnection(ldapConnectionProperties)
+                .createTestUser(
+                        LLDAP_CONTAINER.getAdminDn(), LLDAP_CONTAINER.getAdminPassword(), LLDAP_CONTAINER.getBaseDn());
     }
 
     @AfterAll
@@ -123,7 +120,6 @@ class LdapIntegrationTest {
         LLDAP_CONTAINER.stop();
     }
 
-
     /**
      * Tests successful LDAP bind with correct credentials over secure TLS connection.
      * <p>
@@ -135,7 +131,8 @@ class LdapIntegrationTest {
     @Test
     void testSuccessfulBind() throws LDAPException {
         // Act
-        final boolean authenticated = ldapClient.authenticateUser(TEST_USERNAME, LdapTestConnection.TEST_PASSWORD.getBytes(StandardCharsets.UTF_8));
+        final boolean authenticated = ldapClient.authenticateUser(
+                TEST_USERNAME, LdapTestConnection.TEST_PASSWORD.getBytes(StandardCharsets.UTF_8));
 
         // Assert
         assertThat(authenticated)
@@ -157,7 +154,8 @@ class LdapIntegrationTest {
         final String wrongPassword = "wrong_password";
 
         // Act
-        final boolean authenticated = ldapClient.authenticateUser(TEST_USERNAME, wrongPassword.getBytes(StandardCharsets.UTF_8));
+        final boolean authenticated =
+                ldapClient.authenticateUser(TEST_USERNAME, wrongPassword.getBytes(StandardCharsets.UTF_8));
 
         // Assert
         assertThat(authenticated)
@@ -185,9 +183,8 @@ class LdapIntegrationTest {
         ldapClient.start();
         try (final LDAPConnection adminConnection = testconnection.createConnection()) {
             // Bind as admin to create authenticated pool using LldapContainer's convenience methods
-            final BindRequest bindRequest = new SimpleBindRequest(
-                    LLDAP_CONTAINER.getAdminDn(),
-                    LLDAP_CONTAINER.getAdminPassword());
+            final BindRequest bindRequest =
+                    new SimpleBindRequest(LLDAP_CONTAINER.getAdminDn(), LLDAP_CONTAINER.getAdminPassword());
             final BindResult bindResult = adminConnection.bind(bindRequest);
             assertThat(bindResult.getResultCode()).isEqualTo(ResultCode.SUCCESS);
 
@@ -195,50 +192,43 @@ class LdapIntegrationTest {
 
             try (final var authenticatedPool = new LDAPConnectionPool(adminConnection, 1, 5)) {
                 // Test 1: Simple UID search
-                final SearchFilterDnResolver uidResolver = new SearchFilterDnResolver(authenticatedPool,
-                        "ou=people," + LLDAP_CONTAINER.getBaseDn(),
-                        "uid",
-                        null,
-                        SearchScope.ONE,
-                        5);
+                final SearchFilterDnResolver uidResolver = new SearchFilterDnResolver(
+                        authenticatedPool, "ou=people," + LLDAP_CONTAINER.getBaseDn(), "uid", null, SearchScope.ONE, 5);
 
                 String resolvedDn = uidResolver.resolveDn(TEST_USERNAME);
-                assertThat(resolvedDn).as("Should resolve DN by UID")
+                assertThat(resolvedDn)
+                        .as("Should resolve DN by UID")
                         .isEqualTo("uid=" + TEST_USERNAME + ",ou=people," + LLDAP_CONTAINER.getBaseDn());
 
                 // Verify we can authenticate with the resolved DN
                 final boolean authenticated =
                         ldapClient.bindUser(resolvedDn, TEST_PASSWORD.getBytes(StandardCharsets.UTF_8));
-                assertThat(authenticated).as("Should authenticate with resolved DN").isTrue();
+                assertThat(authenticated)
+                        .as("Should authenticate with resolved DN")
+                        .isTrue();
 
                 // Test 2: Email search
-                final SearchFilterDnResolver emailResolver = new SearchFilterDnResolver(authenticatedPool,
-                        LLDAP_CONTAINER.getBaseDn(),
-                        "mail",
-                        null,
-                        SearchScope.SUB,
-                        5);
+                final SearchFilterDnResolver emailResolver = new SearchFilterDnResolver(
+                        authenticatedPool, LLDAP_CONTAINER.getBaseDn(), "mail", null, SearchScope.SUB, 5);
 
                 resolvedDn = emailResolver.resolveDn(TEST_USERNAME + "@example.com");
-                assertThat(resolvedDn).as("Should resolve DN by email")
+                assertThat(resolvedDn)
+                        .as("Should resolve DN by email")
                         .isEqualTo("uid=" + TEST_USERNAME + ",ou=people," + LLDAP_CONTAINER.getBaseDn());
 
                 // Test 3: Complex filter
-                final SearchFilterDnResolver complexResolver = new SearchFilterDnResolver(authenticatedPool,
-                        LLDAP_CONTAINER.getBaseDn(),
-                        "uid",
-                        "inetOrgPerson",
-                        SearchScope.SUB,
-                        5);
+                final SearchFilterDnResolver complexResolver = new SearchFilterDnResolver(
+                        authenticatedPool, LLDAP_CONTAINER.getBaseDn(), "uid", "inetOrgPerson", SearchScope.SUB, 5);
 
                 resolvedDn = complexResolver.resolveDn(TEST_USERNAME);
-                assertThat(resolvedDn).as("Should resolve DN with complex filter")
+                assertThat(resolvedDn)
+                        .as("Should resolve DN with complex filter")
                         .isEqualTo("uid=" + TEST_USERNAME + ",ou=people," + LLDAP_CONTAINER.getBaseDn());
 
                 // Test 5: User not found
-                assertThatThrownBy(() -> uidResolver.resolveDn("nonexistent")).isInstanceOf(SearchFilterDnResolver.DnResolutionException.class)
+                assertThatThrownBy(() -> uidResolver.resolveDn("nonexistent"))
+                        .isInstanceOf(SearchFilterDnResolver.DnResolutionException.class)
                         .hasMessageContaining("No LDAP entry found for username: nonexistent");
-
             }
         }
     }

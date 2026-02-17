@@ -17,11 +17,10 @@ package com.hivemq.api.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import io.swagger.v3.oas.annotations.media.Schema;
-
-import java.util.List;
 
 public abstract class PaginatedItemsResponse<T> {
 
@@ -33,7 +32,6 @@ public abstract class PaginatedItemsResponse<T> {
     @JsonProperty("items")
     @Schema(description = "List of result items that are returned by this endpoint")
     private final @NotNull List<@NotNull T> items;
-
 
     protected PaginatedItemsResponse(
             final @NotNull List<@NotNull T> items, final @Nullable PaginationCursor paginationCursor) {
@@ -48,5 +46,4 @@ public abstract class PaginatedItemsResponse<T> {
     public @NotNull List<@NotNull T> getItems() {
         return items;
     }
-
 }

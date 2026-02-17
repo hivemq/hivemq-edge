@@ -15,8 +15,8 @@
  */
 package com.hivemq.configuration;
 
-import org.jetbrains.annotations.NotNull;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.jetbrains.annotations.NotNull;
 
 public class HivemqId {
 
@@ -30,7 +30,7 @@ public class HivemqId {
         return hivemqId;
     }
 
-    //needs to be at least 5 characters long to provide acceptable uniqueness
+    // needs to be at least 5 characters long to provide acceptable uniqueness
     public @NotNull String generateId() {
         return RandomStringUtils.randomAlphanumeric(5);
     }

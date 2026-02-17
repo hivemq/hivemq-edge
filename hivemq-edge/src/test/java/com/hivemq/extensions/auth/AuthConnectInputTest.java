@@ -15,19 +15,18 @@
  */
 package com.hivemq.extensions.auth;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.extension.sdk.api.packets.connect.ConnectPacket;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.connect.CONNECT;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Georg Held
@@ -37,6 +36,7 @@ public class AuthConnectInputTest {
 
     private CONNECT connect;
     private AuthConnectInput taskInput;
+
     @BeforeEach
     public void setUp() {
 
@@ -51,7 +51,7 @@ public class AuthConnectInputTest {
                 .withUsername("user")
                 .withPassword("password".getBytes(Charset.defaultCharset()))
                 .withAuthMethod("method")
-                .withAuthData(new byte[]{'a', 'b', 'c'})
+                .withAuthData(new byte[] {'a', 'b', 'c'})
                 .build();
         taskInput = new AuthConnectInput(connect, channel);
     }
@@ -64,8 +64,12 @@ public class AuthConnectInputTest {
 
         assertEquals("method", connectPacket.getAuthenticationMethod().get());
         assertEquals("user", connectPacket.getUserName().get());
-        assertEquals(ByteBuffer.wrap("password".getBytes()), connectPacket.getPassword().get());
-        assertEquals(ByteBuffer.wrap("abc".getBytes()), connectPacket.getAuthenticationData().get());
+        assertEquals(
+                ByteBuffer.wrap("password".getBytes()),
+                connectPacket.getPassword().get());
+        assertEquals(
+                ByteBuffer.wrap("abc".getBytes()),
+                connectPacket.getAuthenticationData().get());
         assertEquals(taskInput, taskInput.get());
     }
 }

@@ -19,15 +19,14 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Christoph Schäbel
@@ -47,9 +46,10 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
 
     private final Lock lock = new ReentrantLock();
 
-    AsyncLocalChunkIterator(final @NotNull FetchCallback<V> fetchCallback,
-                            final @NotNull ItemCallback<V> itemCallback,
-                            final @NotNull ExecutorService executorService) {
+    AsyncLocalChunkIterator(
+            final @NotNull FetchCallback<V> fetchCallback,
+            final @NotNull ItemCallback<V> itemCallback,
+            final @NotNull ExecutorService executorService) {
         this.fetchCallback = fetchCallback;
         this.resultBuffer = new ResultBuffer<>((cursor, resultBuffer) -> {
             fetchNextChunk(cursor);
@@ -65,14 +65,13 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
 
     private void fetchNextChunk(final @Nullable ChunkCursor cursor) {
         final ListenableFuture<ChunkResult<V>> singleFuture = fetchCallback.fetchNextResults(cursor);
-        Futures.addCallback(
-                singleFuture, new ChunkResultFutureCallback<V>(resultBuffer, this, lock), executorService);
+        Futures.addCallback(singleFuture, new ChunkResultFutureCallback<V>(resultBuffer, this, lock), executorService);
     }
 
     private synchronized void triggerIteration() {
 
         if (!iterating.compareAndSet(false, true)) {
-            //protect from late arrivals
+            // protect from late arrivals
             return;
         }
 
@@ -85,7 +84,7 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
 
         if (items == null) {
             if (fetchFuture.isDone()) {
-                //no results available and all done
+                // no results available and all done
                 resultBuffer.clean();
                 finishedFuture.complete(null);
             }
@@ -128,9 +127,10 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
         private final @NotNull AsyncLocalChunkIterator<V> asyncLocalChunkIterator;
         private final @NotNull Lock lock;
 
-        ChunkResultFutureCallback(final @NotNull ResultBuffer<V> resultBuffer,
-                                  final @NotNull AsyncLocalChunkIterator<V> asyncLocalChunkIterator,
-                                  final @NotNull Lock lock) {
+        ChunkResultFutureCallback(
+                final @NotNull ResultBuffer<V> resultBuffer,
+                final @NotNull AsyncLocalChunkIterator<V> asyncLocalChunkIterator,
+                final @NotNull Lock lock) {
             this.resultBuffer = resultBuffer;
             this.asyncLocalChunkIterator = asyncLocalChunkIterator;
             this.lock = lock;
@@ -140,7 +140,7 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
         public void onSuccess(final ChunkResult<V> result) {
 
             if (asyncLocalChunkIterator.aborted.get()) {
-                //the current iteration has been aborted, ignore results
+                // the current iteration has been aborted, ignore results
                 return;
             }
 
@@ -151,7 +151,7 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
 
             lock.lock();
             try {
-                //add chunk to buffer
+                // add chunk to buffer
                 if (!result.getResults().isEmpty()) {
                     resultBuffer.addChunk(result);
                 }
@@ -164,7 +164,6 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
             }
 
             asyncLocalChunkIterator.triggerIteration();
-
         }
 
         @Override
@@ -179,9 +178,10 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
         private final @NotNull ResultBuffer<V> resultBuffer;
         private final @NotNull Lock lock;
 
-        private ChunkCallback(final @NotNull AsyncLocalChunkIterator<V> asyncLocalChunkIterator,
-                              final @NotNull ResultBuffer<V> resultBuffer,
-                              final @NotNull Lock lock) {
+        private ChunkCallback(
+                final @NotNull AsyncLocalChunkIterator<V> asyncLocalChunkIterator,
+                final @NotNull ResultBuffer<V> resultBuffer,
+                final @NotNull Lock lock) {
             this.asyncLocalChunkIterator = asyncLocalChunkIterator;
             this.resultBuffer = resultBuffer;
             this.lock = lock;
@@ -195,7 +195,7 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
             }
 
             if (!result) {
-                //iteration aborted
+                // iteration aborted
                 asyncLocalChunkIterator.aborted.set(true);
                 resultBuffer.clean();
                 asyncLocalChunkIterator.getFinishedFuture().complete(null);
@@ -209,7 +209,7 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
 
                 if (items == null) {
                     asyncLocalChunkIterator.iterating.set(false);
-                    //no results available anymore, but all chunks done
+                    // no results available anymore, but all chunks done
                     if (asyncLocalChunkIterator.getFetchFuture().isDone()) {
                         resultBuffer.clean();
                         asyncLocalChunkIterator.getFinishedFuture().complete(null);
@@ -221,7 +221,6 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
             } finally {
                 lock.unlock();
             }
-
         }
 
         @Override

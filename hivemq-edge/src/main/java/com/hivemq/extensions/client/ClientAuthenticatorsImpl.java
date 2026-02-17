@@ -17,16 +17,15 @@ package com.hivemq.extensions.client;
 
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.common.annotations.GuardedBy;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.EnhancedAuthenticator;
 import com.hivemq.extensions.ExtensionPriorityComparator;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
-
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -59,7 +58,10 @@ public class ClientAuthenticatorsImpl implements ClientAuthenticators {
         final Lock lock = authenticatorLock.writeLock();
         lock.lock();
         try {
-            enhancedAuthenticatorMap.entrySet().removeIf(next -> next.getValue().getClass().getClassLoader().equals(pluginClassLoader));
+            enhancedAuthenticatorMap
+                    .entrySet()
+                    .removeIf(
+                            next -> next.getValue().getClass().getClassLoader().equals(pluginClassLoader));
         } finally {
             lock.unlock();
         }

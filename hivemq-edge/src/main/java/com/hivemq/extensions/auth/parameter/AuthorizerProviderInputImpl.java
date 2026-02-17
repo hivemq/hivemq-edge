@@ -15,11 +15,11 @@
  */
 package com.hivemq.extensions.auth.parameter;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.parameter.AuthorizerProviderInput;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 import com.hivemq.extensions.parameter.ClientBasedInputImpl;
 import io.netty.channel.Channel;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck

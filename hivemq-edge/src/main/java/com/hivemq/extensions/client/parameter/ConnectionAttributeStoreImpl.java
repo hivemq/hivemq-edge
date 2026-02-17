@@ -16,16 +16,15 @@
 package com.hivemq.extensions.client.parameter;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionAttributeStore;
 import com.hivemq.util.Bytes;
 import io.netty.channel.Channel;
-
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Silvio Giebl
@@ -130,5 +129,4 @@ public class ConnectionAttributeStoreImpl implements ConnectionAttributeStore {
             connectionAttributes.clear();
         }
     }
-
 }

@@ -20,10 +20,6 @@ import com.hivemq.api.auth.handler.AuthenticationResult;
 import com.hivemq.api.auth.handler.IAuthenticationHandler;
 import com.hivemq.api.auth.handler.impl.ChainedAuthenticationHandler;
 import com.hivemq.configuration.service.ApiConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.annotation.Priority;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
@@ -41,6 +37,9 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A feature that binds in the Auth lifecycle using a dynamic feature. During bootstrap the Resources
@@ -58,7 +57,8 @@ public class ApiAuthenticationFeature implements DynamicFeature {
     private final ApiConfigurationService apiConfigurationService;
 
     @Inject
-    public ApiAuthenticationFeature(final @NotNull Set<IAuthenticationHandler> authenticationHandler,
+    public ApiAuthenticationFeature(
+            final @NotNull Set<IAuthenticationHandler> authenticationHandler,
             final @NotNull ApiConfigurationService apiConfigurationService) {
         this.authenticationHandler = authenticationHandler;
         this.apiConfigurationService = apiConfigurationService;
@@ -68,18 +68,22 @@ public class ApiAuthenticationFeature implements DynamicFeature {
     public void configure(final @NotNull ResourceInfo resourceInfo, final @NotNull FeatureContext context) {
 
         final Method resourceMethod = resourceInfo.getResourceMethod();
-        //-- Check if roles are defined on the resource method (these are the ones that are the most specific)
-        Optional<RolesAllowed>
-                requiredRoles = ApiPermissionUtils.getAnnotationIfExists(RolesAllowed.class, resourceMethod);
-        if(requiredRoles.isPresent() && !Set.of(requiredRoles.get().value()).contains("NO_AUTH_REQUIRED")){
-            final AuthenticationFilter filter = new AuthenticationFilter(Set.of(requiredRoles.get().value()));
+        // -- Check if roles are defined on the resource method (these are the ones that are the most specific)
+        Optional<RolesAllowed> requiredRoles =
+                ApiPermissionUtils.getAnnotationIfExists(RolesAllowed.class, resourceMethod);
+        if (requiredRoles.isPresent() && !Set.of(requiredRoles.get().value()).contains("NO_AUTH_REQUIRED")) {
+            final AuthenticationFilter filter =
+                    new AuthenticationFilter(Set.of(requiredRoles.get().value()));
             context.register(filter);
             return;
         } else {
-            //-- Check if roles are defined on the resource class
-            requiredRoles = ApiPermissionUtils.getAnnotationIfExists(RolesAllowed.class, resourceInfo.getResourceClass());
-            if(requiredRoles.isPresent() && !Set.of(requiredRoles.get().value()).contains("NO_AUTH_REQUIRED")){
-                final AuthenticationFilter filter = new AuthenticationFilter(Set.of(requiredRoles.get().value()));
+            // -- Check if roles are defined on the resource class
+            requiredRoles =
+                    ApiPermissionUtils.getAnnotationIfExists(RolesAllowed.class, resourceInfo.getResourceClass());
+            if (requiredRoles.isPresent()
+                    && !Set.of(requiredRoles.get().value()).contains("NO_AUTH_REQUIRED")) {
+                final AuthenticationFilter filter =
+                        new AuthenticationFilter(Set.of(requiredRoles.get().value()));
                 context.register(filter);
                 return;
             }
@@ -91,8 +95,9 @@ public class ApiAuthenticationFeature implements DynamicFeature {
         }
     }
 
-    protected ApiSecurityContext createSecurityContext(final @NotNull AuthenticationResult result){
-        ApiSecurityContext context = new ApiSecurityContext(result.getPrincipal(), result.getAuthenticationMethod(), true);
+    protected ApiSecurityContext createSecurityContext(final @NotNull AuthenticationResult result) {
+        ApiSecurityContext context =
+                new ApiSecurityContext(result.getPrincipal(), result.getAuthenticationMethod(), true);
         return context;
     }
 
@@ -124,8 +129,10 @@ public class ApiAuthenticationFeature implements DynamicFeature {
                 // first check the authorization and set the security context if authentication was successful
                 ChainedAuthenticationHandler handler = new ChainedAuthenticationHandler(authenticationHandler);
                 AuthenticationResult result = handler.authenticate(requestContext);
-                if(!result.isSuccess()){
-                    log.debug("Authentication failed for resource {}", requestContext.getUriInfo().getPath());
+                if (!result.isSuccess()) {
+                    log.debug(
+                            "Authentication failed for resource {}",
+                            requestContext.getUriInfo().getPath());
                     // a bit counterintuitive but HTTP response codes specify UNAUTHORIZED(401) if authentication fails
                     Response.ResponseBuilder builder = Response.status(Response.Status.UNAUTHORIZED);
                     handler.decorateResponse(result, builder);
@@ -134,22 +141,31 @@ public class ApiAuthenticationFeature implements DynamicFeature {
                 } else {
                     SecurityContext context = createSecurityContext(result);
                     requestContext.setSecurityContext(context);
-                    if(log.isTraceEnabled()){
-                        log.trace("Request authenticated {} -> {}", requestContext.getUriInfo().getPath(), requestContext.getSecurityContext());
+                    if (log.isTraceEnabled()) {
+                        log.trace(
+                                "Request authenticated {} -> {}",
+                                requestContext.getUriInfo().getPath(),
+                                requestContext.getSecurityContext());
                     }
                 }
 
                 // next check the authorization
-                if(!requiredPermissions.isEmpty()){
-                    if(!handler.authorized(requestContext, requiredPermissions)){
-                        log.warn("Not authorized to access resource {} -> {}", requestContext.getUriInfo().getPath(), requestContext.getSecurityContext());
+                if (!requiredPermissions.isEmpty()) {
+                    if (!handler.authorized(requestContext, requiredPermissions)) {
+                        log.warn(
+                                "Not authorized to access resource {} -> {}",
+                                requestContext.getUriInfo().getPath(),
+                                requestContext.getSecurityContext());
                         // a bit counterintuitive but HTTP response codes specify FORBIDDEN(403) if authorization fails
                         Response.ResponseBuilder builder = Response.status(Response.Status.FORBIDDEN);
                         handler.decorateResponse(result, builder);
                         requestContext.abortWith(builder.build());
                     } else {
-                        if(log.isTraceEnabled()){
-                            log.trace("Request authorized {} -> {}", requestContext.getUriInfo().getPath(), requestContext.getSecurityContext());
+                        if (log.isTraceEnabled()) {
+                            log.trace(
+                                    "Request authorized {} -> {}",
+                                    requestContext.getUriInfo().getPath(),
+                                    requestContext.getSecurityContext());
                         }
                     }
                 }
@@ -165,4 +181,3 @@ public class ApiAuthenticationFeature implements DynamicFeature {
         }
     }
 }
-

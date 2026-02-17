@@ -15,20 +15,16 @@
  */
 package com.hivemq.mqtt.services;
 
-
 import com.google.common.util.concurrent.ListenableFuture;
-import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.mqtt.handler.publish.PublishingResult;
 import com.hivemq.mqtt.message.publish.PUBLISH;
+import java.util.concurrent.ExecutorService;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.concurrent.ExecutorService;
-
 public interface PrePublishProcessorService {
 
-    @NotNull ListenableFuture<PublishingResult> publish(
-            @NotNull PUBLISH publish,
-            @NotNull ExecutorService executorService,
-            @Nullable String sender);
+    @NotNull
+    ListenableFuture<PublishingResult> publish(
+            @NotNull PUBLISH publish, @NotNull ExecutorService executorService, @Nullable String sender);
 }

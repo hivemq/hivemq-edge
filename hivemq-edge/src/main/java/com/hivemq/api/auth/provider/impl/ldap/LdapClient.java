@@ -26,14 +26,13 @@ import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.RoundRobinServerSet;
 import com.unboundid.ldap.sdk.SimpleBindRequest;
 import com.unboundid.ldap.sdk.StartTLSPostConnectProcessor;
+import java.security.GeneralSecurityException;
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLContext;
-import java.security.GeneralSecurityException;
 
 /**
  * LDAP client that manages connections and provides authentication operations.
@@ -72,8 +71,8 @@ public class LdapClient {
      *
      * @param connectionProperties The connection configuration
      */
-    public LdapClient(final @NotNull LdapConnectionProperties connectionProperties,
-                      final @NotNull SecurityLog securityLog) {
+    public LdapClient(
+            final @NotNull LdapConnectionProperties connectionProperties, final @NotNull SecurityLog securityLog) {
         this.connectionProperties = connectionProperties;
         this.securityLog = securityLog;
         // Resolver will be created after connection pool is established in start()
@@ -92,15 +91,17 @@ public class LdapClient {
             throw new IllegalStateException("LDAP client is already started");
         }
 
-        log.debug("Starting LDAP client, connecting to {}:{}",
-                connectionProperties.servers().hosts()[0], connectionProperties.servers().ports()[0]);
+        log.debug(
+                "Starting LDAP client, connecting to {}:{}",
+                connectionProperties.servers().hosts()[0],
+                connectionProperties.servers().ports()[0]);
 
         final var connectionOptions = connectionProperties.createConnectionOptions();
 
         SocketFactory socketFactory = null;
         StartTLSPostConnectProcessor startTlsProcessor = null;
         switch (connectionProperties.tlsMode()) {
-            case NONE -> {} //NOOP
+            case NONE -> {} // NOOP
             case LDAPS -> {
                 final SSLContext sslContext = connectionProperties.createSSLContext();
                 socketFactory = sslContext.getSocketFactory();
@@ -113,7 +114,6 @@ public class LdapClient {
 
         final var simpleBindEntity = connectionProperties.ldapSimpleBind();
         final var baseDn = new DN(connectionProperties.rdns());
-
 
         final var bindDn = new DN(ImmutableList.<RDN>builder()
                 .add(new DN(simpleBindEntity.rdns()).getRDNs())
@@ -135,9 +135,8 @@ public class LdapClient {
                 bindRequest,
                 startTlsProcessor);
 
-        final var ldapConnectionPoolHealthCheck =
-                new PruneUnneededConnectionsLDAPConnectionPoolHealthCheck(
-                        minConnections, 1_000L); //TODO configurable??
+        final var ldapConnectionPoolHealthCheck = new PruneUnneededConnectionsLDAPConnectionPoolHealthCheck(
+                minConnections, 1_000L); // TODO configurable??
 
         try {
             connectionPool = new LDAPConnectionPool( //
@@ -155,11 +154,13 @@ public class LdapClient {
             userDnResolver = connectionProperties.createUserDnResolver(connectionPool);
 
             started = true;
-            log.info("LDAP client started successfully, connected to {}:{}",
-                    connectionProperties.servers().hosts()[0], connectionProperties.servers().ports()[0]);
+            log.info(
+                    "LDAP client started successfully, connected to {}:{}",
+                    connectionProperties.servers().hosts()[0],
+                    connectionProperties.servers().ports()[0]);
         } catch (final Exception e) {
             // Close the connection if pool creation fails
-            if(connectionPool != null) {
+            if (connectionPool != null) {
                 connectionPool.close();
             }
             throw e;
@@ -255,7 +256,6 @@ public class LdapClient {
             securityLog.authenticationFailed("LDAP", username, "Failed to resolve DN for user");
             throw e;
         }
-
     }
 
     /**

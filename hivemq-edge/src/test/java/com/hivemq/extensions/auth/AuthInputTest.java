@@ -15,6 +15,8 @@
  */
 package com.hivemq.extensions.auth;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.extension.sdk.api.packets.auth.AuthPacket;
 import com.hivemq.extension.sdk.api.packets.auth.AuthReasonCode;
@@ -27,8 +29,6 @@ import com.hivemq.util.Bytes;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Florian Limpöck
@@ -45,6 +45,7 @@ public class AuthInputTest {
     private AUTH auth;
     private AuthInput authInput;
     private ClientConnection clientConnection;
+
     @BeforeEach
     public void setUp() {
 
@@ -72,5 +73,4 @@ public class AuthInputTest {
         assertFalse(authInput.isReAuthentication());
         assertEquals(authInput, authInput.get());
     }
-
 }

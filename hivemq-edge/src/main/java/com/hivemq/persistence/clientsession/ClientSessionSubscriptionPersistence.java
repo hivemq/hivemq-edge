@@ -19,13 +19,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.annotations.ReadOnly;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.iteration.ChunkCursor;
 import com.hivemq.extensions.iteration.MultipleChunkResult;
 import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.persistence.clientsession.callback.SubscriptionResult;
-
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Dominik Obermaier
@@ -60,8 +59,8 @@ public interface ClientSessionSubscriptionPersistence {
      * @return a result containing the new cursor and a map of clientIds to their subscriptions
      */
     @NotNull
-    ListenableFuture<MultipleChunkResult<Map<String, ImmutableSet<Topic>>>> getAllLocalSubscribersChunk(@NotNull ChunkCursor cursor);
-
+    ListenableFuture<MultipleChunkResult<Map<String, ImmutableSet<Topic>>>> getAllLocalSubscribersChunk(
+            @NotNull ChunkCursor cursor);
 
     /**
      * Remove a subscription for a specific client and a specific topic.
@@ -90,7 +89,8 @@ public interface ClientSessionSubscriptionPersistence {
      */
     @NotNull
     @ReadOnly
-    ListenableFuture<ImmutableList<SubscriptionResult>> addSubscriptions(@NotNull String clientId, @NotNull ImmutableSet<Topic> topics);
+    ListenableFuture<ImmutableList<SubscriptionResult>> addSubscriptions(
+            @NotNull String clientId, @NotNull ImmutableSet<Topic> topics);
 
     /**
      * Remove a set of topics subscription for a specific client and a specific topic.
@@ -147,7 +147,6 @@ public interface ClientSessionSubscriptionPersistence {
      * @param clientId   the client's id.
      * @param sharedSubs the shared subscriptions to invalidate cache for.
      */
-    void invalidateSharedSubscriptionCacheAndPoll(@NotNull String clientId, @NotNull ImmutableSet<Subscription> sharedSubs);
-
-
+    void invalidateSharedSubscriptionCacheAndPoll(
+            @NotNull String clientId, @NotNull ImmutableSet<Subscription> sharedSubs);
 }

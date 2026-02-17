@@ -15,19 +15,19 @@
  */
 package util.encoder;
 
+import static org.mockito.Mockito.mock;
+
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.codec.encoder.MQTTMessageEncoder;
 import com.hivemq.configuration.service.SecurityConfigurationService;
 import com.hivemq.configuration.service.impl.SecurityConfigurationServiceImpl;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.logging.EventLog;
 import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.metrics.handler.GlobalMQTTMessageCounter;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnectorImpl;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import io.netty.channel.ChannelHandler;
-
-import static org.mockito.Mockito.mock;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Dominik Obermaier
@@ -46,9 +46,15 @@ public class TestMessageEncoder extends MQTTMessageEncoder {
             final MessageDroppedService messageDroppedService,
             final SecurityConfigurationService securityConfigurationService) {
 
-        super(new TestEncoderFactory(messageDroppedService, securityConfigurationService,
-                        new MqttServerDisconnectorImpl(new EventLog()), new Mqtt3ConnectEncoder(), new Mqtt3SubscribeEncoder(),
-                        new Mqtt3UnsubscribeEncoder(), new PingreqEncoder()),
+        super(
+                new TestEncoderFactory(
+                        messageDroppedService,
+                        securityConfigurationService,
+                        new MqttServerDisconnectorImpl(new EventLog()),
+                        new Mqtt3ConnectEncoder(),
+                        new Mqtt3SubscribeEncoder(),
+                        new Mqtt3UnsubscribeEncoder(),
+                        new PingreqEncoder()),
                 new GlobalMQTTMessageCounter(new MetricsHolder(new MetricRegistry())));
 
         this.securityConfigurationService = securityConfigurationService;

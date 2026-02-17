@@ -19,13 +19,12 @@ import com.hivemq.configuration.entity.security.AllowEmptyClientIdEntity;
 import com.hivemq.configuration.entity.security.PayloadFormatValidationEntity;
 import com.hivemq.configuration.entity.security.RequestProblemInformationEntityConfig;
 import com.hivemq.configuration.entity.security.UTF8ValidationEntity;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElementRef;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -46,7 +45,8 @@ public class SecurityConfigEntity {
     private @NotNull AllowEmptyClientIdEntity allowEmptyClientIdEntity = new AllowEmptyClientIdEntity();
 
     @XmlElementRef(required = false)
-    private @NotNull RequestProblemInformationEntityConfig allowRequestProblemInformationEntity = new RequestProblemInformationEntityConfig();
+    private @NotNull RequestProblemInformationEntityConfig allowRequestProblemInformationEntity =
+            new RequestProblemInformationEntityConfig();
 
     public @NotNull PayloadFormatValidationEntity getPayloadFormatValidationEntity() {
         return payloadFormatValidationEntity;
@@ -69,16 +69,17 @@ public class SecurityConfigEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final SecurityConfigEntity that = (SecurityConfigEntity) o;
-        return Objects.equals(getPayloadFormatValidationEntity(), that.getPayloadFormatValidationEntity()) &&
-                Objects.equals(getUtf8ValidationEntity(), that.getUtf8ValidationEntity()) &&
-                Objects.equals(getAllowEmptyClientIdEntity(), that.getAllowEmptyClientIdEntity()) &&
-                Objects.equals(getAllowRequestProblemInformationEntity(),
-                        that.getAllowRequestProblemInformationEntity());
+        return Objects.equals(getPayloadFormatValidationEntity(), that.getPayloadFormatValidationEntity())
+                && Objects.equals(getUtf8ValidationEntity(), that.getUtf8ValidationEntity())
+                && Objects.equals(getAllowEmptyClientIdEntity(), that.getAllowEmptyClientIdEntity())
+                && Objects.equals(
+                        getAllowRequestProblemInformationEntity(), that.getAllowRequestProblemInformationEntity());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getPayloadFormatValidationEntity(),
+        return Objects.hash(
+                getPayloadFormatValidationEntity(),
                 getUtf8ValidationEntity(),
                 getAllowEmptyClientIdEntity(),
                 getAllowRequestProblemInformationEntity());

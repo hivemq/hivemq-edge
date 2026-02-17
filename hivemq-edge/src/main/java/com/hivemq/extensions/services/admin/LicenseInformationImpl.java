@@ -15,9 +15,9 @@
  */
 package com.hivemq.extensions.services.admin;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.admin.LicenseEdition;
 import com.hivemq.extension.sdk.api.services.admin.LicenseInformation;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Lukas Brandl

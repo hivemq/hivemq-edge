@@ -15,6 +15,13 @@
  */
 package com.hivemq.edge.adapters.file.config;
 
+import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
+import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
@@ -29,9 +36,6 @@ import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.protocols.ProtocolAdapterConfig;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterFactoryManager;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Test;
-
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -39,14 +43,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
-import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
-import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("unchecked")
 class FileProtocolAdapterConfigTest {
@@ -63,39 +61,57 @@ class FileProtocolAdapterConfigTest {
 
         assertThat(protocolAdapterConfig.getAdapterId()).isEqualTo("my-file-protocol-adapter");
         assertThat(config.getFileToMqttConfig().getPollingIntervalMillis()).isEqualTo(10);
-        assertThat(config.getFileToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(9);
+        assertThat(config.getFileToMqttConfig().getMaxPollingErrorsBeforeRemoval())
+                .isEqualTo(9);
 
-        assertThat(protocolAdapterConfig.getNorthboundMappings()).satisfiesExactly(mapping -> {
-            assertThat(mapping.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(mapping.getMqttQos()).isEqualTo(1);
-            assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
-            assertThat(mapping.getIncludeTimestamp()).isFalse();
-            assertThat(mapping.getIncludeTagNames()).isTrue();
-            assertThat(mapping.getTagName()).isEqualTo("tag1");
+        assertThat(protocolAdapterConfig.getNorthboundMappings())
+                .satisfiesExactly(
+                        mapping -> {
+                            assertThat(mapping.getMqttTopic()).isEqualTo("my/topic");
+                            assertThat(mapping.getMqttQos()).isEqualTo(1);
+                            assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
+                            assertThat(mapping.getIncludeTimestamp()).isFalse();
+                            assertThat(mapping.getIncludeTagNames()).isTrue();
+                            assertThat(mapping.getTagName()).isEqualTo("tag1");
 
-            assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
-                assertThat(userProperty.getName()).isEqualTo("name");
-                assertThat(userProperty.getValue()).isEqualTo("value1");
-            }, userProperty -> {
-                assertThat(userProperty.getName()).isEqualTo("name");
-                assertThat(userProperty.getValue()).isEqualTo("value2");
-            });
-        }, mapping -> {
-            assertThat(mapping.getMqttTopic()).isEqualTo("my/topic/2");
-            assertThat(mapping.getMqttQos()).isEqualTo(1);
-            assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
-            assertThat(mapping.getIncludeTimestamp()).isFalse();
-            assertThat(mapping.getIncludeTagNames()).isTrue();
-            assertThat(mapping.getTagName()).isEqualTo("tag2");
+                            assertThat(mapping.getUserProperties())
+                                    .satisfiesExactly(
+                                            userProperty -> {
+                                                assertThat(userProperty.getName())
+                                                        .isEqualTo("name");
+                                                assertThat(userProperty.getValue())
+                                                        .isEqualTo("value1");
+                                            },
+                                            userProperty -> {
+                                                assertThat(userProperty.getName())
+                                                        .isEqualTo("name");
+                                                assertThat(userProperty.getValue())
+                                                        .isEqualTo("value2");
+                                            });
+                        },
+                        mapping -> {
+                            assertThat(mapping.getMqttTopic()).isEqualTo("my/topic/2");
+                            assertThat(mapping.getMqttQos()).isEqualTo(1);
+                            assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
+                            assertThat(mapping.getIncludeTimestamp()).isFalse();
+                            assertThat(mapping.getIncludeTagNames()).isTrue();
+                            assertThat(mapping.getTagName()).isEqualTo("tag2");
 
-            assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
-                assertThat(userProperty.getName()).isEqualTo("name");
-                assertThat(userProperty.getValue()).isEqualTo("value1");
-            }, userProperty -> {
-                assertThat(userProperty.getName()).isEqualTo("name");
-                assertThat(userProperty.getValue()).isEqualTo("value2");
-            });
-        });
+                            assertThat(mapping.getUserProperties())
+                                    .satisfiesExactly(
+                                            userProperty -> {
+                                                assertThat(userProperty.getName())
+                                                        .isEqualTo("name");
+                                                assertThat(userProperty.getValue())
+                                                        .isEqualTo("value1");
+                                            },
+                                            userProperty -> {
+                                                assertThat(userProperty.getName())
+                                                        .isEqualTo("name");
+                                                assertThat(userProperty.getValue())
+                                                        .isEqualTo("value2");
+                                            });
+                        });
     }
 
     @Test
@@ -108,8 +124,8 @@ class FileProtocolAdapterConfigTest {
 
         assertThat(protocolAdapterConfig.getAdapterId()).isEqualTo("my-file-protocol-adapter");
         assertThat(config.getFileToMqttConfig().getPollingIntervalMillis()).isEqualTo(1000);
-        assertThat(config.getFileToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
-
+        assertThat(config.getFileToMqttConfig().getMaxPollingErrorsBeforeRemoval())
+                .isEqualTo(10);
 
         assertThat(protocolAdapterConfig.getNorthboundMappings()).satisfiesExactly(subscription -> {
             assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
@@ -120,9 +136,8 @@ class FileProtocolAdapterConfigTest {
             assertThat(subscription.getTagName()).isEqualTo("tag1");
         });
 
-        assertThat(protocolAdapterConfig.getTags().stream().map(t -> (FileTag) t)).contains(new FileTag("tag1",
-                "decsription",
-                new FileTagDefinition("pathy", ContentType.BINARY)));
+        assertThat(protocolAdapterConfig.getTags().stream().map(t -> (FileTag) t))
+                .contains(new FileTag("tag1", "decsription", new FileTagDefinition("pathy", ContentType.BINARY)));
     }
 
     @Test
@@ -147,10 +162,8 @@ class FileProtocolAdapterConfigTest {
 
     @Test
     public void unconvertConfigObject_full_valid() {
-        final FileSpecificAdapterConfig adapterConfig = new FileSpecificAdapterConfig(
-                new FileToMqttConfig(12,
-                        13,
-                        List.of(new FileToMqttMapping("my/destination", 1, null, false, true, null, "tag1"))));
+        final FileSpecificAdapterConfig adapterConfig = new FileSpecificAdapterConfig(new FileToMqttConfig(
+                12, 13, List.of(new FileToMqttMapping("my/destination", 1, null, false, true, null, "tag1"))));
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);
@@ -160,14 +173,14 @@ class FileProtocolAdapterConfigTest {
         final Map<String, Object> toMqtt = (Map<String, Object>) config.get("fileToMqtt");
         assertThat(toMqtt.get("pollingIntervalMillis")).isEqualTo(12);
         assertThat(toMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(13);
-        assertThat(toMqtt.get("fileToMqttMappings")).isNull(); //mappings are supposed to be ignored when rendered to XML
+        assertThat(toMqtt.get("fileToMqttMappings"))
+                .isNull(); // mappings are supposed to be ignored when rendered to XML
     }
 
     @Test
     public void unconvertConfigObject_defaults_valid() {
-        final FileSpecificAdapterConfig adapterConfig = new FileSpecificAdapterConfig(new FileToMqttConfig(null,
-                null,
-                List.of(new FileToMqttMapping("my/destination", null, null, null, null, null, "tag1"))));
+        final FileSpecificAdapterConfig adapterConfig = new FileSpecificAdapterConfig(new FileToMqttConfig(
+                null, null, List.of(new FileToMqttMapping("my/destination", null, null, null, null, null, "tag1"))));
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);
@@ -177,8 +190,8 @@ class FileProtocolAdapterConfigTest {
         final Map<String, Object> toMqtt = (Map<String, Object>) config.get("fileToMqtt");
         assertThat(toMqtt.get("pollingIntervalMillis")).isEqualTo(1000);
         assertThat(toMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(10);
-        assertThat(toMqtt.get("fileToMqttMappings")).isNull(); //mappings are supposed to be ignored when rendered to XML
-
+        assertThat(toMqtt.get("fileToMqttMappings"))
+                .isNull(); // mappings are supposed to be ignored when rendered to XML
     }
 
     private @NotNull ProtocolAdapterConfig getProtocolAdapterConfig(final @NotNull URL resource)
@@ -186,7 +199,8 @@ class FileProtocolAdapterConfigTest {
         final File path = Path.of(resource.toURI()).toFile();
 
         final HiveMQConfigEntity configEntity = loadConfig(path);
-        final ProtocolAdapterEntity adapterEntity = configEntity.getProtocolAdapterConfig().get(0);
+        final ProtocolAdapterEntity adapterEntity =
+                configEntity.getProtocolAdapterConfig().get(0);
 
         final ProtocolAdapterConfigConverter converter = createConverter();
 
@@ -205,7 +219,8 @@ class FileProtocolAdapterConfigTest {
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {
-        final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(mock(SystemInformation.class), new ConfigurationFile(configFile), List.of());
+        final ConfigFileReaderWriter readerWriter =
+                new ConfigFileReaderWriter(mock(SystemInformation.class), new ConfigurationFile(configFile), List.of());
         return readerWriter.applyConfig();
     }
 }

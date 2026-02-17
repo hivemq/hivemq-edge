@@ -15,6 +15,9 @@
  */
 package com.hivemq.api.model.mappings.northbound;
 
+import static com.hivemq.api.model.JavaScriptConstants.JS_MAX_SAFE_INTEGER;
+import static java.util.Objects.requireNonNullElse;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
@@ -23,13 +26,9 @@ import com.hivemq.configuration.entity.adapter.MqttUserPropertyEntity;
 import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
-
-import static com.hivemq.api.model.JavaScriptConstants.JS_MAX_SAFE_INTEGER;
-import static java.util.Objects.requireNonNullElse;
 
 @Schema(name = "NorthboundMapping")
 public class NorthboundMappingModel {
@@ -77,28 +76,34 @@ public class NorthboundMappingModel {
         this.includeTimestamp = requireNonNullElse(includeTimestamp, false);
         this.userProperties = requireNonNullElse(userProperties, List.of());
         this.maxQoS = requireNonNullElse(maxQoS, QoSModel.AT_LEAST_ONCE);
-        // we must set a upper limit for the expiry interval as JS otherwise will wrongly 
+        // we must set a upper limit for the expiry interval as JS otherwise will wrongly
         // round it which leads to an exception when sending it back to the backend.
         this.messageExpiryInterval =
                 Math.min(requireNonNullElse(messageExpiryInterval, Long.MAX_VALUE), JS_MAX_SAFE_INTEGER);
     }
 
     public static NorthboundMappingModel fromPersistence(final @NotNull NorthboundMapping mapping) {
-        return new NorthboundMappingModel(mapping.getTagName(),
+        return new NorthboundMappingModel(
+                mapping.getTagName(),
                 mapping.getMqttTopic(),
                 mapping.getIncludeTagNames(),
                 mapping.getIncludeTimestamp(),
-                mapping.getUserProperties().stream().map(NorthboundMappingModel::userProp).toList(),
+                mapping.getUserProperties().stream()
+                        .map(NorthboundMappingModel::userProp)
+                        .toList(),
                 QoSModel.fromNumber(mapping.getMqttQos()),
                 mapping.getMessageExpiryInterval());
     }
 
     public static NorthboundMappingModel fromEntity(final @NotNull NorthboundMappingEntity northboundMapping) {
-        return new NorthboundMappingModel(northboundMapping.getTagName(),
+        return new NorthboundMappingModel(
+                northboundMapping.getTagName(),
                 northboundMapping.getTopic(),
                 northboundMapping.isIncludeTagNames(),
                 northboundMapping.isIncludeTimestamp(),
-                northboundMapping.getUserProperties().stream().map(NorthboundMappingModel::userProp).toList(),
+                northboundMapping.getUserProperties().stream()
+                        .map(NorthboundMappingModel::userProp)
+                        .toList(),
                 QoSModel.fromNumber(northboundMapping.getMaxQoS()),
                 northboundMapping.getMessageExpiryInterval());
     }
@@ -113,12 +118,12 @@ public class NorthboundMappingModel {
 
     private static @NotNull MqttUserPropertyModel userProp(final @NotNull MqttUserProperty p) {
         return new MqttUserPropertyModel(p.getName(), p.getValue());
-
     }
 
     public @NotNull NorthboundMapping toPersistence() {
         // re-translate the max safe js value to the max java value.
-        return new NorthboundMapping(tagName,
+        return new NorthboundMapping(
+                tagName,
                 topic,
                 maxQoS.getQosNumber(),
                 includeTagNames,

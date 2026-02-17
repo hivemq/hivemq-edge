@@ -22,11 +22,11 @@ import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
+
 /**
  * Factory for creating Siemens S7 protocol adapter instances.
  */
-public class S7ProtocolAdapterFactory
-        implements ProtocolAdapterFactory<S7SpecificAdapterConfig> {
+public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7SpecificAdapterConfig> {
 
     final boolean writingEnabled;
 

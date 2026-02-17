@@ -16,22 +16,22 @@
 package com.hivemq.extensions.auth.parameter;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.auth.parameter.SubscriptionAuthorizerOutput;
 import com.hivemq.extension.sdk.api.packets.disconnect.DisconnectReasonCode;
 import com.hivemq.extension.sdk.api.packets.subscribe.SubackReasonCode;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
 import com.hivemq.extensions.executor.task.AbstractAsyncOutput;
 import com.hivemq.extensions.executor.task.PluginTaskOutput;
-
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Lukas Brandl
  */
-public class SubscriptionAuthorizerOutputImpl extends AbstractAsyncOutput<SubscriptionAuthorizerOutput> implements SubscriptionAuthorizerOutput, PluginTaskOutput, Supplier<SubscriptionAuthorizerOutputImpl> {
+public class SubscriptionAuthorizerOutputImpl extends AbstractAsyncOutput<SubscriptionAuthorizerOutput>
+        implements SubscriptionAuthorizerOutput, PluginTaskOutput, Supplier<SubscriptionAuthorizerOutputImpl> {
 
     private @Nullable SubackReasonCode subackReasonCode;
     private @Nullable String reasonString;
@@ -43,7 +43,11 @@ public class SubscriptionAuthorizerOutputImpl extends AbstractAsyncOutput<Subscr
     private final @NotNull AtomicBoolean authorizerPresent = new AtomicBoolean(false);
 
     public enum AuthorizationState {
-        SUCCESS, CONTINUE, FAIL, DISCONNECT, UNDECIDED
+        SUCCESS,
+        CONTINUE,
+        FAIL,
+        DISCONNECT,
+        UNDECIDED
     }
 
     public SubscriptionAuthorizerOutputImpl(final @NotNull PluginOutPutAsyncer asyncer) {
@@ -68,7 +72,7 @@ public class SubscriptionAuthorizerOutputImpl extends AbstractAsyncOutput<Subscr
         authorizationState = AuthorizationState.FAIL;
     }
 
-    public void forceFailedAuthorization(){
+    public void forceFailedAuthorization() {
         completed.set(true);
         this.subackReasonCode = SubackReasonCode.NOT_AUTHORIZED;
         authorizationState = AuthorizationState.FAIL;
@@ -78,9 +82,9 @@ public class SubscriptionAuthorizerOutputImpl extends AbstractAsyncOutput<Subscr
     public void failAuthorization(final @NotNull SubackReasonCode reasonCode) {
         checkCompleted("failAuthorization");
         Preconditions.checkNotNull(reasonCode, "reason code must never be null");
-        if (reasonCode == SubackReasonCode.GRANTED_QOS_0 ||
-                reasonCode == SubackReasonCode.GRANTED_QOS_1 ||
-                reasonCode == SubackReasonCode.GRANTED_QOS_2) {
+        if (reasonCode == SubackReasonCode.GRANTED_QOS_0
+                || reasonCode == SubackReasonCode.GRANTED_QOS_1
+                || reasonCode == SubackReasonCode.GRANTED_QOS_2) {
             throw new IllegalArgumentException("fail must use a SUBACK Error code");
         }
         this.subackReasonCode = reasonCode;
@@ -92,9 +96,9 @@ public class SubscriptionAuthorizerOutputImpl extends AbstractAsyncOutput<Subscr
         checkCompleted("failAuthorization");
         Preconditions.checkNotNull(reasonCode, "reason code must never be null");
         Preconditions.checkNotNull(reasonString, "reason string must never be null");
-        if (reasonCode == SubackReasonCode.GRANTED_QOS_0 ||
-                reasonCode == SubackReasonCode.GRANTED_QOS_1 ||
-                reasonCode == SubackReasonCode.GRANTED_QOS_2) {
+        if (reasonCode == SubackReasonCode.GRANTED_QOS_0
+                || reasonCode == SubackReasonCode.GRANTED_QOS_1
+                || reasonCode == SubackReasonCode.GRANTED_QOS_2) {
             throw new IllegalArgumentException("Fail must use a SUBACK Error code");
         }
         this.subackReasonCode = reasonCode;
@@ -130,8 +134,9 @@ public class SubscriptionAuthorizerOutputImpl extends AbstractAsyncOutput<Subscr
     @Override
     public void nextExtensionOrDefault() {
         if (completed.get()) {
-            throw new UnsupportedOperationException("nextExtensionOrDefault must not be called if authorizeSuccessfully, " +
-                    "failAuthorization, disconnectClient or nextExtensionOrDefault has already been called or if the async output has already timed out");
+            throw new UnsupportedOperationException(
+                    "nextExtensionOrDefault must not be called if authorizeSuccessfully, "
+                            + "failAuthorization, disconnectClient or nextExtensionOrDefault has already been called or if the async output has already timed out");
         }
         authorizationState = AuthorizationState.CONTINUE;
     }
@@ -154,8 +159,8 @@ public class SubscriptionAuthorizerOutputImpl extends AbstractAsyncOutput<Subscr
 
     private void checkCompleted(final @NotNull String method) {
         if (!completed.compareAndSet(false, true)) {
-            throw new UnsupportedOperationException(method + " must not be called if authorizeSuccessfully, " +
-                    "failAuthorization, disconnectClient or nextExtensionOrDefault has already been called");
+            throw new UnsupportedOperationException(method + " must not be called if authorizeSuccessfully, "
+                    + "failAuthorization, disconnectClient or nextExtensionOrDefault has already been called");
         }
     }
 

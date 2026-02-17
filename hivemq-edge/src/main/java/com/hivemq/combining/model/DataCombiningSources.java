@@ -16,29 +16,29 @@
 package com.hivemq.combining.model;
 
 import com.hivemq.configuration.entity.combining.DataCombiningSourcesEntity;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
+public record DataCombiningSources(
+        DataIdentifierReference primaryReference, List<String> tags, List<String> topicFilters) {
 
-
-public record DataCombiningSources(DataIdentifierReference primaryReference, List<String> tags,
-                                   List<String> topicFilters) {
-
-    public static @NotNull DataCombiningSources fromModel(final @NotNull com.hivemq.edge.api.model.DataCombiningSources model) {
-        return new DataCombiningSources(DataIdentifierReference.from(model.getPrimary()),
-                model.getTags(),
-                model.getTopicFilters());
+    public static @NotNull DataCombiningSources fromModel(
+            final @NotNull com.hivemq.edge.api.model.DataCombiningSources model) {
+        return new DataCombiningSources(
+                DataIdentifierReference.from(model.getPrimary()), model.getTags(), model.getTopicFilters());
     }
 
     public @NotNull com.hivemq.edge.api.model.DataCombiningSources toModel() {
-        return new com.hivemq.edge.api.model.DataCombiningSources().primary(primaryReference().to())
+        return new com.hivemq.edge.api.model.DataCombiningSources()
+                .primary(primaryReference().to())
                 .tags(tags)
                 .topicFilters(topicFilters);
     }
 
-
-    public static @NotNull DataCombiningSources fromPersistence(final @NotNull DataCombiningSourcesEntity persistenceModel) {
-        return new DataCombiningSources(DataIdentifierReference.fromPersistence(persistenceModel.getPrimaryIdentifier()),
+    public static @NotNull DataCombiningSources fromPersistence(
+            final @NotNull DataCombiningSourcesEntity persistenceModel) {
+        return new DataCombiningSources(
+                DataIdentifierReference.fromPersistence(persistenceModel.getPrimaryIdentifier()),
                 persistenceModel.getTags(),
                 persistenceModel.getTopicFilters());
     }
@@ -46,6 +46,4 @@ public record DataCombiningSources(DataIdentifierReference primaryReference, Lis
     public @NotNull DataCombiningSourcesEntity toPersistence() {
         return new DataCombiningSourcesEntity(primaryReference().toPersistence(), tags(), topicFilters());
     }
-
 }
-

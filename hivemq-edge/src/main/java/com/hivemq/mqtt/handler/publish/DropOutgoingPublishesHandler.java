@@ -15,9 +15,10 @@
  */
 package com.hivemq.mqtt.handler.publish;
 
+import static com.hivemq.configuration.service.InternalConfigurations.NOT_WRITABLE_QUEUE_SIZE;
+
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.mqtt.message.publish.PUBLISH;
@@ -27,14 +28,12 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.hivemq.configuration.service.InternalConfigurations.NOT_WRITABLE_QUEUE_SIZE;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Singleton
 public class DropOutgoingPublishesHandler {
@@ -48,14 +47,17 @@ public class DropOutgoingPublishesHandler {
     private final int notWritableQueueSize;
 
     @Inject
-    public DropOutgoingPublishesHandler(final @NotNull PublishPayloadPersistence publishPayloadPersistence,
-                                        final @NotNull MessageDroppedService messageDroppedService) {
+    public DropOutgoingPublishesHandler(
+            final @NotNull PublishPayloadPersistence publishPayloadPersistence,
+            final @NotNull MessageDroppedService messageDroppedService) {
         this.publishPayloadPersistence = publishPayloadPersistence;
         this.messageDroppedService = messageDroppedService;
         this.notWritableQueueSize = NOT_WRITABLE_QUEUE_SIZE.get();
     }
 
-    public boolean checkChannelNotWritable(final ChannelHandlerContext ctx, final @NotNull Object msg, final @NotNull ChannelPromise promise) throws Exception {
+    public boolean checkChannelNotWritable(
+            final ChannelHandlerContext ctx, final @NotNull Object msg, final @NotNull ChannelPromise promise)
+            throws Exception {
         if (!ctx.channel().isWritable()) {
 
             if (msg instanceof PUBLISH) {
@@ -71,10 +73,17 @@ public class DropOutgoingPublishesHandler {
                         final SettableFuture<PublishStatus> future = ((PublishWithFuture) msg).getFuture();
                         future.set(PublishStatus.CHANNEL_NOT_WRITABLE);
                     }
-                    //Drop message
-                    final String clientId = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getClientId();
-                    log.trace("Dropped qos 0 message for client {} on topic {} because the channel was not writable", clientId, publish.getTopic());
-                    messageDroppedService.notWritable(clientId, publish.getTopic(), publish.getQoS().getQosNumber());
+                    // Drop message
+                    final String clientId = ctx.channel()
+                            .attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                            .get()
+                            .getClientId();
+                    log.trace(
+                            "Dropped qos 0 message for client {} on topic {} because the channel was not writable",
+                            clientId,
+                            publish.getTopic());
+                    messageDroppedService.notWritable(
+                            clientId, publish.getTopic(), publish.getQoS().getQosNumber());
                     promise.setSuccess();
                     return true;
                 }
@@ -83,7 +92,6 @@ public class DropOutgoingPublishesHandler {
 
         return false;
     }
-
 
     private class DecrementCounterListener implements GenericFutureListener<Future<? super Void>> {
 

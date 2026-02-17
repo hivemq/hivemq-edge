@@ -15,18 +15,17 @@
  */
 package com.hivemq.util.render;
 
-import com.hivemq.exceptions.UnrecoverableException;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.hivemq.exceptions.UnrecoverableException;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 
 public class EnvVarUtilTest {
 
@@ -63,7 +62,7 @@ public class EnvVarUtilTest {
 
         final String result = EnvVarUtil.getValue("test.existing.both");
 
-        //expect System.property to win
+        // expect System.property to win
         assertEquals("iamset2", result);
     }
 
@@ -155,5 +154,4 @@ public class EnvVarUtilTest {
             }
         }
     }
-
 }

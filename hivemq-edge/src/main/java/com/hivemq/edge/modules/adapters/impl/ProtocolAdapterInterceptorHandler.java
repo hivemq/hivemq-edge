@@ -52,13 +52,12 @@ import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.util.Exceptions;
 import jakarta.inject.Inject;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ProtocolAdapterInterceptorHandler {
 
@@ -112,11 +111,11 @@ public class ProtocolAdapterInterceptorHandler {
         final SettableFuture<PublishingResult> resultFuture = SettableFuture.create();
 
         final PublishPacketImpl packet = new PublishPacketImpl(publish);
-        final ProtocolAdapterInformationImpl bridgeInfo = new ProtocolAdapterInformationImpl(protocolAdapter.getId(),
+        final ProtocolAdapterInformationImpl bridgeInfo = new ProtocolAdapterInformationImpl(
+                protocolAdapter.getId(),
                 protocolAdapter.getProtocolAdapterInformation().getProtocolId());
-        final ProtocolAdapterPublishInboundInputImpl input = new ProtocolAdapterPublishInboundInputImpl(bridgeInfo,
-                packet,
-                new ProtocolAdapterDynamicContextImpl(dynamicContext));
+        final ProtocolAdapterPublishInboundInputImpl input = new ProtocolAdapterPublishInboundInputImpl(
+                bridgeInfo, packet, new ProtocolAdapterDynamicContextImpl(dynamicContext));
         final ExtensionParameterHolder<ProtocolAdapterPublishInboundInputImpl> inputHolder =
                 new ExtensionParameterHolder<>(input);
 
@@ -128,7 +127,8 @@ public class ProtocolAdapterInterceptorHandler {
                 new ExtensionParameterHolder<>(output);
 
         final ProtocolAdapterInterceptorHandler.PublishInboundInterceptorContext context =
-                new ProtocolAdapterInterceptorHandler.PublishInboundInterceptorContext(protocolAdapter,
+                new ProtocolAdapterInterceptorHandler.PublishInboundInterceptorContext(
+                        protocolAdapter,
                         providerMap.size(),
                         publish,
                         inputHolder,
@@ -138,8 +138,8 @@ public class ProtocolAdapterInterceptorHandler {
 
         for (final ProtocolAdapterPublishInboundInterceptorProvider interceptorProvider : providerMap.values()) {
 
-            final HiveMQExtension extension =
-                    hiveMQExtensions.getExtensionForClassloader(interceptorProvider.getClass().getClassLoader());
+            final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(
+                    interceptorProvider.getClass().getClassLoader());
             if (extension == null) { // disabled extension would be null
                 context.finishInterceptor();
                 continue;
@@ -149,21 +149,20 @@ public class ProtocolAdapterInterceptorHandler {
                     new ProtocolAdapterInboundProviderInputImpl(serverInformation, bridgeInfo);
 
             final ProtocolAdapterInterceptorHandler.ProtocolAdapterInboundInterceptorTask task =
-                    new ProtocolAdapterInterceptorHandler.ProtocolAdapterInboundInterceptorTask(interceptorProvider,
-                            providerInput,
-                            extension.getId());
+                    new ProtocolAdapterInterceptorHandler.ProtocolAdapterInboundInterceptorTask(
+                            interceptorProvider, providerInput, extension.getId());
             pluginTaskExecutorService.handlePluginInOutTaskExecution(context, inputHolder, outputHolder, task);
         }
 
         return resultFuture;
     }
 
-
     private @NotNull ListenableFuture<PublishingResult> processPublish(
-            final @NotNull PUBLISH publish,
-            final @NotNull ProtocolAdapter protocolAdapter) {
-        final DataGovernanceData data =
-                new DataGovernanceDataImpl.Builder().withClientId(protocolAdapter.getId()).withPublish(publish).build();
+            final @NotNull PUBLISH publish, final @NotNull ProtocolAdapter protocolAdapter) {
+        final DataGovernanceData data = new DataGovernanceDataImpl.Builder()
+                .withClientId(protocolAdapter.getId())
+                .withPublish(publish)
+                .build();
         final DataGovernanceContext context = new ProtocolAdapterContext(data, protocolAdapter);
         return dataGovernanceService.applyAndPublish(context);
     }
@@ -178,11 +177,16 @@ public class ProtocolAdapterInterceptorHandler {
         }
     }
 
-    protected static Map<String, String> populateAdapterContextReplacements(final @NotNull ProtocolAdapter protocolAdapter) {
+    protected static Map<String, String> populateAdapterContextReplacements(
+            final @NotNull ProtocolAdapter protocolAdapter) {
 
         return ImmutableMap.<String, String>builder()
-                .put(ADAPTER_NAME_TOKEN, protocolAdapter.getProtocolAdapterInformation().getDisplayName())
-                .put(ADAPTER_PROTOCOL_ID_TOKEN, protocolAdapter.getProtocolAdapterInformation().getProtocolId())
+                .put(
+                        ADAPTER_NAME_TOKEN,
+                        protocolAdapter.getProtocolAdapterInformation().getDisplayName())
+                .put(
+                        ADAPTER_PROTOCOL_ID_TOKEN,
+                        protocolAdapter.getProtocolAdapterInformation().getProtocolId())
                 .put(ADAPTER_INSTANCE_ID_TOKEN, protocolAdapter.getId())
                 .build();
     }
@@ -249,22 +253,26 @@ public class ProtocolAdapterInterceptorHandler {
             final ProtocolAdapterPublishInboundOutputImpl output = outputHolder.get();
             if (output.isPreventDelivery()) {
                 dropMessage(output);
-                resultFuture.set(PublishingResult.failed("adapter interceptor prevented delivery.", AckReasonCode.UNSPECIFIED_ERROR));
+                resultFuture.set(PublishingResult.failed(
+                        "adapter interceptor prevented delivery.", AckReasonCode.UNSPECIFIED_ERROR));
             } else {
-                final PUBLISH finalPublish = PUBLISHFactory.merge(inputHolder.get().getPublishPacket(), publish);
+                final PUBLISH finalPublish =
+                        PUBLISHFactory.merge(inputHolder.get().getPublishPacket(), publish);
                 resultFuture.setFuture(processPublish(finalPublish, protocolAdapter));
             }
         }
 
         private void dropMessage(final @NotNull ProtocolAdapterPublishInboundOutputImpl output) {
-            messageDroppedService.extensionPrevented(protocolAdapter.getId(),
+            messageDroppedService.extensionPrevented(
+                    protocolAdapter.getId(),
                     publish.getTopic(),
                     publish.getQoS().getQosNumber());
         }
     }
 
-    private static class ProtocolAdapterInboundInterceptorTask implements
-            PluginInOutTask<ProtocolAdapterPublishInboundInputImpl, ProtocolAdapterPublishInboundOutputImpl> {
+    private static class ProtocolAdapterInboundInterceptorTask
+            implements PluginInOutTask<
+                    ProtocolAdapterPublishInboundInputImpl, ProtocolAdapterPublishInboundOutputImpl> {
 
         private final @NotNull ProtocolAdapterPublishInboundInterceptorProvider interceptorProvider;
         private final @NotNull ProtocolAdapterInboundProviderInput providerInput;
@@ -298,8 +306,8 @@ public class ProtocolAdapterInterceptorHandler {
                 }
             } catch (final Throwable e) {
                 log.warn(
-                        "Uncaught exception was thrown from extension with id \"{}\" on MQTT bridge inbound PUBLISH interception. " +
-                                "Extensions are responsible for their own exception handling.",
+                        "Uncaught exception was thrown from extension with id \"{}\" on MQTT bridge inbound PUBLISH interception. "
+                                + "Extensions are responsible for their own exception handling.",
                         extensionId,
                         e);
                 output.forciblyPreventPublishDelivery();
@@ -313,5 +321,4 @@ public class ProtocolAdapterInterceptorHandler {
             return interceptorProvider.getClass().getClassLoader();
         }
     }
-
 }

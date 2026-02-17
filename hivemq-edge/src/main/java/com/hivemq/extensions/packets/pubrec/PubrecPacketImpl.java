@@ -16,15 +16,14 @@
 package com.hivemq.extensions.packets.pubrec;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.publish.AckReasonCode;
 import com.hivemq.extension.sdk.api.packets.pubrec.PubrecPacket;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.pubrec.PUBREC;
-
 import java.util.Objects;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Yannick Weber
@@ -87,10 +86,10 @@ public class PubrecPacketImpl implements PubrecPacket {
             return false;
         }
         final PubrecPacketImpl that = (PubrecPacketImpl) o;
-        return (packetIdentifier == that.packetIdentifier) &&
-                (reasonCode == that.reasonCode) &&
-                Objects.equals(reasonString, that.reasonString) &&
-                userProperties.equals(that.userProperties);
+        return (packetIdentifier == that.packetIdentifier)
+                && (reasonCode == that.reasonCode)
+                && Objects.equals(reasonString, that.reasonString)
+                && userProperties.equals(that.userProperties);
     }
 
     @Override

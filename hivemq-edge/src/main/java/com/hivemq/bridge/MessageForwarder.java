@@ -17,8 +17,6 @@ package com.hivemq.bridge;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-
 public interface MessageForwarder {
 
     /**
@@ -36,7 +34,6 @@ public interface MessageForwarder {
      * @param clearQueue          whether the current queue for this forwarder should be closed
      */
     void removeForwarder(@NotNull MqttForwarder mqttForwarder, final boolean clearQueue);
-
 
     /**
      * Call this method whenever new messages are available for a forwarder.

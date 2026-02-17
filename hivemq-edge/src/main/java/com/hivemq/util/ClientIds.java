@@ -18,7 +18,6 @@ package com.hivemq.util;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.hivemq.configuration.HivemqId;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.nio.charset.StandardCharsets;
@@ -43,7 +42,7 @@ public class ClientIds {
 
         final long currentCounter = clientIDCounter.getAndIncrement();
         final String rawID = "hmq_" + hivemqId + "_" + currentCounter + "_" + System.currentTimeMillis();
-        return "hmq_" + hivemqId + "_" + currentCounter + "_" + hashFunction.hashString(rawID, StandardCharsets.UTF_8).toString();
-
+        return "hmq_" + hivemqId + "_" + currentCounter + "_"
+                + hashFunction.hashString(rawID, StandardCharsets.UTF_8).toString();
     }
 }

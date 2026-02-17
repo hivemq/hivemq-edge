@@ -15,20 +15,19 @@
  */
 package com.hivemq.security.ssl;
 
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.SSL_HANDLER;
+
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.ReferenceCountUtil;
+import java.util.NoSuchElementException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.NoSuchElementException;
-
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.SSL_HANDLER;
 
 public class SslSniHandler extends SniHandler {
 
@@ -38,8 +37,8 @@ public class SslSniHandler extends SniHandler {
 
     public SslSniHandler(final @NotNull SslHandler sslHandler, final @NotNull SslContext sslContext) {
         super((input, promise) -> {
-            //This could be used to return a different SslContext depending on the provided hostname
-            //For now the same SslContext is returned independent of the provided hostname
+            // This could be used to return a different SslContext depending on the provided hostname
+            // For now the same SslContext is returned independent of the provided hostname
             promise.setSuccess(sslContext);
             return promise;
         });
@@ -47,13 +46,21 @@ public class SslSniHandler extends SniHandler {
     }
 
     @Override
-    protected void replaceHandler(final @NotNull ChannelHandlerContext ctx, final @Nullable String hostname, final @NotNull SslContext sslContext) throws Exception {
+    protected void replaceHandler(
+            final @NotNull ChannelHandlerContext ctx,
+            final @Nullable String hostname,
+            final @NotNull SslContext sslContext)
+            throws Exception {
 
         if (hostname != null) {
-            final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+            final ClientConnection clientConnection =
+                    ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
             clientConnection.setAuthSniHostname(hostname);
             if (log.isTraceEnabled()) {
-                log.trace("Client with IP '{}' sent SNI hostname '{}'", clientConnection.getChannelIP().orElse("UNKNOWN"), hostname);
+                log.trace(
+                        "Client with IP '{}' sent SNI hostname '{}'",
+                        clientConnection.getChannelIP().orElse("UNKNOWN"),
+                        hostname);
             }
         }
 
@@ -63,7 +70,7 @@ public class SslSniHandler extends SniHandler {
             ctx.pipeline().replace(this, SSL_HANDLER, sslHandlerInstance);
             sslHandlerInstance = null;
         } catch (final NoSuchElementException ignored) {
-            //ignore, happens when channel is already closed
+            // ignore, happens when channel is already closed
         } finally {
             // Since the SslHandler was not inserted into the pipeline the ownership of the SSLEngine was not
             // transferred to the SslHandler.

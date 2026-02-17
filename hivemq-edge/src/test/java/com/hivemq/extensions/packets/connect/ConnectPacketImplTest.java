@@ -15,7 +15,8 @@
  */
 package com.hivemq.extensions.packets.connect;
 
-import org.jetbrains.annotations.NotNull;
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.hivemq.extension.sdk.api.packets.connect.WillPublishPacket;
 import com.hivemq.extension.sdk.api.packets.general.MqttVersion;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
@@ -24,17 +25,15 @@ import com.hivemq.mqtt.message.connect.CONNECT;
 import com.hivemq.mqtt.message.connect.MqttWillPublish;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
-import nl.jqno.equalsverifier.EqualsVerifier;
-import nl.jqno.equalsverifier.Warning;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * @author Georg Held
@@ -43,6 +42,7 @@ public class ConnectPacketImplTest {
 
     private @NotNull ConnectPacketImpl connectPacket;
     private @NotNull ConnectPacketImpl emptyPacket;
+
     @BeforeEach
     public void setUp() {
         final CONNECT connect = new CONNECT.Mqtt5Builder()
@@ -59,16 +59,16 @@ public class ConnectPacketImplTest {
                 .withMaximumPacketSize(Long.MAX_VALUE)
                 .withResponseInformationRequested(true)
                 .withProblemInformationRequested(true)
-                .withWillPublish(new MqttWillPublish.Mqtt5Builder().withTopic("topic")
+                .withWillPublish(new MqttWillPublish.Mqtt5Builder()
+                        .withTopic("topic")
                         .withPayload("payload".getBytes())
                         .withQos(QoS.AT_LEAST_ONCE)
                         .build())
                 .withUserProperties(Mqtt5UserProperties.of(new MqttUserProperty("one", "one")))
                 .build();
 
-        final CONNECT empty = new CONNECT.Mqtt5Builder()
-                .withClientIdentifier("client")
-                .build();
+        final CONNECT empty =
+                new CONNECT.Mqtt5Builder().withClientIdentifier("client").build();
 
         connectPacket = new ConnectPacketImpl(connect, System.currentTimeMillis());
         emptyPacket = new ConnectPacketImpl(empty, System.currentTimeMillis());
@@ -83,7 +83,9 @@ public class ConnectPacketImplTest {
     @Test
     @Timeout(5)
     public void test_user_properties() {
-        assertEquals(Mqtt5UserProperties.of(new MqttUserProperty("one", "one")).asList(), connectPacket.getUserProperties().asList());
+        assertEquals(
+                Mqtt5UserProperties.of(new MqttUserProperty("one", "one")).asList(),
+                connectPacket.getUserProperties().asList());
     }
 
     @Test
@@ -95,7 +97,9 @@ public class ConnectPacketImplTest {
         final WillPublishPacket publishPacket = willPublish.get();
         assertEquals("topic", publishPacket.getTopic());
         assertEquals(Qos.AT_LEAST_ONCE, publishPacket.getQos());
-        assertEquals("payload", StandardCharsets.UTF_8.decode(publishPacket.getPayload().get()).toString());
+        assertEquals(
+                "payload",
+                StandardCharsets.UTF_8.decode(publishPacket.getPayload().get()).toString());
         assertEquals(0, publishPacket.getWillDelay());
     }
 
@@ -157,7 +161,9 @@ public class ConnectPacketImplTest {
     @Test
     @Timeout(5)
     public void test_password() {
-        assertEquals(ByteBuffer.wrap("password".getBytes()), connectPacket.getPassword().get());
+        assertEquals(
+                ByteBuffer.wrap("password".getBytes()),
+                connectPacket.getPassword().get());
         assertFalse(emptyPacket.getPassword().isPresent());
     }
 
@@ -171,7 +177,9 @@ public class ConnectPacketImplTest {
     @Test
     @Timeout(5)
     public void test_auth_data() {
-        assertEquals(ByteBuffer.wrap("data".getBytes()), connectPacket.getAuthenticationData().get());
+        assertEquals(
+                ByteBuffer.wrap("data".getBytes()),
+                connectPacket.getAuthenticationData().get());
         assertFalse(emptyPacket.getAuthenticationData().isPresent());
     }
 

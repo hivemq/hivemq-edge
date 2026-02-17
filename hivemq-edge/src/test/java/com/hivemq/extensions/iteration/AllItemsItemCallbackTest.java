@@ -13,21 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.iteration;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 public class AllItemsItemCallbackTest {
 
@@ -77,8 +75,7 @@ public class AllItemsItemCallbackTest {
                 });
 
         final ListenableFuture<Boolean> future = stringCallback.onItems(input);
-        assertThatThrownBy(() -> future.get())
-                .hasCauseInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> future.get()).hasCauseInstanceOf(RuntimeException.class);
     }
 
     @Test
@@ -92,7 +89,6 @@ public class AllItemsItemCallbackTest {
                 });
 
         final ListenableFuture<Boolean> future = stringCallback.onItems(input);
-        assertThatThrownBy(() -> future.get())
-                .hasCauseInstanceOf(Error.class);
+        assertThatThrownBy(() -> future.get()).hasCauseInstanceOf(Error.class);
     }
 }

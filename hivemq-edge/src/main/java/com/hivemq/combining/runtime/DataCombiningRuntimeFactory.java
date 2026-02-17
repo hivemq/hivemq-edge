@@ -21,10 +21,9 @@ import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class DataCombiningRuntimeFactory {
@@ -53,9 +52,9 @@ public class DataCombiningRuntimeFactory {
         this.dataCombiningTransformationService = dataCombiningTransformationService;
     }
 
-    public @NotNull DataCombiningRuntime build(
-            final @NotNull DataCombining dataCombining) {
-        return new DataCombiningRuntime(dataCombining,
+    public @NotNull DataCombiningRuntime build(final @NotNull DataCombining dataCombining) {
+        return new DataCombiningRuntime(
+                dataCombining,
                 localTopicTree,
                 tagManager,
                 clientQueuePersistence,
@@ -63,5 +62,4 @@ public class DataCombiningRuntimeFactory {
                 dataCombiningPublishService,
                 dataCombiningTransformationService);
     }
-
 }

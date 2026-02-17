@@ -15,22 +15,21 @@
  */
 package com.hivemq.configuration.service.impl;
 
-import com.hivemq.configuration.service.MqttConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import com.hivemq.mqtt.message.QoS;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults.*;
+import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.DEFAULT_MAXIMUM_PACKET_SIZE_NO_LIMIT;
+import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRY_MAX;
 
+import com.hivemq.configuration.service.MqttConfigurationService;
+import com.hivemq.mqtt.message.QoS;
 import jakarta.inject.Singleton;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults.*;
-import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.DEFAULT_MAXIMUM_PACKET_SIZE_NO_LIMIT;
-import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRY_MAX;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Dominik Obermaier
@@ -47,16 +46,19 @@ public class MqttConfigurationServiceImpl implements MqttConfigurationService {
     private final AtomicInteger maxPacketSize = new AtomicInteger(DEFAULT_MAXIMUM_PACKET_SIZE_NO_LIMIT);
 
     private final AtomicLong maxQueuedMessages = new AtomicLong(MAX_QUEUED_MESSAGES_DEFAULT);
-    private final AtomicReference<QueuedMessagesStrategy> queuedMessagesStrategy = new AtomicReference<>(QUEUED_MESSAGES_STRATEGY_DEFAULT);
+    private final AtomicReference<QueuedMessagesStrategy> queuedMessagesStrategy =
+            new AtomicReference<>(QUEUED_MESSAGES_STRATEGY_DEFAULT);
 
     private final AtomicBoolean retainedMessagesEnabled = new AtomicBoolean(RETAINED_MESSAGES_ENABLED_DEFAULT);
 
-    private final AtomicBoolean wildcardSubscriptionsEnabled = new AtomicBoolean(WILDCARD_SUBSCRIPTIONS_ENABLED_DEFAULT);
+    private final AtomicBoolean wildcardSubscriptionsEnabled =
+            new AtomicBoolean(WILDCARD_SUBSCRIPTIONS_ENABLED_DEFAULT);
 
     private final AtomicBoolean topicAliasEnabled = new AtomicBoolean(TOPIC_ALIAS_ENABLED_DEFAULT);
     private final AtomicInteger topicAliasMaxPerClient = new AtomicInteger(TOPIC_ALIAS_MAX_PER_CLIENT_DEFAULT);
 
-    private final AtomicBoolean subscriptionIdentifierEnabled = new AtomicBoolean(SUBSCRIPTION_IDENTIFIER_ENABLED_DEFAULT);
+    private final AtomicBoolean subscriptionIdentifierEnabled =
+            new AtomicBoolean(SUBSCRIPTION_IDENTIFIER_ENABLED_DEFAULT);
     private final AtomicBoolean sharedSubscriptionsEnabled = new AtomicBoolean(SHARED_SUBSCRIPTIONS_ENABLED_DEFAULT);
     private final AtomicBoolean keepAliveAllowZero = new AtomicBoolean(KEEP_ALIVE_ALLOW_UNLIMITED_DEFAULT);
     private final AtomicInteger keepAliveMax = new AtomicInteger(KEEP_ALIVE_MAX_DEFAULT);
@@ -228,5 +230,4 @@ public class MqttConfigurationServiceImpl implements MqttConfigurationService {
         log.debug("Setting the server receive maximum to {}", serverReceiveMaximum);
         this.serverReceiveMaximum.set(serverReceiveMaximum);
     }
-
 }

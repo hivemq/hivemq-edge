@@ -16,12 +16,11 @@
 package com.hivemq.configuration.reader;
 
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
-import com.hivemq.configuration.entity.RestrictionsEntity;
 import com.hivemq.configuration.entity.SecurityConfigEntity;
 import com.hivemq.configuration.service.SecurityConfigurationService;
 import org.jetbrains.annotations.NotNull;
 
-public class SecurityConfigurator implements Configurator<SecurityConfigEntity>{
+public class SecurityConfigurator implements Configurator<SecurityConfigEntity> {
 
     protected final @NotNull SecurityConfigurationService securityConfigurationService;
 
@@ -34,7 +33,7 @@ public class SecurityConfigurator implements Configurator<SecurityConfigEntity>{
 
     @Override
     public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
-        if(initialized && hasChanged(this.configEntity, config.getSecurityConfig())) {
+        if (initialized && hasChanged(this.configEntity, config.getSecurityConfig())) {
             return true;
         }
         return false;
@@ -45,13 +44,15 @@ public class SecurityConfigurator implements Configurator<SecurityConfigEntity>{
         this.configEntity = config.getSecurityConfig();
         this.initialized = true;
 
-        securityConfigurationService.setAllowServerAssignedClientId(configEntity.getAllowEmptyClientIdEntity().isEnabled());
-        securityConfigurationService.setValidateUTF8(configEntity.getUtf8ValidationEntity().isEnabled());
-        securityConfigurationService.setPayloadFormatValidation(configEntity.getPayloadFormatValidationEntity().isEnabled());
-        securityConfigurationService.setAllowRequestProblemInformation(configEntity.getAllowRequestProblemInformationEntity().isEnabled());
+        securityConfigurationService.setAllowServerAssignedClientId(
+                configEntity.getAllowEmptyClientIdEntity().isEnabled());
+        securityConfigurationService.setValidateUTF8(
+                configEntity.getUtf8ValidationEntity().isEnabled());
+        securityConfigurationService.setPayloadFormatValidation(
+                configEntity.getPayloadFormatValidationEntity().isEnabled());
+        securityConfigurationService.setAllowRequestProblemInformation(
+                configEntity.getAllowRequestProblemInformationEntity().isEnabled());
 
         return ConfigResult.SUCCESS;
     }
-
-
 }

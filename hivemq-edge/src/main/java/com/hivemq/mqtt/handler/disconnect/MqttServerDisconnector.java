@@ -16,11 +16,11 @@
 package com.hivemq.mqtt.handler.disconnect;
 
 import com.hivemq.annotations.ExecuteInEventloop;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import io.netty.channel.Channel;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -40,10 +40,9 @@ public interface MqttServerDisconnector {
      * @param eventLogMessage the event log message
      */
     default void logAndClose(
-            final @NotNull Channel channel,
-            final @Nullable String logMessage,
-            final @Nullable String eventLogMessage) {
-        disconnect(channel, logMessage, eventLogMessage, null, null, Mqtt5UserProperties.NO_USER_PROPERTIES, false, true);
+            final @NotNull Channel channel, final @Nullable String logMessage, final @Nullable String eventLogMessage) {
+        disconnect(
+                channel, logMessage, eventLogMessage, null, null, Mqtt5UserProperties.NO_USER_PROPERTIES, false, true);
     }
 
     /**
@@ -66,7 +65,15 @@ public interface MqttServerDisconnector {
             final @Nullable Mqtt5DisconnectReasonCode reasonCode,
             final @Nullable String reasonString) {
 
-        disconnect(channel, logMessage, eventLogMessage, reasonCode, reasonString, Mqtt5UserProperties.NO_USER_PROPERTIES, false, false);
+        disconnect(
+                channel,
+                logMessage,
+                eventLogMessage,
+                reasonCode,
+                reasonString,
+                Mqtt5UserProperties.NO_USER_PROPERTIES,
+                false,
+                false);
     }
 
     void disconnect(

@@ -21,11 +21,6 @@ import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
 import com.hivemq.util.ExceptionUtils;
 import com.hivemq.util.NanoTimeProvider;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.VisibleForTesting;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -35,6 +30,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PollingTask implements Runnable {
 
@@ -66,7 +65,7 @@ public class PollingTask implements Runnable {
     }
 
     private static long getBackoff(final int errorCount) {
-        //-- This will backoff up to a max of about a day (unless the max provided is less)
+        // -- This will backoff up to a max of about a day (unless the max provided is less)
         final long max = InternalConfigurations.ADAPTER_RUNTIME_MAX_APPLICATION_ERROR_BACKOFF.get();
         long f = (long) (Math.pow(2, Math.min(errorCount, 20)) * 100);
         f += ThreadLocalRandom.current().nextInt(0, errorCount * 100);
@@ -82,7 +81,8 @@ public class PollingTask implements Runnable {
                 return;
             }
             final CompletableFuture<?> localExecutionFuture = sampler.execute()
-                    .orTimeout(InternalConfigurations.ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS.get(),
+                    .orTimeout(
+                            InternalConfigurations.ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS.get(),
                             TimeUnit.MILLISECONDS);
             localExecutionFuture.whenComplete((aVoid, throwable) -> {
                 if (throwable == null) {
@@ -97,7 +97,8 @@ public class PollingTask implements Runnable {
                 }
             });
         } catch (final Throwable t) {
-            // the sampler shouldn't throw a exception, but better safe than sorry as we might to miss rescheduling the task otherwise.
+            // the sampler shouldn't throw a exception, but better safe than sorry as we might to miss rescheduling the
+            // task otherwise.
             handleExceptionDuringPolling(t);
         }
     }
@@ -111,9 +112,9 @@ public class PollingTask implements Runnable {
     }
 
     private void handleInterruptionException(final @NotNull Throwable throwable) {
-        //-- Job was killed by the framework as it took too long
-        //-- Do not call back to the job here (notify) since it will
-        //-- Not respond and we dont want to block other polls
+        // -- Job was killed by the framework as it took too long
+        // -- Do not call back to the job here (notify) since it will
+        // -- Not respond and we dont want to block other polls
         final var errorCountTotal = watchdogErrorCount.incrementAndGet();
         final var stopBecauseOfTooManyErrors =
                 errorCountTotal > InternalConfigurations.ADAPTER_RUNTIME_WATCHDOG_TIMEOUT_ERRORS_BEFORE_INTERRUPT.get();
@@ -146,7 +147,8 @@ public class PollingTask implements Runnable {
         // case 1: Unlimited retry (maxErrorsBeforeRemoval < 0) or less errors than the limit
         if (maxErrorsBeforeRemoval < 0 || errorCountTotal <= maxErrorsBeforeRemoval) {
             if (log.isDebugEnabled()) {
-                log.debug("Application Error {} in sampler {} -> {}",
+                log.debug(
+                        "Application Error {} in sampler {} -> {}",
                         errorCountTotal,
                         sampler.getAdapterId(),
                         throwable.getMessage(),
@@ -181,17 +183,18 @@ public class PollingTask implements Runnable {
     private void reschedule(final int errorCountTotal) {
         final long pollDuration = TimeUnit.NANOSECONDS.toMillis(nanoTimeProvider.nanoTime() - nanosOfLastPolling);
         final long delayInMillis = sampler.getPeriod() - pollDuration;
-        // a negative delay means that the last polling attempt took longer to be processed than the specified delay between polls
+        // a negative delay means that the last polling attempt took longer to be processed than the specified delay
+        // between polls
         if (delayInMillis < 0) {
             log.warn(
                     "Polling for protocol adapter '{}' can not keep up with the specified '{}' interval, because the polling takes too long.",
                     sampler.getAdapterId(),
                     sampler.getPeriod());
-            eventService.createAdapterEvent(sampler.getAdapterId(), sampler.getProtocolId())
+            eventService
+                    .createAdapterEvent(sampler.getAdapterId(), sampler.getProtocolId())
                     .withMessage(String.format(
                             "Polling for protocol adapter '%s' can not keep up with the specified '%d' ms interval, because the polling takes too long.",
-                            sampler.getAdapterId(),
-                            sampler.getPeriod()))
+                            sampler.getAdapterId(), sampler.getPeriod()))
                     .withSeverity(Event.SEVERITY.WARN)
                     .fire();
         }
@@ -210,9 +213,8 @@ public class PollingTask implements Runnable {
     void schedule(final long nonNegativeDelay) {
         if (continueScheduling.get()) {
             try {
-                currentScheduledFuture.set(scheduledExecutorService.schedule(this,
-                        nonNegativeDelay,
-                        TimeUnit.MILLISECONDS));
+                currentScheduledFuture.set(
+                        scheduledExecutorService.schedule(this, nonNegativeDelay, TimeUnit.MILLISECONDS));
             } catch (final RejectedExecutionException ignored) {
                 // ignore. This is fine during shutdown.
             }

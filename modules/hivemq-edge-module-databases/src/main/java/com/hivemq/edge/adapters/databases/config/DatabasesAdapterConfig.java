@@ -21,114 +21,123 @@ import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 
-
 @SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
-@JsonPropertyOrder({
-        "url", "destination"})
+@JsonPropertyOrder({"url", "destination"})
 public class DatabasesAdapterConfig implements ProtocolSpecificAdapterConfig {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
     @JsonProperty(value = "id", required = true)
-    @ModuleConfigField(title = "Identifier",
-                       description = "Unique identifier for this protocol adapter",
-                       format = ModuleConfigField.FieldType.IDENTIFIER,
-                       required = true,
-                       stringPattern = ID_REGEX,
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
+    @ModuleConfigField(
+            title = "Identifier",
+            description = "Unique identifier for this protocol adapter",
+            format = ModuleConfigField.FieldType.IDENTIFIER,
+            required = true,
+            stringPattern = ID_REGEX,
+            stringMinLength = 1,
+            stringMaxLength = 1024)
     protected @NotNull String id;
 
     @JsonProperty(value = "type", required = true)
-    @ModuleConfigField(title = "Type",
-                       description = "Database type",
-                       format = ModuleConfigField.FieldType.UNSPECIFIED,
-                       required = true,
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
+    @ModuleConfigField(
+            title = "Type",
+            description = "Database type",
+            format = ModuleConfigField.FieldType.UNSPECIFIED,
+            required = true,
+            stringMinLength = 1,
+            stringMaxLength = 1024)
     protected @NotNull DatabaseType type;
 
     @JsonProperty(value = "server", required = true)
-    @ModuleConfigField(title = "Server",
-                       description = "Server address",
-                       format = ModuleConfigField.FieldType.UNSPECIFIED,
-                       required = true,
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
+    @ModuleConfigField(
+            title = "Server",
+            description = "Server address",
+            format = ModuleConfigField.FieldType.UNSPECIFIED,
+            required = true,
+            stringMinLength = 1,
+            stringMaxLength = 1024)
     protected @NotNull String server;
 
     @JsonProperty(value = "port", required = true)
-    @ModuleConfigField(title = "Port",
-                       description = "Server port (Default --> PostgreSQL: 5432, MySQL: 3306, MS SQL: 1433)",
-                       format = ModuleConfigField.FieldType.UNSPECIFIED,
-                       required = true,
-                       stringPattern = ID_REGEX,
-                       stringMinLength = 1,
-                       stringMaxLength = 6,
-                       defaultValue = "5432")
+    @ModuleConfigField(
+            title = "Port",
+            description = "Server port (Default --> PostgreSQL: 5432, MySQL: 3306, MS SQL: 1433)",
+            format = ModuleConfigField.FieldType.UNSPECIFIED,
+            required = true,
+            stringPattern = ID_REGEX,
+            stringMinLength = 1,
+            stringMaxLength = 6,
+            defaultValue = "5432")
     protected @NotNull Integer port;
 
     @JsonProperty(value = "database", required = true)
-    @ModuleConfigField(title = "Database",
-                       description = "Database name",
-                       format = ModuleConfigField.FieldType.UNSPECIFIED,
-                       required = true,
-                       stringPattern = ID_REGEX,
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
+    @ModuleConfigField(
+            title = "Database",
+            description = "Database name",
+            format = ModuleConfigField.FieldType.UNSPECIFIED,
+            required = true,
+            stringPattern = ID_REGEX,
+            stringMinLength = 1,
+            stringMaxLength = 1024)
     protected @NotNull String database;
 
     @JsonProperty(value = "username", required = true)
-    @ModuleConfigField(title = "Username",
-                       description = "Username for the connection to the database",
-                       format = ModuleConfigField.FieldType.UNSPECIFIED,
-                       required = true,
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
+    @ModuleConfigField(
+            title = "Username",
+            description = "Username for the connection to the database",
+            format = ModuleConfigField.FieldType.UNSPECIFIED,
+            required = true,
+            stringMinLength = 1,
+            stringMaxLength = 1024)
     protected @NotNull String username;
 
     @JsonProperty(value = "password", required = true)
-    @ModuleConfigField(title = "Password",
-                       description = "Password for the connection to the database",
-                       format = ModuleConfigField.FieldType.UNSPECIFIED,
-                       required = true,
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
+    @ModuleConfigField(
+            title = "Password",
+            description = "Password for the connection to the database",
+            format = ModuleConfigField.FieldType.UNSPECIFIED,
+            required = true,
+            stringMinLength = 1,
+            stringMaxLength = 1024)
     protected @NotNull String password;
 
     @JsonProperty(value = "encrypt")
-    @ModuleConfigField(title = "Encrypt",
-                       description = "Use TLS to communicate with the remote database",
-                       format = ModuleConfigField.FieldType.BOOLEAN)
+    @ModuleConfigField(
+            title = "Encrypt",
+            description = "Use TLS to communicate with the remote database",
+            format = ModuleConfigField.FieldType.BOOLEAN)
     protected Boolean encrypt;
 
     @JsonProperty(value = "trustCertificate")
-    @ModuleConfigField(title = "Trust Certificate",
-                       description = "Do you want to trust remote certificate",
-                       format = ModuleConfigField.FieldType.BOOLEAN)
+    @ModuleConfigField(
+            title = "Trust Certificate",
+            description = "Do you want to trust remote certificate",
+            format = ModuleConfigField.FieldType.BOOLEAN)
     protected Boolean trustCertificate;
 
     @JsonProperty(value = "connectionTimeoutSeconds")
-    @ModuleConfigField(title = "connectionTimeoutSeconds",
-                       description = "The timeout for connection establishment to the database.",
-                       numberMax = 180,
-                       defaultValue = "30")
+    @ModuleConfigField(
+            title = "connectionTimeoutSeconds",
+            description = "The timeout for connection establishment to the database.",
+            numberMax = 180,
+            defaultValue = "30")
     protected int connectionTimeoutSeconds = 30;
 
     @JsonProperty("pollingIntervalMillis")
-    @ModuleConfigField(title = "Polling Interval [ms]",
-                       description = "Time in millisecond that this endpoint will be polled",
-                       numberMin = 1,
-                       defaultValue = "1000")
+    @ModuleConfigField(
+            title = "Polling Interval [ms]",
+            description = "Time in millisecond that this endpoint will be polled",
+            numberMin = 1,
+            defaultValue = "1000")
     private int pollingIntervalMillis = 1000;
 
     @JsonProperty("maxPollingErrorsBeforeRemoval")
-    @ModuleConfigField(title = "Max. Polling Errors",
-                       description = "Max. errors polling the endpoint before the polling daemon is stopped",
-                       numberMin = -1,
-                       defaultValue = "10")
+    @ModuleConfigField(
+            title = "Max. Polling Errors",
+            description = "Max. errors polling the endpoint before the polling daemon is stopped",
+            numberMin = -1,
+            defaultValue = "10")
     private int maxPollingErrorsBeforeRemoval = 10;
-
 
     public DatabasesAdapterConfig() {
         id = "";
@@ -142,7 +151,9 @@ public class DatabasesAdapterConfig implements ProtocolSpecificAdapterConfig {
         trustCertificate = false;
     }
 
-    public @NotNull DatabaseType getType() { return type;}
+    public @NotNull DatabaseType getType() {
+        return type;
+    }
 
     public @NotNull String getServer() {
         return server;
@@ -171,7 +182,6 @@ public class DatabasesAdapterConfig implements ProtocolSpecificAdapterConfig {
     public @NotNull Boolean getTrustCertificate() {
         return encrypt;
     }
-
 
     public int getPollingIntervalMillis() {
         return pollingIntervalMillis;

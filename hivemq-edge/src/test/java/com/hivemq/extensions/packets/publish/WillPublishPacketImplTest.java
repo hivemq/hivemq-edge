@@ -16,9 +16,9 @@
 package com.hivemq.extensions.packets.publish;
 
 import com.google.common.primitives.ImmutableIntArray;
-import org.jetbrains.annotations.NotNull;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**

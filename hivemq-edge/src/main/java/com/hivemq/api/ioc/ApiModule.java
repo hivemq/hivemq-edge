@@ -62,11 +62,10 @@ import dagger.Provides;
 import dagger.multibindings.ElementsIntoSet;
 import dagger.multibindings.IntoSet;
 import jakarta.inject.Singleton;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Set;
 
 @Module
 public abstract class ApiModule {
@@ -75,43 +74,57 @@ public abstract class ApiModule {
 
     @Binds
     abstract @NotNull AuthenticationApi authenticationApi(@NotNull AuthenticationResourceImpl authenticationResource);
+
     @Binds
     abstract @NotNull BridgesApi bridgeApi(@NotNull BridgeResourceImpl bridgeResource);
+
     @Binds
     abstract @NotNull MetricsApi metricsApi(@NotNull MetricsResourceImpl metricsResource);
+
     @Binds
     abstract @NotNull HealthCheckEndpointApi healthCheckApi(@NotNull HealthCheckResourceImpl healthCheckResource);
+
     @Binds
-    abstract @NotNull ProtocolAdaptersApi protocolAdaptersApi(@NotNull ProtocolAdaptersResourceImpl protocolAdaptersResource);
+    abstract @NotNull ProtocolAdaptersApi protocolAdaptersApi(
+            @NotNull ProtocolAdaptersResourceImpl protocolAdaptersResource);
+
     @Binds
     abstract @NotNull UnsApi unsApi(@NotNull UnsResourceImpl unsResource);
+
     @Binds
     abstract @NotNull FrontendApi frontendApi(@NotNull FrontendResourceImpl gatewayResource);
+
     @Binds
     abstract @NotNull GatewayEndpointApi gatewayApi(@NotNull GatewayResourceImpl gatewayResource);
+
     @Binds
     abstract @NotNull EventsApi eventApi(@NotNull EventResourceImpl eventResource);
+
     @Binds
     abstract @NotNull ITokenVerifier tokenVerifier(@NotNull JwtAuthenticationProvider jwtAuthenticationProvider);
+
     @Binds
     abstract @NotNull ITokenGenerator tokenGenerator(@NotNull JwtAuthenticationProvider jwtAuthenticationProvider);
+
     @Binds
     abstract @NotNull PayloadSamplingApi samplingResource(@NotNull SamplingResourceImpl samplingResource);
+
     @Binds
     abstract @NotNull TopicFiltersApi topicFilterApi(@NotNull TopicFilterResourceImpl topicFilterResource);
+
     @Binds
     abstract @NotNull CombinersApi combinersApi(@NotNull CombinersResourceImpl bridgeResource);
 
     @Provides
     @Singleton
-    static @NotNull JwtAuthenticationProvider jwtAuthenticationProvider(final ApiConfigurationService apiConfigurationService) {
+    static @NotNull JwtAuthenticationProvider jwtAuthenticationProvider(
+            final ApiConfigurationService apiConfigurationService) {
         return new JwtAuthenticationProvider(apiConfigurationService.getApiJwtConfiguration());
     }
 
     @Provides
     @IntoSet
-    static @NotNull Boolean eagerSingletons(
-            final @NotNull ApiResourceRegistry apiResourceRegistry) {
+    static @NotNull Boolean eagerSingletons(final @NotNull ApiResourceRegistry apiResourceRegistry) {
         // this is used to instantiate all the params, similar to guice's asEagerSingleton and returns nothing
         return Boolean.TRUE;
     }
@@ -127,15 +140,16 @@ public abstract class ApiModule {
     @Provides
     @Singleton
     static IUsernameRolesProvider usernamePasswordProvider(
-            final @NotNull ApiConfigurationService apiConfigurationService,
-            final @NotNull SecurityLog securityLog) {
+            final @NotNull ApiConfigurationService apiConfigurationService, final @NotNull SecurityLog securityLog) {
         final var ldap = apiConfigurationService.getLdapConnectionProperties();
-        if(ldap != null) {
+        if (ldap != null) {
             return new LdapUsernameRolesProvider(ldap, securityLog);
         } else {
-            //Generic Credentials used by Both Authentication Handler
+            // Generic Credentials used by Both Authentication Handler
             final SimpleUsernameRolesProviderImpl provider = new SimpleUsernameRolesProviderImpl();
-            log.trace("Applying {} users to API access list", apiConfigurationService.getUserList().size());
+            log.trace(
+                    "Applying {} users to API access list",
+                    apiConfigurationService.getUserList().size());
             apiConfigurationService.getUserList().forEach(provider::add);
             return provider;
         }

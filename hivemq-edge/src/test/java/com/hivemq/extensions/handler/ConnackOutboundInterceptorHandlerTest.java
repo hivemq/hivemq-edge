@@ -13,15 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.handler;
+
+import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 import com.hivemq.extension.sdk.api.interceptor.connack.ConnackOutboundInterceptor;
@@ -43,28 +47,20 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.jupiter.api.BeforeEach;
-// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.rules.TemporaryFolder;
-import org.mockito.Mockito;
-import util.IsolatedExtensionClassloaderUtil;
-import util.TestConfigurationBootstrap;
-import util.TestMessageUtil;
-
 import java.io.File;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mockito;
+import util.IsolatedExtensionClassloaderUtil;
+import util.TestConfigurationBootstrap;
+import util.TestMessageUtil;
 
 /**
  * @since 4.2.0
@@ -100,13 +96,13 @@ public class ConnackOutboundInterceptorHandlerTest {
 
         when(extension.getId()).thenReturn("extension");
 
-        final ConfigurationService configurationService =
-                new TestConfigurationBootstrap().getConfigurationService();
+        final ConfigurationService configurationService = new TestConfigurationBootstrap().getConfigurationService();
         final PluginOutPutAsyncer asyncer = new PluginOutputAsyncerImpl(Mockito.mock(ShutdownHooks.class));
         final PluginTaskExecutorService pluginTaskExecutorService =
                 new PluginTaskExecutorServiceImpl(() -> executor, mock(ShutdownHooks.class));
 
-        handler = new ConnackOutboundInterceptorHandler(configurationService,
+        handler = new ConnackOutboundInterceptorHandler(
+                configurationService,
                 asyncer,
                 hiveMQExtensions,
                 pluginTaskExecutorService,
@@ -163,10 +159,9 @@ public class ConnackOutboundInterceptorHandlerTest {
     @Timeout(5)
     public void test_null_interceptors() throws Exception {
         final ConnackOutboundInterceptorProvider interceptorProvider = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                TestNullOutboundInterceptor.class);
-        when(interceptors.connackOutboundInterceptorProviders()).thenReturn(ImmutableMap.of("extension",
-                interceptorProvider));
+                temporaryFolder.toPath(), TestNullOutboundInterceptor.class);
+        when(interceptors.connackOutboundInterceptorProviders())
+                .thenReturn(ImmutableMap.of("extension", interceptorProvider));
 
         channel.writeOutbound(testConnack());
         channel.runPendingTasks();
@@ -184,10 +179,9 @@ public class ConnackOutboundInterceptorHandlerTest {
     @Timeout(5)
     public void test_modify() throws Exception {
         final ConnackOutboundInterceptorProvider interceptorProvider = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                TestModifyOutboundInterceptor.class);
-        when(interceptors.connackOutboundInterceptorProviders()).thenReturn(ImmutableMap.of("extension",
-                interceptorProvider));
+                temporaryFolder.toPath(), TestModifyOutboundInterceptor.class);
+        when(interceptors.connackOutboundInterceptorProviders())
+                .thenReturn(ImmutableMap.of("extension", interceptorProvider));
         when(hiveMQExtensions.getExtension(eq("extension"))).thenReturn(extension);
 
         channel.writeOutbound(testConnack());
@@ -206,10 +200,9 @@ public class ConnackOutboundInterceptorHandlerTest {
     @Timeout(5)
     public void test_plugin_null() throws Exception {
         final ConnackOutboundInterceptorProvider interceptorProvider = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                TestModifyOutboundInterceptor.class);
-        when(interceptors.connackOutboundInterceptorProviders()).thenReturn(ImmutableMap.of("extension",
-                interceptorProvider));
+                temporaryFolder.toPath(), TestModifyOutboundInterceptor.class);
+        when(interceptors.connackOutboundInterceptorProviders())
+                .thenReturn(ImmutableMap.of("extension", interceptorProvider));
         when(hiveMQExtensions.getExtension(eq("extension"))).thenReturn(null);
 
         channel.writeOutbound(testConnack());
@@ -228,22 +221,23 @@ public class ConnackOutboundInterceptorHandlerTest {
     @Timeout(10)
     public void test_timeout_failed() throws Exception {
         final ConnackOutboundInterceptorProvider interceptorProvider = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                TestTimeoutFailedOutboundInterceptor.class);
-        when(interceptors.connackOutboundInterceptorProviders()).thenReturn(ImmutableMap.of("extension",
-                interceptorProvider));
+                temporaryFolder.toPath(), TestTimeoutFailedOutboundInterceptor.class);
+        when(interceptors.connackOutboundInterceptorProviders())
+                .thenReturn(ImmutableMap.of("extension", interceptorProvider));
         when(hiveMQExtensions.getExtension(eq("extension"))).thenReturn(extension);
 
         channel.writeOutbound(testConnack());
 
-        await().atMost(10, TimeUnit.SECONDS).pollInterval(10, TimeUnit.MILLISECONDS).until(() -> {
-            if (channel.isActive()) {
-                channel.runPendingTasks();
-                channel.runScheduledPendingTasks();
-                return false;
-            }
-            return true;
-        });
+        await().atMost(10, TimeUnit.SECONDS)
+                .pollInterval(10, TimeUnit.MILLISECONDS)
+                .until(() -> {
+                    if (channel.isActive()) {
+                        channel.runPendingTasks();
+                        channel.runScheduledPendingTasks();
+                        return false;
+                    }
+                    return true;
+                });
 
         assertFalse(channel.isActive());
     }
@@ -252,10 +246,9 @@ public class ConnackOutboundInterceptorHandlerTest {
     @Timeout(5)
     public void test_exception() throws Exception {
         final ConnackOutboundInterceptorProvider interceptorProvider = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                TestExceptionOutboundInterceptor.class);
-        when(interceptors.connackOutboundInterceptorProviders()).thenReturn(ImmutableMap.of("extension",
-                interceptorProvider));
+                temporaryFolder.toPath(), TestExceptionOutboundInterceptor.class);
+        when(interceptors.connackOutboundInterceptorProviders())
+                .thenReturn(ImmutableMap.of("extension", interceptorProvider));
         when(hiveMQExtensions.getExtension(eq("extension"))).thenReturn(extension);
 
         channel.writeOutbound(testConnack());
@@ -275,7 +268,8 @@ public class ConnackOutboundInterceptorHandlerTest {
     public static class TestModifyOutboundInterceptor implements ConnackOutboundInterceptorProvider {
 
         @Override
-        public @Nullable ConnackOutboundInterceptor getConnackOutboundInterceptor(final @NotNull ConnackOutboundProviderInput providerInput) {
+        public @Nullable ConnackOutboundInterceptor getConnackOutboundInterceptor(
+                final @NotNull ConnackOutboundProviderInput providerInput) {
             System.out.println("Provider called");
             return (input, output) -> output.getConnackPacket().setServerReference("modified");
         }
@@ -284,7 +278,8 @@ public class ConnackOutboundInterceptorHandlerTest {
     public static class TestTimeoutFailedOutboundInterceptor implements ConnackOutboundInterceptorProvider {
 
         @Override
-        public @Nullable ConnackOutboundInterceptor getConnackOutboundInterceptor(final @NotNull ConnackOutboundProviderInput providerInput) {
+        public @Nullable ConnackOutboundInterceptor getConnackOutboundInterceptor(
+                final @NotNull ConnackOutboundProviderInput providerInput) {
             System.out.println("Provider called");
             return (input, output) -> {
                 output.async(Duration.ofMillis(10), TimeoutFallback.FAILURE);
@@ -296,7 +291,8 @@ public class ConnackOutboundInterceptorHandlerTest {
     public static class TestExceptionOutboundInterceptor implements ConnackOutboundInterceptorProvider {
 
         @Override
-        public @Nullable ConnackOutboundInterceptor getConnackOutboundInterceptor(final @NotNull ConnackOutboundProviderInput providerInput) {
+        public @Nullable ConnackOutboundInterceptor getConnackOutboundInterceptor(
+                final @NotNull ConnackOutboundProviderInput providerInput) {
             System.out.println("Provider called");
             return (input, output) -> {
                 throw new RuntimeException("test");
@@ -307,7 +303,8 @@ public class ConnackOutboundInterceptorHandlerTest {
     public static class TestNullOutboundInterceptor implements ConnackOutboundInterceptorProvider {
 
         @Override
-        public @Nullable ConnackOutboundInterceptor getConnackOutboundInterceptor(final @NotNull ConnackOutboundProviderInput providerInput) {
+        public @Nullable ConnackOutboundInterceptor getConnackOutboundInterceptor(
+                final @NotNull ConnackOutboundProviderInput providerInput) {
             System.out.println("Provider called");
             return null;
         }

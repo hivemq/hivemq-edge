@@ -37,5 +37,4 @@ public interface Mqtt3CONNACK extends Message {
      * @return the {@link Mqtt3ConnAckReturnCode} of the CONNACK message
      */
     Mqtt3ConnAckReturnCode getReturnCode();
-
 }

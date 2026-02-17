@@ -17,17 +17,16 @@ package com.hivemq.extensions.packets.general;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.parameter.TopicPermission;
 import com.hivemq.extension.sdk.api.packets.auth.DefaultAuthorizationBehaviour;
 import com.hivemq.extension.sdk.api.packets.auth.ModifiableDefaultPermissions;
 import com.hivemq.extension.sdk.api.services.exception.DoNotImplementException;
 import com.hivemq.extensions.auth.parameter.TopicPermissionImpl;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
@@ -36,8 +35,8 @@ public class ModifiableDefaultPermissionsImpl implements ModifiableDefaultPermis
 
     private @NotNull ImmutableList<TopicPermission> topicPermissions = ImmutableList.of();
 
-    private final AtomicReference<DefaultAuthorizationBehaviour> defaultAuthorizationBehaviour
-            = new AtomicReference<>(DefaultAuthorizationBehaviour.ALLOW);
+    private final AtomicReference<DefaultAuthorizationBehaviour> defaultAuthorizationBehaviour =
+            new AtomicReference<>(DefaultAuthorizationBehaviour.ALLOW);
 
     private final AtomicBoolean defaultAuthorizationBehaviourOverridden = new AtomicBoolean(false);
 
@@ -56,7 +55,10 @@ public class ModifiableDefaultPermissionsImpl implements ModifiableDefaultPermis
             defaultAuthorizationBehaviour.set(DefaultAuthorizationBehaviour.DENY);
         }
 
-        topicPermissions = ImmutableList.<TopicPermission>builder().addAll(topicPermissions).add(permission).build();
+        topicPermissions = ImmutableList.<TopicPermission>builder()
+                .addAll(topicPermissions)
+                .add(permission)
+                .build();
     }
 
     @Override
@@ -74,7 +76,10 @@ public class ModifiableDefaultPermissionsImpl implements ModifiableDefaultPermis
             defaultAuthorizationBehaviour.set(DefaultAuthorizationBehaviour.DENY);
         }
 
-        topicPermissions = ImmutableList.<TopicPermission>builder().addAll(topicPermissions).addAll(permissions).build();
+        topicPermissions = ImmutableList.<TopicPermission>builder()
+                .addAll(topicPermissions)
+                .addAll(permissions)
+                .build();
     }
 
     @Override

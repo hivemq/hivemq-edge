@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.services.auth;
 
-import org.jetbrains.annotations.NotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.Mockito.mock;
+
 import com.hivemq.extension.sdk.api.auth.Authenticator;
 import com.hivemq.extension.sdk.api.auth.EnhancedAuthenticator;
 import com.hivemq.extension.sdk.api.auth.SimpleAuthenticator;
@@ -24,13 +26,10 @@ import com.hivemq.extension.sdk.api.auth.parameter.AuthenticatorProviderInput;
 import com.hivemq.extension.sdk.api.services.auth.provider.AuthenticatorProvider;
 import com.hivemq.extension.sdk.api.services.auth.provider.EnhancedAuthenticatorProvider;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import util.IsolatedExtensionClassloaderUtil;
-
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.mockito.Mockito.mock;
 
 public class WrappedAuthenticatorProviderTest {
 
@@ -53,9 +52,8 @@ public class WrappedAuthenticatorProviderTest {
     @Test
     @Timeout(5)
     public void test_simple_provider_returns_simple() {
-        final WrappedAuthenticatorProvider wrappedAuthenticatorProvider =
-                new WrappedAuthenticatorProvider((AuthenticatorProvider) i -> simpleAuthenticator,
-                        isolatedExtensionClassloader);
+        final WrappedAuthenticatorProvider wrappedAuthenticatorProvider = new WrappedAuthenticatorProvider(
+                (AuthenticatorProvider) i -> simpleAuthenticator, isolatedExtensionClassloader);
         assertSame(simpleAuthenticator, wrappedAuthenticatorProvider.getAuthenticator(input));
         assertNull(wrappedAuthenticatorProvider.getEnhancedAuthenticator(input));
     }
@@ -63,27 +61,24 @@ public class WrappedAuthenticatorProviderTest {
     @Test
     @Timeout(5)
     public void test_other_provider_returns_null() {
-        final WrappedAuthenticatorProvider wrappedAuthenticatorProvider =
-                new WrappedAuthenticatorProvider((AuthenticatorProvider) i -> authenticator,
-                        isolatedExtensionClassloader);
+        final WrappedAuthenticatorProvider wrappedAuthenticatorProvider = new WrappedAuthenticatorProvider(
+                (AuthenticatorProvider) i -> authenticator, isolatedExtensionClassloader);
         assertNull(wrappedAuthenticatorProvider.getAuthenticator(input));
     }
 
     @Test
     @Timeout(5)
     public void test_enhanced_null_provider_returns_null() {
-        final WrappedAuthenticatorProvider wrapped =
-                new WrappedAuthenticatorProvider((EnhancedAuthenticatorProvider) i -> null,
-                        isolatedExtensionClassloader);
+        final WrappedAuthenticatorProvider wrapped = new WrappedAuthenticatorProvider(
+                (EnhancedAuthenticatorProvider) i -> null, isolatedExtensionClassloader);
         assertNull(wrapped.getEnhancedAuthenticator(input));
     }
 
     @Test
     @Timeout(5)
     public void test_enhanced_provider_returns_simple() {
-        final WrappedAuthenticatorProvider wrappedAuthenticatorProvider =
-                new WrappedAuthenticatorProvider((EnhancedAuthenticatorProvider) i -> enhancedAuthenticator,
-                        isolatedExtensionClassloader);
+        final WrappedAuthenticatorProvider wrappedAuthenticatorProvider = new WrappedAuthenticatorProvider(
+                (EnhancedAuthenticatorProvider) i -> enhancedAuthenticator, isolatedExtensionClassloader);
         assertSame(enhancedAuthenticator, wrappedAuthenticatorProvider.getEnhancedAuthenticator(input));
         assertNull(wrappedAuthenticatorProvider.getAuthenticator(input));
     }

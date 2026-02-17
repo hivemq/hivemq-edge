@@ -15,11 +15,11 @@
  */
 package com.hivemq.extensions.interceptor.pubcomp.parameter;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.pubcomp.parameter.PubcompOutboundOutput;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
 import com.hivemq.extensions.executor.task.AbstractSimpleAsyncOutput;
 import com.hivemq.extensions.packets.pubcomp.ModifiablePubcompPacketImpl;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Yannick Weber

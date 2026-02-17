@@ -16,7 +16,6 @@
 package com.hivemq.extensions.auth;
 
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.executor.task.PluginInOutTaskContext;
 import com.hivemq.mqtt.handler.auth.MqttAuthSender;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
@@ -24,13 +23,13 @@ import com.hivemq.mqtt.message.reason.Mqtt5AuthReasonCode;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 abstract class AuthContext<T extends AuthOutput<?>> extends PluginInOutTaskContext<T> implements Supplier<T> {
 
@@ -41,7 +40,9 @@ abstract class AuthContext<T extends AuthOutput<?>> extends PluginInOutTaskConte
     private final int authenticatorsCount;
     private int counter;
     private @NotNull AuthenticationState state = AuthenticationState.UNDECIDED;
-    @NotNull T output;
+
+    @NotNull
+    T output;
 
     AuthContext(
             final @NotNull String identifier,
@@ -68,8 +69,8 @@ abstract class AuthContext<T extends AuthOutput<?>> extends PluginInOutTaskConte
                     output.nextByTimeout();
                     break;
             }
-        } else if ((output.getAuthenticationState() == AuthenticationState.UNDECIDED) &&
-                output.isAuthenticatorPresent()) {
+        } else if ((output.getAuthenticationState() == AuthenticationState.UNDECIDED)
+                && output.isAuthenticatorPresent()) {
             output.failByUndecided();
         }
 
@@ -118,9 +119,13 @@ abstract class AuthContext<T extends AuthOutput<?>> extends PluginInOutTaskConte
             });
         } catch (final RejectedExecutionException ex) {
             if (!ctx.executor().isShutdown()) {
-                final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
-                log.error("Execution of authentication was rejected for client with IP {}.",
-                        clientConnection.getChannelIP().orElse("UNKNOWN"), ex);
+                final ClientConnection clientConnection = ctx.channel()
+                        .attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                        .get();
+                log.error(
+                        "Execution of authentication was rejected for client with IP {}.",
+                        clientConnection.getChannelIP().orElse("UNKNOWN"),
+                        ex);
             }
         }
     }
@@ -137,7 +142,10 @@ abstract class AuthContext<T extends AuthOutput<?>> extends PluginInOutTaskConte
             if (future.isSuccess()) {
                 final ScheduledFuture<?> timeoutFuture =
                         ctx.executor().schedule(this::onTimeout, output.getTimeout(), TimeUnit.SECONDS);
-                ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setAuthFuture(timeoutFuture);
+                ctx.channel()
+                        .attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                        .get()
+                        .setAuthFuture(timeoutFuture);
             } else if (future.channel().isActive()) {
                 onSendException(future.cause());
             }
@@ -145,7 +153,10 @@ abstract class AuthContext<T extends AuthOutput<?>> extends PluginInOutTaskConte
     }
 
     void succeedAuthentication(final @NotNull T output) {
-        ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setAuthPermissions(output.getDefaultPermissions());
+        ctx.channel()
+                .attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                .get()
+                .setAuthPermissions(output.getDefaultPermissions());
     }
 
     abstract void failAuthentication(@NotNull T output);

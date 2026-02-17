@@ -16,10 +16,10 @@
 package com.hivemq.codec.encoder.mqtt5;
 
 import com.google.common.base.Charsets;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.QoS;
 import io.netty.buffer.ByteBuf;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Util for decoders of MQTT 5 messages.
@@ -28,8 +28,7 @@ import io.netty.buffer.ByteBuf;
  */
 final class Mqtt5MessageEncoderUtil {
 
-    private Mqtt5MessageEncoderUtil() {
-    }
+    private Mqtt5MessageEncoderUtil() {}
 
     static int propertyEncodedLength(final @NotNull String value) {
         return 1 + MqttBinaryData.encodedLength(value);
@@ -67,8 +66,7 @@ final class Mqtt5MessageEncoderUtil {
         return 1 + MqttVariableByteInteger.encodedLength(value);
     }
 
-    static void encodeProperty(
-            final int propertyIdentifier, final @NotNull String value, final @NotNull ByteBuf out) {
+    static void encodeProperty(final int propertyIdentifier, final @NotNull String value, final @NotNull ByteBuf out) {
 
         out.writeByte(propertyIdentifier);
         MqttBinaryData.encode(value.getBytes(Charsets.UTF_8), out);

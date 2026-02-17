@@ -15,13 +15,12 @@
  */
 package com.hivemq.extensions.parameter;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import com.hivemq.extension.sdk.api.parameter.ExtensionStartOutput;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.extension.sdk.api.parameter.ExtensionStartOutput;
-
-import java.util.Optional;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * @author Georg Held

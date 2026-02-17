@@ -15,19 +15,18 @@
  */
 package com.hivemq.persistence.clientqueue;
 
+import static com.hivemq.configuration.service.MqttConfigurationService.QueuedMessagesStrategy;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.ImmutableIntArray;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.MessageWithID;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.pubrel.PUBREL;
 import com.hivemq.persistence.LocalPersistence;
-
 import java.util.List;
-
-import static com.hivemq.configuration.service.MqttConfigurationService.QueuedMessagesStrategy;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Lukas Brandl
@@ -127,11 +126,7 @@ public interface ClientQueueLocalPersistence extends LocalPersistence {
      */
     @NotNull
     ImmutableList<PUBLISH> peek(
-            @NotNull String queueId,
-            boolean shared,
-            long bytesLimit,
-            final int maxMessages,
-            int bucketIndex);
+            @NotNull String queueId, boolean shared, long bytesLimit, final int maxMessages, int bucketIndex);
 
     /**
      * Returns a batch of PUBLISHes that already have a packet identifier. The size of the batch is limited by 2
@@ -199,7 +194,6 @@ public interface ClientQueueLocalPersistence extends LocalPersistence {
      * @return the amount of queued messages
      */
     int size(@NotNull String queueId, boolean shared, int bucketIndex);
-
 
     /**
      * Removes the queue for the given client or shared subscription.

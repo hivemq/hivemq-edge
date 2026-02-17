@@ -15,6 +15,12 @@
  */
 package com.hivemq.configuration.reader;
 
+import static com.hivemq.util.Files.getFileExtension;
+import static com.hivemq.util.Files.getFileNameExcludingExtension;
+import static com.hivemq.util.Files.getFilePathExcludingFile;
+import static com.hivemq.util.render.FileFragmentUtil.replaceFragmentPlaceHolders;
+import static java.util.Objects.requireNonNullElse;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
@@ -42,17 +48,6 @@ import jakarta.xml.bind.Marshaller;
 import jakarta.xml.bind.Unmarshaller;
 import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.ValidationEventLocator;
-import org.apache.commons.io.FileUtils;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.VisibleForTesting;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.xml.XMLConstants;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
@@ -84,12 +79,16 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
-
-import static com.hivemq.util.Files.getFileExtension;
-import static com.hivemq.util.Files.getFileNameExcludingExtension;
-import static com.hivemq.util.Files.getFilePathExcludingFile;
-import static com.hivemq.util.render.FileFragmentUtil.replaceFragmentPlaceHolders;
-import static java.util.Objects.requireNonNullElse;
+import javax.xml.XMLConstants;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ConfigFileReaderWriter {
 
@@ -122,20 +121,18 @@ public class ConfigFileReaderWriter {
 
         // create Jaxb context and marshaller
         try {
-            CONFIG_JAXB_CONTEXT =
-                    JAXBContext.newInstance(ImmutableList.<Class<?>>builder()
-                            .add(HiveMQConfigEntity.class)
-                            // inherited
-                            .add(TCPListenerEntity.class)
-                            .add(WebsocketListenerEntity.class)
-                            .add(TlsTCPListenerEntity.class)
-                            .add(TlsWebsocketListenerEntity.class)
-                            .add(UDPListenerEntity.class)
-                            .add(UDPBroadcastListenerEntity.class)
-
-                            .add(FieldMappingEntity.class)
-                            .build()
-                            .toArray(new Class<?>[0]));
+            CONFIG_JAXB_CONTEXT = JAXBContext.newInstance(ImmutableList.<Class<?>>builder()
+                    .add(HiveMQConfigEntity.class)
+                    // inherited
+                    .add(TCPListenerEntity.class)
+                    .add(WebsocketListenerEntity.class)
+                    .add(TlsTCPListenerEntity.class)
+                    .add(TlsWebsocketListenerEntity.class)
+                    .add(UDPListenerEntity.class)
+                    .add(UDPBroadcastListenerEntity.class)
+                    .add(FieldMappingEntity.class)
+                    .build()
+                    .toArray(new Class<?>[0]));
         } catch (final Throwable e) {
             log.error("Cannot create the jaxb context:", e);
             throw new UnrecoverableException(false);
@@ -167,7 +164,8 @@ public class ConfigFileReaderWriter {
         this.sysInfo = sysInfo;
         this.configFile = configFile;
         this.configurators = configurators;
-        this.extractors = List.of(this.bridgeExtractor = new BridgeExtractor(this),
+        this.extractors = List.of(
+                this.bridgeExtractor = new BridgeExtractor(this),
                 this.protocolAdapterExtractor = new ProtocolAdapterExtractor(this),
                 this.dataCombiningExtractor = new DataCombiningExtractor(this),
                 this.assetMappingExtractor = new AssetMappingExtractor(this),
@@ -185,7 +183,9 @@ public class ConfigFileReaderWriter {
         final StringBuilder sb = new StringBuilder();
         final ValidationEventLocator locator = event.getLocator();
         if (locator == null) {
-            sb.append("\t- XML schema violation caused by: \"").append(event.getMessage()).append("\"");
+            sb.append("\t- XML schema violation caused by: \"")
+                    .append(event.getMessage())
+                    .append("\"");
         } else {
             sb.append("\t- XML schema violation in line '")
                     .append(locator.getLineNumber())
@@ -299,7 +299,8 @@ public class ConfigFileReaderWriter {
     }
 
     public void applyConfigAndWatch(final long checkIntervalInMs) {
-        startWatching(getConfigFileOrFail(),
+        startWatching(
+                getConfigFileOrFail(),
                 (checkIntervalInMs > 0) ? checkIntervalInMs : 1000,
                 this::applyConfig,
                 this::checkMonitoredFilesForChanges);
@@ -396,7 +397,7 @@ public class ConfigFileReaderWriter {
             // replace environment variable placeholders
             String content = Files.readString(configFile.toPath());
             final var fragment = replaceFragmentPlaceHolders(content, sysInfo.isConfigFragmentBase64Zip());
-            content = fragment.getRenderResult(); //must happen before env rendering so templates can be used with envs
+            content = fragment.getRenderResult(); // must happen before env rendering so templates can be used with envs
             content = IfUtil.replaceIfPlaceHolders(content);
             content = EnvVarUtil.replaceEnvironmentVariablePlaceholders(content);
 
@@ -470,18 +471,21 @@ public class ConfigFileReaderWriter {
             for (final Configurator<?> configurator : configurators) {
                 final Configurator.ConfigResult result = configurator.applyConfig(entity);
                 if (result == null) {
-                    log.error("Config {} can not be applied because the result is not found.",
+                    log.error(
+                            "Config {} can not be applied because the result is not found.",
                             configurator.getClass().getSimpleName());
                     return false;
                 }
                 switch (result) {
                     case ERROR -> {
-                        log.error("Config {} can not be applied because an unrecoverable error is found.",
+                        log.error(
+                                "Config {} can not be applied because an unrecoverable error is found.",
                                 configurator.getClass().getSimpleName());
                         return false;
                     }
                     case NEEDS_RESTART -> {
-                        log.error("Config {} can not be applied because it requires restart.",
+                        log.error(
+                                "Config {} can not be applied because it requires restart.",
                                 configurator.getClass().getSimpleName());
                         return false;
                     }
@@ -491,18 +495,21 @@ public class ConfigFileReaderWriter {
             for (final ReloadableExtractor<?, ?> extractor : extractors) {
                 final Configurator.ConfigResult result = extractor.updateConfig(entity);
                 if (result == null) {
-                    log.error("Reloadable config {} can not be applied because the result is not found.",
+                    log.error(
+                            "Reloadable config {} can not be applied because the result is not found.",
                             extractor.getClass().getSimpleName());
                     return false;
                 }
                 switch (result) {
                     case ERROR -> {
-                        log.error("Reloadable config {} can not be applied because an unrecoverable error is found.",
+                        log.error(
+                                "Reloadable config {} can not be applied because an unrecoverable error is found.",
                                 extractor.getClass().getSimpleName());
                         return false;
                     }
                     case NEEDS_RESTART -> {
-                        log.error("Reloadable config {} can not be applied because it requires restart.",
+                        log.error(
+                                "Reloadable config {} can not be applied because it requires restart.",
                                 extractor.getClass().getSimpleName());
                         return false;
                     }
@@ -531,10 +538,10 @@ public class ConfigFileReaderWriter {
             } while (idx < MAX_BACK_FILES && copyFile.exists());
 
             if (copyFile.exists()) {
-                //-- use the oldest available backup index
-                final File[] backupFiles = copyPath.listFiles(child -> child.isFile() &&
-                        child.getName().startsWith(fileNameNoExt) &&
-                        (fileExt == null || child.getName().endsWith(fileExt)));
+                // -- use the oldest available backup index
+                final File[] backupFiles = copyPath.listFiles(child -> child.isFile()
+                        && child.getName().startsWith(fileNameNoExt)
+                        && (fileExt == null || child.getName().endsWith(fileExt)));
                 assert backupFiles != null;
                 Arrays.sort(backupFiles, Comparator.comparingLong(File::lastModified));
                 copyFile = backupFiles[0];
@@ -554,7 +561,8 @@ public class ConfigFileReaderWriter {
             final long interval,
             final @NotNull Supplier<HiveMQConfigEntity> entitySupplier,
             final @NotNull ScheduledTask scheduledTask) {
-        if (executorService.compareAndSet(null,
+        if (executorService.compareAndSet(
+                null,
                 Executors.newSingleThreadScheduledExecutor(ThreadFactoryUtil.create("hivemq-edge-config-watch-%d")))) {
 
             final HiveMQConfigEntity entity = entitySupplier.get();
@@ -567,10 +575,14 @@ public class ConfigFileReaderWriter {
             }
 
             log.info("Rereading config file every {} ms", interval);
-            executorService.get()
-                    .scheduleAtFixedRate(() -> scheduledTask.executePeriodicTask(configFile,
-                            fileModified,
-                            fileModificationTimestamps), 0, interval, TimeUnit.MILLISECONDS);
+            executorService
+                    .get()
+                    .scheduleAtFixedRate(
+                            () -> scheduledTask.executePeriodicTask(
+                                    configFile, fileModified, fileModificationTimestamps),
+                            0,
+                            interval,
+                            TimeUnit.MILLISECONDS);
             Runtime.getRuntime().addShutdownHook(new Thread(this::stopWatching));
         } else {
             throw new IllegalStateException("Config watch was already started");
@@ -595,10 +607,14 @@ public class ConfigFileReaderWriter {
                 pathsToCheck.putAll(fileModificationTimestamps);
                 pathsToCheck.forEach((key, value) -> {
                     try {
-                        if (!key.toString().equals(CONFIG_FRAGMENT_PATH) &&
-                                Files.getFileAttributeView(key.toRealPath(LinkOption.NOFOLLOW_LINKS),
-                                        BasicFileAttributeView.class).readAttributes().lastModifiedTime().toMillis() >
-                                        value) {
+                        if (!key.toString().equals(CONFIG_FRAGMENT_PATH)
+                                && Files.getFileAttributeView(
+                                                        key.toRealPath(LinkOption.NOFOLLOW_LINKS),
+                                                        BasicFileAttributeView.class)
+                                                .readAttributes()
+                                                .lastModifiedTime()
+                                                .toMillis()
+                                        > value) {
                             log.error("Restarting because a required file was updated: {}", key);
                             System.exit(0);
                         }
@@ -610,7 +626,8 @@ public class ConfigFileReaderWriter {
 
             final long modified;
             if (new File(CONFIG_FRAGMENT_PATH).exists()) {
-                modified = Files.getLastModifiedTime(new File(CONFIG_FRAGMENT_PATH).toPath()).toMillis();
+                modified = Files.getLastModifiedTime(new File(CONFIG_FRAGMENT_PATH).toPath())
+                        .toMillis();
             } else {
                 log.warn("No fragment found, checking the full config, only used for testing");
                 modified = Files.getLastModifiedTime(configFile.toPath()).toMillis();

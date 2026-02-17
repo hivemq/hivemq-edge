@@ -19,8 +19,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.events.model.Payload;
-import org.jetbrains.annotations.NotNull;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -28,16 +28,16 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public class PayloadImpl implements Payload {
 
     @JsonProperty("contentType")
-    @Schema(description = "The content type of the payload that the event contains",
-            required = true)
+    @Schema(description = "The content type of the payload that the event contains", required = true)
     private @NotNull ContentType contentType;
 
     @JsonProperty("content")
     @Schema(description = "The content of the payload encoded as a string")
     private @NotNull String content;
 
-    public PayloadImpl(@JsonProperty("contentType") final @NotNull ContentType contentType,
-                       @JsonProperty("content") final @NotNull String content) {
+    public PayloadImpl(
+            @JsonProperty("contentType") final @NotNull ContentType contentType,
+            @JsonProperty("content") final @NotNull String content) {
         this.contentType = contentType;
         this.content = content;
     }
@@ -67,6 +67,4 @@ public class PayloadImpl implements Payload {
             throw new RuntimeException(e);
         }
     }
-
 }
-

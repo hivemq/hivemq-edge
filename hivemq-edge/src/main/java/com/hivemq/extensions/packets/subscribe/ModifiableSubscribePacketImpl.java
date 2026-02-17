@@ -15,17 +15,16 @@
  */
 package com.hivemq.extensions.packets.subscribe;
 
+import static com.hivemq.mqtt.message.subscribe.Mqtt5SUBSCRIBE.DEFAULT_NO_SUBSCRIPTION_IDENTIFIER;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.ThreadSafe;
 import com.hivemq.extension.sdk.api.packets.subscribe.ModifiableSubscribePacket;
 import com.hivemq.extension.sdk.api.packets.subscribe.ModifiableSubscription;
 import com.hivemq.extensions.packets.general.ModifiableUserPropertiesImpl;
-
 import java.util.Optional;
-
-import static com.hivemq.mqtt.message.subscribe.Mqtt5SUBSCRIBE.DEFAULT_NO_SUBSCRIPTION_IDENTIFIER;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -43,15 +42,15 @@ public class ModifiableSubscribePacketImpl implements ModifiableSubscribePacket 
     private final @NotNull ConfigurationService configurationService;
 
     public ModifiableSubscribePacketImpl(
-            final @NotNull SubscribePacketImpl packet,
-            final @NotNull ConfigurationService configurationService) {
+            final @NotNull SubscribePacketImpl packet, final @NotNull ConfigurationService configurationService) {
 
         final ImmutableList.Builder<ModifiableSubscriptionImpl> builder = ImmutableList.builder();
         packet.subscriptions.forEach(
                 subscription -> builder.add(new ModifiableSubscriptionImpl(subscription, configurationService)));
         subscriptions = builder.build();
         userProperties = new ModifiableUserPropertiesImpl(
-                packet.userProperties.asInternalList(), configurationService.securityConfiguration().validateUTF8());
+                packet.userProperties.asInternalList(),
+                configurationService.securityConfiguration().validateUTF8());
         subscriptionIdentifier = packet.subscriptionIdentifier;
         packetIdentifier = packet.packetIdentifier;
 

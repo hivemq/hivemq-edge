@@ -15,20 +15,6 @@
  */
 package com.hivemq.mqtt.services;
 
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.SettableFuture;
-import com.hivemq.bootstrap.factories.HandlerResult;
-import com.hivemq.bootstrap.factories.PrePublishProcessorHandlingProvider;
-import com.hivemq.mqtt.message.dropping.MessageDroppedService;
-import com.hivemq.mqtt.message.publish.PUBLISH;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
@@ -38,8 +24,20 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class PrePublishProcessorServiceImplTest {
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.SettableFuture;
+import com.hivemq.bootstrap.factories.HandlerResult;
+import com.hivemq.bootstrap.factories.PrePublishProcessorHandlingProvider;
+import com.hivemq.mqtt.message.dropping.MessageDroppedService;
+import com.hivemq.mqtt.message.publish.PUBLISH;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+class PrePublishProcessorServiceImplTest {
 
     private final @NotNull InternalPublishService internalPublishService = mock();
     private final @NotNull PrePublishProcessorHandlingProvider processorHandlingProvider = mock();
@@ -47,14 +45,10 @@ class PrePublishProcessorServiceImplTest {
 
     private final @NotNull PrePublishProcessorServiceImpl prePublishProcessorService =
             new PrePublishProcessorServiceImpl(
-                    internalPublishService,
-                    processorHandlingProvider,
-                    messageDroppedService);
+                    internalPublishService, processorHandlingProvider, messageDroppedService);
 
     @BeforeEach
-    void setUp() {
-
-    }
+    void setUp() {}
 
     @Test
     void test_publish_noPreprocessors_directlyPublishOnInternalPublishService() {
@@ -72,11 +66,12 @@ class PrePublishProcessorServiceImplTest {
         final PUBLISH modifiedPublish = mock(PUBLISH.class);
 
         final ListeningExecutorService executorService = MoreExecutors.newDirectExecutorService();
-        when(processorHandlingProvider.get()).thenReturn(List.of((originalPublish, sender, executorService1, messageDroppedService) -> {
-            final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
-            settableFuture.set(new HandlerResult(false, modifiedPublish, null));
-            return settableFuture;
-        }));
+        when(processorHandlingProvider.get())
+                .thenReturn(List.of((originalPublish, sender, executorService1, messageDroppedService) -> {
+                    final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
+                    settableFuture.set(new HandlerResult(false, modifiedPublish, null));
+                    return settableFuture;
+                }));
 
         prePublishProcessorService.publish(publish, executorService, "me");
 
@@ -91,18 +86,21 @@ class PrePublishProcessorServiceImplTest {
         final AtomicBoolean correctModifiedPublish = new AtomicBoolean(false);
 
         final ListeningExecutorService executorService = MoreExecutors.newDirectExecutorService();
-        when(processorHandlingProvider.get()).thenReturn(List.of((originalPublish, sender, executorService1, messageDroppedService) -> {
-            final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
-            settableFuture.set(new HandlerResult(false, modifiedPublish, null));
-            return settableFuture;
-        }, (originalPublish, sender, executorService2, messageDroppedService) -> {
-            final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
-            if (originalPublish == modifiedPublish) {
-                correctModifiedPublish.set(true);
-            }
-            settableFuture.set(new HandlerResult(false, modifiedPublish2, null));
-            return settableFuture;
-        }));
+        when(processorHandlingProvider.get())
+                .thenReturn(List.of(
+                        (originalPublish, sender, executorService1, messageDroppedService) -> {
+                            final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
+                            settableFuture.set(new HandlerResult(false, modifiedPublish, null));
+                            return settableFuture;
+                        },
+                        (originalPublish, sender, executorService2, messageDroppedService) -> {
+                            final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
+                            if (originalPublish == modifiedPublish) {
+                                correctModifiedPublish.set(true);
+                            }
+                            settableFuture.set(new HandlerResult(false, modifiedPublish2, null));
+                            return settableFuture;
+                        }));
 
         prePublishProcessorService.publish(publish, executorService, "me");
 
@@ -116,17 +114,17 @@ class PrePublishProcessorServiceImplTest {
         final PUBLISH modifiedPublish = mock(PUBLISH.class);
 
         final ListeningExecutorService executorService = MoreExecutors.newDirectExecutorService();
-        when(processorHandlingProvider.get()).thenReturn(List.of((originalPublish, sender, executorService1, messageDroppedService) -> {
-            final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
-            settableFuture.set(new HandlerResult(true, modifiedPublish, null));
-            return settableFuture;
-        }));
+        when(processorHandlingProvider.get())
+                .thenReturn(List.of((originalPublish, sender, executorService1, messageDroppedService) -> {
+                    final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
+                    settableFuture.set(new HandlerResult(true, modifiedPublish, null));
+                    return settableFuture;
+                }));
 
         prePublishProcessorService.publish(publish, executorService, "me");
 
         verify(internalPublishService, times(0)).publish(same(modifiedPublish), same(executorService), eq("me"));
     }
-
 
     @Test
     void test_publish_whenFirstProhibitsPublishing_noInternalPublish() {
@@ -136,17 +134,20 @@ class PrePublishProcessorServiceImplTest {
         final AtomicBoolean secondCalled = new AtomicBoolean(false);
 
         final ListeningExecutorService executorService = MoreExecutors.newDirectExecutorService();
-        when(processorHandlingProvider.get()).thenReturn(List.of((originalPublish, sender, executorService1, messageDroppedService) -> {
-            final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
-            settableFuture.set(new HandlerResult(true, modifiedPublish, null));
-            return settableFuture;
-        }, (originalPublish, sender, executorService2, messageDroppedService) -> {
-            final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
-            secondCalled.set(true);
+        when(processorHandlingProvider.get())
+                .thenReturn(List.of(
+                        (originalPublish, sender, executorService1, messageDroppedService) -> {
+                            final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
+                            settableFuture.set(new HandlerResult(true, modifiedPublish, null));
+                            return settableFuture;
+                        },
+                        (originalPublish, sender, executorService2, messageDroppedService) -> {
+                            final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
+                            secondCalled.set(true);
 
-            settableFuture.set(new HandlerResult(false, modifiedPublish2, null));
-            return settableFuture;
-        }));
+                            settableFuture.set(new HandlerResult(false, modifiedPublish2, null));
+                            return settableFuture;
+                        }));
 
         prePublishProcessorService.publish(publish, executorService, "me");
 

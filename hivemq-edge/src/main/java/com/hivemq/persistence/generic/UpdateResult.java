@@ -18,14 +18,14 @@ package com.hivemq.persistence.generic;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public record UpdateResult (UpdateStatus updateStatus, String errorMessage){
+public record UpdateResult(UpdateStatus updateStatus, String errorMessage) {
 
     public static @NotNull UpdateResult success() {
         return new UpdateResult(UpdateStatus.SUCCESS, null);
     }
 
     public static @NotNull UpdateResult failed(final @NotNull UpdateStatus putStatus) {
-        return new UpdateResult(putStatus,  null);
+        return new UpdateResult(putStatus, null);
     }
 
     public static @NotNull UpdateResult failed(
@@ -37,11 +37,9 @@ public record UpdateResult (UpdateStatus updateStatus, String errorMessage){
         return updateStatus;
     }
 
-
     public @Nullable String getErrorMessage() {
         return errorMessage;
     }
-
 
     public enum UpdateStatus {
         SUCCESS(),

@@ -26,9 +26,8 @@ import java.time.LocalTime;
  */
 public class Plc4xDataType {
 
-    //-- A sub-set of the supported core types (TODO fix the object types)
+    // -- A sub-set of the supported core types (TODO fix the object types)
     public enum DATA_TYPE {
-
         NULL((short) 0x00, null),
         BOOL((short) 0x01, Boolean.class),
         BYTE((short) 0x02, Byte.class),
@@ -60,8 +59,7 @@ public class Plc4xDataType {
         DATE_AND_LTIME((short) 0x1F, LocalDateTime.class),
         RAW_BYTE_ARRAY((short) 0x71, Byte.class);
 
-
-        DATA_TYPE(short code, Class<?> javaType){
+        DATA_TYPE(short code, Class<?> javaType) {
             this.code = code;
             this.javaType = javaType;
         }
@@ -77,5 +75,4 @@ public class Plc4xDataType {
             return javaType;
         }
     }
-
 }

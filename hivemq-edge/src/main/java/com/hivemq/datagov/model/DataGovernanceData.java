@@ -15,16 +15,19 @@
  */
 package com.hivemq.datagov.model;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.publish.PUBLISH;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
  */
 public interface DataGovernanceData {
 
-    @NotNull String getClientId();
+    @NotNull
+    String getClientId();
 
-    @NotNull PUBLISH getPublish();
+    @NotNull
+    PUBLISH getPublish();
+
     void setPublish(PUBLISH publish);
 }

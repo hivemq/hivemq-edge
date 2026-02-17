@@ -17,8 +17,6 @@ package com.hivemq.extensions.auth;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.async.Async;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extension.sdk.api.packets.auth.ModifiableDefaultPermissions;
@@ -26,10 +24,11 @@ import com.hivemq.extensions.auth.parameter.ModifiableClientSettingsImpl;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
 import com.hivemq.extensions.executor.task.AbstractAsyncOutput;
 import com.hivemq.extensions.packets.general.ModifiableUserPropertiesImpl;
-
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -42,8 +41,13 @@ abstract class AuthOutput<T> extends AbstractAsyncOutput<T> {
     private @NotNull AuthenticationState authenticationState = AuthenticationState.UNDECIDED;
 
     private @Nullable ByteBuffer authenticationData;
-    @Nullable String reasonString;
-    @Nullable String timeoutReasonString;
+
+    @Nullable
+    String reasonString;
+
+    @Nullable
+    String timeoutReasonString;
+
     private final boolean validateUTF8;
     private final @NotNull ModifiableUserPropertiesImpl userProperties;
     private final @NotNull ModifiableDefaultPermissions defaultPermissions;
@@ -157,11 +161,13 @@ abstract class AuthOutput<T> extends AbstractAsyncOutput<T> {
         authenticationState = AuthenticationState.FAILED;
     }
 
-    @Nullable ByteBuffer getAuthenticationData() {
+    @Nullable
+    ByteBuffer getAuthenticationData() {
         return authenticationData;
     }
 
-    @Nullable String getReasonString() {
+    @Nullable
+    String getReasonString() {
         return reasonString;
     }
 
@@ -193,7 +199,8 @@ abstract class AuthOutput<T> extends AbstractAsyncOutput<T> {
         return authenticatorPresent;
     }
 
-    @NotNull AuthenticationState getAuthenticationState() {
+    @NotNull
+    AuthenticationState getAuthenticationState() {
         return authenticationState;
     }
 
@@ -202,8 +209,8 @@ abstract class AuthOutput<T> extends AbstractAsyncOutput<T> {
             if (isTimedOut()) {
                 throw new UnsupportedOperationException(method + " has no effect as the async operation timed out.");
             }
-            throw new UnsupportedOperationException(method + " must not be called if authenticateSuccessfully, " +
-                    "failAuthentication, continueAuthentication or nextExtensionOrDefault has already been called.");
+            throw new UnsupportedOperationException(method + " must not be called if authenticateSuccessfully, "
+                    + "failAuthentication, continueAuthentication or nextExtensionOrDefault has already been called.");
         }
     }
 }

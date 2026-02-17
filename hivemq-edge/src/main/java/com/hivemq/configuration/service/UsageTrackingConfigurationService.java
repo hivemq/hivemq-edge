@@ -22,7 +22,5 @@ public interface UsageTrackingConfigurationService {
 
     boolean isUsageTrackingEnabled();
 
-    void setTrackingEnabled(final boolean usageTrackingEnabled) ;
-
-
+    void setTrackingEnabled(final boolean usageTrackingEnabled);
 }

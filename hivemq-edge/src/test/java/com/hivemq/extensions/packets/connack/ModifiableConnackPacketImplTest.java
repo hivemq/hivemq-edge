@@ -15,23 +15,20 @@
  */
 package com.hivemq.extensions.packets.connack;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.packets.connect.ConnackReasonCode;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
+import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import util.TestConfigurationBootstrap;
-
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Florian Limpöck
@@ -40,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ModifiableConnackPacketImplTest {
 
     private @NotNull ConfigurationService configurationService;
+
     @BeforeEach
     public void setUp() {
         configurationService = new TestConfigurationBootstrap().getConfigurationService();
@@ -264,8 +262,7 @@ public class ModifiableConnackPacketImplTest {
         final ModifiableConnackPacketImpl modifiablePacket =
                 new ModifiableConnackPacketImpl(packet, configurationService, true);
 
-        assertThatThrownBy(() -> modifiablePacket.setReasonCode(null))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> modifiablePacket.setReasonCode(null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -707,7 +704,8 @@ public class ModifiableConnackPacketImplTest {
         modifiablePacket.getUserProperties().addUserProperty("testName", "testValue");
 
         assertTrue(modifiablePacket.isModified());
-        assertEquals(Optional.of("testValue"), modifiablePacket.getUserProperties().getFirst("testName"));
+        assertEquals(
+                Optional.of("testValue"), modifiablePacket.getUserProperties().getFirst("testName"));
     }
 
     @Test
@@ -797,7 +795,8 @@ public class ModifiableConnackPacketImplTest {
 
     @Test
     public void setSessionPresent() {
-        final ConnackPacketImpl packet = new ConnackPacketImpl(ConnackReasonCode.UNSPECIFIED_ERROR,
+        final ConnackPacketImpl packet = new ConnackPacketImpl(
+                ConnackReasonCode.UNSPECIFIED_ERROR,
                 true,
                 10,
                 60,

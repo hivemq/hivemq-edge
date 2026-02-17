@@ -18,9 +18,6 @@ package com.hivemq.api;
 import com.hivemq.api.auth.ApiPrincipal;
 import com.hivemq.api.error.ApiException;
 import com.hivemq.http.HttpConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.ws.rs.container.ResourceContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -28,6 +25,8 @@ import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 import java.net.http.HttpRequest;
 import java.security.Principal;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Convenience class to expose common injection attributes into the instance.
@@ -38,31 +37,33 @@ public abstract class AbstractApi {
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
-    //-- The Security Context associated with the HttpRequest
-    @Context protected SecurityContext securityContext;
+    // -- The Security Context associated with the HttpRequest
+    @Context
+    protected SecurityContext securityContext;
 
-    //-- The Headers associated with the HttpRequest
-    @Context protected HttpHeaders headers;
+    // -- The Headers associated with the HttpRequest
+    @Context
+    protected HttpHeaders headers;
 
-    //-- The HttpRequest
-    @Context protected HttpRequest request;
+    // -- The HttpRequest
+    @Context
+    protected HttpRequest request;
 
-    //-- The ResourceContext
-    @Context protected ResourceContext context;
+    // -- The ResourceContext
+    @Context
+    protected ResourceContext context;
 
-    //-- The UriInfo associated with the HttpRequest
-    @Context protected UriInfo uriInfo;
+    // -- The UriInfo associated with the HttpRequest
+    @Context
+    protected UriInfo uriInfo;
 
     protected ApiPrincipal getAuthenticatedPrincipalFromContext() throws ApiException {
-        if(securityContext.isSecure() &&
-                securityContext.getUserPrincipal() == null){
-            throw new ApiException("secure principal not available on context",
-                    HttpConstants.SC_UNAUTHORIZED);
+        if (securityContext.isSecure() && securityContext.getUserPrincipal() == null) {
+            throw new ApiException("secure principal not available on context", HttpConstants.SC_UNAUTHORIZED);
         }
         Principal principal = securityContext.getUserPrincipal();
-        if(!(principal instanceof ApiPrincipal)){
-            throw new ApiException("invalid principal type set on context",
-                    HttpConstants.SC_UNAUTHORIZED);
+        if (!(principal instanceof ApiPrincipal)) {
+            throw new ApiException("invalid principal type set on context", HttpConstants.SC_UNAUTHORIZED);
         }
         return (ApiPrincipal) principal;
     }

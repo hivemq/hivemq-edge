@@ -26,9 +26,6 @@ import com.hivemq.http.core.HttpUtils;
 import com.hivemq.http.core.IHttpRequestResponse;
 import com.hivemq.http.core.IHttpRequestResponseHandler;
 import com.hivemq.http.core.UsernamePasswordRoles;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,6 +33,8 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractHttpRequestResponseHandler implements IHttpRequestResponseHandler {
 
@@ -75,14 +74,15 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
                     sendUnsupportedOperationRequest(httpRequestResponse);
             }
         } catch (HttpException e) {
-            logger.warn("caught strong typed http exception, use code and message [{} -> {}]",
+            logger.warn(
+                    "caught strong typed http exception, use code and message [{} -> {}]",
                     e.getResponseCode(),
                     e.getResponseMessage());
             logger.error("handled error", e);
             try {
                 writeASCIIResponse(httpRequestResponse, e.getResponseCode(), e.getResponseMessage());
             } catch (IOException ioe) {
-                //ignore
+                // ignore
             } catch (Exception ex) {
                 logger.error("error sending internal server error request!", ex);
             }
@@ -91,12 +91,13 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
             try {
                 writeASCIIResponse(httpRequestResponse, HttpConstants.SC_INTERNAL_SERVER_ERROR, e.getMessage());
             } catch (IOException ioe) {
-                //ignore
+                // ignore
             } catch (Exception ex) {
                 logger.error("error sending internal server error request!", ex);
             }
         } finally {
-            logger.trace("request {} {} ({}) -> {} done in {}",
+            logger.trace(
+                    "request {} {} ({}) -> {} done in {}",
                     httpRequestResponse.getHttpRequestUri(),
                     httpRequestResponse.getContextPath(),
                     httpRequestResponse.getContextRelativePath(),
@@ -114,22 +115,23 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
     }
 
     protected void sendUnsupportedOperationRequest(final IHttpRequestResponse request) throws IOException {
-        writeASCIIResponse(request,
+        writeASCIIResponse(
+                request,
                 HttpConstants.SC_METHOD_NOT_ALLOWED,
                 Html.getErrorMessage(HttpConstants.SC_METHOD_NOT_ALLOWED, "Method not allowed"));
     }
 
     protected void sendNotFoundResponse(final IHttpRequestResponse request) throws IOException {
-        writeHTMLResponse(request,
+        writeHTMLResponse(
+                request,
                 HttpConstants.SC_NOT_FOUND,
                 Html.getErrorMessage(HttpConstants.SC_NOT_FOUND, "Resource Not found"));
     }
 
     protected void sendBadRequestResponse(final IHttpRequestResponse request, final String message) throws IOException {
         logger.info("resource not found {}", request);
-        writeHTMLResponse(request,
-                HttpConstants.SC_BAD_REQUEST,
-                Html.getErrorMessage(HttpConstants.SC_BAD_REQUEST, message));
+        writeHTMLResponse(
+                request, HttpConstants.SC_BAD_REQUEST, Html.getErrorMessage(HttpConstants.SC_BAD_REQUEST, message));
     }
 
     protected void sendRedirect(final IHttpRequestResponse request, final String resourceUri) throws IOException {
@@ -144,20 +146,24 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
 
     protected void writeASCIIResponse(final IHttpRequestResponse request, final int responseCode, final String message)
             throws IOException {
-        writeResponseInternal(request,
+        writeResponseInternal(
+                request,
                 responseCode,
                 HttpConstants.PLAIN_MIME_TYPE,
                 message != null ? message.getBytes(StandardCharsets.UTF_8) : new byte[0]);
     }
 
-    protected void writeHTMLResponse(final IHttpRequestResponse request, final int responseCode, final String html) throws IOException {
-        writeResponseInternal(request,
+    protected void writeHTMLResponse(final IHttpRequestResponse request, final int responseCode, final String html)
+            throws IOException {
+        writeResponseInternal(
+                request,
                 responseCode,
                 HttpConstants.HTML_MIME_TYPE,
                 html != null ? html.getBytes(StandardCharsets.UTF_8) : new byte[0]);
     }
 
-    protected void writeJSONResponse(final IHttpRequestResponse request, final int responseCode, final byte[] bytes) throws IOException {
+    protected void writeJSONResponse(final IHttpRequestResponse request, final int responseCode, final byte[] bytes)
+            throws IOException {
         writeResponseInternal(request, responseCode, HttpConstants.JSON_MIME_TYPE, bytes);
     }
 
@@ -166,12 +172,13 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
         writeJSONResponse(request, responseCode, mapper.writeValueAsBytes(bean));
     }
 
-    protected void writeMessageBeanResponse(final IHttpRequestResponse request, final int responseCode, final Message message)
-            throws IOException {
+    protected void writeMessageBeanResponse(
+            final IHttpRequestResponse request, final int responseCode, final Message message) throws IOException {
         writeJSONResponse(request, responseCode, mapper.writeValueAsBytes(message));
     }
 
-    protected void writeStreamResponse(final IHttpRequestResponse request, final int responseCode, final String mimeType, final InputStream is)
+    protected void writeStreamResponse(
+            final IHttpRequestResponse request, final int responseCode, final String mimeType, final InputStream is)
             throws IOException {
         final var baos = new ByteArrayOutputStream(1024);
         final var buf = new byte[1024];
@@ -183,7 +190,8 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
         writeResponseInternal(request, responseCode, mimeType, bytes);
     }
 
-    protected void writeResponseInternal(final IHttpRequestResponse request, final int responseCode, final String mimeType, final byte[] bytes)
+    protected void writeResponseInternal(
+            final IHttpRequestResponse request, final int responseCode, final String mimeType, final byte[] bytes)
             throws IOException {
         OutputStream os = null;
         try {
@@ -208,7 +216,8 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
         }
     }
 
-    protected void writeDataFromResource(final IHttpRequestResponse requestResponse, final String resourcePath) throws IOException {
+    protected void writeDataFromResource(final IHttpRequestResponse requestResponse, final String resourcePath)
+            throws IOException {
         InputStream is = loadClasspathResource(resourcePath);
         logger.trace("loading resource from cp '{}' exists ? {}", resourcePath, is != null);
         if (is == null) {
@@ -220,7 +229,8 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
         }
     }
 
-    protected <T> T readRequestBody(final IHttpRequestResponse requestResponse, final Class<T> cls) throws HttpInternalServerError {
+    protected <T> T readRequestBody(final IHttpRequestResponse requestResponse, final Class<T> cls)
+            throws HttpInternalServerError {
         try {
             return mapper.readValue(requestResponse.getRequestBody(), cls);
         } catch (Exception e) {
@@ -230,7 +240,8 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
 
     protected InputStream loadClasspathResource(final String resource) {
         logger.trace("loading resource from path " + resource);
-        InputStream is = AbstractHttpRequestResponseHandler.class.getClassLoader().getResourceAsStream(resource);
+        InputStream is =
+                AbstractHttpRequestResponseHandler.class.getClassLoader().getResourceAsStream(resource);
         if (is == null) {
             is = AbstractHttpRequestResponseHandler.class.getClassLoader().getResourceAsStream("/" + resource);
         }
@@ -251,25 +262,26 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
     }
 
     protected boolean handleBasicHttpAuthentication(
-            final UsernamePasswordRoles usernamePassword,
-            final IHttpRequestResponse httpRequestResponse) throws IOException {
+            final UsernamePasswordRoles usernamePassword, final IHttpRequestResponse httpRequestResponse)
+            throws IOException {
 
         String value = httpRequestResponse.getRequestHeader(HttpConstants.AUTH_HEADER);
         if (value != null) {
             value = value.substring(value.lastIndexOf(" ") + 1);
             value = new String(Base64.getDecoder().decode(value));
             final var userNamePassword = value.split(":");
-            if (usernamePassword.getUserName().equals(userNamePassword[0]) && Objects.deepEquals(usernamePassword.getPassword(), userNamePassword[1].getBytes(StandardCharsets.UTF_8))) {
+            if (usernamePassword.getUserName().equals(userNamePassword[0])
+                    && Objects.deepEquals(
+                            usernamePassword.getPassword(), userNamePassword[1].getBytes(StandardCharsets.UTF_8))) {
                 return true;
             }
         }
 
-        httpRequestResponse.addResponseHeader(HttpConstants.BASIC_AUTH_CHALLENGE_HEADER,
+        httpRequestResponse.addResponseHeader(
+                HttpConstants.BASIC_AUTH_CHALLENGE_HEADER,
                 String.format(HttpConstants.BASIC_AUTH_REALM, usernamePassword.getRealm()));
-        writeResponseInternal(httpRequestResponse,
-                HttpConstants.SC_UNAUTHORIZED,
-                HttpConstants.HTML_MIME_TYPE,
-                new byte[0]);
+        writeResponseInternal(
+                httpRequestResponse, HttpConstants.SC_UNAUTHORIZED, HttpConstants.HTML_MIME_TYPE, new byte[0]);
         return false;
     }
 
@@ -283,9 +295,7 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
         public String message;
         public boolean success;
 
-        public Message() {
-
-        }
+        public Message() {}
 
         public Message(final String message) {
             this.message = message;
@@ -310,4 +320,3 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
         }
     }
 }
-

@@ -15,6 +15,10 @@
  */
 package com.hivemq.edge.adapters.opcua.northbound;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
@@ -34,23 +38,18 @@ import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
-import org.awaitility.Awaitility;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.RegisterExtension;
-import util.EmbeddedOpcUaServerExtension;
-
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.awaitility.Awaitility;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import util.EmbeddedOpcUaServerExtension;
 
 abstract class AbstractOpcUaPayloadConverterTest {
 
@@ -66,12 +65,12 @@ abstract class AbstractOpcUaPayloadConverterTest {
     @BeforeEach
     public void before() {
         receivedDataPoints.clear();
-        when(protocolAdapterInput.getProtocolAdapterState()).thenReturn(new ProtocolAdapterStateImpl(mock(),
-                "id",
-                "protocolId"));
+        when(protocolAdapterInput.getProtocolAdapterState())
+                .thenReturn(new ProtocolAdapterStateImpl(mock(), "id", "protocolId"));
         when(protocolAdapterInput.moduleServices()).thenReturn(moduleServices);
         when(protocolAdapterInput.adapterFactories()).thenReturn(adapterFactories);
-        when(protocolAdapterInput.getProtocolAdapterMetricsHelper()).thenReturn(mock(ProtocolAdapterMetricsService.class));
+        when(protocolAdapterInput.getProtocolAdapterMetricsHelper())
+                .thenReturn(mock(ProtocolAdapterMetricsService.class));
         when(eventService.createAdapterEvent(any(), any())).thenReturn(new EventBuilderImpl(event -> {}));
         when(moduleServices.eventService()).thenReturn(eventService);
         when(moduleServices.protocolAdapterTagStreamingService()).thenReturn(receivedDataPoints::put);
@@ -84,8 +83,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
 
             @Override
             public @NotNull DataPoint createJsonDataPoint(
-                    final @NotNull String tagName,
-                    final @NotNull Object tagValue) {
+                    final @NotNull String tagName, final @NotNull Object tagValue) {
                 return new DataPointImpl(tagName, tagValue, true);
             }
         });
@@ -93,23 +91,15 @@ abstract class AbstractOpcUaPayloadConverterTest {
     }
 
     @NotNull
-    protected OpcUaProtocolAdapter createAndStartAdapter(final @NotNull String subcribedNodeId)
-            throws Exception {
+    protected OpcUaProtocolAdapter createAndStartAdapter(final @NotNull String subcribedNodeId) throws Exception {
 
-        final OpcUaToMqttConfig opcuaToMqttConfig =
-                new OpcUaToMqttConfig(1, 1000);
+        final OpcUaToMqttConfig opcuaToMqttConfig = new OpcUaToMqttConfig(1, 1000);
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
-                opcUaServerExtension.getServerUri(),
-                false,
-                null,
-                null,
-                null,
-                opcuaToMqttConfig,
-                null,
-                null);
+                opcUaServerExtension.getServerUri(), false, null, null, null, opcuaToMqttConfig, null, null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
-        when(protocolAdapterInput.getTags()).thenReturn(List.of(new OpcuaTag(subcribedNodeId, "", new OpcuaTagDefinition(subcribedNodeId))));
+        when(protocolAdapterInput.getTags())
+                .thenReturn(List.of(new OpcuaTag(subcribedNodeId, "", new OpcuaTagDefinition(subcribedNodeId))));
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
@@ -138,5 +128,4 @@ abstract class AbstractOpcUaPayloadConverterTest {
                 .until(() -> !receivedDataPoints.isEmpty());
         return receivedDataPoints;
     }
-
 }

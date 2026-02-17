@@ -18,8 +18,6 @@ package com.hivemq.bootstrap;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.configuration.service.entity.Listener;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
 import com.hivemq.extension.sdk.api.packets.auth.ModifiableDefaultPermissions;
@@ -37,7 +35,6 @@ import com.hivemq.mqtt.message.pool.FreePacketIdRanges;
 import com.hivemq.security.auth.SslClientCertificate;
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
-
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -47,6 +44,8 @@ import java.util.HashMap;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ClientConnection {
 
@@ -546,7 +545,8 @@ public class ClientConnection {
         return extensionConnectionInformation;
     }
 
-    public void setExtensionConnectionInformation(final @Nullable ConnectionInformation extensionConnectionInformation) {
+    public void setExtensionConnectionInformation(
+            final @Nullable ConnectionInformation extensionConnectionInformation) {
         this.extensionConnectionInformation = extensionConnectionInformation;
     }
 
@@ -575,7 +575,7 @@ public class ClientConnection {
         final Optional<SocketAddress> socketAddress = Optional.ofNullable(channel.remoteAddress());
         if (socketAddress.isPresent()) {
             final SocketAddress sockAddress = socketAddress.get();
-            //If this is not an InetAddress, we're treating this as if there's no address
+            // If this is not an InetAddress, we're treating this as if there's no address
             if (sockAddress instanceof InetSocketAddress) {
                 return Optional.ofNullable(((InetSocketAddress) sockAddress).getAddress());
             }
@@ -592,8 +592,8 @@ public class ClientConnection {
         return Optional.ofNullable(clearPasswordAfterAuth);
     }
 
-    public void clearPassword(){
-        if(authPassword == null) {
+    public void clearPassword() {
+        if (authPassword == null) {
             return;
         }
         Arrays.fill(authPassword, (byte) 0);

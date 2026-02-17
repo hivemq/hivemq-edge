@@ -18,8 +18,6 @@ package com.hivemq.mqtt.message.connect;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.codec.encoder.mqtt5.Mqtt5PayloadFormatIndicator;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.connect.WillPublishPacket;
 import com.hivemq.extension.sdk.api.packets.general.UserProperty;
 import com.hivemq.mqtt.message.QoS;
@@ -29,6 +27,8 @@ import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.persistence.Sizable;
 import com.hivemq.util.Bytes;
 import com.hivemq.util.MemoryEstimator;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Silvio Giebl
@@ -41,13 +41,13 @@ public class MqttWillPublish implements Sizable {
 
     private int sizeInMemory = SIZE_NOT_CALCULATED;
 
-    //MQTT 5 and 3
+    // MQTT 5 and 3
     private final String topic;
     private byte[] payload;
     private final QoS qos;
     private final boolean retain;
 
-    //MQTT 5
+    // MQTT 5
     private final String hivemqId;
     private long messageExpiryInterval;
     private final Mqtt5PayloadFormatIndicator payloadFormatIndicator;
@@ -105,7 +105,7 @@ public class MqttWillPublish implements Sizable {
         this.retain = retain;
         this.hivemqId = hivemqId;
 
-        //MQTT 5 Only
+        // MQTT 5 Only
         this.contentType = null;
         this.responseTopic = null;
         this.correlationData = null;
@@ -122,8 +122,11 @@ public class MqttWillPublish implements Sizable {
             return null;
         }
 
-        final Mqtt5PayloadFormatIndicator payloadFormatIndicator = packet.getPayloadFormatIndicator().isPresent() ?
-                Mqtt5PayloadFormatIndicator.valueOf(packet.getPayloadFormatIndicator().get().name()) : null;
+        final Mqtt5PayloadFormatIndicator payloadFormatIndicator =
+                packet.getPayloadFormatIndicator().isPresent()
+                        ? Mqtt5PayloadFormatIndicator.valueOf(
+                                packet.getPayloadFormatIndicator().get().name())
+                        : null;
 
         final ImmutableList.Builder<MqttUserProperty> userProperties = new ImmutableList.Builder<>();
         for (final UserProperty userProperty : packet.getUserProperties().asList()) {
@@ -207,7 +210,7 @@ public class MqttWillPublish implements Sizable {
     /**
      * Will publish payload is a shallow copy.
      */
-    public  @NotNull MqttWillPublish deepCopy() {
+    public @NotNull MqttWillPublish deepCopy() {
         return new MqttWillPublish(
                 this.hivemqId,
                 this.topic,
@@ -238,9 +241,9 @@ public class MqttWillPublish implements Sizable {
         size += MemoryEstimator.stringSize(hivemqId);
         size += MemoryEstimator.stringSize(contentType);
 
-        size += 24; //User Properties Overhead
+        size += 24; // User Properties Overhead
         for (final MqttUserProperty userProperty : getUserProperties().asList()) {
-            size += 24; //UserProperty Object Overhead
+            size += 24; // UserProperty Object Overhead
             size += MemoryEstimator.stringSize(userProperty.getName());
             size += MemoryEstimator.stringSize(userProperty.getValue());
         }
@@ -321,7 +324,6 @@ public class MqttWillPublish implements Sizable {
                     correlationData,
                     userProperties,
                     delayInterval);
-
         }
 
         public Mqtt5Builder withHivemqId(final String hivemqId) {
@@ -383,6 +385,5 @@ public class MqttWillPublish implements Sizable {
             this.delayInterval = delayInterval;
             return this;
         }
-
     }
 }

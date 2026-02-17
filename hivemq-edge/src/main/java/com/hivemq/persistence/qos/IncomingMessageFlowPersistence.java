@@ -15,9 +15,9 @@
  */
 package com.hivemq.persistence.qos;
 
+import com.hivemq.mqtt.message.MessageWithID;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.mqtt.message.MessageWithID;
 
 /**
  * @author Dominik Obermaier
@@ -43,7 +43,6 @@ public interface IncomingMessageFlowPersistence {
      */
     void addOrReplace(final @NotNull String client, final int messageId, final @NotNull MessageWithID message);
 
-
     /**
      * Remove a {@link MessageWithID} for specific client id and message id.
      *
@@ -63,5 +62,4 @@ public interface IncomingMessageFlowPersistence {
      * close the persistence with all buckets.
      */
     void closeDB();
-
 }

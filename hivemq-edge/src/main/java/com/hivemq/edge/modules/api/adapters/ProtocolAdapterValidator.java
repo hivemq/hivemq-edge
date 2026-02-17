@@ -16,9 +16,8 @@
 package com.hivemq.edge.modules.api.adapters;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * An object that handles the validation of the configuration bean, ensuring compliance with the requirement
@@ -28,6 +27,7 @@ import java.util.List;
  */
 public interface ProtocolAdapterValidator {
 
-    @NotNull List<ProtocolAdapterValidationFailure> validateConfiguration(@NotNull ObjectMapper objectMapper, @NotNull Object config);
-
+    @NotNull
+    List<ProtocolAdapterValidationFailure> validateConfiguration(
+            @NotNull ObjectMapper objectMapper, @NotNull Object config);
 }

@@ -74,5 +74,4 @@ public interface SslClientCertificate {
      * @return the state from the last certificate in the chain
      */
     String state();
-
 }

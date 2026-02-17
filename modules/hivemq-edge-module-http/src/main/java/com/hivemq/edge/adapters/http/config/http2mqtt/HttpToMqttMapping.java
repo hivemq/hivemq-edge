@@ -15,6 +15,10 @@
  */
 package com.hivemq.edge.adapters.http.config.http2mqtt;
 
+import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
+import static java.util.Objects.requireNonNullElse;
+import static java.util.Objects.requireNonNullElseGet;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -22,56 +26,51 @@ import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
-import com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.List;
 import java.util.Objects;
-
-import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
-import static com.hivemq.edge.adapters.http.HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS;
-import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MAX_TIMEOUT_SECONDS;
-import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MIN_TIMEOUT_SECONDS;
-import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.HttpContentType.JSON;
-import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.HttpMethod.GET;
-import static java.util.Objects.requireNonNullElse;
-import static java.util.Objects.requireNonNullElseGet;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class HttpToMqttMapping implements PollingContext {
 
     @JsonProperty(value = "tagName", required = true)
-    @ModuleConfigField(title = "tagName", description = "The name of the tag that holds the address data.",
-                       format = ModuleConfigField.FieldType.URI,
-                       required = true)
+    @ModuleConfigField(
+            title = "tagName",
+            description = "The name of the tag that holds the address data.",
+            format = ModuleConfigField.FieldType.URI,
+            required = true)
     private final @NotNull String tagName;
 
     @JsonProperty(value = "mqttTopic", required = true)
-    @ModuleConfigField(title = "Destination MQTT Topic",
-                       description = "The topic to publish data on",
-                       required = true,
-                       format = ModuleConfigField.FieldType.MQTT_TOPIC)
+    @ModuleConfigField(
+            title = "Destination MQTT Topic",
+            description = "The topic to publish data on",
+            required = true,
+            format = ModuleConfigField.FieldType.MQTT_TOPIC)
     private final @NotNull String mqttTopic;
 
     @JsonProperty(value = "mqttQos")
-    @ModuleConfigField(title = "MQTT QoS",
-                       description = "MQTT Quality of Service level",
-                       numberMin = 0,
-                       numberMax = 2,
-                       defaultValue = "0")
+    @ModuleConfigField(
+            title = "MQTT QoS",
+            description = "MQTT Quality of Service level",
+            numberMin = 0,
+            numberMax = 2,
+            defaultValue = "0")
     private final int mqttQos;
 
     @JsonProperty(value = "mqttUserProperties")
-    @ModuleConfigField(title = "MQTT User Properties",
-                       description = "Arbitrary properties to associate with the mapping",
-                       arrayMaxItems = 10)
+    @ModuleConfigField(
+            title = "MQTT User Properties",
+            description = "Arbitrary properties to associate with the mapping",
+            arrayMaxItems = 10)
     private final @NotNull List<MqttUserProperty> userProperties;
 
     @JsonProperty(value = "includeTimestamp")
-    @ModuleConfigField(title = "Include Sample Timestamp In Publish?",
-                       description = "Include the unix timestamp of the sample time in the resulting MQTT message",
-                       defaultValue = "true",
-                       format = ModuleConfigField.FieldType.BOOLEAN)
+    @ModuleConfigField(
+            title = "Include Sample Timestamp In Publish?",
+            description = "Include the unix timestamp of the sample time in the resulting MQTT message",
+            defaultValue = "true",
+            format = ModuleConfigField.FieldType.BOOLEAN)
     private final boolean includeTimestamp;
 
     @JsonCreator
@@ -128,11 +127,11 @@ public class HttpToMqttMapping implements PollingContext {
     @Override
     public boolean equals(final Object o) {
         if (!(o instanceof HttpToMqttMapping that)) return false;
-        return getMqttQos() == that.getMqttQos() &&
-                Objects.equals(getIncludeTimestamp(), that.getIncludeTimestamp()) &&
-                Objects.equals(getTagName(), that.getTagName()) &&
-                Objects.equals(getMqttTopic(), that.getMqttTopic()) &&
-                Objects.equals(getUserProperties(), that.getUserProperties());
+        return getMqttQos() == that.getMqttQos()
+                && Objects.equals(getIncludeTimestamp(), that.getIncludeTimestamp())
+                && Objects.equals(getTagName(), that.getTagName())
+                && Objects.equals(getMqttTopic(), that.getMqttTopic())
+                && Objects.equals(getUserProperties(), that.getUserProperties());
     }
 
     @Override

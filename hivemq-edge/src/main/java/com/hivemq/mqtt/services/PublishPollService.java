@@ -16,9 +16,9 @@
 package com.hivemq.mqtt.services;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import io.netty.channel.Channel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import io.netty.channel.Channel;
 
 /**
  * @author Lukas Brandl
@@ -62,7 +62,6 @@ public interface PublishPollService {
      * @param sharedSubscription of the queue for which messages are polled
      */
     void pollSharedPublishes(@NotNull String sharedSubscription);
-
 
     /**
      * Poll publishes from the shared subscription queue for a given client.

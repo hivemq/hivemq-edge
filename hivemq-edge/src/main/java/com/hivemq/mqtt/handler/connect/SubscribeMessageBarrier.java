@@ -17,7 +17,6 @@ package com.hivemq.mqtt.handler.connect;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hivemq.bootstrap.netty.ChannelHandlerNames;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.Message;
 import com.hivemq.mqtt.message.PINGREQ;
 import com.hivemq.mqtt.message.suback.SUBACK;
@@ -25,13 +24,13 @@ import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;
 import com.hivemq.mqtt.message.unsuback.UNSUBACK;
 import com.hivemq.mqtt.message.unsubscribe.UNSUBSCRIBE;
 import io.netty.channel.*;
-import org.slj.mqtt.sn.wire.version1_2.payload.MqttsnSuback;
-import org.slj.mqtt.sn.wire.version1_2.payload.MqttsnUnsuback;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Queue;
+import org.jetbrains.annotations.NotNull;
+import org.slj.mqtt.sn.wire.version1_2.payload.MqttsnSuback;
+import org.slj.mqtt.sn.wire.version1_2.payload.MqttsnUnsuback;
 
 /**
  * After a subscribe message arrived, we have to queue all messages until the subscribe was handled.
@@ -45,9 +44,13 @@ public class SubscribeMessageBarrier extends ChannelDuplexHandler {
     private final @NotNull Queue<Message> messageQueue = new LinkedList<>();
 
     public static void addToPipeline(@NotNull ChannelHandlerContext ctx) {
-        if(!ctx.pipeline().names().contains(ChannelHandlerNames.MQTT_SUBSCRIBE_MESSAGE_BARRIER)){
+        if (!ctx.pipeline().names().contains(ChannelHandlerNames.MQTT_SUBSCRIBE_MESSAGE_BARRIER)) {
             final SubscribeMessageBarrier subscribeMessageBarrier = new SubscribeMessageBarrier();
-            ctx.pipeline().addAfter(ChannelHandlerNames.MQTT_MESSAGE_ENCODER, ChannelHandlerNames.MQTT_SUBSCRIBE_MESSAGE_BARRIER, subscribeMessageBarrier);
+            ctx.pipeline()
+                    .addAfter(
+                            ChannelHandlerNames.MQTT_MESSAGE_ENCODER,
+                            ChannelHandlerNames.MQTT_SUBSCRIBE_MESSAGE_BARRIER,
+                            subscribeMessageBarrier);
         }
     }
 
@@ -71,14 +74,16 @@ public class SubscribeMessageBarrier extends ChannelDuplexHandler {
             final @NotNull ChannelHandlerContext ctx, final @NotNull Object msg, final @NotNull ChannelPromise promise)
             throws Exception {
 
-        if (msg instanceof SUBACK || msg instanceof UNSUBACK ||
-                msg instanceof MqttsnSuback || msg instanceof MqttsnUnsuback) {
+        if (msg instanceof SUBACK
+                || msg instanceof UNSUBACK
+                || msg instanceof MqttsnSuback
+                || msg instanceof MqttsnUnsuback) {
             promise.addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(final @NotNull ChannelFuture future) {
                     if (future.isSuccess()) {
                         final boolean allMessagesReleased = releaseQueuedMessages(ctx);
-                        if (allMessagesReleased){
+                        if (allMessagesReleased) {
                             ctx.channel().config().setAutoRead(true);
                             ctx.pipeline().remove(SubscribeMessageBarrier.this);
                         }
@@ -102,8 +107,8 @@ public class SubscribeMessageBarrier extends ChannelDuplexHandler {
     }
 
     @VisibleForTesting
-    @NotNull Collection<Message> getQueue() {
+    @NotNull
+    Collection<Message> getQueue() {
         return Collections.unmodifiableCollection(messageQueue);
     }
-
 }

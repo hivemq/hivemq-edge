@@ -15,46 +15,54 @@
  */
 package com.hivemq.configuration.reader;
 
-import com.hivemq.configuration.info.SystemInformation;
-import org.junit.jupiter.api.Test;
-
-import java.io.File;
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.hivemq.configuration.info.SystemInformation;
+import java.io.File;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+
 class ConfigFileReaderWriterTest {
 
     @Test
-    public void test_alltags() throws Exception{
+    public void test_alltags() throws Exception {
         final var systemInformation = mock(SystemInformation.class);
         when(systemInformation.isConfigFragmentBase64Zip()).thenReturn(false);
         final var reader = new ConfigFileReaderWriter(systemInformation, null, List.of());
-        final var configFile = new File(getClass().getClassLoader().getResource("configs/testing/alltags.xml").toURI());
+        final var configFile = new File(getClass()
+                .getClassLoader()
+                .getResource("configs/testing/alltags.xml")
+                .toURI());
         final var configEntity = reader.loadConfigFromXML(configFile);
         assertThat(configEntity).isNotNull();
     }
 
     @Test
-    public void test_empty() throws Exception{
+    public void test_empty() throws Exception {
         final var systemInformation = mock(SystemInformation.class);
         when(systemInformation.isConfigFragmentBase64Zip()).thenReturn(false);
         final var reader = new ConfigFileReaderWriter(systemInformation, null, List.of());
-        final var configFile = new File(getClass().getClassLoader().getResource("configs/testing/empty.xml").toURI());
+        final var configFile = new File(getClass()
+                .getClassLoader()
+                .getResource("configs/testing/empty.xml")
+                .toURI());
         final var configEntity = reader.loadConfigFromXML(configFile);
         assertThat(configEntity).isNotNull();
     }
 
     @Test
-    public void test_datacombiners_no_source() throws Exception{
+    public void test_datacombiners_no_source() throws Exception {
         final var systemInformation = mock(SystemInformation.class);
         when(systemInformation.isConfigFragmentBase64Zip()).thenReturn(false);
         final var reader = new ConfigFileReaderWriter(systemInformation, null, List.of());
-        final var configFile = new File(getClass().getClassLoader().getResource("configs/testing/datacombiners_no_source.xml").toURI());
+        final var configFile = new File(getClass()
+                .getClassLoader()
+                .getResource("configs/testing/datacombiners_no_source.xml")
+                .toURI());
         final var configEntity = reader.loadConfigFromXML(configFile);
-        //This will break as soon as the xsd is fixed
+        // This will break as soon as the xsd is fixed
         assertThat(configEntity).isNotNull();
     }
 }

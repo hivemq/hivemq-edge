@@ -23,15 +23,14 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.google.common.base.Strings;
 import com.hivemq.api.error.ApiException;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class TimestampToDateConverter {
 
@@ -45,7 +44,8 @@ public class TimestampToDateConverter {
         public void serialize(
                 final @Nullable Long value,
                 final @NotNull JsonGenerator jsonGenerator,
-                final @NotNull SerializerProvider provider) throws IOException {
+                final @NotNull SerializerProvider provider)
+                throws IOException {
             if (value == null) {
                 jsonGenerator.writeNull();
             } else {
@@ -60,8 +60,7 @@ public class TimestampToDateConverter {
 
         @Override
         public @Nullable Long deserialize(
-                final @NotNull JsonParser jsonParser,
-                final @NotNull DeserializationContext ctxt) throws IOException {
+                final @NotNull JsonParser jsonParser, final @NotNull DeserializationContext ctxt) throws IOException {
             final String dateAsString = jsonParser.getText();
             if (Strings.isNullOrEmpty(dateAsString)) {
                 return null;
@@ -70,12 +69,9 @@ public class TimestampToDateConverter {
                     final ZonedDateTime parse = ZonedDateTime.parse(dateAsString, DateTimeFormatter.ISO_DATE_TIME);
                     return parse.toInstant().toEpochMilli();
                 } catch (final Throwable t) {
-                    throw new ApiException("Illegal value '" +
-                            dateAsString +
-                            "' for date");
+                    throw new ApiException("Illegal value '" + dateAsString + "' for date");
                 }
             }
         }
     }
-
 }

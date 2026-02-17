@@ -15,6 +15,8 @@
  */
 package com.hivemq.combining.runtime;
 
+import static com.hivemq.mqtt.message.publish.PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET;
+
 import com.hivemq.combining.mapping.DataCombiningTransformationService;
 import com.hivemq.combining.model.DataCombining;
 import com.hivemq.combining.model.DataCombiningDestination;
@@ -22,12 +24,9 @@ import com.hivemq.configuration.HivemqId;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-
-import static com.hivemq.mqtt.message.publish.PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET;
+import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class DataCombiningPublishService {
@@ -47,19 +46,22 @@ public class DataCombiningPublishService {
             final @NotNull DataCombiningDestination dataCombiningDestination,
             final byte @NotNull [] payload,
             final @NotNull DataCombining dataCombining) {
-        dataCombiningTransformationService.applyMappings(new PUBLISHFactory.Mqtt5Builder().withHivemqId(hiveMQId.get())
-                .withQoS(QoS.AT_LEAST_ONCE)
-                .withOnwardQos(QoS.AT_LEAST_ONCE)
-                .withRetain(false) // this message is not retained
-                .withTopic(dataCombiningDestination.topic())
-                .withPayload(payload)
-                .withMessageExpiryInterval(MESSAGE_EXPIRY_INTERVAL_NOT_SET)
-                .withResponseTopic(null)
-                .withCorrelationData(null)
-                .withPayload(payload)
-                .withContentType(null)
-                .withPayloadFormatIndicator(null)
-                .withUserProperties(Mqtt5UserProperties.of())
-                .build(), dataCombining);
+        dataCombiningTransformationService.applyMappings(
+                new PUBLISHFactory.Mqtt5Builder()
+                        .withHivemqId(hiveMQId.get())
+                        .withQoS(QoS.AT_LEAST_ONCE)
+                        .withOnwardQos(QoS.AT_LEAST_ONCE)
+                        .withRetain(false) // this message is not retained
+                        .withTopic(dataCombiningDestination.topic())
+                        .withPayload(payload)
+                        .withMessageExpiryInterval(MESSAGE_EXPIRY_INTERVAL_NOT_SET)
+                        .withResponseTopic(null)
+                        .withCorrelationData(null)
+                        .withPayload(payload)
+                        .withContentType(null)
+                        .withPayloadFormatIndicator(null)
+                        .withUserProperties(Mqtt5UserProperties.of())
+                        .build(),
+                dataCombining);
     }
 }

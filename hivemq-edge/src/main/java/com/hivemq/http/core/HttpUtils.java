@@ -16,13 +16,12 @@
 package com.hivemq.http.core;
 
 import com.hivemq.http.HttpConstants;
-import org.jetbrains.annotations.NotNull;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 public class HttpUtils {
 
@@ -32,36 +31,36 @@ public class HttpUtils {
 
     public static String getMimeTypeFromFileExtension(String fileExtension) throws MimeTypeNotFoundException {
         String mime = HttpConstants.MIME_MAP.get(fileExtension);
-        if(mime == null) throw new MimeTypeNotFoundException("unable to find mimeType for " + fileExtension);
+        if (mime == null) throw new MimeTypeNotFoundException("unable to find mimeType for " + fileExtension);
         return mime;
     }
 
-    public static String getContextRelativePath(String contextPath, String requestUri){
-            return requestUri.substring(requestUri.indexOf(contextPath) + contextPath.length());
+    public static String getContextRelativePath(String contextPath, String requestUri) {
+        return requestUri.substring(requestUri.indexOf(contextPath) + contextPath.length());
     }
 
-    public static String sanitizePath(String resource){
+    public static String sanitizePath(String resource) {
         return resource.replaceAll("//+", "/");
     }
 
-    public static String getFileExtension(String requestUri){
-        if(requestUri.contains(".")){
+    public static String getFileExtension(String requestUri) {
+        if (requestUri.contains(".")) {
             return requestUri.substring(requestUri.lastIndexOf(".") + 1);
         }
         return null;
     }
 
-    public static String combinePaths(String context, String resource){
-        if(context.endsWith("/") && resource.startsWith("/")){
+    public static String combinePaths(String context, String resource) {
+        if (context.endsWith("/") && resource.startsWith("/")) {
             resource = resource.substring(1);
         }
-        if(!context.endsWith("/") && !resource.startsWith("/")){
+        if (!context.endsWith("/") && !resource.startsWith("/")) {
             resource = "/" + resource;
         }
         return context + resource;
     }
 
-    public static String getContentTypeHeaderValue(String mimeType, String encoding){
+    public static String getContentTypeHeaderValue(String mimeType, String encoding) {
         return String.format("%s; charset=%s", mimeType, encoding);
     }
 
@@ -78,8 +77,7 @@ public class HttpUtils {
                 if (name == "") {
                     continue;
                 }
-                String value = keyValuePair.length > 1 ? URLDecoder.decode(
-                        keyValuePair[1], "UTF-8") : "";
+                String value = keyValuePair.length > 1 ? URLDecoder.decode(keyValuePair[1], "UTF-8") : "";
                 map.put(name, value);
             } catch (UnsupportedEncodingException e) {
                 // ignore this parameter if it can't be decoded
@@ -88,14 +86,12 @@ public class HttpUtils {
         return map;
     }
 
-    public static boolean validHttpOrHttpsUrl(final @NotNull String url){
+    public static boolean validHttpOrHttpsUrl(final @NotNull String url) {
         try {
             new URL(url);
             return true;
-        } catch(Exception e){
+        } catch (Exception e) {
         }
         return false;
     }
-
-
 }

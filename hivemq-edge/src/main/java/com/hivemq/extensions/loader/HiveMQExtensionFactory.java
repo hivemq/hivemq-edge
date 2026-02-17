@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.loader;
 
 import com.hivemq.extension.sdk.api.ExtensionMain;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensionEntity;
-
 import java.nio.file.Path;
+import org.jetbrains.annotations.NotNull;
 
 public interface HiveMQExtensionFactory {
 
@@ -35,8 +33,9 @@ public interface HiveMQExtensionFactory {
      * @return a {@link HiveMQExtension}
      */
     @NotNull
-    HiveMQExtension createHiveMQExtension(@NotNull ExtensionMain extensionMainInstance,
-                                          @NotNull Path extensionFolder,
-                                          @NotNull HiveMQExtensionEntity extensionConfig,
-                                          boolean enabled);
+    HiveMQExtension createHiveMQExtension(
+            @NotNull ExtensionMain extensionMainInstance,
+            @NotNull Path extensionFolder,
+            @NotNull HiveMQExtensionEntity extensionConfig,
+            boolean enabled);
 }

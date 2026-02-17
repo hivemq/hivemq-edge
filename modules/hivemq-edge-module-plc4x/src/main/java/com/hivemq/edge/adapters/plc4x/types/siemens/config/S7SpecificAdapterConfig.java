@@ -20,12 +20,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttConfig;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
-
-public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToMqttConfig>  {
+public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToMqttConfig> {
 
     private static final int PORT_MIN = 1;
     private static final int PORT_MAX = 65535;
@@ -39,61 +38,72 @@ public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToM
     }
 
     @JsonProperty(value = "port", required = true)
-    @ModuleConfigField(title = "Port",
-                       description = "The port number on the device you wish to connect to",
-                       required = true,
-                       numberMin = PORT_MIN,
-                       numberMax = PORT_MAX,
-                       defaultValue = "102")
+    @ModuleConfigField(
+            title = "Port",
+            description = "The port number on the device you wish to connect to",
+            required = true,
+            numberMin = PORT_MIN,
+            numberMax = PORT_MAX,
+            defaultValue = "102")
     private final int port;
 
     @JsonProperty(value = "controllerType", required = true)
-    @ModuleConfigField(title = "S7 Controller Type",
-                       description = "The type of the S7 Controller",
-                       required = true,
-                       defaultValue = "S7_300")
+    @ModuleConfigField(
+            title = "S7 Controller Type",
+            description = "The type of the S7 Controller",
+            required = true,
+            defaultValue = "S7_300")
     private final @NotNull S7SpecificAdapterConfig.ControllerType controllerType;
 
     @JsonProperty("remoteRack")
-    @ModuleConfigField(title = "Remote Rack",
-                       description = "Rack value for the remote main CPU (PLC).",
-                       defaultValue = "0")
+    @ModuleConfigField(
+            title = "Remote Rack",
+            description = "Rack value for the remote main CPU (PLC).",
+            defaultValue = "0")
     private final int remoteRack;
 
     @JsonProperty("remoteRack2")
-    @ModuleConfigField(title = "Remote Rack 2",
-                       description = "Rack value for the remote secondary CPU (PLC).",
-                       defaultValue = "0")
+    @ModuleConfigField(
+            title = "Remote Rack 2",
+            description = "Rack value for the remote secondary CPU (PLC).",
+            defaultValue = "0")
     private final int remoteRack2;
 
     @JsonProperty("remoteSlot")
-    @ModuleConfigField(title = "Remote Slot",
-                       description = "Slot value for the remote main CPU (PLC).",
-                       defaultValue = "0")
+    @ModuleConfigField(
+            title = "Remote Slot",
+            description = "Slot value for the remote main CPU (PLC).",
+            defaultValue = "0")
     private final int remoteSlot;
 
     @JsonProperty("remoteSlot2")
-    @ModuleConfigField(title = "Remote Slot 2",
-                       description = "Slot value for the remote secondary CPU (PLC).",
-                       defaultValue = "0")
+    @ModuleConfigField(
+            title = "Remote Slot 2",
+            description = "Slot value for the remote secondary CPU (PLC).",
+            defaultValue = "0")
     private final int remoteSlot2;
 
     @JsonProperty("remoteTsap")
-    @ModuleConfigField(title = "Remote TSAP",
-                       description = "Remote TSAP value. The TSAP (Transport Services Access Point) mechanism is used as a further addressing level in the S7 PLC network. Usually only required for PLC from the LOGO series.",
-                       defaultValue = "0")
+    @ModuleConfigField(
+            title = "Remote TSAP",
+            description =
+                    "Remote TSAP value. The TSAP (Transport Services Access Point) mechanism is used as a further addressing level in the S7 PLC network. Usually only required for PLC from the LOGO series.",
+            defaultValue = "0")
     private final int remoteTsap;
 
     @JsonProperty("keepAlive")
-    @ModuleConfigField(title = "Keep-Alive",
-                       description = "Enable keep-alive ping to prevent TCP connection timeouts during long polling intervals. Recommended when polling interval exceeds 7 seconds.",
-                       defaultValue = "false")
+    @ModuleConfigField(
+            title = "Keep-Alive",
+            description =
+                    "Enable keep-alive ping to prevent TCP connection timeouts during long polling intervals. Recommended when polling interval exceeds 7 seconds.",
+            defaultValue = "false")
     private final boolean keepAlive;
 
     @JsonProperty(value = "s7ToMqtt", required = true)
-    @ModuleConfigField(title = "S7 To MQTT Config",
-                       description = "The configuration for a data stream from S7 to MQTT",
-                       required = true)
+    @ModuleConfigField(
+            title = "S7 To MQTT Config",
+            description = "The configuration for a data stream from S7 to MQTT",
+            required = true)
     private final @Nullable S7ToMqttConfig s7ToMqttConfig;
 
     @JsonCreator
@@ -122,7 +132,6 @@ public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToM
         } else {
             this.s7ToMqttConfig = s7ToMqttConfig;
         }
-
     }
 
     @Override
@@ -166,20 +175,21 @@ public class S7SpecificAdapterConfig extends Plc4XSpecificAdapterConfig<Plc4xToM
     @Override
     public boolean equals(final Object o) {
         if (!(o instanceof S7SpecificAdapterConfig that)) return false;
-        return getPort() == that.getPort() &&
-                getRemoteRack() == that.getRemoteRack() &&
-                getRemoteRack2() == that.getRemoteRack2() &&
-                getRemoteSlot() == that.getRemoteSlot() &&
-                getRemoteSlot2() == that.getRemoteSlot2() &&
-                getRemoteTsap() == that.getRemoteTsap() &&
-                isKeepAlive() == that.isKeepAlive() &&
-                getControllerType() == that.getControllerType() &&
-                Objects.equals(s7ToMqttConfig, that.s7ToMqttConfig);
+        return getPort() == that.getPort()
+                && getRemoteRack() == that.getRemoteRack()
+                && getRemoteRack2() == that.getRemoteRack2()
+                && getRemoteSlot() == that.getRemoteSlot()
+                && getRemoteSlot2() == that.getRemoteSlot2()
+                && getRemoteTsap() == that.getRemoteTsap()
+                && isKeepAlive() == that.isKeepAlive()
+                && getControllerType() == that.getControllerType()
+                && Objects.equals(s7ToMqttConfig, that.s7ToMqttConfig);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getPort(),
+        return Objects.hash(
+                getPort(),
                 getControllerType(),
                 getRemoteRack(),
                 getRemoteRack2(),

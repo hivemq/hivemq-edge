@@ -28,11 +28,10 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider;
 import com.hivemq.edge.api.model.DataPolicyValidator;
 import com.hivemq.http.custom.CustomaPolicyValidatorTypeEnumSerializer;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.ext.Provider;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Sensible defaults for the JAXRS Object Mapper

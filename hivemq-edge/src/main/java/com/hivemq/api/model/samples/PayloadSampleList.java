@@ -18,15 +18,13 @@ package com.hivemq.api.model.samples;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.api.model.ItemsResponse;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 public class PayloadSampleList extends ItemsResponse<PayloadSample> {
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public PayloadSampleList(
-            @JsonProperty("items") final @NotNull List<@NotNull PayloadSample> items) {
+    public PayloadSampleList(@JsonProperty("items") final @NotNull List<@NotNull PayloadSample> items) {
         super(items);
     }
 }

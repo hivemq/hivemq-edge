@@ -21,9 +21,6 @@ import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.adapter.TagEntity;
 import jakarta.xml.bind.ValidationEvent;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -33,6 +30,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ProtocolAdapterExtractor
         implements ReloadableExtractor<List<@NotNull ProtocolAdapterEntity>, List<@NotNull ProtocolAdapterEntity>> {
@@ -51,7 +50,9 @@ public class ProtocolAdapterExtractor
     }
 
     public @NotNull Optional<ProtocolAdapterEntity> getAdapterByAdapterId(String adapterId) {
-        return allConfigs.stream().filter(adapter -> adapter.getAdapterId().equals(adapterId)).findFirst();
+        return allConfigs.stream()
+                .filter(adapter -> adapter.getAdapterId().equals(adapterId))
+                .findFirst();
     }
 
     @Override
@@ -60,27 +61,32 @@ public class ProtocolAdapterExtractor
         final var newConfigs = List.copyOf(config.getProtocolAdapterConfig());
         newConfigs.forEach(entity -> entity.validate(validationEvents));
         final List<ValidationEvent> errorEvents = validationEvents.stream()
-                .filter(event -> event.getSeverity() == ValidationEvent.FATAL_ERROR ||
-                        event.getSeverity() == ValidationEvent.ERROR)
+                .filter(event -> event.getSeverity() == ValidationEvent.FATAL_ERROR
+                        || event.getSeverity() == ValidationEvent.ERROR)
                 .toList();
         if (!errorEvents.isEmpty()) {
             errorEvents.forEach(event -> log.error("Protocol adapter config error: {}", event.getMessage()));
             return Configurator.ConfigResult.ERROR;
         }
-        return updateTagNames(newConfigs).map(duplicates -> Configurator.ConfigResult.ERROR).orElseGet(() -> {
-            allConfigs = newConfigs;
-            //We don'T write here because this method is triggered as the result of a write
-            notifyConsumer();
-            return Configurator.ConfigResult.SUCCESS;
-        });
+        return updateTagNames(newConfigs)
+                .map(duplicates -> Configurator.ConfigResult.ERROR)
+                .orElseGet(() -> {
+                    allConfigs = newConfigs;
+                    // We don'T write here because this method is triggered as the result of a write
+                    notifyConsumer();
+                    return Configurator.ConfigResult.SUCCESS;
+                });
     }
 
-    public synchronized Configurator.ConfigResult updateAllAdapters(final @NotNull List<ProtocolAdapterEntity> adapterConfigs) {
+    public synchronized Configurator.ConfigResult updateAllAdapters(
+            final @NotNull List<ProtocolAdapterEntity> adapterConfigs) {
         final var newConfigs = List.copyOf(adapterConfigs);
-        return updateTagNames(newConfigs).map(duplicates -> Configurator.ConfigResult.ERROR).orElseGet(() -> {
-            replaceConfigsAndTriggerWrite(newConfigs);
-            return Configurator.ConfigResult.SUCCESS;
-        });
+        return updateTagNames(newConfigs)
+                .map(duplicates -> Configurator.ConfigResult.ERROR)
+                .orElseGet(() -> {
+                    replaceConfigsAndTriggerWrite(newConfigs);
+                    return Configurator.ConfigResult.SUCCESS;
+                });
     }
 
     private void replaceConfigsAndTriggerWrite(List<@NotNull ProtocolAdapterEntity> newConfigs) {
@@ -91,41 +97,46 @@ public class ProtocolAdapterExtractor
 
     public synchronized boolean addAdapter(final @NotNull ProtocolAdapterEntity protocolAdapterConfig) {
         final var allConfigsTemp = List.copyOf(allConfigs);
-        if (allConfigsTemp.stream().anyMatch(cfg -> protocolAdapterConfig.getAdapterId().equals(cfg.getAdapterId()))) {
-            throw new IllegalArgumentException("adapter already exists by id '" +
-                    protocolAdapterConfig.getProtocolId() +
-                    "'");
+        if (allConfigsTemp.stream()
+                .anyMatch(cfg -> protocolAdapterConfig.getAdapterId().equals(cfg.getAdapterId()))) {
+            throw new IllegalArgumentException(
+                    "adapter already exists by id '" + protocolAdapterConfig.getProtocolId() + "'");
         }
-        return addTagNamesIfNoDuplicates(protocolAdapterConfig.getTags()).map(dupes -> {
-            log.error("Found duplicated tag names: {}", dupes);
-            return false;
-        }).orElseGet(() -> {
-            final var newConfigs = new ImmutableList.Builder<ProtocolAdapterEntity>().addAll(allConfigsTemp)
-                    .add(protocolAdapterConfig)
-                    .build();
-            replaceConfigsAndTriggerWrite(newConfigs);
-            return true;
-        });
+        return addTagNamesIfNoDuplicates(protocolAdapterConfig.getTags())
+                .map(dupes -> {
+                    log.error("Found duplicated tag names: {}", dupes);
+                    return false;
+                })
+                .orElseGet(() -> {
+                    final var newConfigs = new ImmutableList.Builder<ProtocolAdapterEntity>()
+                            .addAll(allConfigsTemp)
+                            .add(protocolAdapterConfig)
+                            .build();
+                    replaceConfigsAndTriggerWrite(newConfigs);
+                    return true;
+                });
     }
 
-    public synchronized boolean updateAdapter(
-            final @NotNull ProtocolAdapterEntity protocolAdapterConfig) {
+    public synchronized boolean updateAdapter(final @NotNull ProtocolAdapterEntity protocolAdapterConfig) {
         final var duplicateTags = new HashSet<String>();
         final var updated = new AtomicBoolean(false);
-        final var newConfigs = allConfigs.stream().map(oldInstance -> {
-            if (oldInstance.getAdapterId().equals(protocolAdapterConfig.getAdapterId())) {
-                return replaceTagNamesIfNoDuplicates(oldInstance.getTags(),
-                        protocolAdapterConfig.getTags()).map(dupes -> {
-                    duplicateTags.addAll(dupes);
-                    return oldInstance;
-                }).orElseGet(() -> {
-                    updated.set(true);
-                    return protocolAdapterConfig;
-                });
-            } else {
-                return oldInstance;
-            }
-        }).toList();
+        final var newConfigs = allConfigs.stream()
+                .map(oldInstance -> {
+                    if (oldInstance.getAdapterId().equals(protocolAdapterConfig.getAdapterId())) {
+                        return replaceTagNamesIfNoDuplicates(oldInstance.getTags(), protocolAdapterConfig.getTags())
+                                .map(dupes -> {
+                                    duplicateTags.addAll(dupes);
+                                    return oldInstance;
+                                })
+                                .orElseGet(() -> {
+                                    updated.set(true);
+                                    return protocolAdapterConfig;
+                                });
+                    } else {
+                        return oldInstance;
+                    }
+                })
+                .toList();
         if (updated.get()) {
             if (!duplicateTags.isEmpty()) {
                 log.error("Found duplicated tag names: {}", duplicateTags);
@@ -140,12 +151,16 @@ public class ProtocolAdapterExtractor
 
     public synchronized boolean deleteAdapter(final @NotNull String adapterId) {
         final var newConfigs = new ArrayList<>(allConfigs);
-        final var deleted =
-                allConfigs.stream().filter(config -> config.getAdapterId().equals(adapterId)).findFirst().map(found -> {
+        final var deleted = allConfigs.stream()
+                .filter(config -> config.getAdapterId().equals(adapterId))
+                .findFirst()
+                .map(found -> {
                     newConfigs.remove(found);
-                    tagNames.removeAll(found.getTags().stream().map(TagEntity::getName).toList());
+                    tagNames.removeAll(
+                            found.getTags().stream().map(TagEntity::getName).toList());
                     return true;
-                }).orElse(false);
+                })
+                .orElse(false);
 
         if (deleted) {
             replaceConfigsAndTriggerWrite(List.copyOf(newConfigs));
@@ -201,10 +216,11 @@ public class ProtocolAdapterExtractor
     }
 
     private @NotNull Optional<Set<String>> replaceTagNamesIfNoDuplicates(
-            final @NotNull List<TagEntity> oldTags,
-            final @NotNull List<TagEntity> newTags) {
-        final Set<String> oldTagNameSet = oldTags.stream().map(TagEntity::getName).collect(Collectors.toSet());
-        final Set<String> newTagNameSet = newTags.stream().map(TagEntity::getName).collect(Collectors.toSet());
+            final @NotNull List<TagEntity> oldTags, final @NotNull List<TagEntity> newTags) {
+        final Set<String> oldTagNameSet =
+                oldTags.stream().map(TagEntity::getName).collect(Collectors.toSet());
+        final Set<String> newTagNameSet =
+                newTags.stream().map(TagEntity::getName).collect(Collectors.toSet());
         final Set<String> remainingTagNameSet = Sets.intersection(oldTagNameSet, newTagNameSet);
         final Set<String> toBeRemovedTagNameSet = Sets.difference(oldTagNameSet, remainingTagNameSet);
         final Set<String> toBeAddedTagNameSet = Sets.difference(newTagNameSet, remainingTagNameSet);

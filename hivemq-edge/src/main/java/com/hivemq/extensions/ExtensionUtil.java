@@ -15,19 +15,18 @@
  */
 package com.hivemq.extensions;
 
-import com.google.common.collect.ImmutableList;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.collect.ImmutableList;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Georg Held
@@ -69,16 +68,15 @@ public class ExtensionUtil {
             return true;
         }
         if (!xmlPresent) {
-            //obviously no extension folder.
+            // obviously no extension folder.
             return false;
         }
 
-        //at this point jar-file is always missing and xml-file is not.
+        // at this point jar-file is always missing and xml-file is not.
         if (logErrors) {
             log.warn("Extension folder {} does not contain a .jar file, ignoring extension", path);
         }
         return false;
-
     }
 
     @NotNull
@@ -105,6 +103,5 @@ public class ExtensionUtil {
             return disabledFile.createNewFile();
         }
         return true;
-
     }
 }

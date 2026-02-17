@@ -24,16 +24,15 @@ import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.opcua.config.BidirectionalOpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.EnumSet;
+import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.EnumSet;
-import java.util.List;
 
 public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformation {
 
@@ -41,9 +40,7 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapterInformation.class);
 
-
-    private OpcUaProtocolAdapterInformation() {
-    }
+    private OpcUaProtocolAdapterInformation() {}
 
     @Override
     public @NotNull String getProtocolName() {
@@ -97,7 +94,8 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
 
     @Override
     public @NotNull EnumSet<ProtocolAdapterCapability> getCapabilities() {
-        return EnumSet.of(ProtocolAdapterCapability.READ,
+        return EnumSet.of(
+                ProtocolAdapterCapability.READ,
                 ProtocolAdapterCapability.WRITE,
                 ProtocolAdapterCapability.DISCOVER,
                 ProtocolAdapterCapability.COMBINE); // all of them
@@ -110,9 +108,8 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
 
     @Override
     public @Nullable String getUiSchema() {
-        try (final InputStream is = this.getClass()
-                .getClassLoader()
-                .getResourceAsStream("opcua-adapter-ui-schema.json")) {
+        try (final InputStream is =
+                this.getClass().getClassLoader().getResourceAsStream("opcua-adapter-ui-schema.json")) {
             if (is == null) {
                 log.warn("The UISchema for the OPC UA Adapter could not be loaded from resources: Not found.");
                 return null;
@@ -123,7 +120,6 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
             return null;
         }
     }
-
 
     @Override
     public @NotNull Class<? extends Tag> tagConfigurationClass() {

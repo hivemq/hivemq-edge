@@ -15,8 +15,23 @@
  */
 package com.hivemq.edge.adapters.opcua.southbound;
 
+import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.Guid;
+import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.Int16;
+import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.Int32;
+import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.Int64;
+import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.SByte;
+import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.UInt16;
+import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.UInt32;
+import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.UInt64;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import java.lang.reflect.Array;
+import java.time.Instant;
+import java.util.Base64;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 import org.apache.commons.lang3.NotImplementedException;
 import org.eclipse.milo.opcua.sdk.core.typetree.DataType;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
@@ -37,22 +52,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.lang.reflect.Array;
-import java.time.Instant;
-import java.util.Base64;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
-
-import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.Guid;
-import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.Int16;
-import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.Int32;
-import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.Int64;
-import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.SByte;
-import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.UInt16;
-import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.UInt32;
-import static org.eclipse.milo.opcua.stack.core.OpcUaDataType.UInt64;
 
 final class JsonToOpcUAConverterUtil {
 
@@ -101,10 +100,8 @@ final class JsonToOpcUAConverterUtil {
             try {
                 return ExpandedNodeId.parse(jsonNode.asText());
             } catch (final UaRuntimeException e) {
-                throw new RuntimeException("ExpandedNodeId could not be parsed from '" +
-                        jsonNode.asText() +
-                        "': " +
-                        e.getMessage());
+                throw new RuntimeException(
+                        "ExpandedNodeId could not be parsed from '" + jsonNode.asText() + "': " + e.getMessage());
             }
         }
         throw createException(jsonNode, OpcUaDataType.ExpandedNodeId.name());
@@ -115,10 +112,8 @@ final class JsonToOpcUAConverterUtil {
             try {
                 return NodeId.parse(jsonNode.asText());
             } catch (final UaRuntimeException e) {
-                throw new RuntimeException("NodeId could not be parsed from '" +
-                        jsonNode.asText() +
-                        "': " +
-                        e.getMessage());
+                throw new RuntimeException(
+                        "NodeId could not be parsed from '" + jsonNode.asText() + "': " + e.getMessage());
             }
         }
         throw createException(jsonNode, OpcUaDataType.NodeId.name());
@@ -170,8 +165,7 @@ final class JsonToOpcUAConverterUtil {
             if (parsedIntegerBack != jsonNode.intValue()) {
                 throw new IllegalArgumentException(String.format(
                         "An integer was supplied for a double node that is not representable without rounding. Input Integer: '%d', Output Double: '%f'. To avoid inaccuracies the publish will not be consumed.",
-                        jsonNode.intValue(),
-                        parsedDouble));
+                        jsonNode.intValue(), parsedDouble));
             }
             return parsedDouble;
         }
@@ -195,8 +189,7 @@ final class JsonToOpcUAConverterUtil {
             if (parsedIntegerBack != jsonNode.intValue()) {
                 throw new IllegalArgumentException(String.format(
                         "An integer was supplied for a float node that is not representable without rounding. Input Integer: '%d', Output Float: '%f'. To avoid inaccuracies the publish will not be consumed.",
-                        jsonNode.intValue(),
-                        parsedFloat));
+                        jsonNode.intValue(), parsedFloat));
             }
             return parsedFloat;
         }
@@ -270,7 +263,6 @@ final class JsonToOpcUAConverterUtil {
         throw createException(jsonNode, OpcUaDataType.Byte.name());
     }
 
-
     @VisibleForTesting
     static @NotNull UInteger extractUInteger(final @NotNull JsonNode jsonNode) {
         if (jsonNode.isInt() || jsonNode.isLong()) {
@@ -306,48 +298,48 @@ final class JsonToOpcUAConverterUtil {
     }
 
     static @NotNull IllegalArgumentException createException(
-            final @NotNull Object value,
-            final @NotNull String intendedClass) {
-        log.warn("Can not convert '{}' of class '{}' to '{}'.", value, value.getClass().getSimpleName(), intendedClass);
-        throw new IllegalArgumentException("Can not convert '" +
-                value +
-                "' of class '" +
-                value.getClass().getSimpleName() +
-                "' to " +
-                intendedClass +
-                '.');
+            final @NotNull Object value, final @NotNull String intendedClass) {
+        log.warn(
+                "Can not convert '{}' of class '{}' to '{}'.",
+                value,
+                value.getClass().getSimpleName(),
+                intendedClass);
+        throw new IllegalArgumentException("Can not convert '" + value
+                + "' of class '"
+                + value.getClass().getSimpleName()
+                + "' to "
+                + intendedClass
+                + '.');
     }
 
     static @NotNull IllegalArgumentException createOverflowException(
-            final @NotNull Object value,
-            final @NotNull String intendedClass) {
-        log.warn("Conversion error: The value  '{}' of type '{}' cannot be converted to '{}' due to overflow.",
+            final @NotNull Object value, final @NotNull String intendedClass) {
+        log.warn(
+                "Conversion error: The value  '{}' of type '{}' cannot be converted to '{}' due to overflow.",
                 value,
                 value.getClass().getSimpleName(),
                 intendedClass);
-        throw new IllegalArgumentException("Conversion error: The value '" +
-                value +
-                "' of type '" +
-                value.getClass().getSimpleName() +
-                "' cannot be concerted to " +
-                intendedClass +
-                "due to overflow.");
+        throw new IllegalArgumentException("Conversion error: The value '" + value
+                + "' of type '"
+                + value.getClass().getSimpleName()
+                + "' cannot be concerted to "
+                + intendedClass
+                + "due to overflow.");
     }
 
     static @NotNull IllegalArgumentException createUnderflowException(
-            final @NotNull Object value,
-            final @NotNull String intendedClass) {
-        log.warn("Conversion error: The value  '{}' of type '{}' cannot be converted to '{}' due to underflow.",
+            final @NotNull Object value, final @NotNull String intendedClass) {
+        log.warn(
+                "Conversion error: The value  '{}' of type '{}' cannot be converted to '{}' due to underflow.",
                 value,
                 value.getClass().getSimpleName(),
                 intendedClass);
-        throw new IllegalArgumentException("Conversion error: The value '" +
-                value +
-                "' of type '" +
-                value.getClass().getSimpleName() +
-                "' cannot be concerted to " +
-                intendedClass +
-                "due to underflow.");
+        throw new IllegalArgumentException("Conversion error: The value '" + value
+                + "' of type '"
+                + value.getClass().getSimpleName()
+                + "' cannot be concerted to "
+                + intendedClass
+                + "due to underflow.");
     }
 
     static void collectCustomDatatypes(
@@ -364,8 +356,7 @@ final class JsonToOpcUAConverterUtil {
     }
 
     static @NotNull Object parsetoOpcUAObject(
-            final @NotNull OpcUaDataType builtinDataType,
-            final @NotNull JsonNode jsonNode) {
+            final @NotNull OpcUaDataType builtinDataType, final @NotNull JsonNode jsonNode) {
 
         return switch (builtinDataType) {
             case Boolean -> extractBoolean(jsonNode);
@@ -400,8 +391,7 @@ final class JsonToOpcUAConverterUtil {
     }
 
     static @NotNull Object @NotNull [] generateArrayFromArrayNode(
-            final @NotNull ArrayNode arrayNode,
-            final @NotNull OpcUaDataType type) {
+            final @NotNull ArrayNode arrayNode, final @NotNull OpcUaDataType type) {
         final Object[] ret = (Object[]) Array.newInstance(type.getBackingClass(), arrayNode.size());
         for (int i = 0; i < arrayNode.size(); i++) {
             final JsonNode arrayEntry = arrayNode.get(i);

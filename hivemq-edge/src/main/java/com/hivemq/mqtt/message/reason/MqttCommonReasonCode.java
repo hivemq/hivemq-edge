@@ -21,7 +21,6 @@ package com.hivemq.mqtt.message.reason;
  * @author Silvio Giebl
  */
 public enum MqttCommonReasonCode implements Mqtt5ReasonCode {
-
     SUCCESS(0x00),
     NO_MATCHING_SUBSCRIBERS(0x10),
     UNSPECIFIED_ERROR(0x80),

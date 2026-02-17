@@ -21,5 +21,4 @@ package com.hivemq.extensions.events;
  * @author Florian Limpöck
  * @since 4.0.0
  */
-public class OnAuthSuccessEvent {
-}
+public class OnAuthSuccessEvent {}

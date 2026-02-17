@@ -28,14 +28,12 @@ import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.junit.jupiter.api.BeforeAll;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.BeforeAll;
 
 /**
  * @author Simon L Johnson
@@ -45,21 +43,22 @@ public class ProtocolAdapterConfigModelTest {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     @BeforeAll
-    static void beforeStart(){
+    static void beforeStart() {
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.setSerializationInclusion(JsonInclude.Include.ALWAYS);
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
     }
-    private static JsonNode findFirstChild(final @NotNull JsonNode parent, final @NotNull String nodeName){
+
+    private static JsonNode findFirstChild(final @NotNull JsonNode parent, final @NotNull String nodeName) {
         Preconditions.checkNotNull(parent);
         JsonNode child = parent.get(nodeName);
-        if(child != null){
+        if (child != null) {
             return child;
         } else {
             final Iterator<JsonNode> nodes = parent.iterator();
-            while (nodes.hasNext()){
-                if((child = findFirstChild(nodes.next(), nodeName)) != null){
+            while (nodes.hasNext()) {
+                if ((child = findFirstChild(nodes.next(), nodeName)) != null) {
                     return child;
                 }
             }
@@ -67,58 +66,64 @@ public class ProtocolAdapterConfigModelTest {
         return null;
     }
 
-    private static boolean hasImmediateChild(final @NotNull JsonNode parent, final @NotNull String nodeName){
+    private static boolean hasImmediateChild(final @NotNull JsonNode parent, final @NotNull String nodeName) {
         Preconditions.checkNotNull(parent);
         return parent.get(nodeName) != null;
     }
 
-    static class SpecificAdapterConfiguration implements ProtocolSpecificAdapterConfig {
-
-    }
+    static class SpecificAdapterConfiguration implements ProtocolSpecificAdapterConfig {}
 
     private static class TestToMqttMapping implements PollingContext {
 
         @JsonProperty(value = "mqttTopic", required = true)
-        @ModuleConfigField(title = "Destination Topic",
-                           description = "The topic to publish data on",
-                           required = true,
-                           format = ModuleConfigField.FieldType.MQTT_TOPIC)
+        @ModuleConfigField(
+                title = "Destination Topic",
+                description = "The topic to publish data on",
+                required = true,
+                format = ModuleConfigField.FieldType.MQTT_TOPIC)
         protected @Nullable String mqttTopic;
 
         @JsonProperty(value = "mqttQos", required = true)
-        @ModuleConfigField(title = "MQTT QoS",
-                           description = "MQTT Quality of Service level",
-                           required = true,
-                           numberMin = 0,
-                           numberMax = 2,
-                           defaultValue = "0")
+        @ModuleConfigField(
+                title = "MQTT QoS",
+                description = "MQTT Quality of Service level",
+                required = true,
+                numberMin = 0,
+                numberMax = 2,
+                defaultValue = "0")
         protected int qos = 0;
 
         @JsonProperty(value = "messageHandlingOptions")
-        @ModuleConfigField(title = "Message Handling Options",
-                           description = "This setting defines the format of the resulting MQTT message, either a message per changed tag or a message per subscription that may include multiple data points per sample",
-                           enumDisplayValues = {
-                                   "MQTT Message Per Device Tag",
-                                   "MQTT Message Per Subscription (Potentially Multiple Data Points Per Sample)"},
-                           defaultValue = "MQTTMessagePerTag")
+        @ModuleConfigField(
+                title = "Message Handling Options",
+                description =
+                        "This setting defines the format of the resulting MQTT message, either a message per changed tag or a message per subscription that may include multiple data points per sample",
+                enumDisplayValues = {
+                    "MQTT Message Per Device Tag",
+                    "MQTT Message Per Subscription (Potentially Multiple Data Points Per Sample)"
+                },
+                defaultValue = "MQTTMessagePerTag")
         protected @NotNull MessageHandlingOptions messageHandlingOptions = MessageHandlingOptions.MQTTMessagePerTag;
 
         @JsonProperty(value = "includeTimestamp")
-        @ModuleConfigField(title = "Include Sample Timestamp In Publish?",
-                           description = "Include the unix timestamp of the sample time in the resulting MQTT message",
-                           defaultValue = "true")
+        @ModuleConfigField(
+                title = "Include Sample Timestamp In Publish?",
+                description = "Include the unix timestamp of the sample time in the resulting MQTT message",
+                defaultValue = "true")
         protected @NotNull Boolean includeTimestamp = Boolean.TRUE;
 
         @JsonProperty(value = "includeTagNames")
-        @ModuleConfigField(title = "Include Tag Names In Publish?",
-                           description = "Include the names of the tags in the resulting MQTT publish",
-                           defaultValue = "false")
+        @ModuleConfigField(
+                title = "Include Tag Names In Publish?",
+                description = "Include the names of the tags in the resulting MQTT publish",
+                defaultValue = "false")
         protected @NotNull Boolean includeTagNames = Boolean.FALSE;
 
         @JsonProperty(value = "mqttUserProperties")
-        @ModuleConfigField(title = "MQTT User Properties",
-                           description = "Arbitrary properties to associate with the mapping",
-                           arrayMaxItems = 10)
+        @ModuleConfigField(
+                title = "MQTT User Properties",
+                description = "Arbitrary properties to associate with the mapping",
+                arrayMaxItems = 10)
         private @NotNull List<MqttUserProperty> userProperties = new ArrayList<>();
 
         @JsonCreator

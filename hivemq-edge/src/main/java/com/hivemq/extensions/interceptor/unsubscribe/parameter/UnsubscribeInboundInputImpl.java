@@ -16,12 +16,12 @@
 package com.hivemq.extensions.interceptor.unsubscribe.parameter;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
 import com.hivemq.extension.sdk.api.interceptor.unsubscribe.parameter.UnsubscribeInboundInput;
 import com.hivemq.extensions.executor.task.PluginTaskInput;
 import com.hivemq.extensions.packets.unsubscribe.UnsubscribePacketImpl;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Robin Atherton
@@ -61,6 +61,8 @@ public class UnsubscribeInboundInputImpl implements UnsubscribeInboundInput, Plu
 
     public @NotNull UnsubscribeInboundInputImpl update(final @NotNull UnsubscribeInboundOutputImpl output) {
         return new UnsubscribeInboundInputImpl(
-                clientInformation, connectionInformation, output.getUnsubscribePacket().copy());
+                clientInformation,
+                connectionInformation,
+                output.getUnsubscribePacket().copy());
     }
 }

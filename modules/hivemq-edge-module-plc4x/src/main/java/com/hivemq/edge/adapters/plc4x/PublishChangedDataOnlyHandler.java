@@ -16,14 +16,13 @@
 package com.hivemq.edge.adapters.plc4x;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This class is here TEMPORARY, the functionality will be moved into NorthboundMappings
@@ -31,15 +30,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class PublishChangedDataOnlyHandler {
     private final @NotNull Map<String, Set<DataPoint>> lastSamples = new ConcurrentHashMap<>();
 
-    public boolean checkIfValuesHaveChangedSinceLastInvocation(final @NotNull String tagName, final @NotNull List<DataPoint> newValue) {
+    public boolean checkIfValuesHaveChangedSinceLastInvocation(
+            final @NotNull String tagName, final @NotNull List<DataPoint> newValue) {
         final var replaced = new AtomicBoolean(false);
-        lastSamples.compute(tagName, (key,value) -> {
+        lastSamples.compute(tagName, (key, value) -> {
             if (value == null) {
                 replaced.set(true);
                 return new HashSet<>(newValue);
             } else {
                 final var newSet = new HashSet<>(newValue);
-                if(!newSet.equals(value)) {
+                if (!newSet.equals(value)) {
                     replaced.set(true);
                     return new HashSet<>(newValue);
                 } else {

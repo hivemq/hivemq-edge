@@ -16,7 +16,6 @@
 package com.hivemq.configuration.entity.mqtt;
 
 import com.hivemq.configuration.entity.EnabledEntity;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlRootElement;
@@ -28,5 +27,4 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 @XmlRootElement(name = "shared-subscriptions")
 @XmlAccessorType(XmlAccessType.NONE)
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
-public class SharedSubscriptionsConfigEntity extends EnabledEntity {
-}
+public class SharedSubscriptionsConfigEntity extends EnabledEntity {}

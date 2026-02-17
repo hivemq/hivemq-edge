@@ -21,20 +21,20 @@ import com.hivemq.edge.adapters.etherip.model.dataypes.EtherIpInt;
 import com.hivemq.edge.adapters.etherip.model.dataypes.EtherIpLong;
 import com.hivemq.edge.adapters.etherip.model.dataypes.EtherIpString;
 import etherip.types.CIPData;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Optional;
-
 public class EtherIpValueFactory {
     private static final Logger log = LoggerFactory.getLogger(EtherIpValue.class);
 
-    public static Optional<EtherIpValue> fromTagAddressAndCipData(@NotNull String tagAddress, @NotNull CIPData cipData) {
+    public static Optional<EtherIpValue> fromTagAddressAndCipData(
+            @NotNull String tagAddress, @NotNull CIPData cipData) {
         CIPData.Type dataType = cipData.getType();
 
         try {
-            if(cipData.isNumeric()) {
+            if (cipData.isNumeric()) {
                 if (cipData.getElementCount() > 1) {
                     log.warn("More than one element returned, only the first one will be used");
                 }

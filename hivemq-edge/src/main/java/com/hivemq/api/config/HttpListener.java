@@ -15,17 +15,16 @@
  */
 package com.hivemq.api.config;
 
-import org.jetbrains.annotations.NotNull;
-
 import static com.google.common.base.Preconditions.checkNotNull;
+
+import org.jetbrains.annotations.NotNull;
 
 public class HttpListener implements ApiListener {
 
     private final int port;
     private final @NotNull String bindAddress;
 
-    public HttpListener(
-            final int port, final @NotNull String bindAddress) {
+    public HttpListener(final int port, final @NotNull String bindAddress) {
         checkNotNull(bindAddress, "Bind address must not be null");
         this.port = port;
         this.bindAddress = bindAddress;
@@ -38,5 +37,4 @@ public class HttpListener implements ApiListener {
     public String getBindAddress() {
         return bindAddress;
     }
-
 }

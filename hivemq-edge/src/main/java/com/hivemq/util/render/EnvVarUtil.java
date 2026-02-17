@@ -16,12 +16,11 @@
 package com.hivemq.util.render;
 
 import com.hivemq.exceptions.UnrecoverableException;
+import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.regex.Pattern;
 
 /**
  * Util for handling system environment variables
@@ -42,7 +41,7 @@ public class EnvVarUtil {
      * @return the value of the environment variable with the specified name
      */
     public static @Nullable String getValue(final @NotNull String name) {
-        //also check java properties if system variable is not found
+        // also check java properties if system variable is not found
         final var systemProperty = System.getProperty(name);
         if (systemProperty != null) {
             return systemProperty;
@@ -61,13 +60,12 @@ public class EnvVarUtil {
     public static @NotNull String replaceEnvironmentVariablePlaceholders(final @NotNull String text) {
         final var resultString = new StringBuilder();
 
-        final var matcher = Pattern.compile(ENV_VAR_PATTERN)
-                .matcher(text);
+        final var matcher = Pattern.compile(ENV_VAR_PATTERN).matcher(text);
 
         while (matcher.find()) {
 
             if (matcher.groupCount() < 1) {
-                //this should never happen as we declared 1 groups in the ENV_VAR_PATTERN
+                // this should never happen as we declared 1 groups in the ENV_VAR_PATTERN
                 log.warn("Found unexpected environment variable placeholder in config.xml");
                 matcher.appendReplacement(resultString, "");
                 continue;
@@ -82,20 +80,17 @@ public class EnvVarUtil {
                 throw new UnrecoverableException(false);
             }
 
-            //sets replacement for this match
+            // sets replacement for this match
             matcher.appendReplacement(resultString, escapeReplacement(replacement));
-
         }
 
-        //adds everything except the replacements to the string buffer
+        // adds everything except the replacements to the string buffer
         matcher.appendTail(resultString);
 
         return resultString.toString();
     }
 
     private static @NotNull String escapeReplacement(final @NotNull String replacement) {
-        return replacement
-                .replace("\\", "\\\\")
-                .replace("$", "\\$");
+        return replacement.replace("\\", "\\\\").replace("$", "\\$");
     }
 }

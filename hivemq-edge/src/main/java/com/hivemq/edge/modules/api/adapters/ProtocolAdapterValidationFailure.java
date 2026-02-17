@@ -19,11 +19,15 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public interface ProtocolAdapterValidationFailure {
-    @NotNull String getMessage();
+    @NotNull
+    String getMessage();
 
-    @Nullable Class getOrigin();
+    @Nullable
+    Class getOrigin();
 
-    @Nullable Throwable getCause();
+    @Nullable
+    Throwable getCause();
 
-    @Nullable String getFieldName();
+    @Nullable
+    String getFieldName();
 }

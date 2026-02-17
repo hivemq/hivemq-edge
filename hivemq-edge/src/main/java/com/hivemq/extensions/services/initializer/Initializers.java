@@ -15,10 +15,9 @@
  */
 package com.hivemq.extensions.services.initializer;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.intializer.ClientInitializer;
-
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -36,5 +35,6 @@ public interface Initializers {
     /**
      * @return a map of extension ids and client initializers, sorted descending by extension priority.
      */
-    @NotNull Map<@NotNull String, @NotNull ClientInitializer> getClientInitializerMap();
+    @NotNull
+    Map<@NotNull String, @NotNull ClientInitializer> getClientInitializerMap();
 }

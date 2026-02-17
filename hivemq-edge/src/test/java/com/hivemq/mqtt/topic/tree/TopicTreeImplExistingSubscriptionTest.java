@@ -15,6 +15,8 @@
  */
 package com.hivemq.mqtt.topic.tree;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.metrics.MetricsHolder;
@@ -24,20 +26,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 /**
  * @author Christoph Schäbel
  */
 public class TopicTreeImplExistingSubscriptionTest {
 
     private LocalTopicTree topicTree;
+
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.initMocks(this);
         InternalConfigurations.TOPIC_TREE_MAP_CREATION_THRESHOLD.set(1);
         topicTree = new LocalTopicTree(new MetricsHolder(new MetricRegistry()));
-
     }
 
     @Test
@@ -48,7 +48,6 @@ public class TopicTreeImplExistingSubscriptionTest {
 
         assertTrue(topicTree.addTopic("client2", new Topic("#", QoS.EXACTLY_ONCE), (byte) 0, null));
         assertTrue(topicTree.addTopic("client", new Topic("#", QoS.EXACTLY_ONCE), (byte) 0, null));
-
     }
 
     @Test
@@ -100,5 +99,4 @@ public class TopicTreeImplExistingSubscriptionTest {
         assertFalse(topicTree.addTopic("client", new Topic("b/#", QoS.EXACTLY_ONCE), (byte) 0, null));
         assertFalse(topicTree.addTopic("client", new Topic("#", QoS.EXACTLY_ONCE), (byte) 0, null));
     }
-
 }

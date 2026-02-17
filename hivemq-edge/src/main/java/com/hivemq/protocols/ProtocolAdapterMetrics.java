@@ -15,14 +15,13 @@
  */
 package com.hivemq.protocols;
 
-import com.codahale.metrics.MetricRegistry;
-import org.jetbrains.annotations.NotNull;
+import static com.hivemq.metrics.HiveMQMetrics.ADAPTERS_CURRENT;
 
+import com.codahale.metrics.MetricRegistry;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.hivemq.metrics.HiveMQMetrics.ADAPTERS_CURRENT;
+import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class ProtocolAdapterMetrics {
@@ -41,12 +40,16 @@ public class ProtocolAdapterMetrics {
     }
 
     public void increaseProtocolAdapterMetric(final @NotNull String protocolType) {
-        metricRegistry.counter(PROTOCOL_ADAPTER_PREFIX + protocolType + ".current").inc();
+        metricRegistry
+                .counter(PROTOCOL_ADAPTER_PREFIX + protocolType + ".current")
+                .inc();
         currentAdapters.incrementAndGet();
     }
 
     public void decreaseProtocolAdapterMetric(final @NotNull String protocolType) {
-        metricRegistry.counter(PROTOCOL_ADAPTER_PREFIX + protocolType + ".current").dec();
+        metricRegistry
+                .counter(PROTOCOL_ADAPTER_PREFIX + protocolType + ".current")
+                .dec();
         currentAdapters.decrementAndGet();
     }
 }

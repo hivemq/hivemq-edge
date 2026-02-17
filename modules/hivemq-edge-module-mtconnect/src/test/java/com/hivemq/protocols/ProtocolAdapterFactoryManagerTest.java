@@ -15,6 +15,8 @@
  */
 package com.hivemq.protocols;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.configuration.info.SystemInformationImpl;
 import com.hivemq.edge.HiveMQEdgeConstants;
@@ -22,14 +24,11 @@ import com.hivemq.edge.adapters.mtconnect.MtConnectProtocolAdapterInformation;
 import com.hivemq.edge.impl.events.EventServiceDelegateImpl;
 import com.hivemq.edge.impl.events.InMemoryEventImpl;
 import com.hivemq.edge.modules.ModuleLoader;
+import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.Map;
-import java.util.Set;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class ProtocolAdapterFactoryManagerTest {
     @BeforeEach
@@ -47,14 +46,13 @@ public class ProtocolAdapterFactoryManagerTest {
         final ModuleLoader moduleLoader = new ModuleLoader(new SystemInformationImpl(true));
         moduleLoader.loadModules();
         final Set<ModuleLoader.EdgeModule> modules = moduleLoader.getModules();
-        assertThat(modules).isNotEmpty()
-                .filteredOn(module -> MtConnectProtocolAdapterInformation.MODULE_NAME.equals(module.getRoot()
-                        .getName()))
+        assertThat(modules)
+                .isNotEmpty()
+                .filteredOn(module -> MtConnectProtocolAdapterInformation.MODULE_NAME.equals(
+                        module.getRoot().getName()))
                 .hasSize(1);
         final Map<String, ProtocolAdapterFactory<?>> adapterFactoryMap = ProtocolAdapterFactoryManager.findAllAdapters(
-                moduleLoader,
-                new EventServiceDelegateImpl(new InMemoryEventImpl()),
-                true);
+                moduleLoader, new EventServiceDelegateImpl(new InMemoryEventImpl()), true);
         assertThat(adapterFactoryMap).isNotEmpty().containsKey(MtConnectProtocolAdapterInformation.PROTOCOL_ID);
     }
 }

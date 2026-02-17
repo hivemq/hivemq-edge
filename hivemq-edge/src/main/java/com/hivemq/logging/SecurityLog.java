@@ -21,9 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-
 /**
  * The SecurityLog class is used to log certain events that could be important for customers to separate files.
  */
@@ -35,13 +32,12 @@ public class SecurityLog {
     /**
      * Events are logged to DEBUG, in case customers are using a custom logback.xml
      */
-
     private static final Logger logAuthenticationFailed = LoggerFactory.getLogger(SECURITY_AUTHENTICATION_FAILED);
+
     private static final Logger logAuthenticationSucceeded = LoggerFactory.getLogger(SECURITY_AUTHENTICATION_SUCCEEDED);
 
     @Inject
-    public SecurityLog() {
-    }
+    public SecurityLog() {}
 
     /**
      * Log that an authentication was successful
@@ -49,13 +45,8 @@ public class SecurityLog {
      * @param mechanism the authentication mechanism used
      * @param userName the username of the authenticated user
      */
-    public void authenticationSucceeded(
-            final @NotNull String mechanism,
-            final @NotNull String userName) {
-        logAuthenticationSucceeded.debug(
-                "Successfully authenticated user {} using {}",
-                userName,
-                mechanism);
+    public void authenticationSucceeded(final @NotNull String mechanism, final @NotNull String userName) {
+        logAuthenticationSucceeded.debug("Successfully authenticated user {} using {}", userName, mechanism);
     }
 
     /**
@@ -66,13 +57,7 @@ public class SecurityLog {
      * @param reason why the authentication failed
      */
     public void authenticationFailed(
-            final @NotNull String mechanism,
-            final @NotNull String userName,
-            final @NotNull String reason) {
-        logAuthenticationFailed.debug(
-                "Failed to authenticate user {} using {}: {}",
-                userName,
-                mechanism,
-                reason);
+            final @NotNull String mechanism, final @NotNull String userName, final @NotNull String reason) {
+        logAuthenticationFailed.debug("Failed to authenticate user {} using {}: {}", userName, mechanism, reason);
     }
 }

@@ -16,8 +16,8 @@
 package com.hivemq.api.model.capabilities;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.jetbrains.annotations.NotNull;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.jetbrains.annotations.NotNull;
 
 public class Capability {
 
@@ -33,9 +33,10 @@ public class Capability {
     @Schema(description = "A description for the capability")
     private final @NotNull String description;
 
-    public Capability(@JsonProperty("id") final @NotNull String id,
-                      @JsonProperty("displayName") final @NotNull String displayName,
-                      @JsonProperty("description") final @NotNull String description) {
+    public Capability(
+            @JsonProperty("id") final @NotNull String id,
+            @JsonProperty("displayName") final @NotNull String displayName,
+            @JsonProperty("description") final @NotNull String description) {
         this.id = id;
         this.displayName = displayName;
         this.description = description;
@@ -53,4 +54,3 @@ public class Capability {
         return description;
     }
 }
-

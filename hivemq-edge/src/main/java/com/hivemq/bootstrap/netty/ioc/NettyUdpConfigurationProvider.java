@@ -16,23 +16,22 @@
 package com.hivemq.bootstrap.netty.ioc;
 
 import com.hivemq.bootstrap.netty.NettyUdpConfiguration;
-import org.jetbrains.annotations.NotNull;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This Provider creates the configuration for Netty.
  */
 @Singleton
-public class NettyUdpConfigurationProvider extends AbstractNettyConfigurationProvider implements Provider<NettyUdpConfiguration> {
+public class NettyUdpConfigurationProvider extends AbstractNettyConfigurationProvider
+        implements Provider<NettyUdpConfiguration> {
 
     @Inject
-    public NettyUdpConfigurationProvider() {
-    }
+    public NettyUdpConfigurationProvider() {}
 
     @NotNull
     @Override
@@ -43,5 +42,4 @@ public class NettyUdpConfigurationProvider extends AbstractNettyConfigurationPro
 
         return new NettyUdpConfiguration(NioDatagramChannel.class, parentEventLoop, childEventLoop);
     }
-
 }

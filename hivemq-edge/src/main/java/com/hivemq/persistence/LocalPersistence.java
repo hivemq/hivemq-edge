@@ -26,5 +26,4 @@ public interface LocalPersistence {
      * @param bucketIndex the persistence bucket index.
      */
     void closeDB(int bucketIndex);
-
 }

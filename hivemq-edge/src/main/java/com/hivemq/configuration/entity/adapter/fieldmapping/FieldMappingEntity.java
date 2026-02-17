@@ -19,8 +19,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.configuration.entity.EntityValidatable;
 import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
@@ -28,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("unused")
 public class FieldMappingEntity implements EntityValidatable {
@@ -36,13 +35,12 @@ public class FieldMappingEntity implements EntityValidatable {
     @XmlElement(name = "instruction")
     private final @NotNull List<InstructionEntity> instructions;
 
-    //no arg constructor for JaxB
+    // no arg constructor for JaxB
     public FieldMappingEntity() {
         instructions = new ArrayList<>();
     }
 
-    public FieldMappingEntity(
-            final @NotNull List<InstructionEntity> instructions) {
+    public FieldMappingEntity(final @NotNull List<InstructionEntity> instructions) {
         this.instructions = instructions;
     }
 

@@ -17,5 +17,4 @@ package com.hivemq.edge.modules.adapters.impl.polling.batch;
 
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
 
-public class BatchPollingInputImpl implements BatchPollingInput {
-}
+public class BatchPollingInputImpl implements BatchPollingInput {}

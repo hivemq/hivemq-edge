@@ -21,14 +21,13 @@ import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
 import com.hivemq.edge.api.model.FieldMapping;
 import com.hivemq.edge.api.model.Instruction;
 import com.hivemq.persistence.mappings.SouthboundMapping;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlElement;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("unused")
 public class SouthboundMappingEntity implements EntityValidatable {
@@ -93,21 +92,21 @@ public class SouthboundMappingEntity implements EntityValidatable {
     }
 
     public @NotNull com.hivemq.edge.api.model.SouthboundMapping toAPi() {
-        return com.hivemq.edge.api.model.SouthboundMapping
-                .builder()
+        return com.hivemq.edge.api.model.SouthboundMapping.builder()
                 .tagName(this.getTagName())
                 .topicFilter(this.getTopicFilter())
-                .fieldMapping(this.fieldMapping != null ?
-                        FieldMapping
-                                .builder()
-                                .instructions(
-                                        this.fieldMapping.getInstructions().stream()
-                                            .map(instruction ->
-                                                    (Instruction)Instruction
-                                                        .builder()
-                                                            .destination(instruction.getDestinationFieldName())
-                                                            .source(instruction.getSourceFieldName())
-                                                        .build()).toList()).build() : null).build();
+                .fieldMapping(
+                        this.fieldMapping != null
+                                ? FieldMapping.builder()
+                                        .instructions(this.fieldMapping.getInstructions().stream()
+                                                .map(instruction -> (Instruction) Instruction.builder()
+                                                        .destination(instruction.getDestinationFieldName())
+                                                        .source(instruction.getSourceFieldName())
+                                                        .build())
+                                                .toList())
+                                        .build()
+                                : null)
+                .build();
     }
 
     public static @NotNull SouthboundMappingEntity fromPersistence(final @NotNull SouthboundMapping southboundMapping) {
@@ -118,7 +117,9 @@ public class SouthboundMappingEntity implements EntityValidatable {
                 southboundMapping.getSchema());
     }
 
-    public static @NotNull SouthboundMappingEntity fromApi(final @NotNull com.hivemq.edge.api.model.SouthboundMapping southboundMapping, final @NotNull String schema) {
+    public static @NotNull SouthboundMappingEntity fromApi(
+            final @NotNull com.hivemq.edge.api.model.SouthboundMapping southboundMapping,
+            final @NotNull String schema) {
         return new SouthboundMappingEntity(
                 southboundMapping.getTagName(),
                 southboundMapping.getTopicFilter(),
@@ -131,10 +132,10 @@ public class SouthboundMappingEntity implements EntityValidatable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final SouthboundMappingEntity that = (SouthboundMappingEntity) o;
-        return Objects.equals(getTopicFilter(), that.getTopicFilter()) &&
-                Objects.equals(getTagName(), that.getTagName()) &&
-                Objects.equals(fieldMapping, that.fieldMapping) &&
-                Objects.equals(fromNorthSchema, that.fromNorthSchema);
+        return Objects.equals(getTopicFilter(), that.getTopicFilter())
+                && Objects.equals(getTagName(), that.getTagName())
+                && Objects.equals(fieldMapping, that.fieldMapping)
+                && Objects.equals(fromNorthSchema, that.fromNorthSchema);
     }
 
     @Override

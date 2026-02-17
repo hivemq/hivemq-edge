@@ -15,7 +15,6 @@
  */
 package com.hivemq.util;
 
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
@@ -26,10 +25,9 @@ import jakarta.inject.Singleton;
 public class NanoTimeProvider {
 
     @Inject
-    NanoTimeProvider(){}
+    NanoTimeProvider() {}
 
-    public long nanoTime(){
+    public long nanoTime() {
         return System.nanoTime();
     }
-
 }

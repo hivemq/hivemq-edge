@@ -18,15 +18,14 @@ package com.hivemq.protocols.params;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.discovery.NodeTree;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class NodeTreeImpl implements NodeTree {
 
@@ -36,7 +35,8 @@ public class NodeTreeImpl implements NodeTree {
     @Override
     public void addNode(
             final @NotNull String id,
-            final @NotNull String name, final @NotNull String value,
+            final @NotNull String name,
+            final @NotNull String value,
             final @NotNull String description,
             final @Nullable String parentId,
             @NotNull final NodeType nodeType,
@@ -91,7 +91,8 @@ public class NodeTreeImpl implements NodeTree {
 
         public ObjectNode(
                 final @NotNull String name,
-                final @NotNull String description, final @NotNull String value,
+                final @NotNull String description,
+                final @NotNull String value,
                 final @NotNull String id,
                 final @NotNull NodeType nodeType,
                 final boolean selectable) {
@@ -141,8 +142,6 @@ public class NodeTreeImpl implements NodeTree {
 
             return indent(indent, result.toString());
         }
-
-
     }
 
     public static @NotNull String indent(final int n, final String src) {

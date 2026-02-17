@@ -15,8 +15,8 @@
  */
 package com.hivemq.extensions.auth.parameter;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.parameter.TopicPermission;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
@@ -26,7 +26,8 @@ public interface InternalTopicPermission extends TopicPermission {
     /**
      * @return the topic split by '/' as a String[]
      */
-    @NotNull String[] getSplitTopic();
+    @NotNull
+    String[] getSplitTopic();
 
     /**
      * @return true if '#' or '+' is in the topic string, else false

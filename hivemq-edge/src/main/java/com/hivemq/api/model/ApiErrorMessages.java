@@ -20,12 +20,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Lists;
 import com.hivemq.http.error.Error;
-import com.hivemq.http.error.Error;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 
 public class ApiErrorMessages {
 
@@ -33,14 +31,14 @@ public class ApiErrorMessages {
     private final @NotNull List<@NotNull ApiErrorMessage> errors = new ArrayList<>();
 
     public ApiErrorMessages(final @NotNull ApiErrorMessage... errors) {
-        if(errors != null && errors.length > 0){
+        if (errors != null && errors.length > 0) {
             this.errors.addAll(Lists.newArrayList(errors));
         }
     }
 
     @JsonCreator
     public ApiErrorMessages(@JsonProperty("errors") final List<@NotNull ApiErrorMessage> errors) {
-        if(errors != null && errors.size() > 0){
+        if (errors != null && errors.size() > 0) {
             this.errors.addAll(errors);
         }
     }
@@ -50,15 +48,14 @@ public class ApiErrorMessages {
     }
 
     @JsonIgnore
-    public ApiErrorMessages addError(final @NotNull ApiErrorMessage error){
+    public ApiErrorMessages addError(final @NotNull ApiErrorMessage error) {
         this.errors.add(error);
         return this;
     }
 
     @JsonIgnore
-    public List<Error> toErrorList(){
-        return errors
-                .stream()
+    public List<Error> toErrorList() {
+        return errors.stream()
                 .map(error -> new Error(error.getTitle(), error.getFieldName()))
                 .collect(Collectors.toList());
     }

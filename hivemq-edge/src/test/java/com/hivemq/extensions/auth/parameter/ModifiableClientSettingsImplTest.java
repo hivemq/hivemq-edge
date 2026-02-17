@@ -15,14 +15,13 @@
  */
 package com.hivemq.extensions.auth.parameter;
 
-import org.jetbrains.annotations.NotNull;
-import com.hivemq.extension.sdk.api.auth.parameter.OverloadProtectionThrottlingLevel;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
+import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import static org.junit.jupiter.api.Assertions.*;
+import com.hivemq.extension.sdk.api.auth.parameter.OverloadProtectionThrottlingLevel;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Lukas Brandl
@@ -31,6 +30,7 @@ public class ModifiableClientSettingsImplTest {
 
     @NotNull
     private ModifiableClientSettingsImpl clientSettings;
+
     @BeforeEach
     public void setUp() throws Exception {
         clientSettings = new ModifiableClientSettingsImpl(65535, null);
@@ -38,13 +38,13 @@ public class ModifiableClientSettingsImplTest {
 
     @Test
     public void test_client_receive_max_to_low() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> clientSettings.setClientReceiveMaximum(0));
     }
 
     @Test
     public void test_client_receive_max_to_high() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> clientSettings.setClientReceiveMaximum(65535 + 1));
     }
 

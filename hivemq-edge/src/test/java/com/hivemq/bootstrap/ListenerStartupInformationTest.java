@@ -15,29 +15,29 @@
  */
 package com.hivemq.bootstrap;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.hivemq.configuration.service.entity.MqttTcpListener;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 public class ListenerStartupInformationTest {
-
 
     @Test
     public void test_successful_listener_startup_original_listener_null() {
-    
-        assertThrows(NullPointerException.class, () -> ListenerStartupInformation.successfulListenerStartup(1883, null));
+
+        assertThrows(
+                NullPointerException.class, () -> ListenerStartupInformation.successfulListenerStartup(1883, null));
     }
 
     @Test
     public void test_successful_listener() throws Exception {
         final MqttTcpListener listener = new MqttTcpListener(1883, "0.0.0.0");
-        final ListenerStartupInformation info = ListenerStartupInformation.successfulListenerStartup(listener.getPort(), listener);
+        final ListenerStartupInformation info =
+                ListenerStartupInformation.successfulListenerStartup(listener.getPort(), listener);
 
         assertTrue(info.isSuccessful());
         assertEquals(1883, info.getPort());
@@ -47,14 +47,16 @@ public class ListenerStartupInformationTest {
 
     @Test
     public void test_failed_listener_startup_original_listener_null() {
-    
-        assertThrows(NullPointerException.class, () -> ListenerStartupInformation.failedListenerStartup(1883, null, null));
+
+        assertThrows(
+                NullPointerException.class, () -> ListenerStartupInformation.failedListenerStartup(1883, null, null));
     }
 
     @Test
     public void test_failed_listener_no_exception() throws Exception {
         final MqttTcpListener listener = new MqttTcpListener(1883, "0.0.0.0");
-        final ListenerStartupInformation info = ListenerStartupInformation.failedListenerStartup(listener.getPort(), listener, null);
+        final ListenerStartupInformation info =
+                ListenerStartupInformation.failedListenerStartup(listener.getPort(), listener, null);
 
         assertFalse(info.isSuccessful());
         assertEquals(1883, info.getPort());
@@ -65,7 +67,8 @@ public class ListenerStartupInformationTest {
     @Test
     public void test_failed_listener_exception() throws Exception {
         final MqttTcpListener listener = new MqttTcpListener(1883, "0.0.0.0");
-        final ListenerStartupInformation info = ListenerStartupInformation.failedListenerStartup(listener.getPort(), listener, new IllegalArgumentException("illegal"));
+        final ListenerStartupInformation info = ListenerStartupInformation.failedListenerStartup(
+                listener.getPort(), listener, new IllegalArgumentException("illegal"));
 
         assertFalse(info.isSuccessful());
         assertEquals(1883, info.getPort());
@@ -73,5 +76,4 @@ public class ListenerStartupInformationTest {
         assertTrue(info.getException().isPresent());
         assertEquals(IllegalArgumentException.class, info.getException().get().getClass());
     }
-
 }

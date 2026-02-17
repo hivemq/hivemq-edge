@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.codec.encoder;
 
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.metrics.handler.GlobalMQTTMessageCounter;
 import com.hivemq.mqtt.message.Message;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
-
 import jakarta.inject.Inject;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Dominik Obermaier
@@ -47,7 +45,8 @@ public class MQTTMessageEncoder extends MessageToByteEncoder<Message> {
     @Override
     protected void encode(
             final @NotNull ChannelHandlerContext ctx, final @NotNull Message msg, final @NotNull ByteBuf out) {
-        final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         globalMQTTMessageCounter.countOutbound(msg);
         encoderFactory.encode(clientConnection, msg, out);
         globalMQTTMessageCounter.countOutboundTraffic(out.readableBytes());
@@ -56,7 +55,8 @@ public class MQTTMessageEncoder extends MessageToByteEncoder<Message> {
     @Override
     protected @NotNull ByteBuf allocateBuffer(
             final @NotNull ChannelHandlerContext ctx, final @NotNull Message msg, final boolean preferDirect) {
-        final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         return encoderFactory.allocateBuffer(clientConnection, msg, preferDirect);
     }
 }

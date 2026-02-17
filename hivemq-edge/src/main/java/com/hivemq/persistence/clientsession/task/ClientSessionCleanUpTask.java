@@ -15,16 +15,15 @@
  */
 package com.hivemq.persistence.clientsession.task;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientsession.ClientSessionPersistence;
 import com.hivemq.persistence.clientsession.ClientSessionPersistenceImpl;
 import com.hivemq.persistence.clientsession.PendingWillMessages;
 import com.hivemq.persistence.local.ClientSessionLocalPersistence;
 import com.hivemq.util.Checkpoints;
-
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ClientSessionCleanUpTask implements SingleWriterService.Task<Void> {
 

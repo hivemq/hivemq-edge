@@ -15,7 +15,6 @@
  */
 package com.hivemq.bootstrap.netty;
 
-
 import io.netty.channel.Channel;
 
 /**

@@ -21,8 +21,6 @@ import com.hivemq.codec.decoder.mqtt.mqtt3.Mqtt31ConnectDecoder;
 import com.hivemq.codec.decoder.mqtt.mqtt5.Mqtt5ConnectDecoder;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.handler.connack.MqttConnacker;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.connect.CONNECT;
@@ -30,9 +28,10 @@ import com.hivemq.mqtt.message.reason.Mqtt5ConnAckReasonCode;
 import com.hivemq.util.ClientIds;
 import com.hivemq.util.ReasonStrings;
 import io.netty.buffer.ByteBuf;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The MQTT 'parent' decoder which decides to which actual MQTT decoder the message is delegated to
@@ -73,10 +72,11 @@ public class MqttConnectDecoder {
          * decide since the protocol name is not going to change.
          */
 
-        //The reader index is now at the beginning of the variable MQTT header field. We're only
+        // The reader index is now at the beginning of the variable MQTT header field. We're only
         // interested in the Length LSB byte
         if (buf.readableBytes() < 2) {
-            mqttConnacker.connackError(clientConnection.getChannel(),
+            mqttConnacker.connackError(
+                    clientConnection.getChannel(),
                     "A client (IP: {}) connected with a packet without protocol version.",
                     "Sent CONNECT without protocol version",
                     Mqtt5ConnAckReasonCode.UNSUPPORTED_PROTOCOL_VERSION,
@@ -135,7 +135,8 @@ public class MqttConnectDecoder {
     }
 
     private void connackInvalidProtocolVersion(final @NotNull ClientConnection clientConnection) {
-        mqttConnacker.connackError(clientConnection.getChannel(),
+        mqttConnacker.connackError(
+                clientConnection.getChannel(),
                 "A client (IP: {}) connected with an invalid protocol version.",
                 "Sent CONNECT with an invalid protocol version",
                 Mqtt5ConnAckReasonCode.UNSUPPORTED_PROTOCOL_VERSION,

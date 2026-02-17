@@ -15,6 +15,16 @@
  */
 package com.hivemq.extensions.services.publish;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.util.concurrent.Futures;
 import com.hivemq.common.shutdown.ShutdownHooks;
@@ -40,27 +50,13 @@ import com.hivemq.mqtt.services.PublishDistributor;
 import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
 import com.hivemq.mqtt.topic.SubscriptionFlag;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import org.junit.jupiter.api.Timeout;
-import util.TestConfigurationBootstrap;
-
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import util.TestConfigurationBootstrap;
 
 /**
  * @author Lukas Brandl
@@ -77,15 +73,20 @@ public class PublishServiceImplTest {
             new TestConfigurationBootstrap().getConfigurationService();
     private @NotNull PublishServiceImpl publishService;
     private @NotNull DataGovernanceService dataGovernanceService;
+
     @BeforeEach
     public void setUp() throws Exception {
         when(rateLimitService.rateLimitExceeded()).thenReturn(false);
-        @NotNull final GlobalManagedExtensionExecutorService managedPluginExecutorService =
+        @NotNull
+        final GlobalManagedExtensionExecutorService managedPluginExecutorService =
                 new GlobalManagedExtensionExecutorService(shutdownHooks);
         managedPluginExecutorService.postConstruct();
         dataGovernanceService = mock(DataGovernanceService.class);
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishingResult.DELIVERED));
-        publishService = new PublishServiceImpl(rateLimitService, managedPluginExecutorService,
+        when(dataGovernanceService.applyAndPublish(any()))
+                .thenReturn(Futures.immediateFuture(PublishingResult.DELIVERED));
+        publishService = new PublishServiceImpl(
+                rateLimitService,
+                managedPluginExecutorService,
                 publishDistributor,
                 hiveMQId,
                 topicTree,
@@ -102,7 +103,8 @@ public class PublishServiceImplTest {
     @Test
     public void test_publish_rate_limit_exceeded() throws Throwable {
         when(rateLimitService.rateLimitExceeded()).thenReturn(true);
-        final Publish publish = new PublishBuilderImpl(fullConfigurationService).topic("topic")
+        final Publish publish = new PublishBuilderImpl(fullConfigurationService)
+                .topic("topic")
                 .payload(ByteBuffer.wrap("message".getBytes()))
                 .build();
 
@@ -113,7 +115,9 @@ public class PublishServiceImplTest {
 
     @Test
     public void test_publish_to_client_implemented_publish() throws Throwable {
-        assertThatThrownBy(() -> publishService.publishToClient(new TestPublish(), "client").get())
+        assertThatThrownBy(() -> publishService
+                        .publishToClient(new TestPublish(), "client")
+                        .get())
                 .isInstanceOf(ExecutionException.class)
                 .hasCauseInstanceOf(DoNotImplementException.class);
     }
@@ -121,11 +125,13 @@ public class PublishServiceImplTest {
     @Test
     public void test_publish_to_client_rate_limit_exceeded() throws Throwable {
         when(rateLimitService.rateLimitExceeded()).thenReturn(true);
-        final Publish publish = new PublishBuilderImpl(fullConfigurationService).topic("topic")
+        final Publish publish = new PublishBuilderImpl(fullConfigurationService)
+                .topic("topic")
                 .payload(ByteBuffer.wrap("message".getBytes()))
                 .build();
 
-        assertThatThrownBy(() -> publishService.publishToClient(publish, "client").get())
+        assertThatThrownBy(
+                        () -> publishService.publishToClient(publish, "client").get())
                 .isInstanceOf(ExecutionException.class)
                 .hasCauseInstanceOf(RateLimitExceededException.class);
     }
@@ -133,10 +139,12 @@ public class PublishServiceImplTest {
     @Test
     @Timeout(10)
     public void test_publish() throws Throwable {
-        final Publish publish = new PublishBuilderImpl(fullConfigurationService).topic("topic")
+        final Publish publish = new PublishBuilderImpl(fullConfigurationService)
+                .topic("topic")
                 .payload(ByteBuffer.wrap("message".getBytes()))
                 .build();
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishingResult.DELIVERED));
+        when(dataGovernanceService.applyAndPublish(any()))
+                .thenReturn(Futures.immediateFuture(PublishingResult.DELIVERED));
 
         publishService.publish(publish).get();
         verify(dataGovernanceService).applyAndPublish(any());
@@ -146,31 +154,35 @@ public class PublishServiceImplTest {
     @Timeout(10)
     public void test_publish_to_client() throws Exception {
         final byte subscriptionFlags = SubscriptionFlag.getDefaultFlags(false, false, false);
-        final Publish publish = new PublishBuilderImpl(fullConfigurationService).topic("topic")
+        final Publish publish = new PublishBuilderImpl(fullConfigurationService)
+                .topic("topic")
                 .payload(ByteBuffer.wrap("message".getBytes()))
                 .build();
-        when(topicTree.findSubscriber("client", "topic")).thenReturn(new SubscriberWithIdentifiers("client",
-                1,
-                subscriptionFlags,
-                null));
-        when(publishDistributor.sendMessageToSubscriber(any(PUBLISH.class),
-                anyString(),
-                anyInt(),
-                anyBoolean(),
-                anyBoolean(),
-                any(ImmutableIntArray.class))).thenReturn(Futures.immediateFuture(PublishStatus.DELIVERED));
-        final PublishToClientResult result = publishService.publishToClient(publish, "client").get();
+        when(topicTree.findSubscriber("client", "topic"))
+                .thenReturn(new SubscriberWithIdentifiers("client", 1, subscriptionFlags, null));
+        when(publishDistributor.sendMessageToSubscriber(
+                        any(PUBLISH.class),
+                        anyString(),
+                        anyInt(),
+                        anyBoolean(),
+                        anyBoolean(),
+                        any(ImmutableIntArray.class)))
+                .thenReturn(Futures.immediateFuture(PublishStatus.DELIVERED));
+        final PublishToClientResult result =
+                publishService.publishToClient(publish, "client").get();
         assertEquals(PublishToClientResult.SUCCESSFUL, result);
     }
 
     @Test
     @Timeout(10)
     public void test_publish_to_client_not_subscribed() throws Exception {
-        final Publish publish = new PublishBuilderImpl(fullConfigurationService).topic("topic")
+        final Publish publish = new PublishBuilderImpl(fullConfigurationService)
+                .topic("topic")
                 .payload(ByteBuffer.wrap("message".getBytes()))
                 .build();
         when(topicTree.findSubscriber("client", "topic")).thenReturn(null);
-        final PublishToClientResult result = publishService.publishToClient(publish, "client").get();
+        final PublishToClientResult result =
+                publishService.publishToClient(publish, "client").get();
         assertEquals(PublishToClientResult.NOT_SUBSCRIBED, result);
     }
 

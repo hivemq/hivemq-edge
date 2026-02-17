@@ -19,12 +19,11 @@ import com.hivemq.datagov.DataGovernanceContext;
 import com.hivemq.datagov.model.DataGovernanceData;
 import com.hivemq.datagov.model.DataGovernanceResult;
 import com.hivemq.datagov.provider.DataGovernanceTokenProvider;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
@@ -41,8 +40,8 @@ public class DataGovernanceContextImpl implements DataGovernanceContext {
         this.tokenReplacements = Collections.emptyMap();
     }
 
-    public DataGovernanceContextImpl(final @NotNull DataGovernanceData input,
-                                     final @NotNull Map<String, String> tokenReplacements) {
+    public DataGovernanceContextImpl(
+            final @NotNull DataGovernanceData input, final @NotNull Map<String, String> tokenReplacements) {
         this.input = input;
         this.tokenReplacements = tokenReplacements;
     }

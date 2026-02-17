@@ -15,23 +15,23 @@
  */
 package com.hivemq.persistence.local.memory;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENCE_BUCKET_COUNT;
+import static com.hivemq.util.ThreadPreConditions.SINGLE_WRITER_THREAD_PREFIX;
+
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.annotations.ExecuteInSingleWriter;
 import com.hivemq.configuration.service.InternalConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extensions.iteration.BucketChunkResult;
 import com.hivemq.metrics.HiveMQMetrics;
 import com.hivemq.persistence.RetainedMessage;
 import com.hivemq.persistence.local.xodus.PublishTopicTree;
 import com.hivemq.persistence.retained.RetainedMessageLocalPersistence;
 import com.hivemq.util.ThreadPreConditions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.AbstractMap;
@@ -40,11 +40,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENCE_BUCKET_COUNT;
-import static com.hivemq.util.ThreadPreConditions.SINGLE_WRITER_THREAD_PREFIX;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Lukas Brandl
@@ -60,7 +59,7 @@ public class RetainedMessageMemoryLocalPersistence implements RetainedMessageLoc
     @VisibleForTesting
     final PublishTopicTree @NotNull [] topicTrees;
 
-    final private Map<String, RetainedMessage> @NotNull [] buckets;
+    private final Map<String, RetainedMessage> @NotNull [] buckets;
 
     private final int bucketCount;
 
@@ -80,8 +79,8 @@ public class RetainedMessageMemoryLocalPersistence implements RetainedMessageLoc
             topicTrees[i] = new PublishTopicTree();
         }
 
-        metricRegistry.register(HiveMQMetrics.RETAINED_MESSAGES_MEMORY_PERSISTENCE_TOTAL_SIZE.name(),
-                (Gauge<Long>) currentMemorySize::get);
+        metricRegistry.register(HiveMQMetrics.RETAINED_MESSAGES_MEMORY_PERSISTENCE_TOTAL_SIZE.name(), (Gauge<Long>)
+                currentMemorySize::get);
     }
 
     @Override
@@ -178,7 +177,7 @@ public class RetainedMessageMemoryLocalPersistence implements RetainedMessageLoc
         ThreadPreConditions.startsWith(SINGLE_WRITER_THREAD_PREFIX);
 
         final Map<String, RetainedMessage> bucket = buckets[bucketIndex];
-        if(bucket != null) {
+        if (bucket != null) {
             bucket.entrySet().removeIf(entry -> {
                 if (entry == null) {
                     return false;
@@ -197,36 +196,34 @@ public class RetainedMessageMemoryLocalPersistence implements RetainedMessageLoc
         }
     }
 
-    // in contrast to the file persistence method we already have everything in memory. The sizing and pagination are ignored.
+    // in contrast to the file persistence method we already have everything in memory. The sizing and pagination are
+    // ignored.
     @Override
     public @NotNull BucketChunkResult<Map<String, @NotNull RetainedMessage>> getAllRetainedMessagesChunk(
             final int bucketIndex, final @Nullable String ignored, final int alsoIgnored) {
 
-        final ImmutableMap<String, RetainedMessage> collectedRetainedMessages =
-                buckets[bucketIndex].entrySet()
-                        .stream()
-                        .map(entry -> {
-                            final String topic = entry.getKey();
-                            final RetainedMessage retainedMessage = entry.getValue();
+        final ImmutableMap<String, RetainedMessage> collectedRetainedMessages = buckets[bucketIndex].entrySet().stream()
+                .map(entry -> {
+                    final String topic = entry.getKey();
+                    final RetainedMessage retainedMessage = entry.getValue();
 
-                            // ignore messages with exceeded message expiry interval
-                            if (retainedMessage.hasExpired()) {
-                                return null;
-                            }
+                    // ignore messages with exceeded message expiry interval
+                    if (retainedMessage.hasExpired()) {
+                        return null;
+                    }
 
-                            final Long payloadId = retainedMessage.getPublishId();
-                            if (payloadId == null) {
-                                log.warn(
-                                        "Could not dereference payload for retained message on topic \"{}\" as payload was null.",
-                                        topic);
-                                return null;
-                            }
+                    final Long payloadId = retainedMessage.getPublishId();
+                    if (payloadId == null) {
+                        log.warn(
+                                "Could not dereference payload for retained message on topic \"{}\" as payload was null.",
+                                topic);
+                        return null;
+                    }
 
-                            return new AbstractMap.SimpleEntry<>(topic, retainedMessage);
-
-                        })
-                        .filter(entry -> !Objects.isNull(entry))
-                        .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+                    return new AbstractMap.SimpleEntry<>(topic, retainedMessage);
+                })
+                .filter(entry -> !Objects.isNull(entry))
+                .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
 
         return new BucketChunkResult<>(collectedRetainedMessages, true, null, bucketIndex);
     }
@@ -236,7 +233,6 @@ public class RetainedMessageMemoryLocalPersistence implements RetainedMessageLoc
         throw new UnsupportedOperationException(
                 "Iterate is only used for migrations which are not needed for memory persistences");
     }
-
 
     @Override
     public void closeDB(final int bucketIndex) {

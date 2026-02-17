@@ -15,12 +15,11 @@
  */
 package com.hivemq.configuration.entity.listener;
 
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.xml.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Dominik Obermaier
@@ -66,9 +65,9 @@ public class WebsocketListenerEntity extends ListenerEntity {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         final WebsocketListenerEntity that = (WebsocketListenerEntity) o;
-        return Objects.equals(getPath(), that.getPath()) &&
-                Objects.equals(getSubprotocols(), that.getSubprotocols()) &&
-                Objects.equals(isAllowExtensions(), that.isAllowExtensions());
+        return Objects.equals(getPath(), that.getPath())
+                && Objects.equals(getSubprotocols(), that.getSubprotocols())
+                && Objects.equals(isAllowExtensions(), that.isAllowExtensions());
     }
 
     @Override

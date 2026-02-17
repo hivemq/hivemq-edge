@@ -15,6 +15,16 @@
  */
 package com.hivemq.bridge.mqtt;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
@@ -29,31 +39,19 @@ import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperty;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5PayloadFormatIndicator;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import util.TestMessageUtil;
-
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import util.TestMessageUtil;
 
 @SuppressWarnings("OptionalGetWithoutIsPresent")
 class RemoteMqttForwarderTest {
@@ -65,7 +63,6 @@ class RemoteMqttForwarderTest {
     private final @NotNull AtomicBoolean callbackCalled = new AtomicBoolean(false);
     private final @NotNull RemoteMqttForwarder forwarder =
             createForwarder(callbackCalled, false, "{#}", List.of(), List.of(), 2);
-
 
     @BeforeEach
     void setup() {
@@ -84,9 +81,16 @@ class RemoteMqttForwarderTest {
         verify(mqtt5AsyncClient).publish(captor.capture());
 
         assertTrue(callbackCalled.get());
-        assertEquals(1, metricRegistry.counter("com.hivemq.edge.bridge.testbridge.forward.publish.count").getCount());
-        assertEquals(0,
-                metricRegistry.counter("com.hivemq.edge.bridge.testbridge.forward.publish.failed.count").getCount());
+        assertEquals(
+                1,
+                metricRegistry
+                        .counter("com.hivemq.edge.bridge.testbridge.forward.publish.count")
+                        .getCount());
+        assertEquals(
+                0,
+                metricRegistry
+                        .counter("com.hivemq.edge.bridge.testbridge.forward.publish.failed.count")
+                        .getCount());
 
         final Mqtt5Publish publish = captor.getValue();
 
@@ -105,9 +109,16 @@ class RemoteMqttForwarderTest {
         verify(mqtt5AsyncClient).publish(captor.capture());
 
         assertTrue(callbackCalled.get());
-        assertEquals(1, metricRegistry.counter("com.hivemq.edge.bridge.testbridge.forward.publish.count").getCount());
-        assertEquals(0,
-                metricRegistry.counter("com.hivemq.edge.bridge.testbridge.forward.publish.failed.count").getCount());
+        assertEquals(
+                1,
+                metricRegistry
+                        .counter("com.hivemq.edge.bridge.testbridge.forward.publish.count")
+                        .getCount());
+        assertEquals(
+                0,
+                metricRegistry
+                        .counter("com.hivemq.edge.bridge.testbridge.forward.publish.failed.count")
+                        .getCount());
 
         final Mqtt5Publish publish = captor.getValue();
 
@@ -164,9 +175,15 @@ class RemoteMqttForwarderTest {
         verify(mqtt5AsyncClient, never()).publish(any());
         assertTrue(called.get());
 
-        assertEquals(0, metricRegistry.counter("com.hivemq.edge.bridge.testbridge.forward.publish.count").getCount());
-        assertEquals(1,
-                metricRegistry.counter("com.hivemq.edge.bridge.testbridge.forward.publish.loop-hops-exceeded.count")
+        assertEquals(
+                0,
+                metricRegistry
+                        .counter("com.hivemq.edge.bridge.testbridge.forward.publish.count")
+                        .getCount());
+        assertEquals(
+                1,
+                metricRegistry
+                        .counter("com.hivemq.edge.bridge.testbridge.forward.publish.loop-hops-exceeded.count")
                         .getCount());
     }
 
@@ -182,14 +199,22 @@ class RemoteMqttForwarderTest {
         verify(mqtt5AsyncClient, never()).publish(any());
         assertTrue(called.get());
 
-        assertEquals(0, metricRegistry.counter("com.hivemq.edge.bridge.testbridge.forward.publish.count").getCount());
-        assertEquals(1,
-                metricRegistry.counter("com.hivemq.edge.bridge.testbridge.forward.publish.excluded.count").getCount());
+        assertEquals(
+                0,
+                metricRegistry
+                        .counter("com.hivemq.edge.bridge.testbridge.forward.publish.count")
+                        .getCount());
+        assertEquals(
+                1,
+                metricRegistry
+                        .counter("com.hivemq.edge.bridge.testbridge.forward.publish.excluded.count")
+                        .getCount());
     }
 
     @Test
     public void whenCustomProps_ThenCustomPropsArePresentInRemotePub() {
-        final RemoteMqttForwarder forwarder = createForwarder(callbackCalled,
+        final RemoteMqttForwarder forwarder = createForwarder(
+                callbackCalled,
                 false,
                 "{#}",
                 List.of(),
@@ -213,19 +238,17 @@ class RemoteMqttForwarderTest {
         final Mqtt5UserProperty prop2 = publish.getUserProperties().asList().get(1);
         assertEquals("user2", prop2.getName().toString());
         assertEquals("property2", prop2.getValue().toString());
-        //custom
+        // custom
         final Mqtt5UserProperty prop3 = publish.getUserProperties().asList().get(2);
         assertEquals("customk1", prop3.getName().toString());
         assertEquals("customv1", prop3.getValue().toString());
         final Mqtt5UserProperty prop4 = publish.getUserProperties().asList().get(3);
         assertEquals("customk2", prop4.getName().toString());
         assertEquals("customv2", prop4.getValue().toString());
-        //also hop count
+        // also hop count
         final Mqtt5UserProperty prop5 = publish.getUserProperties().asList().get(4);
         assertEquals("hmq-bridge-hop-count", prop5.getName().toString());
         assertEquals("1", prop5.getValue().toString());
-
-
     }
 
     @Test
@@ -293,8 +316,8 @@ class RemoteMqttForwarderTest {
     public void whenHopPropIsNaN_ThenResetHop() {
         forwarder.start();
         final PUBLISH localPublish = TestMessageUtil.createFullMqtt5Publish();
-        localPublish.setUserProperties(Mqtt5UserProperties.of(MqttUserProperty.of("hmq-bridge-hop-count",
-                "not-a-number")));
+        localPublish.setUserProperties(
+                Mqtt5UserProperties.of(MqttUserProperty.of("hmq-bridge-hop-count", "not-a-number")));
         forwarder.onMessage(localPublish, "testqueue");
 
         final ArgumentCaptor<Mqtt5Publish> captor = ArgumentCaptor.forClass(Mqtt5Publish.class);
@@ -318,9 +341,16 @@ class RemoteMqttForwarderTest {
         forwarder.onMessage(localPublish, "testqueue");
 
         assertTrue(callbackCalled.get());
-        assertEquals(0, metricRegistry.counter("com.hivemq.edge.bridge.testbridge.forward.publish.count").getCount());
-        assertEquals(1,
-                metricRegistry.counter("com.hivemq.edge.bridge.testbridge.forward.publish.failed.count").getCount());
+        assertEquals(
+                0,
+                metricRegistry
+                        .counter("com.hivemq.edge.bridge.testbridge.forward.publish.count")
+                        .getCount());
+        assertEquals(
+                1,
+                metricRegistry
+                        .counter("com.hivemq.edge.bridge.testbridge.forward.publish.failed.count")
+                        .getCount());
     }
 
     @Test
@@ -345,13 +375,15 @@ class RemoteMqttForwarderTest {
             final int maxQoS) {
         final LocalSubscription localSubscription =
                 new LocalSubscription(List.of("#"), destination, excludes, customProps, preserveRetain, maxQoS, 1000L);
-        final MqttBridge bridge = new MqttBridge.Builder().withId("testbridge")
+        final MqttBridge bridge = new MqttBridge.Builder()
+                .withId("testbridge")
                 .withHost("1")
                 .withClientId("testcid")
                 .withLocalSubscriptions(List.of(localSubscription))
                 .build();
 
-        final RemoteMqttForwarder forwarder = new RemoteMqttForwarder("testid",
+        final RemoteMqttForwarder forwarder = new RemoteMqttForwarder(
+                "testid",
                 bridge,
                 localSubscription,
                 bridgeClient,
@@ -372,10 +404,16 @@ class RemoteMqttForwarderTest {
         assertEquals(2, publish.getQos().getCode());
         assertFalse(publish.isRetain());
         assertEquals(360, publish.getMessageExpiryInterval().getAsLong());
-        assertEquals(Mqtt5PayloadFormatIndicator.UTF_8, publish.getPayloadFormatIndicator().get());
+        assertEquals(
+                Mqtt5PayloadFormatIndicator.UTF_8,
+                publish.getPayloadFormatIndicator().get());
         assertEquals("content type", publish.getContentType().get().toString());
         assertEquals("response topic", publish.getResponseTopic().get().toString());
-        assertEquals("correlation data", StandardCharsets.UTF_8.decode(publish.getCorrelationData().get()).toString());
+        assertEquals(
+                "correlation data",
+                StandardCharsets.UTF_8
+                        .decode(publish.getCorrelationData().get())
+                        .toString());
         assertEquals(3, publish.getUserProperties().asList().size());
         final Mqtt5UserProperty prop1 = publish.getUserProperties().asList().get(0);
         assertEquals("user1", prop1.getName().toString());
@@ -383,7 +421,7 @@ class RemoteMqttForwarderTest {
         final Mqtt5UserProperty prop2 = publish.getUserProperties().asList().get(1);
         assertEquals("user2", prop2.getName().toString());
         assertEquals("property2", prop2.getValue().toString());
-        //also hop count
+        // also hop count
         final Mqtt5UserProperty prop3 = publish.getUserProperties().asList().get(2);
         assertEquals("hmq-bridge-hop-count", prop3.getName().toString());
         assertEquals("1", prop3.getValue().toString());

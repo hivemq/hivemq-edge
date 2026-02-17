@@ -15,23 +15,6 @@
  */
 package com.hivemq.edge.modules.adapters.simulation;
 
-import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
-import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
-import com.hivemq.edge.modules.adapters.impl.polling.batch.BatchPollingInputImpl;
-import com.hivemq.edge.modules.adapters.simulation.config.SimulationSpecificAdapterConfig;
-import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTag;
-import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTagDefinition;
-import org.jetbrains.annotations.NotNull;
-import com.hivemq.edge.modules.adapters.impl.polling.PollingOutputImpl;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-import org.mockito.ArgumentCaptor;
-
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -42,6 +25,22 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
+import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
+import com.hivemq.edge.modules.adapters.impl.polling.PollingOutputImpl;
+import com.hivemq.edge.modules.adapters.impl.polling.batch.BatchPollingInputImpl;
+import com.hivemq.edge.modules.adapters.simulation.config.SimulationSpecificAdapterConfig;
+import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTag;
+import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTagDefinition;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.mockito.ArgumentCaptor;
+
 @SuppressWarnings({"rawtypes", "unchecked"})
 class SimulationProtocolAdapterTest {
 
@@ -49,18 +48,16 @@ class SimulationProtocolAdapterTest {
     private final @NotNull SimulationSpecificAdapterConfig protocolAdapterConfig = mock();
     private @NotNull SimulationProtocolAdapter simulationProtocolAdapter;
     private final @NotNull BatchPollingInputImpl pollingInput = new BatchPollingInputImpl();
-    private final @NotNull PollingOutputImpl pollingOutput =
-            new PollingOutputImpl(new ProtocolAdapterDataSampleImpl());
+    private final @NotNull PollingOutputImpl pollingOutput = new PollingOutputImpl(new ProtocolAdapterDataSampleImpl());
     private final @NotNull TimeWaiter timeWaiter = mock();
-
 
     @BeforeEach
     void setUp() {
-        when(input.getProtocolAdapterState()).thenReturn(new ProtocolAdapterStateImpl(mock(),
-                "simulation",
-                "test-simulator"));
+        when(input.getProtocolAdapterState())
+                .thenReturn(new ProtocolAdapterStateImpl(mock(), "simulation", "test-simulator"));
         when(input.getConfig()).thenReturn(protocolAdapterConfig);
-        when(input.getTags()).thenReturn(List.of(new SimulationTag("tag1", "description", new SimulationTagDefinition())));
+        when(input.getTags())
+                .thenReturn(List.of(new SimulationTag("tag1", "description", new SimulationTagDefinition())));
         simulationProtocolAdapter =
                 new SimulationProtocolAdapter(SimulationProtocolAdapterInformation.INSTANCE, input, timeWaiter);
     }

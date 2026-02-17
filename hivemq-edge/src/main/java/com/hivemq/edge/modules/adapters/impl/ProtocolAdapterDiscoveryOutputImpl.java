@@ -17,18 +17,16 @@ package com.hivemq.edge.modules.adapters.impl;
 
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.exceptions.StackLessProtocolAdapterException;
+import com.hivemq.protocols.params.NodeTreeImpl;
+import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.protocols.params.NodeTreeImpl;
-
-import java.util.concurrent.CompletableFuture;
 
 public class ProtocolAdapterDiscoveryOutputImpl implements ProtocolAdapterDiscoveryOutput {
 
     private final @NotNull NodeTreeImpl nodeTree = new NodeTreeImpl();
     private final @NotNull CompletableFuture<Void> outputFuture = new CompletableFuture<>();
     private @Nullable String errorMessage = null;
-
 
     @Override
     public @NotNull NodeTreeImpl getNodeTree() {

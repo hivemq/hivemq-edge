@@ -17,9 +17,9 @@ package com.hivemq.codec.encoder.mqtt3;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.encoder.MqttEncoder;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.unsuback.UNSUBACK;
 import io.netty.buffer.ByteBuf;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Dominik Obermaier
@@ -32,12 +32,10 @@ public class Mqtt3UnsubackEncoder implements MqttEncoder<UNSUBACK> {
 
     @Override
     public void encode(
-            final @NotNull ClientConnection clientConnection,
-            final @NotNull UNSUBACK msg,
-            final @NotNull ByteBuf out) {
+            final @NotNull ClientConnection clientConnection, final @NotNull UNSUBACK msg, final @NotNull ByteBuf out) {
 
         out.writeByte(UNSUBACK_FIXED_HEADER);
-        //The remaining length is always static for UNSUBACKs
+        // The remaining length is always static for UNSUBACKs
         out.writeByte(UNSUBACK_REMAINING_LENGTH);
 
         out.writeShort(msg.getPacketIdentifier());

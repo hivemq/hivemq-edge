@@ -17,15 +17,14 @@ package com.hivemq.edge.adapters.opcua.client;
 
 import com.hivemq.edge.adapters.opcua.Constants;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
+import java.security.KeyPair;
+import java.util.function.Consumer;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClientConfigBuilder;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.security.KeyPair;
-import java.util.function.Consumer;
 
 public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilder> {
 
@@ -35,7 +34,10 @@ public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilde
     private final @NotNull ParsedConfig parsedConfig;
     private final @NotNull OpcUaSpecificAdapterConfig config;
 
-    public OpcUaClientConfigurator(final @NotNull String adapterId, final @NotNull ParsedConfig parsedConfig, final @NotNull OpcUaSpecificAdapterConfig config) {
+    public OpcUaClientConfigurator(
+            final @NotNull String adapterId,
+            final @NotNull ParsedConfig parsedConfig,
+            final @NotNull OpcUaSpecificAdapterConfig config) {
         this.adapterId = adapterId;
         this.parsedConfig = parsedConfig;
         this.config = config;
@@ -44,7 +46,8 @@ public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilde
     @Override
     public void accept(final @NotNull OpcUaClientConfigBuilder configBuilder) {
         // Use Application URI from certificate if available, otherwise fall back to default
-        final String applicationUri = (parsedConfig.applicationUri() != null && !parsedConfig.applicationUri().isBlank())
+        final String applicationUri = (parsedConfig.applicationUri() != null
+                        && !parsedConfig.applicationUri().isBlank())
                 ? parsedConfig.applicationUri()
                 : Constants.OPCUA_APPLICATION_URI;
 
@@ -67,16 +70,21 @@ public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilde
                 .setSessionTimeout(UInteger.valueOf(sessionTimeoutMs))
                 .setRequestTimeout(UInteger.valueOf(requestTimeoutMs))
                 .setKeepAliveInterval(UInteger.valueOf(keepAliveIntervalMs))
-                .setKeepAliveFailuresAllowed(UInteger.valueOf(config.getConnectionOptions().keepAliveFailuresAllowed()));
+                .setKeepAliveFailuresAllowed(
+                        UInteger.valueOf(config.getConnectionOptions().keepAliveFailuresAllowed()));
 
-        log.info("Configured OPC UA timeouts: session={}ms, request={}ms, keepAlive={}ms, failuresAllowed={}",
-                config.getConnectionOptions().sessionTimeoutMs(), config.getConnectionOptions().requestTimeoutMs(), config.getConnectionOptions().keepAliveIntervalMs(), config.getConnectionOptions().keepAliveFailuresAllowed());
+        log.info(
+                "Configured OPC UA timeouts: session={}ms, request={}ms, keepAlive={}ms, failuresAllowed={}",
+                config.getConnectionOptions().sessionTimeoutMs(),
+                config.getConnectionOptions().requestTimeoutMs(),
+                config.getConnectionOptions().keepAliveIntervalMs(),
+                config.getConnectionOptions().keepAliveFailuresAllowed());
         log.info("TLS is enabled: {}", parsedConfig.tlsEnabled());
         if (parsedConfig.tlsEnabled()) {
             if (log.isDebugEnabled()) {
                 log.debug("Configuring TLS");
             }
-            //trusted certs, either from configured truststore or system default
+            // trusted certs, either from configured truststore or system default
             configBuilder.setCertificateValidator(parsedConfig.clientCertificateValidator());
 
             if (parsedConfig.keyPairWithChain() != null) {
@@ -84,7 +92,8 @@ public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilde
                     log.debug("Keystore for TLS is available");
                 }
                 configBuilder.setCertificate(parsedConfig.keyPairWithChain().publicKey());
-                configBuilder.setCertificateChain(parsedConfig.keyPairWithChain().certificateChain());
+                configBuilder.setCertificateChain(
+                        parsedConfig.keyPairWithChain().certificateChain());
             } else {
                 if (log.isDebugEnabled()) {
                     log.debug("Keystore for TLS is not available");
@@ -99,7 +108,8 @@ public class OpcUaClientConfigurator implements Consumer<OpcUaClientConfigBuilde
 
         if (parsedConfig.keyPairWithChain() != null) {
             log.info("Setting up keypair with chain");
-            configBuilder.setKeyPair(new KeyPair(parsedConfig.keyPairWithChain().publicKey().getPublicKey(),
+            configBuilder.setKeyPair(new KeyPair(
+                    parsedConfig.keyPairWithChain().publicKey().getPublicKey(),
                     parsedConfig.keyPairWithChain().privateKey()));
         }
     }

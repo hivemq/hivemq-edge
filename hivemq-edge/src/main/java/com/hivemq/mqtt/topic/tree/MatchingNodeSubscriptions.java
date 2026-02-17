@@ -18,14 +18,13 @@ package com.hivemq.mqtt.topic.tree;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.hivemq.annotations.ReadOnly;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.topic.SubscriberWithQoS;
-
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 class MatchingNodeSubscriptions {
 
@@ -33,13 +32,15 @@ class MatchingNodeSubscriptions {
      * This array gets lazy initialized for memory saving purposes. May contain {@code null}
      * values. These null values are reassigned if possible before the array gets expanded.
      */
-    @Nullable SubscriberWithQoS @Nullable [] nonSharedSubscribersArray;
+    @Nullable
+    SubscriberWithQoS @Nullable [] nonSharedSubscribersArray;
 
     /**
      * An optional index for quick subscription info lookup. Gets initialized once the number of subscriptions
      * in the array gets to a certain threshold configured via parameter passed to the constructor of the topic tree.
      */
-    @Nullable Map<String, SubscriberWithQoS> nonSharedSubscribersMap;
+    @Nullable
+    Map<String, SubscriberWithQoS> nonSharedSubscribersMap;
 
     /**
      * An optional index for quick shared subscription info lookup. Shared subscriptions' information is grouped in
@@ -49,7 +50,8 @@ class MatchingNodeSubscriptions {
      * This grouping improves the retrieval for shared subscriptions' groups and topic filters
      * in case of massive subscriptions in the same group to the same topic filter.
      */
-    @NotNull Map<String, SubscriptionGroup> sharedSubscribersMap;
+    @NotNull
+    Map<String, SubscriptionGroup> sharedSubscribersMap;
 
     MatchingNodeSubscriptions() {
         sharedSubscribersMap = Map.of();
@@ -127,28 +129,27 @@ class MatchingNodeSubscriptions {
 
         assert subscribersBuilder != null || subscriberNamesBuilder != null;
 
-        getAllSubscriptionsStream().filter(itemFilter)
-                .forEach(subscriber -> {
-                    if (subscribersBuilder != null) {
-                        subscribersBuilder.add(subscriber);
-                    } else {
-                        subscriberNamesBuilder.add(subscriber.getSubscriber());
-                    }
-                });
+        getAllSubscriptionsStream().filter(itemFilter).forEach(subscriber -> {
+            if (subscribersBuilder != null) {
+                subscribersBuilder.add(subscriber);
+            } else {
+                subscriberNamesBuilder.add(subscriber.getSubscriber());
+            }
+        });
     }
 
     @ReadOnly
     public int getSubscriberCount() {
-        final int nonSharedSubscribersCount = nonSharedSubscribersMap != null ?
-                nonSharedSubscribersMap.size() : countArraySize(nonSharedSubscribersArray);
+        final int nonSharedSubscribersCount = nonSharedSubscribersMap != null
+                ? nonSharedSubscribersMap.size()
+                : countArraySize(nonSharedSubscribersArray);
 
         return nonSharedSubscribersCount + sharedSubscribersMap.size();
     }
 
     @ReadOnly
     public @NotNull Stream<SubscriberWithQoS> getSharedSubscriptionsStream() {
-        return sharedSubscribersMap.values()
-                .stream()
+        return sharedSubscribersMap.values().stream()
                 .flatMap(subscriptionGroup -> subscriptionGroup.getSubscriptionsInfos().stream());
     }
 
@@ -182,9 +183,9 @@ class MatchingNodeSubscriptions {
 
     @ReadOnly
     public boolean isEmpty() {
-        return (nonSharedSubscribersMap == null || nonSharedSubscribersMap.isEmpty()) &&
-                (nonSharedSubscribersArray == null || isEmptyArray(nonSharedSubscribersArray)) &&
-                sharedSubscribersMap.isEmpty();
+        return (nonSharedSubscribersMap == null || nonSharedSubscribersMap.isEmpty())
+                && (nonSharedSubscribersArray == null || isEmptyArray(nonSharedSubscribersArray))
+                && sharedSubscribersMap.isEmpty();
     }
 
     ///////////////////////////////////////////////////////////////////////
@@ -194,8 +195,7 @@ class MatchingNodeSubscriptions {
     ///////////////////////////////////////////////////////////////////////
 
     private static @NotNull String sharedSubscriptionKey(
-            final @NotNull String sharedName,
-            final @NotNull String topicFilter) {
+            final @NotNull String sharedName, final @NotNull String topicFilter) {
 
         return sharedName + "/" + topicFilter;
     }
@@ -209,15 +209,18 @@ class MatchingNodeSubscriptions {
 
         private final @NotNull Map<String, SubscriberWithQoS> subscriptions = new HashMap<>();
 
-        @Nullable SubscriberWithQoS put(final @NotNull SubscriberWithQoS subscription) {
+        @Nullable
+        SubscriberWithQoS put(final @NotNull SubscriberWithQoS subscription) {
             return subscriptions.put(subscription.getSubscriber(), subscription);
         }
 
-        @Nullable SubscriberWithQoS remove(final @NotNull String subscriber) {
+        @Nullable
+        SubscriberWithQoS remove(final @NotNull String subscriber) {
             return subscriptions.remove(subscriber);
         }
 
-        @NotNull Collection<SubscriberWithQoS> getSubscriptionsInfos() {
+        @NotNull
+        Collection<SubscriberWithQoS> getSubscriptionsInfos() {
             return subscriptions.values();
         }
 
@@ -254,8 +257,9 @@ class MatchingNodeSubscriptions {
         }
 
         // Possible initialization of map and moving the data
-        final int exactSubscribersCount = nonSharedSubscribersMap != null ?
-                nonSharedSubscribersMap.values().size() : countArraySize(nonSharedSubscribersArray);
+        final int exactSubscribersCount = nonSharedSubscribersMap != null
+                ? nonSharedSubscribersMap.values().size()
+                : countArraySize(nonSharedSubscribersArray);
 
         if (nonSharedSubscribersMap == null && exactSubscribersCount > subscriberMapCreationThreshold) {
             nonSharedSubscribersMap = new HashMap<>(subscriberMapCreationThreshold + 1);
@@ -265,26 +269,27 @@ class MatchingNodeSubscriptions {
                         nonSharedSubscribersMap.put(subscriber.getSubscriber(), subscriber);
                     }
                 }
-                //The array can be removed, because the map is used from now on.
+                // The array can be removed, because the map is used from now on.
                 nonSharedSubscribersArray = null;
             }
         }
 
         if (nonSharedSubscribersMap != null) {
-            final SubscriberWithQoS prev = nonSharedSubscribersMap.put(subscriberToAdd.getSubscriber(), subscriberToAdd);
+            final SubscriberWithQoS prev =
+                    nonSharedSubscribersMap.put(subscriberToAdd.getSubscriber(), subscriberToAdd);
             return prev == null ? null : new SubscriptionInfoPresenceStatus(prev.equals(subscriberToAdd));
         }
 
         if (nonSharedSubscribersArray == null) {
-            nonSharedSubscribersArray = new SubscriberWithQoS[]{subscriberToAdd};
+            nonSharedSubscribersArray = new SubscriberWithQoS[] {subscriberToAdd};
             return null;
         }
 
-        //Let's try to find an existing subscription first
+        // Let's try to find an existing subscription first
         for (int i = 0; i < nonSharedSubscribersArray.length; i++) {
-            if (nonSharedSubscribersArray[i] != null &&
-                    subscriberToAdd.getSubscriber().equals(nonSharedSubscribersArray[i].getSubscriber())) {
-                //This entry is already present in the array, we can override and abort
+            if (nonSharedSubscribersArray[i] != null
+                    && subscriberToAdd.getSubscriber().equals(nonSharedSubscribersArray[i].getSubscriber())) {
+                // This entry is already present in the array, we can override and abort
                 final SubscriptionInfoPresenceStatus subscriptionInfoPresenceStatus =
                         new SubscriptionInfoPresenceStatus(this.nonSharedSubscribersArray[i].equals(subscriberToAdd));
 
@@ -293,11 +298,11 @@ class MatchingNodeSubscriptions {
             }
         }
 
-        //Let's try to find an empty slot in the array
+        // Let's try to find an empty slot in the array
         final int emptySlotIndex = Arrays.asList(nonSharedSubscribersArray).indexOf(null);
         if (emptySlotIndex >= 0) {
             nonSharedSubscribersArray[emptySlotIndex] = subscriberToAdd;
-        } else { //or allocate a new array
+        } else { // or allocate a new array
             final SubscriberWithQoS[] newArray = new SubscriberWithQoS[nonSharedSubscribersArray.length + 1];
             System.arraycopy(nonSharedSubscribersArray, 0, newArray, 0, nonSharedSubscribersArray.length);
             newArray[nonSharedSubscribersArray.length] = subscriberToAdd;
@@ -317,9 +322,7 @@ class MatchingNodeSubscriptions {
     }
 
     private @Nullable SubscriptionInfoRemovalStatus removeSubscriberFromStructures(
-            final @NotNull String subscriber,
-            final @Nullable String sharedName,
-            final @Nullable String topicFilter) {
+            final @NotNull String subscriber, final @Nullable String sharedName, final @Nullable String topicFilter) {
 
         SubscriberWithQoS remove = null;
         if (sharedName != null && topicFilter != null) { // shared subscription removal

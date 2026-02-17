@@ -19,12 +19,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.File;
-
 import org.junit.jupiter.api.Test;
 
 public class FilesTest {
 
-    private static final String TEST_DIRECTORY_PATH = File.separator + "home" + File.separator + "pa.th" + File.separator;
+    private static final String TEST_DIRECTORY_PATH =
+            File.separator + "home" + File.separator + "pa.th" + File.separator;
 
     @Test
     public void test_file_name_when_file_path_contains_separator() {

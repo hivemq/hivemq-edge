@@ -17,7 +17,6 @@ package com.hivemq.extensions.handler.tasks;
 
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.auth.parameter.SubscriptionAuthorizerOutputImpl;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.handler.subscribe.IncomingSubscribeService;
@@ -25,10 +24,10 @@ import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode;
 import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;
 import io.netty.channel.ChannelHandlerContext;
+import java.util.List;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 /**
  * @author Christoph Schäbel
@@ -61,14 +60,18 @@ public class AllTopicsProcessedTask implements Runnable {
     public void run() {
 
         try {
-            Preconditions.checkArgument(listenableFutures.size() == msg.getTopics().size(), "The amount of futures must be equal to the amount of topics");
+            Preconditions.checkArgument(
+                    listenableFutures.size() == msg.getTopics().size(),
+                    "The amount of futures must be equal to the amount of topics");
 
-            final Mqtt5SubAckReasonCode[] answerCodes = new Mqtt5SubAckReasonCode[msg.getTopics().size()];
+            final Mqtt5SubAckReasonCode[] answerCodes =
+                    new Mqtt5SubAckReasonCode[msg.getTopics().size()];
             final String[] reasonStrings = new String[msg.getTopics().size()];
 
             boolean authorizersPresent = false;
             for (int i = 0; i < listenableFutures.size(); i++) {
-                final SubscriptionAuthorizerOutputImpl output = listenableFutures.get(i).get();
+                final SubscriptionAuthorizerOutputImpl output =
+                        listenableFutures.get(i).get();
 
                 if (output.isAuthorizerPresent()) {
                     authorizersPresent = true;
@@ -90,14 +93,15 @@ public class AllTopicsProcessedTask implements Runnable {
                         break;
                     case UNDECIDED:
                         if (!output.isAuthorizerPresent()) {
-                            //providers never returned an authorizer, same as continue
+                            // providers never returned an authorizer, same as continue
                             break;
                         }
                         answerCodes[i] = Mqtt5SubAckReasonCode.NOT_AUTHORIZED;
                         reasonStrings[i] = "Sent a SUBSCRIBE with an unauthorized subscription";
                         break;
                     case SUCCESS:
-                        answerCodes[i] = Mqtt5SubAckReasonCode.fromCode(msg.getTopics().get(i).getQoS().getQosNumber());
+                        answerCodes[i] = Mqtt5SubAckReasonCode.fromCode(
+                                msg.getTopics().get(i).getQoS().getQosNumber());
                         break;
                     default:
                         break;
@@ -106,21 +110,25 @@ public class AllTopicsProcessedTask implements Runnable {
 
             final boolean finalAuthorizersPresent = authorizersPresent;
             if (ctx.channel().isActive()) {
-                ctx.executor().execute(() -> incomingSubscribeService.processSubscribe(ctx, msg, answerCodes, reasonStrings, finalAuthorizersPresent));
+                ctx.executor()
+                        .execute(() -> incomingSubscribeService.processSubscribe(
+                                ctx, msg, answerCodes, reasonStrings, finalAuthorizersPresent));
             }
 
         } catch (final Exception e) {
             log.error("Subscription authorization failed: ", e);
         }
-
     }
 
     private void disconnectClient(final int topicIndex, final @NotNull SubscriptionAuthorizerOutputImpl output) {
-        final String logMessage = "A client (IP: {}) sent a SUBSCRIBE with an unauthorized subscription for topic '" + msg.getTopics().get(topicIndex).getTopic() + "'. This is not allowed. Disconnecting client.";
-        final String eventLogMessage = "Sent a SUBSCRIBE with an unauthorized subscription for topic '" + msg.getTopics().get(topicIndex).getTopic() + "'";
+        final String logMessage = "A client (IP: {}) sent a SUBSCRIBE with an unauthorized subscription for topic '"
+                + msg.getTopics().get(topicIndex).getTopic() + "'. This is not allowed. Disconnecting client.";
+        final String eventLogMessage = "Sent a SUBSCRIBE with an unauthorized subscription for topic '"
+                + msg.getTopics().get(topicIndex).getTopic() + "'";
 
         ctx.channel().eventLoop().execute(() -> {
-            mqttServerDisconnector.disconnect(ctx.channel(),
+            mqttServerDisconnector.disconnect(
+                    ctx.channel(),
                     logMessage,
                     eventLogMessage,
                     Mqtt5DisconnectReasonCode.from(output.getDisconnectReasonCode()),

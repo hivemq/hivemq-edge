@@ -27,11 +27,10 @@ import com.hivemq.extensions.services.admin.AdminServiceImpl;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.pulse.messaging.AssetMapperManager;
 import com.hivemq.util.Checkpoints;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.inject.Inject;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class HiveMQEdgeGateway {
 
@@ -65,16 +64,14 @@ public class HiveMQEdgeGateway {
             dataCombinerManager.start();
             assetMapperManager.start();
 
-            final List<ListenerStartupInformation> startupInformation = nettyBootstrap.bootstrapServer().get();
+            final List<ListenerStartupInformation> startupInformation =
+                    nettyBootstrap.bootstrapServer().get();
             Checkpoints.checkpoint("listener-started");
             new StartupListenerVerifier(startupInformation).verifyAndPrint();
-
-
 
             ((AdminServiceImpl) adminService).hivemqStarted();
         } catch (Exception e) {
             throw new HiveMQEdgeStartupException(e);
         }
-
     }
 }

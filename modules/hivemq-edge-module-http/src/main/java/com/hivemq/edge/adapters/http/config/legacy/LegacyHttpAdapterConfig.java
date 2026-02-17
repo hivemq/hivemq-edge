@@ -15,18 +15,17 @@
  */
 package com.hivemq.edge.adapters.http.config.legacy;
 
+import static com.hivemq.edge.adapters.http.HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS;
+import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MAX_TIMEOUT_SECONDS;
+
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.List;
 import java.util.Objects;
-
-import static com.hivemq.edge.adapters.http.HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS;
-import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MAX_TIMEOUT_SECONDS;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class LegacyHttpAdapterConfig {
 
@@ -70,7 +69,7 @@ public class LegacyHttpAdapterConfig {
     private final boolean allowUntrustedCertificates;
 
     @JsonProperty("pollingIntervalMillis")
-    @JsonAlias(value = "publishingInterval") //-- Ensure we cater for properties created with legacy configuration
+    @JsonAlias(value = "publishingInterval") // -- Ensure we cater for properties created with legacy configuration
     private final int pollingIntervalMillis;
 
     @JsonCreator
@@ -80,7 +79,8 @@ public class LegacyHttpAdapterConfig {
             @JsonProperty("qos") final @Nullable Integer qos,
             @JsonProperty("httpRequestMethod") final @Nullable HttpSpecificAdapterConfig.HttpMethod httpRequestMethod,
             @JsonProperty("httpConnectTimeout") final @Nullable Integer httpConnectTimeoutSeconds,
-            @JsonProperty("httpRequestBodyContentType") final @Nullable HttpSpecificAdapterConfig.HttpContentType httpRequestBodyContentType,
+            @JsonProperty("httpRequestBodyContentType")
+                    final @Nullable HttpSpecificAdapterConfig.HttpContentType httpRequestBodyContentType,
             @JsonProperty("httpRequestBody") final @Nullable String httpRequestBody,
             @JsonProperty("assertResponseIsJson") final @Nullable Boolean assertResponseIsJson,
             @JsonProperty("httpPublishSuccessStatusCodeOnly") final @Nullable Boolean httpPublishSuccessStatusCodeOnly,
@@ -88,7 +88,8 @@ public class LegacyHttpAdapterConfig {
             @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty("maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
             @JsonProperty("allowUntrustedCertificates") final @Nullable Boolean allowUntrustedCertificates,
-            @JsonProperty("pollingIntervalMillis") @JsonAlias("publishingInterval") final @Nullable Integer pollingIntervalMillis) {
+            @JsonProperty("pollingIntervalMillis") @JsonAlias("publishingInterval")
+                    final @Nullable Integer pollingIntervalMillis) {
         this.id = id;
         if (pollingIntervalMillis != null) {
             this.pollingIntervalMillis = pollingIntervalMillis;
@@ -99,11 +100,13 @@ public class LegacyHttpAdapterConfig {
         this.url = url;
         this.destination = destination;
         this.qos = Objects.requireNonNullElse(qos, 0);
-        this.httpRequestMethod = Objects.requireNonNullElse(httpRequestMethod, HttpSpecificAdapterConfig.HttpMethod.GET);
-        this.httpRequestBodyContentType = Objects.requireNonNullElse(httpRequestBodyContentType, HttpSpecificAdapterConfig.HttpContentType.JSON);
+        this.httpRequestMethod =
+                Objects.requireNonNullElse(httpRequestMethod, HttpSpecificAdapterConfig.HttpMethod.GET);
+        this.httpRequestBodyContentType =
+                Objects.requireNonNullElse(httpRequestBodyContentType, HttpSpecificAdapterConfig.HttpContentType.JSON);
         this.httpRequestBody = httpRequestBody;
         if (httpConnectTimeoutSeconds != null) {
-            //-- Ensure we apply a reasonable timeout, so we don't hang threads
+            // -- Ensure we apply a reasonable timeout, so we don't hang threads
             this.httpConnectTimeoutSeconds = Math.min(httpConnectTimeoutSeconds, MAX_TIMEOUT_SECONDS);
         } else {
             this.httpConnectTimeoutSeconds = DEFAULT_TIMEOUT_SECONDS;

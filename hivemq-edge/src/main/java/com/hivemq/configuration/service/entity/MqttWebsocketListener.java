@@ -15,15 +15,14 @@
  */
 package com.hivemq.configuration.service.entity;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A listener which allows to listen to MQTT traffic over websockets.
@@ -130,7 +129,7 @@ public class MqttWebsocketListener implements Listener {
         public Builder() {
             path = "";
             subprotocols = new ArrayList<>();
-            subprotocols.add("mqtt"); //Add default subprotocol which is required by the MQTT spec
+            subprotocols.add("mqtt"); // Add default subprotocol which is required by the MQTT spec
             allowExtensions = false;
         }
 
@@ -242,13 +241,8 @@ public class MqttWebsocketListener implements Listener {
             if (name == null) {
                 name = "websocket-listener-" + port;
             }
-            return new MqttWebsocketListener(port,
-                    bindAddress,
-                    path,
-                    allowExtensions,
-                    subprotocols,
-                    name,
-                    externalHostname);
+            return new MqttWebsocketListener(
+                    port, bindAddress, path, allowExtensions, subprotocols, name, externalHostname);
         }
     }
 }

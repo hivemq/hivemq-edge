@@ -19,18 +19,16 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @JsonSerialize(using = DataUrl.Serializer.class)
 public class DataUrl {
 
     public static final String BASE64_TOKEN = ";base64";
     public static final String DATA_TOKEN = "data:";
-
 
     private final @NotNull String mimeType;
     private final @NotNull String encoding;
@@ -52,7 +50,6 @@ public class DataUrl {
         return new DataUrl("application/json", StandardCharsets.US_ASCII.displayName(), "base64", data);
     }
 
-
     public static @NotNull DataUrl create(final @NotNull String dataUrlAsString) {
         checkDataPrefix(dataUrlAsString);
         // remove data:
@@ -61,8 +58,9 @@ public class DataUrl {
         checkSeparator(dataUrlWithoutDataPrefix, dataUrlAsString);
         final String[] metaDataAndDataSplit = dataUrlWithoutDataPrefix.split(",");
         if (metaDataAndDataSplit.length != 2) {
-            throw new IllegalArgumentException(dataUrlAsString +
-                    " is not a valid data URL, because it did not contain metadata and data separated by exactly one ','.");
+            throw new IllegalArgumentException(
+                    dataUrlAsString
+                            + " is not a valid data URL, because it did not contain metadata and data separated by exactly one ','.");
         }
         final String metadata = metaDataAndDataSplit[0];
         final String data = metaDataAndDataSplit[1];
@@ -86,10 +84,10 @@ public class DataUrl {
         if (o == null || getClass() != o.getClass()) return false;
 
         final DataUrl dataUrl = (DataUrl) o;
-        return mimeType.equals(dataUrl.mimeType) &&
-                encoding.equals(dataUrl.encoding) &&
-                charset.equals(dataUrl.charset) &&
-                data.equals(dataUrl.data);
+        return mimeType.equals(dataUrl.mimeType)
+                && encoding.equals(dataUrl.encoding)
+                && charset.equals(dataUrl.charset)
+                && data.equals(dataUrl.data);
     }
 
     @Override
@@ -103,23 +101,20 @@ public class DataUrl {
 
     private static void checkDataPrefix(final @NotNull String dataUrlAsString) {
         if (!dataUrlAsString.startsWith(DATA_TOKEN)) {
-            throw new IllegalArgumentException("The supplied String '" +
-                    dataUrlAsString +
-                    "' does not start with the required prefix '" +
-                    DATA_TOKEN +
-                    "'.");
+            throw new IllegalArgumentException("The supplied String '" + dataUrlAsString
+                    + "' does not start with the required prefix '"
+                    + DATA_TOKEN
+                    + "'.");
         }
     }
 
     private static void checkSeparator(
             final @NotNull String dataUrlWithoutDataPrefix, final @NotNull String dataUrlAsString) {
         if (!dataUrlWithoutDataPrefix.contains(",")) {
-            throw new IllegalArgumentException("The supplied String '" +
-                    dataUrlAsString +
-                    "' does not contain the necessary ',' as separator between metadata and data.");
+            throw new IllegalArgumentException("The supplied String '" + dataUrlAsString
+                    + "' does not contain the necessary ',' as separator between metadata and data.");
         }
     }
-
 
     public @NotNull String getCharset() {
         return charset;
@@ -141,7 +136,6 @@ public class DataUrl {
     public @NotNull String toString() {
         return "data:" + mimeType + ";" + encoding + "," + data;
     }
-
 
     public static class Serializer extends StdSerializer<DataUrl> {
 

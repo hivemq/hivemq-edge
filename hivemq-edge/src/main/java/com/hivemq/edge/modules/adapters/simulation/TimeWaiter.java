@@ -15,9 +15,8 @@
  */
 package com.hivemq.edge.modules.adapters.simulation;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.NotNull;
 
 public class TimeWaiter {
     public static @NotNull TimeWaiter INSTANCE = new TimeWaiter();

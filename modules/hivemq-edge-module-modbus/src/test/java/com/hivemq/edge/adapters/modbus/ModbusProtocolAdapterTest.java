@@ -15,20 +15,19 @@
  */
 package com.hivemq.edge.adapters.modbus;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.edge.adapters.modbus.config.ModbusToMqttMapping;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
-import org.assertj.core.groups.Tuple;
-import org.junit.jupiter.api.Test;
-
 import java.util.List;
 import java.util.stream.IntStream;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.assertj.core.groups.Tuple;
+import org.junit.jupiter.api.Test;
 
 class ModbusProtocolAdapterTest {
 
@@ -37,13 +36,17 @@ class ModbusProtocolAdapterTest {
         final ModBusData data1 = createSampleData();
         final ModBusData data2 = createSampleData();
 
-        assertEquals(0,
-                AdapterDataUtils.mergeChangedSamples(data1.getDataPoints(), data2.getDataPoints()).size(),
+        assertEquals(
+                0,
+                AdapterDataUtils.mergeChangedSamples(data1.getDataPoints(), data2.getDataPoints())
+                        .size(),
                 "There should be no deltas");
         data2.getDataPoints().set(5, new DataPointImpl("register-5", 777));
 
-        assertEquals(1,
-                AdapterDataUtils.mergeChangedSamples(data1.getDataPoints(), data2.getDataPoints()).size(),
+        assertEquals(
+                1,
+                AdapterDataUtils.mergeChangedSamples(data1.getDataPoints(), data2.getDataPoints())
+                        .size(),
                 "There should be 1 delta");
     }
 
@@ -63,13 +66,8 @@ class ModbusProtocolAdapterTest {
     }
 
     protected static ModBusData createSampleData() {
-        final ModbusToMqttMapping pollingContext = new ModbusToMqttMapping("topic",
-                2,
-                "tag1",
-                MessageHandlingOptions.MQTTMessagePerSubscription,
-                true,
-                false,
-                List.of());
+        final ModbusToMqttMapping pollingContext = new ModbusToMqttMapping(
+                "topic", 2, "tag1", MessageHandlingOptions.MQTTMessagePerSubscription, true, false, List.of());
         final ModBusData data = new ModBusData(pollingContext);
         IntStream.range(0, 10).forEach(i -> data.addDataPoint(new DataPointImpl("register-" + i, i)));
         return data;

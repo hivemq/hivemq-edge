@@ -15,9 +15,9 @@
  */
 package com.hivemq.extensions.services.executor;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.CompletableScheduledFuture;
 import com.hivemq.extensions.HiveMQExtensions;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -38,8 +38,10 @@ public class WrappedScheduledRunnable implements Runnable {
     private final HiveMQExtensions hiveMQExtensions;
 
     WrappedScheduledRunnable(
-            final @NotNull Runnable runnable, final @NotNull ClassLoader classLoader,
-            final @NotNull CompletableScheduledFuture<?> future, final @NotNull HiveMQExtensions hiveMQExtensions) {
+            final @NotNull Runnable runnable,
+            final @NotNull ClassLoader classLoader,
+            final @NotNull CompletableScheduledFuture<?> future,
+            final @NotNull HiveMQExtensions hiveMQExtensions) {
         this.runnable = runnable;
         this.classLoader = classLoader;
         this.future = future;
@@ -62,7 +64,7 @@ public class WrappedScheduledRunnable implements Runnable {
             Thread.currentThread().setContextClassLoader(classLoader);
             runnable.run();
 
-            //scheduled futures don't complete normally so completable wont do either.
+            // scheduled futures don't complete normally so completable wont do either.
 
         } catch (final Throwable t) {
             future.completeExceptionally(t);

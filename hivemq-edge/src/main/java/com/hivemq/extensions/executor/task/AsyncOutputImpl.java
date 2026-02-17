@@ -16,11 +16,10 @@
 package com.hivemq.extensions.executor.task;
 
 import com.google.common.util.concurrent.SettableFuture;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.async.Async;
-
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
@@ -39,9 +38,10 @@ public class AsyncOutputImpl<T extends PluginTaskOutput> implements Async<T> {
     @NotNull
     private Status status;
 
-    public AsyncOutputImpl(final @NotNull T output,
-                           final @NotNull SettableFuture<Boolean> asyncFuture,
-                           final @NotNull ScheduledFuture<?> timeoutTaskFuture) {
+    public AsyncOutputImpl(
+            final @NotNull T output,
+            final @NotNull SettableFuture<Boolean> asyncFuture,
+            final @NotNull ScheduledFuture<?> timeoutTaskFuture) {
         this.output = output;
         this.asyncFuture = asyncFuture;
         this.timeoutTaskFuture = timeoutTaskFuture;
@@ -66,7 +66,7 @@ public class AsyncOutputImpl<T extends PluginTaskOutput> implements Async<T> {
     public Status getStatus() {
         if (asyncFuture.isDone()) {
             try {
-                //timeout is not needed here, because the future is already done, but better safe than sorry
+                // timeout is not needed here, because the future is already done, but better safe than sorry
                 return asyncFuture.get(1, TimeUnit.SECONDS) ? Status.DONE : Status.CANCELED;
             } catch (final Exception e) {
                 return Status.CANCELED;

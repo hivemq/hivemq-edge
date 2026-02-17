@@ -15,15 +15,14 @@
  */
 package com.hivemq.util;
 
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Special class which is used to provide certain checkpoints for integration testing
@@ -43,17 +42,14 @@ public class Checkpoints {
     private static boolean enabled;
     private static boolean debug;
 
-
     // checkpoint for the moment when the connection to the control plane is established
-    public static final @NotNull String CONTROL_PLANE_CONNECTION_ESTABLISHED =
-            "control-plane-connection-established";
+    public static final @NotNull String CONTROL_PLANE_CONNECTION_ESTABLISHED = "control-plane-connection-established";
 
     public static final @NotNull String CONTROL_PLANE_CONNECTION_HANDSHAKE_REISSUED =
             "control-plane-connection-handshake-reissued";
 
-    //a checkpoint for the moment after the extension start method was successfully called
+    // a checkpoint for the moment after the extension start method was successfully called
     public static final @NotNull String EXTENSION_STARTED = "extension-started";
-
 
     public static boolean enabled() {
         return enabled;

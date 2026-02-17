@@ -13,23 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.client.parameter;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionAttributeStore;
 import com.hivemq.mqtt.handler.publish.PublishFlushHandler;
 import io.netty.channel.Channel;
 import io.netty.util.Attribute;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -37,10 +33,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @since 4.0.0
@@ -51,6 +47,7 @@ public class ConnectionAttributeStoreImplTest {
     private @NotNull ConnectionAttributes connectionAttributes;
     private @NotNull ConnectionAttributeStore connectionAttributeStore;
     private @NotNull ClientConnection clientConnection;
+
     @BeforeEach
     public void setUp() {
         channel = mock(Channel.class);
@@ -106,7 +103,8 @@ public class ConnectionAttributeStoreImplTest {
         connectionAttributeStore.put(key, value);
         assertNotNull(clientConnection.getConnectionAttributes());
 
-        final Optional<ByteBuffer> setValue = clientConnection.getConnectionAttributes().get(key);
+        final Optional<ByteBuffer> setValue =
+                clientConnection.getConnectionAttributes().get(key);
         assertTrue(setValue.isPresent());
         assertEquals(value, setValue.get());
     }
@@ -117,8 +115,7 @@ public class ConnectionAttributeStoreImplTest {
         final String key = null;
         final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes());
 
-        assertThatThrownBy(() -> connectionAttributeStore.put(key, value))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> connectionAttributeStore.put(key, value)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -127,8 +124,7 @@ public class ConnectionAttributeStoreImplTest {
         final String key = "test.key";
         final ByteBuffer value = null;
 
-        assertThatThrownBy(() -> connectionAttributeStore.put(key, value))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> connectionAttributeStore.put(key, value)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -171,7 +167,8 @@ public class ConnectionAttributeStoreImplTest {
         connectionAttributeStore.putAsString(key, value);
         assertNotNull(clientConnection.getConnectionAttributes());
 
-        final Optional<ByteBuffer> setValue = clientConnection.getConnectionAttributes().get(key);
+        final Optional<ByteBuffer> setValue =
+                clientConnection.getConnectionAttributes().get(key);
         assertTrue(setValue.isPresent());
         assertEquals(ByteBuffer.wrap(value.getBytes()), setValue.get());
     }
@@ -239,7 +236,8 @@ public class ConnectionAttributeStoreImplTest {
         connectionAttributeStore.putAsString(key, value, charset);
         assertNotNull(clientConnection.getConnectionAttributes());
 
-        final Optional<ByteBuffer> setValue = clientConnection.getConnectionAttributes().get(key);
+        final Optional<ByteBuffer> setValue =
+                clientConnection.getConnectionAttributes().get(key);
         assertTrue(setValue.isPresent());
         assertEquals(ByteBuffer.wrap(value.getBytes(charset)), setValue.get());
     }
@@ -304,8 +302,7 @@ public class ConnectionAttributeStoreImplTest {
     public void test_get_null_key() {
         final String key = null;
 
-        assertThatThrownBy(() -> connectionAttributeStore.get(key))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> connectionAttributeStore.get(key)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -350,8 +347,7 @@ public class ConnectionAttributeStoreImplTest {
     public void test_getAsString_null_key() {
         final String key = null;
 
-        assertThatThrownBy(() -> connectionAttributeStore.getAsString(key))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> connectionAttributeStore.getAsString(key)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -416,7 +412,8 @@ public class ConnectionAttributeStoreImplTest {
 
     @Test
     public void test_getAll() {
-        final ImmutableMap<String, ByteBuffer> values = ImmutableMap.of("test.key1",
+        final ImmutableMap<String, ByteBuffer> values = ImmutableMap.of(
+                "test.key1",
                 ByteBuffer.wrap("test.value1".getBytes()),
                 "test.key2",
                 ByteBuffer.wrap("test.value2".getBytes()));
@@ -500,8 +497,7 @@ public class ConnectionAttributeStoreImplTest {
     public void test_remove_null_key() {
         final String key = null;
 
-        assertThatThrownBy(() -> connectionAttributeStore.remove(key))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> connectionAttributeStore.remove(key)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -570,8 +566,7 @@ public class ConnectionAttributeStoreImplTest {
                 @Override
                 public void runCount() {
                     connectionAttributeStore.putAsString(
-                            "test.key" + random.nextInt(EXECUTIONS / 10),
-                            RandomStringUtils.random(10));
+                            "test.key" + random.nextInt(EXECUTIONS / 10), RandomStringUtils.random(10));
                 }
             };
             getRunnables[i] = new ExceptionCountRunnable(EXECUTIONS) {
@@ -642,7 +637,7 @@ public class ConnectionAttributeStoreImplTest {
         }
     }
 
-    private static abstract class ExceptionCountRunnable implements Runnable {
+    private abstract static class ExceptionCountRunnable implements Runnable {
 
         private final AtomicInteger exceptionCount = new AtomicInteger();
         private final int runCount;

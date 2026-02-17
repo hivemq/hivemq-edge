@@ -15,21 +15,20 @@
  */
 package com.hivemq.extensions.auth.parameter;
 
+import static com.hivemq.extensions.auth.parameter.SubscriptionAuthorizerOutputImpl.AuthorizationState.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.hivemq.extension.sdk.api.packets.disconnect.DisconnectReasonCode;
 import com.hivemq.extension.sdk.api.packets.subscribe.SubackReasonCode;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import static com.hivemq.extensions.auth.parameter.SubscriptionAuthorizerOutputImpl.AuthorizationState.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Christoph Schäbel
@@ -41,6 +40,7 @@ public class SubscriptionAuthorizerOutputImplTest {
     private PluginOutPutAsyncer asyncer;
 
     private SubscriptionAuthorizerOutputImpl output;
+
     @BeforeEach
     public void before() {
         MockitoAnnotations.initMocks(this);
@@ -124,40 +124,38 @@ public class SubscriptionAuthorizerOutputImplTest {
     @Test
     public void test_exception_multiple_result_next() {
         output.authorizeSuccessfully();
-        assertThatThrownBy(() ->output.nextExtensionOrDefault())
-                .isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> output.nextExtensionOrDefault()).isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
     public void test_exception_multiple_result_success() {
         output.authorizeSuccessfully();
-        assertThatThrownBy(() -> output.authorizeSuccessfully())
-                .isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> output.authorizeSuccessfully()).isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
     public void test_exception_multiple_result_fail() {
         output.authorizeSuccessfully();
-        assertThatThrownBy(() -> output.failAuthorization())
-                .isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> output.failAuthorization()).isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
     public void test_exception_multiple_result_disconnect() {
         output.authorizeSuccessfully();
-        assertThatThrownBy(() -> output.disconnectClient())
-                .isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> output.disconnectClient()).isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
     public void test_fail_sucess_code() {
-    
+
         assertThrows(IllegalArgumentException.class, () -> output.failAuthorization(SubackReasonCode.GRANTED_QOS_0));
     }
 
     @Test
     public void test_fail_string_sucess_code() {
-    
-        assertThrows(IllegalArgumentException.class, () -> output.failAuthorization(SubackReasonCode.GRANTED_QOS_1, "test-string"));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> output.failAuthorization(SubackReasonCode.GRANTED_QOS_1, "test-string"));
     }
 }

@@ -13,8 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.handler;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.bootstrap.ClientConnection;
@@ -44,6 +50,10 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,18 +62,6 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 import util.IsolatedExtensionClassloaderUtil;
 import util.TestConfigurationBootstrap;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class UnsubackOutboundInterceptorHandlerTest {
 
@@ -95,16 +93,13 @@ public class UnsubackOutboundInterceptorHandlerTest {
 
         when(extension.getId()).thenReturn("extension");
 
-        final ConfigurationService configurationService =
-                new TestConfigurationBootstrap().getConfigurationService();
+        final ConfigurationService configurationService = new TestConfigurationBootstrap().getConfigurationService();
         final PluginOutPutAsyncer asyncer = new PluginOutputAsyncerImpl(Mockito.mock(ShutdownHooks.class));
         final PluginTaskExecutorService pluginTaskExecutorService =
                 new PluginTaskExecutorServiceImpl(() -> executor, mock(ShutdownHooks.class));
 
-        final UnsubackOutboundInterceptorHandler handler = new UnsubackOutboundInterceptorHandler(configurationService,
-                asyncer,
-                extensions,
-                pluginTaskExecutorService);
+        final UnsubackOutboundInterceptorHandler handler = new UnsubackOutboundInterceptorHandler(
+                configurationService, asyncer, extensions, pluginTaskExecutorService);
         channel.pipeline().addLast("test", new ChannelOutboundHandlerAdapter() {
             @Override
             public void write(
@@ -115,6 +110,7 @@ public class UnsubackOutboundInterceptorHandlerTest {
             }
         });
     }
+
     @AfterEach
     public void tearDown() {
         executor.stop();
@@ -126,13 +122,13 @@ public class UnsubackOutboundInterceptorHandlerTest {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(extensions, new ModifiableDefaultPermissionsImpl());
         final UnsubackOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                TestSimpleUnsubackInterceptor.class);
+                temporaryFolder.toPath(), TestSimpleUnsubackInterceptor.class);
         clientContext.addUnsubackOutboundInterceptor(interceptor);
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setExtensionClientContext(clientContext);
 
-        when(extensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class))).thenReturn(extension);
+        when(extensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
+                .thenReturn(extension);
 
         channel.writeOutbound(testUnsuback());
         UNSUBACK unsuback = channel.readOutbound();
@@ -150,13 +146,13 @@ public class UnsubackOutboundInterceptorHandlerTest {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(extensions, new ModifiableDefaultPermissionsImpl());
         final UnsubackOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                TestModifyUnsubackInterceptor.class);
+                temporaryFolder.toPath(), TestModifyUnsubackInterceptor.class);
         clientContext.addUnsubackOutboundInterceptor(interceptor);
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setExtensionClientContext(clientContext);
 
-        when(extensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class))).thenReturn(extension);
+        when(extensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
+                .thenReturn(extension);
 
         channel.writeOutbound(testUnsuback());
         UNSUBACK unsuback = channel.readOutbound();
@@ -165,7 +161,9 @@ public class UnsubackOutboundInterceptorHandlerTest {
             channel.runScheduledPendingTasks();
             unsuback = channel.readOutbound();
         }
-        assertEquals(Mqtt5UnsubAckReasonCode.IMPLEMENTATION_SPECIFIC_ERROR, unsuback.getReasonCodes().get(0));
+        assertEquals(
+                Mqtt5UnsubAckReasonCode.IMPLEMENTATION_SPECIFIC_ERROR,
+                unsuback.getReasonCodes().get(0));
         assertTrue(isTriggered.get());
     }
 
@@ -174,13 +172,13 @@ public class UnsubackOutboundInterceptorHandlerTest {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(extensions, new ModifiableDefaultPermissionsImpl());
         final UnsubackOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                TestExceptionUnsubackInterceptor.class);
+                temporaryFolder.toPath(), TestExceptionUnsubackInterceptor.class);
         clientContext.addUnsubackOutboundInterceptor(interceptor);
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setExtensionClientContext(clientContext);
 
-        when(extensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class))).thenReturn(extension);
+        when(extensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
+                .thenReturn(extension);
 
         channel.writeOutbound(testUnsuback());
         UNSUBACK unsuback = channel.readOutbound();
@@ -193,7 +191,8 @@ public class UnsubackOutboundInterceptorHandlerTest {
     }
 
     private @NotNull UNSUBACK testUnsuback() {
-        return new UNSUBACK(1,
+        return new UNSUBACK(
+                1,
                 ImmutableList.of(Mqtt5UnsubAckReasonCode.TOPIC_FILTER_INVALID),
                 "reason",
                 Mqtt5UserProperties.NO_USER_PROPERTIES);
@@ -206,7 +205,6 @@ public class UnsubackOutboundInterceptorHandlerTest {
                 final @NotNull UnsubackOutboundInput unsubackOutboundInput,
                 final @NotNull UnsubackOutboundOutput unsubackOutboundOutput) {
             isTriggered.set(true);
-
         }
     }
 

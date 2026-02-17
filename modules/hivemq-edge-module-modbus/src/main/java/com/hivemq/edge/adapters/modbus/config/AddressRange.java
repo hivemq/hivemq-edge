@@ -24,29 +24,34 @@ import org.jetbrains.annotations.NotNull;
 public class AddressRange {
 
     @JsonProperty(value = "startIdx", required = true)
-    @ModuleConfigField(title = "Start Index",
-                       description = "The Starting Index (Incl.) of the Address Range",
-                       numberMin = 0,
-                       numberMax = ModbusSpecificAdapterConfig.PORT_MAX,
-                       required = true)
+    @ModuleConfigField(
+            title = "Start Index",
+            description = "The Starting Index (Incl.) of the Address Range",
+            numberMin = 0,
+            numberMax = ModbusSpecificAdapterConfig.PORT_MAX,
+            required = true)
     public final int startIdx;
 
     @JsonProperty(value = "readType", required = true)
-    @ModuleConfigField(title = "The way the register range should be read",
-                       description = "Type of read to performe on the registers",
-                       required = true)
+    @ModuleConfigField(
+            title = "The way the register range should be read",
+            description = "Type of read to performe on the registers",
+            required = true)
     public final @NotNull ModbusAdu readType;
 
     @JsonProperty(value = "unitId", required = true)
-    @ModuleConfigField(title = "The id of the unit to access",
-                       description = "Id of the unit to access on the modbus",
-                       required = true)
+    @ModuleConfigField(
+            title = "The id of the unit to access",
+            description = "Id of the unit to access on the modbus",
+            required = true)
     public final int unitId;
 
     @JsonProperty(value = "flipRegisters", defaultValue = "false")
-    @ModuleConfigField(title = "Indicates if registers should be evaluated in reverse order",
-                       description = "Registers and their contents are normally written/read as big endian, some implementations decided to write the content as big endian but to order the actual registers as little endian.",
-                       defaultValue = "false")
+    @ModuleConfigField(
+            title = "Indicates if registers should be evaluated in reverse order",
+            description =
+                    "Registers and their contents are normally written/read as big endian, some implementations decided to write the content as big endian but to order the actual registers as little endian.",
+            defaultValue = "false")
     public final boolean flipRegisters;
 
     public AddressRange(

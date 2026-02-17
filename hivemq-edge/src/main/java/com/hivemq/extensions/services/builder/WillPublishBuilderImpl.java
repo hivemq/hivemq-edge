@@ -15,14 +15,17 @@
  */
 package com.hivemq.extensions.services.builder;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hivemq.mqtt.message.connect.MqttWillPublish.WILL_DELAY_INTERVAL_DEFAULT;
+import static com.hivemq.mqtt.message.publish.PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.connect.WillPublishPacket;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.packets.general.UserProperties;
@@ -39,15 +42,11 @@ import com.hivemq.extensions.services.publish.PublishImpl;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.util.Topics;
-
 import jakarta.inject.Inject;
 import java.nio.ByteBuffer;
 import java.util.Optional;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hivemq.mqtt.message.connect.MqttWillPublish.WILL_DELAY_INTERVAL_DEFAULT;
-import static com.hivemq.mqtt.message.publish.PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -110,10 +109,18 @@ public class WillPublishBuilderImpl implements WillPublishBuilder {
             throw new DoNotImplementException(PublishPacket.class.getSimpleName());
         }
 
-        return fromComplete(publishPacket.getQos(), publishPacket.getRetain(), publishPacket.getTopic(),
-                publishPacket.getPayloadFormatIndicator(), publishPacket.getMessageExpiryInterval(),
-                publishPacket.getResponseTopic(), publishPacket.getCorrelationData(), publishPacket.getContentType(),
-                publishPacket.getPayload(), publishPacket.getUserProperties(), WILL_DELAY_INTERVAL_DEFAULT);
+        return fromComplete(
+                publishPacket.getQos(),
+                publishPacket.getRetain(),
+                publishPacket.getTopic(),
+                publishPacket.getPayloadFormatIndicator(),
+                publishPacket.getMessageExpiryInterval(),
+                publishPacket.getResponseTopic(),
+                publishPacket.getCorrelationData(),
+                publishPacket.getContentType(),
+                publishPacket.getPayload(),
+                publishPacket.getUserProperties(),
+                WILL_DELAY_INTERVAL_DEFAULT);
     }
 
     @Override
@@ -125,10 +132,18 @@ public class WillPublishBuilderImpl implements WillPublishBuilder {
             throw new DoNotImplementException(Publish.class.getSimpleName());
         }
 
-        return fromComplete(publish.getQos(), publish.getRetain(), publish.getTopic(),
-                publish.getPayloadFormatIndicator(), publish.getMessageExpiryInterval(),
-                publish.getResponseTopic(), publish.getCorrelationData(), publish.getContentType(),
-                publish.getPayload(), publish.getUserProperties(), WILL_DELAY_INTERVAL_DEFAULT);
+        return fromComplete(
+                publish.getQos(),
+                publish.getRetain(),
+                publish.getTopic(),
+                publish.getPayloadFormatIndicator(),
+                publish.getMessageExpiryInterval(),
+                publish.getResponseTopic(),
+                publish.getCorrelationData(),
+                publish.getContentType(),
+                publish.getPayload(),
+                publish.getUserProperties(),
+                WILL_DELAY_INTERVAL_DEFAULT);
     }
 
     @Override
@@ -140,25 +155,33 @@ public class WillPublishBuilderImpl implements WillPublishBuilder {
             throw new DoNotImplementException(WillPublishPacket.class.getSimpleName());
         }
 
-        return fromComplete(willPublish.getQos(), willPublish.getRetain(), willPublish.getTopic(),
-                willPublish.getPayloadFormatIndicator(), willPublish.getMessageExpiryInterval(),
-                willPublish.getResponseTopic(), willPublish.getCorrelationData(), willPublish.getContentType(),
-                willPublish.getPayload(), willPublish.getUserProperties(), willPublish.getWillDelay());
+        return fromComplete(
+                willPublish.getQos(),
+                willPublish.getRetain(),
+                willPublish.getTopic(),
+                willPublish.getPayloadFormatIndicator(),
+                willPublish.getMessageExpiryInterval(),
+                willPublish.getResponseTopic(),
+                willPublish.getCorrelationData(),
+                willPublish.getContentType(),
+                willPublish.getPayload(),
+                willPublish.getUserProperties(),
+                willPublish.getWillDelay());
     }
 
-
     @NotNull
-    private WillPublishBuilder fromComplete(final @NotNull Qos qos,
-                                            final boolean retain,
-                                            final @NotNull String topic,
-                                            final @NotNull Optional<PayloadFormatIndicator> payloadFormatIndicator,
-                                            final @NotNull Optional<Long> messageExpiryInterval,
-                                            final @NotNull Optional<String> responseTopic,
-                                            final @NotNull Optional<ByteBuffer> correlationData,
-                                            final @NotNull Optional<String> contentType,
-                                            final @NotNull Optional<ByteBuffer> payload,
-                                            final @NotNull UserProperties userProperties,
-                                            final long willDelay) {
+    private WillPublishBuilder fromComplete(
+            final @NotNull Qos qos,
+            final boolean retain,
+            final @NotNull String topic,
+            final @NotNull Optional<PayloadFormatIndicator> payloadFormatIndicator,
+            final @NotNull Optional<Long> messageExpiryInterval,
+            final @NotNull Optional<String> responseTopic,
+            final @NotNull Optional<ByteBuffer> correlationData,
+            final @NotNull Optional<String> contentType,
+            final @NotNull Optional<ByteBuffer> payload,
+            final @NotNull UserProperties userProperties,
+            final long willDelay) {
         this.qos = qos;
         this.retain = retain;
         this.topic = topic;
@@ -194,7 +217,10 @@ public class WillPublishBuilderImpl implements WillPublishBuilder {
     @Override
     public @NotNull WillPublishBuilder topic(final @NotNull String topic) {
         checkNotNull(topic, "Topic must not be null");
-        checkArgument(topic.length() <= restrictionsConfig.maxTopicLength(), "Topic filter length must not exceed '" + restrictionsConfig.maxTopicLength() + "' characters, but has '" + topic.length() + "' characters");
+        checkArgument(
+                topic.length() <= restrictionsConfig.maxTopicLength(),
+                "Topic filter length must not exceed '" + restrictionsConfig.maxTopicLength()
+                        + "' characters, but has '" + topic.length() + "' characters");
 
         if (!Topics.isValidTopicToPublish(topic)) {
             throw new IllegalArgumentException("The topic (" + topic + ") is invalid for PUBLISH messages");
@@ -209,14 +235,16 @@ public class WillPublishBuilderImpl implements WillPublishBuilder {
     }
 
     @Override
-    public @NotNull WillPublishBuilder payloadFormatIndicator(final @Nullable PayloadFormatIndicator payloadFormatIndicator) {
+    public @NotNull WillPublishBuilder payloadFormatIndicator(
+            final @Nullable PayloadFormatIndicator payloadFormatIndicator) {
         this.payloadFormatIndicator = payloadFormatIndicator;
         return this;
     }
 
     @Override
     public @NotNull WillPublishBuilder messageExpiryInterval(final long messageExpiryInterval) {
-        PluginBuilderUtil.checkMessageExpiryInterval(messageExpiryInterval, mqttConfigurationService.maxMessageExpiryInterval());
+        PluginBuilderUtil.checkMessageExpiryInterval(
+                messageExpiryInterval, mqttConfigurationService.maxMessageExpiryInterval());
         this.messageExpiryInterval = messageExpiryInterval;
         return this;
     }
@@ -272,8 +300,18 @@ public class WillPublishBuilderImpl implements WillPublishBuilder {
             messageExpiryInterval = mqttConfigurationService.maxMessageExpiryInterval();
         }
 
-        return new WillPublishPacketImpl(topic, qos, payload, retain, messageExpiryInterval, payloadFormatIndicator,
-                contentType, responseTopic, correlationData, UserPropertiesImpl.of(userPropertyBuilder.build()),
-                willDelay, System.currentTimeMillis());
+        return new WillPublishPacketImpl(
+                topic,
+                qos,
+                payload,
+                retain,
+                messageExpiryInterval,
+                payloadFormatIndicator,
+                contentType,
+                responseTopic,
+                correlationData,
+                UserPropertiesImpl.of(userPropertyBuilder.build()),
+                willDelay,
+                System.currentTimeMillis());
     }
 }

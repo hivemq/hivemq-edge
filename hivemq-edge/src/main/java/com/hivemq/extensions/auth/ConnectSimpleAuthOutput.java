@@ -15,8 +15,6 @@
  */
 package com.hivemq.extensions.auth;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.async.Async;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extension.sdk.api.auth.parameter.ModifiableClientSettings;
@@ -24,8 +22,9 @@ import com.hivemq.extension.sdk.api.auth.parameter.SimpleAuthOutput;
 import com.hivemq.extension.sdk.api.packets.auth.ModifiableDefaultPermissions;
 import com.hivemq.extension.sdk.api.packets.connect.ConnackReasonCode;
 import com.hivemq.extension.sdk.api.packets.general.ModifiableUserProperties;
-
 import java.time.Duration;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Silvio Giebl
@@ -95,8 +94,7 @@ class ConnectSimpleAuthOutput implements SimpleAuthOutput {
 
     @Override
     public @NotNull Async<SimpleAuthOutput> async(
-            final @NotNull Duration timeout,
-            final @NotNull TimeoutFallback fallback) {
+            final @NotNull Duration timeout, final @NotNull TimeoutFallback fallback) {
 
         return new AsyncWrapper<>(delegate.async(timeout, fallback), this);
     }

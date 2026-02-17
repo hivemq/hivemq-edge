@@ -34,12 +34,11 @@ import com.hivemq.util.ErrorResponseUtil;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
-import org.jetbrains.annotations.NotNull;
-
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class TopicFilterResourceImpl extends AbstractApi implements TopicFiltersApi {
@@ -65,29 +64,31 @@ public class TopicFilterResourceImpl extends AbstractApi implements TopicFilters
         return switch (result.getTopicFilterPutStatus()) {
             case SUCCESS -> Response.ok().build();
             case TOPIC_NAME_ALREADY_USED ->
-                    ErrorResponseUtil.errorResponse(new AlreadyExistsError("The topic filter '" +
-                            topicFilterModel.getDescription() +
-                            "' cannot be created since another item already exists with the same name."));
+                ErrorResponseUtil.errorResponse(
+                        new AlreadyExistsError("The topic filter '" + topicFilterModel.getDescription()
+                                + "' cannot be created since another item already exists with the same name."));
             case TOPIC_FILTER_ALREADY_PRESENT ->
-                    ErrorResponseUtil.errorResponse(new AlreadyExistsError("The topic filter '" +
-                            topicFilterModel.getDescription() +
-                            "' cannot be created since another item already exists with the same filter."));
+                ErrorResponseUtil.errorResponse(
+                        new AlreadyExistsError("The topic filter '" + topicFilterModel.getDescription()
+                                + "' cannot be created since another item already exists with the same filter."));
         };
     }
 
     @Override
     public @NotNull Response getTopicFilters() {
         final List<com.hivemq.edge.api.model.TopicFilter> topicFilterModelList =
-                topicFilterPersistence.getTopicFilters().stream().map(TopicFilterPojo::toModel).toList();
+                topicFilterPersistence.getTopicFilters().stream()
+                        .map(TopicFilterPojo::toModel)
+                        .toList();
         return Response.ok(new TopicFilterList().items(topicFilterModelList)).build();
     }
 
     @Override
     public @NotNull Response getTopicFilter(final @NotNull String filter) {
         final TopicFilterPojo topicFilter = topicFilterPersistence.getTopicFilter(filter);
-        return topicFilter != null ?
-                Response.ok(topicFilter.toModel()).build() :
-                ErrorResponseUtil.errorResponse(new NotFoundError());
+        return topicFilter != null
+                ? Response.ok(topicFilter.toModel()).build()
+                : ErrorResponseUtil.errorResponse(new NotFoundError());
     }
 
     @Override
@@ -103,7 +104,9 @@ public class TopicFilterResourceImpl extends AbstractApi implements TopicFilters
         }
 
         final String schema = new String(Base64.getDecoder().decode(schemaAsDataUrl.getData()), StandardCharsets.UTF_8);
-        return Response.ok(schema).header("Content-Type", "text/plain; charset=UTF-8").build();
+        return Response.ok(schema)
+                .header("Content-Type", "text/plain; charset=UTF-8")
+                .build();
     }
 
     @Override
@@ -130,13 +133,12 @@ public class TopicFilterResourceImpl extends AbstractApi implements TopicFilters
 
         final String filter = URLDecoder.decode(filterUriEncoded, StandardCharsets.UTF_8);
         if (!filter.equals(topicFilterModel.getTopicFilter())) {
-            return ErrorResponseUtil.errorResponse(new BadRequestError("the filter in the path '" +
-                    filter +
-                    "' (uriEncoded: '" +
-                    filterUriEncoded +
-                    "')does not fit to the filter in the body '" +
-                    topicFilterModel.getTopicFilter() +
-                    "'"));
+            return ErrorResponseUtil.errorResponse(new BadRequestError("the filter in the path '" + filter
+                    + "' (uriEncoded: '"
+                    + filterUriEncoded
+                    + "')does not fit to the filter in the body '"
+                    + topicFilterModel.getTopicFilter()
+                    + "'"));
         }
 
         final TopicFilterUpdateResult result =
@@ -154,10 +156,8 @@ public class TopicFilterResourceImpl extends AbstractApi implements TopicFilters
             return ErrorResponseUtil.errorResponse(new ConfigWritingDisabled());
         }
 
-        final TopicFilterUpdateResult result = topicFilterPersistence.updateAllTopicFilters(model.getItems()
-                .stream()
-                .map(TopicFilterPojo::fromModel)
-                .toList());
+        final TopicFilterUpdateResult result = topicFilterPersistence.updateAllTopicFilters(
+                model.getItems().stream().map(TopicFilterPojo::fromModel).toList());
         return switch (result.getTopicFilterUpdateStatus()) {
             case SUCCESS -> Response.ok().build();
             case NOT_FOUND -> ErrorResponseUtil.errorResponse(new NotFoundError());

@@ -16,12 +16,11 @@
 package com.hivemq.extensions.handler.tasks;
 
 import com.google.common.util.concurrent.SettableFuture;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extensions.auth.parameter.SubscriptionAuthorizerOutputImpl;
 import com.hivemq.extensions.executor.task.PluginInOutTaskContext;
-
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
@@ -49,12 +48,14 @@ public class SubscriptionAuthorizerContext extends PluginInOutTaskContext<Subscr
     @Override
     public void pluginPost(final @NotNull SubscriptionAuthorizerOutputImpl pluginOutput) {
 
-        if (pluginOutput.isAsync() && pluginOutput.isTimedOut() && pluginOutput.getTimeoutFallback() == TimeoutFallback.FAILURE) {
-            //Timeout fallback failure means publish delivery prevention
+        if (pluginOutput.isAsync()
+                && pluginOutput.isTimedOut()
+                && pluginOutput.getTimeoutFallback() == TimeoutFallback.FAILURE) {
+            // Timeout fallback failure means publish delivery prevention
             pluginOutput.forceFailedAuthorization();
         }
 
-        //the topic is done if any authorizer sets the outcome
+        // the topic is done if any authorizer sets the outcome
         if (pluginOutput.isCompleted()) {
             authorizeFuture.set(pluginOutput);
             return;
@@ -66,7 +67,7 @@ public class SubscriptionAuthorizerContext extends PluginInOutTaskContext<Subscr
     }
 
     public void increment() {
-        //we must set the future when no more interceptors are registered
+        // we must set the future when no more interceptors are registered
         if (counter.incrementAndGet() == authorizerCount) {
             authorizeFuture.set(output);
         }

@@ -15,46 +15,54 @@
  */
 package com.hivemq.mqtt.message.publish;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.util.MemoryEstimator;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 /**
  * @since 4.0.0
  */
 public class PUBLISHTest {
 
-    private static final int FIXED_SIZE =
-            MemoryEstimator.OBJECT_SHELL_SIZE +  // shell size
-                    MemoryEstimator.INT_SIZE +  // size size
-                    MemoryEstimator.LONG_SIZE +  // timestamp
-                    24 + // user props overhead
-                    MemoryEstimator.BOOLEAN_SIZE +  // duplicateDelivery
-                    MemoryEstimator.BOOLEAN_SIZE +  // retain
-                    MemoryEstimator.BOOLEAN_SIZE +  // isNewTopicAlias
-                    MemoryEstimator.LONG_SIZE +  // messageExpiryInterval
-                    MemoryEstimator.LONG_SIZE +  // publishId
-                    MemoryEstimator.LONG_WRAPPER_SIZE + // payloadId
-                    MemoryEstimator.ENUM_OVERHEAD +  // QoS
-                    MemoryEstimator.ENUM_OVERHEAD;   // payloadFormatIndicator
+    private static final int FIXED_SIZE = MemoryEstimator.OBJECT_SHELL_SIZE
+            + // shell size
+            MemoryEstimator.INT_SIZE
+            + // size size
+            MemoryEstimator.LONG_SIZE
+            + // timestamp
+            24
+            + // user props overhead
+            MemoryEstimator.BOOLEAN_SIZE
+            + // duplicateDelivery
+            MemoryEstimator.BOOLEAN_SIZE
+            + // retain
+            MemoryEstimator.BOOLEAN_SIZE
+            + // isNewTopicAlias
+            MemoryEstimator.LONG_SIZE
+            + // messageExpiryInterval
+            MemoryEstimator.LONG_SIZE
+            + // publishId
+            MemoryEstimator.LONG_WRAPPER_SIZE
+            + // payloadId
+            MemoryEstimator.ENUM_OVERHEAD
+            + // QoS
+            MemoryEstimator.ENUM_OVERHEAD; // payloadFormatIndicator
 
     @Test
     public void test_publish_qos_null() {
@@ -113,7 +121,6 @@ public class PUBLISHTest {
 
         assertNotNull(publishMqtt5);
         assertNotNull(publishMqtt3);
-
     }
 
     @Test
@@ -140,7 +147,6 @@ public class PUBLISHTest {
 
         assertNotNull(publishMqtt5);
         assertNotNull(publishMqtt3);
-
     }
 
     @Test
@@ -155,7 +161,8 @@ public class PUBLISHTest {
                 .withTopic("topic") // 10+38 = 48 bytes
                 .withResponseTopic("response") // 16+38 = 54 bytes
                 .withCorrelationData("correlation".getBytes()) // 11+12 = 23 bytes
-                .withUserProperties(Mqtt5UserProperties.of(MqttUserProperty.of("name", "value"))) //   ((4 + 5) * 2) + 24 + 38 + 38 = 118
+                .withUserProperties(Mqtt5UserProperties.of(
+                        MqttUserProperty.of("name", "value"))) //   ((4 + 5) * 2) + 24 + 38 + 38 = 118
                 .build();
 
         final List<Thread> threadList = new ArrayList<>();
@@ -175,10 +182,9 @@ public class PUBLISHTest {
         }
 
         for (final int size : sizeList) {
-            //19 + 48 + 54 + 23 + 118 = 262
+            // 19 + 48 + 54 + 23 + 118 = 262
             assertEquals(262 + 54 + FIXED_SIZE + MemoryEstimator.stringSize(publishMqtt5.getUniqueId()), size);
         }
-
     }
 
     @Test
@@ -192,8 +198,9 @@ public class PUBLISHTest {
                 .withTopic("topic") // 10+38 = 48 bytes
                 .build();
 
-        assertEquals(67 + 54 + FIXED_SIZE + MemoryEstimator.stringSize(publishMqtt5.getUniqueId()), publishMqtt5.getEstimatedSizeInMemory());
-
+        assertEquals(
+                67 + 54 + FIXED_SIZE + MemoryEstimator.stringSize(publishMqtt5.getUniqueId()),
+                publishMqtt5.getEstimatedSizeInMemory());
     }
 
     @Test
@@ -208,8 +215,9 @@ public class PUBLISHTest {
                 .withTopic("topic") // 10+38 = 48 bytes
                 .build();
 
-        assertEquals(48 + 54 + FIXED_SIZE + MemoryEstimator.stringSize(publishMqtt5.getUniqueId()), publishMqtt5.getEstimatedSizeInMemory());
-
+        assertEquals(
+                48 + 54 + FIXED_SIZE + MemoryEstimator.stringSize(publishMqtt5.getUniqueId()),
+                publishMqtt5.getEstimatedSizeInMemory());
     }
 
     @Test
@@ -220,15 +228,20 @@ public class PUBLISHTest {
                 .withOnwardQos(QoS.AT_MOST_ONCE)
                 .withHivemqId("hivemqId") // 16+38 = 54 bytes
                 .withPayload(new byte[1024 * 1024 * 5]) // 5MB + 12 bytes
-                .withCorrelationData(new byte[1024 * 1024 * 5])  // 5MB + 12 bytes
+                .withCorrelationData(new byte[1024 * 1024 * 5]) // 5MB + 12 bytes
                 .withResponseTopic(RandomStringUtils.randomAlphanumeric(65000)) // 130.038 bytes
                 .withTopic(RandomStringUtils.randomAlphanumeric(65000)) // 130.038 bytes
                 .withUserProperties(getManyProperties()) // 12.777.790 bytes
                 .build();
 
-        final long estimatedSize = ((1024 * 1024 * 5) * 2) + 54 + 24 + (130_038 * 2) + 12_777_790 + FIXED_SIZE + MemoryEstimator.stringSize(publishMqtt5.getUniqueId()); // 23_523_857 bytes + UniqueID Bytes
+        final long estimatedSize = ((1024 * 1024 * 5) * 2)
+                + 54
+                + 24
+                + (130_038 * 2)
+                + 12_777_790
+                + FIXED_SIZE
+                + MemoryEstimator.stringSize(publishMqtt5.getUniqueId()); // 23_523_857 bytes + UniqueID Bytes
         assertEquals(estimatedSize, publishMqtt5.getEstimatedSizeInMemory());
-
     }
 
     @Test
@@ -251,7 +264,8 @@ public class PUBLISHTest {
         final PUBLISH publish2 = createPublishWithTimestampAndExpiry(System.currentTimeMillis(), 1);
         assertFalse(publish2.isExpired());
 
-        final PUBLISH publish3 = createPublishWithTimestampAndExpiry(System.currentTimeMillis() - 100000000, MqttConfigurationDefaults.TTL_DISABLED);
+        final PUBLISH publish3 = createPublishWithTimestampAndExpiry(
+                System.currentTimeMillis() - 100000000, MqttConfigurationDefaults.TTL_DISABLED);
         assertFalse(publish3.isExpired());
     }
 
@@ -270,11 +284,10 @@ public class PUBLISHTest {
 
     private Mqtt5UserProperties getManyProperties() {
         final AtomicInteger counter = new AtomicInteger();
-        final Set<MqttUserProperty> userProperties =
-                Stream.generate(() -> MqttUserProperty.of("name" + counter.incrementAndGet(), "value"))
-                        .limit(100000)
-                        .collect(Collectors.toSet());
-        return Mqtt5UserProperties.of(userProperties.toArray(new MqttUserProperty[]{}));
-
+        final Set<MqttUserProperty> userProperties = Stream.generate(
+                        () -> MqttUserProperty.of("name" + counter.incrementAndGet(), "value"))
+                .limit(100000)
+                .collect(Collectors.toSet());
+        return Mqtt5UserProperties.of(userProperties.toArray(new MqttUserProperty[] {}));
     }
 }

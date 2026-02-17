@@ -19,11 +19,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
-
 
 @SuppressWarnings("FieldCanBeLocal")
 public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
@@ -32,42 +30,47 @@ public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfi
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
     @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
-    @ModuleConfigField(title = "Identifier",
-                       description = "Unique identifier for this protocol adapter",
-                       format = ModuleConfigField.FieldType.IDENTIFIER,
-                       required = true,
-                       stringPattern = ID_REGEX,
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
+    @ModuleConfigField(
+            title = "Identifier",
+            description = "Unique identifier for this protocol adapter",
+            format = ModuleConfigField.FieldType.IDENTIFIER,
+            required = true,
+            stringPattern = ID_REGEX,
+            stringMinLength = 1,
+            stringMaxLength = 1024)
     private @Nullable String id;
 
     @JsonProperty(value = "host", required = true)
-    @ModuleConfigField(title = "Host",
-                       description = "IP Address or hostname of the device you wish to connect to",
-                       required = true,
-                       format = ModuleConfigField.FieldType.HOSTNAME)
+    @ModuleConfigField(
+            title = "Host",
+            description = "IP Address or hostname of the device you wish to connect to",
+            required = true,
+            format = ModuleConfigField.FieldType.HOSTNAME)
     private final @NotNull String host;
 
     @JsonProperty(value = "port", required = true)
-    @ModuleConfigField(title = "Port",
-                       description = "The port number on the device you wish to connect to",
-                       required = true,
-                       numberMin = PORT_MIN,
-                       numberMax = PORT_MAX)
+    @ModuleConfigField(
+            title = "Port",
+            description = "The port number on the device you wish to connect to",
+            required = true,
+            numberMin = PORT_MIN,
+            numberMax = PORT_MAX)
     private final int port;
 
     @JsonProperty("timeoutMillis")
-    @ModuleConfigField(title = "Timeout",
-                       description = "Time (in milliseconds) to await a connection before the client gives up",
-                       numberMin = 1000,
-                       numberMax = 15000,
-                       defaultValue = "5000")
+    @ModuleConfigField(
+            title = "Timeout",
+            description = "Time (in milliseconds) to await a connection before the client gives up",
+            numberMin = 1000,
+            numberMax = 15000,
+            defaultValue = "5000")
     private final int timeoutMillis;
 
     @JsonProperty(value = "modbusToMqtt", required = true)
-    @ModuleConfigField(title = "Modbus To MQTT Config",
-                       description = "The configuration for a data stream from Modbus to MQTT",
-                       required = true)
+    @ModuleConfigField(
+            title = "Modbus To MQTT Config",
+            description = "The configuration for a data stream from Modbus to MQTT",
+            required = true)
     private final @Nullable ModbusToMqttConfig modbusToMQTTConfig;
 
     @JsonCreator
@@ -104,10 +107,10 @@ public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfi
         if (!(o instanceof ModbusSpecificAdapterConfig that)) {
             return false;
         }
-        return getPort() == that.getPort() &&
-                getTimeoutMillis() == that.getTimeoutMillis() &&
-                Objects.equals(getHost(), that.getHost()) &&
-                Objects.equals(getModbusToMQTTConfig(), that.getModbusToMQTTConfig());
+        return getPort() == that.getPort()
+                && getTimeoutMillis() == that.getTimeoutMillis()
+                && Objects.equals(getHost(), that.getHost())
+                && Objects.equals(getModbusToMQTTConfig(), that.getModbusToMQTTConfig());
     }
 
     @Override

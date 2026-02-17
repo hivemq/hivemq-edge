@@ -13,29 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.security.ssl;
 
 import com.hivemq.configuration.service.entity.Tls;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.security.exception.SslException;
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
 import io.netty.handler.ssl.SupportedCipherSuiteFilter;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import javax.net.ssl.SSLException;
 import java.util.List;
+import javax.net.ssl.SSLException;
+import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class SslContextFactory {
 
     @Inject
-    public SslContextFactory() {
-    }
+    public SslContextFactory() {}
 
     /**
      * Creates a new {@link SslContext} according to the information stored in the {@link Tls} object
@@ -55,7 +52,7 @@ public class SslContextFactory {
                 builder.protocols(tls.getProtocols());
             }
 
-            //set chosen cipher suites if available or the default one
+            // set chosen cipher suites if available or the default one
             final List<String> cipherSuites = tls.getCipherSuites();
             if (cipherSuites != null && !cipherSuites.isEmpty()) {
                 builder.ciphers(cipherSuites, SupportedCipherSuiteFilter.INSTANCE);

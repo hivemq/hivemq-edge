@@ -21,8 +21,6 @@ import com.google.common.util.concurrent.*;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.service.MqttConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.handler.publish.PublishStatus;
 import com.hivemq.mqtt.handler.publish.PublishWriteFailedListener;
 import com.hivemq.mqtt.message.QoS;
@@ -37,15 +35,16 @@ import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
 import com.hivemq.persistence.util.FutureUtils;
 import io.netty.channel.Channel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.nio.channels.ClosedChannelException;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Utility methods for using retained messages
@@ -98,7 +97,8 @@ public class RetainedMessagesSender {
             return Futures.immediateFuture(null);
         }
 
-        final String clientId = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getClientId();
+        final String clientId =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getClientId();
         final ImmutableList.Builder<ListenableFuture<RetainedMessage>> retainedMessageFutures = ImmutableList.builder();
         for (final Topic topic : subscribedTopics) {
             retainedMessageFutures.add(retainedMessagePersistence.get(topic.getTopic()));
@@ -108,12 +108,20 @@ public class RetainedMessagesSender {
                 Futures.allAsList(retainedMessageFutures.build());
 
         final SettableFuture<Void> resultFuture = SettableFuture.create();
-        Futures.addCallback(retainedMessagesFuture, new SendRetainedMessageCallback(subscribedTopics, hiveMQId,
-                publishPayloadPersistence, clientId, resultFuture, channel, clientQueuePersistence,
-                mqttConfigurationService), channel.eventLoop());
+        Futures.addCallback(
+                retainedMessagesFuture,
+                new SendRetainedMessageCallback(
+                        subscribedTopics,
+                        hiveMQId,
+                        publishPayloadPersistence,
+                        clientId,
+                        resultFuture,
+                        channel,
+                        clientQueuePersistence,
+                        mqttConfigurationService),
+                channel.eventLoop());
 
         return resultFuture;
-
     }
 
     private static class SendRetainedMessageCallback implements FutureCallback<List<RetainedMessage>> {
@@ -154,7 +162,7 @@ public class RetainedMessagesSender {
             for (int i = 0; i < retainedMessages.size(); i++) {
                 final RetainedMessage retainedMessage = retainedMessages.get(i);
 
-                //list can contain null entries
+                // list can contain null entries
                 if (retainedMessage == null) {
                     continue;
                 }
@@ -191,7 +199,6 @@ public class RetainedMessagesSender {
                         .withPayloadFormatIndicator(retainedMessage.getPayloadFormatIndicator())
                         .withSubscriptionIdentifiers(subscriptionIdentifiers);
                 builder.add(publishBuilder.build());
-
             }
             sendOutMessages(builder.build());
         }
@@ -223,8 +230,13 @@ public class RetainedMessagesSender {
                 resultFuture.setFuture(FutureUtils.voidFutureFromList(futures.build()));
                 return;
             }
-            final Long queueLimit = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getQueueSizeMaximum();
-            futures.add(clientQueuePersistence.add(clientId, false, qos1and2Messages, true,
+            final Long queueLimit =
+                    channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getQueueSizeMaximum();
+            futures.add(clientQueuePersistence.add(
+                    clientId,
+                    false,
+                    qos1and2Messages,
+                    true,
                     Objects.requireNonNullElseGet(queueLimit, mqttConfigurationService::maxQueuedMessages)));
             resultFuture.setFuture(FutureUtils.voidFutureFromList(futures.build()));
         }
@@ -233,36 +245,42 @@ public class RetainedMessagesSender {
             final SettableFuture<Void> resultFuture = SettableFuture.create();
             final SettableFuture<PublishStatus> publishFuture = SettableFuture.create();
 
-            Futures.addCallback(publishFuture, new FutureCallback<>() {
-                @Override
-                public void onSuccess(final @Nullable PublishStatus status) {
+            Futures.addCallback(
+                    publishFuture,
+                    new FutureCallback<>() {
+                        @Override
+                        public void onSuccess(final @Nullable PublishStatus status) {
 
-                    if (status == PublishStatus.DELIVERED) {
-                        resultFuture.set(null);
-                    } else {
-                        resultFuture.setException(new ClosedChannelException());
-                    }
+                            if (status == PublishStatus.DELIVERED) {
+                                resultFuture.set(null);
+                            } else {
+                                resultFuture.setException(new ClosedChannelException());
+                            }
 
-                    payloadPersistence.decrementReferenceCounter(qos0Publish.getPublishId());
-                    if (qos0Publish.getPacketIdentifier() != 0) {
-                        final FreePacketIdRanges
-                                messageIDPool = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getMessageIDPool();
-                        messageIDPool.returnId(qos0Publish.getPacketIdentifier());
-                    }
-                }
+                            payloadPersistence.decrementReferenceCounter(qos0Publish.getPublishId());
+                            if (qos0Publish.getPacketIdentifier() != 0) {
+                                final FreePacketIdRanges messageIDPool = channel.attr(
+                                                ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                                        .get()
+                                        .getMessageIDPool();
+                                messageIDPool.returnId(qos0Publish.getPacketIdentifier());
+                            }
+                        }
 
-                @Override
-                public void onFailure(final @NotNull Throwable t) {
-                    if (t instanceof CancellationException) {
-                        //ignore because task was cancelled because channel became inactive and
-                        //response has already been sent by callback from ChannelInactiveHandler
-                        return;
-                    }
-                    payloadPersistence.decrementReferenceCounter(qos0Publish.getPublishId());
-                }
-            }, MoreExecutors.directExecutor());
+                        @Override
+                        public void onFailure(final @NotNull Throwable t) {
+                            if (t instanceof CancellationException) {
+                                // ignore because task was cancelled because channel became inactive and
+                                // response has already been sent by callback from ChannelInactiveHandler
+                                return;
+                            }
+                            payloadPersistence.decrementReferenceCounter(qos0Publish.getPublishId());
+                        }
+                    },
+                    MoreExecutors.directExecutor());
 
-            final PublishWithFuture message = new PublishWithFuture(qos0Publish, publishFuture, false, payloadPersistence);
+            final PublishWithFuture message =
+                    new PublishWithFuture(qos0Publish, publishFuture, false, payloadPersistence);
             channel.writeAndFlush(message).addListener(new PublishWriteFailedListener(publishFuture));
 
             return resultFuture;

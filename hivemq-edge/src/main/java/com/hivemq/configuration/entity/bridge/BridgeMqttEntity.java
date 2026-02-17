@@ -15,13 +15,12 @@
  */
 package com.hivemq.configuration.entity.bridge;
 
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.Objects;
+import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 @XmlRootElement(name = "mqtt")
@@ -77,10 +76,10 @@ public class BridgeMqttEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final BridgeMqttEntity that = (BridgeMqttEntity) o;
-        return isCleanStart() == that.isCleanStart() &&
-                getSessionExpiry() == that.getSessionExpiry() &&
-                getKeepAlive() == that.getKeepAlive() &&
-                Objects.equals(getClientId(), that.getClientId());
+        return isCleanStart() == that.isCleanStart()
+                && getSessionExpiry() == that.getSessionExpiry()
+                && getKeepAlive() == that.getKeepAlive()
+                && Objects.equals(getClientId(), that.getClientId());
     }
 
     @Override

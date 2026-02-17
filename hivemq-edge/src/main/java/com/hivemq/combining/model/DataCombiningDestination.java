@@ -16,18 +16,21 @@
 package com.hivemq.combining.model;
 
 import com.hivemq.configuration.entity.combining.DataCombiningDestinationEntity;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Optional;
 import java.util.UUID;
+import org.jetbrains.annotations.NotNull;
 
 public record DataCombiningDestination(String assetId, String topic, String schema) {
 
-    public static DataCombiningDestination from(final @NotNull com.hivemq.edge.api.model.DataCombiningDestination destination) {
+    public static DataCombiningDestination from(
+            final @NotNull com.hivemq.edge.api.model.DataCombiningDestination destination) {
         // Asset ID can be null, so we need to handle that case.
-        return new DataCombiningDestination(Optional.ofNullable(destination.getAssetId())
-                .map(UUID::toString)
-                .orElse(null), destination.getTopic(), destination.getSchema());
+        return new DataCombiningDestination(
+                Optional.ofNullable(destination.getAssetId())
+                        .map(UUID::toString)
+                        .orElse(null),
+                destination.getTopic(),
+                destination.getSchema());
     }
 
     public static DataCombiningDestination fromPersistence(final @NotNull DataCombiningDestinationEntity entity) {

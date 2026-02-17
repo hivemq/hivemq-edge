@@ -22,6 +22,4 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 @XmlRootElement(name = "http-listener")
 @XmlAccessorType(XmlAccessType.NONE)
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
-public class HttpListenerEntity extends ApiListenerEntity {
-
-}
+public class HttpListenerEntity extends ApiListenerEntity {}

@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.configuration;
 
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.SchemaOutputResolver;
-
-import javax.xml.transform.Result;
-import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.io.IOException;
+import javax.xml.transform.Result;
+import javax.xml.transform.stream.StreamResult;
 
 public class GenSchemaMain {
-    public static void main(String[] args) throws Exception{
+    public static void main(String[] args) throws Exception {
         JAXBContext context = JAXBContext.newInstance(HiveMQConfigEntity.class);
 
         context.generateSchema(new SchemaOutputResolver() {

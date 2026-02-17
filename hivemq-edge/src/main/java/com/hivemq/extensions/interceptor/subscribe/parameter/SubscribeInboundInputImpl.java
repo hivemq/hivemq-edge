@@ -16,12 +16,12 @@
 package com.hivemq.extensions.interceptor.subscribe.parameter;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ClientInformation;
 import com.hivemq.extension.sdk.api.client.parameter.ConnectionInformation;
 import com.hivemq.extension.sdk.api.interceptor.subscribe.parameter.SubscribeInboundInput;
 import com.hivemq.extensions.executor.task.PluginTaskInput;
 import com.hivemq.extensions.packets.subscribe.SubscribePacketImpl;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -62,6 +62,8 @@ public class SubscribeInboundInputImpl implements SubscribeInboundInput, PluginT
 
     public @NotNull SubscribeInboundInputImpl update(final @NotNull SubscribeInboundOutputImpl output) {
         return new SubscribeInboundInputImpl(
-                clientInformation, connectionInformation, output.getSubscribePacket().copy());
+                clientInformation,
+                connectionInformation,
+                output.getSubscribePacket().copy());
     }
 }

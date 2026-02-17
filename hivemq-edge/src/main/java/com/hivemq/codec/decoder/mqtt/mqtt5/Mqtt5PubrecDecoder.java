@@ -15,12 +15,13 @@
  */
 package com.hivemq.codec.decoder.mqtt.mqtt5;
 
+import static com.hivemq.mqtt.message.mqtt5.MessageProperties.REASON_STRING;
+import static com.hivemq.mqtt.message.mqtt5.MessageProperties.USER_PROPERTY;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.decoder.mqtt.AbstractMqttDecoder;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
@@ -29,12 +30,10 @@ import com.hivemq.mqtt.message.pubrec.Mqtt5PUBREC;
 import com.hivemq.mqtt.message.pubrec.PUBREC;
 import com.hivemq.mqtt.message.reason.Mqtt5PubRecReasonCode;
 import io.netty.buffer.ByteBuf;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-
-import static com.hivemq.mqtt.message.mqtt5.MessageProperties.REASON_STRING;
-import static com.hivemq.mqtt.message.mqtt5.MessageProperties.USER_PROPERTY;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Waldemar Ruck
@@ -69,9 +68,10 @@ public class Mqtt5PubrecDecoder extends AbstractMqttDecoder<PUBREC> {
             return null;
         }
 
-        //nothing more to read
+        // nothing more to read
         if (!buf.isReadable()) {
-            return new PUBREC(packetIdentifier, Mqtt5PUBREC.DEFAULT_REASON_CODE, null, Mqtt5UserProperties.NO_USER_PROPERTIES);
+            return new PUBREC(
+                    packetIdentifier, Mqtt5PUBREC.DEFAULT_REASON_CODE, null, Mqtt5UserProperties.NO_USER_PROPERTIES);
         }
 
         final Mqtt5PubRecReasonCode reasonCode = Mqtt5PubRecReasonCode.fromCode(buf.readUnsignedByte());
@@ -104,7 +104,8 @@ public class Mqtt5PubrecDecoder extends AbstractMqttDecoder<PUBREC> {
                     break;
 
                 case USER_PROPERTY:
-                    userPropertiesBuilder = readUserProperty(clientConnection, buf, userPropertiesBuilder, MessageType.PUBREC);
+                    userPropertiesBuilder =
+                            readUserProperty(clientConnection, buf, userPropertiesBuilder, MessageType.PUBREC);
                     if (userPropertiesBuilder == null) {
                         return null;
                     }

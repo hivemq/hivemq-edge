@@ -26,14 +26,13 @@ import com.hivemq.edge.modules.adapters.impl.polling.ProtocolAdapterPollingServi
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.edge.modules.api.events.EventListener;
 import com.hivemq.edge.modules.api.events.EventStore;
-import org.jetbrains.annotations.NotNull;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.ElementsIntoSet;
-
 import jakarta.inject.Singleton;
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("unused")
 @Module
@@ -45,11 +44,13 @@ public abstract class ModulesModule {
 
     @Binds
     @Singleton
-    abstract @NotNull ProtocolAdapterPublishService adapterPublishService(@NotNull ProtocolAdapterPublishServiceImpl adapterPublishService);
+    abstract @NotNull ProtocolAdapterPublishService adapterPublishService(
+            @NotNull ProtocolAdapterPublishServiceImpl adapterPublishService);
 
     @Binds
     @Singleton
-    abstract @NotNull ProtocolAdapterPollingService protocolAdapterPollingService(@NotNull ProtocolAdapterPollingServiceImpl protocolAdapterPollingService);
+    abstract @NotNull ProtocolAdapterPollingService protocolAdapterPollingService(
+            @NotNull ProtocolAdapterPollingServiceImpl protocolAdapterPollingService);
 
     @Binds
     @Singleton

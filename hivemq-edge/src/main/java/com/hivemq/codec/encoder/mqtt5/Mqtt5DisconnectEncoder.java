@@ -15,27 +15,27 @@
  */
 package com.hivemq.codec.encoder.mqtt5;
 
+import static com.hivemq.codec.encoder.mqtt5.Mqtt5MessageEncoderUtil.encodeNullableProperty;
+import static com.hivemq.codec.encoder.mqtt5.Mqtt5MessageEncoderUtil.nullablePropertyEncodedLength;
+import static com.hivemq.mqtt.message.mqtt5.MessageProperties.SERVER_REFERENCE;
+
 import com.hivemq.codec.encoder.mqtt5.Mqtt5MessageWithUserPropertiesEncoder.Mqtt5MessageWithOmissibleReasonCodeEncoder;
 import com.hivemq.configuration.service.SecurityConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.disconnect.DISCONNECT;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import io.netty.buffer.ByteBuf;
-
 import jakarta.inject.Singleton;
-
-import static com.hivemq.codec.encoder.mqtt5.Mqtt5MessageEncoderUtil.encodeNullableProperty;
-import static com.hivemq.codec.encoder.mqtt5.Mqtt5MessageEncoderUtil.nullablePropertyEncodedLength;
-import static com.hivemq.mqtt.message.mqtt5.MessageProperties.SERVER_REFERENCE;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Silvio Giebl
  * @author Florian Limpöck
  */
 @Singleton
-public class Mqtt5DisconnectEncoder extends Mqtt5MessageWithOmissibleReasonCodeEncoder<DISCONNECT, Mqtt5DisconnectReasonCode> {
+public class Mqtt5DisconnectEncoder
+        extends Mqtt5MessageWithOmissibleReasonCodeEncoder<DISCONNECT, Mqtt5DisconnectReasonCode> {
 
     private static final int FIXED_HEADER = MessageType.DISCONNECT.ordinal() << 4;
 
@@ -51,7 +51,8 @@ public class Mqtt5DisconnectEncoder extends Mqtt5MessageWithOmissibleReasonCodeE
     }
 
     @Override
-    @NotNull Mqtt5DisconnectReasonCode getDefaultReasonCode() {
+    @NotNull
+    Mqtt5DisconnectReasonCode getDefaultReasonCode() {
         return Mqtt5DisconnectReasonCode.NORMAL_DISCONNECTION;
     }
 

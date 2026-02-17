@@ -17,14 +17,13 @@ package com.hivemq.mqttsn;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.bootstrap.ClientState;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.handler.publish.PublishFlushHandler;
 import io.netty.channel.Channel;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an MQTTSN connection in the system
@@ -32,8 +31,7 @@ import java.util.Map;
  */
 public class MqttsnClientConnection extends ClientConnection {
 
-    private volatile @NotNull MqttsnClientState mqttsnClientState
-            = MqttsnClientState.DISCONNECTED;
+    private volatile @NotNull MqttsnClientState mqttsnClientState = MqttsnClientState.DISCONNECTED;
 
     private @Nullable Map<Integer, Integer> publishMsgIdToTopicAliasId;
 
@@ -42,8 +40,8 @@ public class MqttsnClientConnection extends ClientConnection {
     private @Nullable IAwakeFlushCompleteCallback awakeFlushCompleteCallback;
     private final @NotNull Object flushCallbackMutex = new Object();
 
-
-    public MqttsnClientConnection(final @NotNull Channel channel, final @NotNull PublishFlushHandler publishFlushHandler) {
+    public MqttsnClientConnection(
+            final @NotNull Channel channel, final @NotNull PublishFlushHandler publishFlushHandler) {
         super(channel, publishFlushHandler);
         publishMsgIdToTopicAliasId = Collections.synchronizedMap(new HashMap<>());
     }
@@ -66,35 +64,34 @@ public class MqttsnClientConnection extends ClientConnection {
 
     public void proposeClientState(final @NotNull ClientState clientState) {
         super.proposeClientState(clientState);
-        //only make the change if the super state changed
-        if(getClientState() == ClientState.AUTHENTICATED){
+        // only make the change if the super state changed
+        if (getClientState() == ClientState.AUTHENTICATED) {
             mqttsnClientState = MqttsnClientState.ACTIVE;
         }
     }
 
-    public void proposeSleep(){
+    public void proposeSleep() {
         proposeClientState(ClientState.DISCONNECTING);
         mqttsnClientState = MqttsnClientState.ASLEEP;
     }
 
-    public void proposeAwake(){
+    public void proposeAwake() {
         proposeClientState(ClientState.AUTHENTICATED);
         mqttsnClientState = MqttsnClientState.AWAKE;
     }
 
-    public void proposeActive(){
+    public void proposeActive() {
         proposeClientState(ClientState.AUTHENTICATED);
         mqttsnClientState = MqttsnClientState.ACTIVE;
     }
 
-    public void correlatePublishToTopicAlias(final @NotNull Integer msgId, final @NotNull Integer topicAliasId){
+    public void correlatePublishToTopicAlias(final @NotNull Integer msgId, final @NotNull Integer topicAliasId) {
         publishMsgIdToTopicAliasId.put(msgId, topicAliasId);
     }
 
-    public Integer getOriginatingTopicAliasForMessageId(final @NotNull Integer msgId){
+    public Integer getOriginatingTopicAliasForMessageId(final @NotNull Integer msgId) {
         return publishMsgIdToTopicAliasId.get(msgId);
     }
-
 
     @Override
     public int decrementInFlightCount() {
@@ -102,11 +99,11 @@ public class MqttsnClientConnection extends ClientConnection {
         try {
             return returnCount;
         } finally {
-            if(returnCount == 0 && awakeFlushCompleteCallback != null){
-                synchronized (flushCallbackMutex){
-                    if(awakeFlushCompleteCallback != null){
-                        synchronized (flushCallbackMutex){
-                            //-- This happens ONCE only
+            if (returnCount == 0 && awakeFlushCompleteCallback != null) {
+                synchronized (flushCallbackMutex) {
+                    if (awakeFlushCompleteCallback != null) {
+                        synchronized (flushCallbackMutex) {
+                            // -- This happens ONCE only
                             getChannel().eventLoop().submit(() -> {
                                 awakeFlushCompleteCallback.flushComplete();
                                 awakeFlushCompleteCallback = null;
@@ -124,11 +121,10 @@ public class MqttsnClientConnection extends ClientConnection {
 
     @Override
     public String toString() {
-        return "MqttsnClientConnection{" +
-                "clientId=" + super.getClientId() +
-                ", state=" + mqttsnClientState +
-                ", parentState=" + getClientState() +
-                ", version=" + mqttsnProtocolVersion +
-                '}';
+        return "MqttsnClientConnection{" + "clientId="
+                + super.getClientId() + ", state="
+                + mqttsnClientState + ", parentState="
+                + getClientState() + ", version="
+                + mqttsnProtocolVersion + '}';
     }
 }

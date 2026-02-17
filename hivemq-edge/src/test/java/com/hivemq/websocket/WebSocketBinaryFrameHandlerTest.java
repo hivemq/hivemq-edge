@@ -15,6 +15,8 @@
  */
 package com.hivemq.websocket;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -22,11 +24,10 @@ import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 public class WebSocketBinaryFrameHandlerTest {
 
     private EmbeddedChannel channel;
+
     @BeforeEach
     public void setUp() throws Exception {
         final WebSocketBinaryFrameHandler webSocketBinaryFrameHandler = new WebSocketBinaryFrameHandler();

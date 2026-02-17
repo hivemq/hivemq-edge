@@ -15,20 +15,19 @@
  */
 package com.hivemq.configuration.entity.adapter;
 
+import static java.util.Objects.requireNonNull;
+
 import com.hivemq.configuration.entity.EntityValidatable;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
 import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import static java.util.Objects.requireNonNull;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class TagEntity implements EntityValidatable {
 
@@ -76,9 +75,9 @@ public class TagEntity implements EntityValidatable {
     @Override
     public boolean equals(final @Nullable Object o) {
         if (o instanceof final TagEntity that) {
-            return Objects.equals(name, that.name) &&
-                    Objects.equals(definition, that.definition) &&
-                    Objects.equals(description, that.description);
+            return Objects.equals(name, that.name)
+                    && Objects.equals(definition, that.definition)
+                    && Objects.equals(description, that.description);
         }
         return false;
     }

@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.configuration.reader;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
-import com.hivemq.configuration.entity.InternalConfigEntity;
 import com.hivemq.configuration.entity.listener.ListenerEntity;
 import com.hivemq.configuration.entity.listener.TCPListenerEntity;
 import com.hivemq.configuration.entity.listener.TLSEntity;
@@ -39,15 +37,14 @@ import com.hivemq.configuration.service.entity.MqttWebsocketListener;
 import com.hivemq.configuration.service.entity.MqttsnUdpListener;
 import com.hivemq.configuration.service.entity.Tls;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ListenerConfigurator implements Configurator<ListenerConfigurator.Listeners> {
 
@@ -73,7 +70,7 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
     @Override
     public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
         final Listeners listeners = new Listeners(config.getMqttListenerConfig(), config.getMqttsnListenerConfig());
-        if(initialized && hasChanged(this.configEntity, listeners)) {
+        if (initialized && hasChanged(this.configEntity, listeners)) {
             return true;
         }
         return false;
@@ -82,7 +79,7 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
     @Override
     public ConfigResult applyConfig(final @NotNull HiveMQConfigEntity config) {
         final Listeners listeners = new Listeners(config.getMqttListenerConfig(), config.getMqttsnListenerConfig());
-        if(listeners.equals(configEntity)) {
+        if (listeners.equals(configEntity)) {
             return ConfigResult.NO_OP;
         }
         this.configEntity = listeners;
@@ -130,7 +127,8 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
 
     @NotNull
     MqttTcpListener convertTcpListener(final @NotNull TCPListenerEntity entity) {
-        return new MqttTcpListener(entity.getPort(),
+        return new MqttTcpListener(
+                entity.getPort(),
                 entity.getBindAddress(),
                 getName(entity, "tcp-listener-"),
                 entity.getExternalHostname());
@@ -138,7 +136,8 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
 
     @NotNull
     MqttsnUdpListener convertUdpListener(final @NotNull UDPListenerEntity entity) {
-        return new MqttsnUdpListener(entity.getPort(),
+        return new MqttsnUdpListener(
+                entity.getPort(),
                 entity.getBindAddress(),
                 getName(entity, "udp-listener-"),
                 entity.getExternalHostname());
@@ -146,7 +145,8 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
 
     @NotNull
     MqttWebsocketListener convertWebsocketListener(final @NotNull WebsocketListenerEntity entity) {
-        return new MqttWebsocketListener.Builder().allowExtensions(entity.isAllowExtensions())
+        return new MqttWebsocketListener.Builder()
+                .allowExtensions(entity.isAllowExtensions())
                 .bindAddress(entity.getBindAddress())
                 .path(entity.getPath())
                 .port(entity.getPort())
@@ -158,7 +158,8 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
 
     @NotNull
     MqttTlsTcpListener convertTlsTcpListener(final @NotNull TlsTCPListenerEntity entity) {
-        return new MqttTlsTcpListener(entity.getPort(),
+        return new MqttTlsTcpListener(
+                entity.getPort(),
                 entity.getBindAddress(),
                 convertTls(entity.getTls()),
                 getName(entity, "tls-tcp-listener-"),
@@ -167,7 +168,8 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
 
     @NotNull
     MqttTlsWebsocketListener convertTlsWebsocketListener(final @NotNull TlsWebsocketListenerEntity entity) {
-        return new MqttTlsWebsocketListener.Builder().port(entity.getPort())
+        return new MqttTlsWebsocketListener.Builder()
+                .port(entity.getPort())
                 .bindAddress(entity.getBindAddress())
                 .path(entity.getPath())
                 .allowExtensions(entity.isAllowExtensions())
@@ -181,9 +183,10 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
     @NotNull
     private String getName(final @NotNull ListenerEntity entity, final @NotNull String defaultPrefix) {
 
-        final String chosenName = (entity.getName() == null || entity.getName().trim().isEmpty()) ?
-                defaultPrefix + entity.getPort() :
-                entity.getName();
+        final String chosenName =
+                (entity.getName() == null || entity.getName().trim().isEmpty())
+                        ? defaultPrefix + entity.getPort()
+                        : entity.getName();
 
         if (chosenNames.contains(chosenName)) {
 
@@ -193,7 +196,8 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
                 newName = chosenName + "-" + count++;
             }
 
-            log.warn("Name '{}' already in use. Renaming listener with address '{}' and port '{}' to: '{}'",
+            log.warn(
+                    "Name '{}' already in use. Renaming listener with address '{}' and port '{}' to: '{}'",
                     chosenName,
                     entity.getBindAddress(),
                     entity.getPort(),
@@ -204,7 +208,6 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
             chosenNames.add(chosenName);
             return chosenName;
         }
-
     }
 
     @NotNull
@@ -212,35 +215,30 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
         final String keystorePath =
                 getPathFromEntityPath(Objects.requireNonNullElse(entity.getKeystoreEntity(), new KeystoreEntity())
                         .getPath());
-        final TruststoreEntity truststoreEntity = Objects.requireNonNullElse(entity.getTruststoreEntity(), new TruststoreEntity());
+        final TruststoreEntity truststoreEntity =
+                Objects.requireNonNullElse(entity.getTruststoreEntity(), new TruststoreEntity());
 
-
-        final String truststorePath =
-                getPathFromEntityPath(truststoreEntity.getPath());
+        final String truststorePath = getPathFromEntityPath(truststoreEntity.getPath());
 
         Preconditions.checkNotNull(keystorePath, "Keystore path must not be null");
 
-        final String type = (keystorePath.endsWith(".p12") || keystorePath.endsWith(".pfx")) ?
-                KEYSTORE_TYPE_PKCS12 :
-                KEYSTORE_TYPE_JKS;
+        final String type = (keystorePath.endsWith(".p12") || keystorePath.endsWith(".pfx"))
+                ? KEYSTORE_TYPE_PKCS12
+                : KEYSTORE_TYPE_JKS;
 
-        return new Tls.Builder().withKeystorePath(keystorePath)
+        return new Tls.Builder()
+                .withKeystorePath(keystorePath)
                 .withKeystoreType(type)
                 .withKeystorePassword(entity.getKeystoreEntity().getPassword())
                 .withPrivateKeyPassword(entity.getKeystoreEntity().getPrivateKeyPassword())
-
                 .withProtocols(entity.getProtocols())
-
                 .withTruststorePath(truststorePath)
                 .withTruststoreType(type)
                 .withTruststorePassword(truststoreEntity.getPassword())
-
                 .withClientAuthMode(getClientAuthMode(entity.getClientAuthMode()))
                 .withCipherSuites(entity.getCipherSuites())
                 .withPreferServerCipherSuites(entity.isPreferServerCipherSuites())
-
                 .withHandshakeTimeout(entity.getHandshakeTimeout())
-
                 .build();
     }
 
@@ -252,7 +250,7 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
      */
     @Nullable
     private String getPathFromEntityPath(final @NotNull String path) {
-        //blank is default for unused
+        // blank is default for unused
         if (path.isBlank()) {
             return null;
         } else {
@@ -275,7 +273,7 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
             case NONE:
                 return Tls.ClientAuthMode.NONE;
             default:
-                //This should never happen
+                // This should never happen
                 return Tls.ClientAuthMode.NONE;
         }
     }
@@ -283,7 +281,10 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
     public static class Listeners {
         public final @NotNull List<ListenerEntity> mqttListeners;
         public final @NotNull List<ListenerEntity> mqttsnListeners;
-        public Listeners(final @NotNull List<ListenerEntity> mqttListeners, final @NotNull List<ListenerEntity> mqttsnListeners) {
+
+        public Listeners(
+                final @NotNull List<ListenerEntity> mqttListeners,
+                final @NotNull List<ListenerEntity> mqttsnListeners) {
             this.mqttListeners = mqttListeners;
             this.mqttsnListeners = mqttsnListeners;
         }
@@ -293,8 +294,8 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             final Listeners listeners = (Listeners) o;
-            return Objects.equals(mqttListeners, listeners.mqttListeners) &&
-                    Objects.equals(mqttsnListeners, listeners.mqttsnListeners);
+            return Objects.equals(mqttListeners, listeners.mqttListeners)
+                    && Objects.equals(mqttsnListeners, listeners.mqttsnListeners);
         }
 
         @Override

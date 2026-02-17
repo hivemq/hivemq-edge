@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.http.core.Html;
 import com.hivemq.http.core.IHttpRequestResponse;
-
 import java.io.IOException;
 
 public class HelloWorldHandler extends AbstractHttpRequestResponseHandler {
@@ -30,6 +29,7 @@ public class HelloWorldHandler extends AbstractHttpRequestResponseHandler {
 
     @Override
     protected void handleHttpGet(IHttpRequestResponse request) throws IOException {
-        writeHTMLResponse(request, HttpConstants.SC_OK, Html.span("Hello World From HiveMQ Edge Console!", Html.RED, true));
+        writeHTMLResponse(
+                request, HttpConstants.SC_OK, Html.span("Hello World From HiveMQ Edge Console!", Html.RED, true));
     }
 }

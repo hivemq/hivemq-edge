@@ -15,10 +15,9 @@
  */
 package com.hivemq.codec.transcoder;
 
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Optional;
 
 /**
  * Simple bean to encapsulate the results of a transcoding session. The result may have resulted in a failure OR a success but with no output.
@@ -27,7 +26,9 @@ import java.util.Optional;
 public class TranscodingResult<FromT, ToT> {
 
     public enum RESULT {
-        success, failure, pending
+        success,
+        failure,
+        pending
     }
 
     private RESULT result = RESULT.pending;
@@ -36,7 +37,6 @@ public class TranscodingResult<FromT, ToT> {
     private Optional<ToT> output = Optional.empty();
     private String reasonString;
     private Throwable error;
-
 
     public TranscodingResult(@NotNull ITranscodingContext context, final @NotNull FromT input) {
         this.context = context;
@@ -56,11 +56,13 @@ public class TranscodingResult<FromT, ToT> {
         this.output = output;
     }
 
-    @NotNull public RESULT getResult() {
+    @NotNull
+    public RESULT getResult() {
         return result;
     }
 
-    @Nullable public String getReasonString() {
+    @Nullable
+    public String getReasonString() {
         return reasonString;
     }
 
@@ -68,19 +70,21 @@ public class TranscodingResult<FromT, ToT> {
         this.reasonString = reasonString;
     }
 
-    @NotNull public FromT getInput() {
+    @NotNull
+    public FromT getInput() {
         return input;
     }
 
-    @NotNull public Optional<ToT> getOutput() {
+    @NotNull
+    public Optional<ToT> getOutput() {
         return output;
     }
 
-    public boolean isComplete(){
+    public boolean isComplete() {
         return result != null && result != RESULT.pending;
     }
 
-    public boolean isError(){
+    public boolean isError() {
         return result != null && result == RESULT.failure;
     }
 
@@ -89,26 +93,26 @@ public class TranscodingResult<FromT, ToT> {
         this.error = error;
     }
 
-    @Nullable public Throwable getError() {
+    @Nullable
+    public Throwable getError() {
         return error;
     }
 
     @Override
     public String toString() {
-        return "TranscodingResult{" +
-                "result=" +
-                result +
-                ", context=" +
-                context +
-                ", input=" +
-                input +
-                ", output=" +
-                output +
-                ", reasonString='" +
-                reasonString +
-                '\'' +
-                ", error=" +
-                error +
-                '}';
+        return "TranscodingResult{" + "result="
+                + result
+                + ", context="
+                + context
+                + ", input="
+                + input
+                + ", output="
+                + output
+                + ", reasonString='"
+                + reasonString
+                + '\''
+                + ", error="
+                + error
+                + '}';
     }
 }

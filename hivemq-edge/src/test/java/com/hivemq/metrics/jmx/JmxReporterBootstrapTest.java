@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.metrics.jmx;
-
-import com.codahale.metrics.MetricRegistry;
-import org.junit.jupiter.api.Test;
-
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
-import java.lang.management.ManagementFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import com.codahale.metrics.MetricRegistry;
+import java.lang.management.ManagementFactory;
+import java.util.concurrent.atomic.AtomicInteger;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Lukas Brandl

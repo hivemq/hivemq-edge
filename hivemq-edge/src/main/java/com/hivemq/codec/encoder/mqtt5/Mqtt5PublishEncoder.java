@@ -15,21 +15,20 @@
  */
 package com.hivemq.codec.encoder.mqtt5;
 
+import static com.hivemq.codec.encoder.mqtt5.Mqtt5MessageEncoderUtil.*;
+import static com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults.MAX_EXPIRY_INTERVAL_DEFAULT;
+import static com.hivemq.mqtt.message.mqtt5.MessageProperties.*;
+
 import com.google.common.primitives.ImmutableIntArray;
 import com.hivemq.configuration.service.SecurityConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import io.netty.buffer.ByteBuf;
-
 import jakarta.inject.Singleton;
-
-import static com.hivemq.codec.encoder.mqtt5.Mqtt5MessageEncoderUtil.*;
-import static com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults.MAX_EXPIRY_INTERVAL_DEFAULT;
-import static com.hivemq.mqtt.message.mqtt5.MessageProperties.*;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Silvio Giebl
@@ -60,7 +59,7 @@ public class Mqtt5PublishEncoder extends Mqtt5MessageWithUserPropertiesEncoder<P
 
         remainingLength += MqttBinaryData.encodedLength(publish.getTopic());
 
-        //packetIdentifier
+        // packetIdentifier
         if (publish.getQoS() != QoS.AT_MOST_ONCE) {
             remainingLength += 2;
         }
@@ -92,7 +91,8 @@ public class Mqtt5PublishEncoder extends Mqtt5MessageWithUserPropertiesEncoder<P
     }
 
     @Override
-    @NotNull Mqtt5UserProperties getUserProperties(final @NotNull PUBLISH publish) {
+    @NotNull
+    Mqtt5UserProperties getUserProperties(final @NotNull PUBLISH publish) {
         return publish.getUserProperties();
     }
 
@@ -150,7 +150,8 @@ public class Mqtt5PublishEncoder extends Mqtt5MessageWithUserPropertiesEncoder<P
     }
 
     private static void encodeFixedProperties(final @NotNull PUBLISH publish, final @NotNull ByteBuf out) {
-        encodeIntProperty(MESSAGE_EXPIRY_INTERVAL, publish.getMessageExpiryInterval(), MAX_EXPIRY_INTERVAL_DEFAULT, out);
+        encodeIntProperty(
+                MESSAGE_EXPIRY_INTERVAL, publish.getMessageExpiryInterval(), MAX_EXPIRY_INTERVAL_DEFAULT, out);
         encodeNullableProperty(PAYLOAD_FORMAT_INDICATOR, publish.getPayloadFormatIndicator(), out);
         encodeNullableProperty(CONTENT_TYPE, publish.getContentType(), out);
         encodeNullableProperty(RESPONSE_TOPIC, publish.getResponseTopic(), out);
