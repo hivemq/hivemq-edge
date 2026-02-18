@@ -18,13 +18,15 @@
 ## What It Detects
 
 ### Critical (Blocks Commit)
+
 - AWS access keys (AKIA...)
-- GitHub personal access tokens (ghp_...)
+- GitHub personal access tokens (ghp\_...)
 - Private keys (-----BEGIN PRIVATE KEY-----)
 - SSH keys
 - Slack tokens
 
 ### High Risk (Warns)
+
 - Generic API keys
 - Passwords in config
 - Bearer tokens
@@ -33,6 +35,7 @@
 - Client secrets
 
 ### Medium Risk (Info)
+
 - Private IP addresses
 - Internal hostnames
 - Company email addresses
@@ -53,12 +56,14 @@
 ### Pre-Commit Hook (Optional)
 
 Install husky:
+
 ```bash
 pnpm add -D husky
 npx husky install
 ```
 
 Create `.husky/pre-commit`:
+
 ```bash
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
@@ -89,6 +94,7 @@ security_scan_docs:
 ## Configuration
 
 Edit `.claude/skills/docs-security-scan/config.yaml` to:
+
 - Add new patterns
 - Adjust severity levels
 - Add allowed exceptions
@@ -99,6 +105,7 @@ Edit `.claude/skills/docs-security-scan/config.yaml` to:
 If the scanner flags safe content:
 
 1. **Use clear placeholders:**
+
    ```markdown
    ✅ api_key: YOUR_API_KEY_HERE
    ✅ password: <your-password>
@@ -106,9 +113,10 @@ If the scanner flags safe content:
    ```
 
 2. **Add to allowed exceptions** in `config.yaml`:
+
    ```yaml
    allowed_exceptions:
-     - "your-safe-pattern"
+     - 'your-safe-pattern'
    ```
 
 3. **Use code blocks for examples:**
@@ -121,6 +129,7 @@ If the scanner flags safe content:
 ## Testing the Scanner
 
 Create a test file:
+
 ```bash
 echo "password: secret123" > test-secret.md
 ./tools/scan-docs-security.sh
@@ -137,6 +146,7 @@ rm test-secret.md
 ## Maintenance
 
 Review quarterly:
+
 - Update patterns for new threats
 - Check false positive rate
 - Review allowed exceptions
