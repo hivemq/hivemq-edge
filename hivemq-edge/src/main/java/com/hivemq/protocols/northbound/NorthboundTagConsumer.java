@@ -91,26 +91,34 @@ public class NorthboundTagConsumer implements TagConsumer {
             final List<DataPoint> jsonDataPoints =
                     dataPoints.stream().filter(DataPoint::treatTagValueAsJson).toList();
 
-            final var preparedJsonDataPoints = jsonDataPoints.stream().map(jsonDataPoint -> {
-                try {
-                    final var jsonMap=objectMapper.readValue((String)jsonDataPoint.getTagValue(), typeRef);
-                    if (jsonMap.size() > 1 && jsonMap.containsKey("value")) {
-                        return new DataPointImpl(jsonDataPoint.getTagName(), jsonMap);
-                    } else if (jsonMap.containsKey("value")) {
-                        return new DataPointImpl(jsonDataPoint.getTagName(), jsonMap.get("value"), true);
-                    } else {
-                        log.error("No value received for tag '{}'. This indicates a broken tag on the OPC UA side.", jsonDataPoint.getTagName());
-                        return null;
-                    }
-                } catch (final JsonProcessingException e) {
-                    if(log.isDebugEnabled()) {
-                        log.debug("Unable to parse JSON for tag '{}': {}", jsonDataPoint.getTagName(), jsonDataPoint.getTagValue() );
-                    } else {
-                        log.error("Unable to parse JSON for tag '{}'", jsonDataPoint.getTagName());
-                    }
-                    return null;
-                }
-            }).filter(Objects::nonNull).toList();
+            final var preparedJsonDataPoints = jsonDataPoints.stream()
+                    .map(jsonDataPoint -> {
+                        try {
+                            final var jsonMap = objectMapper.readValue((String) jsonDataPoint.getTagValue(), typeRef);
+                            if (jsonMap.size() > 1 && jsonMap.containsKey("value")) {
+                                return new DataPointImpl(jsonDataPoint.getTagName(), jsonMap);
+                            } else if (jsonMap.containsKey("value")) {
+                                return new DataPointImpl(jsonDataPoint.getTagName(), jsonMap.get("value"), true);
+                            } else {
+                                log.error(
+                                        "No value received for tag '{}'. This indicates a broken tag on the OPC UA side.",
+                                        jsonDataPoint.getTagName());
+                                return null;
+                            }
+                        } catch (final JsonProcessingException e) {
+                            if (log.isDebugEnabled()) {
+                                log.debug(
+                                        "Unable to parse JSON for tag '{}': {}",
+                                        jsonDataPoint.getTagName(),
+                                        jsonDataPoint.getTagValue());
+                            } else {
+                                log.error("Unable to parse JSON for tag '{}'", jsonDataPoint.getTagName());
+                            }
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .toList();
 
             final var dataPointsCopied = new ArrayList<>(dataPoints);
             dataPointsCopied.removeAll(jsonDataPoints);

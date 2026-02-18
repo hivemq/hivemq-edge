@@ -608,28 +608,33 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             return;
         }
         conn.client()
-                .ifPresentOrElse(client -> {
-                    @SuppressWarnings("unused")
-                    final var unused = new JsonSchemaGenerator(client, config.isIncludeMetadata())
-                            .createMqttPayloadJsonSchema(tag)
-                            .whenComplete((result, throwable) -> {
-                                if (throwable == null) {
-                                    result.ifPresentOrElse(schema -> {
-                                        log.debug("Schema inferred for tag='{}'", tagName);
-                                        output.finish(schema);
-                                    }, () -> {
-                                        log.error("No schema inferred for tag='{}'", tagName);
-                                        output.fail("No schema inferred for tag='" + tagName + "'");
+                .ifPresentOrElse(
+                        client -> {
+                            @SuppressWarnings("unused")
+                            final var unused = new JsonSchemaGenerator(client, config.isIncludeMetadata())
+                                    .createMqttPayloadJsonSchema(tag)
+                                    .whenComplete((result, throwable) -> {
+                                        if (throwable == null) {
+                                            result.ifPresentOrElse(
+                                                    schema -> {
+                                                        log.debug("Schema inferred for tag='{}'", tagName);
+                                                        output.finish(schema);
+                                                    },
+                                                    () -> {
+                                                        log.error("No schema inferred for tag='{}'", tagName);
+                                                        output.fail("No schema inferred for tag='" + tagName + "'");
+                                                    });
+                                        } else {
+                                            log.error(
+                                                    "Exception while creating tag schema for '{}'", tagName, throwable);
+                                            output.fail(throwable, null);
+                                        }
                                     });
-                                } else {
-                                    log.error("Exception while creating tag schema for '{}'", tagName, throwable);
-                                    output.fail(throwable, null);
-                                }
-                            });
-                }, () -> {
-                    log.error("Discovery failed: Client not connected or not initialized");
-                    output.fail("Discovery failed: Client not connected or not initialized");
-                });
+                        },
+                        () -> {
+                            log.error("Discovery failed: Client not connected or not initialized");
+                            output.fail("Discovery failed: Client not connected or not initialized");
+                        });
     }
 
     @Override

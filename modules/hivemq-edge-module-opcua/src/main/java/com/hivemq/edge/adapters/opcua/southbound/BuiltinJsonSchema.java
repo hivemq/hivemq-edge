@@ -120,8 +120,7 @@ public class BuiltinJsonSchema {
      * These properties are marked as readOnly and are not required.
      */
     static void addReadOnlyMetadataProperties(
-            final @NotNull ObjectNode propertiesNode,
-            final @NotNull ObjectMapper objectMapper) {
+            final @NotNull ObjectNode propertiesNode, final @NotNull ObjectMapper objectMapper) {
         // sourceTimestamp - DateTime as ISO 8601 string
         final ObjectNode sourceTimestamp = objectMapper.createObjectNode();
         sourceTimestamp.put(TYPE, STRING_DATA_TYPE);
@@ -321,8 +320,7 @@ public class BuiltinJsonSchema {
     }
 
     static @NotNull JsonNode createJsonSchemaForArrayType(
-            final @NotNull OpcUaDataType builtinDataType,
-            final @NotNull UInteger @NotNull [] dimensions) {
+            final @NotNull OpcUaDataType builtinDataType, final @NotNull UInteger @NotNull [] dimensions) {
         return createJsonSchemaForArrayType(builtinDataType, dimensions, false);
     }
 
@@ -356,8 +354,7 @@ public class BuiltinJsonSchema {
     }
 
     static @Nullable JsonNode createJsonSchemaForBuiltInType(
-            final @NotNull OpcUaDataType builtinDataType,
-            final boolean includeMetadata) {
+            final @NotNull OpcUaDataType builtinDataType, final boolean includeMetadata) {
         if (!includeMetadata) {
             return BUILT_IN_TYPES.get(builtinDataType);
         }

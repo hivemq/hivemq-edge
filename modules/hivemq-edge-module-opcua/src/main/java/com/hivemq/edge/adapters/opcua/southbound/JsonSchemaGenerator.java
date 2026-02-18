@@ -71,15 +71,19 @@ public class JsonSchemaGenerator {
         final String nodeId = tag.getDefinition().getNode();
         final var jsonSchemaGenerator = new JsonSchemaGenerator(client, includeMetadata);
         final var parsed = NodeId.parse(nodeId);
-        return jsonSchemaGenerator.collectTypeInfo(parsed).thenApply(info -> {
-            if (info.arrayDimensions() != null && info.arrayDimensions().length > 0) {
-                return createJsonSchemaForArrayType(info.dataType(), info.arrayDimensions, includeMetadata);
-            } else if (info.nestedFields() == null || info.nestedFields().isEmpty()) {
-                return createJsonSchemaForBuiltInType(info.dataType(), includeMetadata);
-            } else {
-                return jsonSchemaGenerator.jsonSchemaFromNodeId(info);
-            }
-        }).thenApply(Optional::of);
+        return jsonSchemaGenerator
+                .collectTypeInfo(parsed)
+                .thenApply(info -> {
+                    if (info.arrayDimensions() != null && info.arrayDimensions().length > 0) {
+                        return createJsonSchemaForArrayType(info.dataType(), info.arrayDimensions, includeMetadata);
+                    } else if (info.nestedFields() == null
+                            || info.nestedFields().isEmpty()) {
+                        return createJsonSchemaForBuiltInType(info.dataType(), includeMetadata);
+                    } else {
+                        return jsonSchemaGenerator.jsonSchemaFromNodeId(info);
+                    }
+                })
+                .thenApply(Optional::of);
     }
 
     private @NotNull CompletableFuture<FieldInformation> collectTypeInfo(final @NotNull NodeId destinationNodeId) {

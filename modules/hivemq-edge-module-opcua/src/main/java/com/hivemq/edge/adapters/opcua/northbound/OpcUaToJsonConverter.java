@@ -65,8 +65,7 @@ public class OpcUaToJsonConverter {
     private static final @NotNull Base64.Encoder BASE_64 = Base64.getEncoder();
 
     public static @NotNull ByteBuffer convertPayload(
-            final @NotNull EncodingContext serializationContext,
-            final @NotNull DataValue dataValue) {
+            final @NotNull EncodingContext serializationContext, final @NotNull DataValue dataValue) {
         return convertPayload(serializationContext, dataValue, false);
     }
 
@@ -82,30 +81,38 @@ public class OpcUaToJsonConverter {
         if (includeMetadata) {
             jsonObject.add("statusCode", convertStatusCode(dataValue.getStatusCode()));
             if (dataValue.getSourceTime() != null) {
-                jsonObject.add("sourceTime",
-                        new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(dataValue.getSourceTime().getJavaInstant())));
+                jsonObject.add(
+                        "sourceTime",
+                        new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(
+                                dataValue.getSourceTime().getJavaInstant())));
             } else {
                 jsonObject.add("sourceTime", JsonNull.INSTANCE);
             }
             if (dataValue.getSourcePicoseconds() != null) {
-                jsonObject.add("sourcePicoseconds", new JsonPrimitive(dataValue.getSourcePicoseconds().intValue()));
+                jsonObject.add(
+                        "sourcePicoseconds",
+                        new JsonPrimitive(dataValue.getSourcePicoseconds().intValue()));
             } else {
                 jsonObject.add("sourcePicoseconds", JsonNull.INSTANCE);
             }
             if (dataValue.getServerTime() != null) {
-                jsonObject.add("serverTime",
-                        new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(dataValue.getServerTime().getJavaInstant())));
+                jsonObject.add(
+                        "serverTime",
+                        new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(
+                                dataValue.getServerTime().getJavaInstant())));
             } else {
                 jsonObject.add("serverTime", JsonNull.INSTANCE);
             }
             if (dataValue.getServerPicoseconds() != null) {
-                jsonObject.add("serverPicoseconds", new JsonPrimitive(dataValue.getServerPicoseconds().intValue()));
+                jsonObject.add(
+                        "serverPicoseconds",
+                        new JsonPrimitive(dataValue.getServerPicoseconds().intValue()));
             } else {
                 jsonObject.add("serverPicoseconds", JsonNull.INSTANCE);
             }
         }
 
-        if(value != null) {
+        if (value != null) {
             jsonObject.add("value", convertValue(value, serializationContext));
         } else {
             jsonObject.add("value", JsonNull.INSTANCE);

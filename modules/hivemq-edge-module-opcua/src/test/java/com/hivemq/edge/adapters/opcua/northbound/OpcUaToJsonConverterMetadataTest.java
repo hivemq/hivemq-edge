@@ -15,8 +15,14 @@
  */
 package com.hivemq.edge.adapters.opcua.northbound;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
@@ -24,13 +30,6 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.junit.jupiter.api.Test;
-
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 class OpcUaToJsonConverterMetadataTest {
 
@@ -67,7 +66,8 @@ class OpcUaToJsonConverterMetadataTest {
 
     @Test
     void whenIncludeMetadataTrue_thenOutputContainsPicoseconds() {
-        final DataValue dataValue = new DataValue(new Variant(42),
+        final DataValue dataValue = new DataValue(
+                new Variant(42),
                 StatusCode.GOOD,
                 new DateTime(Instant.now()),
                 UShort.valueOf(12345),
@@ -86,8 +86,11 @@ class OpcUaToJsonConverterMetadataTest {
 
     @Test
     void whenIncludeMetadataTrueAndStatusCodeNotGood_thenOutputContainsStatusCode() {
-        final DataValue dataValue = new DataValue(new Variant(42), new StatusCode(0x80000000L), // Bad status
-                new DateTime(Instant.now()), null);
+        final DataValue dataValue = new DataValue(
+                new Variant(42),
+                new StatusCode(0x80000000L), // Bad status
+                new DateTime(Instant.now()),
+                null);
 
         final ByteBuffer result = OpcUaToJsonConverter.convertPayload(ENCODING_CONTEXT, dataValue, true);
         final String json = new String(result.array(), StandardCharsets.UTF_8);
@@ -101,8 +104,11 @@ class OpcUaToJsonConverterMetadataTest {
 
     @Test
     void whenIncludeMetadataTrueAndStatusCodeGood_thenStatusCodeIsThereAndGood() {
-        final DataValue dataValue = new DataValue(new Variant(42), StatusCode.GOOD, // Good status (value = 0)
-                new DateTime(Instant.now()), null);
+        final DataValue dataValue = new DataValue(
+                new Variant(42),
+                StatusCode.GOOD, // Good status (value = 0)
+                new DateTime(Instant.now()),
+                null);
 
         final ByteBuffer result = OpcUaToJsonConverter.convertPayload(ENCODING_CONTEXT, dataValue, true);
         final String json = new String(result.array(), StandardCharsets.UTF_8);
@@ -118,7 +124,8 @@ class OpcUaToJsonConverterMetadataTest {
 
     @Test
     void whenIncludeMetadataFalse_thenOutputDoesNotContainMetadata() {
-        final DataValue dataValue = new DataValue(new Variant(42),
+        final DataValue dataValue = new DataValue(
+                new Variant(42),
                 new StatusCode(0x80000000L),
                 new DateTime(Instant.now()),
                 UShort.valueOf(12345),
@@ -140,7 +147,8 @@ class OpcUaToJsonConverterMetadataTest {
 
     @Test
     void whenIncludeMetadataDefaultOverload_thenBehavesLikeFalse() {
-        final DataValue dataValue = new DataValue(new Variant(42),
+        final DataValue dataValue = new DataValue(
+                new Variant(42),
                 new StatusCode(0x80000000L),
                 new DateTime(Instant.now()),
                 UShort.valueOf(12345),
@@ -160,9 +168,13 @@ class OpcUaToJsonConverterMetadataTest {
     void whenIncludeMetadataTrueWithAllMetadata_thenOutputContainsAllFields() {
         final Instant sourceTime = Instant.parse("2024-01-15T10:30:00Z");
         final Instant serverTime = Instant.parse("2024-01-15T10:30:01Z");
-        final DataValue dataValue =
-                new DataValue(new Variant("test-value"), new StatusCode(0x80010000L), // Bad_UnexpectedError
-                        new DateTime(sourceTime), UShort.valueOf(100), new DateTime(serverTime), UShort.valueOf(200));
+        final DataValue dataValue = new DataValue(
+                new Variant("test-value"),
+                new StatusCode(0x80010000L), // Bad_UnexpectedError
+                new DateTime(sourceTime),
+                UShort.valueOf(100),
+                new DateTime(serverTime),
+                UShort.valueOf(200));
 
         final ByteBuffer result = OpcUaToJsonConverter.convertPayload(ENCODING_CONTEXT, dataValue, true);
         final String json = new String(result.array(), StandardCharsets.UTF_8);
@@ -173,7 +185,8 @@ class OpcUaToJsonConverterMetadataTest {
         assertThat(jsonObject.get("serverTime").getAsString()).isEqualTo("2024-01-15T10:30:01Z");
         assertThat(jsonObject.get("sourcePicoseconds").getAsInt()).isEqualTo(100);
         assertThat(jsonObject.get("serverPicoseconds").getAsInt()).isEqualTo(200);
-        assertThat(jsonObject.getAsJsonObject("statusCode").get("code").getAsLong()).isEqualTo(0x80010000L);
+        assertThat(jsonObject.getAsJsonObject("statusCode").get("code").getAsLong())
+                .isEqualTo(0x80010000L);
     }
 
     @Test
@@ -193,11 +206,14 @@ class OpcUaToJsonConverterMetadataTest {
 
     @Test
     void whenIncludeMetadataTrueWithNullTimestamps_thenOnlyNonNullFieldsIncluded() {
-        final DataValue dataValue = new DataValue(new Variant(42), new StatusCode(0x80000000L), null, // no source time
+        final DataValue dataValue = new DataValue(
+                new Variant(42),
+                new StatusCode(0x80000000L),
+                null, // no source time
                 null, // no source picoseconds
                 null, // no server time
-                null  // no server picoseconds
-        );
+                null // no server picoseconds
+                );
 
         final ByteBuffer result = OpcUaToJsonConverter.convertPayload(ENCODING_CONTEXT, dataValue, true);
         final String json = new String(result.array(), StandardCharsets.UTF_8);

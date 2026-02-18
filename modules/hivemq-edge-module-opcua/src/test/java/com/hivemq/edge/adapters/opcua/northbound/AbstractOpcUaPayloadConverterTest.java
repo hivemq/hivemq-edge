@@ -95,15 +95,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
 
         final OpcUaToMqttConfig opcuaToMqttConfig = new OpcUaToMqttConfig(1, 1000);
         final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
-                opcUaServerExtension.getServerUri(),
-                false,
-                null,
-                null,
-                null,
-                opcuaToMqttConfig,
-                null,
-                null,
-                null);
+                opcUaServerExtension.getServerUri(), false, null, null, null, opcuaToMqttConfig, null, null, null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
         when(protocolAdapterInput.getTags())
