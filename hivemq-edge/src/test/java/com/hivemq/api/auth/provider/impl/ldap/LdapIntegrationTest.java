@@ -94,6 +94,7 @@ class LdapIntegrationTest {
                 "uid", // uidAttribute
                 "ou=people," + LLDAP_CONTAINER.getBaseDn(), // rdns
                 null,
+                null,
                 SearchScope.SUB,
                 5,
                 ADMIN, // assignedRole

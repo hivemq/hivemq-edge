@@ -79,6 +79,9 @@ public class LdapAuthenticationEntity {
     @XmlElement(name = "rdns")
     private @Nullable String rdns = null;
 
+    @XmlElement(name = "base-dn")
+    private @Nullable String baseDn = null;
+
     @XmlElement(name = "required-object-class")
     private @Nullable String requiredObjectClass = null;
 
@@ -123,6 +126,10 @@ public class LdapAuthenticationEntity {
         return rdns;
     }
 
+    public @Nullable String getBaseDn() {
+        return baseDn;
+    }
+
     public @Nullable String getRequiredObjectClass() {
         return requiredObjectClass;
     }
@@ -161,6 +168,7 @@ public class LdapAuthenticationEntity {
                 && Objects.equals(getTrustStore(), that.getTrustStore())
                 && Objects.equals(getUidAttribute(), that.getUidAttribute())
                 && Objects.equals(getRdns(), that.getRdns())
+                && Objects.equals(getBaseDn(), that.getBaseDn())
                 && Objects.equals(getRequiredObjectClass(), that.getRequiredObjectClass())
                 && Objects.equals(getSimpleBindEntity(), that.getSimpleBindEntity())
                 && Objects.equals(getUserRoles(), that.getUserRoles());
@@ -177,6 +185,7 @@ public class LdapAuthenticationEntity {
                 getMaxConnections(),
                 getUidAttribute(),
                 getRdns(),
+                getBaseDn(),
                 getRequiredObjectClass(),
                 directoryDescent,
                 getSearchTimeoutSeconds(),

@@ -18,13 +18,16 @@ package com.hivemq.api.auth.provider.impl.ldap;
 import static com.hivemq.api.auth.ApiRoles.ADMIN;
 import static java.util.Arrays.stream;
 
+import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.entity.api.ldap.LdapAuthenticationEntity;
 import com.hivemq.configuration.entity.api.ldap.LdapServerEntity;
 import com.hivemq.configuration.entity.api.ldap.LdapSimpleBindEntity;
 import com.hivemq.configuration.entity.api.ldap.TrustStoreEntity;
 import com.hivemq.configuration.entity.api.ldap.UserRoleEntity;
+import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.LDAPConnectionOptions;
 import com.unboundid.ldap.sdk.LDAPConnectionPool;
+import com.unboundid.ldap.sdk.RDN;
 import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.util.ssl.SSLUtil;
 import com.unboundid.util.ssl.TrustAllTrustManager;
@@ -42,6 +45,24 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * Encapsulates all the connection details needed to connect to an LDAP server,
  * including TLS configuration, timeouts, truststore information, and DN resolution.
+ * <p>
+ * <strong>Search roots and service accounts:</strong>
+ * <ul>
+ *     <li><strong>Standard Mode</strong> (baseDn is specified):
+ *         <ul>
+ *             <li>Search root is constructed from (search) rdns relative to baseDn</li>
+ *             <li>Service account rdns is also relative to baseDn (NOT to search root)</li>
+ *             <li>This allows service accounts in different OUs than users</li>
+ *         </ul>
+ *     </li>
+ *     <li><strong>Legacy Mode</strong> (baseDn is null or empty):
+ *         <ul>
+ *             <li>Search root is equal to (search) rdns</li>
+ *             <li>i.e. (search) rdns is treated as the absolute search root DN</li>
+ *             <li>Service account rdns is relative to this absolute search root DN</li>
+ *         </ul>
+ *     </li>
+ * </ul>
  *
  * @param servers                        List of LDapServers to connect to
  * @param tlsMode                        The TLS/SSL mode to use
@@ -50,7 +71,8 @@ import org.jetbrains.annotations.Nullable;
  * @param responseTimeoutMillis          Response timeout in milliseconds (0 = use default)
  * @param maxConnections                 Maximum number of connections in the connection pool
  * @param uidAttribute                   The unique LDAP attribute that is used to identify every entry in the subtree of client RDNs. The default setting is uid
- * @param rdns                           The base DN for Directory Descent searches (defaults to baseDn if null)
+ * @param rdns                           The relative DNs for user searches (absolute if baseDn is null, relative to baseDn otherwise)
+ * @param baseDn                         Optional base DN. When specified, both rdns and service account rdns are relative to this
  * @param searchScope                    The search scope for Directory Descent (ONE, SUB, or BASE)
  * @param searchTimeoutSeconds           The timeout for Directory Descent searches in seconds
  * @param assignedRole                   The role assigned to authenticated users
@@ -70,6 +92,7 @@ public record LdapConnectionProperties(
         int maxConnections,
         @Nullable String uidAttribute,
         @NotNull String rdns,
+        @Nullable String baseDn,
         @Nullable String requiredObjectClass,
         @NotNull SearchScope searchScope,
         int searchTimeoutSeconds,
@@ -193,6 +216,7 @@ public record LdapConnectionProperties(
                 entity.getMaxConnections(),
                 entity.getUidAttribute(),
                 entity.getRdns(),
+                entity.getBaseDn(),
                 entity.getRequiredObjectClass(),
                 entity.getDirecoryDescent() ? SearchScope.SUB : SearchScope.BASE,
                 entity.getSearchTimeoutSeconds(),
@@ -231,10 +255,26 @@ public record LdapConnectionProperties(
         if (assignedRole.isBlank()) {
             throw new IllegalArgumentException("Assigned Role cannot be empty");
         }
+
+        // Validate baseDn is a valid DN if present
+        if (baseDn != null && !baseDn.isBlank()) {
+            try {
+                new DN(baseDn);
+            } catch (final Exception e) {
+                throw new IllegalArgumentException("Invalid base DN: " + baseDn, e);
+            }
+        }
+
+        // Validate rdns is a valid DN
+        try {
+            new DN(rdns);
+        } catch (final Exception e) {
+            throw new IllegalArgumentException("Invalid rdns: " + rdns, e);
+        }
     }
 
     /**
-     * Creates a DN resolver using either Direct Reference or Directory Descent mode.
+     * Creates a DN resolver using either Direct Reference or Directory Descent.
      * <p>
      * The resolver type is determined by configuration:
      * <ul>
@@ -242,23 +282,31 @@ public record LdapConnectionProperties(
      *     <li>If {@code uidAttribute} is set: Creates {@link SearchFilterDnResolver} (Directory Descent)</li>
      * </ul>
      * <p>
-     * For Directory Descent mode, a connection pool is required to perform LDAP searches.
+     * For Directory Descent, a connection pool is required to perform LDAP searches.
+     * <p>
      *
      * @param connectionPool The LDAP connection pool (required for Directory Descent, ignored for Direct Reference)
      * @return A UserDnResolver configured based on this properties object
      * @throws IllegalStateException if Directory Descent is configured but no connection pool is provided
      */
     public @NotNull UserDnResolver createUserDnResolver(final @Nullable LDAPConnectionPool connectionPool) {
+
         if (searchScope.equals(SearchScope.SUB)) {
             if (connectionPool == null) {
                 throw new IllegalStateException(
                         "Connection pool is required for Directory Descent (search-based DN resolution). "
                                 + "Ensure the LDAP client is started before creating the resolver.");
             }
+
             return new SearchFilterDnResolver(
-                    connectionPool, rdns, uidAttribute, requiredObjectClass, searchScope, searchTimeoutSeconds);
+                    connectionPool,
+                    getEffectiveSearchRootDn(),
+                    uidAttribute,
+                    requiredObjectClass,
+                    searchScope,
+                    searchTimeoutSeconds);
         } else {
-            return new TemplateDnResolver(uidAttribute, rdns);
+            return new TemplateDnResolver(uidAttribute, getEffectiveSearchRootDn());
         }
     }
 
@@ -330,6 +378,83 @@ public record LdapConnectionProperties(
         return options;
     }
 
+    // effectiveSearchRootDn is usually the (search) rdns relative to baseDn,
+    // but in legacy more - when baseDn is empty it is the (search) rdns treated as absolute DN
+    String getEffectiveSearchRootDn() {
+        final String effectiveSearchRootDn;
+        if (baseDn != null && !baseDn.isBlank()) {
+            try {
+                effectiveSearchRootDn = new DN(ImmutableList.<RDN>builder()
+                                .add(new DN(rdns).getRDNs())
+                                .add(new DN(baseDn).getRDNs())
+                                .build())
+                        .toString();
+            } catch (final Exception e) {
+                throw new IllegalArgumentException(
+                        "Cannot create effectiveSearchRootDn from (search) rdns " + rdns + " and base " + baseDn, e);
+            }
+        } else {
+            effectiveSearchRootDn = rdns;
+        }
+        return effectiveSearchRootDn;
+    }
+
+    // effectiveQueryRootDn is usually the base-dn, but in legacy mode the (search) rdns
+    String getEffectiveQueryRootDn() {
+        final String effectiveQueryRootDn;
+        if (baseDn != null && !baseDn.isBlank()) {
+            effectiveQueryRootDn = baseDn;
+        } else {
+            effectiveQueryRootDn = rdns;
+        }
+        return effectiveQueryRootDn;
+    }
+
+    // effectiveServiceAccountDn (from simpleBind.rdns) is usually relative to baseDN,
+    // but in legacy mode it is relative to (search) rdns
+    // but we also permit it to be specified as an absolute DN
+    String getEffectiveServiceAccountDn() {
+        final String effectiveServiceAccountDn;
+        if (baseDn != null && !baseDn.isBlank()) {
+            if (ldapSimpleBind.rdns.endsWith(baseDn)) {
+                effectiveServiceAccountDn = ldapSimpleBind.rdns;
+            } else {
+                try {
+                    effectiveServiceAccountDn = new DN(ImmutableList.<RDN>builder()
+                                    .add(new DN(ldapSimpleBind.rdns).getRDNs())
+                                    .add(new DN(baseDn).getRDNs())
+                                    .build())
+                            .toString();
+                } catch (final Exception e) {
+                    throw new IllegalArgumentException(
+                            "Cannot create effectiveServiceAccountDn from (search) rdns " + ldapSimpleBind.rdns
+                                    + " and base "
+                                    + baseDn,
+                            e);
+                }
+            }
+        } else {
+            if (ldapSimpleBind.rdns.endsWith(rdns)) {
+                effectiveServiceAccountDn = ldapSimpleBind.rdns;
+            } else {
+                try {
+                    effectiveServiceAccountDn = new DN(ImmutableList.<RDN>builder()
+                                    .add(new DN(ldapSimpleBind.rdns).getRDNs())
+                                    .add(new DN(rdns).getRDNs())
+                                    .build())
+                            .toString();
+                } catch (final Exception e) {
+                    throw new IllegalArgumentException(
+                            "Cannot create effectiveServiceAccountDn from (search) rdns " + ldapSimpleBind.rdns
+                                    + " and base "
+                                    + rdns,
+                            e);
+                }
+            }
+        }
+        return effectiveServiceAccountDn;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (o == null || getClass() != o.getClass()) return false;
@@ -340,6 +465,7 @@ public record LdapConnectionProperties(
                 && responseTimeoutMillis() == that.responseTimeoutMillis()
                 && acceptAnyCertificateForTesting() == that.acceptAnyCertificateForTesting()
                 && Objects.equals(rdns(), that.rdns())
+                && Objects.equals(baseDn(), that.baseDn())
                 && tlsMode() == that.tlsMode()
                 && Objects.equals(servers(), that.servers())
                 && Objects.equals(uidAttribute(), that.uidAttribute())
@@ -362,6 +488,7 @@ public record LdapConnectionProperties(
                 maxConnections(),
                 uidAttribute(),
                 rdns(),
+                baseDn(),
                 requiredObjectClass(),
                 searchScope(),
                 searchTimeoutSeconds(),
