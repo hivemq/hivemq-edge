@@ -1,7 +1,7 @@
 ---
-name: technical-doc-writer
+name: technical-doc-review
 description: Review technical documentation against the HiveMQ writing guidelines, producing a structured quality report with actionable findings per file
-argument-hint: "[path/to/file.md | path/to/directory] [--summary-only]"
+argument-hint: '[path/to/file.md | path/to/directory] [--summary-only]'
 disable-model-invocation: false
 user-invocable: true
 allowed-tools: Glob, Grep, Read
@@ -130,17 +130,17 @@ Grep for lines in prose sections (not code blocks, not table rows, not list item
 
 Scan the document for these known HiveMQ Edge terms and check for synonym drift:
 
-| Canonical term | Watch for non-canonical variants |
-|----------------|----------------------------------|
-| `protocol adapter` | "adapter", "protocol plugin", "connector" |
-| `MQTT broker` | "broker" (acceptable), "message broker" (avoid) |
-| `combiner` | "data combiner", "combining node" |
-| `northbound mapping` | "northbound subscription", "tag mapping" |
-| `topic filter` | "topic selector", "topic matcher" |
-| `behavior policy` | "behaviour policy" (note British/American split) |
-| `dry-run` | "dry run", "dryrun" |
-| `React Query` | "react query", "TanStack Query" (use React Query in docs) |
-| `Zustand` | "zustand" (capitalize in prose) |
+| Canonical term       | Watch for non-canonical variants                          |
+| -------------------- | --------------------------------------------------------- |
+| `protocol adapter`   | "adapter", "protocol plugin", "connector"                 |
+| `MQTT broker`        | "broker" (acceptable), "message broker" (avoid)           |
+| `combiner`           | "data combiner", "combining node"                         |
+| `northbound mapping` | "northbound subscription", "tag mapping"                  |
+| `topic filter`       | "topic selector", "topic matcher"                         |
+| `behavior policy`    | "behaviour policy" (note British/American split)          |
+| `dry-run`            | "dry run", "dryrun"                                       |
+| `React Query`        | "react query", "TanStack Query" (use React Query in docs) |
+| `Zustand`            | "zustand" (capitalize in prose)                           |
 
 ### Phase 3: Generate Report
 
@@ -160,17 +160,18 @@ Output a structured Markdown report. Use this template:
 
 ## Summary
 
-| Category | Critical | Advisory |
-|----------|----------|----------|
-| Passive voice | {n} | — |
-| Modal verbs | {n} | — |
-| Sentence length | — | {n} |
-| Terminology | {n} | {n} |
-| Structure / frontmatter | {n} | {n} |
-| Other style | {n} | {n} |
-| **Total** | **{n}** | **{n}** |
+| Category                | Critical | Advisory |
+| ----------------------- | -------- | -------- |
+| Passive voice           | {n}      | —        |
+| Modal verbs             | {n}      | —        |
+| Sentence length         | —        | {n}      |
+| Terminology             | {n}      | {n}      |
+| Structure / frontmatter | {n}      | {n}      |
+| Other style             | {n}      | {n}      |
+| **Total**               | **{n}**  | **{n}**  |
 
 ### Top 3 Issues Across All Files
+
 {List the three most common issues with example count}
 
 ---
@@ -180,12 +181,15 @@ Output a structured Markdown report. Use this template:
 ### {filename}
 
 **Structural:**
+
 - {finding or "✅ Frontmatter complete"}
 
 **Critical issues:**
+
 - Line {n}: `{offending text}` — {rule violated, suggested fix}
 
 **Advisory notes:**
+
 - Line {n}: {observation}
 
 ---
@@ -222,21 +226,21 @@ Output a structured Markdown report. Use this template:
 
 Derived from _HiveMQ Technical Documentation Writing Guidelines v1.0_.
 
-| Rule | Requirement |
-|------|-------------|
-| Voice | Active voice. "The broker disconnects the client." not "The client is disconnected." |
-| Tense | Simple present, imperative, infinitive. No future tense narration. |
-| Modal verbs | Avoid: should, could, would, may, might, will |
-| `-ing` forms | Avoid as main verb. "To navigate" not "by navigating". |
-| Sentence length | 25 words max for descriptions. 20 words for procedures. |
-| Pronouns | No gender-specific. Minimize "this", "it", "these" as subject. |
-| Articles | Based on pronunciation: "an MQTT", "a HiveMQ", "an SQL database". |
-| Lists | Parallel construction. Capitalize first word. Period if full sentences. |
-| Acronyms | Define on first use. MQTT is exempt. |
-| Terminology | One term per concept. Consistent throughout. |
-| Commas | Serial comma. Comma after introductory phrase. |
-| Courtesy | No "please" in instructions. |
-| Click | Transitive: "Click Save." Not "Click on Save." |
-| Link text | Descriptive. Not "click here", "this page". |
-| Noun clusters | Maximum 3 consecutive nouns. |
-| Hyphens | Compound adjectives before noun: "drop-down list", "read-only memory". |
+| Rule            | Requirement                                                                          |
+| --------------- | ------------------------------------------------------------------------------------ |
+| Voice           | Active voice. "The broker disconnects the client." not "The client is disconnected." |
+| Tense           | Simple present, imperative, infinitive. No future tense narration.                   |
+| Modal verbs     | Avoid: should, could, would, may, might, will                                        |
+| `-ing` forms    | Avoid as main verb. "To navigate" not "by navigating".                               |
+| Sentence length | 25 words max for descriptions. 20 words for procedures.                              |
+| Pronouns        | No gender-specific. Minimize "this", "it", "these" as subject.                       |
+| Articles        | Based on pronunciation: "an MQTT", "a HiveMQ", "an SQL database".                    |
+| Lists           | Parallel construction. Capitalize first word. Period if full sentences.              |
+| Acronyms        | Define on first use. MQTT is exempt.                                                 |
+| Terminology     | One term per concept. Consistent throughout.                                         |
+| Commas          | Serial comma. Comma after introductory phrase.                                       |
+| Courtesy        | No "please" in instructions.                                                         |
+| Click           | Transitive: "Click Save." Not "Click on Save."                                       |
+| Link text       | Descriptive. Not "click here", "this page".                                          |
+| Noun clusters   | Maximum 3 consecutive nouns.                                                         |
+| Hyphens         | Compound adjectives before noun: "drop-down list", "read-only memory".               |
