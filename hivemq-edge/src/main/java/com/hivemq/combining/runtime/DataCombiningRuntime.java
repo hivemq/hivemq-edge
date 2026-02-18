@@ -186,7 +186,7 @@ public class DataCombiningRuntime {
 
         @Override
         public @NotNull String toString() {
-            return dataPoint.toString();
+            return dataPoint.getTagValue().toString();
         }
     }
 
