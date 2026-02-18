@@ -414,10 +414,14 @@ describe('NodeAdapter', () => {
 ## Related Documentation
 
 **Architecture:**
+- [Domain Model](./DOMAIN_MODEL.md) — Entity definitions (TAG, TOPIC, TOPIC FILTER, COMBINER) and transformation flows; why the workspace graph differs from the domain ontology
 - [DataHub Architecture](./DATAHUB_ARCHITECTURE.md)
 - [State Management](./STATE_MANAGEMENT.md)
 - [Data Flow](./DATA_FLOW.md)
 - [Testing Architecture](./TESTING_ARCHITECTURE.md)
+
+**Walkthroughs:**
+- [Domain Ontology Visualization](../walkthroughs/DOMAIN_ONTOLOGY.md) — Why the workspace canvas is separate from the domain ontology view; seven visualization approaches explored
 
 **Guides:**
 - [Testing Guide](../guides/TESTING_GUIDE.md)
