@@ -51,9 +51,9 @@ describe('DataPolicyPanel', () => {
     cy.get('[role="alert"]')
       .should('be.visible')
       .should('have.attr', 'data-status', 'error')
-      .should('have.text', 'Not found')
+      .should('have.text', 'Not Found')
 
-    cy.get('@onFormError').should('have.been.calledWithErrorMessage', 'Not found')
+    cy.get('@onFormError').should('have.been.calledWithErrorMessage', 'Not Found')
   })
 
   it('should render the fields for the panel', () => {

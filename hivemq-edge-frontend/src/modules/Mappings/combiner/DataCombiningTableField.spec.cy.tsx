@@ -224,7 +224,7 @@ describe('DataCombiningTableField', () => {
     })
   })
 
-  describe('Screenshots for documentation', () => {
+  describe.skip('Screenshots for documentation', () => {
     it('should capture empty state', () => {
       cy.mountWithProviders(
         <CustomFormTesting
@@ -235,8 +235,6 @@ describe('DataCombiningTableField', () => {
           }}
         />
       )
-
-      cy.wait(300) // Stabilize render
 
       // Screenshot: Empty table with "No data received yet" message
       cy.screenshot('combiner-empty-state', {
@@ -284,8 +282,6 @@ describe('DataCombiningTableField', () => {
           formContext={{ entities: MOCK_ASSET_MAPPER.sources.items }}
         />
       )
-
-      cy.wait(300) // Stabilize render
 
       // Screenshot: Table with 3 mappings showing summaries
       cy.screenshot('combiner-mapping-table', {

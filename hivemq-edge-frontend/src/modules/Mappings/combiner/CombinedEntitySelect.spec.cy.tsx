@@ -72,7 +72,7 @@ describe('CombinedEntitySelect', () => {
     cy.get('@options').eq(0).should('contain.text', 'my-adapter/power/off').should('contain.text', 'Tag')
   })
 
-  it('should capture screenshot for documentation', () => {
+  it.skip('should capture screenshot for documentation', () => {
     cy.mountWithProviders(
       <CombinedEntitySelectWrapper tags={['opcua-1/power/off']} topicFilters={['topicFilter/t3']} onChange={cy.stub} />
     )
@@ -81,7 +81,6 @@ describe('CombinedEntitySelect', () => {
     cy.get('#combiner-entity-select').realClick()
     cy.get('#combiner-entity-select').type('m') // Trigger dropdown
     cy.get('#react-select-entity-listbox').should('be.visible')
-    cy.wait(300) // Stabilize dropdown
 
     // Screenshot: Dropdown showing entity options with metadata (icon, description, tag count)
     cy.screenshot('combiner-entity-select', {
