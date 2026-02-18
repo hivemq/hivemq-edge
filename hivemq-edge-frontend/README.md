@@ -189,3 +189,5 @@ pnpm run coverage:merge:all         # Vitest + Cypress
   - `coverage-combined/coverage-final.json` - Combined JSON report
 
 📚 **For detailed coverage documentation**, see [COVERAGE-SETUP.md](./COVERAGE-SETUP.md)
+
+Just some random change
