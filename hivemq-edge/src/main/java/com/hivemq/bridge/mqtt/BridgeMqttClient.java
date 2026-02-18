@@ -160,7 +160,9 @@ public class BridgeMqttClient {
                                 if (future != null) {
                                     future.cancel(true);
                                 }
-                                operationState.set(OperationState.IDLE);
+                                // Only reset to IDLE if stop() hasn't already transitioned to STOPPING.
+                                // If stop() already owns the lifecycle, let it manage the state.
+                                operationState.compareAndSet(OperationState.STARTING, OperationState.IDLE);
                                 return null;
                             }
                             if (throwable != null) {
@@ -175,7 +177,7 @@ public class BridgeMqttClient {
                                 if (future != null) {
                                     future.setException(throwable);
                                 }
-                                operationState.set(OperationState.IDLE);
+                                operationState.compareAndSet(OperationState.STARTING, OperationState.IDLE);
                                 return null;
                             }
                             if (mqtt5ConnAck.getReasonCode().isError()) {
@@ -192,7 +194,7 @@ public class BridgeMqttClient {
                                     future.setException(new RuntimeException("CONNACK error for bridge '"
                                             + bridge.getId() + "': " + mqtt5ConnAck.getReasonCode()));
                                 }
-                                operationState.set(OperationState.IDLE);
+                                operationState.compareAndSet(OperationState.STARTING, OperationState.IDLE);
                                 return null;
                             }
 
@@ -263,7 +265,7 @@ public class BridgeMqttClient {
                                         if (future != null) {
                                             future.set(null);
                                         }
-                                        operationState.set(OperationState.IDLE);
+                                        operationState.compareAndSet(OperationState.STARTING, OperationState.IDLE);
                                         return null;
                                     });
                             return null;
@@ -273,7 +275,7 @@ public class BridgeMqttClient {
                             if (future != null) {
                                 future.setException(e);
                             }
-                            operationState.set(OperationState.IDLE);
+                            operationState.compareAndSet(OperationState.STARTING, OperationState.IDLE);
                             return null;
                         }
                     });
@@ -319,8 +321,13 @@ public class BridgeMqttClient {
                                 exception);
                     }
                 }
-                stopFutureRef.getAndSet(null).set(null);
-                operationState.set(OperationState.IDLE);
+                final var future = stopFutureRef.getAndSet(null);
+                if (future != null) {
+                    future.set(null);
+                }
+                // Only reset to IDLE if we're still in STOPPING state.
+                // Prevents overwriting a concurrent start()'s STARTING state.
+                operationState.compareAndSet(OperationState.STOPPING, OperationState.IDLE);
                 perBridgeMetrics.clearAll(metricRegistry);
                 if (log.isInfoEnabled()) {
                     log.info("Bridge '{}' stopped successfully", bridge.getId());
@@ -395,7 +402,7 @@ public class BridgeMqttClient {
                     final var existing = startFutureRef.get();
                     if (existing != null) {
                         log.info(
-                                "Start operation already in progress for adapter with id '{}', returning existing future",
+                                "Start operation already in progress for bridge with id '{}', returning existing future",
                                 bridge.getId());
                         yield existing;
                     }
