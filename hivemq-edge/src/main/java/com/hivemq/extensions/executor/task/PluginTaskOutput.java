@@ -22,12 +22,16 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Interface for output objects produced by plugin task execution.
+ *
  * @author Georg Held
  * @author Christoph Schäbel
  */
 public interface PluginTaskOutput {
 
     /**
+     * Checks whether this output uses async handling.
+     *
      * @return true if the extension method invoked the async handling
      */
     boolean isAsync();
@@ -38,6 +42,8 @@ public interface PluginTaskOutput {
     void markAsAsync();
 
     /**
+     * Checks whether this output has timed out.
+     *
      * @return true if the task's async timeout is exceeded, false if the task is still running or resume was called
      */
     boolean isTimedOut();
@@ -53,6 +59,8 @@ public interface PluginTaskOutput {
     void resetAsyncStatus();
 
     /**
+     * Returns the future used to track async completion.
+     *
      * @return a {@link SettableFuture} which is set to true if resume has been called on the
      * {@link AsyncOutput} and false if a timeout occurred
      */
@@ -60,6 +68,8 @@ public interface PluginTaskOutput {
     SettableFuture<Boolean> getAsyncFuture();
 
     /**
+     * Returns the timeout fallback strategy.
+     *
      * @return the timeout fallback to use if the async operation times out
      */
     @NotNull

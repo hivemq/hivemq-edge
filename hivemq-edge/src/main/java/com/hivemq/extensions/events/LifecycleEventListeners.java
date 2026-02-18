@@ -20,6 +20,8 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Registry for client lifecycle event listener providers.
+ *
  * @author Florian Limpöck
  * @since 4.0.0
  */
@@ -33,6 +35,8 @@ public interface LifecycleEventListeners {
     void addClientLifecycleEventListenerProvider(@NotNull ClientLifecycleEventListenerProvider provider);
 
     /**
+     * Returns the registered lifecycle event listener providers.
+     *
      * @return a map of extension ids and ClientLifecycleEventListenerProvider, sorted descending by extension priority.
      */
     @NotNull

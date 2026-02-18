@@ -810,7 +810,7 @@ public abstract class AbstractMqttDecoder<T extends Message> extends MqttDecoder
     /**
      * Closes the connection of a client because of sending a message without identifier
      * <p>
-     * MQTT 3 only. adapted from {@link this#decodePacketIdentifier(ClientConnection, ByteBuf, MessageType)}
+     * MQTT 3 only. adapted from {@link #decodePacketIdentifier(ClientConnection, ByteBuf, MessageType)}
      * <p>
      *
      * @param clientConnection the connection of the mqtt client

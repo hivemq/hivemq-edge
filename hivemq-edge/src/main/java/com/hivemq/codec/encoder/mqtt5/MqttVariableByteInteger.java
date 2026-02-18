@@ -67,7 +67,7 @@ public final class MqttVariableByteInteger {
             encodedByte = byteBuf.readByte();
             final int encodedByteValue = encodedByte & VALUE_MASK;
             value += encodedByteValue << shift;
-            shift += VALUE_BITS;
+            shift = (byte) (shift + VALUE_BITS);
         } while ((encodedByte & CONTINUATION_BIT_MASK) != 0);
 
         if (shift > VALUE_BITS && encodedByte == 0) {

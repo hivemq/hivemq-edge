@@ -114,23 +114,23 @@ public class ClientLifecycleEventHandler extends SimpleChannelInboundHandler<CON
                 log.debug("Firing OnAuthSuccessEvent failed: ", e);
             }
 
-        } else if (evt instanceof OnAuthFailedEvent) {
+        } else if (evt instanceof OnAuthFailedEvent onAuthFailedEvent) {
             try {
-                fireOnAuthFailed(ctx, (OnAuthFailedEvent) evt);
+                fireOnAuthFailed(ctx, onAuthFailedEvent);
             } catch (final Exception e) {
                 log.debug("Firing OnAuthFailedEvent failed: ", e);
             }
 
-        } else if (evt instanceof OnClientDisconnectEvent) {
+        } else if (evt instanceof OnClientDisconnectEvent onClientDisconnectEvent) {
             try {
-                fireOnClientDisconnect(ctx, (OnClientDisconnectEvent) evt);
+                fireOnClientDisconnect(ctx, onClientDisconnectEvent);
             } catch (final Exception e) {
                 log.debug("Firing OnClientDisconnectEvent failed: ", e);
             }
 
-        } else if (evt instanceof OnServerDisconnectEvent) {
+        } else if (evt instanceof OnServerDisconnectEvent onServerDisconnectEvent) {
             try {
-                fireOnServerDisconnect(ctx, (OnServerDisconnectEvent) evt);
+                fireOnServerDisconnect(ctx, onServerDisconnectEvent);
             } catch (final Exception e) {
                 log.debug("Firing OnServerDisconnectEvent failed: ", e);
             }
@@ -371,23 +371,21 @@ public class ClientLifecycleEventHandler extends SimpleChannelInboundHandler<CON
             }
 
             try {
-                if (pluginTaskInput instanceof ConnectionStartInputImpl) {
-                    eventListener.onMqttConnectionStart((ConnectionStartInputImpl) pluginTaskInput);
-                } else if (pluginTaskInput instanceof AuthenticationSuccessfulInputImpl) {
-                    eventListener.onAuthenticationSuccessful((AuthenticationSuccessfulInputImpl) pluginTaskInput);
-                } else if (pluginTaskInput instanceof AuthenticationFailedInputImpl) {
-                    eventListener.onAuthenticationFailedDisconnect((AuthenticationFailedInputImpl) pluginTaskInput);
-                } else if (pluginTaskInput instanceof ClientInitiatedDisconnectInputImpl) {
+                if (pluginTaskInput instanceof ConnectionStartInputImpl connectionStartInput) {
+                    eventListener.onMqttConnectionStart(connectionStartInput);
+                } else if (pluginTaskInput instanceof AuthenticationSuccessfulInputImpl authSuccessInput) {
+                    eventListener.onAuthenticationSuccessful(authSuccessInput);
+                } else if (pluginTaskInput instanceof AuthenticationFailedInputImpl authFailedInput) {
+                    eventListener.onAuthenticationFailedDisconnect(authFailedInput);
+                } else if (pluginTaskInput instanceof ClientInitiatedDisconnectInputImpl taskInput) {
 
-                    final ClientInitiatedDisconnectInputImpl taskInput =
-                            (ClientInitiatedDisconnectInputImpl) pluginTaskInput;
                     if (taskInput.isGraceful()) {
                         eventListener.onClientInitiatedDisconnect(taskInput);
                     } else {
                         eventListener.onConnectionLost(taskInput);
                     }
-                } else if (pluginTaskInput instanceof ServerInitiatedDisconnectInputImpl) {
-                    eventListener.onServerInitiatedDisconnect((ServerInitiatedDisconnectInputImpl) pluginTaskInput);
+                } else if (pluginTaskInput instanceof ServerInitiatedDisconnectInputImpl serverDisconnectInput) {
+                    eventListener.onServerInitiatedDisconnect(serverDisconnectInput);
                 }
 
             } catch (final Throwable e) {

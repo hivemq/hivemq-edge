@@ -28,6 +28,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Immutable implementation of {@link WillPublishPacket} for the extension system.
+ *
  * @author Florian Limpöck
  * @author Silvio Giebl
  * @since 4.0.0
@@ -99,10 +101,9 @@ public class WillPublishPacketImpl extends PublishPacketImpl implements WillPubl
         if (this == o) {
             return true;
         }
-        if (!(o instanceof WillPublishPacketImpl) || !super.equals(o)) {
+        if (!(o instanceof WillPublishPacketImpl that) || !super.equals(o)) {
             return false;
         }
-        final WillPublishPacketImpl that = (WillPublishPacketImpl) o;
         return willDelay == that.willDelay;
     }
 

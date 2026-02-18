@@ -49,6 +49,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Handles PUBACK interception for registered extension interceptors.
+ *
  * @author Yannick Weber
  * @author Robin Atherton
  * @author Silvio Giebl
@@ -125,6 +127,7 @@ public class PubackInterceptorHandler {
         }
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void handleOutboundPuback(
             final @NotNull ChannelHandlerContext ctx,
             final @NotNull PUBACK puback,
@@ -179,6 +182,7 @@ public class PubackInterceptorHandler {
         }
     }
 
+    @SuppressWarnings("EffectivelyPrivate")
     private static class PubackInboundInterceptorContext extends PluginInOutTaskContext<PubackInboundOutputImpl>
             implements Runnable {
 
@@ -268,6 +272,7 @@ public class PubackInterceptorHandler {
         }
     }
 
+    @SuppressWarnings("EffectivelyPrivate")
     private static class PubackOutboundInterceptorContext extends PluginInOutTaskContext<PubackOutboundOutputImpl>
             implements Runnable {
 
@@ -317,6 +322,7 @@ public class PubackInterceptorHandler {
             return false;
         }
 
+        @SuppressWarnings("FutureReturnValueIgnored")
         @Override
         public void run() {
             ctx.writeAndFlush(PUBACK.from(inputHolder.get().getPubackPacket()), promise);

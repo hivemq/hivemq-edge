@@ -259,6 +259,7 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
             try {
                 pipeline.remove(AUTH_IN_PROGRESS_MESSAGE_HANDLER);
             } catch (final NoSuchElementException ignored) {
+                // Handler may have already been removed by another thread; safe to ignore.
             }
         }
         clientConnection.setAuthConnect(null);
@@ -290,8 +291,7 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
     @Override
     public void userEventTriggered(final @NotNull ChannelHandlerContext ctx, final @NotNull Object evt)
             throws Exception {
-        if (evt instanceof AuthorizeWillResultEvent) {
-            final AuthorizeWillResultEvent resultEvent = (AuthorizeWillResultEvent) evt;
+        if (evt instanceof AuthorizeWillResultEvent resultEvent) {
             afterPublishAuthorizer(ctx, resultEvent.getConnect(), resultEvent.getResult());
         } else {
             super.userEventTriggered(ctx, evt);
@@ -819,6 +819,7 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
             }
         }
 
+        @SuppressWarnings("FutureReturnValueIgnored")
         @Override
         public void onFailure(final @NotNull Throwable throwable) {
             Exceptions.rethrowError(

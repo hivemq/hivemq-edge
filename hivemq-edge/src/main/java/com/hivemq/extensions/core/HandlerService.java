@@ -23,6 +23,7 @@ import java.util.TreeMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/** Service for managing handler and pre-publish processor handling factories. */
 public class HandlerService {
 
     private @Nullable HandlerFactory handlerFactory;
@@ -34,6 +35,8 @@ public class HandlerService {
     }
 
     /**
+     * Registers a pre-publish processor handling factory with the given priority.
+     *
      * @param prio                               lower prio is executed first, same prio will throw exception
      * @param prePublishProcessorHandlingFactory the HandlerFactory will only get called once when the first message
      *                                           is processed

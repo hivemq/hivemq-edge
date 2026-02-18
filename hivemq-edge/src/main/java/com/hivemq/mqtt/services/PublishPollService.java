@@ -21,12 +21,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Service for polling queued messages for MQTT clients.
+ *
  * @author Lukas Brandl
  */
 public interface PublishPollService {
 
     /**
-     * {@inheritDoc}
+     * Polls messages for the client.
      */
     void pollMessages(@NotNull String client, @NotNull Channel channel);
 

@@ -95,9 +95,8 @@ public class PluginInitializerHandler extends ChannelOutboundHandlerAdapter {
             final @NotNull ChannelHandlerContext ctx, final @NotNull Object msg, final @NotNull ChannelPromise promise)
             throws Exception {
 
-        if (msg instanceof CONNACK) {
+        if (msg instanceof CONNACK connack) {
 
-            final CONNACK connack = (CONNACK) msg;
             if (connack.getReasonCode() != Mqtt5ConnAckReasonCode.SUCCESS) {
                 super.write(ctx, msg, promise);
                 return;
@@ -111,6 +110,7 @@ public class PluginInitializerHandler extends ChannelOutboundHandlerAdapter {
         }
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     private void fireInitialize(
             final @NotNull ChannelHandlerContext ctx,
             final @Nullable CONNACK msg,
@@ -188,6 +188,7 @@ public class PluginInitializerHandler extends ChannelOutboundHandlerAdapter {
                 ctx.executor());
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     private void authenticateWill(
             final @NotNull ChannelHandlerContext ctx,
             final @Nullable CONNACK msg,
@@ -286,6 +287,7 @@ public class PluginInitializerHandler extends ChannelOutboundHandlerAdapter {
             finishInitializer();
         }
 
+        @SuppressWarnings("EffectivelyPrivate")
         public void finishInitializer() {
             try {
                 if (counter.incrementAndGet() == initializerSize) {

@@ -18,6 +18,8 @@ package com.hivemq.mqtt.message.pubcomp;
 import com.hivemq.mqtt.message.MessageType;
 
 /**
+ * MQTT 3.x representation of a PUBCOMP message.
+ *
  * @author Waldemar Ruck
  */
 public interface Mqtt3PUBCOMP {

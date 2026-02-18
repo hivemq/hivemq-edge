@@ -26,17 +26,19 @@ public class JsonSchema {
 
     public static @NotNull JsonNode createJsonSchema() {
         try {
-            return OBJECT_MAPPER.readTree("{\n" + "  \"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n"
-                    + "  \"type\": \"object\",\n"
-                    + "  \"properties\": {\n"
-                    + "    \"value\": {\n"
-                    + "      \"type\": \"object\"\n"
-                    + "    }\n"
-                    + "  },\n"
-                    + "  \"required\": [\n"
-                    + "    \"value\"\n"
-                    + "  ]\n"
-                    + "}");
+            return OBJECT_MAPPER.readTree("""
+                    {
+                      "$schema": "https://json-schema.org/draft/2019-09/schema",
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "object"
+                        }
+                      },
+                      "required": [
+                        "value"
+                      ]
+                    }""");
         } catch (final JsonProcessingException e) {
             throw new RuntimeException(e);
         }

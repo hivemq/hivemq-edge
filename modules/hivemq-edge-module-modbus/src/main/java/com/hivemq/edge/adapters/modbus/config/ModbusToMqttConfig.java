@@ -24,6 +24,8 @@ import java.util.Objects;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Configuration for the Modbus to MQTT data stream.
+ *
  * @since 4.9.0
  */
 public class ModbusToMqttConfig {

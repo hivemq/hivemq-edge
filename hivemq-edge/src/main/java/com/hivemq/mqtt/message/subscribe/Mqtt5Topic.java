@@ -20,6 +20,8 @@ import com.hivemq.mqtt.message.mqtt5.Mqtt5RetainHandling;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Represents a topic subscription in MQTT 5 with additional subscription options.
+ *
  * @author Florian Limpöck
  * @since 4.0.0
  */
@@ -41,29 +43,39 @@ public interface Mqtt5Topic {
     boolean DEFAULT_RETAIN_AS_PUBLISHED = false;
 
     /**
+     * Returns the topic filter string.
+     *
      * @return the topic as String representation
      */
     @NotNull
     String getTopic();
 
     /**
+     * Returns the quality of service level for this topic.
+     *
      * @return the QoS of a Topic
      */
     @NotNull
     QoS getQoS();
 
     /**
+     * Returns whether the no-local option is set.
+     *
      * @return whether the client must not receive messages published by itself. The default is {@link #DEFAULT_NO_LOCAL}.
      */
     boolean isNoLocal();
 
     /**
+     * Returns the retain handling option for this subscription.
+     *
      * @return the handling of retained message for this subscription. The default is {@link #DEFAULT_RETAIN_HANDLING}.
      */
     @NotNull
     Mqtt5RetainHandling getRetainHandling();
 
     /**
+     * Returns whether the retain-as-published option is set.
+     *
      * @return whether the retain flag for incoming publishes must be set to its original value.
      */
     boolean isRetainAsPublished();

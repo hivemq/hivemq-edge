@@ -21,6 +21,8 @@ import com.hivemq.mqtt.message.reason.Mqtt5PubAckReasonCode;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * MQTT 5 representation of a PUBACK message.
+ *
  * @author Waldemar Ruck
  * @since 4.0
  */
@@ -29,18 +31,24 @@ public interface Mqtt5PUBACK {
     Mqtt5PubAckReasonCode DEFAULT_REASON_CODE = Mqtt5PubAckReasonCode.SUCCESS;
 
     /**
+     * Returns the reason code of this PUBACK packet.
+     *
      * @return the reason code of this PUBACK packet.
      */
     @NotNull
     Mqtt5PubAckReasonCode getReasonCode();
 
     /**
+     * Returns the optional reason string of this PUBACK packet.
+     *
      * @return the optional reason string of this PUBACK packet.
      */
     @NotNull
     String getReasonString();
 
     /**
+     * Returns the optional user properties of this PUBACK packet.
+     *
      * @return the optional user properties of this PUBACK packet.
      */
     @NotNull

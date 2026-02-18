@@ -62,7 +62,9 @@ public class SslContextStoreTest {
     @BeforeEach
     public void before() {
         sslContext = mock(SslContext.class);
-        executorService = mock(ListeningScheduledExecutorService.class);
+        @SuppressWarnings("DoNotMock")
+        final var mockExecutorService = mock(ListeningScheduledExecutorService.class);
+        executorService = mockExecutorService;
         captor = ArgumentCaptor.forClass(Runnable.class);
 
         final SslContextFactory sslContextFactory = mock(SslContextFactory.class);

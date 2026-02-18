@@ -19,6 +19,8 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Registry for managing MQTT-SN topic aliases and name-to-alias mappings.
+ *
  * @author Simon L Johnson
  */
 public interface IMqttsnTopicRegistry {

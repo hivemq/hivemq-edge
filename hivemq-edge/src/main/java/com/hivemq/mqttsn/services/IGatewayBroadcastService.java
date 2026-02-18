@@ -19,6 +19,8 @@ import io.netty.channel.Channel;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Service responsible for broadcasting MQTT-SN gateway advertisements.
+ *
  * @author Simon L Johnson
  */
 public interface IGatewayBroadcastService {

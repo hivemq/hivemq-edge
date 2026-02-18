@@ -44,6 +44,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Decoder for MQTT 5 SUBSCRIBE messages.
+ *
  * @author Florian Limpöck
  */
 @Singleton
@@ -92,24 +94,23 @@ public class Mqtt5SubscribeDecoder extends AbstractMqttDecoder<SUBSCRIBE> {
             final int propertyIdentifier = buf.readByte();
 
             switch (propertyIdentifier) {
-                case USER_PROPERTY:
+                case USER_PROPERTY -> {
                     userPropertiesBuilder =
                             readUserProperty(clientConnection, buf, userPropertiesBuilder, MessageType.SUBSCRIBE);
                     if (userPropertiesBuilder == null) {
                         return null;
                     }
-                    break;
-
-                case SUBSCRIPTION_IDENTIFIER:
+                }
+                case SUBSCRIPTION_IDENTIFIER -> {
                     subscriptionIdentifier = readSubscriptionIdentifier(clientConnection, buf, subscriptionIdentifier);
                     if (subscriptionIdentifier == DISCONNECTED) {
                         return null;
                     }
-                    break;
-
-                default:
+                }
+                default -> {
                     disconnectByInvalidPropertyIdentifier(clientConnection, propertyIdentifier, MessageType.SUBSCRIBE);
                     return null;
+                }
             }
         }
 

@@ -27,6 +27,8 @@ import com.google.common.collect.ImmutableList;
 public interface Mqtt3UNSUBSCRIBE {
 
     /**
+     * Returns a list of topics the client wants to unsubscribe from.
+     *
      * @return a list of topic the client wants to unsubscribe to
      */
     ImmutableList<String> getTopics();

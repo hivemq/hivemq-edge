@@ -19,6 +19,8 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Represents an error that occurred during data governance pipeline execution.
+ *
  * @author Simon L Johnson
  */
 public interface DataGovernanceError {

@@ -22,6 +22,8 @@ import io.netty.buffer.ByteBuf;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Encoder for MQTT 3 PUBACK messages.
+ *
  * @author Dominik Obermaier
  */
 public class Mqtt3PubackEncoder implements MqttEncoder<PUBACK> {

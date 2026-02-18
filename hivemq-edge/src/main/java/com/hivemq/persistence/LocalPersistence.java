@@ -16,6 +16,8 @@
 package com.hivemq.persistence;
 
 /**
+ * Base interface for local persistence implementations.
+ *
  * @author Lukas Brandl
  */
 public interface LocalPersistence {

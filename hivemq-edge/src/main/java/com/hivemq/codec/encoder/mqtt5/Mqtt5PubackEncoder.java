@@ -24,6 +24,8 @@ import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Encoder for MQTT 5 PUBACK messages.
+ *
  * @author Waldemar Ruck
  * @since 4.0
  */
@@ -32,6 +34,7 @@ public class Mqtt5PubackEncoder
         extends Mqtt5MessageWithUserPropertiesEncoder.Mqtt5MessageWithIdAndOmissibleReasonCodeEncoder<
                 PUBACK, Mqtt5PubAckReasonCode> {
 
+    @SuppressWarnings("EnumOrdinal")
     private static final int FIXED_HEADER = MessageType.PUBACK.ordinal() << 4;
 
     public Mqtt5PubackEncoder(

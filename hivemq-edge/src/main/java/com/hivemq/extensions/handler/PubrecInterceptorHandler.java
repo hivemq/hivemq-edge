@@ -49,6 +49,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Handles PUBREC interception for registered extension interceptors.
+ *
  * @author Yannick Weber
  * @author Silvio Giebl
  */
@@ -124,6 +126,7 @@ public class PubrecInterceptorHandler {
         }
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void handleOutboundPubrec(
             final @NotNull ChannelHandlerContext ctx,
             final @NotNull PUBREC pubrec,
@@ -178,6 +181,7 @@ public class PubrecInterceptorHandler {
         }
     }
 
+    @SuppressWarnings("EffectivelyPrivate")
     private static class PubrecInboundInterceptorContext extends PluginInOutTaskContext<PubrecInboundOutputImpl>
             implements Runnable {
 
@@ -267,6 +271,7 @@ public class PubrecInterceptorHandler {
         }
     }
 
+    @SuppressWarnings("EffectivelyPrivate")
     private static class PubrecOutboundInterceptorContext extends PluginInOutTaskContext<PubrecOutboundOutputImpl>
             implements Runnable {
 
@@ -316,6 +321,7 @@ public class PubrecInterceptorHandler {
             return false;
         }
 
+        @SuppressWarnings("FutureReturnValueIgnored")
         @Override
         public void run() {
             ctx.writeAndFlush(PUBREC.from(inputHolder.get().getPubrecPacket()), promise);

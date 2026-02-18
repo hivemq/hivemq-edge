@@ -32,25 +32,31 @@ public interface SystemInformation {
     void init();
 
     /**
+     * Returns the version string of HiveMQ.
+     *
      * @return the version string of HiveMQ
      */
     @NotNull
     String getHiveMQVersion();
 
     /**
+     * Returns the home folder of HiveMQ.
+     *
      * @return the home folder of HiveMQ
      */
     @NotNull
     File getHiveMQHomeFolder();
 
     /**
+     * Returns a secondary folder where additional configs like topic filters are stored.
+     *
      * @return a secondary folder where additional configs like topic filters are stored
      */
     @NotNull
     File getSecondaryHiveMQHomeFolder();
 
     /**
-     * /**
+     * Returns the config folder of HiveMQ.
      *
      * @return the config folder of HiveMQ
      */
@@ -58,62 +64,84 @@ public interface SystemInformation {
     File getConfigFolder();
 
     /**
+     * Returns the log folder of HiveMQ.
+     *
      * @return the log folder of HiveMQ
      */
     @NotNull
     File getLogFolder();
 
     /**
+     * Returns the data folder of HiveMQ.
+     *
      * @return the data folder of HiveMQ
      */
     @NotNull
     File getDataFolder();
 
     /**
-     * @return the config folder of HiveMQ
+     * Returns the license folder of HiveMQ.
+     *
+     * @return the license folder of HiveMQ
      */
     @NotNull
     File getLicenseFolder();
 
     /**
+     * Returns the extensions folder of HiveMQ.
+     *
      * @return the extensions folder of HiveMQ
      */
     @NotNull
     File getExtensionsFolder();
 
     /**
+     * Returns the folder where HiveMQ stores pulse related data.
+     *
      * @return the folder where HiveMQ stores pulse related data
      */
     @NotNull
     File getPulseTokenFolder();
 
     /**
+     * Returns the modules folder of HiveMQ.
+     *
      * @return the modules folder of HiveMQ
      */
     @NotNull
     File getModulesFolder();
 
     /**
+     * Returns the timestamp of HiveMQ start.
+     *
      * @return the timestamp of HiveMQ start
      */
     long getRunningSince();
 
     /**
+     * Returns the count of CPUs HiveMQ uses.
+     *
      * @return the count of CPUs HiveMQ uses
      */
     int getProcessorCount();
 
     /**
+     * Returns whether HiveMQ is running in embedded mode.
+     *
      * @return is HiveMQ running in embedded mode
      */
     boolean isEmbedded();
 
     /**
-     * @return should the fragment config be treated as bing zipped and base64 encoded
+     * Returns whether the fragment config should be treated as being zipped and base64 encoded.
+     *
+     * @return should the fragment config be treated as being zipped and base64 encoded
      */
     boolean isConfigFragmentBase64Zip();
 
     /**
+     * Returns the interval between refreshing config files, 0 means no refreshing.
+     *
      * @return the interval between refreshing config files, 0 means no refreshing
      */
     long configRefreshIntervalInMs();

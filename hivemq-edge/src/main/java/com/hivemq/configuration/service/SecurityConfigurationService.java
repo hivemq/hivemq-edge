@@ -16,6 +16,8 @@
 package com.hivemq.configuration.service;
 
 /**
+ * Configuration service for security-related MQTT settings.
+ *
  * @author Florian Limpöck
  * @since 4.0.0
  */
@@ -31,21 +33,29 @@ public interface SecurityConfigurationService {
     boolean ALLOW_REQUEST_PROBLEM_INFORMATION_DEFAULT = true;
 
     /**
+     * Returns whether the server may assign a client identifier.
+     *
      * @return true if server may assign a client id when clients connect with zero length client id else false.
      */
     boolean allowServerAssignedClientId();
 
     /**
+     * Returns whether UTF-8 validation is enabled.
+     *
      * @return true if topic and client id should be validated to be UTF-8 well formed else false.
      */
     boolean validateUTF8();
 
     /**
+     * Returns whether payload format validation is enabled.
+     *
      * @return true if any payload should be validated by payload format indicator else false.
      */
     boolean payloadFormatValidation();
 
     /**
+     * Returns whether request problem information is allowed.
+     *
      * @return true if the request problem information should be allowed else false.
      */
     boolean allowRequestProblemInformation();

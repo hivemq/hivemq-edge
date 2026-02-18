@@ -50,6 +50,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Handles PUBLISH outbound interception for registered extension interceptors.
+ *
  * @author Lukas Brandl
  * @author Silvio Giebl
  */
@@ -79,6 +81,7 @@ public class PublishOutboundInterceptorHandler {
         this.messageDroppedService = messageDroppedService;
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void handleOutboundPublish(
             final @NotNull ChannelHandlerContext ctx,
             final @NotNull PUBLISH publish,
@@ -191,6 +194,7 @@ public class PublishOutboundInterceptorHandler {
             return false;
         }
 
+        @SuppressWarnings("FutureReturnValueIgnored")
         @Override
         public void run() {
             if (outputHolder.get().isPreventDelivery()) {

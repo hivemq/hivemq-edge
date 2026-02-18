@@ -39,7 +39,9 @@ public enum ContentType {
             new ObjectMapper().enable(JsonParser.Feature.INCLUDE_SOURCE_IN_LOCATION);
     private static final @NotNull Logger log = LoggerFactory.getLogger(ContentType.class);
 
+    @SuppressWarnings("ImmutableEnumChecker")
     private final @NotNull Function<byte[], Object> mapperFunction;
+
     private final @NotNull String mimeTypeRepresentation;
 
     ContentType(final @NotNull Function<byte[], Object> mapperFunction, final @NotNull String mimeTypeRepresentation) {

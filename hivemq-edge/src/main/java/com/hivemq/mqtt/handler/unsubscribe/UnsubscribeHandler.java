@@ -65,6 +65,7 @@ public class UnsubscribeHandler extends SimpleChannelInboundHandler<UNSUBSCRIBE>
         this.sharedSubscriptionService = sharedSubscriptionService;
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     @Override
     protected void channelRead0(final @NotNull ChannelHandlerContext ctx, final @NotNull UNSUBSCRIBE msg)
             throws Exception {

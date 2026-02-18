@@ -21,6 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Interface for MQTT 3 CONNECT message properties.
+ *
  * @author Florian Limpöck
  */
 public interface Mqtt3CONNECT extends Message {

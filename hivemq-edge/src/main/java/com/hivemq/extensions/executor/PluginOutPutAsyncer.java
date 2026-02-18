@@ -30,6 +30,8 @@ import org.jetbrains.annotations.NotNull;
 public interface PluginOutPutAsyncer {
 
     /**
+     * Wraps the given output in an {@link Async} with the specified timeout.
+     *
      * @param output  the original {@link PluginTaskOutput} implementation.
      * @param timeout the timeout after which the {@code outputTimeoutTransformation} should be
      *                applied to the {@code <T>} instead of the real {@link

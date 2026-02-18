@@ -19,62 +19,86 @@ import com.hivemq.mqtt.message.Message;
 import com.hivemq.mqtt.message.QoS;
 
 /**
+ * Interface for MQTT 3 PUBLISH message properties.
+ *
  * @author Florian Limpöck
  * @since 4.0.0
  */
 public interface Mqtt3PUBLISH extends Message {
 
     /**
+     * Returns the HiveMQ id of the publish message.
+     *
      * @return the hivemq id of the publish message
      */
     String getHivemqId();
 
     /**
+     * Returns the unique id of the publish message.
+     *
      * @return the unique id of the publish message
      */
     String getUniqueId();
 
     /**
-     * @return the pulish id of the publish message
+     * Returns the publish id of the publish message.
+     *
+     * @return the publish id of the publish message
      */
     long getPublishId();
 
     /**
+     * Returns the payload of the publish message.
+     *
      * @return the payload of the publish message
      */
     byte[] getPayload();
 
     /**
+     * Returns the topic of the publish message.
+     *
      * @return the topic of the publish message
      */
     String getTopic();
 
     /**
+     * Returns the duplicate delivery flag of the publish message.
+     *
      * @return the duplicate delivery flag of the publish message
      */
     boolean isDuplicateDelivery();
 
     /**
+     * Returns the retain flag of the publish message.
+     *
      * @return the retain flag of the publish message
      */
     boolean isRetain();
 
     /**
+     * Returns the message expiry interval of the publish message.
+     *
      * @return the message expiry interval (old ttl) of the publish message
      */
     long getMessageExpiryInterval();
 
     /**
+     * Returns the quality of service of the publish message.
+     *
      * @return the quality of service of the publish message
      */
     QoS getQoS();
 
     /**
+     * Returns the timestamp of the publish message.
+     *
      * @return the timestamp of the publish message
      */
     long getTimestamp();
 
     /**
+     * Returns the packet identifier of the publish message.
+     *
      * @return the packet identifier of the publish message
      */
     int getPacketIdentifier();

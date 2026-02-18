@@ -30,6 +30,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Sends MQTT AUTH messages to clients during the authentication flow.
+ *
  * @author Daniel Krüger
  * @author Florian Limpöck
  */

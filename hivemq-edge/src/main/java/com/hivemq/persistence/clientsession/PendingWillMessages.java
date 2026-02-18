@@ -49,6 +49,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Manages will messages that are pending delivery after client disconnect.
+ *
  * @author Lukas Brandl
  */
 @Singleton
@@ -64,6 +66,7 @@ public class PendingWillMessages {
     private final @NotNull DataGovernanceService dataGovernanceService;
 
     @Inject
+    @SuppressWarnings("FutureReturnValueIgnored")
     public PendingWillMessages(
             final @Persistence @NotNull ListeningScheduledExecutorService executorService,
             final @NotNull Lazy<ClientSessionPersistence> clientSessionPersistence,
@@ -76,7 +79,7 @@ public class PendingWillMessages {
         this.clientSessionLocalPersistence = clientSessionLocalPersistence;
         this.metricsHolder = metricsHolder;
         this.dataGovernanceService = dataGovernanceService;
-        executorService.scheduleAtFixedRate(
+        var unused = executorService.scheduleAtFixedRate(
                 new CheckWillsTask(), WILL_DELAY_CHECK_INTERVAL_SEC, WILL_DELAY_CHECK_INTERVAL_SEC, TimeUnit.SECONDS);
     }
 

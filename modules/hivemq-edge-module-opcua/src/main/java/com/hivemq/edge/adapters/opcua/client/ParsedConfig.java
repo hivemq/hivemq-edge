@@ -27,7 +27,6 @@ import com.hivemq.edge.adapters.opcua.util.KeystoreUtil;
 import java.io.File;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -206,8 +205,8 @@ public record ParsedConfig(
                 if (log.isDebugEnabled()) {
                     log.debug("X509 authentication is enabled");
                 }
-                identityProviders.add(new X509IdentityProvider(
-                        Arrays.asList(keyPairWithChain.certificateChain()), keyPairWithChain.privateKey()));
+                identityProviders.add(
+                        new X509IdentityProvider(keyPairWithChain.certificateChain(), keyPairWithChain.privateKey()));
             }
 
             final BasicAuth basicAuth = auth.basicAuth();

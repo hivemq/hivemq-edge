@@ -20,6 +20,8 @@ import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode;
 
 /**
+ * MQTT 5 representation of a SUBACK message.
+ *
  * @author Florian Limpöck
  * @since 4.0.0
  */

@@ -34,6 +34,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Protocol adapter information for the S7 protocol adapter.
+ *
  * @author HiveMQ Adapter Generator
  */
 public class S7ProtocolAdapterInformation implements ProtocolAdapterInformation {

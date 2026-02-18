@@ -37,6 +37,7 @@ public class SleepHandler extends SimpleChannelInboundHandler<MqttsnDisconnect> 
     public SleepHandler() {}
 
     @Override
+    @SuppressWarnings("FutureReturnValueIgnored")
     protected void channelRead0(final @NotNull ChannelHandlerContext ctx, final @NotNull MqttsnDisconnect msg)
             throws Exception {
 

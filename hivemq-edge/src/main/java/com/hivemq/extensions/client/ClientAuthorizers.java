@@ -23,6 +23,8 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Registry for per-client authorizers.
+ *
  * @author Florian Limpöck
  * @since 4.0.0
  */
@@ -44,12 +46,16 @@ public interface ClientAuthorizers {
     void removeAllForPlugin(@NotNull IsolatedExtensionClassloader pluginClassLoader);
 
     /**
+     * Returns a map of all subscription authorizers per extension id.
+     *
      * @return a map of all subscription authorizers per extension id.
      */
     @NotNull
     Map<String, SubscriptionAuthorizer> getSubscriptionAuthorizersMap();
 
     /**
+     * Returns a map of all publish authorizers per extension id.
+     *
      * @return a map of all publish authorizers per extension id.
      */
     @NotNull

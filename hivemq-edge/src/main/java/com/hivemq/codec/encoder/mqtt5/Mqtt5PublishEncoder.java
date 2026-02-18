@@ -31,12 +31,15 @@ import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Encoder for MQTT 5 PUBLISH messages.
+ *
  * @author Silvio Giebl
  * @author Florian Limpöck
  */
 @Singleton
 public class Mqtt5PublishEncoder extends Mqtt5MessageWithUserPropertiesEncoder<PUBLISH> {
 
+    @SuppressWarnings("EnumOrdinal")
     private static final int FIXED_HEADER = MessageType.PUBLISH.ordinal() << 4;
 
     public Mqtt5PublishEncoder(
@@ -108,6 +111,7 @@ public class Mqtt5PublishEncoder extends Mqtt5MessageWithUserPropertiesEncoder<P
         return propertyLength;
     }
 
+    @SuppressWarnings("EnumOrdinal")
     private static void encodeFixedHeader(final @NotNull PUBLISH publish, final @NotNull ByteBuf out) {
 
         int flags = 0;

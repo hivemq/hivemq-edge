@@ -24,6 +24,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Represents a data sample collected from an HTTP endpoint.
+ *
  * @author HiveMQ Adapter Generator
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)

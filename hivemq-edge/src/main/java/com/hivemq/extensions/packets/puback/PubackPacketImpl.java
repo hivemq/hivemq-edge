@@ -26,6 +26,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Immutable implementation of the PUBACK extension packet.
+ *
  * @author Yannick Weber
  * @author Silvio Giebl
  */
@@ -82,10 +84,9 @@ public class PubackPacketImpl implements PubackPacket {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PubackPacketImpl)) {
+        if (!(o instanceof PubackPacketImpl that)) {
             return false;
         }
-        final PubackPacketImpl that = (PubackPacketImpl) o;
         return (packetIdentifier == that.packetIdentifier)
                 && (reasonCode == that.reasonCode)
                 && Objects.equals(reasonString, that.reasonString)

@@ -101,7 +101,7 @@ public class Mqtt5DisconnectDecoder extends AbstractMqttDecoder<DISCONNECT> {
             final int propertyIdentifier = buf.readByte();
 
             switch (propertyIdentifier) {
-                case SESSION_EXPIRY_INTERVAL:
+                case SESSION_EXPIRY_INTERVAL -> {
                     sessionExpiryInterval = decodeSessionExpiryInterval(
                             clientConnection,
                             buf,
@@ -132,34 +132,31 @@ public class Mqtt5DisconnectDecoder extends AbstractMqttDecoder<DISCONNECT> {
                         }
                         sessionExpiryInterval = maxSessionExpiryInterval;
                     }
-                    break;
-
-                case SERVER_REFERENCE:
+                }
+                case SERVER_REFERENCE -> {
                     serverReference =
                             decodeServerReference(clientConnection, buf, serverReference, MessageType.DISCONNECT);
                     if (serverReference == null) {
                         return null;
                     }
-                    break;
-
-                case REASON_STRING:
+                }
+                case REASON_STRING -> {
                     reasonString = decodeReasonString(clientConnection, buf, reasonString, MessageType.DISCONNECT);
                     if (reasonString == null) {
                         return null;
                     }
-                    break;
-
-                case USER_PROPERTY:
+                }
+                case USER_PROPERTY -> {
                     userPropertiesBuilder =
                             readUserProperty(clientConnection, buf, userPropertiesBuilder, MessageType.DISCONNECT);
                     if (userPropertiesBuilder == null) {
                         return null;
                     }
-                    break;
-
-                default:
+                }
+                default -> {
                     disconnectByInvalidPropertyIdentifier(clientConnection, propertyIdentifier, MessageType.DISCONNECT);
                     return null;
+                }
             }
         }
 

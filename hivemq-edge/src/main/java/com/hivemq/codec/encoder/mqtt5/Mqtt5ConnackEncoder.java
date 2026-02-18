@@ -29,11 +29,14 @@ import io.netty.buffer.ByteBuf;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Encoder for MQTT 5 CONNACK messages.
+ *
  * @author Florian Limpöck
  */
 public class Mqtt5ConnackEncoder
         extends Mqtt5MessageWithUserPropertiesEncoder.Mqtt5MessageWithReasonStringEncoder<CONNACK> {
 
+    @SuppressWarnings("EnumOrdinal")
     private static final int CONNACK_FIXED_HEADER = MessageType.CONNACK.ordinal() << 4;
 
     public Mqtt5ConnackEncoder(

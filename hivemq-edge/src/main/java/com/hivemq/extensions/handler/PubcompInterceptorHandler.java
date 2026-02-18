@@ -49,6 +49,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Handles PUBCOMP interception for registered extension interceptors.
+ *
  * @author Yannick Weber
  * @author Silvio Giebl
  */
@@ -125,6 +127,7 @@ public class PubcompInterceptorHandler {
         }
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void handleOutboundPubcomp(
             final @NotNull ChannelHandlerContext ctx,
             final @NotNull PUBCOMP pubcomp,
@@ -179,6 +182,7 @@ public class PubcompInterceptorHandler {
         }
     }
 
+    @SuppressWarnings("EffectivelyPrivate")
     private static class PubcompInboundInterceptorContext extends PluginInOutTaskContext<PubcompInboundOutputImpl>
             implements Runnable {
 
@@ -268,6 +272,7 @@ public class PubcompInterceptorHandler {
         }
     }
 
+    @SuppressWarnings("EffectivelyPrivate")
     private static class PubcompOutboundInterceptorContext extends PluginInOutTaskContext<PubcompOutboundOutputImpl>
             implements Runnable {
 
@@ -318,6 +323,7 @@ public class PubcompInterceptorHandler {
             return false;
         }
 
+        @SuppressWarnings("FutureReturnValueIgnored")
         @Override
         public void run() {
             ctx.writeAndFlush(PUBCOMP.from(inputHolder.get().getPubcompPacket()), promise);

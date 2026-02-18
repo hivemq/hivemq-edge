@@ -26,6 +26,8 @@ import jakarta.inject.Inject;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Netty encoder that serializes outbound MQTT messages to bytes.
+ *
  * @author Dominik Obermaier
  */
 @ChannelHandler.Sharable

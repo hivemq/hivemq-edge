@@ -24,6 +24,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Represents a data sample collected from a Modbus device.
+ *
  * @author Simon L Johnson
  */
 public class ModBusData {

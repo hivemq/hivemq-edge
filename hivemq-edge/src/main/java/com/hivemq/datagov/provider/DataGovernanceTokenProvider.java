@@ -20,6 +20,8 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Provider for token replacements used in data governance pipelines.
+ *
  * @author Simon L Johnson
  */
 public interface DataGovernanceTokenProvider {

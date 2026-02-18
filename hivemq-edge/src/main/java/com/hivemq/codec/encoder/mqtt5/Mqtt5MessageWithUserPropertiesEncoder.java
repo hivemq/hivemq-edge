@@ -79,13 +79,13 @@ abstract class Mqtt5MessageWithUserPropertiesEncoder<T extends Message> implemen
             final long maximumPacketSize = calculateMaxMessageSize(clientConnection);
 
             // PUBLISH must not omit any properties
-            if (msg instanceof PUBLISH) {
+            if (msg instanceof PUBLISH publish) {
                 // The maximal packet size exceeds the clients accepted packet size
-                clientConnection.getChannel().pipeline().fireUserEventTriggered(new PublishDroppedEvent((PUBLISH) msg));
+                clientConnection.getChannel().pipeline().fireUserEventTriggered(new PublishDroppedEvent(publish));
                 messageDroppedService.publishMaxPacketSizeExceeded(
                         clientId,
-                        ((PUBLISH) msg).getTopic(),
-                        ((PUBLISH) msg).getQoS().getQosNumber(),
+                        publish.getTopic(),
+                        publish.getQoS().getQosNumber(),
                         maximumPacketSize,
                         msg.getEncodedLength());
                 if (log.isTraceEnabled()) {
@@ -188,14 +188,11 @@ abstract class Mqtt5MessageWithUserPropertiesEncoder<T extends Message> implemen
     abstract int calculatePropertyLength(@NotNull T message);
 
     int propertyLength(final @NotNull T message, final int propertyLength, final int omittedProperties) {
-        switch (omittedProperties) {
-            case 0:
-                return propertyLength;
-            case 1:
-                return propertyLength - getUserProperties(message).encodedLength();
-            default:
-                return -1;
-        }
+        return switch (omittedProperties) {
+            case 0 -> propertyLength;
+            case 1 -> propertyLength - getUserProperties(message).encodedLength();
+            default -> -1;
+        };
     }
 
     /**
@@ -209,6 +206,8 @@ abstract class Mqtt5MessageWithUserPropertiesEncoder<T extends Message> implemen
     }
 
     /**
+     * Calculates the length of the omissible properties of the MQTT message.
+     *
      * @return the length of the omissible properties of the MQTT message.
      */
     int omissiblePropertiesLength(final @NotNull T message) {
@@ -244,18 +243,15 @@ abstract class Mqtt5MessageWithUserPropertiesEncoder<T extends Message> implemen
 
         @Override
         int propertyLength(final @NotNull M message, final int propertyLength, final int omittedProperties) {
-            switch (omittedProperties) {
-                case 0:
-                    return propertyLength;
-                case 1:
-                    return propertyLength - reasonStringLength(message);
-                case 2:
-                    return propertyLength - getUserProperties(message).encodedLength();
-                default:
-                    return -1;
-            }
+            return switch (omittedProperties) {
+                case 0 -> propertyLength;
+                case 1 -> propertyLength - reasonStringLength(message);
+                case 2 -> propertyLength - getUserProperties(message).encodedLength();
+                default -> -1;
+            };
         }
 
+        @Override
         final int omissiblePropertiesLength(final @NotNull M message) {
             return reasonStringLength(message) + getUserProperties(message).encodedLength();
         }

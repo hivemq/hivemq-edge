@@ -36,7 +36,7 @@ public class FutureUtils {
 
     public static ListenableFuture<Void> voidFutureFromList(final ImmutableList<ListenableFuture<Void>> futures) {
         final SettableFuture<Void> result = SettableFuture.create();
-        Futures.whenAllComplete(futures)
+        var unused = Futures.whenAllComplete(futures)
                 .call(
                         (Callable<Void>) () -> {
                             final List<Throwable> throwables = new ArrayList<>();

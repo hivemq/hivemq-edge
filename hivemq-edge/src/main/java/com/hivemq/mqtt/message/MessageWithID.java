@@ -18,6 +18,8 @@ package com.hivemq.mqtt.message;
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
+ * Base class for MQTT messages that carry a packet identifier.
+ *
  * @author Dominik Obermaier
  * @since 1.4
  */

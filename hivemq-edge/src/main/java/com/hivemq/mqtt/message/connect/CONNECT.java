@@ -28,6 +28,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * A MQTT CONNECT message.
+ *
  * @author Florian Limpöck
  * @author Silvio Giebl
  */

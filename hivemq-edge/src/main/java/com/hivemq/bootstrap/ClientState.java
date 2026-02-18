@@ -19,6 +19,8 @@ import java.util.EnumSet;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Connection lifecycle states of an MQTT client.
+ *
  * @author Abdullah Imal
  */
 public enum ClientState {

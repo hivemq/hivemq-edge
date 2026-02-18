@@ -18,6 +18,8 @@ package com.hivemq.mqtt.message.disconnect;
 import com.hivemq.mqtt.message.MessageType;
 
 /**
+ * Represents an MQTT 3 DISCONNECT message.
+ *
  * @author Florian Limpöck
  */
 public interface Mqtt3DISCONNECT {

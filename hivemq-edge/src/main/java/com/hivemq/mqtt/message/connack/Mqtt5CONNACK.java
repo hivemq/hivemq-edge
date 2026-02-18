@@ -25,8 +25,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * @author Florian Limpöck
+ * Interface for MQTT 5 CONNACK message properties.
  *
+ * @author Florian Limpöck
  * @since 4.0.0
  */
 public interface Mqtt5CONNACK extends Message {
@@ -69,52 +70,70 @@ public interface Mqtt5CONNACK extends Message {
     boolean DEFAULT_SHARED_SUBSCRIPTION_AVAILABLE = true;
 
     /**
+     * Returns the maximum amount of not acknowledged publishes with QoS 1 or 2 the server accepts concurrently.
+     *
      * @return the maximum amount of not acknowledged publishes with QoS 1 or 2 the server accepts concurrently. The
      * default is {@link #DEFAULT_RECEIVE_MAXIMUM}.
      */
     int getReceiveMaximum();
 
     /**
+     * Returns the maximum amount of topic aliases the server accepts from the client.
+     *
      * @return the maximum amount of topic aliases the server accepts from the client. The default is {@link
      * #DEFAULT_TOPIC_ALIAS_MAXIMUM}.
      */
     int getTopicAliasMaximum();
 
     /**
+     * Returns the maximum packet size the server accepts from the client.
+     *
      * @return the maximum packet size the server accepts from the client. The default is {@link
      * #DEFAULT_MAXIMUM_PACKET_SIZE_NO_LIMIT}.
      */
     int getMaximumPacketSize();
 
     /**
+     * Returns the maximum QoS the server accepts from the client.
+     *
      * @return the maximum QoS the server accepts from the client. The default is {@link #DEFAULT_MAXIMUM_QOS}.
      */
     QoS getMaximumQoS();
 
     /**
+     * Returns whether the server accepts retained messages.
+     *
      * @return whether the server accepts retained messages. The default is {@link #DEFAULT_RETAIN_AVAILABLE}.
      */
     boolean isRetainAvailable();
 
     /**
+     * Returns whether the server accepts wildcard subscriptions.
+     *
      * @return whether the server accepts wildcard subscriptions. The default is {@link
      * #DEFAULT_WILDCARD_SUBSCRIPTION_AVAILABLE}.
      */
     boolean isWildcardSubscriptionAvailable();
 
     /**
+     * Returns whether the server accepts subscription identifiers.
+     *
      * @return whether the server accepts subscription identifiers. The default is {@link
      * #DEFAULT_SUBSCRIPTION_IDENTIFIER_AVAILABLE}.
      */
     boolean isSubscriptionIdentifierAvailable();
 
     /**
+     * Returns whether the server accepts shared subscriptions.
+     *
      * @return whether the server accepts shared subscriptions. The default is {@link
      * #DEFAULT_SHARED_SUBSCRIPTION_AVAILABLE}.
      */
     boolean isSharedSubscriptionAvailable();
 
     /**
+     * Returns the reason code of this CONNACK packet.
+     *
      * @return the reason code of this CONNACK packet.
      */
     @NotNull
@@ -131,17 +150,23 @@ public interface Mqtt5CONNACK extends Message {
     boolean isSessionPresent();
 
     /**
+     * Returns the optional session expiry interval set from the server.
+     *
      * @return the optional session expiry interval set from the server. If absent, the session expiry interval from the
      * CONNECT packet is used.
      */
     long getSessionExpiryInterval();
 
     /**
+     * Returns the optional keep alive set from the server.
+     *
      * @return the optional keep alive set from the server. If absent, the keep alive from the CONNECT packet is used.
      */
     int getServerKeepAlive();
 
     /**
+     * Returns the optional client identifier assigned by the server.
+     *
      * @return the optional client identifier assigned by the server. If absent, the client identifier from the CONNECT
      * packet is used.
      */
@@ -149,36 +174,48 @@ public interface Mqtt5CONNACK extends Message {
     String getAssignedClientIdentifier();
 
     /**
+     * Returns the authentication/authorization method.
+     *
      * @return the authentication/authorization method.
      */
     @Nullable
     String getAuthMethod();
 
     /**
+     * Returns the optional authentication/authorization data.
+     *
      * @return the optional authentication/authorization data.
      */
     @Nullable
     byte[] getAuthData();
 
     /**
+     * Returns the optional response information of this CONNACK packet to retrieve a response topic from.
+     *
      * @return the optional response information of this CONNACK packet to retrieve a response topic from.
      */
     @Nullable
     String getResponseInformation();
 
     /**
+     * Returns the optional server reference.
+     *
      * @return the optional server reference.
      */
     @Nullable
     String getServerReference();
 
     /**
+     * Returns the optional reason string of this CONNACK packet.
+     *
      * @return the optional reason string of this CONNACK packet.
      */
     @Nullable
     String getReasonString();
 
     /**
+     * Returns the optional user properties of this CONNACK packet.
+     *
      * @return the optional user properties of this CONNACK packet.
      */
     @NotNull

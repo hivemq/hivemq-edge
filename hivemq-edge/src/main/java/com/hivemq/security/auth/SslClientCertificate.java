@@ -26,51 +26,71 @@ import java.security.cert.Certificate;
 public interface SslClientCertificate {
 
     /**
+     * Returns the last certificate in the chain.
+     *
      * @return the last certificate in the chain
      */
     Certificate certificate();
 
     /**
+     * Returns the whole certificate chain.
+     *
      * @return the whole certificate chain
      */
     Certificate[] certificateChain();
 
     /**
+     * Returns the commonName from the last certificate in the chain.
+     *
      * @return the commonName from the last certificate in the chain
      */
     String commonName();
 
     /**
+     * Returns the organization from the last certificate in the chain.
+     *
      * @return the organization from the last certificate in the chain
      */
     String organization();
 
     /**
+     * Returns the organizational unit from the last certificate in the chain.
+     *
      * @return the organizational unit from the last certificate in the chain
      */
     String organizationalUnit();
 
     /**
+     * Returns the title from the last certificate in the chain.
+     *
      * @return the title from the last certificate in the chain
      */
     String title();
 
     /**
+     * Returns the serial number from the last certificate in the chain.
+     *
      * @return the serial number from the last certificate in the chain
      */
     String serial();
 
     /**
+     * Returns the country code from the last certificate in the chain.
+     *
      * @return the country code from the last certificate in the chain
      */
     String country();
 
     /**
+     * Returns the locality from the last certificate in the chain.
+     *
      * @return the locality from the last certificate in the chain
      */
     String locality();
 
     /**
+     * Returns the state from the last certificate in the chain.
+     *
      * @return the state from the last certificate in the chain
      */
     String state();

@@ -25,6 +25,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Represents a HiveMQ extension with its lifecycle and metadata.
+ *
  * @author Georg Held
  * @author Christoph Schäbel
  */
@@ -58,6 +60,8 @@ public interface HiveMQExtension {
     void clean(final boolean disable);
 
     /**
+     * Returns if the extension is enabled.
+     *
      * @return if the extension is enabled
      */
     boolean isEnabled();
@@ -68,58 +72,78 @@ public interface HiveMQExtension {
     void setDisabled();
 
     /**
+     * Returns the extension's priority which is taken from the extension's hivemq-extension.xml.
+     *
      * @return the extension's priority which is taken from the extension's hivemq-extension.xml
      */
     int getPriority();
 
     /**
+     * Returns the extension's start priority which is taken from the extension's hivemq-extension.xml.
+     *
      * @return the extension's start priority which is taken from the extension's hivemq-extension.xml
      */
     int getStartPriority();
 
     /**
+     * Returns the extension's name which is taken from the extension's hivemq-extension.xml.
+     *
      * @return the extension's name which is taken from the extension's hivemq-extension.xml
      */
     @NotNull
     String getName();
 
     /**
+     * Returns the extension's author which is taken from the extension's hivemq-extension.xml.
+     *
      * @return the extension's author which is taken from the extension's hivemq-extension.xml
      */
     @Nullable
     String getAuthor();
 
     /**
+     * Returns the extension's version which is taken from the extension's hivemq-extension.xml.
+     *
      * @return the extension's version which is taken from the extension's hivemq-extension.xml
      */
     @NotNull
     String getVersion();
 
     /**
+     * Returns the extension's id which is taken from the extension's hivemq-extension.xml.
+     *
      * @return the extension's id which is taken from the extension's hivemq-extension.xml
      */
     @NotNull
     String getId();
 
     /**
+     * Returns the {@link Class} of the extension's implementation of the {@link ExtensionMain} class.
+     *
      * @return the {@link Class} of the extension's implementation of the {@link ExtensionMain} class
      */
     @Nullable
     Class<? extends ExtensionMain> getExtensionMainClazz();
 
     /**
+     * Returns the {@link ClassLoader} used to load the {@link ExtensionMain} class.
+     *
      * @return the {@link ClassLoader} used to load the {@link ExtensionMain} class
      */
     @Nullable
     ClassLoader getExtensionClassloader();
 
     /**
+     * Returns the path to the extension's folder.
+     *
      * @return the path to the extension's folder
      */
     @NotNull
     Path getExtensionFolderPath();
 
     /**
+     * Returns the previously enabled version of the extension, or null if no previous version was enabled.
+     *
      * @return the previously enabled version of the extension, or null if no previous version was enabled
      */
     @Nullable

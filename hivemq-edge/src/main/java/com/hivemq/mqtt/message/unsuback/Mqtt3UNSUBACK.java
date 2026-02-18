@@ -19,6 +19,8 @@ import com.google.common.collect.ImmutableList;
 import com.hivemq.mqtt.message.reason.Mqtt5UnsubAckReasonCode;
 
 /**
+ * MQTT 3.x representation of an UNSUBACK message.
+ *
  * @author Florian Limpöck
  * @since 4.0.0
  */

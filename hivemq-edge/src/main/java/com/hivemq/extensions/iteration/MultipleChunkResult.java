@@ -19,6 +19,8 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Aggregated chunk result containing results from multiple persistence buckets.
+ *
  * @author Christoph Schäbel
  */
 public class MultipleChunkResult<V> {

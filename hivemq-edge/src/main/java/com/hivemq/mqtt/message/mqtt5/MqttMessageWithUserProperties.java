@@ -161,6 +161,7 @@ public abstract class MqttMessageWithUserProperties extends MessageWithID {
             super.packetIdentifier = packetIdentifier;
         }
 
+        @Override
         public int getPacketIdentifier() {
             return packetIdentifier;
         }
@@ -188,6 +189,7 @@ public abstract class MqttMessageWithUserProperties extends MessageWithID {
             this.reasonCodes = reasonCodes;
         }
 
+        @Override
         public int getPacketIdentifier() {
             return packetIdentifier;
         }

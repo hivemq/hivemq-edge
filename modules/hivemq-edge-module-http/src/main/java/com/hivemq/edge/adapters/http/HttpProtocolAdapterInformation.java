@@ -34,6 +34,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Protocol adapter information for the HTTP protocol adapter.
+ *
  * @author HiveMQ Adapter Generator
  */
 public class HttpProtocolAdapterInformation implements ProtocolAdapterInformation {

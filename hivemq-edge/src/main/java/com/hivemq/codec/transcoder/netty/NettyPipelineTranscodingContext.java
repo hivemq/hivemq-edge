@@ -31,6 +31,8 @@ import org.slj.mqtt.sn.spi.IMqttsnCodec;
 import org.slj.mqtt.sn.spi.IMqttsnMessageFactory;
 
 /**
+ * Transcoding context backed by a Netty channel pipeline.
+ *
  * @author Simon L Johnson
  */
 public class NettyPipelineTranscodingContext implements ITranscodingContext {

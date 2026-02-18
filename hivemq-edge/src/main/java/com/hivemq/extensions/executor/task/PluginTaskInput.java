@@ -16,6 +16,8 @@
 package com.hivemq.extensions.executor.task;
 
 /**
+ * Marker interface for input objects passed to plugin tasks.
+ *
  * @author Georg Held
  */
 public interface PluginTaskInput {}

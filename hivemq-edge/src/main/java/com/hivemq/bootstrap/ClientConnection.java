@@ -41,6 +41,7 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -106,7 +107,7 @@ public class ClientConnection {
     private @Nullable ClientAuthorizers extensionClientAuthorizers;
     private @Nullable ClientInformation extensionClientInformation;
     private @Nullable ConnectionInformation extensionConnectionInformation;
-    private @NotNull HashMap<String, Object> additionalInformation;
+    private @NotNull Map<String, Object> additionalInformation;
 
     public ClientConnection(final @NotNull Channel channel, final @NotNull PublishFlushHandler publishFlushHandler) {
         this.channel = channel;
@@ -135,7 +136,7 @@ public class ClientConnection {
 
     // ONLY VISIBLE FOR TESTING !!!
     // DO NOT USE IN PROD !!!
-    @VisibleForTesting()
+    @VisibleForTesting
     public void setClientStateUnsafe(final @NotNull ClientState clientState) {
         this.clientState = clientState;
     }
@@ -576,8 +577,8 @@ public class ClientConnection {
         if (socketAddress.isPresent()) {
             final SocketAddress sockAddress = socketAddress.get();
             // If this is not an InetAddress, we're treating this as if there's no address
-            if (sockAddress instanceof InetSocketAddress) {
-                return Optional.ofNullable(((InetSocketAddress) sockAddress).getAddress());
+            if (sockAddress instanceof InetSocketAddress inetSocketAddress) {
+                return Optional.ofNullable(inetSocketAddress.getAddress());
             }
         }
 
@@ -600,7 +601,7 @@ public class ClientConnection {
         authPassword = null;
     }
 
-    public @NotNull HashMap<String, Object> getAdditionalInformation() {
+    public @NotNull Map<String, Object> getAdditionalInformation() {
         return additionalInformation;
     }
 

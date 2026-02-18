@@ -21,6 +21,8 @@ import com.hivemq.mqtt.message.reason.Mqtt5PubCompReasonCode;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * MQTT 5 representation of a PUBCOMP message.
+ *
  * @author Waldemar Ruck
  * @since 4.0
  */
@@ -29,18 +31,24 @@ public interface Mqtt5PUBCOMP {
     Mqtt5PubCompReasonCode DEFAULT_REASON_CODE = Mqtt5PubCompReasonCode.SUCCESS;
 
     /**
+     * Returns the reason code of this PUBCOMP packet.
+     *
      * @return the reason code of this PUBCOMP packet.
      */
     @NotNull
     Mqtt5PubCompReasonCode getReasonCode();
 
     /**
+     * Returns the optional reason string of this PUBCOMP packet.
+     *
      * @return the optional reason string of this PUBACK packet.
      */
     @NotNull
     String getReasonString();
 
     /**
+     * Returns the optional user properties of this PUBCOMP packet.
+     *
      * @return the optional user properties of this PUBACK packet.
      */
     @NotNull

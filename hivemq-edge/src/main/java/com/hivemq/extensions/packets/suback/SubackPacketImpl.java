@@ -27,6 +27,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Immutable implementation of the SUBACK extension packet.
+ *
  * @author Robin Atherton
  * @author Silvio Giebl
  */
@@ -84,10 +86,9 @@ public class SubackPacketImpl implements SubackPacket {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof SubackPacketImpl)) {
+        if (!(o instanceof SubackPacketImpl that)) {
             return false;
         }
-        final SubackPacketImpl that = (SubackPacketImpl) o;
         return reasonCodes.equals(that.reasonCodes)
                 && Objects.equals(reasonString, that.reasonString)
                 && (packetIdentifier == that.packetIdentifier)

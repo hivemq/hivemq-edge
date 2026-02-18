@@ -77,23 +77,25 @@ public class IncomingPublishDropper {
                 clientId, publish.getTopic(), reason, publish.getQoS().getQosNumber());
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     private void dropWithoutDisconnectingMqtt3(
             final @NotNull PUBLISH publish, final @NotNull ChannelHandlerContext ctx) {
         switch (publish.getQoS()) {
-            case AT_MOST_ONCE:
+            case AT_MOST_ONCE -> {
                 // no ack for qos 0
-                break;
-            case AT_LEAST_ONCE:
+            }
+            case AT_LEAST_ONCE -> {
                 final PUBACK puback = new PUBACK(publish.getPacketIdentifier());
                 ctx.writeAndFlush(puback);
-                break;
-            case EXACTLY_ONCE:
+            }
+            case EXACTLY_ONCE -> {
                 final PUBREC pubrec = new PUBREC(publish.getPacketIdentifier());
                 ctx.writeAndFlush(pubrec);
-                break;
+            }
         }
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     private void dropPublishMqtt5(
             final @NotNull AckReasonCode ackReasonCode,
             final @Nullable String reasonString,
@@ -101,10 +103,10 @@ public class IncomingPublishDropper {
             final @NotNull ChannelHandlerContext ctx) {
 
         switch (publish.getQoS()) {
-            case AT_MOST_ONCE:
+            case AT_MOST_ONCE -> {
                 // no ack for qos 0
-                break;
-            case AT_LEAST_ONCE:
+            }
+            case AT_LEAST_ONCE -> {
                 final Mqtt5PubAckReasonCode pubackReasonCode = Mqtt5PubAckReasonCode.from(ackReasonCode);
                 final PUBACK puback = new PUBACK(
                         publish.getPacketIdentifier(),
@@ -112,8 +114,8 @@ public class IncomingPublishDropper {
                         reasonString,
                         Mqtt5UserProperties.NO_USER_PROPERTIES);
                 ctx.writeAndFlush(puback);
-                break;
-            case EXACTLY_ONCE:
+            }
+            case EXACTLY_ONCE -> {
                 final Mqtt5PubRecReasonCode pubrecReasonCode = Mqtt5PubRecReasonCode.from(ackReasonCode);
                 final PUBREC pubrec = new PUBREC(
                         publish.getPacketIdentifier(),
@@ -121,7 +123,7 @@ public class IncomingPublishDropper {
                         reasonString,
                         Mqtt5UserProperties.NO_USER_PROPERTIES);
                 ctx.writeAndFlush(pubrec);
-                break;
+            }
         }
     }
 

@@ -24,6 +24,8 @@ import org.jetbrains.annotations.Nullable;
 public interface Listener {
 
     /**
+     * Returns the port of the listener.
+     *
      * @return the port of the listener
      */
     int getPort();
@@ -31,18 +33,24 @@ public interface Listener {
     void setPort(int port);
 
     /**
+     * Returns the bind address of a listener.
+     *
      * @return the bind address of a listener
      */
     @NotNull
     String getBindAddress();
 
     /**
+     * Returns the human-readable name of the listener.
+     *
      * @return the human-readable, name of the listener
      */
     @NotNull
     String getReadableName();
 
     /**
+     * Returns the name of the listener.
+     *
      * @return the name of the listener
      * @since 4.1
      */
@@ -50,6 +58,8 @@ public interface Listener {
     String getName();
 
     /**
+     * Returns the hostname where the listener can be reached from clients.
+     *
      * @return the hostname where the listener can be reached from clients
      * @since 4.1
      */

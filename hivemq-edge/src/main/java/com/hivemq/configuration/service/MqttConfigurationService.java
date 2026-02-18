@@ -62,76 +62,106 @@ public interface MqttConfigurationService {
     }
 
     /**
+     * Returns the maximum offline queued messages per client.
+     *
      * @return the global maximum offline queued messages per client
      */
     long maxQueuedMessages();
 
     /**
+     * Returns the maximum session expiry interval for offline clients.
+     *
      * @return the maximum client session expiry interval. The session expiry interval applies to offline clients.
      */
     long maxSessionExpiryInterval();
 
     /**
+     * Returns the maximum publish message expiry interval.
+     *
      * @return the maximum publish message expire interval.
      */
     long maxMessageExpiryInterval();
 
     /**
+     * Returns the server receive maximum.
+     *
      * @return the maximum amount of concurrent QoS > 0 publishes the server allows before disconnecting the client.
      */
     int serverReceiveMaximum();
 
     /**
+     * Returns the maximum allowed MQTT packet size.
+     *
      * @return the maximum allowed MQTT packet size in bytes
      */
     int maxPacketSize();
 
     /**
+     * Returns the strategy for discarding queued messages when the queue is full.
+     *
      * @return the strategy to discard queued messages, when queue full. Default DISCARD
      */
     QueuedMessagesStrategy getQueuedMessagesStrategy();
 
     /**
+     * Returns whether retained messages are enabled.
+     *
      * @return true if retained messages are enabled, else false. Default true
      */
     boolean retainedMessagesEnabled();
 
     /**
+     * Returns whether wildcard subscriptions are enabled.
+     *
      * @return true if wildcard subscriptions are enabled, else false. Default true
      */
     boolean wildcardSubscriptionsEnabled();
 
     /**
+     * Returns the maximum QoS level the server allows.
+     *
      * @return the maximum qos the server allows. Default 2 (Exactly Once)
      */
     QoS maximumQos();
 
     /**
+     * Returns whether topic alias is enabled.
+     *
      * @return true if topic alias is enabled, else false. Default false
      */
     boolean topicAliasEnabled();
 
     /**
+     * Returns the maximum number of topic aliases per client.
+     *
      * @return the maximum amount of topic aliases a client may have. Default 10
      */
     int topicAliasMaxPerClient();
 
     /**
+     * Returns whether subscription identifiers are enabled.
+     *
      * @return true if subscription identifiers are enabled, else false. Default false
      */
     boolean subscriptionIdentifierEnabled();
 
     /**
+     * Returns whether shared subscriptions are enabled.
+     *
      * @return true if shared subscriptions are enabled, else false. Default true
      */
     boolean sharedSubscriptionsEnabled();
 
     /**
+     * Returns whether zero keep alive is allowed.
+     *
      * @return true if zero keep alive is allowed (no keep alive), else false. Default true
      */
     boolean keepAliveAllowZero();
 
     /**
+     * Returns the maximum keep alive value.
+     *
      * @return the maximum keep alive a client may have. Default 65535
      */
     int keepAliveMax();

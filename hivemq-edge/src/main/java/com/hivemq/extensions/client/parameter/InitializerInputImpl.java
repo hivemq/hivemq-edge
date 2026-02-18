@@ -26,6 +26,8 @@ import io.netty.channel.Channel;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Implementation of {@link InitializerInput} for plugin task execution.
+ *
  * @author Florian Limpöck
  * @since 4.0.0
  */

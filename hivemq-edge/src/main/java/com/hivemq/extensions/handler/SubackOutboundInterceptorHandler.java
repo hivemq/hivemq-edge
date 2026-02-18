@@ -46,6 +46,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Handles SUBACK outbound interception for registered extension interceptors.
+ *
  * @author Robin Atherton
  * @author Silvio Giebl
  */
@@ -72,6 +74,7 @@ public class SubackOutboundInterceptorHandler {
         this.executorService = executorService;
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void handleOutboundSuback(
             final @NotNull ChannelHandlerContext ctx,
             final @NotNull SUBACK suback,
@@ -126,6 +129,7 @@ public class SubackOutboundInterceptorHandler {
         }
     }
 
+    @SuppressWarnings("EffectivelyPrivate")
     private static class SubAckOutboundInterceptorContext extends PluginInOutTaskContext<SubackOutboundOutputImpl>
             implements Runnable {
 
@@ -175,6 +179,7 @@ public class SubackOutboundInterceptorHandler {
             return false;
         }
 
+        @SuppressWarnings("FutureReturnValueIgnored")
         @Override
         public void run() {
             ctx.writeAndFlush(SUBACK.from(inputHolder.get().getSubackPacket()), promise);

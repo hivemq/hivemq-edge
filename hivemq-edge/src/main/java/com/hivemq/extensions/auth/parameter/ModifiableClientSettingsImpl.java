@@ -22,6 +22,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Implementation of {@link ModifiableClientSettings} that tracks modifications.
+ *
  * @author Lukas Brandl
  */
 public class ModifiableClientSettingsImpl implements ModifiableClientSettings {
@@ -40,9 +42,9 @@ public class ModifiableClientSettingsImpl implements ModifiableClientSettings {
     @Override
     public void setClientReceiveMaximum(final int receiveMaximum) {
         Preconditions.checkArgument(
-                receiveMaximum >= 1, "Receive maximum must NOT be less than 1 was " + receiveMaximum + ".");
+                receiveMaximum >= 1, "Receive maximum must NOT be less than 1 was %s.", receiveMaximum);
         Preconditions.checkArgument(
-                receiveMaximum <= 65535, "Receive maximum must NOT be more than 65535 was " + receiveMaximum + ".");
+                receiveMaximum <= 65535, "Receive maximum must NOT be more than 65535 was %s.", receiveMaximum);
         if (this.receiveMaximum == receiveMaximum) {
             return;
         }
@@ -63,7 +65,7 @@ public class ModifiableClientSettingsImpl implements ModifiableClientSettings {
     @Override
     public void setClientQueueSizeMaximum(final long queueSizeMaximum) {
         Preconditions.checkArgument(
-                queueSizeMaximum >= 1, "Queue size maximum must NOT be less than 1, was " + queueSizeMaximum + ".");
+                queueSizeMaximum >= 1, "Queue size maximum must NOT be less than 1, was %s.", queueSizeMaximum);
         if (this.queueSizeMaximum != null && queueSizeMaximum == this.queueSizeMaximum) {
             return;
         }

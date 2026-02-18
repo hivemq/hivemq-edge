@@ -19,6 +19,8 @@ import com.hivemq.extension.sdk.api.annotations.Immutable;
 import com.hivemq.mqtt.message.subscribe.Topic;
 
 /**
+ * Immutable representation of a client subscription with topic, flags, and optional shared group.
+ *
  * @author Lukas Brandl
  */
 @Immutable

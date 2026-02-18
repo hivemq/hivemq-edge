@@ -119,10 +119,9 @@ public class KeystoreUtil {
             final Certificate[] certificateChain = keyStore.getCertificateChain(keyAlias);
 
             final X509Certificate certificateX509 = (X509Certificate) certificate;
-            final X509Certificate[] certificateChainX509 = new X509Certificate[certificateChain.length];
-            for (int i = 0; i < certificateChain.length; i++) {
-                certificateChainX509[i] = (X509Certificate) certificateChain[i];
-            }
+            final List<X509Certificate> certificateChainX509 = Arrays.stream(certificateChain)
+                    .map(cert -> (X509Certificate) cert)
+                    .toList();
 
             // Extract Application URI from certificate SAN extension
             final String applicationUri =
@@ -149,6 +148,6 @@ public class KeystoreUtil {
     public record KeyPairWithChain(
             @NotNull PrivateKey privateKey,
             @NotNull X509Certificate publicKey,
-            @NotNull X509Certificate[] certificateChain,
+            @NotNull List<X509Certificate> certificateChain,
             @Nullable String applicationUri) {}
 }

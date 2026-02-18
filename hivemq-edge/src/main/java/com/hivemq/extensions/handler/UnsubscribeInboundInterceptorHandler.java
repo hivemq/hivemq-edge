@@ -50,6 +50,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Handles UNSUBSCRIBE inbound interception for registered extension interceptors.
+ *
  * @author Robin Atherton
  * @author Silvio Giebl
  */
@@ -129,6 +131,7 @@ public class UnsubscribeInboundInterceptorHandler {
         }
     }
 
+    @SuppressWarnings("EffectivelyPrivate")
     private static class UnsubscribeInboundInterceptorContext
             extends PluginInOutTaskContext<UnsubscribeInboundOutputImpl> implements Runnable {
 
@@ -190,6 +193,7 @@ public class UnsubscribeInboundInterceptorHandler {
             }
         }
 
+        @SuppressWarnings("FutureReturnValueIgnored")
         private void prevent(final @NotNull UnsubscribeInboundOutputImpl output) {
             final int size = output.getUnsubscribePacket().getTopicFilters().size();
             final ImmutableList.Builder<Mqtt5UnsubAckReasonCode> reasonCodesBuilder = ImmutableList.builder();

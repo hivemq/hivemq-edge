@@ -16,6 +16,8 @@
 package com.hivemq.bootstrap.netty;
 
 /**
+ * Constants for Netty channel handler names used in the pipeline.
+ *
  * @author Dominik Obermaier
  * @author Christoph Schäbel
  * @author Lukas Brandl

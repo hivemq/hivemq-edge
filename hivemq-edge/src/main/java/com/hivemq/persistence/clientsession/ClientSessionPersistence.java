@@ -29,6 +29,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Persistence interface for client session data.
+ *
  * @author Lukas Brandl
  */
 public interface ClientSessionPersistence {
@@ -84,6 +86,8 @@ public interface ClientSessionPersistence {
     ListenableFuture<Void> cleanUp(int bucketIndex);
 
     /**
+     * Returns all client identifiers stored in the persistence.
+     *
      * @return a future of all client ids in the persistence.
      */
     @NotNull
@@ -172,6 +176,8 @@ public interface ClientSessionPersistence {
     ListenableFuture<Boolean> invalidateSession(@NotNull String clientId, @NotNull DisconnectSource disconnectSource);
 
     /**
+     * Returns all pending will messages.
+     *
      * @return The delay of all will messages that have not been sent yet, mapped to the client id.
      */
     @NotNull

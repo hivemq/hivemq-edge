@@ -51,6 +51,8 @@ public enum QoS {
     }
 
     /**
+     * Returns the integer value of the QoS.
+     *
      * @return the integer value of the QoS. Can be 0, 1 or 2
      */
     public int getQosNumber() {
@@ -61,12 +63,16 @@ public enum QoS {
         return qos;
     }
 
-    private static final @NotNull QoS @NotNull [] LOOKUP = new QoS[Qos.values().length];
+    @SuppressWarnings("EnumOrdinal")
+    private static final @NotNull QoS @NotNull [] LOOKUP = initLookup();
 
-    static {
+    @SuppressWarnings("EnumOrdinal")
+    private static @NotNull QoS @NotNull [] initLookup() {
+        final QoS[] lookup = new QoS[Qos.values().length];
         for (final QoS qoS : values()) {
-            LOOKUP[qoS.qos.ordinal()] = qoS;
+            lookup[qoS.qos.ordinal()] = qoS;
         }
+        return lookup;
     }
 
     /**
@@ -80,6 +86,7 @@ public enum QoS {
         return i >= 0 && i < VALUES.length ? VALUES[i] : null;
     }
 
+    @SuppressWarnings("EnumOrdinal")
     public static @NotNull QoS from(final @NotNull Qos qos) {
         return LOOKUP[qos.ordinal()];
     }

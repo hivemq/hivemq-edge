@@ -16,6 +16,8 @@
 package com.hivemq.mqttsn;
 
 /**
+ * Connection states for an MQTT-SN client.
+ *
  * @author Simon L Johnson
  */
 public enum MqttsnClientState {

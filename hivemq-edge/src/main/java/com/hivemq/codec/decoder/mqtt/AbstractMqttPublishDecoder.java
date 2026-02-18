@@ -29,6 +29,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Abstract base decoder for MQTT PUBLISH messages providing common decoding logic.
+ *
  * @author Florian Limpöck
  */
 public abstract class AbstractMqttPublishDecoder<T extends Message> extends AbstractMqttDecoder<T> {

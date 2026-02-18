@@ -23,11 +23,15 @@ package com.hivemq.mqtt.message.reason;
 public interface Mqtt5ReasonCode {
 
     /**
+     * Returns the byte code of this Reason Code.
+     *
      * @return the byte code of this Reason Code.
      */
     int getCode();
 
     /**
+     * Returns whether this Reason Code is an Error Code.
+     *
      * @return whether this Reason Code is an Error Code.
      */
     default boolean isError() {
@@ -35,6 +39,8 @@ public interface Mqtt5ReasonCode {
     }
 
     /**
+     * Returns whether this Reason Code can be sent by the server according to the MQTT 5 specification.
+     *
      * @return whether this Reason Code can be sent by the server according to the MQTT 5 specification.
      */
     default boolean canBeSentByServer() {
@@ -42,6 +48,8 @@ public interface Mqtt5ReasonCode {
     }
 
     /**
+     * Returns whether this Reason Code can be sent by the client according to the MQTT 5 specification.
+     *
      * @return whether this Reason Code can be sent by the client according to the MQTT 5 specification.
      */
     default boolean canBeSentByClient() {

@@ -16,6 +16,8 @@
 package com.hivemq.mqtt.message.mqtt5;
 
 /**
+ * Constants for MQTT 5 message property identifiers.
+ *
  * @author Lukas Brandl
  */
 public class MessageProperties {

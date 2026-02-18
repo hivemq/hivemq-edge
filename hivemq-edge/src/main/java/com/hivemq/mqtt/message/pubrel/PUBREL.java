@@ -28,6 +28,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Represents an MQTT PUBREL (Publish Release) message used in QoS 2 message delivery.
+ *
  * @since 1.4
  */
 public class PUBREL extends MqttMessageWithUserProperties.MqttMessageWithIdAndReasonCode<Mqtt5PubRelReasonCode>
@@ -128,6 +130,8 @@ public class PUBREL extends MqttMessageWithUserProperties.MqttMessageWithIdAndRe
     }
 
     /**
+     * Returns the estimated size of this PUBREL object in memory.
+     *
      * @return an approximately size of the pubrel object in bytes.
      */
     public int getEstimatedSizeInMemory() {

@@ -47,6 +47,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Handles PING interception for registered extension interceptors.
+ *
  * @author Robin Atherton
  * @author Silvio Giebl
  */
@@ -113,6 +115,7 @@ public class PingInterceptorHandler {
         }
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void handleOutboundPingResp(
             final @NotNull ChannelHandlerContext ctx,
             final @NotNull PINGRESP pingresp,
@@ -232,6 +235,7 @@ public class PingInterceptorHandler {
         }
     }
 
+    @SuppressWarnings("EffectivelyPrivate")
     private static class PingReqInboundInterceptorContext extends PluginInOutTaskContext<PingReqInboundOutputImpl>
             implements Runnable {
 
@@ -267,6 +271,7 @@ public class PingInterceptorHandler {
         }
     }
 
+    @SuppressWarnings("EffectivelyPrivate")
     private static class PingRespOutboundInterceptorContext extends PluginInOutTaskContext<PingRespOutboundOutputImpl>
             implements Runnable {
 
@@ -288,6 +293,7 @@ public class PingInterceptorHandler {
             this.promise = promise;
         }
 
+        @Override
         public void pluginPost(final @NotNull PingRespOutboundOutputImpl pluginOutput) {
             finishInterceptor();
         }
@@ -298,6 +304,7 @@ public class PingInterceptorHandler {
             }
         }
 
+        @SuppressWarnings("FutureReturnValueIgnored")
         @Override
         public void run() {
             ctx.writeAndFlush(PINGRESP.INSTANCE, promise);

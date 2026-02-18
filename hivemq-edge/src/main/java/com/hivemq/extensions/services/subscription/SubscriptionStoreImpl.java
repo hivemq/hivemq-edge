@@ -406,7 +406,7 @@ public class SubscriptionStoreImpl implements SubscriptionStore {
             final @NotNull Executor callbackExecutor) {
 
         Preconditions.checkNotNull(callback, "Callback cannot be null");
-        Preconditions.checkNotNull(callback, "Callback executor cannot be null");
+        Preconditions.checkNotNull(callbackExecutor, "Callback executor cannot be null");
 
         if (rateLimitService.rateLimitExceeded()) {
             return CompletableFuture.failedFuture(PluginServiceRateLimitService.RATE_LIMIT_EXCEEDED_EXCEPTION);

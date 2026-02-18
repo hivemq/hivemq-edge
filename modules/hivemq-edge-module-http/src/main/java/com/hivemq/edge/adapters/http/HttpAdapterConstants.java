@@ -16,6 +16,8 @@
 package com.hivemq.edge.adapters.http;
 
 /**
+ * Constants for the HTTP protocol adapter configuration.
+ *
  * @author Simon L Johnson
  */
 public interface HttpAdapterConstants {

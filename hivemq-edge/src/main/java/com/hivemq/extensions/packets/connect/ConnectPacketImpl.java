@@ -30,6 +30,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Immutable implementation of {@link ConnectPacket} for the extension system.
+ *
  * @author Georg Held
  * @author Robin Atherton
  * @author Silvio Giebl
@@ -200,10 +202,9 @@ public class ConnectPacketImpl implements ConnectPacket {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ConnectPacketImpl)) {
+        if (!(o instanceof ConnectPacketImpl that)) {
             return false;
         }
-        final ConnectPacketImpl that = (ConnectPacketImpl) o;
         return (mqttVersion == that.mqttVersion)
                 && clientId.equals(that.clientId)
                 && (cleanStart == that.cleanStart)

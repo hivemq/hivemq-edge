@@ -24,6 +24,8 @@ import com.hivemq.extension.sdk.api.interceptor.protocoladapter.ProtocolAdapterP
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Registry for interceptor providers used by extensions.
+ *
  * @author Lukas Brandl
  * @since 4.2.0
  */

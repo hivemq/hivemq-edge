@@ -26,6 +26,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Immutable implementation of the PUBCOMP extension packet.
+ *
  * @author Yannick Weber
  * @author Silvio Giebl
  */
@@ -82,10 +84,9 @@ public class PubcompPacketImpl implements PubcompPacket {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PubcompPacketImpl)) {
+        if (!(o instanceof PubcompPacketImpl that)) {
             return false;
         }
-        final PubcompPacketImpl that = (PubcompPacketImpl) o;
         return (packetIdentifier == that.packetIdentifier)
                 && (reasonCode == that.reasonCode)
                 && Objects.equals(reasonString, that.reasonString)

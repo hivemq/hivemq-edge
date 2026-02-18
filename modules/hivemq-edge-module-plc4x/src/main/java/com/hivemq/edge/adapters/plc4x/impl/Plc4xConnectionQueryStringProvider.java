@@ -19,6 +19,8 @@ import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Provides the connection query string for a PLC4X adapter configuration.
+ *
  * @author Simon L Johnson
  */
 public interface Plc4xConnectionQueryStringProvider<T extends Plc4XSpecificAdapterConfig> {

@@ -44,6 +44,7 @@ plugins {
     id("com.hivemq.repository-convention")
     id("com.hivemq.jacoco-convention")
     id("com.hivemq.spotless-convention")
+    id("com.hivemq.errorprone-convention")
 }
 
 group = "com.hivemq"

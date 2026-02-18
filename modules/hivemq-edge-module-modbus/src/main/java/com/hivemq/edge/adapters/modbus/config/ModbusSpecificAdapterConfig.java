@@ -29,6 +29,7 @@ public class ModbusSpecificAdapterConfig implements ProtocolSpecificAdapterConfi
     public static final int PORT_MAX = 65535;
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
+    @SuppressWarnings("UnusedVariable")
     @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
     @ModuleConfigField(
             title = "Identifier",

@@ -183,7 +183,7 @@ public class ConnectionPersistenceImpl implements ConnectionPersistence {
             }
         }
 
-        Futures.whenAllComplete(closeFutures)
+        var unused = Futures.whenAllComplete(closeFutures)
                 .run(
                         () -> {
                             shutDownPartition(connectionPartitions, index + 1, closeFuture);

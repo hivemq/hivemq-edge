@@ -20,6 +20,8 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Result of a data governance pipeline execution.
+ *
  * @author Simon L Johnson
  */
 public interface DataGovernanceResult {

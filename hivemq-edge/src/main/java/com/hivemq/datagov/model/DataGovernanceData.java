@@ -19,6 +19,8 @@ import com.hivemq.mqtt.message.publish.PUBLISH;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Data container holding the publish message and client context for data governance.
+ *
  * @author Simon L Johnson
  */
 public interface DataGovernanceData {

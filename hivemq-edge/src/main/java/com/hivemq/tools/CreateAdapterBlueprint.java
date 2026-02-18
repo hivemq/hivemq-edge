@@ -234,7 +234,7 @@ public class CreateAdapterBlueprint {
         while (value == null) {
             output.printf("%s (Please select one) : %n", question);
             for (int i = 0; i < choices.length; i++) {
-                output.print(String.format("%d : ", i + 1, choices[i]));
+                output.print(String.format("%d : %s", i + 1, choices[i]));
             }
             value = input.nextLine();
             value = value.trim();

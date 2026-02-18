@@ -18,6 +18,8 @@ package com.hivemq.mqtt.handler.publish;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Delivery status of a PUBLISH message.
+ *
  * @author Christoph Schäbel
  */
 public enum PublishStatus {

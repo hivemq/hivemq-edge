@@ -71,7 +71,7 @@ public class EventLog {
     public void messageDropped(
             final @Nullable String clientId,
             final @Nullable String topic,
-            final @NotNull int qos,
+            final int qos,
             final @NotNull String reason) {
         logMessageDropped.debug(
                 "Outgoing publish message was dropped. Receiving client: {}, topic: {}, qos: {}, reason: {}.",
@@ -90,10 +90,7 @@ public class EventLog {
      * @param reason why the message was dropped
      */
     public void sharedSubscriptionMessageDropped(
-            final @Nullable String group,
-            final @Nullable String topic,
-            final @NotNull int qos,
-            final @NotNull String reason) {
+            final @Nullable String group, final @Nullable String topic, final int qos, final @NotNull String reason) {
         logMessageDropped.debug(
                 "Outgoing publish message was dropped. Receiving shared subscription group: {}, topic: {}, qos: {}, reason: {}.",
                 valueOrUnknown(group),

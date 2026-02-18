@@ -18,6 +18,8 @@ package com.hivemq.mqtt.message.connack;
 import com.hivemq.mqtt.message.Message;
 
 /**
+ * Represents an MQTT 3 CONNACK message.
+ *
  * @author Florian Limpöck
  *
  * @since 4.0.0
@@ -34,6 +36,8 @@ public interface Mqtt3CONNACK extends Message {
     boolean isSessionPresent();
 
     /**
+     * Returns the {@link Mqtt3ConnAckReturnCode} of the CONNACK message.
+     *
      * @return the {@link Mqtt3ConnAckReturnCode} of the CONNACK message
      */
     Mqtt3ConnAckReturnCode getReturnCode();

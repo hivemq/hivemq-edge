@@ -19,6 +19,8 @@ import java.io.Serializable;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Base interface for all MQTT messages.
+ *
  * @author Dominik Obermaier
  * @author Florian Limpöck
  * @since 1.4

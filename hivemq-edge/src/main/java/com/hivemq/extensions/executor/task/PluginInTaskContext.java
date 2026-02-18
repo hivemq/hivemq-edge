@@ -18,6 +18,8 @@ package com.hivemq.extensions.executor.task;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Task context for inbound plugin task execution.
+ *
  * @author Georg Held
  */
 public abstract class PluginInTaskContext extends AbstractPluginTaskContext {

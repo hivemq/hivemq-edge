@@ -18,6 +18,8 @@ package com.hivemq.api.mqtt;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * Return codes indicating the outcome of a publish operation.
+ *
  * @author Florian Limpöck
  * @since 4.0.0
  */

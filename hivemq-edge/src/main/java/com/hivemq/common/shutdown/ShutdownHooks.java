@@ -91,12 +91,15 @@ public class ShutdownHooks {
     }
 
     /**
+     * Returns the registry of all shutdown hooks.
+     *
      * @return A registry of all Shutdown Hooks.
      */
     public @NotNull Multimap<Integer, HiveMQShutdownHook> getShutdownHooks() {
         return synchronousHooks;
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void runShutdownHooks() {
         shuttingDown.set(true);
         log.info("Shutting down HiveMQ. Please wait, this could take a while...");

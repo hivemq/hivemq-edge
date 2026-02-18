@@ -97,6 +97,7 @@ public class ScheduledCleanUpServiceTest {
     }
 
     @Test
+    @SuppressWarnings("DoNotMock")
     public void scheduleCleanUpTask_whenCalledRepeatedly_iteratesThroughBucketsAndPersistences() {
         final ListeningScheduledExecutorService scheduledExecutorService =
                 mock(ListeningScheduledExecutorService.class);
@@ -111,7 +112,7 @@ public class ScheduledCleanUpServiceTest {
         final ArgumentCaptor<ScheduledCleanUpService.CleanUpTask> argumentCaptor =
                 ArgumentCaptor.forClass(ScheduledCleanUpService.CleanUpTask.class);
         when(scheduledExecutorService.schedule(argumentCaptor.capture(), anyLong(), any(TimeUnit.class)))
-                .thenReturn(mock(ListenableScheduledFuture.class));
+                .thenReturn(mockListenableScheduledFuture());
 
         for (int bucketIndex = 0; bucketIndex < 64; bucketIndex++) {
             for (int persistenceIndex = 0;
@@ -166,5 +167,10 @@ public class ScheduledCleanUpServiceTest {
                 new ScheduledCleanUpService.CleanUpTask(scheduledCleanUpService, scheduledExecutorService, 1, 1, 1);
         task.call();
         Awaitility.waitAtMost(timeout).until(scheduledNextTask::get);
+    }
+
+    @SuppressWarnings("DoNotMock")
+    private static <T> ListenableScheduledFuture<T> mockListenableScheduledFuture() {
+        return mock(ListenableScheduledFuture.class);
     }
 }

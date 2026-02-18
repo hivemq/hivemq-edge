@@ -30,6 +30,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Immutable implementation of {@link PublishPacket} for the extension system.
+ *
  * @author Florian Limpöck
  * @author Silvio Giebl
  * @since 4.0.0
@@ -193,10 +195,9 @@ public class PublishPacketImpl implements PublishPacket {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PublishPacketImpl)) {
+        if (!(o instanceof PublishPacketImpl that)) {
             return false;
         }
-        final PublishPacketImpl that = (PublishPacketImpl) o;
         return that.canEqual(this)
                 && topic.equals(that.topic)
                 && (qos == that.qos)
