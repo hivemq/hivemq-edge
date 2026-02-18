@@ -15,16 +15,13 @@
  */
 package com.hivemq.api.auth.provider.impl.ldap;
 
-import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.entity.api.ldap.UserRoleEntity;
 import com.hivemq.logging.SecurityLog;
-import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.DereferencePolicy;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPConnectionPool;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.PruneUnneededConnectionsLDAPConnectionPoolHealthCheck;
-import com.unboundid.ldap.sdk.RDN;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.RoundRobinServerSet;
 import com.unboundid.ldap.sdk.SearchRequest;
@@ -69,7 +66,6 @@ public class LdapClient {
     private final @NotNull SecurityLog securityLog;
     private volatile UserDnResolver userDnResolver;
     private volatile LDAPConnectionPool connectionPool;
-    private volatile SimpleBindRequest adminBindRequest;
     private volatile boolean started = false;
 
     /**
@@ -121,17 +117,9 @@ public class LdapClient {
             }
         }
 
-        final var simpleBindEntity = connectionProperties.ldapSimpleBind();
-        final var baseDn = new DN(connectionProperties.rdns());
-
-        final var bindDn = new DN(ImmutableList.<RDN>builder()
-                .add(new DN(simpleBindEntity.rdns()).getRDNs())
-                .add(baseDn.getRDNs())
-                .build());
-
-        final var bindRequest = new SimpleBindRequest(bindDn, simpleBindEntity.userPassword());
-        // Store admin bind request for re-authenticating connections after user authentication
-        this.adminBindRequest = bindRequest;
+        final var bindRequest = new SimpleBindRequest(
+                connectionProperties.getEffectiveServiceAccountDn(),
+                connectionProperties.ldapSimpleBind().userPassword());
 
         final int maxConnections = connectionProperties.maxConnections();
         final int minConnections = Math.min(1, maxConnections);
@@ -159,7 +147,8 @@ public class LdapClient {
                     ldapConnectionPoolHealthCheck);
 
             // Create the DN resolver now that the connection pool is available
-            // This is required for Directory Descent (search-based) resolution
+            // We delay it until here, because the directory descent resolver checks for the existence of a pool
+            // (though it only needs it later when we eventually resolve a username)
             userDnResolver = connectionProperties.createUserDnResolver(connectionPool);
 
             started = true;
@@ -191,7 +180,6 @@ public class LdapClient {
         }
 
         userDnResolver = null;
-        adminBindRequest = null;
         started = false;
         log.info("LDAP client stopped successfully");
     }
@@ -281,11 +269,14 @@ public class LdapClient {
      */
     public @NotNull Set<String> getRolesForUser(
             final @NotNull String username, final @Nullable List<UserRoleEntity> userRoles) throws LDAPException {
+
         ensureStarted();
+
         if (userRoles == null || userRoles.isEmpty()) {
             log.debug("No user roles configured, returning empty set");
             return Set.of();
         }
+
         // Resolve username to DN
         final String userDn;
         try {
@@ -295,7 +286,9 @@ public class LdapClient {
             log.error("Failed to resolve DN for user '{}': {}", username, e.getMessage());
             throw e;
         }
+
         final Set<String> matchedRoles = new HashSet<>();
+
         // Execute each role query
         for (final var userRole : userRoles) {
             final String role = userRole.getRole();
@@ -309,9 +302,8 @@ public class LdapClient {
                 final var filter = Filter.create(query);
 
                 // Create search request
-                // We search from the base DN with subtree scope to find any matching entries
                 final var searchRequest = new SearchRequest(
-                        connectionProperties.rdns(),
+                        connectionProperties.getEffectiveQueryRootDn(),
                         SearchScope.SUB,
                         DereferencePolicy.NEVER,
                         1, // Size limit - we only need to know if there's at least one match

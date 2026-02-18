@@ -54,22 +54,69 @@
                 <connect-timeout-millis>5000</connect-timeout-millis>    <!-- 5 seconds -->
                 <response-timeout-millis>10000</response-timeout-millis>  <!-- 10 seconds -->
 
+                <!-- Optional: Maximum number of connections in the pool -->
+                <max-connections>5</max-connections>
+
                 <!--
-                    User DN Template
-                    Defines how usernames are mapped to LDAP Distinguished Names.
-                    Placeholders:
-                    - {username}: The username entered in the login form
-                    - {baseDn}: The base DN specified below
-
-                    Examples:
-                    - OpenLDAP: uid={username},ou=people,{baseDn}
-                    - Active Directory: cn={username},cn=Users,{baseDn}
-                    - Email-based: mail={username},ou=staff,{baseDn}
+                    User Identifier Attribute
+                    The LDAP attribute used to identify users (default: uid)
+                    Common values: uid, cn, sAMAccountName (Active Directory)
                 -->
-                <user-dn-template>uid={username},ou=people,{baseDn}</user-dn-template>
+                <uid-attribute>uid</uid-attribute>
 
-                <!-- Base DN: The root of your LDAP directory tree -->
+                <!--
+                    Relative Distinguished Names (RDNs)
+                    - NEW MODE (with base-dn below): Specify relative path (e.g., "ou=people")
+                    - LEGACY MODE (without base-dn): Specify absolute DN (e.g., "ou=people,dc=example,dc=com")
+
+                    This is combined with uid-attribute to form user DNs:
+                    - User DN will be: uid={username},ou=people,dc=example,dc=com
+                -->
+                <rdns>ou=people</rdns>
+
+                <!--
+                    Base DN (Optional)
+                    The root of your LDAP directory tree.
+
+                    NEW MODE: When specified, both rdns and service account rdns are relative to this.
+                    This allows service accounts in different OUs than users:
+                    - User search base: rdns + base-dn = "ou=people,dc=example,dc=com"
+                    - Service account: service rdns + base-dn = "cn=admin,ou=system,dc=example,dc=com"
+
+                    LEGACY MODE: If omitted, rdns is treated as absolute DN.
+                -->
                 <base-dn>dc=example,dc=com</base-dn>
+
+                <!--
+                    Optional: Object class filter for user entries
+                    Only entries with this object class will be considered valid users
+                -->
+                <required-object-class>inetOrgPerson</required-object-class>
+
+                <!--
+                    Directory Descent Mode (Optional)
+                    - false (default): Direct binding - faster, uses uid-attribute and rdns
+                    - true: Search mode - searches for user in directory tree, more flexible
+                -->
+                <directory-descent>false</directory-descent>
+
+                <!-- Optional: Search timeout for directory descent mode (in seconds) -->
+                <search-timeout-seconds>5</search-timeout-seconds>
+
+                <!--
+                    Service Account Configuration
+                    The LDAP account used to bind to the server for user lookups.
+
+                    NEW MODE (with base-dn): rdns is relative to base-dn
+                    - Example: cn=admin,ou=system + dc=example,dc=com = cn=admin,ou=system,dc=example,dc=com
+
+                    LEGACY MODE (without base-dn): rdns is relative to the base rdns above
+                    - Example: cn=admin + ou=people,dc=example,dc=com = cn=admin,ou=people,dc=example,dc=com
+                -->
+                <simple-bind>
+                    <rdns>cn=admin,ou=system</rdns>
+                    <user-password>admin-password</user-password>
+                </simple-bind>
             </ldap-authentication>
         </ldap>
     </admin-api>
