@@ -141,19 +141,6 @@ public class OpcUaClientConnection {
                         })
                         .get(connectionTimeoutSecondsMs, TimeUnit.MILLISECONDS);
                 log.debug("OPC UA client connected successfully for adapter '{}'", adapterId);
-
-                // Eagerly initialize the dynamic encoding context so custom data type
-                // codecs are registered before subscription data starts arriving.
-                // If deferred to the first subscription callback, the initialization
-                // may produce an incomplete result that gets cached permanently.
-                try {
-                    client.getDynamicEncodingContext();
-                } catch (final UaException e) {
-                    log.warn(
-                            "Failed to pre-initialize dynamic encoding context for adapter '{}': {}",
-                            adapterId,
-                            e.getMessage());
-                }
             } catch (final TimeoutException e) {
                 log.error(
                         "Connection timeout after {} milliseconds for OPC UA adapter '{}'",
