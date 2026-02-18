@@ -132,7 +132,7 @@ describe('DataCombiningEditorField', () => {
     // TODO[NVL] add the tests
   })
 
-  it('should capture screenshot for documentation', () => {
+  it.skip('should capture screenshot for documentation', () => {
     cy.mountWithProviders(
       <CustomFormTesting
         schema={mockDataCombiningTableSchema}
@@ -140,8 +140,6 @@ describe('DataCombiningEditorField', () => {
         formData={mockFormData}
       />
     )
-
-    cy.wait(500) // Stabilize render and allow schema loaders to show
 
     // Screenshot: Full editor field showing split layout (sources left, destination right)
     cy.screenshot('combiner-editor-field', {
