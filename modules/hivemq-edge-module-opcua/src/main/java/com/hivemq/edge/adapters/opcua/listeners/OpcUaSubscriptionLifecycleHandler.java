@@ -325,9 +325,8 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
 
     private @NotNull String extractPayload(final @NotNull OpcUaClient client, final @NotNull DataValue value)
             throws UaException {
-        final ByteBuffer byteBuffer = OpcUaToJsonConverter.convertPayload(client.getDynamicEncodingContext(),
-                value,
-                config.isIncludeMetadata());
+        final ByteBuffer byteBuffer = OpcUaToJsonConverter.convertPayload(
+                client.getDynamicEncodingContext(), value, config.isIncludeMetadata());
         final byte[] buffer = new byte[byteBuffer.remaining()];
         byteBuffer.get(buffer);
         return new String(buffer, StandardCharsets.UTF_8);

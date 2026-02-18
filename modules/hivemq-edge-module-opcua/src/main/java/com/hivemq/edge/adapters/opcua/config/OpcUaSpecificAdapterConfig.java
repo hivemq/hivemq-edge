@@ -100,9 +100,10 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
     private final @NotNull ConnectionOptions connectionOptions;
 
     @JsonProperty("includeMetadata")
-    @ModuleConfigField(title = "Include Metadata",
-                       description = "Include OPC UA metadata (timestamps, status code) in JSON output and schema",
-                       defaultValue = "false")
+    @ModuleConfigField(
+            title = "Include Metadata",
+            description = "Include OPC UA metadata (timestamps, status code) in JSON output and schema",
+            defaultValue = "false")
     private final boolean includeMetadata;
 
     @JsonCreator
@@ -167,16 +168,16 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (!(o instanceof OpcUaSpecificAdapterConfig that)) return false;
-        return getOverrideUri().equals(that.getOverrideUri()) &&
-                includeMetadata == that.includeMetadata &&
-                Objects.equals(id, that.id) &&
-                Objects.equals(getUri(), that.getUri()) &&
-                Objects.equals(getApplicationUri(), that.getApplicationUri()) &&
-                Objects.equals(getAuth(), that.getAuth()) &&
-                Objects.equals(getTls(), that.getTls()) &&
-                Objects.equals(getSecurity(), that.getSecurity()) &&
-                Objects.equals(getOpcuaToMqttConfig(), that.getOpcuaToMqttConfig()) &&
-                Objects.equals(connectionOptions, that.connectionOptions);
+        return getOverrideUri().equals(that.getOverrideUri())
+                && includeMetadata == that.includeMetadata
+                && Objects.equals(id, that.id)
+                && Objects.equals(getUri(), that.getUri())
+                && Objects.equals(getApplicationUri(), that.getApplicationUri())
+                && Objects.equals(getAuth(), that.getAuth())
+                && Objects.equals(getTls(), that.getTls())
+                && Objects.equals(getSecurity(), that.getSecurity())
+                && Objects.equals(getOpcuaToMqttConfig(), that.getOpcuaToMqttConfig())
+                && Objects.equals(connectionOptions, that.connectionOptions);
     }
 
     @Override
@@ -196,30 +197,29 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
 
     @Override
     public String toString() {
-        return "OpcUaSpecificAdapterConfig{" +
-                "id='" +
-                id +
-                '\'' +
-                ", uri='" +
-                uri +
-                '\'' +
-                ", overrideUri=" +
-                overrideUri +
-                ", applicationUri='" +
-                applicationUri +
-                '\'' +
-                ", auth=" +
-                auth +
-                ", tls=" +
-                tls +
-                ", security=" +
-                security +
-                ", opcuaToMqttConfig=" +
-                opcuaToMqttConfig +
-                ", connectionOptions=" +
-                connectionOptions +
-                ", includeMetadata=" +
-                includeMetadata +
-                '}';
+        return "OpcUaSpecificAdapterConfig{" + "id='"
+                + id
+                + '\''
+                + ", uri='"
+                + uri
+                + '\''
+                + ", overrideUri="
+                + overrideUri
+                + ", applicationUri='"
+                + applicationUri
+                + '\''
+                + ", auth="
+                + auth
+                + ", tls="
+                + tls
+                + ", security="
+                + security
+                + ", opcuaToMqttConfig="
+                + opcuaToMqttConfig
+                + ", connectionOptions="
+                + connectionOptions
+                + ", includeMetadata="
+                + includeMetadata
+                + '}';
     }
 }

@@ -15,6 +15,8 @@
  */
 package com.hivemq.edge.adapters.opcua.southbound;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -23,8 +25,6 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class BuiltinJsonSchemaTest {
 
@@ -112,20 +112,23 @@ class BuiltinJsonSchemaTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = OpcUaDataType.class, names = {
-            "Boolean",
-            "Byte",
-            "SByte",
-            "Int16",
-            "UInt16",
-            "Int32",
-            "UInt32",
-            "Int64",
-            "UInt64",
-            "Float",
-            "Double",
-            "String",
-            "DateTime"})
+    @EnumSource(
+            value = OpcUaDataType.class,
+            names = {
+                "Boolean",
+                "Byte",
+                "SByte",
+                "Int16",
+                "UInt16",
+                "Int32",
+                "UInt32",
+                "Int64",
+                "UInt64",
+                "Float",
+                "Double",
+                "String",
+                "DateTime"
+            })
     void whenCreateJsonSchemaForBuiltInTypeWithMetadata_thenSchemaContainsMetadataProperties(
             final OpcUaDataType dataType) {
         final JsonNode schema = BuiltinJsonSchema.createJsonSchemaForBuiltInType(dataType, true);
@@ -143,26 +146,31 @@ class BuiltinJsonSchemaTest {
         // Verify metadata properties are readOnly
         assertThat(properties.get("sourceTime").get("readOnly").asBoolean()).isTrue();
         assertThat(properties.get("serverTime").get("readOnly").asBoolean()).isTrue();
-        assertThat(properties.get("sourcePicoseconds").get("readOnly").asBoolean()).isTrue();
-        assertThat(properties.get("serverPicoseconds").get("readOnly").asBoolean()).isTrue();
+        assertThat(properties.get("sourcePicoseconds").get("readOnly").asBoolean())
+                .isTrue();
+        assertThat(properties.get("serverPicoseconds").get("readOnly").asBoolean())
+                .isTrue();
         assertThat(properties.get("statusCode").get("readOnly").asBoolean()).isTrue();
     }
 
     @ParameterizedTest
-    @EnumSource(value = OpcUaDataType.class, names = {
-            "Boolean",
-            "Byte",
-            "SByte",
-            "Int16",
-            "UInt16",
-            "Int32",
-            "UInt32",
-            "Int64",
-            "UInt64",
-            "Float",
-            "Double",
-            "String",
-            "DateTime"})
+    @EnumSource(
+            value = OpcUaDataType.class,
+            names = {
+                "Boolean",
+                "Byte",
+                "SByte",
+                "Int16",
+                "UInt16",
+                "Int32",
+                "UInt32",
+                "Int64",
+                "UInt64",
+                "Float",
+                "Double",
+                "String",
+                "DateTime"
+            })
     void whenCreateJsonSchemaForBuiltInTypeWithoutMetadata_thenSchemaDoesNotContainMetadataProperties(
             final OpcUaDataType dataType) {
         final JsonNode schema = BuiltinJsonSchema.createJsonSchemaForBuiltInType(dataType, false);
@@ -180,7 +188,7 @@ class BuiltinJsonSchemaTest {
 
     @Test
     void whenCreateJsonSchemaForArrayTypeWithMetadata_thenSchemaContainsMetadataProperties() {
-        final UInteger[] dimensions = new UInteger[]{UInteger.valueOf(10)};
+        final UInteger[] dimensions = new UInteger[] {UInteger.valueOf(10)};
 
         final JsonNode schema = BuiltinJsonSchema.createJsonSchemaForArrayType(OpcUaDataType.Int32, dimensions, true);
 
@@ -200,7 +208,7 @@ class BuiltinJsonSchemaTest {
 
     @Test
     void whenCreateJsonSchemaForArrayTypeWithoutMetadata_thenSchemaDoesNotContainMetadataProperties() {
-        final UInteger[] dimensions = new UInteger[]{UInteger.valueOf(10)};
+        final UInteger[] dimensions = new UInteger[] {UInteger.valueOf(10)};
 
         final JsonNode schema = BuiltinJsonSchema.createJsonSchemaForArrayType(OpcUaDataType.Int32, dimensions, false);
 

@@ -15,6 +15,12 @@
  */
 package com.hivemq.edge.adapters.opcua.northbound;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
@@ -37,6 +43,12 @@ import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.protocols.ProtocolAdapterStopOutputImpl;
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.jetbrains.annotations.NotNull;
@@ -46,19 +58,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import util.EmbeddedOpcUaServerExtension;
-
-import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class OpcUaToJsonConverterMetadataIntegrationTest {
 
@@ -74,12 +73,12 @@ class OpcUaToJsonConverterMetadataIntegrationTest {
     @BeforeEach
     public void before() {
         receivedDataPoints.clear();
-        when(protocolAdapterInput.getProtocolAdapterState()).thenReturn(new ProtocolAdapterStateImpl(mock(),
-                "id",
-                "protocolId"));
+        when(protocolAdapterInput.getProtocolAdapterState())
+                .thenReturn(new ProtocolAdapterStateImpl(mock(), "id", "protocolId"));
         when(protocolAdapterInput.moduleServices()).thenReturn(moduleServices);
         when(protocolAdapterInput.adapterFactories()).thenReturn(adapterFactories);
-        when(protocolAdapterInput.getProtocolAdapterMetricsHelper()).thenReturn(mock(ProtocolAdapterMetricsService.class));
+        when(protocolAdapterInput.getProtocolAdapterMetricsHelper())
+                .thenReturn(mock(ProtocolAdapterMetricsService.class));
         when(eventService.createAdapterEvent(any(), any())).thenReturn(new EventBuilderImpl(event -> {}));
         when(moduleServices.eventService()).thenReturn(eventService);
         when(moduleServices.protocolAdapterTagStreamingService()).thenReturn(receivedDataPoints::put);
@@ -92,8 +91,7 @@ class OpcUaToJsonConverterMetadataIntegrationTest {
 
             @Override
             public @NotNull DataPoint createJsonDataPoint(
-                    final @NotNull String tagName,
-                    final @NotNull Object tagValue) {
+                    final @NotNull String tagName, final @NotNull Object tagValue) {
                 return new DataPointImpl(tagName, tagValue, true);
             }
         });
@@ -108,12 +106,11 @@ class OpcUaToJsonConverterMetadataIntegrationTest {
 
         final OpcUaProtocolAdapter protocolAdapter = createAndStartAdapterWithMetadata(nodeId, true);
 
-        await().until(() -> ProtocolAdapterState.ConnectionStatus.CONNECTED.equals(protocolAdapter.getProtocolAdapterState()
-                .getConnectionStatus()));
+        await().until(() -> ProtocolAdapterState.ConnectionStatus.CONNECTED.equals(
+                protocolAdapter.getProtocolAdapterState().getConnectionStatus()));
 
         final var received = expectAdapterPublish();
-        protocolAdapter.stop(new ProtocolAdapterStopInput() {
-        }, new ProtocolAdapterStopOutputImpl());
+        protocolAdapter.stop(new ProtocolAdapterStopInput() {}, new ProtocolAdapterStopOutputImpl());
 
         assertThat(received).containsKey(nodeId);
         final List<DataPoint> dataPoints = received.get(nodeId);
@@ -133,12 +130,11 @@ class OpcUaToJsonConverterMetadataIntegrationTest {
 
         final OpcUaProtocolAdapter protocolAdapter = createAndStartAdapterWithMetadata(nodeId, false);
 
-        await().until(() -> ProtocolAdapterState.ConnectionStatus.CONNECTED.equals(protocolAdapter.getProtocolAdapterState()
-                .getConnectionStatus()));
+        await().until(() -> ProtocolAdapterState.ConnectionStatus.CONNECTED.equals(
+                protocolAdapter.getProtocolAdapterState().getConnectionStatus()));
 
         final var received = expectAdapterPublish();
-        protocolAdapter.stop(new ProtocolAdapterStopInput() {
-        }, new ProtocolAdapterStopOutputImpl());
+        protocolAdapter.stop(new ProtocolAdapterStopInput() {}, new ProtocolAdapterStopOutputImpl());
 
         assertThat(received).containsKey(nodeId);
         final List<DataPoint> dataPoints = received.get(nodeId);
@@ -152,11 +148,11 @@ class OpcUaToJsonConverterMetadataIntegrationTest {
 
     @NotNull
     private OpcUaProtocolAdapter createAndStartAdapterWithMetadata(
-            final @NotNull String subscribedNodeId,
-            final boolean includeMetadata) throws Exception {
+            final @NotNull String subscribedNodeId, final boolean includeMetadata) throws Exception {
 
         final OpcUaToMqttConfig opcuaToMqttConfig = new OpcUaToMqttConfig(1, 1000);
-        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(opcUaServerExtension.getServerUri(),
+        final OpcUaSpecificAdapterConfig config = new OpcUaSpecificAdapterConfig(
+                opcUaServerExtension.getServerUri(),
                 false,
                 null,
                 null,
@@ -167,9 +163,8 @@ class OpcUaToJsonConverterMetadataIntegrationTest {
                 includeMetadata);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
-        when(protocolAdapterInput.getTags()).thenReturn(List.of(new OpcuaTag(subscribedNodeId,
-                "",
-                new OpcuaTagDefinition(subscribedNodeId))));
+        when(protocolAdapterInput.getTags())
+                .thenReturn(List.of(new OpcuaTag(subscribedNodeId, "", new OpcuaTagDefinition(subscribedNodeId))));
 
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);

@@ -34,6 +34,15 @@ public class BidirectionalOpcUaSpecificAdapterConfig extends OpcUaSpecificAdapte
             @JsonProperty("security") final @Nullable Security security,
             @JsonProperty("connectionOptions") final @Nullable ConnectionOptions connectionOptions,
             @JsonProperty("includeMetadata") final @Nullable Boolean includeMetadata) {
-        super(uri, overrideUri, applicationUri, auth, tls, opcuaToMqttConfig, security, connectionOptions, includeMetadata);
+        super(
+                uri,
+                overrideUri,
+                applicationUri,
+                auth,
+                tls,
+                opcuaToMqttConfig,
+                security,
+                connectionOptions,
+                includeMetadata);
     }
 }
