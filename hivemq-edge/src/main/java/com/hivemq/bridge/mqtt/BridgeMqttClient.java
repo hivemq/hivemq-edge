@@ -181,18 +181,22 @@ public class BridgeMqttClient {
                                 return null;
                             }
                             if (mqtt5ConnAck.getReasonCode().isError()) {
+                                final String reasonString = mqtt5ConnAck
+                                        .getReasonString()
+                                        .map(Objects::toString)
+                                        .orElse("");
                                 log.error(
                                         "Failed to connect bridge '{}', CONNACK returned reason code {}, reason string: '{}'",
                                         bridge.getId(),
                                         mqtt5ConnAck.getReasonCode(),
-                                        mqtt5ConnAck
-                                                .getReasonString()
-                                                .map(Objects::toString)
-                                                .orElse(""));
+                                        reasonString);
                                 final var future = startFutureRef.getAndSet(null);
                                 if (future != null) {
-                                    future.setException(new RuntimeException("CONNACK error for bridge '"
-                                            + bridge.getId() + "': " + mqtt5ConnAck.getReasonCode()));
+                                    future.setException(new RuntimeException(
+                                            "CONNACK error for bridge '" + bridge.getId() + "' connecting to "
+                                                    + bridge.getHost() + ":" + bridge.getPort()
+                                                    + " - reason code: " + mqtt5ConnAck.getReasonCode()
+                                                    + ", reason string: '" + reasonString + "'"));
                                 }
                                 operationState.compareAndSet(OperationState.STARTING, OperationState.IDLE);
                                 return null;
