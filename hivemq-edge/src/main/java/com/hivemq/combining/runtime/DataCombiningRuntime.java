@@ -42,6 +42,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hivemq.combining.runtime.SourceSanitizer.sanitize;
@@ -62,7 +63,7 @@ public class DataCombiningRuntime {
     private final @NotNull ClientQueuePersistence clientQueuePersistence; // what is the purpose of this?
     private final @NotNull SingleWriterService singleWriterService; // what is the purpose of this?
     private final @NotNull DataCombiningPublishService dataCombiningPublishService;
-    private final @NotNull DataCombiningTransformationService dataCombiningTransformationService; // what is the purpose of this
+    private final @NotNull DataCombiningTransformationService dataCombiningTransformationService; // and this
 
     private final @NotNull ObjectMapper mapper;
     private final @NotNull List<InternalSubscription> subscriptions;
@@ -102,6 +103,7 @@ public class DataCombiningRuntime {
         dataCombining.instructions()
                 .stream()
                 .map(Instruction::dataIdentifierReference)
+                .filter(Objects::nonNull)
                 .filter(ref -> !ref.equals(trigger))
                 .distinct()
                 .forEach(ref -> subscribe(ref, false, true));
@@ -110,6 +112,7 @@ public class DataCombiningRuntime {
         boolean providesValue = dataCombining.instructions()
                 .stream()
                 .map(Instruction::dataIdentifierReference)
+                .filter(Objects::nonNull)
                 .anyMatch(ref -> ref.equals(trigger));
         subscribe(trigger, true, providesValue);
     }
@@ -119,6 +122,7 @@ public class DataCombiningRuntime {
         log.debug("Stoping data combining {}", dataCombining.id());
 
         subscriptions.forEach(InternalSubscription::unSubscribe);
+        subscriptions.clear();
 
         dataCombiningTransformationService.removeScriptForDataCombining(dataCombining);
     }
@@ -209,10 +213,10 @@ public class DataCombiningRuntime {
         log.debug("Starting {} consumer for {}", ref.type(), ref.id());
         switch (ref.type()) {
             case TAG -> {
-                    subscriptions.add(new InternalSubscriptionTag(ref, isTrigger, providesValue));
+                subscriptions.add(new InternalSubscriptionTag(ref, isTrigger, providesValue));
             }
             case TOPIC_FILTER -> {
-                    subscriptions.add(new InternalSubscriptionTopicFilter(ref, isTrigger, providesValue));
+                subscriptions.add(new InternalSubscriptionTopicFilter(ref, isTrigger, providesValue));
             }
             case PULSE_ASSET -> {
                 log.error("Pulse Assets shouldn't be input to data combining in Edge {}", ref.id());
@@ -241,6 +245,12 @@ public class DataCombiningRuntime {
                     /// so that `tagManager` knows which tag is meant (if there are multiple with the same tagname)
                     /// I presume such a change has been made to tag manager in Sam's epic
                     return ref.id();
+                }
+
+                // TODO(mschoene) I'm not sure that the TagConsumer should get a scope?
+                // I think it should return the ref, and then the ref has one way to deterministically serialize itself
+                public String getScope() {
+                    return ref.scope();
                 }
 
                 @Override
