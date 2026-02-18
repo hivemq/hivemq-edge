@@ -324,6 +324,7 @@ describe('PolicySummaryReport', () => {
 ## Related Documentation
 
 **Architecture:**
+- [Domain Model](./DOMAIN_MODEL.md) — How TOPIC FILTERs connect the Edge data layer to DataHub data policies; entity model for the full integration graph
 - [Workspace Architecture](./WORKSPACE_ARCHITECTURE.md)
 - [State Management](./STATE_MANAGEMENT.md)
 - [Data Flow](./DATA_FLOW.md)

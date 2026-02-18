@@ -60,6 +60,13 @@ This directory contains high-level architecture documentation explaining how the
   - Complete Cypress custom commands reference
   - CI/CD pipeline (9 parallel jobs)
 
+- **[DOMAIN_MODEL.md](./DOMAIN_MODEL.md)** - Domain entity model and transformation flows
+  - Six integration points: TAG, TOPIC, TOPIC FILTER, COMBINER, BRIDGE, ASSET MAPPER
+  - Four transformation types: northbound, southbound, bridge, combiner
+  - Topic filter as MQTT wildcard pattern matcher (activates DataHub policies)
+  - Data aggregation layer (`useGetDomainOntology`)
+  - Entity reference table with API types
+
 ## Purpose
 
 Architecture documents explain:

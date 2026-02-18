@@ -11,6 +11,13 @@ This directory contains in-depth walkthroughs that explain complex features from
   - FormContext, validation, and scaffolding patterns
   - Testing strategy and common pitfalls
 
+- **[DOMAIN_ONTOLOGY.md](./DOMAIN_ONTOLOGY.md)** - Domain ontology visualization walkthrough
+  - Why the workspace canvas is not the answer for ontology visualization
+  - Five existing visualization approaches (Sankey, Chord, Sunburst, Cluster, Edge Bundling)
+  - Two Phase 1 implementations (Network Graph, Data Flow Tracer)
+  - What was not activated and why
+  - Lessons learned and deferred work
+
 ## Purpose
 
 Walkthroughs provide:

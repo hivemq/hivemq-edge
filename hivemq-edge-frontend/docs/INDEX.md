@@ -58,6 +58,7 @@ High-level architecture documentation explaining how the application is structur
 | [Workspace Architecture](./architecture/WORKSPACE_ARCHITECTURE.md) | React Flow canvas and workspace patterns | ✅ Complete |
 | [Protocol Adapter Architecture](./architecture/PROTOCOL_ADAPTER_ARCHITECTURE.md) | Backend-driven adapter configuration with RJSF | ✅ Complete |
 | [Testing Architecture](./architecture/TESTING_ARCHITECTURE.md) | 7-layer testing pyramid, tools, CI/CD, accessibility | ✅ Complete |
+| [Domain Model](./architecture/DOMAIN_MODEL.md) | Entity model (TAG, TOPIC, TOPIC FILTER, COMBINER, BRIDGE, ASSET MAPPER), transformation flows, topic filter as MQTT pattern matcher | ✅ Complete |
 
 ---
 
@@ -110,6 +111,7 @@ In-depth explanations of complex features from both interaction design and techn
 | Document | Description | Status |
 |----------|-------------|--------|
 | [RJSF Combiner Walkthrough](./walkthroughs/RJSF_COMBINER.md) | How we transformed flat forms into interactive UX | ✅ Complete |
+| [Domain Ontology Visualization](./walkthroughs/DOMAIN_ONTOLOGY.md) | Five existing visualization approaches, two Phase 1 implementations, deferred work | ✅ Complete |
 
 ---
 
