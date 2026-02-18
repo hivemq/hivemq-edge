@@ -22,6 +22,8 @@ A catalogue of external design and planning artefacts that provide context, rati
   - [Pulse, Asset Mapping & Data Modelling](#pulse-asset-mapping--data-modelling)
   - [DataHub Designer & Edge Integration](#datahub-designer--edge-integration)
   - [Domain Modelling, Patterns & Practices](#domain-modelling-patterns--practices)
+- [Figma Boards](#figma-boards)
+
 - [Board-to-Documentation Map](#board-to-documentation-map)
 
 ---
@@ -87,6 +89,17 @@ Boards covering domain entity relationships, engineering practices, and cross-cu
 **See:** [Testing Architecture](../architecture/TESTING_ARCHITECTURE.md) (testing pyramid), [Protocol Adapter Architecture](../architecture/PROTOCOL_ADAPTER_ARCHITECTURE.md) (domain entities)
 
 ---
+
+## Figma Boards
+
+ Board                                   | URL | Summary                                                                                |
+|-----------------------------------------|-----|----------------------------------------------------------------------------------------|
+| **Original Bridge designs**             | [Open](https://www.figma.com/file/PMoMzXRmKLnlIalZxlOS1M/Edge?type=design&node-id=241%3A114538&t=6dIRdUn8zXnjPxmP-1) | First design proposal for the Bridge creation - and original design artefacts for Edge |
+| **Definitive Bridge designs **          | [Open](https://www.figma.com/file/PMoMzXRmKLnlIalZxlOS1M/Edge?type=design&node-id=607%3A1102408&mode=design&t=ivBgHbTpTV4ryqyQ-1) | Definitive version of the design                                                       |
+| **Edge Data Models + Domain mapping  ** | [Open](https://www.figma.com/design/goCjhfUWBP3Fc3e73BaWD0/Edge---Data-Models---Mapping?m=auto&t=lmUJ6TL3bwQHQj97-6) | First draft of the contemporary Edge                                                   |
+| **Edge inventory 2024.9  **             | [Open](https://www.figma.com/design/GUsY1u8yDtIl7OE9XApfY1/EDGE?node-id=3-18&p=f&t=lmUJ6TL3bwQHQj97-0) | Edge review v2024.9                                                                    |
+| **Edge inventory 2024.9  **             | [Open](https://www.figma.com/design/goCjhfUWBP3Fc3e73BaWD0/Edge-Initiatives?node-id=960-282183&t=nucffe3DJCrYEkDe-4) | Edge review v2025.1                                                                  |
+
 
 ## Board-to-Documentation Map
 
