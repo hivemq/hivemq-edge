@@ -279,6 +279,7 @@ Tasks follow the Linear workflow. When a user mentions a task (e.g., "EDG-40"), 
 **Pattern**: `.tasks/{project-id}-{issue-number}-{short-description}/`
 
 **Examples**:
+
 - Linear issue `EDG-40` → Directory: `.tasks/EDG-40-technical-documentation/`
 - Linear issue `EDG-38` → Directory: `.tasks/EDG-38-readonly-schemas/`
 

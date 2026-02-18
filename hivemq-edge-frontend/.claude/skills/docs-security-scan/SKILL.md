@@ -7,10 +7,12 @@ Scans `./docs/` directory for accidentally committed secrets, credentials, and c
 ## When to Use
 
 **Automatically:**
+
 - Pre-commit hook (if configured)
 - CI pipeline (recommended)
 
 **Manually:**
+
 - Before committing documentation changes
 - After updating any document with URLs, tokens, or configuration
 - During documentation review
@@ -20,6 +22,7 @@ Scans `./docs/` directory for accidentally committed secrets, credentials, and c
 ### High-Risk Patterns (Block Commit)
 
 **API Keys & Tokens:**
+
 - AWS keys: `AKIA[0-9A-Z]{16}`
 - GitHub tokens: `ghp_[a-zA-Z0-9]{36}`
 - Generic API keys: `api[_-]?key[_-]?[=:]\s*['\"]?[a-zA-Z0-9]{20,}`
@@ -27,41 +30,49 @@ Scans `./docs/` directory for accidentally committed secrets, credentials, and c
 - JWT tokens: `eyJ[a-zA-Z0-9_-]+\.eyJ[a-zA-Z0-9_-]+`
 
 **Passwords:**
+
 - Password fields: `password[_-]?[=:]\s*['\"]?[^\s'\"]+`
 - Database URLs with passwords: `://[^:]+:[^@]+@`
 
 **Private Keys:**
+
 - Private key headers: `-----BEGIN.*PRIVATE KEY-----`
 - SSH keys: `ssh-rsa\s+AAAA[a-zA-Z0-9+/]+`
 
 **Secrets & Credentials:**
+
 - Secret values: `secret[_-]?[=:]\s*['\"]?[a-zA-Z0-9]{20,}`
 - Client secrets: `client[_-]?secret`
 - Auth tokens: `auth[_-]?token`
 
 **Internal URLs:**
+
 - Private IP addresses: `(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)`
 - Internal hostnames: `\.internal\.|\.local\.|\.corp\.`
 
 **Email Addresses (Organizational):**
+
 - Company emails: `[a-zA-Z0-9._%+-]+@hivemq\.com`
 - Specific patterns that might expose internal structure
 
 ### Medium-Risk Patterns (Warn)
 
 **Configuration:**
+
 - Hardcoded ports with credentials
 - Database connection strings
 - SMTP credentials
 - S3 bucket names with sensitive context
 
 **Personal Information:**
+
 - Phone numbers
 - Physical addresses (if not public office)
 
 ## Allowed Patterns
 
 **Safe to commit:**
+
 - Public documentation URLs
 - GitHub repository URLs (public repos)
 - Published blog posts
@@ -70,12 +81,13 @@ Scans `./docs/` directory for accidentally committed secrets, credentials, and c
 - Documentation about security (not actual secrets)
 
 **Example Safe Patterns:**
+
 ```markdown
-✅ `api_key: "YOUR_API_KEY_HERE"`  # Placeholder
-✅ `password: "<your-password>"`   # Placeholder
+✅ `api_key: "YOUR_API_KEY_HERE"` # Placeholder
+✅ `password: "<your-password>"` # Placeholder
 ✅ `https://github.com/hivemq/...` # Public repo
-✅ `Bearer <token>`                # Documentation template
-✅ `secret: process.env.SECRET`    # Code reference
+✅ `Bearer <token>` # Documentation template
+✅ `secret: process.env.SECRET` # Code reference
 ```
 
 ## Usage
@@ -227,11 +239,13 @@ Results:
 **If scan flags safe content:**
 
 1. **Check if it's actually safe:**
+
    - Is it a placeholder? Mark clearly: `<YOUR_KEY>`
    - Is it example code? Add comment: `# Example only`
    - Is it documentation about secrets? Use code blocks
 
 2. **Add to allowed exceptions:**
+
    - Edit `config.yaml`
    - Add exact string to `allowed_exceptions`
    - Document why it's safe
@@ -245,12 +259,14 @@ Results:
 ## Maintenance
 
 **Review quarterly:**
+
 - Add new secret patterns as threats emerge
 - Update allowed exceptions
 - Check false positive rate
 - Review scanning performance
 
 **Add patterns when:**
+
 - New service APIs are integrated
 - New authentication methods used
 - Security audit identifies gaps
