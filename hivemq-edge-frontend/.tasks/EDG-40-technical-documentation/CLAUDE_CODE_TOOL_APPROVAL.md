@@ -1,7 +1,7 @@
 ---
-title: "Claude Code — Tool Approval Behaviour"
-date: "2026-02-17"
-purpose: "Reference for understanding which tools require user approval when running skills and autonomous tasks"
+title: 'Claude Code — Tool Approval Behaviour'
+date: '2026-02-17'
+purpose: 'Reference for understanding which tools require user approval when running skills and autonomous tasks'
 ---
 
 # Claude Code — Tool Approval Behaviour
@@ -12,15 +12,15 @@ Understanding which tool calls pause for user approval is critical for designing
 
 ## Summary: What Requires Approval
 
-| Tool | Requires approval? | Notes |
-|------|--------------------|-------|
-| `Read`, `Glob`, `Grep` | Never | Read-only, always safe |
-| `Edit`, `Write` | No (in interactive mode) | File modifications are allowed without prompt |
-| `Bash` — safe commands | No | `pnpm prettier`, `pnpm lint`, `git status` etc. |
-| `Bash` — destructive patterns | Yes / blocked | `rm -rf`, `git reset --hard`, force push to main |
-| `Task` (subagents) | No | Subagents inherit parent permission context |
-| `AskUserQuestion` | Always | Intentional — designed to pause for human decision |
-| MCP tools | Depends | Third-party MCP servers declare their own permission requirements |
+| Tool                          | Requires approval?       | Notes                                                             |
+| ----------------------------- | ------------------------ | ----------------------------------------------------------------- |
+| `Read`, `Glob`, `Grep`        | Never                    | Read-only, always safe                                            |
+| `Edit`, `Write`               | No (in interactive mode) | File modifications are allowed without prompt                     |
+| `Bash` — safe commands        | No                       | `pnpm prettier`, `pnpm lint`, `git status` etc.                   |
+| `Bash` — destructive patterns | Yes / blocked            | `rm -rf`, `git reset --hard`, force push to main                  |
+| `Task` (subagents)            | No                       | Subagents inherit parent permission context                       |
+| `AskUserQuestion`             | Always                   | Intentional — designed to pause for human decision                |
+| MCP tools                     | Depends                  | Third-party MCP servers declare their own permission requirements |
 
 **Observed in practice:** A full review-and-fix run across 39 documentation files — using Read, Glob, Grep, Edit (12 file modifications), and Bash (`pnpm prettier`) — completed with zero approval prompts.
 
@@ -40,7 +40,7 @@ The interruptions you experience are not tool-level approval gates. They are:
 
 ### Read-only skills — zero approval required
 
-Skills with `allowed-tools: Glob, Grep, Read` are fully autonomous. The `technical-doc-writer` skill is designed this way:
+Skills with `allowed-tools: Glob, Grep, Read` are fully autonomous. The `technical-doc-review` skill is designed this way:
 
 ```yaml
 allowed-tools: Glob, Grep, Read
@@ -50,7 +50,7 @@ These skills can run as background tasks (`run_in_background: true`) with no sup
 
 ### Fix-applying skills — also zero approval required
 
-Adding `Edit` to `allowed-tools` does not trigger approval prompts in interactive mode. A future `--fix` variant of `technical-doc-writer` could apply changes directly:
+Adding `Edit` to `allowed-tools` does not trigger approval prompts in interactive mode. A future `--fix` variant of `technical-doc-review` could apply changes directly:
 
 ```yaml
 allowed-tools: Glob, Grep, Read, Edit
@@ -87,11 +87,7 @@ For operations that should always be permitted without prompting, add them to `.
 ```json
 {
   "permissions": {
-    "allow": [
-      "Bash(pnpm prettier*)",
-      "Bash(pnpm lint*)",
-      "Bash(pnpm test*)"
-    ]
+    "allow": ["Bash(pnpm prettier*)", "Bash(pnpm lint*)", "Bash(pnpm test*)"]
   }
 }
 ```
@@ -122,5 +118,5 @@ No step in this pipeline requires user approval. The only decision point is the 
 ## See Also
 
 - [Claude Code settings documentation](https://docs.anthropic.com/en/docs/claude-code/settings)
-- `.claude/skills/technical-doc-writer/SKILL.md` — the skill this analysis informed
+- `.claude/skills/technical-doc-review/SKILL.md` — the skill this analysis informed
 - `.tasks/EDG-40-technical-documentation/DOC_QUALITY_REVIEW.md` — first review run results
