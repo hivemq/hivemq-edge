@@ -288,8 +288,16 @@ public class OpenLdapContainer extends GenericContainer<OpenLdapContainer> {
      *
      * @return the admin DN
      */
+    public @NotNull String getAdminUsername() {
+        return "admin";
+    }
+
+    public @NotNull String getAdminRdns() {
+        return "cn=" + getAdminUsername();
+    }
+
     public @NotNull String getAdminDn() {
-        return "cn=admin," + baseDn;
+        return getAdminRdns() + "," + getBaseDn();
     }
 
     /**

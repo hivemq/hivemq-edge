@@ -83,7 +83,8 @@ class LdapTlsModesIntegrationTest {
                 5,
                 "ADMIN", // assignedRole
                 false,
-                ldapSimpleBind);
+                ldapSimpleBind,
+                null);
 
         // Create and start LDAP client
         ldapClient = new LdapClient(ldapConnectionProperties, new SecurityLog());
@@ -157,7 +158,8 @@ class LdapTlsModesIntegrationTest {
                 5,
                 "ADMIN", // assignedRole
                 false,
-                ldapSimpleBind);
+                ldapSimpleBind,
+                null);
 
         final LdapClient timeoutClient = new LdapClient(timeoutProps, new SecurityLog());
 
@@ -202,7 +204,8 @@ class LdapTlsModesIntegrationTest {
                 5,
                 "ADMIN", // assignedRole
                 false,
-                ldapSimpleBind);
+                ldapSimpleBind,
+                null);
 
         final LdapClient defaultTimeoutClient = new LdapClient(defaultTimeoutProps, new SecurityLog());
 

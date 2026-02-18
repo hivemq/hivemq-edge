@@ -16,20 +16,29 @@
 package com.hivemq.api.auth.provider.impl.ldap;
 
 import com.google.common.collect.ImmutableList;
+import com.hivemq.configuration.entity.api.ldap.UserRoleEntity;
 import com.hivemq.logging.SecurityLog;
 import com.unboundid.ldap.sdk.DN;
+import com.unboundid.ldap.sdk.DereferencePolicy;
+import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPConnectionPool;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.PruneUnneededConnectionsLDAPConnectionPoolHealthCheck;
 import com.unboundid.ldap.sdk.RDN;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.RoundRobinServerSet;
+import com.unboundid.ldap.sdk.SearchRequest;
+import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.ldap.sdk.SimpleBindRequest;
 import com.unboundid.ldap.sdk.StartTLSPostConnectProcessor;
 import java.security.GeneralSecurityException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -256,6 +265,80 @@ public class LdapClient {
             securityLog.authenticationFailed("LDAP", username, "Failed to resolve DN for user");
             throw e;
         }
+    }
+
+    /**
+     * Executes LDAP role queries for a user and returns the set of roles for which queries succeed.
+     * <p>
+     * Each user-role query is executed with the {userDn} placeholder replaced by the user's actual DN.
+     * If a query returns one or more results, the corresponding role is included in the result set.
+     *
+     * @param username  The username to resolve and query roles for
+     * @param userRoles The list of user-role configurations to execute
+     * @return A set of role names for which the LDAP queries returned results (empty if no matches or null input)
+     * @throws LDAPException         if there's an LDAP protocol error during DN resolution
+     * @throws IllegalStateException if the client is not started
+     */
+    public @NotNull Set<String> getRolesForUser(
+            final @NotNull String username, final @Nullable List<UserRoleEntity> userRoles) throws LDAPException {
+        ensureStarted();
+        if (userRoles == null || userRoles.isEmpty()) {
+            log.debug("No user roles configured, returning empty set");
+            return Set.of();
+        }
+        // Resolve username to DN
+        final String userDn;
+        try {
+            userDn = userDnResolver.resolveDn(username);
+            log.debug("Resolved username '{}' to DN: {}", username, userDn);
+        } catch (final SearchFilterDnResolver.DnResolutionException e) {
+            log.error("Failed to resolve DN for user '{}': {}", username, e.getMessage());
+            throw e;
+        }
+        final Set<String> matchedRoles = new HashSet<>();
+        // Execute each role query
+        for (final var userRole : userRoles) {
+            final String role = userRole.getRole();
+            final String queryTemplate = userRole.getQuery();
+            try {
+                // Substitute {userDn} placeholder in query
+                final String query = queryTemplate.replace("{userDn}", userDn);
+                log.debug("Executing role query for role '{}': {}", role, query);
+
+                // Parse the query as an LDAP filter
+                final var filter = Filter.create(query);
+
+                // Create search request
+                // We search from the base DN with subtree scope to find any matching entries
+                final var searchRequest = new SearchRequest(
+                        connectionProperties.rdns(),
+                        SearchScope.SUB,
+                        DereferencePolicy.NEVER,
+                        1, // Size limit - we only need to know if there's at least one match
+                        connectionProperties.searchTimeoutSeconds(),
+                        false, // Types only = false
+                        filter,
+                        "1.1" // Return no attributes, we only need to know if entries exist
+                        );
+
+                final var searchResult = connectionPool.search(searchRequest);
+                if (searchResult.getResultCode() == ResultCode.SUCCESS && searchResult.getEntryCount() > 0) {
+                    log.debug(
+                            "Role query for '{}' matched {} entries, adding role", role, searchResult.getEntryCount());
+                    matchedRoles.add(role);
+                } else {
+                    log.debug("Role query for '{}' returned no matches", role);
+                }
+            } catch (final LDAPException e) {
+                // Log error but continue with other queries
+                log.error("LDAP error executing role query for role '{}': {}", role, e.getMessage(), e);
+            } catch (final Exception e) {
+                // Catch any other exceptions (e.g., invalid filter syntax)
+                log.error("Error executing role query for role '{}': {}", role, e.getMessage(), e);
+            }
+        }
+        log.debug("User '{}' matched {} roles: {}", username, matchedRoles.size(), matchedRoles);
+        return matchedRoles;
     }
 
     /**

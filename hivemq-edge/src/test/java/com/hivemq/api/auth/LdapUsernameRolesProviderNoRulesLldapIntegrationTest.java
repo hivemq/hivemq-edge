@@ -41,7 +41,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * Uses plain LDAP (no TLS) for simplicity in testing.
  */
 @Testcontainers
-class LdapUsernameRolesProviderIntegrationTest {
+class LdapUsernameRolesProviderNoRulesLldapIntegrationTest {
 
     @Container
     private static final LldapContainer LLDAP_CONTAINER = new LldapContainer();
@@ -57,7 +57,7 @@ class LdapUsernameRolesProviderIntegrationTest {
         // Create LdapSimpleBind for LLDAP admin authentication
         // LLDAP admin DN: uid=admin
         final var ldapSimpleBind = new LdapConnectionProperties.LdapSimpleBind(
-                "uid=" + LLDAP_CONTAINER.getAdminUsername(), LLDAP_CONTAINER.getAdminPassword());
+                LLDAP_CONTAINER.getAdminRdns(), LLDAP_CONTAINER.getAdminPassword());
 
         // Create connection properties for plain LDAP (no TLS for simplicity)
         // 5 second connect timeout
@@ -70,13 +70,14 @@ class LdapUsernameRolesProviderIntegrationTest {
                 10000, // 10 second response timeout
                 1,
                 "uid", // uidAttribute
-                getBaseDn(), // rdns
+                LLDAP_CONTAINER.getBaseDn(), // rdns
                 null,
                 SearchScope.SUB,
                 5,
                 ADMIN, // assignedRole
                 false,
-                ldapSimpleBind);
+                ldapSimpleBind,
+                null);
 
         // Create test user in LLDAP
         new LdapTestConnection(ldapConnectionProperties)
@@ -85,10 +86,6 @@ class LdapUsernameRolesProviderIntegrationTest {
 
         // Create the LdapUsernameRolesProvider
         provider = new LdapUsernameRolesProvider(ldapConnectionProperties, new SecurityLog());
-    }
-
-    public static String getBaseDn() {
-        return "ou=people," + LLDAP_CONTAINER.getBaseDn();
     }
 
     @AfterAll

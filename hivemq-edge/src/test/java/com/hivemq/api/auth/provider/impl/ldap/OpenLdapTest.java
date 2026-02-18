@@ -99,8 +99,8 @@ class OpenLdapTest {
 
         // Create LdapSimpleBind for OpenLDAP admin authentication
         // OpenLDAP admin DN: cn=admin,{baseDn}
-        final LdapConnectionProperties.LdapSimpleBind ldapSimpleBind =
-                new LdapConnectionProperties.LdapSimpleBind("cn=admin", OPENLDAP_CONTAINER.getAdminPassword());
+        final LdapConnectionProperties.LdapSimpleBind ldapSimpleBind = new LdapConnectionProperties.LdapSimpleBind(
+                OPENLDAP_CONTAINER.getAdminRdns(), OPENLDAP_CONTAINER.getAdminPassword());
 
         // Create connection properties
         connectionProperties = new LdapConnectionProperties(
@@ -117,7 +117,8 @@ class OpenLdapTest {
                 5,
                 ADMIN,
                 false,
-                ldapSimpleBind);
+                ldapSimpleBind,
+                null);
 
         // Create and start LDAP client
         ldapClient = new LdapClient(connectionProperties, new SecurityLog());
@@ -182,15 +183,19 @@ class OpenLdapTest {
 
             // Search for all users in ou=people
             final SearchRequest searchRequest = new SearchRequest(
-                    "ou=people," + OPENLDAP_CONTAINER.getBaseDn(), SearchScope.ONE, "(objectClass=inetOrgPerson)");
+                    "ou=people," + OPENLDAP_CONTAINER.getBaseDn(),
+                    SearchScope.ONE,
+                    "(objectClass=inetOrgPerson)",
+                    SearchRequest.ALL_USER_ATTRIBUTES,
+                    SearchRequest.ALL_OPERATIONAL_ATTRIBUTES);
 
             final SearchResult searchResult = connection.search(searchRequest);
 
             // Assert - Should find 3 users (alice, bob, charlie)
             assertThat(searchResult.getResultCode()).isEqualTo(ResultCode.SUCCESS);
             assertThat(searchResult.getEntryCount())
-                    .as("Should have loaded 3 users from LDIF file")
-                    .isEqualTo(3);
+                    .as("Should have loaded 4 users from LDIF file")
+                    .isEqualTo(4);
 
             // Verify alice exists with correct attributes
             final SearchResultEntry alice = searchResult.getSearchEntries().stream()
@@ -202,6 +207,7 @@ class OpenLdapTest {
             assertThat(alice.getAttributeValue("sn")).isEqualTo("Anderson");
             assertThat(alice.getAttributeValue("mail")).isEqualTo("alice@example.org");
             assertThat(alice.getAttributeValue("description")).isEqualTo("Software Engineer");
+            assertThat(alice.getAttributeValues("memberOf")).contains("cn=developers,ou=groups,dc=example,dc=org");
         }
     }
 
@@ -253,7 +259,7 @@ class OpenLdapTest {
             final SearchRequest searchRequest = new SearchRequest(
                     "cn=developers,ou=groups," + OPENLDAP_CONTAINER.getBaseDn(),
                     SearchScope.BASE,
-                    "(objectClass=groupOfNames)");
+                    "(objectClass=groupOfUniqueNames)");
 
             final SearchResult searchResult = connection.search(searchRequest);
 
@@ -265,7 +271,7 @@ class OpenLdapTest {
                     searchResult.getSearchEntries().getFirst();
 
             // Verify group members
-            final String[] members = developersGroup.getAttributeValues("member");
+            final String[] members = developersGroup.getAttributeValues("uniqueMember");
             assertThat(members)
                     .as("Developers group should have 2 members")
                     .hasSize(2)
@@ -339,7 +345,7 @@ class OpenLdapTest {
             final SearchResult result1 = connection.search(search1);
             assertThat(result1.getEntryCount())
                     .as("All users should have @example.org email")
-                    .isEqualTo(3);
+                    .isEqualTo(4);
 
             // Search 2: Find users with uidNumber >= 10002
             final SearchRequest search2 =
@@ -347,24 +353,24 @@ class OpenLdapTest {
 
             final SearchResult result2 = connection.search(search2);
             assertThat(result2.getEntryCount())
-                    .as("Bob and Charlie have uidNumber >= 10002")
-                    .isEqualTo(2);
+                    .as("Bob, Charlie, and Don have uidNumber >= 10002")
+                    .isEqualTo(3);
 
             // Search 3: Find all groups
             final SearchRequest search3 = new SearchRequest(
-                    "ou=groups," + OPENLDAP_CONTAINER.getBaseDn(), SearchScope.ONE, "(objectClass=groupOfNames)");
+                    "ou=groups," + OPENLDAP_CONTAINER.getBaseDn(), SearchScope.ONE, "(objectClass=groupOfUniqueNames)");
 
             final SearchResult result3 = connection.search(search3);
             assertThat(result3.getEntryCount())
-                    .as("Should have 2 groups from LDIF")
-                    .isEqualTo(2);
+                    .as("Should have 3 groups from LDIF")
+                    .isEqualTo(3);
 
             // Verify group names
             final List<String> groupNames = result3.getSearchEntries().stream()
                     .map(entry -> entry.getAttributeValue("cn"))
                     .toList();
 
-            assertThat(groupNames).containsExactlyInAnyOrder("developers", "administrators");
+            assertThat(groupNames).containsExactlyInAnyOrder("developers", "administrators", "data-scientists");
         }
     }
 
@@ -372,6 +378,11 @@ class OpenLdapTest {
      * Demonstrates verifying organizational structure from LDIF.
      * <p>
      * Tests that the organizational units (ou=people, ou=groups) exist.
+     * </p>
+     * <p>
+     * I'm not 100% sure what this test is for. The LDAP auth provider does not depend on ou=people even existing.
+     * Is this so that failures in the setup for the real tests are noticed early?
+     * </p>
      */
     @Test
     void testOrganizationalStructure() throws Exception {
@@ -452,7 +463,8 @@ class OpenLdapTest {
                 5,
                 ADMIN,
                 true, // TEST ONLY: Accept any certificate
-                ldapSimpleBind);
+                ldapSimpleBind,
+                null);
 
         final LdapClient startTlsClient = new LdapClient(startTlsProps, new SecurityLog());
 
@@ -521,7 +533,8 @@ class OpenLdapTest {
                 5,
                 ADMIN,
                 true, // TEST ONLY: Accept any certificate
-                ldapSimpleBind);
+                ldapSimpleBind,
+                null);
 
         final LdapClient startTlsClient = new LdapClient(startTlsProps, new SecurityLog());
 
@@ -591,7 +604,8 @@ class OpenLdapTest {
                 5,
                 ADMIN,
                 true, // TEST ONLY: Accept any certificate
-                ldapSimpleBind);
+                ldapSimpleBind,
+                null);
 
         final LdapClient plainClient = new LdapClient(plainProps, new SecurityLog());
 
@@ -610,7 +624,8 @@ class OpenLdapTest {
                 5,
                 ADMIN,
                 true, // TEST ONLY: Accept any certificate
-                ldapSimpleBind);
+                ldapSimpleBind,
+                null);
 
         final LdapClient startTlsClient = new LdapClient(startTlsProps, new SecurityLog());
 
