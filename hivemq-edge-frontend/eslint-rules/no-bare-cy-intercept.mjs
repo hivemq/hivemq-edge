@@ -88,7 +88,8 @@ function getUrlList() {
  * @returns {number}
  */
 function levenshtein(a, b) {
-  const m = a.length, n = b.length
+  const m = a.length,
+    n = b.length
   if (m === 0) return n
   if (n === 0) return m
   let prev = Array.from({ length: n + 1 }, (_, i) => i)
@@ -129,9 +130,7 @@ function findClosestRoutes(url, method = null) {
 /** Returns true if the file already imports API_ROUTES from the generated registry. */
 function hasApiRoutesImport(sourceCode) {
   return sourceCode.ast.body.some(
-    (node) =>
-      node.type === 'ImportDeclaration' &&
-      node.specifiers.some((spec) => spec.local.name === 'API_ROUTES')
+    (node) => node.type === 'ImportDeclaration' && node.specifiers.some((spec) => spec.local.name === 'API_ROUTES')
   )
 }
 
@@ -230,8 +229,7 @@ export const noBareIntercept = {
       suggestInterceptApi: 'Replace with cy.interceptApi({{routeKey}}, ...)',
       missingLeadingSlash:
         '"{{url}}" looks like an API route but is missing a leading slash — did you mean \'/{{url}}\'?',
-      suggestTypoFix:
-        'Replace with cy.interceptApi({{routeKey}}, ...) — closest match (edit distance: {{distance}})',
+      suggestTypoFix: 'Replace with cy.interceptApi({{routeKey}}, ...) — closest match (edit distance: {{distance}})',
     },
     schema: [],
   },
