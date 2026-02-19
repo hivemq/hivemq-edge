@@ -1,6 +1,7 @@
 /// <reference types="cypress" />
 
 import Login from '@/modules/Login/components/Login.tsx'
+import { API_ROUTES } from '@cypr/support/__generated__/apiRoutes'
 
 describe('Login', () => {
   beforeEach(() => {
@@ -8,9 +9,7 @@ describe('Login', () => {
   })
 
   it('should render properly', () => {
-    cy.intercept('/api/v1/auth/authenticate', {
-      token: 'fake_token',
-    }).as('getConfig')
+    cy.interceptApi(API_ROUTES.authentication.authenticate, { token: 'fake_token' }).as('getConfig')
 
     cy.mountWithProviders(<Login />)
     // cy.get('.cxccc').should('contain.text', 'xxx')
