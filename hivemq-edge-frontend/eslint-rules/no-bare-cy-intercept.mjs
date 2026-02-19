@@ -8,9 +8,13 @@
  * Callback-based intercepts (req handlers) are excluded — they handle stateful
  * scenarios (CRUD, dynamic replies) where cy.interceptApi does not apply.
  *
- * When the URL + HTTP method can be resolved to a known API_ROUTES entry, the rule
- * also provides an ESLint suggestion that rewrites the call automatically and injects
- * the API_ROUTES import if it is not already present.
+ * Three categories of diagnostic:
+ *
+ *   1. useInterceptApi — URL starts with /api/ and matches (or is close to) a known
+ *      route. Offers an exact suggestion or a Levenshtein-based "did you mean" fix.
+ *
+ *   2. missingLeadingSlash — URL starts with api/ (no leading slash). Almost always
+ *      a typo. Normalised URL is looked up for an exact or fuzzy suggestion.
  *
  * @see {@link cypress/support/__generated__/apiRoutes.ts} for the typed route registry
  * @see {@link https://linear.app/hivemq/issue/EDG-73}
@@ -25,6 +29,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const HTTP_METHODS = new Set(['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'])
 
 const API_ROUTES_IMPORT = "import { API_ROUTES } from '@cypr/support/__generated__/apiRoutes'\n"
+
+/** Maximum edit distance for a fuzzy URL match to be offered as a suggestion. */
+const LEVENSHTEIN_THRESHOLD = 3
 
 // ─── Route map (lazy-loaded from generated meta) ──────────────────────────────
 
@@ -51,6 +58,72 @@ function getRouteMap() {
   return _routeMap
 }
 
+// ─── URL list (lazy-derived for Levenshtein search) ───────────────────────────
+
+/** @type {Array<{method: string, url: string, routeKey: string}> | null} */
+let _urlList = null
+
+/**
+ * Returns the route map entries decomposed into {method, url, routeKey} objects,
+ * cached for the lifetime of the ESLint daemon session.
+ */
+function getUrlList() {
+  if (_urlList !== null) return _urlList
+  const routeMap = getRouteMap()
+  _urlList = [...routeMap.entries()].map(([key, routeKey]) => {
+    const spaceIdx = key.indexOf(' ')
+    return { method: key.slice(0, spaceIdx), url: key.slice(spaceIdx + 1), routeKey }
+  })
+  return _urlList
+}
+
+// ─── Levenshtein ──────────────────────────────────────────────────────────────
+
+/**
+ * Computes the Levenshtein edit distance between two strings.
+ * Uses two-row dynamic programming for O(min(m,n)) space.
+ *
+ * @param {string} a
+ * @param {string} b
+ * @returns {number}
+ */
+function levenshtein(a, b) {
+  const m = a.length, n = b.length
+  if (m === 0) return n
+  if (n === 0) return m
+  let prev = Array.from({ length: n + 1 }, (_, i) => i)
+  let curr = new Array(n + 1)
+  for (let i = 1; i <= m; i++) {
+    curr[0] = i
+    for (let j = 1; j <= n; j++) {
+      curr[j] = a[i - 1] === b[j - 1] ? prev[j - 1] : 1 + Math.min(prev[j - 1], prev[j], curr[j - 1])
+    }
+    ;[prev, curr] = [curr, prev]
+  }
+  return prev[n]
+}
+
+/**
+ * Finds routes within LEVENSHTEIN_THRESHOLD edit distance of `url`.
+ * Optionally restricts results to a specific HTTP method.
+ * Returns up to 2 results sorted by ascending distance.
+ *
+ * @param {string} url
+ * @param {string|null} method  restrict to this HTTP method, or null for all
+ * @returns {Array<{routeKey: string, distance: number}>}
+ */
+function findClosestRoutes(url, method = null) {
+  const results = []
+  for (const entry of getUrlList()) {
+    if (method && entry.method !== method) continue
+    const dist = levenshtein(url, entry.url)
+    if (dist > 0 && dist <= LEVENSHTEIN_THRESHOLD) {
+      results.push({ routeKey: entry.routeKey, distance: dist })
+    }
+  }
+  return results.sort((a, b) => a.distance - b.distance).slice(0, 2)
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Returns true if the file already imports API_ROUTES from the generated registry. */
@@ -63,11 +136,7 @@ function hasApiRoutesImport(sourceCode) {
 }
 
 /**
- * Builds a single suggest entry for a known routeKey.
- *
- * The fix function:
- *   1. Replaces the cy.intercept(...) call with cy.interceptApi(routeKey, body)
- *   2. Prepends the API_ROUTES import if the file does not already have one
+ * Builds a suggest entry for a confirmed exact route match.
  *
  * @param {string} routeKey      e.g. "API_ROUTES.bridges.getBridges"
  * @param {object} node          the cy.intercept CallExpression AST node
@@ -90,6 +159,58 @@ function makeSuggest(routeKey, node, bodyArg, sourceCode) {
   }
 }
 
+/**
+ * Builds a suggest entry for a fuzzy (Levenshtein) route match.
+ * The description includes the edit distance to signal it is a best guess.
+ *
+ * @param {string} routeKey
+ * @param {number} distance  Levenshtein edit distance
+ * @param {object} node
+ * @param {object|null} bodyArg
+ * @param {object} sourceCode
+ */
+function makeSuggestTypo(routeKey, distance, node, bodyArg, sourceCode) {
+  return {
+    messageId: 'suggestTypoFix',
+    data: { routeKey, distance },
+    fix(fixer) {
+      const fixes = []
+      const bodyText = bodyArg ? `, ${sourceCode.getText(bodyArg)}` : ''
+      fixes.push(fixer.replaceText(node, `cy.interceptApi(${routeKey}${bodyText})`))
+      if (!hasApiRoutesImport(sourceCode)) {
+        fixes.push(fixer.insertTextBefore(sourceCode.ast.body[0], API_ROUTES_IMPORT))
+      }
+      return fixes
+    },
+  }
+}
+
+/**
+ * Builds the suggest array for a URL: exact matches first, Levenshtein fallback.
+ *
+ * @param {string} url          normalised URL starting with /api/
+ * @param {string|null} method  if known, restrict exact + fuzzy search to this method
+ * @param {object} node
+ * @param {object|null} bodyArg
+ * @param {object} sourceCode
+ * @param {Map<string,string>} routeMap
+ */
+function buildSuggest(url, method, node, bodyArg, sourceCode, routeMap) {
+  // Exact matches (all methods if method is null, otherwise just the one)
+  const methods = method ? [method] : [...HTTP_METHODS]
+  const exactSuggests = methods
+    .map((m) => routeMap.get(`${m} ${url}`))
+    .filter(Boolean)
+    .map((routeKey) => makeSuggest(routeKey, node, bodyArg, sourceCode))
+
+  if (exactSuggests.length > 0) return exactSuggests
+
+  // Levenshtein fallback
+  return findClosestRoutes(url, method).map(({ routeKey, distance }) =>
+    makeSuggestTypo(routeKey, distance, node, bodyArg, sourceCode)
+  )
+}
+
 // ─── Rule ─────────────────────────────────────────────────────────────────────
 
 /** @type {import('eslint').Rule.RuleModule} */
@@ -107,6 +228,10 @@ export const noBareIntercept = {
         'Use cy.interceptApi(API_ROUTES.namespace.route, response) instead of cy.intercept() for static API responses.' +
         ' See cypress/support/__generated__/apiRoutes.ts for the typed route registry.',
       suggestInterceptApi: 'Replace with cy.interceptApi({{routeKey}}, ...)',
+      missingLeadingSlash:
+        '"{{url}}" looks like an API route but is missing a leading slash — did you mean \'/{{url}}\'?',
+      suggestTypoFix:
+        'Replace with cy.interceptApi({{routeKey}}, ...) — closest match (edit distance: {{distance}})',
     },
     schema: [],
   },
@@ -138,36 +263,48 @@ export const noBareIntercept = {
         )
         if (hasCallback) return
 
-        // cy.intercept('/api/...', ...) — URL-only or URL+response
-        // No HTTP method available, so try all methods and offer a suggestion for each match.
         const firstArg = args[0]
-        if (firstArg.type === 'Literal' && typeof firstArg.value === 'string' && firstArg.value.startsWith('/api/')) {
-          const url = firstArg.value
+        if (firstArg.type !== 'Literal' || typeof firstArg.value !== 'string') return
+
+        const firstVal = firstArg.value
+
+        // ── cy.intercept('api/...') or cy.intercept('api/...', body) ──────────
+        // URL-only, missing leading slash.
+        if (firstVal.startsWith('api/')) {
           const bodyArg = args[1] ?? null
-          const suggest = [...HTTP_METHODS]
-            .map((method) => routeMap.get(`${method} ${url}`))
-            .filter(Boolean)
-            .map((routeKey) => makeSuggest(routeKey, node, bodyArg, sourceCode))
+          const normalizedUrl = '/' + firstVal
+          const suggest = buildSuggest(normalizedUrl, null, node, bodyArg, sourceCode, routeMap)
+          context.report({ node, messageId: 'missingLeadingSlash', data: { url: firstVal }, suggest })
+          return
+        }
+
+        // ── cy.intercept('/api/...') or cy.intercept('/api/...', body) ────────
+        // URL-only, correct leading slash.
+        if (firstVal.startsWith('/api/')) {
+          const bodyArg = args[1] ?? null
+          const suggest = buildSuggest(firstVal, null, node, bodyArg, sourceCode, routeMap)
           context.report({ node, messageId: 'useInterceptApi', suggest })
           return
         }
 
-        // cy.intercept('GET', '/api/...', ...) — method + URL + optional response
-        if (
-          args.length >= 2 &&
-          firstArg.type === 'Literal' &&
-          typeof firstArg.value === 'string' &&
-          HTTP_METHODS.has(firstArg.value.toUpperCase())
-        ) {
+        // ── cy.intercept('METHOD', url, ...) ──────────────────────────────────
+        if (args.length >= 2 && HTTP_METHODS.has(firstVal.toUpperCase())) {
           const secondArg = args[1]
-          if (
-            secondArg.type === 'Literal' &&
-            typeof secondArg.value === 'string' &&
-            secondArg.value.startsWith('/api/')
-          ) {
-            const routeKey = routeMap.get(`${firstArg.value.toUpperCase()} ${secondArg.value}`)
-            const bodyArg = args[2] ?? null
-            const suggest = routeKey ? [makeSuggest(routeKey, node, bodyArg, sourceCode)] : []
+          if (secondArg.type !== 'Literal' || typeof secondArg.value !== 'string') return
+
+          const method = firstVal.toUpperCase()
+          const url = secondArg.value
+          const bodyArg = args[2] ?? null
+
+          if (url.startsWith('api/')) {
+            const normalizedUrl = '/' + url
+            const suggest = buildSuggest(normalizedUrl, method, node, bodyArg, sourceCode, routeMap)
+            context.report({ node, messageId: 'missingLeadingSlash', data: { url }, suggest })
+            return
+          }
+
+          if (url.startsWith('/api/')) {
+            const suggest = buildSuggest(url, method, node, bodyArg, sourceCode, routeMap)
             context.report({ node, messageId: 'useInterceptApi', suggest })
           }
         }
