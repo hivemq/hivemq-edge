@@ -1,5 +1,6 @@
 /**
- * Generates cypress/support/__generated__/apiRoutes.ts from src/api/__generated__/services/*.ts
+ * Generates cypress/support/__generated__/apiRoutes.ts and apiRoutes.meta.json
+ * from src/api/__generated__/services/*.ts
  *
  * Run directly: node --experimental-strip-types tools/generateInterceptRoutes.ts
  * Run via npm:  pnpm dev:openAPI  (integrated into the OpenAPI codegen pipeline)
@@ -15,6 +16,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
 const SERVICES_DIR = join(ROOT, 'src/api/__generated__/services')
 const OUTPUT_FILE = join(ROOT, 'cypress/support/__generated__/apiRoutes.ts')
+const META_FILE = join(ROOT, 'cypress/support/__generated__/apiRoutes.meta.json')
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -338,6 +340,26 @@ ${namespaceBlocks}
 `
 }
 
+/**
+ * Generates the reverse-lookup map consumed by the no-bare-cy-intercept ESLint rule.
+ *
+ * Maps "METHOD /url" → "API_ROUTES.namespace.method" so the rule can suggest the
+ * exact replacement when it detects a bare cy.intercept() call.
+ *
+ * Parametric URLs use ** wildcards (matching the runtime url stored in Route.url):
+ *   "GET /api/v1/management/bridges/{bridgeId}" → "GET /api/v1/management/bridges/**"
+ */
+function generateMeta(services: ServiceEntry[]): string {
+  const map: Record<string, string> = {}
+  for (const svc of services) {
+    for (const r of svc.routes) {
+      const wildcardUrl = r.url.replace(/\{[^}]+}/g, '**')
+      map[`${r.httpMethod} ${wildcardUrl}`] = `API_ROUTES.${svc.namespace}.${r.methodName}`
+    }
+  }
+  return JSON.stringify(map, null, 2) + '\n'
+}
+
 // ─── Main ──────────────────────────────────────────────────────────────────────
 
 const serviceFiles = readdirSync(SERVICES_DIR)
@@ -362,6 +384,7 @@ for (const svc of services) {
 }
 
 writeFileSync(OUTPUT_FILE, generateOutput(services), 'utf-8')
+writeFileSync(META_FILE, generateMeta(services), 'utf-8')
 
 const totalRoutes = services.reduce((sum, s) => sum + s.routes.length, 0)
-console.log(`Generated apiRoutes.ts — ${services.length} services, ${totalRoutes} routes`)
+console.log(`Generated apiRoutes.ts + apiRoutes.meta.json — ${services.length} services, ${totalRoutes} routes`)
