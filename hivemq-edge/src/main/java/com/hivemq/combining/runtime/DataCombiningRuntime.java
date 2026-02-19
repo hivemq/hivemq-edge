@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,33 +87,35 @@ public class DataCombiningRuntime {
         // prepare the script for the data combining
         dataCombiningTransformationService.addScriptForDataCombining(combining);
         final DataIdentifierReference primaryRef = combining.sources().primaryReference();
+        final AtomicBoolean primaryProcessed = new AtomicBoolean();
         combining.instructions().stream()
                 .map(Instruction::dataIdentifierReference)
                 .filter(Objects::nonNull)
-                .filter(ref -> !ref.equals(primaryRef))
                 .distinct()
-                .forEach(this::subscribeNonPrimary);
-        subscribePrimary(primaryRef);
+                .forEach(dataIdentifierReference -> {
+                    if (dataIdentifierReference.equals(primaryRef)) {
+                        primaryProcessed.set(true);
+                        subscribe(dataIdentifierReference, true, true);
+                    } else {
+                        subscribe(dataIdentifierReference, false, true);
+                    }
+                });
+        if (!primaryProcessed.get()) {
+            subscribe(primaryRef, true, false);
+        }
     }
 
-    private void subscribeNonPrimary(final @NotNull DataIdentifierReference ref) {
-        subscribe(ref, false);
-    }
-
-    private void subscribePrimary(final @NotNull DataIdentifierReference ref) {
-        subscribe(ref, true);
-    }
-
-    private void subscribe(final @NotNull DataIdentifierReference ref, final boolean isPrimary) {
+    private void subscribe(
+            final @NotNull DataIdentifierReference ref, final boolean primary, final boolean storeDataPoints) {
         InternalConsumer consumer = null;
         switch (ref.type()) {
             case TAG -> {
                 log.debug("Starting tag consumer for tag {} with scope {}", ref.id(), ref.scope());
-                consumer = new InternalTagConsumer(ref, isPrimary);
+                consumer = new InternalTagConsumer(ref, primary, storeDataPoints);
             }
             case TOPIC_FILTER -> {
                 log.debug("Starting mqtt consumer for filter {}", ref.id());
-                consumer = new InternalTopicFilterConsumer(ref, isPrimary);
+                consumer = new InternalTopicFilterConsumer(ref, primary, storeDataPoints);
             }
             default -> log.warn("Unsupported data identifier reference type: {}", ref.type());
         }
@@ -162,10 +165,15 @@ public class DataCombiningRuntime {
     public abstract class InternalConsumer {
         protected final @NotNull DataIdentifierReference dataIdentifierReference;
         protected final boolean primary;
+        protected final boolean storeDataPoints;
 
-        public InternalConsumer(final @NotNull DataIdentifierReference dataIdentifierReference, final boolean primary) {
+        public InternalConsumer(
+                final @NotNull DataIdentifierReference dataIdentifierReference,
+                final boolean primary,
+                final boolean storeDataPoints) {
             this.dataIdentifierReference = dataIdentifierReference;
             this.primary = primary;
+            this.storeDataPoints = storeDataPoints;
         }
 
         public abstract void close();
@@ -181,8 +189,10 @@ public class DataCombiningRuntime {
         private final @NotNull String topicFilter;
 
         public InternalTopicFilterConsumer(
-                final @NotNull DataIdentifierReference dataIdentifierReference, final boolean primary) {
-            super(dataIdentifierReference, primary);
+                final @NotNull DataIdentifierReference dataIdentifierReference,
+                final boolean primary,
+                final boolean storeDataPoints) {
+            super(dataIdentifierReference, primary, storeDataPoints);
             this.queueId = combining.id() + "/" + dataIdentifierReference.id();
             this.subscriber = combining.id() + "#";
             this.topicFilter = dataIdentifierReference.id();
@@ -190,7 +200,9 @@ public class DataCombiningRuntime {
                     new QueueConsumer(clientQueuePersistence, combining.id() + "/" + topicFilter, singleWriterService) {
                         @Override
                         public void process(final @NotNull PUBLISH publish) {
-                            topicFilterToPublish.put(topicFilter, publish);
+                            if (storeDataPoints) {
+                                topicFilterToPublish.put(topicFilter, publish);
+                            }
                             if (primary) {
                                 triggerPublish(combining);
                             }
@@ -222,8 +234,10 @@ public class DataCombiningRuntime {
 
     public final class InternalTagConsumer extends InternalConsumer implements TagConsumer {
         public InternalTagConsumer(
-                final @NotNull DataIdentifierReference dataIdentifierReference, final boolean primary) {
-            super(dataIdentifierReference, primary);
+                final @NotNull DataIdentifierReference dataIdentifierReference,
+                final boolean primary,
+                final boolean storeDataPoints) {
+            super(dataIdentifierReference, primary, storeDataPoints);
         }
 
         @Override
@@ -239,7 +253,9 @@ public class DataCombiningRuntime {
         @Override
         public void accept(final @NotNull List<DataPoint> dataPoints) {
             // Use DataIdentifierReference as the key to include scope
-            tagResults.put(dataIdentifierReference, dataPoints);
+            if (storeDataPoints) {
+                tagResults.put(dataIdentifierReference, dataPoints);
+            }
             if (primary) {
                 try {
                     triggerPublish(combining);

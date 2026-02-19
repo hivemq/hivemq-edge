@@ -535,8 +535,8 @@ class DataCombiningRuntimeTest {
         final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(dataCombiningPublishService).publish(eq(destination), payloadCaptor.capture(), eq(combining));
         final String payload = new String(payloadCaptor.getValue());
-        // The key should be the fully qualified name: adapter1/TAG:tag1
-        assertThat(payload).contains("adapter1/TAG:tag1");
+        // The payload should be the empty.
+        assertThat(payload).isEqualTo("{}");
     }
 
     /*
@@ -755,9 +755,9 @@ class DataCombiningRuntimeTest {
 
     /*
      * Verifies via start() that when the primary TOPIC_FILTER is also referenced in an
-     * instruction, it is only subscribed once (deduplicated by .filter(ref -> !ref.equals(primaryRef)))
-     * and still triggers publish as the primary. The instruction ref equals the primary ref,
-     * so it's filtered out of the stream, and only subscribe(primaryRef, true) creates the subscription.
+     * instruction, it is only subscribed once (deduplicated by .distinct()) and still
+     * triggers publish as the primary. The instruction ref equals the primary ref,
+     * so it's handled once inside the forEach with isPrimary=true, storeDataPoints=true.
      */
     @Test
     void start_whenPrimaryTopicFilterAlsoInInstruction_thenSubscribedOnceAsPrimary() {
@@ -783,5 +783,172 @@ class DataCombiningRuntimeTest {
 
         // The single subscription is primary and triggered publish
         verify(dataCombiningPublishService, times(1)).publish(any(), any(), eq(combining));
+    }
+
+    // --- storeDataPoints tests ---
+
+    /*
+     * When the TAG primary is referenced by an instruction, it is subscribed with
+     * storeDataPoints=true. Accepting data on the primary stores it in tagResults,
+     * so triggerPublish() includes the tag data in the published payload.
+     * The payload should contain the fully qualified tag key and the data point value.
+     */
+    @Test
+    void start_whenTagPrimaryInInstructions_thenAcceptStoresDataInPayload() {
+        final DataIdentifierReference primary =
+                new DataIdentifierReference("tag1", DataIdentifierReference.Type.TAG, "adapter1");
+        final Instruction instruction = new Instruction("$.temperature", "output", primary);
+        final DataCombiningDestination destination = new DataCombiningDestination(null, "dest/topic", "{}");
+        final DataCombining combining = new DataCombining(
+                UUID.randomUUID(),
+                new DataCombiningSources(primary, List.of("tag1"), List.of()),
+                destination,
+                List.of(instruction));
+
+        final DataCombiningRuntime runtime = createRuntime(combining);
+        runtime.start();
+
+        final ArgumentCaptor<TagConsumer> consumerCaptor = ArgumentCaptor.forClass(TagConsumer.class);
+        verify(tagManager).addConsumer(consumerCaptor.capture());
+
+        consumerCaptor.getValue().accept(List.of(new DataPointImpl("tag1", "{\"temperature\":25}")));
+
+        final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(dataCombiningPublishService).publish(eq(destination), payloadCaptor.capture(), eq(combining));
+        final String payload = new String(payloadCaptor.getValue());
+        assertThat(payload).contains("adapter1/TAG:tag1");
+        assertThat(payload).contains("\"temperature\":25");
+    }
+
+    /*
+     * When the TAG primary is NOT referenced by any instruction, it is subscribed with
+     * storeDataPoints=false. Accepting data on the primary triggers triggerPublish()
+     * but does NOT store the data in tagResults. The published payload is empty "{}".
+     */
+    @Test
+    void start_whenTagPrimaryNotInInstructions_thenAcceptDoesNotStoreDataInPayload() {
+        final DataIdentifierReference primary =
+                new DataIdentifierReference("tag1", DataIdentifierReference.Type.TAG, "adapter1");
+        final DataCombiningDestination destination = new DataCombiningDestination(null, "dest/topic", "{}");
+        final DataCombining combining = new DataCombining(
+                UUID.randomUUID(),
+                new DataCombiningSources(primary, List.of("tag1"), List.of()),
+                destination,
+                List.of());
+
+        final DataCombiningRuntime runtime = createRuntime(combining);
+        runtime.start();
+
+        final ArgumentCaptor<TagConsumer> consumerCaptor = ArgumentCaptor.forClass(TagConsumer.class);
+        verify(tagManager).addConsumer(consumerCaptor.capture());
+
+        consumerCaptor.getValue().accept(List.of(new DataPointImpl("tag1", "{\"temperature\":25}")));
+
+        final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(dataCombiningPublishService).publish(eq(destination), payloadCaptor.capture(), eq(combining));
+        final String payload = new String(payloadCaptor.getValue());
+        assertThat(payload).isEqualTo("{}");
+    }
+
+    /*
+     * When the TOPIC_FILTER primary is referenced by an instruction, it is subscribed with
+     * storeDataPoints=true. When a message arrives via polling, it is stored in
+     * topicFilterToPublish. triggerPublish() includes the topic filter data in the payload.
+     */
+    @Test
+    void start_whenTopicFilterPrimaryInInstructions_thenMessageStoredInPayload() {
+        final PUBLISH mqttPublish = createMockPublish();
+        setupSynchronousPolling(mqttPublish);
+
+        final DataIdentifierReference primary =
+                new DataIdentifierReference("sensor/temp", DataIdentifierReference.Type.TOPIC_FILTER);
+        final Instruction instruction = new Instruction("$.v", "output", primary);
+        final DataCombiningDestination destination = new DataCombiningDestination(null, "dest/topic", "{}");
+        final DataCombining combining = new DataCombining(
+                UUID.randomUUID(),
+                new DataCombiningSources(primary, List.of(), List.of("sensor/temp")),
+                destination,
+                List.of(instruction));
+
+        final DataCombiningRuntime runtime = createRuntime(combining);
+        runtime.start();
+
+        final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(dataCombiningPublishService).publish(eq(destination), payloadCaptor.capture(), eq(combining));
+        final String payload = new String(payloadCaptor.getValue());
+        // Payload should contain the topic filter data from the mock publish {"v":1}
+        assertThat(payload).contains("\"v\":1");
+    }
+
+    /*
+     * When the TOPIC_FILTER primary is NOT referenced by any instruction, it is subscribed
+     * with storeDataPoints=false. When a message arrives via polling, it is NOT stored in
+     * topicFilterToPublish. triggerPublish() produces an empty payload "{}".
+     */
+    @Test
+    void start_whenTopicFilterPrimaryNotInInstructions_thenMessageNotStoredInPayload() {
+        final PUBLISH mqttPublish = createMockPublish();
+        setupSynchronousPolling(mqttPublish);
+
+        final DataIdentifierReference primary =
+                new DataIdentifierReference("sensor/temp", DataIdentifierReference.Type.TOPIC_FILTER);
+        final DataCombiningDestination destination = new DataCombiningDestination(null, "dest/topic", "{}");
+        final DataCombining combining = new DataCombining(
+                UUID.randomUUID(),
+                new DataCombiningSources(primary, List.of(), List.of("sensor/temp")),
+                destination,
+                List.of());
+
+        final DataCombiningRuntime runtime = createRuntime(combining);
+        runtime.start();
+
+        final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(dataCombiningPublishService).publish(eq(destination), payloadCaptor.capture(), eq(combining));
+        final String payload = new String(payloadCaptor.getValue());
+        assertThat(payload).isEqualTo("{}");
+    }
+
+    /*
+     * Mixed scenario: TAG primary is NOT in instructions (storeDataPoints=false), but a
+     * non-primary TAG instruction IS present (storeDataPoints=true). When the non-primary
+     * tag stores data and the primary triggers publish, the payload contains only the
+     * non-primary tag data — the primary's data is excluded.
+     */
+    @Test
+    void start_whenTagPrimaryNotInInstructions_withNonPrimaryInstruction_thenOnlyNonPrimaryDataInPayload() {
+        final DataIdentifierReference primary =
+                new DataIdentifierReference("tag1", DataIdentifierReference.Type.TAG, "adapter1");
+        final DataIdentifierReference instructionRef =
+                new DataIdentifierReference("tag2", DataIdentifierReference.Type.TAG, "adapter2");
+        final Instruction instruction = new Instruction("$.value", "output", instructionRef);
+        final DataCombiningDestination destination = new DataCombiningDestination(null, "dest/topic", "{}");
+        final DataCombining combining = new DataCombining(
+                UUID.randomUUID(),
+                new DataCombiningSources(primary, List.of("tag1", "tag2"), List.of()),
+                destination,
+                List.of(instruction));
+
+        final DataCombiningRuntime runtime = createRuntime(combining);
+        runtime.start();
+
+        final ArgumentCaptor<TagConsumer> captor = ArgumentCaptor.forClass(TagConsumer.class);
+        verify(tagManager, times(2)).addConsumer(captor.capture());
+        final List<TagConsumer> consumers = captor.getAllValues();
+
+        // Feed data to non-primary (tag2) first — stores but does not trigger
+        consumers.get(0).accept(List.of(new DataPointImpl("tag2", "{\"humidity\":60}")));
+        verify(dataCombiningPublishService, never()).publish(any(), any(), any());
+
+        // Feed data to primary (tag1) — triggers publish but does NOT store its own data
+        consumers.get(1).accept(List.of(new DataPointImpl("tag1", "{\"temperature\":25}")));
+
+        final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(dataCombiningPublishService).publish(eq(destination), payloadCaptor.capture(), eq(combining));
+        final String payload = new String(payloadCaptor.getValue());
+        // Payload contains non-primary tag2 data but NOT primary tag1 data
+        assertThat(payload).contains("adapter2/TAG:tag2");
+        assertThat(payload).contains("\"humidity\":60");
+        assertThat(payload).doesNotContain("adapter1/TAG:tag1");
+        assertThat(payload).doesNotContain("temperature");
     }
 }
