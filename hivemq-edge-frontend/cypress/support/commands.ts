@@ -10,6 +10,8 @@ import { checkAccessibility } from './commands/checkAccessibility'
 import { clearInterceptList } from './commands/clearInterceptList'
 import { setMonacoEditorValue, getMonacoEditorValue } from './commands/monacoEditor'
 import { saveHTMLSnapshot, logDOMState } from './commands/saveHTMLSnapshot'
+import { interceptApi } from './commands/interceptApi'
+import type { Route } from './apiRoutes'
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -35,6 +37,21 @@ declare global {
       // For AI debugging
       saveHTMLSnapshot(name: string): Chainable<void>
       logDOMState(label?: string): Chainable<void>
+
+      /**
+       * Type-safe cy.intercept wrapper for static API responses.
+       * TypeScript infers the response type from the route object and validates
+       * the response body against the OpenAPI model at compile time.
+       *
+       * @see {@link API_ROUTES} in `cypress/support/apiRoutes.ts`
+       * @see {@link https://linear.app/hivemq/issue/EDG-73}
+       *
+       * @example
+       * cy.interceptApi(API_ROUTES.authentication.authenticate, { token: 'fake' }).as('auth')
+       * cy.interceptApi(API_ROUTES.bridges.getBridgeById.withParams({ bridgeId: 'x' }), bridgeMock)
+       * cy.interceptApi(API_ROUTES.bridges.getBridges, { statusCode: 404 })
+       */
+      interceptApi<T>(route: Route<T>, response: T | { statusCode: number; log?: boolean }): Chainable<null>
     }
   }
 }
@@ -48,6 +65,8 @@ Cypress.Commands.add('setMonacoEditorValue', { prevSubject: 'element' }, setMona
 Cypress.Commands.add('getMonacoEditorValue', { prevSubject: 'element' }, getMonacoEditorValue)
 Cypress.Commands.add('saveHTMLSnapshot', saveHTMLSnapshot)
 Cypress.Commands.add('logDOMState', logDOMState)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+Cypress.Commands.add('interceptApi', interceptApi as any)
 
 // eslint-disable-next-line @typescript-eslint/no-namespace, @typescript-eslint/no-unused-vars
 declare namespace Chai {

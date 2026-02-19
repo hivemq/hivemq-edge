@@ -21,7 +21,8 @@
     "baseUrl": "./",
     "paths": {
       "@/*": ["src/*"],
-      "@datahub/*": ["src/extensions/datahub/*"]
+      "@datahub/*": ["src/extensions/datahub/*"],
+      "@cypr/*": ["cypress/*"]
     }
   },
   "files": [],
