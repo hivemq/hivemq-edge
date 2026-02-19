@@ -565,13 +565,13 @@ class DataCombiningRuntimeTest {
     }
 
     /*
-     * Verifies that subscribeTopicFilter() creates an InternalSubscription with the
-     * correct subscriber (combiningId + "#"), topic, and sharedName (combiningId).
-     * It should also register the topic in LocalTopicTree via addTopic() with
-     * the matching subscriber and shared name parameters.
+     * Verifies that when start() subscribes a TOPIC_FILTER primary, it registers the
+     * topic in LocalTopicTree via addTopic() with the correct subscriber (combiningId + "#")
+     * and sharedName (combiningId). These values are set internally by InternalTopicFilterConsumer
+     * and used for shared subscription routing.
      */
     @Test
-    void subscribeTopicFilter_thenAddsTopicToTree() {
+    void start_whenTopicFilterPrimary_thenAddsTopicToTreeWithCorrectSubscriberAndSharedName() {
         final DataIdentifierReference primary =
                 new DataIdentifierReference("sensor/temp", DataIdentifierReference.Type.TOPIC_FILTER);
         final UUID combiningId = UUID.randomUUID();
@@ -582,24 +582,22 @@ class DataCombiningRuntimeTest {
                 List.of());
 
         final DataCombiningRuntime runtime = createRuntime(combining);
-        final DataCombiningRuntime.InternalSubscription subscription =
-                runtime.subscribeTopicFilter(combining, "sensor/temp", false);
-
-        assertThat(subscription.subscriber()).isEqualTo(combiningId + "#");
-        assertThat(subscription.topic()).isEqualTo("sensor/temp");
-        assertThat(subscription.sharedName()).isEqualTo(combiningId.toString());
+        runtime.start();
 
         verify(localTopicTree).addTopic(eq(combiningId + "#"), any(Topic.class), anyByte(), eq(combiningId.toString()));
     }
 
     /*
-     * Verifies that InternalSubscription.getQueueId() returns the format
-     * "sharedName/topic" which is "combiningId/sensor/temp".
-     * This queue ID is used by ClientQueuePersistence to identify the shared
-     * subscription queue for reading and acknowledging messages.
+     * Verifies that the queue ID used for polling has the format "combiningId/topicFilter".
+     * When start() creates an InternalTopicFilterConsumer, its QueueConsumer uses this
+     * queue ID for readShared() calls. We verify the format by checking that
+     * clientQueuePersistence.readShared() is called with the expected queue ID.
      */
     @Test
-    void internalSubscription_getQueueId_thenReturnsCorrectFormat() {
+    void start_whenTopicFilterPrimary_thenQueueIdHasCorrectFormat() {
+        final PUBLISH mqttPublish = createMockPublish();
+        setupSynchronousPolling(mqttPublish);
+
         final DataIdentifierReference primary =
                 new DataIdentifierReference("sensor/temp", DataIdentifierReference.Type.TOPIC_FILTER);
         final UUID combiningId = UUID.randomUUID();
@@ -610,10 +608,11 @@ class DataCombiningRuntimeTest {
                 List.of());
 
         final DataCombiningRuntime runtime = createRuntime(combining);
-        final DataCombiningRuntime.InternalSubscription subscription =
-                runtime.subscribeTopicFilter(combining, "sensor/temp", false);
+        runtime.start();
 
-        assertThat(subscription.getQueueId()).isEqualTo(combiningId + "/sensor/temp");
+        final ArgumentCaptor<String> queueIdCaptor = ArgumentCaptor.forClass(String.class);
+        verify(clientQueuePersistence, times(2)).readShared(queueIdCaptor.capture(), anyInt(), anyLong());
+        assertThat(queueIdCaptor.getAllValues()).allMatch(id -> id.equals(combiningId + "/sensor/temp"));
     }
 
     // --- Topic filter primary tests (via start()) ---
