@@ -11,7 +11,8 @@ import { clearInterceptList } from './commands/clearInterceptList'
 import { setMonacoEditorValue, getMonacoEditorValue } from './commands/monacoEditor'
 import { saveHTMLSnapshot, logDOMState } from './commands/saveHTMLSnapshot'
 import { interceptApi } from './commands/interceptApi'
-import type { Route } from './apiRoutes'
+import type { Route } from './__generated__/apiRoutes'
+import type { StaticResponse } from './commands/interceptApi'
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -43,7 +44,7 @@ declare global {
        * TypeScript infers the response type from the route object and validates
        * the response body against the OpenAPI model at compile time.
        *
-       * @see {@link API_ROUTES} in `cypress/support/apiRoutes.ts`
+       * @see {@link API_ROUTES} in `cypress/support/__generated__/apiRoutes.ts`
        * @see {@link https://linear.app/hivemq/issue/EDG-73}
        *
        * @example
@@ -51,7 +52,7 @@ declare global {
        * cy.interceptApi(API_ROUTES.bridges.getBridgeById.withParams({ bridgeId: 'x' }), bridgeMock)
        * cy.interceptApi(API_ROUTES.bridges.getBridges, { statusCode: 404 })
        */
-      interceptApi<T>(route: Route<T>, response: T | { statusCode: number; log?: boolean }): Chainable<null>
+      interceptApi<T>(route: Route<T>, response: T | StaticResponse<T>): Chainable<null>
     }
   }
 }
