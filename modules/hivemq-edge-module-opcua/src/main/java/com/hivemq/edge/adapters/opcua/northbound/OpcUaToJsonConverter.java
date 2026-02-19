@@ -15,8 +15,6 @@
  */
 package com.hivemq.edge.adapters.opcua.northbound;
 
-import static com.hivemq.edge.adapters.opcua.Constants.EMPTY_BYTES;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
