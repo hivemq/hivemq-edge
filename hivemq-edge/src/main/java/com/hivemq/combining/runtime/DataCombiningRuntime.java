@@ -159,12 +159,11 @@ public class DataCombiningRuntime {
         }
 
         public JsonNode getJsonNode() {
-            if (jsonNode == null) {
-                String propertyValue = value.toString();
+            if (value != null) {
                 try {
                     jsonNode = mapper.readTree(value.toString());
                 } catch (final IOException e) {
-                    log.warn("Exception during json parsing of datapoint '{}'", propertyValue);
+                    log.warn("Exception during json parsing of datapoint '{}'", value);
                     throw new RuntimeException(e);
                 }
                 value = null;
@@ -210,7 +209,7 @@ public class DataCombiningRuntime {
             final @NotNull DataIdentifierReference ref,
             final boolean isTrigger,
             final boolean providesValue) {
-        log.debug("Starting {} consumer for {}", ref.type(), ref.id());
+        log.debug("Starting {} consumer for {}", ref.type(), ref);
         switch (ref.type()) {
             case TAG -> {
                 subscriptions.add(new InternalSubscriptionTag(ref, isTrigger, providesValue));
