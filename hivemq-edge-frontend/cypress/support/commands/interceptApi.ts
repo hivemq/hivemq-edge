@@ -47,10 +47,7 @@ export type StaticResponse<T> = {
  * @see {@link API_ROUTES} for the full route registry
  * @see {@link https://linear.app/hivemq/issue/EDG-73} for implementation context
  */
-export const interceptApi = <T>(
-  route: Route<T>,
-  response: T | StaticResponse<T>
-): Cypress.Chainable<null> => {
+export const interceptApi = <T>(route: Route<T>, response: T | StaticResponse<T>): Cypress.Chainable<null> => {
   // The cast to `any` is intentional: type safety is provided by the function
   // signature above. Internally we delegate to cy.intercept which accepts the
   // same plain objects — the TypeScript boundary is the function signature.

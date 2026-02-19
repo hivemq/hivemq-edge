@@ -104,12 +104,7 @@ function lineColToOffset(source: string, line: number, col: number): number {
  * A character-scan would fail because cy.intercept and cy.interceptApi share
  * the "cy.intercept" prefix, causing the scan to overshoot.
  */
-function decomposeFix(
-  fix: SuggestionFix,
-  source: string,
-  msgLine: number,
-  msgColumn: number
-): DecomposedFix {
+function decomposeFix(fix: SuggestionFix, source: string, msgLine: number, msgColumn: number): DecomposedFix {
   if (fix.text.startsWith(IMPORT_TEXT)) {
     const importInsertPos = fix.range[0] // = body[0].range[0]
     const callStart = lineColToOffset(source, msgLine, msgColumn)
@@ -175,9 +170,7 @@ for (const pattern of patterns) {
     const filePath = result.filePath
     const relPath = relative(ROOT, filePath)
 
-    const messages = (result.messages as LintMessage[]).filter(
-      (m) => m.ruleId === 'local/no-bare-cy-intercept'
-    )
+    const messages = (result.messages as LintMessage[]).filter((m) => m.ruleId === 'local/no-bare-cy-intercept')
     if (messages.length === 0) continue
 
     totalFiles++
@@ -201,7 +194,11 @@ for (const pattern of patterns) {
       }
 
       const decomposed = decomposeFix(firstSuggestion.fix, originalSource, msg.line, msg.column)
-      replacements.push({ callStart: decomposed.callStart, callEnd: decomposed.callEnd, newCallText: decomposed.newCallText })
+      replacements.push({
+        callStart: decomposed.callStart,
+        callEnd: decomposed.callEnd,
+        newCallText: decomposed.newCallText,
+      })
       if (decomposed.needsImport && !alreadyHasImport) {
         needsImport = true
         importInsertPos = decomposed.importInsertPos
