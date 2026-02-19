@@ -27,7 +27,6 @@ import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.JsonPayloadCreator;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Payload;
-import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishServiceImpl;
@@ -58,7 +57,6 @@ public class NorthboundTagConsumer implements TagConsumer {
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull EventService eventService;
     private final @NotNull AtomicInteger publishCount = new AtomicInteger(0);
-    private final @NotNull DataPointFactory dataPointFactory;
 
     public NorthboundTagConsumer(
             final @NotNull PollingContext pollingContext,
@@ -75,18 +73,6 @@ public class NorthboundTagConsumer implements TagConsumer {
         this.protocolAdapterPublishService = protocolAdapterPublishService;
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.eventService = eventService;
-        this.dataPointFactory = new DataPointFactory() {
-            @Override
-            public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
-                return new DataPointImpl(tagName, tagValue);
-            }
-
-            @Override
-            public @NotNull DataPoint createJsonDataPoint(
-                    final @NotNull String tagName, final @NotNull Object tagValue) {
-                return new DataPointImpl(tagName, tagValue, true);
-            }
-        };
     }
 
     public void accept(final @NotNull List<DataPoint> dataPoints) {
@@ -100,8 +86,6 @@ public class NorthboundTagConsumer implements TagConsumer {
         try {
             final ImmutableList.Builder<CompletableFuture<?>> publishFutures = ImmutableList.builder();
 
-            final List<byte[]> jsonPayloadsAsBytes = new ArrayList<>();
-
             final JsonPayloadCreator jsonPayloadCreatorOverride = pollingContext.getJsonPayloadCreator();
 
             final List<DataPoint> jsonDataPoints =
@@ -111,23 +95,38 @@ public class NorthboundTagConsumer implements TagConsumer {
                     .map(jsonDataPoint -> {
                         try {
                             final var jsonMap = objectMapper.readValue((String) jsonDataPoint.getTagValue(), typeRef);
-                            final var value = jsonMap.get("value");
-                            if (value != null) {
-                                return dataPointFactory.create(jsonDataPoint.getTagName(), value);
+                            if (jsonMap.size() > 1 && jsonMap.containsKey("value")) {
+                                return new DataPointImpl(jsonDataPoint.getTagName(), jsonMap);
+                            } else if (jsonMap.containsKey("value")) {
+                                return new DataPointImpl(jsonDataPoint.getTagName(), jsonMap.get("value"), true);
                             } else {
-                                throw new RuntimeException("No value entry in JSON message");
+                                log.error(
+                                        "No value received for tag '{}'. This indicates a broken tag on the OPC UA side.",
+                                        jsonDataPoint.getTagName());
+                                return null;
                             }
-                        } catch (JsonProcessingException e) {
-                            throw new RuntimeException(e);
+                        } catch (final JsonProcessingException e) {
+                            if (log.isDebugEnabled()) {
+                                log.debug(
+                                        "Unable to parse JSON for tag '{}': {}",
+                                        jsonDataPoint.getTagName(),
+                                        jsonDataPoint.getTagValue());
+                            } else {
+                                log.error("Unable to parse JSON for tag '{}'", jsonDataPoint.getTagName());
+                            }
+                            return null;
                         }
                     })
+                    .filter(Objects::nonNull)
                     .toList();
 
             final var dataPointsCopied = new ArrayList<>(dataPoints);
             dataPointsCopied.removeAll(jsonDataPoints);
             dataPointsCopied.addAll(preparedJsonDataPoints);
-            jsonPayloadsAsBytes.addAll(Objects.requireNonNullElse(jsonPayloadCreatorOverride, jsonPayloadCreator)
-                    .convertToJson(dataPointsCopied, pollingContext, objectMapper));
+
+            final List<byte[]> jsonPayloadsAsBytes =
+                    new ArrayList<>(Objects.requireNonNullElse(jsonPayloadCreatorOverride, jsonPayloadCreator)
+                            .convertToJson(dataPointsCopied, pollingContext, objectMapper));
 
             for (final byte[] json : jsonPayloadsAsBytes) {
                 final ProtocolAdapterPublishBuilder publishBuilder = protocolAdapterPublishService

@@ -188,6 +188,7 @@ class OpcUaProtocolAdapterConfigTest {
                         new Truststore("my/truststore/path", "truststore-password")),
                 new OpcUaToMqttConfig(1, 1000),
                 new Security(BASIC128RSA15),
+                null,
                 null);
 
         final OpcUaProtocolAdapterFactory opcuaProtocolAdapterFactory =
@@ -224,7 +225,7 @@ class OpcUaProtocolAdapterConfigTest {
     @Test
     public void unconvertConfigObject_default_valid() {
         final BidirectionalOpcUaSpecificAdapterConfig adapterConfig = new BidirectionalOpcUaSpecificAdapterConfig(
-                "my.uri.com", true, null, null, null, new OpcUaToMqttConfig(1, 1000), null, null);
+                "my.uri.com", true, null, null, null, new OpcUaToMqttConfig(1, 1000), null, null, null);
 
         final OpcUaProtocolAdapterFactory opcuaProtocolAdapterFactory =
                 new OpcUaProtocolAdapterFactory(mock(ProtocolAdapterFactoryInput.class));

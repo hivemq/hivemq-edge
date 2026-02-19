@@ -313,6 +313,7 @@ class ParsedConfigTest {
                 tls,
                 opcUaToMqttConfig,
                 security,
+                null,
                 null);
     }
 }
