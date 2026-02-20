@@ -1,0 +1,11 @@
+page_objects:
+  root: cypress/pages/
+  pattern: '{Module}/{ModulePage}.ts'
+
+translation_files:
+  main: src/locales/en/
+  datahub: src/extensions/datahub/locales/en/datahub.json
+
+version: '1.0.0'
+last_updated: '2026-02-20'
+maintainer: 'Edge Frontend Team'

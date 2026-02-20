@@ -1,0 +1,12 @@
+pr:
+  screenshots:
+    skill: capture-screenshots
+    flag: '--for pr'
+    storage: .tasks-log/screenshots/
+
+linear:
+  base_url: 'https://linear.app/hivemq/issue/'
+
+version: '1.0.0'
+last_updated: '2026-02-20'
+maintainer: 'Edge Frontend Team'
