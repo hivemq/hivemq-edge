@@ -8,52 +8,42 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **YOU MUST COMPLETE THIS CHECKLIST AT THE START OF EVERY CONVERSATION. NO EXCEPTIONS.**
 
-## 🚨 BLOCKING REQUIREMENT: Read These 2 Documents FIRST
+## 🚨 BLOCKING REQUIREMENT: Read This Document FIRST
 
-**DO NOT proceed with ANY user request until you have used the Read tool to read BOTH documents below.**
+**DO NOT proceed with ANY user request until you have used the Read tool to read the document below.**
 
-### Required Actions (Complete in Order):
+### Required Action:
 
-1. **USE THE READ TOOL** to read `.github/AI_MANDATORY_RULES.md`
+**USE THE READ TOOL** to read `.github/AI_MANDATORY_RULES.md`
 
-   - This contains critical rules that prevent wasting 1-2 hours on common mistakes
-   - Not optional. Not negotiable. READ IT.
-
-2. **USE THE READ TOOL** to read `.tasks/DESIGN_GUIDELINES.md`
-   - UI component patterns, button variants, design patterns
-   - Required before touching any UI code
+- Contains critical rules that prevent wasting 1-2 hours on common mistakes
+- Not optional. Not negotiable. READ IT.
 
 ### ⚠️ Verification Checklist
 
 Before responding to the user's first request, verify:
 
-- [ ] I used the Read tool on `.github/AI_MANDATORY_RULES.md` (not skimmed - READ)
-- [ ] I used the Read tool on `.tasks/DESIGN_GUIDELINES.md` (not skimmed - READ)
-- [ ] I understand the key rules from each document
-- [ ] I will NOT skip these rules to "appear productive"
+- [ ] I used the Read tool on `.github/AI_MANDATORY_RULES.md` (not skimmed — READ)
+- [ ] I understand the key rules in that document
+- [ ] I will NOT skip this to "appear productive"
+
+### For UI work
+
+UI implementation is handled by the `agent-ui-engineer` sub-agent (`.claude/agents/agent-ui-engineer.md`). Delegate to it when implementing components, modals, buttons, or any visual UI. The sub-agent has the design system rules (button variants, modal icons, overlay blur) baked into its system prompt.
 
 ### 🔥 Consequences of Skipping This
 
 **If you skip this preflight:**
 
-- You will waste 1-2 hours on problems that take 15 minutes with guidelines
 - You will violate critical rules and break tests
 - User will have to repeat instructions 3-4 times
 - User will waste their time fixing your avoidable mistakes
 
-**Cost of reading:** 3-5 minutes
-**Cost of NOT reading:** 1-3 hours wasted
-
 ## Why This Section Exists
 
-Past AI instances have:
+Past AI instances have treated mandatory reading as "optional context" and started work immediately to "appear productive", wasting hours on problems the guidelines would have prevented.
 
-- Seen "Mandatory Reading" and ignored it
-- Treated it as "optional context"
-- Started work immediately to "appear productive"
-- Wasted hours on problems the guidelines would have prevented
-
-**This time is different. READ THE DOCUMENTS FIRST.**
+**READ THE DOCUMENT FIRST.**
 
 ---
 
@@ -262,17 +252,37 @@ cy.mountWithProviders(<Component />, {
 
 Test handlers are co-located with hooks in `__handlers__` directories.
 
-## Task Documentation
+## Documentation and agentic context
 
-Task-related documentation is in `.tasks/`:
+### Reference documentation
 
-- `ACTIVE_TASKS.md` - Index of current tasks
-- `CYPRESS_TESTING_GUIDELINES.md` - Comprehensive Cypress guide
-- `DATAHUB_ARCHITECTURE.md` - DataHub state management details
-- `RJSF_WIDGET_DESIGN_AND_TESTING.md` - Form widget patterns
-- `WORKSPACE_TESTING_GUIDELINES.md` - Workspace-specific mock data
+Comprehensive guides live in `docs/`:
 
-### Task Directory Structure
+- `docs/guides/` — Testing, Cypress, RJSF, i18n, design, onboarding
+- `docs/architecture/` — Workspace, DataHub, domain model, state management
+- `docs/api/` — OpenAPI, MSW mocking, Cypress intercepts
+- `docs/technical/` — Stack, configuration, build, deployment
+- `docs/analysis/` — Migration analyses, quality reviews
+
+### Skills
+
+Workflow skills live in `.claude/skills/`. Invoke with `/skill-name` or Claude invokes automatically based on context:
+
+- `debug-cypress` — Systematic Cypress failure investigation
+- `trace-error-messages` — Trace error text through the full stack
+- `create-pr` — Write user-centric pull request descriptions
+- `create-blogpost` — Write feature announcements and release notes
+- `capture-screenshots` — Generate UI screenshots for PRs, docs, and blog posts
+- `technical-doc-review` — Review and improve technical documentation
+
+### Agents
+
+Specialized sub-agents live in `.claude/agents/`. Claude delegates to them automatically:
+
+- `agent-ui-engineer` — UI implementation with design system rules baked in
+- `agent-e2e-tester` — Cypress component and E2E test writing, debugging, and review
+
+### Task directory structure
 
 Tasks follow the Linear workflow. When a user mentions a task (e.g., "EDG-40"), check `.tasks/{linear-id}-{task-name}/` for context.
 
