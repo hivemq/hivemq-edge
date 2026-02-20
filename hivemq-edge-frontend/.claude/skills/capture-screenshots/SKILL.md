@@ -30,11 +30,11 @@ Invoke this skill when:
 
 ## Storage and naming by purpose
 
-| Purpose | Storage | Naming convention |
-| ------- | ------- | ----------------- |
-| PR | `.tasks-log/screenshots/` | `before-{feature}.png` / `after-{feature}.png` |
-| Docs | `docs/assets/screenshots/` | `{feature}-{state}.png` |
-| Blog | `.tasks-log/screenshots/blog/` | `{feature}-hero.png` |
+| Purpose | Storage                        | Naming convention                              |
+| ------- | ------------------------------ | ---------------------------------------------- |
+| PR      | `.tasks-log/screenshots/`      | `before-{feature}.png` / `after-{feature}.png` |
+| Docs    | `docs/assets/screenshots/`     | `{feature}-{state}.png`                        |
+| Blog    | `.tasks-log/screenshots/blog/` | `{feature}-hero.png`                           |
 
 Create the target directory if it does not exist.
 

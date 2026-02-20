@@ -177,13 +177,13 @@ Use `contain.text` for partial matches when message format may evolve. Use `have
 
 ## Error Message Source Matrix
 
-| Error type | Source | Example | When it appears |
-|---|---|---|---|
-| Client-side validation | RJSF / JSON Schema | `"id is a required property"` | Before API call |
-| API contract message | OpenAPI `errors` object | `"Bridge is invalid"` | `ApiError.message` |
-| API response body | MSW handler `body.title` | `"Invalid username and/or password"` | `ApiError.body.title` — what the UI shows |
-| Generic user-facing | i18n translation key | `"Unable to create bridge"` | Generic label wrapping the detail |
-| Network error | Axios / Fetch | `"Network Error"` | Connection failure |
+| Error type             | Source                   | Example                              | When it appears                           |
+| ---------------------- | ------------------------ | ------------------------------------ | ----------------------------------------- |
+| Client-side validation | RJSF / JSON Schema       | `"id is a required property"`        | Before API call                           |
+| API contract message   | OpenAPI `errors` object  | `"Bridge is invalid"`                | `ApiError.message`                        |
+| API response body      | MSW handler `body.title` | `"Invalid username and/or password"` | `ApiError.body.title` — what the UI shows |
+| Generic user-facing    | i18n translation key     | `"Unable to create bridge"`          | Generic label wrapping the detail         |
+| Network error          | Axios / Fetch            | `"Network Error"`                    | Connection failure                        |
 
 ---
 

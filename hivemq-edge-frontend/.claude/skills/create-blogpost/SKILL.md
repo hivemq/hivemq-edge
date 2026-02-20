@@ -81,10 +81,12 @@ concrete example or use case.
 ### How It Helps
 
 #### Better Visualization
+
 See your MQTT architecture clearly without manual positioning. Different layouts reveal
 different aspects of your topology.
 
 #### Faster Setup
+
 Apply a layout in one click, then save it as a reusable preset for consistent workspaces.
 ```
 
@@ -119,27 +121,27 @@ One or two sentences. Specific (name the feature), action-oriented, encouraging.
 
 ## Tone and voice
 
-| Do | Avoid |
-|----|-------|
-| Second person: "You can", "Your workspace" | First or third person narration |
-| Active voice: "Click the button" | Passive voice: "The button can be clicked" |
-| Specific benefits with examples | Vague claims: "improved UX", "better performance" |
-| Plain language | Technical jargon without definition (no "DAG", "constraint propagation") |
-| Contractions: "You'll notice", "Don't worry" | Marketing hyperbole: "revolutionary", "game-changing" |
+| Do                                           | Avoid                                                                    |
+| -------------------------------------------- | ------------------------------------------------------------------------ |
+| Second person: "You can", "Your workspace"   | First or third person narration                                          |
+| Active voice: "Click the button"             | Passive voice: "The button can be clicked"                               |
+| Specific benefits with examples              | Vague claims: "improved UX", "better performance"                        |
+| Plain language                               | Technical jargon without definition (no "DAG", "constraint propagation") |
+| Contractions: "You'll notice", "Don't worry" | Marketing hyperbole: "revolutionary", "game-changing"                    |
 
 ---
 
 ## Word count targets
 
-| Section | Target |
-|---------|--------|
-| Title | <70 characters |
-| What It Is | 75–150 words |
-| How It Works | 80–120 words |
-| How It Helps | 100–150 words |
+| Section       | Target                  |
+| ------------- | ----------------------- |
+| Title         | <70 characters          |
+| What It Is    | 75–150 words            |
+| How It Works  | 80–120 words            |
+| How It Helps  | 100–150 words           |
 | Looking Ahead | 80–120 words (optional) |
-| CTA | 1–2 sentences |
-| **Total** | **~500 words** |
+| CTA           | 1–2 sentences           |
+| **Total**     | **~500 words**          |
 
 Target 500 words to leave room for other features when combining into a multi-feature announcement.
 

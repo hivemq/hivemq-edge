@@ -35,6 +35,7 @@ Invoke this skill when:
 ### Step 1 — Read the exact error
 
 Copy the full error message. Note:
+
 - The exact selector or text it was looking for
 - The line number that failed
 - Any "found N elements, expected 1" details
@@ -68,6 +69,7 @@ grep -r "some.key_CONTEXT_VALUE" src --include="*.json"
 ```
 
 Translation files:
+
 - Main app: `src/locales/en/`
 - DataHub: `src/extensions/datahub/locales/en/datahub.json`
 
@@ -183,7 +185,7 @@ This is more useful than a screenshot: you get a machine-readable list of every 
 If `cy.checkAccessibility()` fails but the log shows no violation details, check `cypress.config.ts`:
 
 ```typescript
-installLogsPrinter(on, { printLogsToConsole: 'onFail' })  // not 'never'
+installLogsPrinter(on, { printLogsToConsole: 'onFail' }) // not 'never'
 ```
 
 And `cypress/support/e2e.ts`:
