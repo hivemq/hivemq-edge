@@ -172,7 +172,7 @@ Reveals Workspace features gated behind this flag during active development. Exa
 
 ### Heap Analytics
 
-**Purpose:** Session recording and user behaviour analytics for UX research.
+**See:** [External Services — Heap Analytics](./EXTERNAL_SERVICES.md#heap-analytics) for the dashboard URL, login method, and access status.
 
 **Activation:** Only loads when:
 
@@ -187,15 +187,11 @@ Reveals Workspace features gated behind this flag during active development. Exa
 - Dev project ID: `1974822562` (in `.env.local`) — use the dev ID locally to avoid polluting production data
 - User properties sent: `hivemqId`, broker `version`
 
-**Dashboard access:** Contact the team for access to the HiveMQ Heap organisation. The dev and prod projects are separate.
-
-**See:** [External Services — Heap Analytics](./EXTERNAL_SERVICES.md#heap-analytics) for the dashboard URL, login method, and access status.
-
 ---
 
 ### Sentry
 
-**Purpose:** Error monitoring, performance tracing, and session replay.
+**See:** [External Services — Sentry](./EXTERNAL_SERVICES.md#sentry) for the dashboard URL, login method, and access status.
 
 **Activation:** Initialises in all modes except `'development'` (never runs locally with `pnpm dev`). User consent is also checked via the Privacy Consent Banner.
 
@@ -211,19 +207,13 @@ Reveals Workspace features gated behind this flag during active development. Exa
 
 **Source maps:** `@sentry/vite-plugin` in `vite.config.ts` uploads source maps to Sentry on every build (org: `hivemq`, project: `edge`). This requires `SENTRY_AUTH_TOKEN` to be available in the build environment — this is a CI secret, not a developer-facing variable.
 
-**Dashboard:** [https://sentry.io](https://sentry.io) — HiveMQ organisation, `edge` project. Contact the team for access.
-
-**See:** [External Services — Sentry](./EXTERNAL_SERVICES.md#sentry) for the dashboard URL, login method, and access status.
-
 ---
 
 ### Percy
 
-**Purpose:** Visual regression testing — pixel-level screenshot comparison on every PR.
+**See:** [External Services — Percy](./EXTERNAL_SERVICES.md#percy) for the dashboard URL, login method, and access status (⚠️ manager access not yet shared).
 
 **Activation:** Runs in CI as part of `check-frontend.yml`. Can be run locally with the `PERCY_TOKEN` from `.env.local`.
-
-**Dashboard:** [https://percy.io](https://percy.io) — find the project linked from the GitHub PR checks. The project token (`PERCY_TOKEN`) in `.env.local` gives access.
 
 **Local run:**
 
@@ -236,39 +226,29 @@ The `PERCY_BRANCH=local` setting prevents local snapshots from being compared ag
 
 **See:** [Testing Architecture](../architecture/TESTING_ARCHITECTURE.md) for how Percy fits into the visual regression workflow.
 
-**See:** [External Services — Percy](./EXTERNAL_SERVICES.md#percy) for the dashboard URL, login method, and access status (⚠️ manager access not yet shared).
-
 ---
 
 ### SonarCloud
 
-**Purpose:** Static analysis, code smell detection, test coverage reporting.
+**See:** [External Services — SonarCloud](./EXTERNAL_SERVICES.md#sonarcloud) for the dashboard URL, login method, and access status.
 
 **CI only** — no local configuration required.
-
-**Dashboard:** [https://sonarcloud.io/summary/new_code?id=hivemq_hivemq-edge](https://sonarcloud.io/summary/new_code?id=hivemq_hivemq-edge)
 
 **PR analysis:** SonarCloud posts a quality gate status on every PR via `check-frontend.yml`. Coverage data is merged from Vitest + Cypress component + Cypress E2E before upload.
 
 **See:** [Dependency Management](./DEPENDENCY_MANAGEMENT.md) and the `/sonarqube` skill for fetching per-PR metrics.
 
-**See:** [External Services — SonarCloud](./EXTERNAL_SERVICES.md#sonarcloud) for the dashboard URL, login method, and access status.
-
 ---
 
 ### Snyk
 
-**Purpose:** Dependency vulnerability scanning.
+**See:** [External Services — Snyk](./EXTERNAL_SERVICES.md#snyk) for the dashboard URL, login method, and access status.
 
 **CI only** — no local configuration required.
-
-**Dashboard (frontend project):** [https://app.snyk.io/org/hivemq-edge/project/05151663-f435-4653-9e82-98a53a2640d3](https://app.snyk.io/org/hivemq-edge/project/05151663-f435-4653-9e82-98a53a2640d3)
 
 **Vulnerability alert routing:** Currently Kanbanize; migrating to Linear — see [INT-63](https://linear.app/hivemq/issue/INT-63/snyk-notifier-migrate-to-linear).
 
 **See:** [Dependency Management](./DEPENDENCY_MANAGEMENT.md#snyk) for the full Snyk workflow breakdown.
-
-**See:** [External Services — Snyk](./EXTERNAL_SERVICES.md#snyk) for the dashboard URL, login method, and access status.
 
 ---
 
@@ -335,7 +315,7 @@ The indirection through `config` means:
 - Single source of truth — rename a flag in one place, not across every consumer
 - Testability — tests can mock `config` rather than Vite's env system
 
-Feature flags gate routes in `src/modules/App/routes.tsx`, FSM rendering in `FiniteStateMachineFlow.tsx`, and drag-and-drop behaviour in `AccessibleDraggableLock.tsx`.
+Feature flags gate routes in `src/modules/App/routes.tsx`, FSM rendering in `FiniteStateMachineFlow.tsx`, and drag-and-drop behavior in `AccessibleDraggableLock.tsx`.
 
 ---
 

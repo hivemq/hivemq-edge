@@ -1,14 +1,10 @@
 ---
-title: 'Combiner UX Walkthrough'
-description: 'How we transformed flat RJSF forms into interactive UX for data mapping configuration'
-tags: ['rjsf', 'combiner', 'ux', 'forms', 'walkthrough']
-audience: ['developers', 'ux-designers', 'technical-leads']
-related:
-  - ../guides/RJSF_GUIDE.md
-  - ../architecture/PROTOCOL_ADAPTER_ARCHITECTURE.md
-  - ../guides/TESTING_GUIDE.md
-  - ../guides/CYPRESS_GUIDE.md
-last_updated: 2026-02-16
+title: "Combiner UX Walkthrough"
+author: "Edge Frontend Team"
+last_updated: "2026-02-16"
+purpose: "Walkthrough of how the team transformed flat RJSF forms into interactive UX for data mapping configuration"
+audience: "Developers building or extending combiner forms; developers working on RJSF widget patterns"
+maintained_at: "docs/walkthroughs/RJSF_COMBINER.md"
 ---
 
 # Combiner UX Walkthrough
@@ -201,7 +197,7 @@ CombinerMappingManager (Root)
 | **No Context** | Entity IDs shown as strings (UUIDs, names) | "Which adapter owns this tag?" |
 | **Validation Errors** | Errors at bottom of long scroll | "Where did I make a mistake?" |
 
-**User Quote (Hypothetical):** *"I just want to add one mapping, but I have to scroll through 20 other mappings to find the 'Add' button."*
+**Illustrative user feedback:** *"I just want to add one mapping, but I have to scroll through 20 other mappings to find the 'Add' button."*
 
 ---
 
@@ -376,7 +372,7 @@ Select adapters for tags:
 1. **Open text input** allows invalid values (not in sources list)
 2. **No visual indication** of which sources are available
 3. **Type confusion**: User must specify whether primary is a TAG or TOPIC_FILTER separately
-4. **Typo risk**: Easy to mistype tag/topic filter names (e.g., "temperature/sensor1" vs "temp/sensor1")
+4. **Typo risk**: Easy to mistype tag/topic filter names (for example, "temperature/sensor1" vs "temp/sensor1")
 
 **Design Solution:**
 
@@ -547,7 +543,7 @@ const validateDataPrimary = useCallback<CustomValidator<DataCombining>>(
 
 **Scaffolding in Action:**
 
-Because dropdown options come ONLY from existing sources, user **cannot type invalid value**. This is implicit validation—the UI prevents impossible states.
+Because dropdown options come ONLY from existing sources, the user **cannot type an invalid value**. This is implicit validation — the UI prevents impossible states.
 
 Custom validation serves as **safety net** for programmatic changes or edge cases.
 

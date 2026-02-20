@@ -75,12 +75,9 @@ graph TD
 All data fetched from the backend lives in React Query's cache. This is the canonical source of truth for server-side entities: adapters, bridges, policies, schemas, scripts, combiners, and so on.
 
 **Key characteristics:**
-- `staleTime: 5 minutes` — data is served from cache without a network request unless stale
-- `refetchOnMount: true` — always refetch when a consumer mounts (if stale)
-- `refetchOnWindowFocus: false`, `refetchOnReconnect: false` — explicit control only
 - Five endpoints use polling at 5-second intervals for live status
 
-**See:** [Data Flow Architecture](./DATA_FLOW.md) for the complete request lifecycle, cache configuration, query keys, polling hooks, and mutation invalidation pattern.
+**See:** [Data Flow Architecture](./DATA_FLOW.md) for the complete request lifecycle, cache configuration (`staleTime`, `refetchOnMount`), query keys, polling hooks, and mutation invalidation pattern.
 
 **See:** [React Query Patterns](../api/REACT_QUERY_PATTERNS.md) for hook patterns and conventions.
 
@@ -267,7 +264,7 @@ Standard React `useState` and `useReducer` are used for state that is:
 - Dropdown open/close state
 - Pagination offset in a table component
 
-**Rule:** If you find yourself lifting `useState` through three or more component levels via props, convert it to a Zustand store.
+**Rule:** When `useState` propagates through three or more component levels via props, convert it to a Zustand store.
 
 ---
 
@@ -280,7 +277,7 @@ Standard React `useState` and `useReducer` are used for state that is:
 
 **Problem:** Node positions are the only data that exist in `localStorage` and nowhere else. The backend has no concept of canvas positions — it stores adapters, bridges, and combiners as entities, but has no fields for `x`, `y` coordinates. When the workspace loads, backend entities are converted into React Flow nodes and their positions are set from the `localStorage` state.
 
-**Root cause:** There is no stable, unique identifier linking a node in localStorage to a backend entity. Adapter IDs are user-defined strings (for example, `my-opcua-adapter`). If a user renames an adapter or if the backend regenerates its identifier, the localStorage entry becomes orphaned and the position is lost.
+**Root cause:** There is no stable, unique identifier linking a node in localStorage to a backend entity. Adapter IDs are user-defined strings (for example, `my-opcua-adapter`). If a user renames an adapter or if the backend regenerates its identifier, the localStorage entry becomes orphaned and the position disappears.
 
 **Consequence:** Any feature that needs to read or set node positions programmatically (backend-triggered layout, preset management, multi-device onboarding) must work around this gap. Position presets stored in `layoutConfig.presets` share the same fragility.
 

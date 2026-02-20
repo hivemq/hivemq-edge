@@ -288,108 +288,69 @@ flowchart TD
 
 ### Component Testing Requirements
 
-**Wrapper:** React Flow components MUST use `ReactFlowTesting` wrapper.
+Follow the standard component test pattern in [Testing Architecture](./TESTING_ARCHITECTURE.md). For Workspace components, use the `ReactFlowTesting` wrapper:
 
-**Key Patterns:**
-- All node components need React Flow context
-- Provide initial nodes/edges to wrapper
-- Accessibility test required as final test in suite
-
-**Example:**
 ```typescript
 import { ReactFlowTesting } from '@/__test-utils__/react-flow/ReactFlowTesting'
 
-describe('NodeAdapter', () => {
-  const mockNode = {
-    id: 'adapter-1',
-    type: NodeTypes.ADAPTER_NODE,
-    position: { x: 0, y: 0 },
-    data: { ...mockAdapterData, statusModel: { runtime: RuntimeStatus.ACTIVE, operational: OperationalStatus.ACTIVE } }
-  }
-
-  it('should render adapter node', () => {
-    cy.mountWithProviders(<NodeAdapter {...mockNode} />, {
-      wrapper: ({ children }) => (
-        <ReactFlowTesting config={{ initialState: { nodes: [mockNode], edges: [] } }}>
-          {children}
-        </ReactFlowTesting>
-      )
-    })
-
-    cy.contains(mockNode.data.id).should('be.visible')
-  })
-
-  it('should be accessible', () => {
-    cy.injectAxe()
-    cy.mountWithProviders(<NodeAdapter {...mockNode} />, {
-      wrapper: ({ children }) => (
-        <ReactFlowTesting config={{ initialState: { nodes: [mockNode], edges: [] } }}>
-          {children}
-        </ReactFlowTesting>
-      )
-    })
-    cy.checkAccessibility()
-  })
+cy.mountWithProviders(<NodeAdapter {...mockNode} />, {
+  wrapper: ({ children }) => (
+    <ReactFlowTesting config={{ initialState: { nodes: [mockNode], edges: [] } }}>
+      {children}
+    </ReactFlowTesting>
+  ),
 })
 ```
 
-**See:** [Testing Guide](../guides/TESTING_GUIDE.md) for general patterns.
-**See:** [Workspace Testing Guide](../guides/WORKSPACE_TESTING_GUIDE.md) for Workspace-specific patterns.
-
 ### E2E Testing Requirements
 
-**Critical Setup:**
-1. **Mock ALL status endpoints:**
-   ```typescript
-   // Adapter status
-   cy.intercept('GET', '/api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] })
-   cy.intercept('GET', '/api/v1/management/protocol-adapters/status', { items: [mockAdapterStatus] })
+For general E2E patterns, see [Cypress Guide](../guides/CYPRESS_GUIDE.md). The Workspace requires these additional intercepts and page objects.
 
-   // Bridge status
-   cy.intercept('GET', '/api/v1/management/bridges', { items: [mockBridge] })
-   cy.intercept('GET', '/api/v1/management/bridges/status', { items: [mockBridgeStatus] })
+**Mock all status endpoints** before navigating to `/workspace`:
 
-   // Pulse status
-   cy.intercept('GET', '/api/v1/pulse/status', mockPulseStatus)
+```typescript
+// Adapter status
+cy.intercept('GET', '/api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] })
+cy.intercept('GET', '/api/v1/management/protocol-adapters/status', { items: [mockAdapterStatus] })
 
-   // Combiners
-   cy.intercept('GET', '/api/v1/data-combining/combiners', { items: [mockCombiner] })
-   ```
+// Bridge status
+cy.intercept('GET', '/api/v1/management/bridges', { items: [mockBridge] })
+cy.intercept('GET', '/api/v1/management/bridges/status', { items: [mockBridgeStatus] })
 
-2. **Status fixtures must match API structure:**
-   - `Status` type: `{ connection: 'CONNECTED', runtime: 'STARTED', type: 'adapter', id: '...' }`
-   - `PulseStatus` type: `{ activation: 'ACTIVATED', runtime: 'CONNECTED' }`
+// Pulse status
+cy.intercept('GET', '/api/v1/pulse/status', mockPulseStatus)
 
-3. **Wait for canvas to render:**
-   ```typescript
-   cy.get('[role="application"][data-testid="rf__wrapper"]').should('be.visible')
-   ```
+// Combiners
+cy.intercept('GET', '/api/v1/data-combining/combiners', { items: [mockCombiner] })
+```
 
-**Page Objects:** `cypress/pages/Workspace/WorkspacePage.ts`
+**Status fixtures must match the API structure:**
 
-**See:** [Cypress Guide](../guides/CYPRESS_GUIDE.md) for E2E patterns.
+- `Status` type: `{ connection: 'CONNECTED', runtime: 'STARTED', type: 'adapter', id: '...' }`
+- `PulseStatus` type: `{ activation: 'ACTIVATED', runtime: 'CONNECTED' }`
 
-### Specific Gotchas
+**Wait for the canvas before asserting:**
 
-| Issue | Symptom | Solution |
-|-------|---------|----------|
-| **Node component not rendering in test** | TypeError about React Flow context | Use ReactFlowTesting wrapper in component test |
-| **Status not updating in E2E** | Nodes show INACTIVE | Mock status endpoints with correct Status structure |
-| **Canvas timeout in E2E** | Never finds rf__wrapper | Missing adapter/bridge/pulse data intercepts |
-| **Edge not animating in test** | Operational status not working | Ensure node has statusModel with operational=ACTIVE |
+```typescript
+cy.get('[role="application"][data-testid="rf__wrapper"]').should('be.visible')
+```
+
+**Page objects:** `cypress/pages/Workspace/WorkspacePage.ts`
 
 ---
 
 ## Common Issues & Solutions
 
-| Issue | Symptom | Solution | Reference |
-|-------|---------|----------|-----------|
-| **Edges not animating** | All edges static, no flowing dots | Check operational status. Must be ACTIVE for animation. Runtime ACTIVE not enough. | `utils/status-utils.ts` |
-| **Status not propagating** | Passive nodes stuck INACTIVE | Verify active nodes have statusModel. Check status-propagation.utils.ts logic. | `utils/status-propagation.utils.ts` |
-| **Combiner edge wrong status** | Edge animated but combiner has no mappings | Per-edge rules use target combiner operational. Verify combiner.mappings exists. | `utils/status-utils.ts` (lines 437-617) |
-| **Layout not applying** | Nodes overlap after layout click | Check console for errors. Verify algorithm has nodes/edges data. | `hooks/useLayoutEngine.ts` |
-| **Filter not working** | Nodes still visible after filter | Check filterConfiguration.operator (AND/OR). Verify criteria format. | `components/filters/filters.utils.ts` |
-| **React Flow context error in test** | Cannot read property useStore of null | Missing ReactFlowTesting wrapper. Add to cy.mountWithProviders. | See Testing section above |
+| Issue | Symptom | Fix | Reference |
+| --- | --- | --- | --- |
+| **Node component not rendering in test** | `TypeError` about React Flow context | Use `ReactFlowTesting` wrapper in `cy.mountWithProviders` | See Component Testing Requirements above |
+| **Canvas timeout in E2E** | Never finds `rf__wrapper` | Add missing adapter/bridge/pulse data intercepts | E2E Testing Requirements above |
+| **Status not updating in E2E** | Nodes show INACTIVE | Mock status endpoints with correct `Status` structure | E2E Testing Requirements above |
+| **Edges not animating** | All edges static, no flowing dots | Operational status must be ACTIVE for animation — runtime ACTIVE alone is not enough | `utils/status-utils.ts` |
+| **Status not propagating** | Passive nodes stuck INACTIVE | Verify active nodes have `statusModel`; check `status-propagation.utils.ts` logic | `utils/status-propagation.utils.ts` |
+| **Combiner edge wrong status** | Edge animates but combiner has no mappings | Per-edge rules use the target combiner's operational status — verify `combiner.mappings` exists | `utils/status-utils.ts` (lines 437–617) |
+| **Layout not applying** | Nodes overlap after layout click | Check console for errors; verify the algorithm receives nodes/edges data | `hooks/useLayoutEngine.ts` |
+| **Filter not working** | Nodes still visible after filter | Check `filterConfiguration.operator` (AND/OR); verify criteria format | `components/filters/filters.utils.ts` |
 
 ---
 

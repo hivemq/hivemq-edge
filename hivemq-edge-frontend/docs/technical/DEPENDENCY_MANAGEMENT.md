@@ -36,7 +36,7 @@ Dependencies are not updated on a scheduled cadence. A version is kept as-is unl
 3. A **feature** in a newer version is required for a planned change
 4. A **planned major migration** (see [below](#planned-major-migrations)) makes the update necessary
 
-There is no quarterly dependency refresh, no automated merge of Renovate PRs, and no requirement to stay on latest. Stability is preferred over recency.
+There is no quarterly dependency refresh, no automated merge of Renovate PRs, and no requirement to stay on latest. The team prefers stability over recency.
 
 ---
 
@@ -84,32 +84,17 @@ Three workflows in `.github/workflows/` implement Snyk integration. All are at t
 
 **`snyk-pr.yml` — Runs on every PR targeting `master`**
 
-Scans both the backend and the frontend for new issues introduced by the PR:
-```yaml
-# Frontend scan step (excerpt)
-- name: Check for new issues (hivemq-edge-frontend)
-  uses: hivemq/hivemq-snyk-composite-action@v2.3.0
-  with:
-    snyk-args: --org=hivemq-edge -d hivemq-edge/hivemq-edge-frontend
-    artifact-name: snyk-report-hivemq-edge-frontend
-```
+Scans both the backend and the frontend for new issues introduced by the PR.
+
+**See:** `.github/workflows/snyk-pr.yml` for the full workflow definition.
 
 This is the most visible integration — the Snyk check appears in the PR checks list for every pull request. A new high/critical vulnerability introduced by a PR will block or flag the PR.
 
 **`snyk-push.yml` — Runs on push to `master` and on workflow_call**
 
-Runs `snyk monitor` (not just scan) for the development lifecycle. Registers the dependency snapshot against the Snyk project so the dashboard reflects the current `master` state:
-```yaml
-# Frontend monitor step (excerpt)
-- name: Run Snyk Frontend monitor
-  run: >
-    snyk monitor --file=pnpm-lock.yaml
-    --target-reference=${{ github.ref_name }}
-    --org=hivemq-edge
-    --project-name=hivemq-edge-frontend
-    --project-lifecycle=development
-    hivemq-edge/hivemq-edge-frontend
-```
+Runs `snyk monitor` (not just scan) for the development lifecycle. Registers the dependency snapshot against the Snyk project so the dashboard reflects the current `master` state.
+
+**See:** `.github/workflows/snyk-push.yml` for the full workflow definition.
 
 Tags include Kanbanize board metadata for ticket routing. This will migrate to Linear tags when INT-63 is complete.
 
@@ -146,7 +131,7 @@ When Snyk identifies a vulnerability:
 
 1. **Severity assessment** — Critical and High severity findings require action. Medium and Low are tracked but not necessarily acted on immediately.
 2. **Check if exploitable** — Snyk often flags vulnerabilities in code paths the application does not use. Assess whether the vulnerable code path is reachable in the frontend context.
-3. **Update the dependency** — If exploitable or high severity, update to the fixed version. The update should go through a normal PR with:
+3. **Update the dependency** — If exploitable or high severity, update to the fixed version. Put the update through a normal PR with:
    - The dependency bump in `package.json` / `pnpm-lock.yaml`
    - Any code changes required by the updated API (keep these minimal)
    - Full CI pass including Snyk scan on the PR itself
@@ -167,7 +152,7 @@ Most dependencies in `package.json` use **exact versions** (no caret or tilde):
 "cypress": "15.8.2"
 ```
 
-This is intentional: exact pins prevent unexpected behaviour when `pnpm install` is run in CI or by a new developer. The lockfile (`pnpm-lock.yaml`) provides a second layer of pinning.
+This is intentional: exact pins prevent unexpected behavior when `pnpm install` is run in CI or by a new developer. The lockfile (`pnpm-lock.yaml`) provides a second layer of pinning.
 
 **Caret ranges (`^`) are used for a small number of packages** where the team is comfortable with automatic patch/minor acceptance:
 
@@ -211,7 +196,7 @@ These are hard requirements enforced by pnpm. Updates to Node or pnpm versions m
 
 ## Planned Major Migrations
 
-Two major dependency migrations have been analysed and are planned but not yet scheduled. Both require dedicated engineering tasks.
+Two major dependency migrations have been analyzed and are planned but not yet scheduled. Both require dedicated engineering tasks.
 
 ### `openapi-typescript-codegen` → `@hey-api/openapi-ts`
 

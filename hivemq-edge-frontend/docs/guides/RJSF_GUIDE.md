@@ -252,7 +252,7 @@ const MyCustomWidget = (props: WidgetProps) => {
 **Type:** `Partial<TemplatesType>`
 **Purpose:** Override RJSF's rendering of structural elements (fields, arrays, objects).
 
-**Note:** The `ChakraRJSForm` component pre-configures templates. You typically don't need to override them unless extending `ChakraRJSForm` itself.
+**Note:** Override `ChakraRJSForm` templates only when extending the component itself.
 
 ```typescript
 // Internal configuration in ChakraRJSForm.tsx
@@ -280,7 +280,7 @@ templates={{
 **Type:** `RegistryWidgetsType`
 **Purpose:** Map custom input components to `ui:widget` names.
 
-**Note:** The `ChakraRJSForm` component pre-registers widgets. You typically don't need to override them.
+**Note:** Override `ChakraRJSForm` widgets only when adding a new custom widget.
 
 ```typescript
 // Internal configuration in ChakraRJSForm.tsx
@@ -315,7 +315,7 @@ See [Custom Widgets](#custom-widgets) section for widget development.
 **Type:** `RegistryFieldsType`
 **Purpose:** Map custom field components that replace entire field rendering (not just the input).
 
-**Note:** The `ChakraRJSForm` component pre-registers fields. You typically don't need to override them.
+**Note:** Override `ChakraRJSForm` fields only when adding a custom field renderer.
 
 ```typescript
 // Internal configuration in ChakraRJSForm.tsx
@@ -445,65 +445,18 @@ interface BridgeConfig {
   enabled: boolean
 }
 
-const schema: JSONSchema7 = {
-  type: 'object',
-  required: ['id', 'host', 'port'],
-  properties: {
-    id: {
-      type: 'string',
-      title: 'Bridge ID',
-      pattern: '^[a-zA-Z0-9-_]+$',
-    },
-    host: {
-      type: 'string',
-      title: 'MQTT Broker Host',
-      format: 'hostname',
-    },
-    port: {
-      type: 'integer',
-      title: 'Port',
-      minimum: 1,
-      maximum: 65535,
-      default: 1883,
-    },
-    enabled: {
-      type: 'boolean',
-      title: 'Enabled',
-      default: true,
-    },
-  },
-}
-
-const uiSchema: UiSchema = {
-  'ui:order': ['id', 'host', 'port', 'enabled'],
-  id: {
-    'ui:placeholder': 'my-bridge',
-  },
-  port: {
-    'ui:widget': 'updown',
-  },
-  enabled: {
-    'ui:widget': 'switch',
-  },
-}
+// Define schema and uiSchema (see JSON Schema Patterns and UI Schema Reference sections above)
+const schema: JSONSchema7 = { /* ... */ }
+const uiSchema: UiSchema = { /* ... */ }
 
 export const BridgeForm = () => {
-  const [formData, setFormData] = useState<BridgeConfig>({
-    id: '',
-    host: '',
-    port: 1883,
-    enabled: true,
-  })
+  const [formData, setFormData] = useState<BridgeConfig>({ id: '', host: '', port: 1883, enabled: true })
 
   const customValidate = (data: BridgeConfig, errors) => {
     if (data.enabled && data.port < 1024) {
       errors.port?.addError('Enabled bridges must use port >= 1024')
     }
     return errors
-  }
-
-  const handleSubmit = (e) => {
-    console.log('Submitted:', e.formData)
   }
 
   return (
@@ -513,12 +466,15 @@ export const BridgeForm = () => {
       uiSchema={uiSchema}
       formData={formData}
       onChange={(e) => setFormData(e.formData)}
-      onSubmit={handleSubmit}
+      onSubmit={(e) => console.log('Submitted:', e.formData)}
       customValidate={customValidate}
     />
   )
 }
 ```
+
+For a production implementation that uses all these props together with a real schema, see
+[`src/modules/Bridges/components/BridgeEditorDrawer.tsx`](../../src/modules/Bridges/components/BridgeEditorDrawer.tsx).
 
 ---
 
@@ -1178,5 +1134,3 @@ When creating custom RJSF widgets with react-select:
 - [Chakra UI Docs](https://chakra-ui.com/)
 
 ---
-
-**Last Updated:** 2026-02-16

@@ -73,8 +73,8 @@ graph BT
         L3[Layer 3: Integration Tests<br/>Cypress E2E + Component]
         L4[Layer 4: Accessibility<br/>Cypress + axe-core<br/>WCAG 2.1 AA Compliance]
         L5[Layer 5: Visual Regression<br/>Percy Screenshot Comparison]
-        L6[Layer 6: Production Monitoring<br/>Heap Analytics + Sentry Error Tracking]
-        L7[Layer 7: Lighthouse<br/>Performance & Accessibility Audits]
+        L6[Layer 6: Performance Testing<br/>Lighthouse Performance & Accessibility Audits]
+        L7[Layer 7: Production Monitoring<br/>Heap Analytics + Sentry Error Tracking]
     end
 
     L1 --> L2
@@ -1237,176 +1237,9 @@ pnpm docs:security-scan:verbose # Scan with detailed output
 
 ## Cypress Custom Commands
 
-**Custom commands simplify testing and ensure consistency.**
+The project extends Cypress with custom commands covering four categories: mounting (`mountWithProviders`), element selection (`getByTestId`, `findByTestId`, `getByAriaLabel`), accessibility (`checkAccessibility`), and specialized utilities (`clearInterceptList`, `setMonacoEditorValue`, `getMonacoEditorValue`, `saveHTMLSnapshot`, `logDOMState`). Every component test must include an accessibility test using `cy.checkAccessibility()` — this is a mandatory architectural requirement enforced in CI.
 
-### Registered Commands
-
-#### `cy.getByTestId(value: string)`
-
-**Purpose:** Get element by `data-testid` attribute.
-
-```typescript
-cy.getByTestId('submit-button').click()
-// Equivalent to: cy.get('[data-testid="submit-button"]').click()
-```
-
-**Why:** Cleaner syntax, enforces testid convention.
-
----
-
-#### `cy.findByTestId(testId: string)`
-
-**Purpose:** Find within previous subject by `data-testid`.
-
-```typescript
-cy.getByTestId('modal').findByTestId('close-button').click()
-// Equivalent to: cy.getByTestId('modal').find('[data-testid="close-button"]').click()
-```
-
-**Why:** Scoped queries for complex UIs.
-
----
-
-#### `cy.getByAriaLabel(value: string)`
-
-**Purpose:** Get element by `aria-label` attribute.
-
-```typescript
-cy.getByAriaLabel('Close dialog').click()
-// Equivalent to: cy.get('[aria-label="Close dialog"]').click()
-```
-
-**Why:** Accessibility-first selectors.
-
----
-
-#### `cy.checkAccessibility(context?, options?, skipFailures?)`
-
-**Purpose:** Run axe-core accessibility audit.
-
-```typescript
-cy.injectAxe()
-cy.checkAccessibility()  // Full page audit
-
-// With context
-cy.checkAccessibility('#main-content')
-
-// With rule overrides
-cy.checkAccessibility(undefined, {
-  rules: {
-    'color-contrast': { enabled: false },
-  },
-})
-
-// Skip failures for debugging
-cy.checkAccessibility(undefined, undefined, true)
-```
-
-**Why:** Centralized accessibility testing with logging.
-
----
-
-#### `cy.mountWithProviders(component, options?)`
-
-**Purpose:** Mount React component with all providers (React Query, Router, Chakra).
-
-```typescript
-cy.mountWithProviders(<MyComponent />)
-
-// With router
-cy.mountWithProviders(<MyComponent />, {
-  routerProps: { initialEntries: ['/dashboard'] },
-})
-
-// With custom wrapper
-cy.mountWithProviders(<MyComponent />, {
-  wrapper: CustomWrapper,
-})
-```
-
-**Why:** Eliminates boilerplate, ensures consistent provider setup.
-
----
-
-#### `cy.clearInterceptList(alias: string)`
-
-**Purpose:** Clear intercept list for an alias.
-
-```typescript
-cy.intercept('/api/adapters').as('getAdapters')
-cy.wait('@getAdapters')
-cy.clearInterceptList('@getAdapters')  // Clear for next assertion
-```
-
-**Why:** Prevents stale intercept data in long tests.
-
----
-
-#### `cy.setMonacoEditorValue(value: string)`
-
-**Purpose:** Set value in Monaco Editor instance.
-
-```typescript
-cy.get('.monaco-editor').setMonacoEditorValue('console.log("hello")')
-```
-
-**Why:** Monaco Editor requires special handling, not standard `.type()`.
-
----
-
-#### `cy.getMonacoEditorValue()`
-
-**Purpose:** Get current value from Monaco Editor.
-
-```typescript
-cy.get('.monaco-editor')
-  .getMonacoEditorValue()
-  .should('eq', 'console.log("hello")')
-```
-
-**Why:** Monaco Editor internal state not accessible via DOM.
-
----
-
-#### `cy.saveHTMLSnapshot(name: string)`
-
-**Purpose:** Save current DOM as HTML file for AI debugging.
-
-```typescript
-cy.saveHTMLSnapshot('debug-modal-state')
-// Saves to: cypress/debug-modal-state.html
-```
-
-**Why:** Helps AI agents debug test failures.
-
----
-
-#### `cy.logDOMState(label?: string)`
-
-**Purpose:** Log current DOM state to console.
-
-```typescript
-cy.logDOMState('Before button click')
-// Logs full DOM to Cypress command log
-```
-
-**Why:** Quick debugging without saving files.
-
----
-
-### Custom Chai Assertion
-
-#### `.calledWithErrorMessage(expectedMessage)`
-
-**Purpose:** Assert stub was called with Error having specific message.
-
-```typescript
-const onError = cy.stub().as('onError')
-// ... trigger error ...
-cy.get('@onError').should('calledWithErrorMessage', 'Invalid input')
-```
-
-**Why:** Simplifies error testing.
+**See:** [Cypress Guide — Custom Commands](../guides/CYPRESS_GUIDE.md#custom-commands) for the full command reference with signatures and examples.
 
 ---
 
@@ -1715,23 +1548,7 @@ sonar.javascript.lcov.reportPaths=\
 
 ## Summary
 
-**HiveMQ Edge Frontend employs a comprehensive 7-layer testing strategy:**
-
-1. **Code Quality** - ESLint, Prettier, TypeScript, SonarCloud
-2. **Unit Tests** - Vitest for logic and utilities
-3. **Integration Tests** - Cypress Component & E2E
-4. **Accessibility** - cypress-axe, WCAG 2.1 AA compliance (mandatory)
-5. **Visual Regression** - Percy screenshot comparison
-6. **Performance** - Lighthouse Core Web Vitals
-7. **Production Monitoring** - Heap Analytics, Sentry
-
-**Every layer is automated, runs in CI, and blocks merge on failure.**
-
-**Accessibility testing is mandatory for every component - no exceptions.**
-
-**Coverage is aggregated from multiple sources and reported to SonarQube.**
-
-**Custom tooling provides parallel execution and intelligent coverage merging.**
+All seven layers run automatically in CI and block merge on failure. Accessibility testing is mandatory for every component — no exceptions.
 
 ---
 

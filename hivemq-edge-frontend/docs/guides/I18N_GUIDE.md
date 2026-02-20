@@ -55,7 +55,7 @@ HiveMQ Edge Frontend uses **i18next** and **react-i18next** for internationaliza
 
 ## Configuration and Setup
 
-The i18n configuration is located at `/Users/nicolas/dev-projects/edge/hivemq-edge/hivemq-edge-frontend/src/config/i18n.config.ts`:
+The i18n configuration is located at `src/config/i18n.config.ts`:
 
 ```typescript
 import { initReactI18next } from 'react-i18next'
@@ -288,93 +288,21 @@ t('components:pagination.ariaLabel')
 
 ### Main Translation File (`translation.json`)
 
-Located at `src/locales/en/translation.json`, this is the largest file containing all feature translations:
+The main translation file contains all feature-level translations organized by module: global actions (`action.*`), branding, navigation, and every feature area such as `workspace`, `bridge`, `protocolAdapter`, and `topicFilter`.
 
-```json
-{
-  "branding": {
-    "appName": "HiveMQ Edge",
-    "company": "HiveMQ"
-  },
-  "action": {
-    "logout": "Logout",
-    "cancel": "Cancel",
-    "close": "Close",
-    "delete": "Delete",
-    "save": "Save"
-  },
-  "navigation": {
-    "gateway": {
-      "title": "HiveMQ Edge",
-      "routes": {
-        "home": "Home",
-        "workspace": "Workspace",
-        "bridges": "MQTT Bridges"
-      }
-    }
-  },
-  "workspace": {
-    "canvas": {
-      "aria-label": "Edge Workspace"
-    }
-  }
-}
-```
+See [`src/locales/en/translation.json`](../../src/locales/en/translation.json) for the full structure.
 
 ### Components Translation File (`components.json`)
 
-Located at `src/locales/en/components.json`, contains reusable component translations:
+The components translation file contains translations for shared, reusable UI components such as pagination controls, search bars, table toolbars, and keyboard shortcut labels.
 
-```json
-{
-  "shortcuts": {
-    "modifier": {
-      "META_MacOS": "⌘",
-      "META_Others": "^"
-    }
-  },
-  "pagination": {
-    "ariaLabel": "Pagination Toolbar",
-    "goFirstPage": "Go to the first page",
-    "goPreviousPage": "Go to the previous page",
-    "pageOf": "Page {{ page }} of {{ max }}",
-    "perPage": "Items per page"
-  },
-  "SearchBar": {
-    "aria-label": "Search Toolbar",
-    "filter": {
-      "placeholder": "Search for ..."
-    }
-  }
-}
-```
+See [`src/locales/en/components.json`](../../src/locales/en/components.json) for the full structure.
 
 ### Schema Translation File (`schemas.json`)
 
-Located at `src/locales/en/schemas.json`, contains JSON Schema form labels:
+The schema translation file contains field titles, descriptions, and helper text for JSON Schema-driven forms rendered by RJSF, organized by schema type (for example, `Combiner`, `definitions.Instruction`).
 
-```json
-{
-  "definitions": {
-    "Instruction": {
-      "description": "Each instruction describes how one of the properties of your destination data model is populated from the source",
-      "destination": {
-        "title": "Destination path"
-      }
-    }
-  },
-  "Combiner": {
-    "id": {
-      "title": "Unique id",
-      "description": "The unique id of the data combiner"
-    },
-    "name": {
-      "title": "Name",
-      "description": "The user-facing name of the combiner"
-    }
-  }
-}
-```
+See [`src/locales/en/schemas.json`](../../src/locales/en/schemas.json) for the full structure.
 
 ### DataHub Translation File (`datahub.json`)
 
@@ -702,23 +630,7 @@ it('should not have missing translation keys', () => {
 
 ## Best Practices
 
-### 1. Never Hardcode User-Facing Text
-
-**❌ Wrong:**
-
-```typescript
-<Heading>Configure Workspace</Heading>
-<Button>Save Changes</Button>
-```
-
-**✅ Correct:**
-
-```typescript
-<Heading>{t('workspace.configuration.header')}</Heading>
-<Button>{t('action.save')}</Button>
-```
-
-### 2. Use Descriptive, Hierarchical Keys
+### 1. Use Descriptive, Hierarchical Keys
 
 **❌ Wrong:**
 
@@ -736,21 +648,7 @@ t('bridge.drawer.title.create')
 t('protocolAdapter.action.add')
 ```
 
-### 3. Always Provide ARIA Labels with i18n
-
-**❌ Wrong:**
-
-```typescript
-<Select aria-label="Select protocol" />
-```
-
-**✅ Correct:**
-
-```typescript
-<Select aria-label={t('protocolAdapter.selector.ariaLabel')} />
-```
-
-### 4. Use Context for Variations
+### 2. Use Context for Variations
 
 Instead of multiple similar keys, use context:
 
@@ -784,7 +682,7 @@ Instead of multiple similar keys, use context:
 }
 ```
 
-### 5. Keep Translation Keys Close to Usage
+### 3. Keep Translation Keys Close to Usage
 
 Organize keys by feature/module, not by UI element type:
 
@@ -816,24 +714,7 @@ Organize keys by feature/module, not by UI element type:
 }
 ```
 
-### 6. Reuse Common Actions
-
-Create a shared `action` namespace for common terms:
-
-```json
-{
-  "action": {
-    "cancel": "Cancel",
-    "close": "Close",
-    "delete": "Delete",
-    "save": "Save",
-    "previous": "Previous",
-    "next": "Next"
-  }
-}
-```
-
-### 7. Document Complex Keys
+### 4. Document Complex Keys
 
 Add comments for keys with special formatting or context:
 
@@ -979,54 +860,9 @@ it('should show plural form', () => {
 
 ## Common Patterns
 
-### Pattern 1: Button Actions
+### Pattern 1: Dynamic Context-Based Text
 
-```typescript
-<Button variant="primary" type="submit">
-  {t('action.save')}
-</Button>
-<Button variant="outline" onClick={onCancel}>
-  {t('action.cancel')}
-</Button>
-```
-
-### Pattern 2: Modal Headers
-
-```typescript
-<ModalHeader>
-  {t('bridge.drawer.title.create')}
-</ModalHeader>
-```
-
-### Pattern 3: Form Labels and Helpers
-
-```typescript
-<FormControl>
-  <FormLabel>{t('bridge.options.id.label')}</FormLabel>
-  <Input placeholder={t('bridge.options.id.placeholder')} />
-  <FormHelperText>{t('bridge.options.id.helper')}</FormHelperText>
-</FormControl>
-```
-
-### Pattern 4: Error Messages
-
-```typescript
-<FormErrorMessage>
-  {t('bridge.options.id.error.required')}
-</FormErrorMessage>
-```
-
-### Pattern 5: Toast Notifications
-
-```typescript
-toast({
-  title: t('bridge.toast.create.title'),
-  description: t('bridge.toast.create.description', { context: 'success' }),
-  status: 'success',
-})
-```
-
-### Pattern 6: Dynamic Context-Based Text
+Pass a runtime variable as the `context` argument to select the correct translation at runtime without branching in component code:
 
 ```typescript
 const { t } = useTranslation()
@@ -1040,16 +876,7 @@ return (
 // Output: "Adapter Overview"
 ```
 
-### Pattern 7: Reusing Common Terms
-
-```typescript
-// Don't duplicate common actions
-<Button>{t('action.save')}</Button>
-<Button>{t('action.cancel')}</Button>
-<Button>{t('action.delete')}</Button>
-```
-
-### Pattern 8: Nested Translation References
+### Pattern 2: Nested Translation References
 
 ```json
 {

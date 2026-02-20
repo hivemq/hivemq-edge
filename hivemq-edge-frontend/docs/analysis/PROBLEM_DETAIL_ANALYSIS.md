@@ -47,7 +47,7 @@ The backend has applied RFC 9457 to the DataHub domain (PR #993). The frontend *
 
 **Switching the code generator is the foundational prerequisite for the entire migration.**
 
-A prototype using `@hey-api/openapi-ts` was used to assess what the generated output would look like — the results confirm that a capable generator can produce per-operation discriminated error unions with full TypeScript narrowing. This is the evidence base for the migration plan. The prototype is not a deliverable.
+The team used a prototype with `@hey-api/openapi-ts` to assess what the generated output would look like — the results confirm that a capable generator can produce per-operation discriminated error unions with full TypeScript narrowing. This is the evidence base for the migration plan. The prototype is not a deliverable.
 
 ### Scorecard
 
@@ -453,7 +453,7 @@ flowchart LR
 
 **Objective:** Replace `openapi-typescript-codegen` with a generator capable of producing typed error responses from the OpenAPI spec.
 
-**This is the largest, most consequential phase.** It is not purely an error handling concern — it changes the generated HTTP client, the React Query integration, the enum representation, and the import paths for all generated types. It should be planned as a distinct engineering task, potentially sequenced with or after the Chakra v3 migration (see [Chakra V3 Migration Analysis](./CHAKRA_V3_MIGRATION.md)).
+**This is the largest, most consequential phase.** It is not purely an error handling concern — it changes the generated HTTP client, the React Query integration, the enum representation, and the import paths for all generated types. Plan it as a distinct engineering task, potentially sequenced with or after the Chakra v3 migration (see [Chakra V3 Migration Analysis](./CHAKRA_V3_MIGRATION.md)).
 
 **Expected output from the new generator, per operation:**
 - A `{Operation}Errors` type mapping HTTP status codes to specific error types
@@ -642,7 +642,7 @@ The user-visible type definitions (field names, required/optional, nesting) are 
 
 **What changes:**
 - Import paths: `@/api/__generated__/models/Bridge` → single `@/api/__generated__/types.gen` (or similar)
-- Models that had enum sub-types (e.g. `Status.connection`) become plain string union fields inline
+- Models that had enum sub-types (for example, `Status.connection`) become plain string union fields inline
 - `readonly` annotations may shift slightly
 
 **What stays the same:**
@@ -654,7 +654,7 @@ The user-visible type definitions (field names, required/optional, nesting) are 
 - All files importing from `src/api/__generated__/` must be migrated (~50+ import sites for types alone)
 - All 199 hand-written hooks reviewed and migrated
 - `useHttpClient()` auth interceptor logic must be reproduced on the new client
-- `QUERY_KEYS` enum must be phased out in favour of generated query key functions
+- `QUERY_KEYS` enum must be phased out in favor of generated query key functions
 - MSW test handlers: request/response shape stable, but import paths for types change
 
 **Pre-conditions:**

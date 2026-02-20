@@ -9,6 +9,9 @@ maintained_at: "docs/architecture/DATAHUB_ARCHITECTURE.md"
 
 # DataHub Architecture
 
+> [!CAUTION]
+> The Data Hub UI has been redesigned from scratch for integration within HiveMQ Cloud Connect V2 (CCV2), the next-generation HiveMQ cloud platform. As a result, the DataHub Designer described in this document is no longer actively developed and should be treated as legacy code. Read this document if you are maintaining or debugging the existing DataHub Designer in HiveMQ Edge. Do not use this document as a reference for new DataHub work targeting CCV2.
+
 ---
 
 ## Table of Contents
@@ -24,9 +27,6 @@ maintained_at: "docs/architecture/DATAHUB_ARCHITECTURE.md"
 ---
 
 ## Overview
-
-> [!CAUTION]
-> The Data Hub UI has been redesigned from scratch for integration within CCV2. This is likely to mean that the Data Hub Designer as described in this document is now "abandonware"
 
 ### What is it?
 
@@ -150,12 +150,7 @@ src/extensions/datahub/
 - Draft: `hooks/useDataHubDraftStore.ts`
 - Checks: `hooks/usePolicyChecksStore.ts`
 
-**How:**
-
-| Store | Responsibility | Key Actions |
-|-------|----------------|-------------|
-| **useDataHubDraftStore** | Canvas state (nodes, edges, policy metadata) | `onNodesChange`, `onEdgesChange`, `onConnect`, `reset` |
-| **usePolicyChecksStore** | Validation state and dry-run results | `initReport`, `setReport`, `getErrors`, `setNode` |
+**How:** See [State Management — DataHub Stores](./STATE_MANAGEMENT.md#usedatahubdraftstore--datahub-canvas-draft) for the full store interface reference.
 
 **Key Pattern:** Toolbar buttons read from both stores - draft for canvas state, checks for selected node and validation status.
 
@@ -233,30 +228,9 @@ flowchart LR
 
 ### Component Testing Requirements
 
-**Wrapper:** Standard Cypress mounting with providers.
+Follow the standard component test pattern in [Testing Architecture](./TESTING_ARCHITECTURE.md). Use `cy.mountWithProviders()` and include `cy.checkAccessibility()` as the final test.
 
-**Key Patterns:**
-- All DataHub components follow standard component test structure
-- MSW handlers in `api/hooks/**/__handlers__/` for API mocking
-- Accessibility test required as final test in each suite
-
-**Example:**
-```typescript
-describe('PolicySummaryReport', () => {
-  it('should render success state', () => {
-    cy.mountWithProviders(<PolicySummaryReport status={PolicyDryRunStatus.SUCCESS} />)
-    cy.contains('Policy validation successful')
-  })
-
-  it('should be accessible', () => {
-    cy.injectAxe()
-    cy.mountWithProviders(<PolicySummaryReport status={PolicyDryRunStatus.SUCCESS} />)
-    cy.checkAccessibility()  // NOT cy.checkA11y()
-  })
-})
-```
-
-**See:** [Testing Guide](../guides/TESTING_GUIDE.md) for general patterns.
+MSW handlers for DataHub API calls live in `api/hooks/**/__handlers__/`.
 
 ### E2E Testing Requirements
 
@@ -345,5 +319,5 @@ describe('PolicySummaryReport', () => {
 **Design References (Miro):**
 - [DataHub – Edge Integration](https://miro.com/app/board/uXjVN7kkrF8=) — integration concept, RJSF node editors, OpenAPI constraints
 - [DataHub Designer – Resource Handling Revamp](https://miro.com/app/board/uXjVJnfJQVg=) — Plan A vs Plan B for schema/script resource editing
-- [DataHub Designer – FSM User-Facing Strings](https://miro.com/app/board/uXjVGKMvdqc=) — behaviour model FSMs, event/guard naming, UX copy
+- [DataHub Designer – FSM User-Facing Strings](https://miro.com/app/board/uXjVGKMvdqc=) — behavior model FSMs, event/guard naming, UX copy
 - [Reference Materials](../technical/REFERENCE_MATERIALS.md) — full board catalogue

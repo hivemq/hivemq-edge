@@ -155,7 +155,7 @@ Ask yourself:
 ```
 
 **Use cases for clear overlay:**
-- Modal references visible content (e.g., canvas node)
+- Modal references visible content (for example, canvas node)
 - Animated transitions show underlying elements
 - User needs to verify something below modal
 

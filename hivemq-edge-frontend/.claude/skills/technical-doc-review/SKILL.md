@@ -126,7 +126,35 @@ Grep for lines in prose sections (not code blocks, not table rows, not list item
 ^.{181,}$
 ```
 
-#### 2.4 Terminology Consistency Check (Read-based)
+#### 2.4 Bloat Detection
+
+Flag potential bloat before reading the full file. Run these checks:
+
+**File size:** Files over 800 lines almost always contain bloat. Flag for closer scrutiny.
+
+**Large code blocks:** Count lines between each pair of fenced ` ``` ` delimiters. Any block with ≥ 20 lines is a candidate to replace with a source file link.
+
+**Code-to-prose ratio:** Divide code lines (lines inside fenced blocks) by total lines. A ratio above 30% warrants scrutiny. Ratios above 50% are almost always bloated.
+
+Threshold guide:
+
+| Ratio  | Verdict                                |
+| ------ | -------------------------------------- |
+| < 20%  | Normal                                 |
+| 20–30% | Watch — check block sizes              |
+| 30–50% | Elevated — review each block           |
+| > 50%  | Bloated — cross-reference source files |
+
+**Exception:** Reference documents intended as copy-paste sources (patterns catalogs, API references) legitimately have high code ratios. Evaluate intent before flagging.
+
+**Bloat remediation (apply before other fixes):**
+
+1. Code block ≥ 20 lines that mirrors a real source file → replace with a 1-sentence description and a source file link
+2. Code block repeated across two or more documents → keep the canonical location, cross-reference everywhere else
+3. Multiple near-identical code examples illustrating the same pattern → keep one, describe variations in prose
+4. Fictional examples (code that does not exist in the repo) → remove or replace with a real file reference
+
+#### 2.5 Terminology Consistency Check (Read-based)
 
 Scan the document for these known HiveMQ Edge terms and check for synonym drift:
 
@@ -167,6 +195,7 @@ Output a structured Markdown report. Use this template:
 | Sentence length         | —        | {n}      |
 | Terminology             | {n}      | {n}      |
 | Structure / frontmatter | {n}      | {n}      |
+| Bloat                   | {n}      | {n}      |
 | Other style             | {n}      | {n}      |
 | **Total**               | **{n}**  | **{n}**  |
 
