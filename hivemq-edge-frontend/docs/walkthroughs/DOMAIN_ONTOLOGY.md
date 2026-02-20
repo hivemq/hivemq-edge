@@ -293,7 +293,7 @@ A step-by-step interactive path tracer. The user selects any integration point �
 
 ## What Was Not Activated
 
-Both Phase 1 implementations exist in the codebase (commit `7251e579`) but were not merged into the main feature branch for several reasons:
+Both Phase 1 implementations exist in the codebase (commit `7251e579`) but the team did not merge them into the main feature branch for several reasons:
 
 1. **No E2E test coverage.** Only POC-level component specs existed. Full coverage against the functional requirements had not been written.
 
@@ -305,7 +305,7 @@ Both Phase 1 implementations exist in the codebase (commit `7251e579`) but were 
 
 5. **Performance benchmarks not run.** The Network Graph View's performance with large datasets (>100 entities) was not measured. React Flow handles virtualization natively, but the circular layout algorithm and data transformation hooks had not been profiled.
 
-The feature flag pattern used for `RelationEdgeBundling` was not applied to the new implementations — they were integrated into `DomainOntologyManager`'s tab set but the entire manager remained accessible only through the Edge node side panel, which is not broadly discoverable.
+The team did not apply the feature flag pattern used for `RelationEdgeBundling` to the new implementations — they integrated them into `DomainOntologyManager`'s tab set, but the entire manager is accessible only through the Edge node side panel, which is not broadly discoverable.
 
 ---
 
@@ -338,7 +338,7 @@ Task EDG-40 added three progressively more formal representations of the domain 
 
 A formal OWL 2 ontology defining 13 classes, 14 object properties, 5 data properties, cardinality
 axioms, and a disjointness declaration for Tag/Topic/TopicFilter. Loadable in Protégé and queryable
-via SPARQL once populated with API data serialised as RDF individuals.
+via SPARQL once populated with API data serialized as RDF individuals.
 
 **Known limitation:** The `mqtt:matches` property (TopicFilter → Topic) cannot be derived by an OWL
 reasoner — it requires MQTT wildcard evaluation code to populate. See the ontology README for details.

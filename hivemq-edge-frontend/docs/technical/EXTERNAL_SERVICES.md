@@ -54,7 +54,7 @@ This table tracks whether manager/admin access has been shared with the frontend
 
 ### Heap Analytics
 
-**Purpose:** Session recording and user behaviour analytics for UX research.
+**Purpose:** Session recording and user behavior analytics for UX research.
 
 **Dashboard:** [https://heapanalytics.com/app/env/3411251519/overview/usage-baselines](https://heapanalytics.com/app/env/3411251519/overview/usage-baselines)
 
@@ -66,7 +66,7 @@ This table tracks whether manager/admin access has been shared with the frontend
 
 - Project ID `3411251519` is the production environment
 - Dev project ID is `1974822562` — use this locally to avoid polluting production data
-- Analytics only activate after user accepts the Privacy Consent Banner and the backend's `trackingAllowed` flag is `true`
+- Analytics only activate after the user accepts the Privacy Consent Banner and the backend's `trackingAllowed` flag is `true`
 - User properties captured: `hivemqId`, broker version
 
 **See:** [Configuration — Heap Analytics](./CONFIGURATION.md#heap-analytics)
@@ -140,7 +140,7 @@ This table tracks whether manager/admin access has been shared with the frontend
 - Quality gate result appears in PR checks and blocks merge on failure
 - Use the `/sonarqube` skill to fetch per-PR metrics without leaving the terminal
 
-**See:** [Dependency Management — Snyk](./DEPENDENCY_MANAGEMENT.md#snyk) for the full workflow breakdown.
+**See:** [Configuration — SonarCloud](./CONFIGURATION.md#sonarcloud) for the full workflow breakdown.
 
 ---
 
@@ -210,7 +210,7 @@ This table tracks whether manager/admin access has been shared with the frontend
 
 ### Kanbanize (Deprecated)
 
-**Purpose:** Former issue tracker — being phased out in favour of Linear.
+**Purpose:** Former issue tracker — being phased out in favor of Linear.
 
 **Dashboard:** [https://hivemq.kanbanize.com/ctrl_board/57/](https://hivemq.kanbanize.com/ctrl_board/57/)
 

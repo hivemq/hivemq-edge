@@ -362,18 +362,7 @@ cy.getByTestId('bridge-list').should('be.visible')
 
 ### Core Intercepts Helper
 
-```typescript
-import { cy_interceptCoreE2E } from 'cypress/utils/intercept.utils'
-
-beforeEach(() => {
-  cy_interceptCoreE2E()  // Auth, config, and common polling stubs via cy.interceptApi()
-
-  // Add feature-specific intercepts
-  cy.interceptApi(API_ROUTES.bridges.getBridges, { items: [] })
-})
-```
-
-**Location:** `cypress/utils/intercept.utils.ts`
+`cy_interceptCoreE2E` configures all core API intercepts needed for E2E workspace tests. See [`cypress/utils/intercept.utils.ts`](../../cypress/utils/intercept.utils.ts) for the full implementation.
 
 ### Dynamic Intercepts (callback handlers)
 
@@ -418,22 +407,7 @@ cy.intercept('/api/v1/**', (req) => {
 })
 ```
 
-### 2. Race Conditions
-
-**Problem:** Element not found, test flaky
-
-**Solution:** Wait for API calls before asserting
-
-```typescript
-// ❌ Wrong
-cy.getByTestId('list').should('exist')
-
-// ✅ Correct
-cy.wait('@getAdapters')
-cy.getByTestId('list').should('exist')
-```
-
-### 3. React Flow Context Errors
+### 2. React Flow Context Errors
 
 **Problem:** `Cannot read property 'useStore' of null`
 
@@ -449,22 +423,7 @@ cy.mountWithProviders(<NodeComponent />, {
 })
 ```
 
-### 4. Animation/Timing Issues
-
-**Problem:** Element exists but not visible yet
-
-**Solution:** Assert visibility, don't wait
-
-```typescript
-// ❌ Wrong
-cy.wait(500)
-cy.getByTestId('modal')
-
-// ✅ Correct
-cy.getByTestId('modal').should('be.visible')  // Retries automatically
-```
-
-### 5. Fixture Path Errors
+### 3. Fixture Path Errors
 
 **Problem:** 404 on fixture file
 

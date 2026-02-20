@@ -173,7 +173,7 @@ flowchart TD
 
 **What:** React Query owns all server-derived state. Zustand owns all client-only state.
 
-**Why:** Server data (adapter status, policies, bridge config) changes externally: it needs cache invalidation, background refetch, and stale-while-revalidate behaviour. Client state (canvas node positions, draft policies under construction, UI panel open/closed) has no network representation — it must not trigger API calls and must survive component unmounts. Mixing these concerns in a single store leads to either unnecessary re-fetches or lost local state.
+**Why:** Server data (adapter status, policies, bridge config) changes externally: it needs cache invalidation, background refetch, and stale-while-revalidate behavior. Client state (canvas node positions, draft policies under construction, UI panel open/closed) has no network representation — it must not trigger API calls and must survive component unmounts. Mixing these concerns in a single store leads to either unnecessary re-fetches or lost local state.
 
 **In practice:**
 - `src/api/hooks/` — React Query hooks for all backend data
@@ -268,7 +268,7 @@ flowchart TD
 | **Chakra UI** | v2.8 | Accessible by default; composable primitives; theming system; `@rjsf/chakra-ui` package uses the same version |
 | **React Router** | v6 | Declarative nested routing; file-based structure in `src/modules/App/` |
 
-**Note:** Chakra UI v2 is aging — v3 is available but introduces breaking changes across the entire component API. A migration analysis has been completed. See [Known Gaps](#known-gaps-and-planned-improvements).
+**Note:** Chakra UI v2 is aging — v3 is available but introduces breaking changes across the entire component API. The team completed a migration analysis. See [Known Gaps](#known-gaps-and-planned-improvements).
 
 ### State Management
 
@@ -404,11 +404,11 @@ Four technical analysis documents cover the most significant improvement areas. 
 
 **Current:** Chakra UI v2.8 — functional but no longer receiving new features; v3 is the active release.
 
-**Impact:** Custom theme (`src/modules/Theme/themeHiveMQ.ts`), all ~300+ component files, 20+ RJSF custom widgets, and the `@rjsf/chakra-ui` integration are all bound to the v2 API. The v3 architecture is a substantial rewrite — the theme system, compound component pattern, and many prop APIs changed.
+**Impact:** Custom theme (`src/modules/Theme/themeHiveMQ.ts`), all ~300+ component files, 20+ RJSF custom widgets, and the `@rjsf/chakra-ui` integration all depend on the v2 API. The v3 architecture is a substantial rewrite — the theme system, compound component pattern, and many prop APIs changed.
 
 **Critical dependency:** `@rjsf/chakra-ui` must be compatible with whatever Chakra version is in use. This constrains the migration path.
 
-**Planned:** 4-phase migration. Recommended to sequence with or after the generator switch (Phase 1 of the Problem Detail migration) to avoid two simultaneous breaking changes across the same files.
+**Planned:** 4-phase migration. Sequence this migration with or after the generator switch (Phase 1 of the Problem Detail migration) to avoid two simultaneous breaking changes across the same files.
 
 **See:** [Chakra UI v3 Migration Analysis](../analysis/CHAKRA_V3_MIGRATION.md) — full breaking change catalogue, 10-14 week phased plan, RJSF risk.
 

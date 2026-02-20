@@ -11,7 +11,7 @@ maintained_at: "docs/technical/REFERENCE_MATERIALS.md"
 
 A catalogue of external design and planning artefacts that provide context, rationale, and design intent behind the frontend codebase. These are not maintained in the repository, but are authoritative sources for understanding architectural decisions and UX thinking.
 
-**Access:** Miro boards require a Miro account. Most boards are owned by and shared from Nicolas Van Labeke's workspace. See [External Services](./EXTERNAL_SERVICES.md) for login details.
+**Access:** Miro boards require a Miro account. Most boards are owned by and shared from the team lead's workspace. See [External Services](./EXTERNAL_SERVICES.md) for login details.
 
 ---
 
@@ -63,13 +63,13 @@ Boards covering Pulse integration, asset mapper UX, tag browsing, and bulk subsc
 
 ### DataHub Designer & Edge Integration
 
-Boards covering the policy designer canvas, resource handling, and FSM behaviour models.
+Boards covering the policy designer canvas, resource handling, and FSM behavior models.
 
 | Board | URL | Summary |
 |-------|-----|---------|
-| **DataHub – Edge Integration** | [Open](https://miro.com/app/board/uXjVN7kkrF8=) | High-level concept for integrating DataHub's policy canvas with Edge: topic filters, behaviour/data policies, schemas/scripts, RJSF-based node editors, OpenAPI constraints, capabilities, and frontend toolchain assumptions. |
+| **DataHub – Edge Integration** | [Open](https://miro.com/app/board/uXjVN7kkrF8=) | High-level concept for integrating DataHub's policy canvas with Edge: topic filters, behavior/data policies, schemas/scripts, RJSF-based node editors, OpenAPI constraints, capabilities, and frontend toolchain assumptions. |
 | **DataHub Designer – Resource Handling Revamp** | [Open](https://miro.com/app/board/uXjVJnfJQVg=) | Compares "Plan A" (resource editing tied to policy nodes) vs "Plan B" (central resource editor) for schemas/scripts: flows for creating new versions, read-only vs editable states, pros and cons, state-management complexity. |
-| **DataHub Designer – FSM User-Facing Strings** | [Open](https://miro.com/app/board/uXjVGKMvdqc=) | Behaviour-model FSMs: correct event/guard naming, ordering of transitions, UX copy for models like `Publish.quota` / `Publish.duplicate`, and aligning visuals and labels with the OpenAPI-backed JSON schema. |
+| **DataHub Designer – FSM User-Facing Strings** | [Open](https://miro.com/app/board/uXjVGKMvdqc=) | Behavior-model FSMs: correct event/guard naming, ordering of transitions, UX copy for models like `Publish.quota` / `Publish.duplicate`, and aligning visuals and labels with the OpenAPI-backed JSON schema. |
 
 **See:** [DataHub Architecture](../architecture/DATAHUB_ARCHITECTURE.md)
 
@@ -82,7 +82,7 @@ Boards covering domain entity relationships, engineering practices, and cross-cu
 | Board | URL | Summary |
 |-------|-----|---------|
 | **Edge Domain Ontology** | [Open](https://miro.com/app/board/uXjVLpkTwW8=) | Domain map for Edge: adapters, devices, tags, topic filters, combiners, groups, and data-combining mappings. Includes JSON-schema shapes and API sketches for combiners and mapping instructions. Side-by-side comparison of data flow with and without `TopicFilter`. |
-| **Date and Time: Display and Filtering** | [Open](https://miro.com/app/board/uXjVNRLUwS0=) | Reference for date/time UX: comparisons of rule-based time filters, relative time pickers, range pickers, and timestamped table filtering patterns (e.g. DataDog-style timeframe picker). |
+| **Date and Time: Display and Filtering** | [Open](https://miro.com/app/board/uXjVNRLUwS0=) | Reference for date/time UX: comparisons of rule-based time filters, relative time pickers, range pickers, and timestamped table filtering patterns (for example, DataDog-style timeframe picker). |
 | **Frontend Testing Pyramid** | [Open](https://miro.com/app/board/uXjVMv__p30=) | Frontend testing strategy: layers from unit/logic to interaction and acceptance, visual regression and accessibility, mapped to tools like Cypress, Percy, Axe, Lighthouse, and CI integration. |
 | **Edge: Quick Retrospective** | [Open](https://miro.com/app/board/uXjVM5BD3rM=) | Retrospective board: documentation gaps, OpenAPI spec maintenance, test coverage trade-offs, and calls for better project-management tooling. |
 
@@ -98,7 +98,7 @@ Boards covering domain entity relationships, engineering practices, and cross-cu
 | **Definitive Bridge designs **          | [Open](https://www.figma.com/file/PMoMzXRmKLnlIalZxlOS1M/Edge?type=design&node-id=607%3A1102408&mode=design&t=ivBgHbTpTV4ryqyQ-1) | Definitive version of the design                                                       |
 | **Edge Data Models + Domain mapping  ** | [Open](https://www.figma.com/design/goCjhfUWBP3Fc3e73BaWD0/Edge---Data-Models---Mapping?m=auto&t=lmUJ6TL3bwQHQj97-6) | First draft of the contemporary Edge                                                   |
 | **Edge inventory 2024.9  **             | [Open](https://www.figma.com/design/GUsY1u8yDtIl7OE9XApfY1/EDGE?node-id=3-18&p=f&t=lmUJ6TL3bwQHQj97-0) | Edge review v2024.9                                                                    |
-| **Edge inventory 2024.9  **             | [Open](https://www.figma.com/design/goCjhfUWBP3Fc3e73BaWD0/Edge-Initiatives?node-id=960-282183&t=nucffe3DJCrYEkDe-4) | Edge review v2025.1                                                                  |
+| **Edge inventory 2025.1**               | [Open](https://www.figma.com/design/goCjhfUWBP3Fc3e73BaWD0/Edge-Initiatives?node-id=960-282183&t=nucffe3DJCrYEkDe-4) | Edge review v2025.1                                                                  |
 
 
 ## Board-to-Documentation Map

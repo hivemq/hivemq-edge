@@ -314,23 +314,7 @@ export const useHttpClient = () => {
 
 ### Usage in Hooks
 
-All React Query hooks use `useHttpClient()` to get a configured client instance:
-
-```typescript
-// src/api/hooks/useProtocolAdapters/useGetAllProtocolAdapters.ts
-import { useQuery } from '@tanstack/react-query'
-import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient'
-import { QUERY_KEYS } from '@/api/utils'
-
-export const useGetAllProtocolAdapters = () => {
-  const appClient = useHttpClient()
-
-  return useQuery({
-    queryKey: [QUERY_KEYS.ADAPTERS],
-    queryFn: () => appClient.protocolAdapters.getAdapters(),
-  })
-}
-```
+All React Query hooks call `useHttpClient()` to obtain a configured client instance and then pass the generated service method directly to `queryFn`. See [React Query Patterns](./REACT_QUERY_PATTERNS.md#basic-query-hook) for the canonical `useGetAllProtocolAdapters` example and full hook conventions.
 
 ---
 
@@ -573,7 +557,7 @@ pnpm dev:openAPI
 
 - **Never manually edit** generated files
 - Changes will be overwritten on next `pnpm dev:openAPI`
-- Add `/* generated using openapi-typescript-codegen -- do no edit */` header to all generated files
+- Add `/* generated using openapi-typescript-codegen -- do not edit */` header to all generated files
 
 ### ✅ Custom (Edit Freely)
 

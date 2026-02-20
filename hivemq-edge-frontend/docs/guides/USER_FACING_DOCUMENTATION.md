@@ -57,7 +57,7 @@ Writing and updating the external documentation is the **frontend developer's re
 Update the external docs when:
 
 - A new feature is shipped that users need to know how to use
-- An existing feature's UI or behaviour changes significantly
+- An existing feature's UI or behavior changes significantly
 - A feature is removed or deprecated
 - Screenshots are outdated (UI redesign, Chakra version change, etc.)
 
@@ -74,7 +74,7 @@ The external docs use **Markdown**. They live in a separate repository (not this
 - **Step-by-step instructions** — assume users have no prior knowledge
 - **Screenshots** — for every non-trivial UI screen or interaction
 - **Conceptual explanations** — what the feature is for, not just how to use it
-- **Cross-references** — link to related features (e.g., Data Hub ↔ schemas ↔ policies)
+- **Cross-references** — link to related features (for example, Data Hub ↔ schemas ↔ policies)
 
 > [!NOTE]
 > The Data Hub docs live under the main HiveMQ docs URL, not the Edge-specific URL, because the Data Hub feature is shared between HiveMQ Edge and HiveMQ Platform. Ensure screenshots and examples are compatible with both.

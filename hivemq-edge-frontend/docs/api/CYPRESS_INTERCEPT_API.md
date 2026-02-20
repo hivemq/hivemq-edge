@@ -222,7 +222,7 @@ warning  "api/v1/management/bridges" looks like an API route but is missing a le
          — did you mean '/api/v1/management/bridges'?  local/no-bare-cy-intercept
 ```
 
-The rule normalises the URL (prepends `/`) and offers the same `cy.interceptApi()` quick-fix as
+The rule normalizes the URL (prepends `/`) and offers the same `cy.interceptApi()` quick-fix as
 diagnostic 1 when a matching route is found.
 
 ---
@@ -246,7 +246,7 @@ warning  Use cy.interceptApi(...) for static API responses.  local/no-bare-cy-in
 ```
 
 Up to two suggestions are offered, sorted by ascending edit distance. A method filter is applied
-when the call already includes an explicit HTTP method (e.g. `cy.intercept('GET', url, body)`).
+when the call already includes an explicit HTTP method (for example, `cy.intercept('GET', url, body)`).
 
 ---
 
@@ -256,7 +256,7 @@ when the call already includes an explicit HTTP method (e.g. `cy.intercept('GET'
   stateful/CRUD scenarios that `cy.interceptApi()` does not cover
 - Non-API URLs such as `https://api.github.com/...`
 
-**CI behaviour:**
+**CI behavior:**
 
 Warnings are visible in IDE and CLI output but do not fail the build (`--max-warnings 0` is not
 enforced). This allows incremental migration without blocking development. The severity can be
@@ -297,7 +297,7 @@ configuration is required.
 ### URL-only intercepts
 
 For `cy.intercept('/api/v1/...')` calls without an explicit HTTP method, the IDE offers one
-suggestion per matching method found in the registry (e.g. one entry for `GET`, another for `POST`
+suggestion per matching method found in the registry (for example, one entry for `GET`, another for `POST`
 if both exist). Choose the one that matches the intended semantics.
 
 ---
@@ -305,7 +305,7 @@ if both exist). Choose the one that matches the intended semantics.
 ## When to Still Use cy.intercept()
 
 `cy.interceptApi()` covers static responses only. Use bare `cy.intercept()` with a callback handler
-for any scenario that requires dynamic behaviour:
+for any scenario that requires dynamic behavior:
 
 ```typescript
 // ✅ Keep as cy.intercept() — CRUD mock database

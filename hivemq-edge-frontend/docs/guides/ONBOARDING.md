@@ -354,7 +354,7 @@ The application is a REST API client. It fetches data from the Java backend via 
 
 ### The `config` Singleton
 
-`src/config/index.ts` is a module-level singleton that normalises all environment variables into typed values. Always use it rather than reading `import.meta.env` directly:
+`src/config/index.ts` is a module-level singleton that normalizes all environment variables into typed values. Always use it rather than reading `import.meta.env` directly:
 
 ```typescript
 // ✅ Correct

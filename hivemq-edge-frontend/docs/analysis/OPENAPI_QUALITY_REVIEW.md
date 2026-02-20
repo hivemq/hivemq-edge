@@ -67,7 +67,7 @@ The Edge-native management subsystem (bridges, adapters, events, combiners, UNS,
 
 **Key risk for agentic use:** An LLM relying solely on this spec will:
 - Be unable to construct valid policy pipelines (function IDs, arguments, and constraints are all opaque)
-- Hallucinate relationships between resources (e.g., which adapter owns which tags)
+- Hallucinate relationships between resources (for example, which adapter owns which tags)
 - Misinterpret opaque `JsonNode` fields (used in 7+ distinct semantic contexts)
 - Fail to distinguish authenticated from public endpoints
 - Be unable to reason about behavior model states, transitions, or events
@@ -329,7 +329,7 @@ In reality, `functionId` is one of exactly **9 well-defined functions**, each wi
 
 *`Mqtt.drop` is restricted to `Mqtt.OnInboundPublish` and `Mqtt.OnInboundSubscribe` events in behavior policies.
 
-**What the spec hides:** The closed set of valid `functionId` values; per-function argument schemas; terminal/non-terminal distinction; data-policy-only vs. universal availability; pipeline ordering rules (e.g., `Serdes.deserialize` must precede `Serdes.serialize`).
+**What the spec hides:** The closed set of valid `functionId` values; per-function argument schemas; terminal/non-terminal distinction; data-policy-only vs. universal availability; pipeline ordering rules (for example, `Serdes.deserialize` must precede `Serdes.serialize`).
 
 ---
 
@@ -637,7 +637,7 @@ An agentic system must know which endpoints support pagination to avoid requesti
 | `Domain` | Very vague — used as a secondary tag |
 | `Combiners` | Not defined in top-level tags |
 
-**Recommendation:** Standardise on bare nouns without "Endpoint" suffix. Expand all acronyms. Define all tags used.
+**Recommendation:** Standardize on bare nouns without "Endpoint" suffix. Expand all acronyms. Define all tags used.
 
 ---
 
@@ -710,7 +710,7 @@ Since fixing the upstream spec may not be feasible short-term, create a domain o
 1. **Maps all entity relationships** — adapter→tags, adapter→mappings, combiner→mappings→instructions, policy→schema, asset→mapping
 2. **Provides semantic descriptions** for every `JsonNode` usage context
 3. **Documents authentication requirements** per endpoint
-4. **Normalises the API taxonomy** — provides a consistent naming scheme for operations
+4. **Normalizes the API taxonomy** — provides a consistent naming scheme for operations
 5. **Lists all implicit constraints** — required fields, valid enums, pagination support
 
 ### Priority 2 — Supplement Descriptions for Agentic Context
@@ -719,7 +719,7 @@ For each operation, provide:
 - A clear 1-sentence purpose description
 - The resource type it operates on
 - Parent/child relationships
-- Side effects (e.g., "creating a bridge also starts it")
+- Side effects (for example, "creating a bridge also starts it")
 - Pagination details
 
 ### Priority 3 — Address Critical Spec Defects Upstream
@@ -729,8 +729,8 @@ If spec changes are possible:
 2. Fix all copy-paste description errors (18+ identified)
 3. Add `required` fields to core schemas (16 schemas identified)
 4. Replace `JsonNode` catch-all with contextual wrapper types
-5. Standardise `operationId` naming to camelCase throughout
-6. Standardise on `201`/`204` for create/delete operations
+5. Standardize `operationId` naming to camelCase throughout
+6. Standardize on `201`/`204` for create/delete operations
 7. Fix grammar and garbled descriptions (20+ identified)
 
 ---
@@ -743,8 +743,7 @@ If spec changes are possible:
 | **operationId** | Unique identifier for an API operation, used as the generated SDK method name |
 | **JsonNode** | Generic `type: object` schema used throughout the spec as a catch-all for arbitrary JSON; currently overloaded with 9 distinct semantic meanings |
 | **required fields** | OpenAPI `required` array on a schema declaring which properties must be present; missing from many core schemas in this spec |
-| **writeOnly** | OpenAPI property flag indicating a field should not appear in GET responses (e.g., passwords); missing from sensitive fields |
-| **Compound Component Pattern** | Chakra v3 pattern where multi-part components (Drawer, Modal) expose sub-components via dot notation (e.g., `Drawer.Root`) |
+| **writeOnly** | OpenAPI property flag indicating a field should not appear in GET responses (for example, passwords); missing from sensitive fields |
 | **FSM** | Finite State Machine — the behavior model underlying behavior policies in Data Hub; states and transitions are not documented in the spec |
 | **PolicyOperation** | A pipeline step in a DataHub data or behavior policy; the `functionId` and `arguments` fields are opaque despite having 9 well-defined function types |
 | **Agentic use** | Consumption of the API by an AI agent or LLM that must reason about the domain from the spec alone |

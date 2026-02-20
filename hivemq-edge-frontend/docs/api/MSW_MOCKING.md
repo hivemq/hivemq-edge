@@ -16,17 +16,17 @@ maintained_at: "docs/api/MSW_MOCKING.md"
 - [Overview](#overview)
 - [Architecture](#architecture)
 - [Setup](#setup)
-- [Handler Organization](#handler-organization)
-- [Mock Data Patterns](#mock-data-patterns)
-- [Testing Patterns](#testing-patterns)
-- [Cypress Integration](#cypress-integration)
+- [Handler organization](#handler-organization)
+- [Mock data patterns](#mock-data-patterns)
+- [Testing patterns](#testing-patterns)
+- [Cypress integration](#cypress-integration)
 - [Debugging](#debugging)
-- [Advanced Patterns](#advanced-patterns)
-- [Best Practices](#best-practices)
-- [Common Pitfalls](#common-pitfalls)
-- [Checklist: Adding New MSW Handlers](#checklist-adding-new-msw-handlers)
+- [Advanced patterns](#advanced-patterns)
+- [Best practices](#best-practices)
+- [Common pitfalls](#common-pitfalls)
+- [Checklist: adding new MSW handlers](#checklist-adding-new-msw-handlers)
 - [Glossary](#glossary)
-- [Related Documentation](#related-documentation)
+- [Related documentation](#related-documentation)
 
 ---
 
@@ -36,11 +36,12 @@ HiveMQ Edge frontend uses **Mock Service Worker (MSW)** for API mocking in tests
 
 **Benefits:**
 
-- **Realistic testing** - Intercepts actual `fetch`/`axios` calls (not mocked functions)
-- **Reusable handlers** - Same mocks work in unit, component, and E2E tests
+- **Realistic testing** - Intercepts actual `fetch` calls (not mocked functions)
 - **Fast execution** - No network latency, instant responses
 - **Deterministic tests** - Consistent mock data prevents flaky tests
 - **Error simulation** - Easy to test error states and edge cases
+
+**Scope:** MSW is used for **Vitest unit and hook tests only**. Cypress component and E2E tests use `cy.intercept()`. See [Cypress Integration](#cypress-integration).
 
 **Version:** msw ^2.x (latest)
 
@@ -91,56 +92,15 @@ graph LR
 
 ## Setup
 
-### Installation
+### Test setup
 
-MSW is already installed in the project:
+MSW is already installed. The server lifecycle (start / reset / close) runs automatically for all Vitest tests via `src/__test-utils__/setup.ts`. No per-test setup is required — import mock data and write assertions.
 
-```bash
-pnpm add -D msw
-```
-
-### Test Setup
-
-**Vitest configuration:**
-
-```typescript
-// src/__test-utils__/setup.ts
-import { beforeAll, afterEach, afterAll } from 'vitest'
-import { server } from './msw/server'
-
-// Start MSW server before all tests
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
-
-// Reset handlers after each test
-afterEach(() => server.resetHandlers())
-
-// Clean up after all tests
-afterAll(() => server.close())
-```
-
-**Cypress configuration:**
-
-```typescript
-// cypress/support/component.ts
-import { server } from '@/__test-utils__/msw/server'
-
-// Start MSW before component tests
-before(() => {
-  server.listen({ onUnhandledRequest: 'warn' })
-})
-
-afterEach(() => {
-  server.resetHandlers()
-})
-
-after(() => {
-  server.close()
-})
-```
+**Source:** `src/__test-utils__/setup.ts` — uses `onUnhandledRequest: 'warn'` so missing handlers surface in the console without failing the suite.
 
 ---
 
-## Handler Organization
+## Handler organization
 
 ### Colocated Handlers Pattern
 
@@ -182,49 +142,22 @@ src/api/hooks/
 ```typescript
 // src/api/hooks/useProtocolAdapters/__handlers__/index.ts
 import { http, HttpResponse } from 'msw'
-import type { Adapter, AdaptersList, ProtocolAdaptersList } from '@/api/__generated__'
-import { mockAdapter, mockProtocolAdapter } from '@/__test-utils__/adapters'
+import type { Adapter, AdaptersList } from '@/api/__generated__'
+import { mockAdapter } from '@/__test-utils__/adapters'
 
 export const handlers = [
-  // GET /api/v1/management/protocol-adapters/types
-  http.get('*/protocol-adapters/types', () => {
-    return HttpResponse.json<ProtocolAdaptersList>(
-      { items: [mockProtocolAdapter] },
-      { status: 200 }
-    )
-  }),
-
-  // GET /api/v1/management/protocol-adapters/adapters
   http.get('*/protocol-adapters/adapters', () => {
-    return HttpResponse.json<AdaptersList>(
-      { items: [mockAdapter] },
-      { status: 200 }
-    )
+    return HttpResponse.json<AdaptersList>({ items: [mockAdapter] }, { status: 200 })
   }),
 
-  // GET /api/v1/management/protocol-adapters/adapters/:adapterId
   http.get('*/protocol-adapters/adapters/:adapterId', ({ params }) => {
-    const { adapterId } = params
     return HttpResponse.json<Adapter>(
-      { ...mockAdapter, id: adapterId as string },
+      { ...mockAdapter, id: params.adapterId as string },
       { status: 200 }
     )
   }),
 
-  // POST /api/v1/management/protocol-adapters/adapters/:adapterType
-  http.post('*/protocol-adapters/adapters/:adapterType', () => {
-    return HttpResponse.json({}, { status: 200 })
-  }),
-
-  // PUT /api/v1/management/protocol-adapters/adapters/:adapterId
-  http.put('*/protocol-adapters/adapters/:adapterId', () => {
-    return HttpResponse.json({}, { status: 200 })
-  }),
-
-  // DELETE /api/v1/management/protocol-adapters/adapters/:adapterId
-  http.delete('*/protocol-adapters/adapters/:adapterId', () => {
-    return HttpResponse.json({}, { status: 200 })
-  }),
+  // POST/PUT/DELETE follow the same pattern — see source file
 ]
 ```
 
@@ -237,129 +170,72 @@ export const handlers = [
 
 ---
 
-### Central Handler Registration
+### Central handler registration
 
 **Pattern:** Aggregate handlers from all modules.
 
-```typescript
-// src/__test-utils__/msw/handlers.ts
-import { handlers as adapterHandlers } from '@/api/hooks/useProtocolAdapters/__handlers__'
-import { handlers as combinerHandlers } from '@/api/hooks/useCombiners/__handlers__'
-import { handlers as pulseHandlers } from '@/api/hooks/usePulse/__handlers__'
-import { handlerCapabilities } from '@/api/hooks/useFrontendServices/__handlers__'
+**Source files:**
 
-export const createInterceptHandlers = () => {
-  return [
-    ...handlerCapabilities(),
-    ...adapterHandlers,
-    ...combinerHandlers,
-    ...pulseHandlers,
-  ]
-}
-```
+- `src/__test-utils__/msw/handlers.ts` — imports handler arrays from each feature module and exports `createInterceptHandlers()`
+- `src/__test-utils__/msw/mockServer.ts` — creates the MSW server: `setupServer(...createInterceptHandlers())`
 
-```typescript
-// src/__test-utils__/msw/server.ts
-import { setupServer } from 'msw/node'
-import { createInterceptHandlers } from './handlers'
-
-export const server = setupServer(...createInterceptHandlers())
-```
+**To add a new feature:** import its handler array into `handlers.ts` and spread it into `createInterceptHandlers()`.
 
 ---
 
-## Mock Data Patterns
+## Mock data patterns
 
 ### Centralized Mock Data
 
-**Convention:** Shared mock data lives in `src/__test-utils__/`.
+**Convention:** Shared mock data lives in `src/__test-utils__/`. Each adapter type has its own file.
 
 ```typescript
-// src/__test-utils__/adapters/simulation.ts
-import type { Adapter, ProtocolAdapter } from '@/api/__generated__'
-import { Status } from '@/api/__generated__'
-
+// src/__test-utils__/adapters/simulation.ts (abbreviated)
 export const MOCK_ADAPTER_ID = 'simulation-1'
 
 export const mockProtocolAdapter: ProtocolAdapter = {
   id: 'simulation',
   protocol: 'Simulation',
-  name: 'Simulated Edge Device',
-  description: 'Simulate traffic from an edge device',
-  version: 'Development Version',
-  installed: true,
-  capabilities: ['READ'],
-  category: {
-    name: 'SIMULATION',
-    displayName: 'Simulation',
-  },
-  configSchema: { /* JSON Schema */ },
-  uiSchema: { /* UI Schema */ },
+  // ...see source for full definition
 }
 
 export const mockAdapter: Adapter = {
   id: MOCK_ADAPTER_ID,
   type: 'simulation',
-  config: {
-    minValue: 0,
-    maxValue: 1000,
-    simulationToMqtt: {
-      pollingIntervalMillis: 10000,
-      simulationToMqttMappings: [
-        { mqttTopic: 'sensor/temperature', qos: 0 },
-      ],
-    },
-  },
   status: {
-    startedAt: '2023-08-21T11:51:24.234+01',
     connection: Status.connection.CONNECTED,
     runtime: Status.runtime.STARTED,
   },
+  // ...see source for full definition
 }
 ```
 
-**Benefits:**
-
-- **Reuse across tests** - One mock data object, many tests
-- **Consistency** - Same data in unit, component, and E2E tests
-- **Type safety** - Mock data typed against generated models
+**Source:** `src/__test-utils__/adapters/` — one file per adapter type. Mock data is typed against generated models for compile-time safety.
 
 ---
 
 ### Factory Functions
 
-**Pattern:** Generate dynamic mock data.
+**Pattern:** Generate dynamic mock data with per-test overrides.
 
 ```typescript
-// src/__test-utils__/adapters/index.ts
-import type { Adapter } from '@/api/__generated__'
-import { Status } from '@/api/__generated__'
-
 export const createMockAdapter = (overrides?: Partial<Adapter>): Adapter => ({
   id: 'test-adapter',
   type: 'simulation',
   config: {},
-  status: {
-    connection: Status.connection.CONNECTED,
-    runtime: Status.runtime.STARTED,
-  },
+  status: { connection: Status.connection.CONNECTED, runtime: Status.runtime.STARTED },
   ...overrides,
 })
 
-// Usage in tests
-const connectedAdapter = createMockAdapter({ id: 'adapter-1' })
+// Usage
 const errorAdapter = createMockAdapter({
-  id: 'adapter-2',
-  status: {
-    connection: Status.connection.ERROR,
-    message: 'Connection failed',
-  },
+  status: { connection: Status.connection.ERROR, message: 'Connection failed' },
 })
 ```
 
 ---
 
-## Testing Patterns
+## Testing patterns
 
 ### Basic Handler Usage
 
@@ -420,57 +296,26 @@ describe('useGetAllProtocolAdapters', () => {
 
 ---
 
-### Testing Error States
+### Testing error states
 
 **Pattern:** Return error responses to test error handling.
 
 ```typescript
-describe('useGetAllProtocolAdapters - Error States', () => {
-  it('should handle 500 server error', async () => {
-    server.use(
-      http.get('*/protocol-adapters/adapters', () => {
-        return HttpResponse.json(
-          { error: 'Internal Server Error' },
-          { status: 500 }
-        )
-      })
-    )
+it('should handle 500 server error', async () => {
+  server.use(
+    http.get('*/protocol-adapters/adapters', () => {
+      return HttpResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+    })
+  )
 
-    const { result } = renderHook(() => useGetAllProtocolAdapters(), { wrapper })
+  const { result } = renderHook(() => useGetAllProtocolAdapters(), { wrapper })
 
-    await waitFor(() => expect(result.current.isError).toBe(true))
-    expect(result.current.error?.status).toBe(500)
-  })
-
-  it('should handle 401 unauthorized', async () => {
-    server.use(
-      http.get('*/protocol-adapters/adapters', () => {
-        return HttpResponse.json(
-          { error: 'Unauthorized' },
-          { status: 401 }
-        )
-      })
-    )
-
-    const { result } = renderHook(() => useGetAllProtocolAdapters(), { wrapper })
-
-    await waitFor(() => expect(result.current.isError).toBe(true))
-    expect(result.current.error?.status).toBe(401)
-  })
-
-  it('should handle network error', async () => {
-    server.use(
-      http.get('*/protocol-adapters/adapters', () => {
-        return HttpResponse.error()  // Network error
-      })
-    )
-
-    const { result } = renderHook(() => useGetAllProtocolAdapters(), { wrapper })
-
-    await waitFor(() => expect(result.current.isError).toBe(true))
-  })
+  await waitFor(() => expect(result.current.isError).toBe(true))
+  expect(result.current.error?.status).toBe(500)
 })
 ```
+
+Apply the same pattern for other error cases: use `{ status: 401 }` for unauthorized, or `HttpResponse.error()` for a network-level failure.
 
 ---
 
@@ -479,41 +324,23 @@ describe('useGetAllProtocolAdapters - Error States', () => {
 **Pattern:** Verify mutation calls correct endpoint with correct data.
 
 ```typescript
-import { renderHook, waitFor } from '@testing-library/react'
-import { server } from '@/__test-utils__/msw/server'
-import { http } from 'msw'
+import { server } from '@/__test-utils__/msw/mockServer'
 
-describe('useCreateProtocolAdapter', () => {
-  it('should create adapter', async () => {
-    let capturedRequest: Adapter | null = null
+it('should create adapter', async () => {
+  let capturedRequest: Adapter | null = null
 
-    // Capture request body
-    server.use(
-      http.post('*/protocol-adapters/adapters/:adapterType', async ({ request, params }) => {
-        const { adapterType } = params
-        capturedRequest = await request.json()
-        return HttpResponse.json({}, { status: 200 })
-      })
-    )
-
-    const { result } = renderHook(() => useCreateProtocolAdapter(), { wrapper })
-
-    const newAdapter: Adapter = {
-      id: 'new-adapter',
-      type: 'simulation',
-      config: {},
-    }
-
-    result.current.mutate({
-      adapterType: 'simulation',
-      requestBody: newAdapter,
+  server.use(
+    http.post('*/protocol-adapters/adapters/:adapterType', async ({ request }) => {
+      capturedRequest = await request.json()
+      return HttpResponse.json({}, { status: 200 })
     })
+  )
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+  const { result } = renderHook(() => useCreateProtocolAdapter(), { wrapper })
+  result.current.mutate({ adapterType: 'simulation', requestBody: newAdapter })
 
-    // Verify request was sent with correct data
-    expect(capturedRequest).toEqual(newAdapter)
-  })
+  await waitFor(() => expect(result.current.isSuccess).toBe(true))
+  expect(capturedRequest).toEqual(newAdapter)
 })
 ```
 
@@ -581,75 +408,46 @@ http.delete('*/protocol-adapters/adapters/:adapterId', ({ params }) => {
 
 ---
 
-## Cypress Integration
+## Cypress integration
 
-### Component Tests with MSW
+Cypress tests — both component and E2E — use `cy.intercept()` for network mocking. The MSW server runs only in the Vitest process; it is not available to the Cypress browser runtime.
 
-**Pattern:** MSW handlers work automatically in Cypress component tests.
+### Component tests
 
-```typescript
-// cypress/support/component.ts
-import { server } from '@/__test-utils__/msw/server'
-
-before(() => {
-  server.listen({ onUnhandledRequest: 'warn' })
-})
-
-afterEach(() => {
-  server.resetHandlers()
-})
-
-after(() => {
-  server.close()
-})
-```
-
-**Component test:**
+Stub API calls with `cy.intercept()` at the top of each test or `beforeEach`:
 
 ```typescript
-// src/modules/ProtocolAdapters/AdapterList.spec.cy.tsx
-import { AdapterList } from './AdapterList'
-
 describe('AdapterList', () => {
   it('should display adapters', () => {
-    cy.mountWithProviders(<AdapterList />)
-
-    // MSW handler returns mockAdapter
-    cy.getByTestId('adapter-list').should('exist')
-    cy.contains('simulation-1').should('be.visible')
-  })
-})
-```
-
----
-
-### E2E Tests (Separate MSW Instance)
-
-**Pattern:** E2E tests use custom intercepts, not shared MSW handlers.
-
-```typescript
-// cypress/e2e/adapters/adapter-list.cy.ts
-describe('Adapter List', () => {
-  it('should display adapters', () => {
-    // Custom intercept for E2E
     cy.intercept('GET', '/api/v1/management/protocol-adapters/adapters', {
       statusCode: 200,
       body: { items: [mockAdapter] },
     }).as('getAdapters')
 
-    cy.visit('/adapters')
-
+    cy.mountWithProviders(<AdapterList />)
     cy.wait('@getAdapters')
-    cy.contains('simulation-1').should('be.visible')
+    cy.getByTestId('adapter-list').should('exist')
   })
 })
 ```
 
-**Why separate?**
+### E2E tests
 
-- E2E tests verify full app behavior including routing
-- `cy.intercept()` provides E2E-specific features (wait, alias)
-- MSW handlers stay focused on unit/component tests
+The pattern is identical — `cy.intercept()` before `cy.visit()`:
+
+```typescript
+cy.intercept('GET', '/api/v1/management/protocol-adapters/adapters', {
+  statusCode: 200,
+  body: { items: [mockAdapter] },
+}).as('getAdapters')
+
+cy.visit('/adapters')
+cy.wait('@getAdapters')
+```
+
+For complex stateful scenarios, E2E tests use `@mswjs/data` as an **in-memory database** to generate fixture data — not as a network interceptor. See `cypress/utils/intercept.utils.ts` for examples.
+
+**See:** [Cypress Intercept API](./CYPRESS_INTERCEPT_API.md) for the full `cy.intercept()` reference.
 
 ---
 
@@ -658,9 +456,7 @@ describe('Adapter List', () => {
 ### Log Handler Calls
 
 ```typescript
-// src/__test-utils__/msw/server.ts
-import { setupServer } from 'msw/node'
-
+// src/__test-utils__/msw/mockServer.ts
 export const server = setupServer(...createInterceptHandlers())
 
 // Enable logging in development
@@ -708,37 +504,7 @@ http.post('*/protocol-adapters/adapters/:adapterType', async ({ request }) => {
 
 ---
 
-## Advanced Patterns
-
-### GraphQL Mocking
-
-**Pattern:** MSW supports GraphQL queries and mutations.
-
-```typescript
-import { graphql, HttpResponse } from 'msw'
-
-const graphqlHandlers = [
-  graphql.query('GetUser', ({ variables }) => {
-    return HttpResponse.json({
-      data: {
-        user: { id: variables.id, name: 'John Doe' }
-      }
-    })
-  }),
-
-  graphql.mutation('UpdateUser', ({ variables }) => {
-    return HttpResponse.json({
-      data: {
-        updateUser: { success: true }
-      }
-    })
-  }),
-]
-```
-
-**Note:** HiveMQ Edge uses REST, not GraphQL. This is for reference only.
-
----
+## Advanced patterns
 
 ### Response Composition
 
@@ -768,68 +534,42 @@ http.get('*/protocol-adapters/adapters', () => {
 
 ---
 
-### Stateful Handlers
+### Stateful handlers
 
-**Pattern:** Maintain state across requests within a test.
+**Pattern:** Maintain state across requests within a test using a `Map` initialized in `beforeEach`.
 
 ```typescript
 describe('Adapter CRUD operations', () => {
   let adapterStore: Map<string, Adapter>
 
   beforeEach(() => {
-    adapterStore = new Map([
-      ['simulation-1', mockAdapter],
-    ])
+    adapterStore = new Map([['simulation-1', mockAdapter]])
 
     server.use(
-      http.get('*/protocol-adapters/adapters', () => {
-        return HttpResponse.json<AdaptersList>({
-          items: Array.from(adapterStore.values()),
-        })
-      }),
-
+      http.get('*/protocol-adapters/adapters', () =>
+        HttpResponse.json<AdaptersList>({ items: Array.from(adapterStore.values()) })
+      ),
       http.post('*/protocol-adapters/adapters/:adapterType', async ({ request }) => {
         const newAdapter = await request.json()
         adapterStore.set(newAdapter.id, newAdapter)
         return HttpResponse.json({}, { status: 200 })
       }),
-
       http.delete('*/protocol-adapters/adapters/:adapterId', ({ params }) => {
         adapterStore.delete(params.adapterId as string)
         return HttpResponse.json({}, { status: 200 })
-      }),
+      })
     )
   })
 
-  it('should create and list adapter', async () => {
-    // Create
-    const createResult = renderHook(() => useCreateProtocolAdapter(), { wrapper })
-    createResult.result.current.mutate({ adapterType: 'simulation', requestBody: newAdapter })
-    await waitFor(() => expect(createResult.result.current.isSuccess).toBe(true))
-
-    // List
-    const listResult = renderHook(() => useGetAllProtocolAdapters(), { wrapper })
-    await waitFor(() => expect(listResult.result.current.isSuccess).toBe(true))
-    expect(listResult.result.current.data?.items).toHaveLength(2)
-  })
-
-  it('should delete adapter', async () => {
-    // Delete
-    const deleteResult = renderHook(() => useDeleteProtocolAdapter(), { wrapper })
-    deleteResult.result.current.mutate({ adapterId: 'simulation-1' })
-    await waitFor(() => expect(deleteResult.result.current.isSuccess).toBe(true))
-
-    // List
-    const listResult = renderHook(() => useGetAllProtocolAdapters(), { wrapper })
-    await waitFor(() => expect(listResult.result.current.isSuccess).toBe(true))
-    expect(listResult.result.current.data?.items).toHaveLength(0)
-  })
+  // Test: mutate via hook, re-query, assert store length changed
 })
 ```
 
+Initialize `adapterStore` in `beforeEach` so each test starts from a clean state. Drive mutations through hooks, then re-query to assert the outcome.
+
 ---
 
-## Best Practices
+## Best practices
 
 ### ✅ Do
 
@@ -843,7 +583,7 @@ describe('Adapter CRUD operations', () => {
 
 ### ❌ Don't
 
-- **Don't mock in E2E tests** - Use `cy.intercept()` instead
+- **Don't use MSW in Cypress tests** - Use `cy.intercept()` instead (MSW runs in the Vitest process only)
 - **Don't commit `.only()` tests** - Handlers are shared, isolation matters
 - **Don't hardcode URLs** - Use wildcard `*/path` for flexibility
 - **Don't ignore TypeScript errors** - Mock data must match generated types
@@ -853,7 +593,7 @@ describe('Adapter CRUD operations', () => {
 
 ---
 
-## Common Pitfalls
+## Common pitfalls
 
 ### Issue 1: Handler Not Matching
 
@@ -928,7 +668,7 @@ http.get('*/adapters/:adapterId', ...),  // Matches all others
 
 ---
 
-## Checklist: Adding New MSW Handlers
+## Checklist: adding new MSW handlers
 
 - [ ] Create `__handlers__/index.ts` in hook directory
 - [ ] Export array of MSW handlers
@@ -947,22 +687,19 @@ http.get('*/adapters/:adapterId', ...),  // Matches all others
 
 | Term | Definition |
 |------|------------|
-| **MSW** | Mock Service Worker - library for intercepting network requests in tests |
-| **Handler** | Function that defines how to respond to a specific HTTP request pattern |
-| **Interceptor** | MSW component that captures network requests before they reach the network |
-| **Service Worker** | Browser API used by MSW to intercept requests at the network level |
-| **Request Handler** | MSW function that matches HTTP requests and returns mock responses |
+| **MSW** | Mock Service Worker — library for intercepting network requests in Vitest tests |
+| **Handler** | Function that matches an HTTP request pattern and returns a mock response |
 | **HttpResponse** | MSW utility for creating mock HTTP responses with status codes and bodies |
-| **Wildcard URL** | URL pattern using `*` to match any base URL (e.g., `*/api/users`) |
-| **Path Parameter** | Dynamic segment in URL extracted from request (e.g., `:userId` in `/users/:userId`) |
+| **Wildcard URL** | URL pattern using `*` to match any base URL (for example, `*/api/users`) |
+| **Path parameter** | Dynamic URL segment extracted from a request (for example, `:userId` in `/users/:userId`) |
 | **Passthrough** | Allowing a request to bypass MSW and reach the real API |
-| **Handler Override** | Temporarily replacing a handler in a specific test using `server.use()` |
-| **Factory Function** | Function that creates mock data with customizable overrides |
-| **Stateful Handler** | Handler that maintains state across multiple requests within a test |
+| **Handler override** | Temporarily replacing a handler in a specific test using `server.use()` |
+| **Factory function** | Function that creates mock data with customizable overrides |
+| **Stateful handler** | Handler that maintains state across multiple requests within a test |
 
 ---
 
-## Related Documentation
+## Related documentation
 
 **API:**
 - [OpenAPI Integration](./OPENAPI_INTEGRATION.md)

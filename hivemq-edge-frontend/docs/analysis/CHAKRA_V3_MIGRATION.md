@@ -51,7 +51,7 @@ Migrating from Chakra UI v2.8.2 to v3 is a **significant undertaking** due to th
 | **Risk level** | Medium-High |
 | **Critical blocker** | RJSF + Chakra v3 compatibility |
 
-**Key finding:** The migration is technically feasible, but the `@rjsf/chakra-ui` dependency is the highest-risk item — RJSF v6 with Chakra v3 support must be validated before committing to the full migration. A 2-week pre-migration validation is strongly recommended before any full-scale work begins.
+**Key finding:** The migration is technically feasible, but the `@rjsf/chakra-ui` dependency is the highest-risk item — RJSF v6 with Chakra v3 support must be validated before committing to the full migration. Run a 2-week pre-migration validation before beginning any full-scale work.
 
 ---
 
@@ -231,7 +231,7 @@ Options:
 2. Create a custom RJSF theme targeting Chakra v3 (~2-3 weeks additional effort)
 3. Use headless RJSF with custom Chakra v3 widgets (highest effort, most flexibility)
 
-**This dependency must be validated in the pre-migration phase before any full-scale work begins.**
+**Validate this dependency in the pre-migration phase before beginning full-scale work.**
 
 ---
 
@@ -440,7 +440,7 @@ Before committing to the full migration:
 
 1. **Validate `@rjsf/chakra-ui` v6 + Chakra v3 compatibility** — this is the highest-risk dependency. Build a proof-of-concept form with custom widgets before proceeding.
 2. **Validate `chakra-react-select` v3 support** — test with actual select components, evaluate replacement options if needed.
-3. **Build a theme migration prototype** — convert `Button` + `Drawer` themes to validate dark mode and variant behaviour.
+3. **Build a theme migration prototype** — convert `Button` + `Drawer` themes to validate dark mode and variant behavior.
 4. **Make a formal Go/No-Go decision** after Phase 0 results are known.
 
 ### Hybrid Approach (If Running in Parallel with UX Work)
@@ -456,7 +456,7 @@ If combining with a resource listings UX migration:
 
 - **RJSF blocker:** Wait for official `@rjsf/chakra-ui` v6, or build a custom RJSF theme targeting Chakra v3.
 - **`chakra-react-select` blocker:** Replace with headless `react-select` + custom Chakra v3 styling.
-- **Timeline overrun:** Pause migration at a natural boundary (e.g., after shared components) to deliver partial value.
+- **Timeline overrun:** Pause migration at a natural boundary (for example, after shared components) to deliver partial value.
 
 ---
 
@@ -466,8 +466,8 @@ If combining with a resource listings UX migration:
 |------|------------|
 | **Chakra UI** | React component library providing accessible UI primitives with a built-in theme system |
 | **Component Recipe** | Chakra v3 replacement for `defineStyleConfig` — defines a single-element component's variants and styles |
-| **Slot Recipe** | Chakra v3 replacement for `createMultiStyleConfigHelpers` — defines styles for multi-element components (e.g., Drawer with Root/Content/Header parts) |
-| **Compound Component Pattern** | v3 architectural pattern where components are composed via sub-components (e.g., `Drawer.Root`, `Drawer.Body`) rather than a monolithic wrapper |
+| **Slot Recipe** | Chakra v3 replacement for `createMultiStyleConfigHelpers` — defines styles for multi-element components (for example, Drawer with Root/Content/Header parts) |
+| **Compound Component Pattern** | v3 architectural pattern where components are composed via sub-components (for example, `Drawer.Root`, `Drawer.Body`) rather than a monolithic wrapper |
 | **colorPalette** | Chakra v3 replacement for `colorScheme` — semantic palette prop applied to component and all its parts |
 | **createSystem** | Chakra v3 equivalent of `extendTheme` — creates a typed design system from token and recipe configuration |
 | **RJSF** | React JSON Schema Form (`@rjsf/core`) — form generation library used for protocol adapter and bridge configuration; depends on `@rjsf/chakra-ui` for Chakra theming |

@@ -209,7 +209,7 @@ it('should animate edges for operational adapter', () => {
 })
 ```
 
-**Without mappings intercept, edges won't animate even if adapter is ACTIVE.**
+**Edges do not animate without the mappings intercept, regardless of adapter status.**
 
 ### Testing Pulse/Asset Mappers
 
@@ -250,50 +250,9 @@ describe('Workspace with Pulse', () => {
 import { workspacePage, wizardPage } from 'cypress/pages'
 ```
 
-**`workspacePage`** — `cypress/pages/Workspace/WorkspacePage.ts`
+**`workspacePage`** — [`cypress/pages/Workspace/WorkspacePage.ts`](../../cypress/pages/Workspace/WorkspacePage.ts)
 
-| Selector | Type | Description |
-|----------|------|-------------|
-| `navLink` | getter | Sidebar navigation link to Workspace |
-| `canvas` | getter | React Flow wrapper element (`rf__wrapper`) |
-| `edgeNode` | getter | The HiveMQ Edge hub node |
-| `adapterNode(id)` | method | Adapter node by adapter ID |
-| `bridgeNode(id)` | method | Bridge node by bridge ID |
-| `bridgeNodes()` | method | All bridge nodes |
-| `deviceNode(id)` | method | Device node by adapter ID |
-| `combinerNode(id)` | method | Combiner node by ID |
-| `combinerNodeContent(id)` | method | Returns `{ title, topic }` getters for combiner content |
-| `nodeToolbar` | getter | Floating toolbar appearing on node selection |
-| `toolbox.fit` | nested | "Fit to canvas" control button |
-| `toolbox.zoomIn` | nested | Zoom in control |
-| `canvasToolbar.expandButton` | nested | Expand the layout controls toolbar |
-| `canvasToolbar.collapseButton` | nested | Collapse the layout controls toolbar |
-| `layoutControls.panel` | nested | Layout controls panel container |
-| `layoutControls.algorithmSelector` | nested | Layout algorithm `<select>` |
-| `layoutControls.applyButton` | nested | Apply selected layout |
-| `layoutControls.presetsButton` | nested | Open presets menu |
-| `layoutControls.optionsButton` | nested | Open options drawer |
-| `layoutControls.presetsMenu.saveOption` | nested | Save current layout as preset |
-| `layoutControls.presetsMenu.presets` | nested | All saved preset items |
-| `layoutControls.presetsMenu.presetItem(name)` | nested method | Open specific preset by name |
-| `layoutControls.presetsMenu.presetItemDelete(name)` | nested method | Delete specific preset |
-| `layoutControls.presetsMenu.emptyMessage` | nested | Empty state when no presets exist |
-| `layoutControls.optionsDrawer.drawer` | nested | Layout options drawer dialog |
-| `layoutControls.optionsDrawer.cancelButton` | nested | Cancel changes |
-| `layoutControls.optionsDrawer.applyButton` | nested | Apply options |
-| `layoutControls.savePresetModal.nameInput` | nested | Preset name input |
-| `layoutControls.savePresetModal.saveButton` | nested | Save preset button |
-| `toolbar.title` | nested | Node toolbar title text |
-| `toolbar.topicFilter` | nested | "Manage topic filters" button |
-| `toolbar.combine` | nested | Add to combiner button |
-| `toolbar.group` | nested | Group selected nodes button |
-| `toolbar.overview` | nested | Open node overview panel |
-| `duplicateCombinerModal.modal` | nested | Duplicate detection modal |
-| `duplicateCombinerModal.title` | nested | Modal title |
-| `duplicateCombinerModal.buttons.cancel` | nested | Cancel without action |
-| `duplicateCombinerModal.buttons.createNew` | nested | Create duplicate anyway |
-| `duplicateCombinerModal.buttons.useExisting` | nested | Navigate to existing combiner |
-| `act.selectReactFlowNodes(ids[])` | action method | Multi-select nodes with meta-click |
+`WorkspacePage` provides selectors for the canvas, node navigation, the node toolbar, layout controls (algorithm selector, presets, options drawer), the duplicate combiner modal, and action helpers such as multi-select. See [`cypress/pages/Workspace/WorkspacePage.ts`](../../cypress/pages/Workspace/WorkspacePage.ts) for the full selector reference.
 
 **Usage example:**
 
@@ -317,41 +276,9 @@ it('should navigate workspace', () => {
 })
 ```
 
-**`wizardPage`** — `cypress/pages/Workspace/WizardPage.ts`
+**`wizardPage`** — [`cypress/pages/Workspace/WizardPage.ts`](../../cypress/pages/Workspace/WizardPage.ts)
 
-| Selector | Type | Description |
-|----------|------|-------------|
-| `createEntityButton` | getter | The "+" create entity button |
-| `wizardMenu.selectOption(type)` | method | Click wizard type option (`ADAPTER`\|`BRIDGE`\|`COMBINER`\|`GROUP`) |
-| `progressBar.nextButton` | nested | Wizard "Next" button |
-| `progressBar.backButton` | nested | Wizard "Back" button |
-| `progressBar.completeButton` | nested | Wizard "Complete" button |
-| `progressBar.cancelButton` | nested | Cancel wizard |
-| `canvas.node(nodeId)` | nested method | Get canvas node by ID (selection state) |
-| `canvas.nodeIsSelectable(id)` | nested method | Assert node is selectable |
-| `canvas.ghostNode` | nested | Ghost node preview |
-| `canvas.ghostEdges` | nested | Ghost edge previews |
-| `adapterConfig.panel` | nested | Adapter configuration panel |
-| `adapterConfig.protocolSelectors` | nested | Protocol selection list |
-| `adapterConfig.protocolSelector(type)` | nested method | Specific protocol item |
-| `adapterConfig.selectProtocol(type)` | nested method | Create button for protocol |
-| `adapterConfig.adapterNameInput` | nested | Adapter ID input |
-| `adapterConfig.setAdapterName(name)` | nested method | Clear and type adapter name |
-| `bridgeConfig.bridgeNameInput` | nested | Bridge ID input |
-| `bridgeConfig.setBridgeId(id)` | nested method | Set bridge ID |
-| `bridgeConfig.setHost(host)` | nested method | Set broker host |
-| `bridgeConfig.setPort(port)` | nested method | Set broker port |
-| `selectionPanel.panel` | nested | Selection panel container |
-| `selectionPanel.selectedCount` | nested | Count of selected nodes |
-| `selectionPanel.selectedNodes` | nested | `<li>` items for selected nodes |
-| `selectionPanel.selectedNode(id)` | nested method | Specific selected node |
-| `selectionPanel.nextButton` | nested | "Next" in selection panel |
-| `combinerConfig.combinerNameInput` | nested | Combiner name input |
-| `groupConfig.titleInput` | nested | Group title input |
-| `groupConfig.submitButton` | nested | Create group submit |
-| `completion.successMessage` | nested | Wizard success state |
-| `completion.closeWizardButton` | nested | Close after completion |
-| `completion.entityAppearsOnCanvas(id)` | nested method | Assert entity visible on canvas |
+`WizardPage` provides selectors for the create-entity wizard, covering the wizard menu, progress bar navigation buttons, the canvas ghost-node preview, adapter/bridge/combiner/group configuration panels, the selection panel, and the completion step. See [`cypress/pages/Workspace/WizardPage.ts`](../../cypress/pages/Workspace/WizardPage.ts) for the full selector reference.
 
 ### Stable Selectors
 
@@ -682,7 +609,7 @@ cy.intercept('/api/v1/frontend/capabilities', {
 - [ ] For Pulse: Use `cy_interceptPulseWithMockDB()` or enable capabilities manually
 - [ ] Navigate via `loginPage` → `workspacePage`
 - [ ] Call `workspacePage.toolbox.fit.click()` to fit canvas
-- [ ] Wait for layout (`cy.wait(1000)`) before screenshots
+- [ ] Wait for layout (`cy.wait(1000)`) before screenshots — arbitrary waits are acceptable in screenshot tests only (see [User-Facing Documentation](./USER_FACING_DOCUMENTATION.md#screenshot-timing))
 - [ ] Check accessibility with `cy.injectAxe()` and `cy.checkAccessibility()`
 
 ### Component Test Template

@@ -407,7 +407,7 @@ flowchart LR
 > [!IMPORTANT]
 > This section explains the most consequential — and most frequently overlooked — relationship in the domain model: the connection between TOPICs and TOPIC FILTERs, and how that connection activates DataHub.
 
-A TOPIC FILTER is an MQTT subscription pattern. When the Edge broker receives a message on a MQTT topic, the broker evaluates every active TOPIC FILTER. Any filter whose wildcard pattern matches the topic causes the associated entities to activate.
+A TOPIC FILTER is an MQTT subscription pattern. When the Edge broker receives a message on an MQTT topic, the broker evaluates every active TOPIC FILTER. Any filter whose wildcard pattern matches the topic causes the associated entities to activate.
 
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {

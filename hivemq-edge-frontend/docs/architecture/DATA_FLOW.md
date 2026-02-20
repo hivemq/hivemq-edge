@@ -469,17 +469,7 @@ This means the same mock data used in unit and component tests is reused by the 
 
 ## Decision Guide: Which State Layer?
 
-| Type of state | Where it lives | Example |
-|---|---|---|
-| Backend resource list | React Query cache | List of protocol adapters |
-| Backend resource (single) | React Query cache, parameterised key | Adapter by ID |
-| Live status (polled) | React Query cache, `refetchInterval` | Adapter connection status |
-| Current page / selected item | URL (React Router) | `/adapters/opcua-1` |
-| Complex in-progress edit | Zustand store | DataHub policy draft |
-| Modal open/closed | `useState` | Confirmation dialog |
-| Transient form input | `useState` (or React Hook Form) | Text field value before submit |
-
-**If in doubt:** start with React Query for anything that touches the backend, `useState` for anything that doesn't, and only reach for Zustand when `useState` becomes unwieldy across multiple components.
+For a complete decision guide on when to use React Query vs. Zustand vs. local state, see [State Management — Decision Guide](./STATE_MANAGEMENT.md#decision-guide). That document also covers all Zustand stores in the application, their persistence behavior, and known architectural issues with the Workspace canvas state.
 
 ---
 
@@ -496,7 +486,7 @@ This means the same mock data used in unit and component tests is reused by the 
 - [Architecture Overview](./OVERVIEW.md) — layer diagram, module structure
 - [DataHub Architecture](./DATAHUB_ARCHITECTURE.md) — Zustand store design for DataHub
 - [Workspace Architecture](./WORKSPACE_ARCHITECTURE.md) — React Flow canvas data flows
-- State Management _(planned)_
+- [State Management](./STATE_MANAGEMENT.md) — state layer hierarchy, Zustand stores, decision guide
 
 **Configuration:**
 
