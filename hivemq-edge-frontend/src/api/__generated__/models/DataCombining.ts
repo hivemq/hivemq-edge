@@ -18,10 +18,12 @@ export type DataCombining = {
         primary: DataIdentifierReference;
         /**
          * The list of tags (names) used in the data combining
+         * @deprecated This field will be removed in a future API version. Ownership information is tracked via formContext.selectedSources in the frontend. Reconstructed from instructions on load.
          */
         tags?: Array<string>;
         /**
          * The list of topic filters (names) used in the data combining
+         * @deprecated This field will be removed in a future API version. Ownership information is tracked via formContext.selectedSources in the frontend. Reconstructed from instructions on load.
          */
         topicFilters?: Array<string>;
     };
