@@ -339,15 +339,25 @@ cy.getByTestId('button')
 
 ## Network Intercepts
 
-### Standard Pattern
+**See:** [Type-Safe Cypress Intercepts](../api/CYPRESS_INTERCEPT_API.md) for full documentation on
+`cy.interceptApi()`, the `API_ROUTES` registry, ESLint enforcement, and IDE migration support.
+
+### Preferred: cy.interceptApi()
+
+Use `cy.interceptApi()` for all static `/api/` responses. TypeScript validates the response shape
+against the OpenAPI model at the call site:
 
 ```typescript
-cy.intercept('GET', '/api/v1/adapters', {
-  items: [mockAdapter]
-}).as('getAdapters')
+import { API_ROUTES } from '@cypr/support/__generated__/apiRoutes'
 
-cy.wait('@getAdapters')
-cy.getByTestId('adapter-list').should('be.visible')
+// TypeScript enforces BridgeList shape
+cy.interceptApi(API_ROUTES.bridges.getBridges, { items: [mockBridge] }).as('getBridges')
+
+// Status-only shorthand (disables polling)
+cy.interceptApi(API_ROUTES.protocolAdapters.getAdaptersStatus, { statusCode: 202, log: false })
+
+cy.wait('@getBridges')
+cy.getByTestId('bridge-list').should('be.visible')
 ```
 
 ### Core Intercepts Helper
@@ -356,24 +366,27 @@ cy.getByTestId('adapter-list').should('be.visible')
 import { cy_interceptCoreE2E } from 'cypress/utils/intercept.utils'
 
 beforeEach(() => {
-  cy_interceptCoreE2E()  // Auth, config, etc.
+  cy_interceptCoreE2E()  // Auth, config, and common polling stubs via cy.interceptApi()
 
   // Add feature-specific intercepts
-  cy.intercept('/api/v1/feature', { items: [] })
+  cy.interceptApi(API_ROUTES.bridges.getBridges, { items: [] })
 })
 ```
 
 **Location:** `cypress/utils/intercept.utils.ts`
 
-### Wildcard Intercepts
+### Dynamic Intercepts (callback handlers)
+
+Use bare `cy.intercept()` with a callback only for stateful or dynamic scenarios that
+`cy.interceptApi()` cannot cover:
 
 ```typescript
-// All adapters return empty mappings
-cy.intercept('/api/v1/protocol-adapters/adapters/**/northboundMappings', {
-  items: []
+// CRUD mock database — response depends on runtime state
+cy.intercept('GET', '/api/v1/management/bridges', (req) => {
+  req.reply(200, { items: factory.bridge.getAll() })
 })
 
-// Dynamic response based on ID
+// Dynamic response based on request URL
 cy.intercept('GET', '/api/v1/adapters/**', (req) => {
   const id = req.url.split('/').pop()
   req.reply({ id, name: `Adapter ${id}` })
@@ -384,10 +397,7 @@ cy.intercept('GET', '/api/v1/adapters/**', (req) => {
 
 ```typescript
 // Return 202 to disable status polling in tests
-cy.intercept('/api/v1/protocol-adapters/status', {
-  statusCode: 202,
-  log: false
-})
+cy.interceptApi(API_ROUTES.protocolAdapters.getAdaptersStatus, { statusCode: 202, log: false })
 ```
 
 ---
@@ -530,6 +540,7 @@ pnpm cypress:open:e2e        # Open Cypress UI for E2E tests
 - [DataHub Architecture](../architecture/DATAHUB_ARCHITECTURE.md)
 
 **API Mocking:**
+- [Type-Safe Cypress Intercepts](../api/CYPRESS_INTERCEPT_API.md) - cy.interceptApi(), API_ROUTES registry, ESLint + IDE integration
 - [MSW API Mocking](../api/MSW_MOCKING.md) - Component test API mocking
 
 **Technical:**
