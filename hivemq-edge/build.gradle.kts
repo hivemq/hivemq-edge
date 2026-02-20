@@ -177,6 +177,9 @@ dependencies {
 
     implementation(libs.jakarta.annotation.api)
 
+    // CSV
+    implementation(libs.apache.commons.csv)
+
     // common
     implementation(libs.apache.commons.io)
     implementation(libs.apache.commons.lang)
@@ -207,6 +210,7 @@ dependencies {
     implementation(libs.jackson.databind)
     implementation(libs.jackson.databind.nullable)
     implementation(libs.jackson.dataformat.xml)
+    implementation(libs.jackson.dataformat.yaml)
 
     // Open API
     implementation(libs.swagger.annotations)
