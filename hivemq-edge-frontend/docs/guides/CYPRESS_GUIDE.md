@@ -487,6 +487,141 @@ pnpm cypress:open:e2e        # Open Cypress UI for E2E tests
 
 ---
 
+## Third-party library testing
+
+### Monaco Editor
+
+Monaco manages its own DOM and ignores standard `.type()` commands. Use these patterns.
+
+**Waiting for Monaco to be ready:**
+
+```typescript
+// ✅ Always use assertion-based waiting — never cy.wait(1000)
+cy.get('#root_schemaSource').find('.monaco-editor').should('be.visible')
+cy.get('#root_schemaSource').find('.monaco-editor .view-lines').should('exist')
+```
+
+**Custom commands** (defined in `cypress/support/commands.ts`):
+
+```typescript
+cy.get('#editor-container').setMonacoEditorValue('{"title": "Modified"}')
+cy.get('#editor-container').getMonacoEditorValue().should('contain', 'Modified')
+```
+
+**Component tests** — test form state, not Monaco internals:
+
+```typescript
+// ✅ Verify Monaco renders and test the surrounding form state
+cy.get('#root_schemaSource').find('.monaco-editor').should('be.visible')
+cy.get('#root_version-label + div').should('contain.text', 'DRAFT')
+
+// ❌ Don't simulate typing inside Monaco in component tests — use E2E
+```
+
+**E2E tests** — for actual editing workflows:
+
+```typescript
+cy.get('.monaco-editor').click()
+cy.focused().type('{ctrl+a}')
+cy.focused().type('new content')
+cy.get('#root_version-label + div').should('contain.text', 'MODIFIED')
+```
+
+**IntelliSense** — use the Monaco API, not simulated keyboard events:
+
+```typescript
+// Real events are unreliable (headless vs headed, internal debouncing)
+// Test configuration via the API instead:
+cy.window().then((win) => {
+  const editor = win.monaco.editor.getEditors()[0]
+  editor.setPosition({ lineNumber: 5, column: 11 })
+  editor.trigger('test', 'editor.action.triggerSuggest', {})
+})
+cy.get('.monaco-editor .suggest-widget', { timeout: 5000 }).should('be.visible')
+```
+
+This tests that Monaco is correctly configured (types loaded, IntelliSense enabled), which is the right level for CI. Real typing behavior belongs in manual testing or a dedicated E2E test.
+
+---
+
+### React Select (`chakra-react-select`)
+
+`chakra-react-select` wraps `react-select`, which uses a custom DOM that doesn't behave like a standard `<select>`.
+
+**Core patterns:**
+
+```typescript
+// Open the dropdown
+cy.get('#select-id').click()
+
+// Assert options
+cy.get('[role="option"]').should('have.length', 3)
+cy.get('[role="option"]').eq(0).should('contain.text', 'Option 1')
+
+// Select an option
+cy.get('[role="option"]').contains('My Option').click()
+
+// Test onChange (preferred over checking displayed value)
+const onChangeSpy = cy.spy().as('onChangeSpy')
+cy.mountWithProviders(<MySelect onChange={onChangeSpy} />)
+cy.get('#select-id').click()
+cy.get('[role="option"]').first().click()
+cy.get('@onChangeSpy').should('have.been.calledOnce')
+```
+
+**Common pitfalls:**
+
+```typescript
+// ❌ react-select hides the input value
+cy.get('#select-id').should('have.value', 'Selected')
+
+// ✅ Check the container instead
+cy.get('[class*="react-select"]').should('contain.text', 'Selected')
+
+// ❌ Placeholder is not an HTML attribute
+cy.get('#select-id').should('have.attr', 'placeholder', 'Select...')
+
+// ✅ Check visible text
+cy.get('[class*="react-select"]').should('contain.text', 'Select...')
+```
+
+**Selector reference:**
+
+| Element | Selector |
+|---------|----------|
+| Dropdown input | `#select-id` |
+| Options list | `[role="option"]` |
+| Displayed value | `[class*="react-select"]` |
+| Clear button | `[aria-label="Clear"]` |
+| Open indicator | `[aria-label="Open menu"]` |
+| Multi-value tags | `[class*="multi-value"]` |
+
+**`formContext` for RJSF widgets** — `WidgetProps` and `FieldProps` do not expose full form data. Pass cross-field dependencies via `formContext`:
+
+```typescript
+const mockProps = {
+  id: 'my-select',
+  onChange: cy.spy().as('onChange'),
+  formContext: {
+    currentSchemaSource: '...proto source...',
+  },
+}
+cy.mountWithProviders(<MessageTypeSelect {...mockProps} />)
+```
+
+**Accessibility** — react-select requires disabling two axe rules:
+
+```typescript
+cy.checkAccessibility(undefined, {
+  rules: {
+    'aria-input-field-name': { enabled: false },
+    'scrollable-region-focusable': { enabled: false },
+  },
+})
+```
+
+---
+
 ## Related Documentation
 
 **Testing Guides:**

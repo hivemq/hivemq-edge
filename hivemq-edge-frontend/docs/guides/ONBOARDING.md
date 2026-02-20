@@ -377,6 +377,22 @@ import { something } from '@datahub/api/hooks/...'    // → src/extensions/data
 import { something } from '@cypr/support/...'         // → cypress/support/...
 ```
 
+### Code commenting style
+
+Write self-explanatory code. Add a comment only when the information is not recoverable from the code itself.
+
+**Allowed:**
+- JSDoc on a function when the name and signature do not make the purpose obvious
+- A one-line `// why`, not `// what`, for non-obvious logic or intentional workarounds
+
+**Forbidden:**
+- File-level comment blocks (documentation belongs in docs/, not at the top of source files)
+- Comments inside JSX structure (`{/* Section title */}`)
+- JSDoc `@param` / `@returns` that restate the type signature
+- Inline narration of every statement ("// check if report exists")
+
+When in doubt: if removing the comment leaves the code equally clear, remove the comment.
+
 ### External Product Documentation
 
 The application has official user-facing documentation published at:

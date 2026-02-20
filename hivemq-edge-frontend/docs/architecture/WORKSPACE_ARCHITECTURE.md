@@ -201,6 +201,36 @@ flowchart TD
 
 **Status Priority:** ERROR > ACTIVE > INACTIVE (for aggregations)
 
+**React Flow hooks for passive nodes:**
+
+Passive nodes subscribe only to their connected nodes, not the entire graph. Use this pattern:
+
+```typescript
+// ✅ Correct — subscribes only to connected nodes
+const connections = useNodeConnections({ handleType: 'target', handleId: 'Top' })
+const connectedNodes = useNodesData(connections.map((c) => c.source))
+
+const derivedStatus = useMemo(() => computeFrom(connectedNodes), [connectedNodes])
+
+useEffect(() => {
+  updateNodeData(id, { statusModel: derivedStatus })
+}, [id, derivedStatus, updateNodeData])
+```
+
+```typescript
+// ❌ Wrong — subscribes to ALL nodes and edges, re-renders on every graph change
+const nodes = useNodes()
+const edges = useEdges()
+```
+
+| Hook | Use when |
+|------|----------|
+| `useNodeConnections({ handleType, handleId })` | Finding which nodes are connected |
+| `useNodesData(ids)` | Reading data from connected nodes |
+| `updateNodeData(id, data)` | Writing computed state back to a node |
+| `useReactFlow()` | Accessing the instance for programmatic updates |
+| `useNodes()` / `useEdges()` | Only when you genuinely need the full graph |
+
 ### 4. Per-Edge Operational Status
 
 **What:** Each edge's operational status computed independently based on source and target nodes.
