@@ -16,6 +16,9 @@
 package com.hivemq.edge.adapters.opcua;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.discovery.BrowseException;
+import com.hivemq.adapter.sdk.api.discovery.BrowsedNode;
+import com.hivemq.adapter.sdk.api.discovery.BulkTagBrowser;
 import com.hivemq.adapter.sdk.api.discovery.NodeTree;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
@@ -35,6 +38,7 @@ import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
+import com.hivemq.edge.adapters.opcua.browse.OpcUaNodeBrowser;
 import com.hivemq.edge.adapters.opcua.client.Failure;
 import com.hivemq.edge.adapters.opcua.client.ParsedConfig;
 import com.hivemq.edge.adapters.opcua.client.Success;
@@ -71,7 +75,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
+public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrowser {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
@@ -527,6 +531,24 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                                     });
                         },
                         () -> output.fail("Discovery failed: Client not connected or not initialized"));
+    }
+
+    @Override
+    public @NotNull List<BrowsedNode> browse(
+            final @Nullable String rootNodeId, final int maxDepth) throws BrowseException {
+        if (stopped) {
+            throw new BrowseException("Browse failed: Adapter has been stopped");
+        }
+        final OpcUaClientConnection conn = opcUaClientConnection.get();
+        if (conn == null) {
+            throw new BrowseException("Browse failed: Client connection not initialized");
+        }
+        final var clientOpt = conn.client();
+        if (clientOpt.isEmpty()) {
+            throw new BrowseException("Browse failed: Client not connected");
+        }
+        final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(clientOpt.get(), adapterId);
+        return browser.browse(rootNodeId, maxDepth);
     }
 
     @Override
