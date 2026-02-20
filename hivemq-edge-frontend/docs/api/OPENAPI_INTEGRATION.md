@@ -359,6 +359,8 @@ pnpm dev:openAPI
 - Old generated files in `src/api/__generated__/` are replaced
 - New models, services, schemas are created
 - TypeScript compilation will fail if breaking changes exist
+- `cypress/support/__generated__/apiRoutes.ts` and `apiRoutes.meta.json` are regenerated
+  (the typed Cypress intercept registry — see [Type-Safe Cypress Intercepts](./CYPRESS_INTERCEPT_API.md))
 
 ### Step 3: Fix Breaking Changes
 
@@ -649,7 +651,7 @@ src/api/
 
 - [ ] Backend adds endpoint to OpenAPI spec
 - [ ] OpenAPI spec updated in `hivemq-edge-openapi/dist/bundle.yaml`
-- [ ] Run `pnpm dev:openAPI` to regenerate client
+- [ ] Run `pnpm dev:openAPI` to regenerate client (also regenerates the Cypress intercept registry)
 - [ ] Create custom React Query hook in `src/api/hooks/use{Feature}/use{Action}.ts`
 - [ ] Add MSW handler in `src/api/hooks/use{Feature}/__handlers__/index.ts`
 - [ ] Write tests for custom hook

@@ -4,6 +4,12 @@ This directory contains documentation for API integration, data fetching pattern
 
 ## Documents
 
+- **[CYPRESS_INTERCEPT_API.md](./CYPRESS_INTERCEPT_API.md)** - Type-safe Cypress intercepts
+  - cy.interceptApi() command and API_ROUTES registry
+  - Parametric routes with withParams()
+  - ESLint enforcement (no-bare-cy-intercept rule)
+  - IDE integration: WebStorm and VS Code suggestion support
+
 - **[OPENAPI_INTEGRATION.md](./OPENAPI_INTEGRATION.md)** - OpenAPI client generation
   - openapi-typescript-codegen configuration and workflow
   - Generated client structure (HiveMqClient, services, models, schemas)
