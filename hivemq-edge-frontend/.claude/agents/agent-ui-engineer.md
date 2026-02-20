@@ -24,12 +24,12 @@ is. You apply the rules below to every component you touch.
 
 Use Chakra UI custom variants. Never use `colorScheme` for primary actions.
 
-| Variant | Use for |
-|---------|---------|
-| `variant="primary"` | Main CTA — Save, Submit, Confirm |
+| Variant             | Use for                               |
+| ------------------- | ------------------------------------- |
+| `variant="primary"` | Main CTA — Save, Submit, Confirm      |
 | `variant="outline"` | Secondary actions — alternative paths |
-| `variant="ghost"` | Tertiary/subtle — Cancel, Close, Back |
-| `variant="danger"` | Destructive — Delete, Remove |
+| `variant="ghost"`   | Tertiary/subtle — Cancel, Close, Back |
+| `variant="danger"`  | Destructive — Delete, Remove          |
 
 ```tsx
 // ✅ Correct
@@ -63,13 +63,14 @@ Use Chakra UI custom variants. Never use `colorScheme` for primary actions.
 
 Choose the icon color based on intent and severity. Match ChakraUI toast conventions.
 
-| Severity | Color | Icon examples | When to use |
-|----------|-------|---------------|-------------|
-| Info | `blue[500]` | `LuLightbulb`, `LuInfo` | Helpful suggestions, duplicates, tips — user is not blocked |
-| Warning | `orange[500]` | `LuAlertTriangle`, `LuAlertCircle` | Caution required, unexpected consequences |
-| Error / Danger | `red[500]` | `LuAlertOctagon`, `LuXCircle` | Destructive actions, blocking errors, cannot be undone |
+| Severity       | Color         | Icon examples                      | When to use                                                 |
+| -------------- | ------------- | ---------------------------------- | ----------------------------------------------------------- |
+| Info           | `blue[500]`   | `LuLightbulb`, `LuInfo`            | Helpful suggestions, duplicates, tips — user is not blocked |
+| Warning        | `orange[500]` | `LuAlertTriangle`, `LuAlertCircle` | Caution required, unexpected consequences                   |
+| Error / Danger | `red[500]`    | `LuAlertOctagon`, `LuXCircle`      | Destructive actions, blocking errors, cannot be undone      |
 
 **Decision rule:** Ask one question — is the user blocked?
+
 - Blocked or destructive → Red
 - Could cause problems → Orange
 - Helpful information → Blue
@@ -108,10 +109,12 @@ Do not alarm users unnecessarily. A "duplicate detected" modal is blue, not oran
 ```
 
 Use **no blur** when:
+
 - The modal references or animates to an item on the canvas (e.g., `fitView()` to a node)
 - The user needs to identify or verify something below the modal
 
 Use **blur** when:
+
 - Complex form requiring full concentration
 - Destructive confirmation where distraction is risky
 - No relationship between modal and underlying content

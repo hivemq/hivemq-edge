@@ -54,12 +54,12 @@ Screenshots must appear in the AFTER section before submitting.
 
 **Audience:** Product managers, designers, and developers — not just technical reviewers.
 
-| Do | Avoid |
-|----|-------|
-| Start with what users gain | Replicating the Linear ticket |
-| Use plain language | Technical jargon in the opening |
+| Do                               | Avoid                            |
+| -------------------------------- | -------------------------------- |
+| Start with what users gain       | Replicating the Linear ticket    |
+| Use plain language               | Technical jargon in the opening  |
 | Screenshot first, explain second | Code snippets in the description |
-| State explicit user benefits | Vague improvements ("better UX") |
+| State explicit user benefits     | Vague improvements ("better UX") |
 
 **Opening formula:**
 
@@ -76,7 +76,7 @@ Previously, [limitation]. Now, [new capability].
 
 ## PR structure
 
-```markdown
+````markdown
 # Pull Request: [User-facing feature name]
 
 **Linear Issue:** https://linear.app/hivemq/issue/[ISSUE-ID]/[slug]
@@ -178,6 +178,8 @@ None. / [List with compatibility notes]
 ```bash
 pnpm cypress:run:e2e --spec "cypress/e2e/[path]/[file].spec.cy.ts"
 ```
+````
+
 ```
 
 ---
@@ -204,3 +206,4 @@ pnpm cypress:run:e2e --spec "cypress/e2e/[path]/[file].spec.cy.ts"
 - Write vague benefits ("improved UX", "better performance")
 - Skip screenshots for UI changes
 - Replicate the entire Linear ticket
+```
