@@ -18,7 +18,7 @@ repositories {
 dependencies {
     implementation(libs.jackson.dataformat.xml)
     implementation("net.ltgt.gradle:gradle-errorprone-plugin:${libs.versions.plugin.errorprone.get()}")
-    implementation("com.diffplug.spotless:spotless-plugin-gradle:7.0.2")
+    implementation("com.diffplug.spotless:spotless-plugin-gradle:7.2.1")
 }
 
 gradlePlugin {
