@@ -11,6 +11,7 @@ import { QUERY_KEYS } from '@/api/utils.ts'
 import { factory, primaryKey } from '@mswjs/data'
 import type { FactoryAPI } from '@mswjs/data/lib/glossary'
 import type { PrimaryKey } from '@mswjs/data/lib/primaryKey'
+import { API_ROUTES } from '@cypr/support/__generated__/apiRoutes'
 
 type PrimaryKeyGetter = {
   id: PrimaryKey<string>
@@ -123,15 +124,15 @@ const interceptAssets = (factory: PulseFactory, isPreLoaded: boolean) => {
 
 const interceptAssetMappers = (factory: PulseFactory, isPreLoaded: boolean) => {
   // make sure we have the connected adapters
-  cy.intercept('/api/v1/management/protocol-adapters/types', { items: [MOCK_PROTOCOL_OPC_UA] }).as('getProtocols')
-  cy.intercept('/api/v1/management/protocol-adapters/adapters', {
+  cy.interceptApi(API_ROUTES.protocolAdapters.getAdapterTypes, { items: [MOCK_PROTOCOL_OPC_UA] }).as('getProtocols')
+  cy.interceptApi(API_ROUTES.protocolAdapters.getAdapters, {
     items: [
       { ...mockAdapter_OPCUA, id: 'my-adapter' },
       { ...mockAdapter_OPCUA, id: 'my-other-adapter' },
     ],
   }).as('getAdapters')
 
-  cy.intercept('/api/v1/management/bridges', { items: [] }).as('getBridges')
+  cy.interceptApi(API_ROUTES.bridges.getBridges, { items: [] }).as('getBridges')
 
   cy.intercept<ManagedAssetList>('GET', '/api/v1/management/pulse/asset-mappers', (req) => {
     const data = factory.assetMappers.getAll()
