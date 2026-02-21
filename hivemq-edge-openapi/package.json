@@ -2,7 +2,7 @@
   "name": "hivemq-edge-api",
   "version": "1.0.0",
   "dependencies": {
-    "@redocly/cli": "2.0.2"
+    "@redocly/cli": "2.19.1"
   },
   "private": true,
   "scripts": {
