@@ -10,6 +10,15 @@
  * mega-fix back into (callStart, callEnd, newCallText) so that multiple fixes
  * per file can be applied independently, then injects the import once.
  *
+ * Glob patterns scanned by default:
+ *   - src/** /*.spec.cy.{ts,tsx}    — component / unit spec files
+ *   - cypress/e2e/** /*.{ts,tsx}    — end-to-end spec files
+ *   - cypress/utils/** /*.{ts,tsx}  — shared intercept utility helpers
+ *
+ * Note: cypress/support/commands/interceptApi.ts is intentionally excluded
+ * because it is the implementation of cy.interceptApi and its cy.intercept()
+ * call must not be migrated.
+ *
  * Run:
  *   node --experimental-strip-types tools/migrateCyIntercept.ts [--dry-run]
  *
@@ -153,7 +162,7 @@ function applyEdits(
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 const eslint = new ESLint({ cwd: ROOT, fix: false })
-const patterns = ['src/**/*.spec.cy.{ts,tsx}', 'cypress/e2e/**/*.{ts,tsx}']
+const patterns = ['src/**/*.spec.cy.{ts,tsx}', 'cypress/e2e/**/*.{ts,tsx}', 'cypress/utils/**/*.{ts,tsx}']
 
 console.log(`\nMigrating cy.intercept() → cy.interceptApi()${DRY_RUN ? ' [DRY RUN]' : ''}\n`)
 
@@ -185,8 +194,18 @@ for (const pattern of patterns) {
     let fixCount = 0
 
     for (const msg of messages) {
-      const firstSuggestion = msg.suggestions?.[0]
+      const suggestions = msg.suggestions ?? []
+      const firstSuggestion = suggestions[0]
       if (!firstSuggestion?.fix) {
+        fileSkipped++
+        skippedViolations++
+        if (!noSuggestionFiles.includes(relPath)) noSuggestionFiles.push(relPath)
+        continue
+      }
+      // Skip ambiguous violations: multiple suggestions mean the same URL matches
+      // more than one HTTP method in the registry. Applying the first suggestion
+      // arbitrarily could change runtime matching semantics.
+      if (suggestions.length > 1) {
         fileSkipped++
         skippedViolations++
         if (!noSuggestionFiles.includes(relPath)) noSuggestionFiles.push(relPath)

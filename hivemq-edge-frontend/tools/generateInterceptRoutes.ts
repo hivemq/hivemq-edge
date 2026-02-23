@@ -51,9 +51,9 @@ function deriveNamespace(className: string): string {
   return base.charAt(0).toLowerCase() + base.slice(1)
 }
 
-/** Normalizes return types: 'any' becomes 'void' (no useful shape to enforce). */
+/** Normalizes return types: 'any' becomes 'unknown' (shape unknown but response can still be stubbed). */
 function normalizeReturnType(raw: string): string {
-  return raw.trim() === 'any' ? 'void' : raw.trim()
+  return raw.trim() === 'any' ? 'unknown' : raw.trim()
 }
 
 /**
@@ -328,7 +328,7 @@ export const routeWithParams =
  * Registry of all typed API routes, namespaced to mirror the HiveMqClient service structure.
  *
  * The namespace matches how the app accesses services in production:
- * - \`appClient.authentication.authenticate()\` → \`API_ROUTES.authenticationEndpoint.authenticate\`
+ * - \`appClient.authentication.authenticate()\` → \`API_ROUTES.authentication.authenticate\`
  * - \`appClient.bridges.getBridges()\`           → \`API_ROUTES.bridges.getBridges\`
  *
  * Go-to-definition on any route opens its registry entry with a @see JSDoc link to the
@@ -354,7 +354,24 @@ function generateMeta(services: ServiceEntry[]): string {
   for (const svc of services) {
     for (const r of svc.routes) {
       const wildcardUrl = r.url.replace(/\{[^}]+}/g, '**')
-      map[`${r.httpMethod} ${wildcardUrl}`] = `API_ROUTES.${svc.namespace}.${r.methodName}`
+      const key = `${r.httpMethod} ${wildcardUrl}`
+      const newValue = `API_ROUTES.${svc.namespace}.${r.methodName}`
+      const existing = map[key]
+      if (existing) {
+        // Prefer the non-Endpoint namespace so the suggestion points to the
+        // canonical service (e.g. authentication over authenticationEndpoint).
+        const existingIsEndpoint = existing.includes('Endpoint.')
+        const newIsEndpoint = newValue.includes('Endpoint.')
+        if (existingIsEndpoint && !newIsEndpoint) {
+          map[key] = newValue
+        }
+        // If both or neither are Endpoint services, keep the first one and warn.
+        if (existingIsEndpoint === newIsEndpoint) {
+          console.warn(`WARN: duplicate route ${key} — "${existing}" vs "${newValue}", keeping "${existing}"`)
+        }
+      } else {
+        map[key] = newValue
+      }
     }
   }
   return JSON.stringify(map, null, 2) + '\n'

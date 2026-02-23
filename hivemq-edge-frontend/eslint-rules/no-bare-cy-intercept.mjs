@@ -271,7 +271,7 @@ export const noBareIntercept = {
         if (firstVal.startsWith('api/')) {
           const bodyArg = args[1] ?? null
           const normalizedUrl = '/' + firstVal
-          const suggest = buildSuggest(normalizedUrl, null, node, bodyArg, sourceCode, routeMap)
+          const suggest = bodyArg ? buildSuggest(normalizedUrl, null, node, bodyArg, sourceCode, routeMap) : []
           context.report({ node, messageId: 'missingLeadingSlash', data: { url: firstVal }, suggest })
           return
         }
@@ -280,7 +280,10 @@ export const noBareIntercept = {
         // URL-only, correct leading slash.
         if (firstVal.startsWith('/api/')) {
           const bodyArg = args[1] ?? null
-          const suggest = buildSuggest(firstVal, null, node, bodyArg, sourceCode, routeMap)
+          // Only offer a fix when a response body is present; spy-only intercepts
+          // (no second arg) cannot be auto-migrated because cy.interceptApi requires
+          // a response argument.
+          const suggest = bodyArg ? buildSuggest(firstVal, null, node, bodyArg, sourceCode, routeMap) : []
           context.report({ node, messageId: 'useInterceptApi', suggest })
           return
         }
@@ -296,13 +299,13 @@ export const noBareIntercept = {
 
           if (url.startsWith('api/')) {
             const normalizedUrl = '/' + url
-            const suggest = buildSuggest(normalizedUrl, method, node, bodyArg, sourceCode, routeMap)
+            const suggest = bodyArg ? buildSuggest(normalizedUrl, method, node, bodyArg, sourceCode, routeMap) : []
             context.report({ node, messageId: 'missingLeadingSlash', data: { url }, suggest })
             return
           }
 
           if (url.startsWith('/api/')) {
-            const suggest = buildSuggest(url, method, node, bodyArg, sourceCode, routeMap)
+            const suggest = bodyArg ? buildSuggest(url, method, node, bodyArg, sourceCode, routeMap) : []
             context.report({ node, messageId: 'useInterceptApi', suggest })
           }
         }

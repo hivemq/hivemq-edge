@@ -38,7 +38,7 @@ export default tsEslint.config(
       ...reactHooks.configs.recommended.rules,
 
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
-      'local/no-bare-cy-intercept': 'warn',
+      'local/no-bare-cy-intercept': 'off',
       '@typescript-eslint/ban-ts-comment': 0,
       '@typescript-eslint/no-unused-vars': [
         'error',
@@ -71,9 +71,10 @@ export default tsEslint.config(
     },
   },
   {
-    files: ['**/*.spec.cy.tsx', '**/*.spec.cy.ts'],
+    files: ['**/*.spec.cy.tsx', '**/*.spec.cy.ts', 'cypress/e2e/**/*.{ts,tsx}', 'cypress/utils/**/*.{ts,tsx}'],
     rules: {
       'sonarjs/no-duplicate-string': 'off',
+      'local/no-bare-cy-intercept': 'warn',
     },
   }
 )
