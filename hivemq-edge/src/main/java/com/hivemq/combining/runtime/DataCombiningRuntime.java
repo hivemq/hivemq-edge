@@ -127,8 +127,8 @@ public class DataCombiningRuntime {
 
     public void stop() {
         consumers.forEach(InternalConsumer::close);
-        dataCombiningTransformationService.removeScriptForDataCombining(combining);
         consumers.clear();
+        dataCombiningTransformationService.removeScriptForDataCombining(combining);
     }
 
     public void triggerPublish(final @NotNull DataCombining dataCombining) {
