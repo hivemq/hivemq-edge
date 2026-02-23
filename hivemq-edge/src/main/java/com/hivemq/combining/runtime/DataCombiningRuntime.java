@@ -134,7 +134,7 @@ public class DataCombiningRuntime {
         final var valuesSnapshot = Map.copyOf(values);
 
         valuesSnapshot.forEach((propertyName, propertyValue) ->
-                inputValuesAsDictObject.set(propertyName, propertyValue.getJsonNode()));
+                inputValuesAsDictObject.set(propertyName, propertyValue.getTagValue4Combiner()));
 
         dataCombiningPublishService.publish(dataCombining.destination(),
                 inputValuesAsDictObject.toString().getBytes(StandardCharsets.UTF_8),
@@ -149,7 +149,7 @@ public class DataCombiningRuntime {
     /// And we also don't convert a raw value multiple times,
     /// so we convert raw values that don't change while multiple triggers arrive only once.
     /// There are two concrete implementations for `RawValue`, for tags and for topic-filters.
-    public final class Value {
+    public static final class Value {
         @Nullable RawValue value;
         @Nullable JsonNode jsonNode;
 
@@ -158,14 +158,9 @@ public class DataCombiningRuntime {
             this.jsonNode = null;
         }
 
-        public JsonNode getJsonNode() {
+        public JsonNode getTagValue4Combiner() {
             if (value != null) {
-                try {
-                    jsonNode = mapper.readTree(value.toString());
-                } catch (final IOException e) {
-                    log.warn("Exception during json parsing of datapoint '{}'", value);
-                    throw new RuntimeException(e);
-                }
+                jsonNode = value.getTagValue4Combiner();
                 value = null;
             }
             return jsonNode;
@@ -173,10 +168,10 @@ public class DataCombiningRuntime {
     }
 
     public interface RawValue {
-        @NotNull String toString();
+        @NotNull JsonNode getTagValue4Combiner();
     }
 
-    public static final class RawValueTag implements RawValue {
+    public final class RawValueTag implements RawValue {
         DataPoint dataPoint;
 
         RawValueTag(final DataPoint dataPoint) {
@@ -184,12 +179,17 @@ public class DataCombiningRuntime {
         }
 
         @Override
-        public @NotNull String toString() {
-            return dataPoint.getTagValue().toString();
+        public @NotNull JsonNode getTagValue4Combiner() {
+            try {
+                return mapper.readTree(dataPoint.getTagValue().toString());
+            } catch (final IOException e) {
+                log.warn("Exception during json parsing of datapoint '{}'", dataPoint.getTagValue().toString());
+                throw new RuntimeException(e);
+            }
         }
     }
 
-    public static final class RawValueTopicFilter implements RawValue {
+    public final class RawValueTopicFilter implements RawValue {
         byte[] payload;
 
         RawValueTopicFilter(final byte[] payload) {
@@ -197,8 +197,13 @@ public class DataCombiningRuntime {
         }
 
         @Override
-        public @NotNull String toString() {
-            return new String(payload, StandardCharsets.UTF_8);
+        public @NotNull JsonNode getTagValue4Combiner() {
+            try {
+                return mapper.readTree(new String(payload, StandardCharsets.UTF_8));
+            } catch (final IOException e) {
+                log.warn("Exception during json parsing of message '{}'", new String(payload, StandardCharsets.UTF_8));
+                throw new RuntimeException(e);
+            }
         }
     }
 
