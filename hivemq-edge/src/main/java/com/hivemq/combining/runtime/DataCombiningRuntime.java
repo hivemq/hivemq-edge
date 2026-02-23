@@ -109,12 +109,12 @@ public class DataCombiningRuntime {
                 .forEach(ref -> subscribe(ref, false, true));
 
         // subscribe to the trigger last, gives the other subscriptions a little bit more time to receive a value
-        boolean providesValue = dataCombining.instructions()
+        boolean isValueUsed = dataCombining.instructions()
                 .stream()
                 .map(Instruction::dataIdentifierReference)
                 .filter(Objects::nonNull)
                 .anyMatch(ref -> ref.equals(trigger));
-        subscribe(trigger, true, providesValue);
+        subscribe(trigger, true, isValueUsed);
     }
 
     /// `stop()` unsubscribes all `subscriptions` again
@@ -213,14 +213,14 @@ public class DataCombiningRuntime {
     public void subscribe(
             final @NotNull DataIdentifierReference ref,
             final boolean isTrigger,
-            final boolean providesValue) {
+            final boolean isValueUsed) {
         log.debug("Starting {} consumer for {}", ref.type(), ref);
         switch (ref.type()) {
             case TAG -> {
-                subscriptions.add(new InternalSubscriptionTag(ref, isTrigger, providesValue));
+                subscriptions.add(new InternalSubscriptionTag(ref, isTrigger, isValueUsed));
             }
             case TOPIC_FILTER -> {
-                subscriptions.add(new InternalSubscriptionTopicFilter(ref, isTrigger, providesValue));
+                subscriptions.add(new InternalSubscriptionTopicFilter(ref, isTrigger, isValueUsed));
             }
             case PULSE_ASSET -> {
                 log.error("Pulse Assets shouldn't be input to data combining in Edge {}", ref.id());
@@ -240,7 +240,7 @@ public class DataCombiningRuntime {
         public InternalSubscriptionTag(
                 final @NotNull DataIdentifierReference ref,
                 final boolean isTrigger,
-                final boolean providesValue) {
+                final boolean isValueUsed) {
 
             this.consumer = new TagConsumer() {
                 @Override
@@ -259,7 +259,7 @@ public class DataCombiningRuntime {
 
                 @Override
                 public void accept(final @NotNull List<DataPoint> dataPoints) {
-                    if (providesValue && !dataPoints.isEmpty()) {
+                    if (isValueUsed && !dataPoints.isEmpty()) {
                         values.put(sanitize(ref), new Value(new RawValueTag(dataPoints.getLast())));
                     }
                     if (isTrigger) {
@@ -286,7 +286,7 @@ public class DataCombiningRuntime {
         InternalSubscriptionTopicFilter(
                 final @NotNull DataIdentifierReference ref,
                 final boolean isTrigger,
-                final boolean providesValue) {
+                final boolean isValueUsed) {
             this.subscriber = dataCombining.id().toString() + "#";
             this.topicFilter = ref.id();
             this.sharedName = dataCombining.id().toString();
@@ -304,7 +304,7 @@ public class DataCombiningRuntime {
             this.consumer = new QueueConsumer(clientQueuePersistence, queueId, singleWriterService) {
                 @Override
                 public void process(final @NotNull PUBLISH message) {
-                    if (providesValue) {
+                    if (isValueUsed) {
                         values.put(sanitize(ref), new Value(new RawValueTopicFilter(message.getPayload())));
                     }
                     if (isTrigger) {
