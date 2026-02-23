@@ -58,18 +58,25 @@ public class DataCombiningRuntime {
     private static final Logger log = LoggerFactory.getLogger(DataCombiningRuntime.class);
 
     private final @NotNull DataCombining dataCombining;
-    private final @NotNull LocalTopicTree localTopicTree;
-    private final @NotNull TagManager tagManager;
-    /// `clientQueuePersistence` is the queue on which messages matching topic filters area enqueued when published
-    private final @NotNull ClientQueuePersistence clientQueuePersistence;
-    /// `singleWriterService` is the concurrency mechanism to serialize all access to the underlying storage
-    private final @NotNull SingleWriterService singleWriterService;
-    private final @NotNull DataCombiningPublishService dataCombiningPublishService;
-    private final @NotNull DataCombiningTransformationService dataCombiningTransformationService; // and this
 
+    /// `tagManager` manages the subscriptions for tags
+    private final @NotNull TagManager tagManager;
+
+    /// `localTopicTree` enqueues published messages matching a topic filter to `clientQueuePersistence`
+    /// `singleWriterService` is the concurrency mechanism to serialize all access for `clientQueuePersistence`
+    private final @NotNull LocalTopicTree localTopicTree;
+    private final @NotNull ClientQueuePersistence clientQueuePersistence;
+    private final @NotNull SingleWriterService singleWriterService;
+
+    /// add some description for these two (why are there two?)
+    private final @NotNull DataCombiningPublishService dataCombiningPublishService;
+    private final @NotNull DataCombiningTransformationService dataCombiningTransformationService;
     private final @NotNull ObjectMapper mapper;
+
+    /// subscriptions remembers all the subscriptions for tags and topic filters, so we can unsubscribe them again
     private final @NotNull List<InternalSubscription> subscriptions;
-    /// `values` is the hash map where we store values, it must be a concurrent hash map, values may arrive in parallel
+
+    /// `values` is the hash map where we store values, it must be a concurrent map since values may arrive concurrent
     private final @NotNull ConcurrentHashMap<String, Value> values;
 
     public DataCombiningRuntime(
@@ -93,7 +100,7 @@ public class DataCombiningRuntime {
         this.values = new ConcurrentHashMap<>();
     }
 
-    /// `starts()` subscribes to all inputs
+    /// `starts()` collects all the inputs and subscribes to them all
     public void start() {
         log.debug("Starting data combining {}", dataCombining.id());
 
@@ -101,22 +108,26 @@ public class DataCombiningRuntime {
 
         DataIdentifierReference trigger = dataCombining.sources().primaryReference();
 
-        /// subscribe to all inputs, except for the trigger; subscribe to each input only once
-        dataCombining.instructions()
+        /// collect subscriptions for all the distinct inputs, except for the trigger
+        subscriptions.addAll(dataCombining.instructions()
                 .stream()
                 .map(Instruction::dataIdentifierReference)
                 .filter(Objects::nonNull)
                 .filter(ref -> !ref.equals(trigger))
                 .distinct()
-                .forEach(ref -> subscribe(ref, false, true));
+                .map(ref -> internalSubscription(ref, false, true))
+                .toList());
 
-        /// subscribe to the trigger last, gives the other subscriptions a little bit more time to receive a value
+        /// collect a subscription for the trigger, check whether it is used in an instructions and we need its value
         boolean isValueUsed = dataCombining.instructions()
                 .stream()
                 .map(Instruction::dataIdentifierReference)
                 .filter(Objects::nonNull)
                 .anyMatch(ref -> ref.equals(trigger));
-        subscribe(trigger, true, isValueUsed);
+        subscriptions.add(internalSubscription(trigger, true, isValueUsed));
+
+        /// now subscribe to them all
+        subscriptions.forEach(InternalSubscription::subscribe);
     }
 
     /// `stop()` unsubscribes all `subscriptions` again
@@ -209,29 +220,32 @@ public class DataCombiningRuntime {
         }
     }
 
-    /// `subscribe` subscribes the input (tag or topic filter).
-    /// It does this by creating either a `InternalSubscriptionTag` or `InternalSubscriptionTopicFilter`.
-    /// It remembers all subscriptions in `subscriptions`, so that we can unsubscribe them again on `close()`.
-    public void subscribe(
+    /// `internalSubscription` returns an, initially inactive, subscription for the input (tag or topic filter),
+    /// by creating either an `InternalSubscriptionTag` or an `InternalSubscriptionTopicFilter`
+    public InternalSubscription internalSubscription(
             final @NotNull DataIdentifierReference ref,
             final boolean isTrigger,
             final boolean isValueUsed) {
         log.debug("Starting {} consumer for {}", ref.type(), ref);
         switch (ref.type()) {
             case TAG -> {
-                subscriptions.add(new InternalSubscriptionTag(ref, isTrigger, isValueUsed));
+                return new InternalSubscriptionTag(ref, isTrigger, isValueUsed);
             }
             case TOPIC_FILTER -> {
-                subscriptions.add(new InternalSubscriptionTopicFilter(ref, isTrigger, isValueUsed));
+                return new InternalSubscriptionTopicFilter(ref, isTrigger, isValueUsed);
             }
             case PULSE_ASSET -> {
                 log.error("Pulse Assets shouldn't be input to data combining in Edge {}", ref.id());
-                throw new RuntimeException();
+                throw new RuntimeException("Pulse Assets shouldn't be input to data combining in Edge");
             }
         }
+        return null;
     }
 
     public interface InternalSubscription {
+
+        void subscribe();
+
         void unSubscribe();
     }
 
@@ -270,6 +284,9 @@ public class DataCombiningRuntime {
                 }
             };
 
+        }
+
+        public void subscribe() {
             tagManager.addConsumer(consumer);
         }
 
@@ -290,9 +307,9 @@ public class DataCombiningRuntime {
                 final boolean isTrigger,
                 final boolean isValueUsed) {
 
-            /// Note that the steps in this method must be done pretty much exactly in this order and with these values
-            /// the whole sequence should have been combined and encapsulated somewhere central
+            /// Note that the steps here and in `subscribe()` must be done exactly in this order and with these values
             /// it is a problem that `DataCombiningRuntime` needs to know so much about how to subscribe a topic filter
+            /// the whole sequence should have been combined and encapsulated somewhere central
 
             /// `consumerId` must be an id for the subscription to the topic tree
             /// with the intent that publish can distinguish different subscribers to the same topic filter
@@ -322,6 +339,10 @@ public class DataCombiningRuntime {
                     }
                 }
             };
+
+        }
+
+        public void subscribe() {
 
             /// add the consumer to the queue, start listening for messages enqueued to this slot
             consumer.start();

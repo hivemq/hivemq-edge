@@ -594,7 +594,8 @@ class DataCombiningRuntimeTest {
         // mS: my syntax for subscriptions is different
         // final DataCombiningRuntime.InternalSubscription subscription =
         //         runtime.subscribeTopicFilter(combining, "sensor/temp", false);
-        runtime.subscribe(new DataIdentifierReference("sensor/temp", DataIdentifierReference.Type.TOPIC_FILTER), false, true);
+        var sub = runtime.internalSubscription(new DataIdentifierReference("sensor/temp", DataIdentifierReference.Type.TOPIC_FILTER), false, true);
+        sub.subscribe();
 
         // mS: and you can't really look into them
         // assertThat(subscription.subscriber()).isEqualTo(combiningId + "#");
@@ -625,7 +626,7 @@ class DataCombiningRuntimeTest {
         // mS: my syntax for subscriptions is different
         // final DataCombiningRuntime.InternalSubscription subscription =
         //         runtime.subscribeTopicFilter(combining, "sensor/temp", false);
-        runtime.subscribe(new DataIdentifierReference("sensor/temp", DataIdentifierReference.Type.TOPIC_FILTER), false, true);
+        runtime.internalSubscription(new DataIdentifierReference("sensor/temp", DataIdentifierReference.Type.TOPIC_FILTER), false, true);
 
         // mS: and you can't really look into them
         // assertThat(subscription.getQueueId()).isEqualTo(combiningId + "/sensor/temp");
