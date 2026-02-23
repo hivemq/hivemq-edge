@@ -60,14 +60,16 @@ public class DataCombiningRuntime {
     private final @NotNull DataCombining dataCombining;
     private final @NotNull LocalTopicTree localTopicTree;
     private final @NotNull TagManager tagManager;
-    private final @NotNull ClientQueuePersistence clientQueuePersistence; // what is the purpose of this?
-    private final @NotNull SingleWriterService singleWriterService; // what is the purpose of this?
+    /// `clientQueuePersistence` is the queue on which messages matching topic filters area enqueued when published
+    private final @NotNull ClientQueuePersistence clientQueuePersistence;
+    /// `singleWriterService` is the concurrency mechanism to serialize all access to the underlying storage
+    private final @NotNull SingleWriterService singleWriterService;
     private final @NotNull DataCombiningPublishService dataCombiningPublishService;
     private final @NotNull DataCombiningTransformationService dataCombiningTransformationService; // and this
 
     private final @NotNull ObjectMapper mapper;
     private final @NotNull List<InternalSubscription> subscriptions;
-    // values must be a concurrent hash map, values may arrive anytime
+    /// `values` is the hash map where we store values, it must be a concurrent hash map, values may arrive in parallel
     private final @NotNull ConcurrentHashMap<String, Value> values;
 
     public DataCombiningRuntime(
@@ -99,7 +101,7 @@ public class DataCombiningRuntime {
 
         DataIdentifierReference trigger = dataCombining.sources().primaryReference();
 
-        // subscribe to all inputs, except for the trigger; subscribe to each input only once
+        /// subscribe to all inputs, except for the trigger; subscribe to each input only once
         dataCombining.instructions()
                 .stream()
                 .map(Instruction::dataIdentifierReference)
@@ -108,7 +110,7 @@ public class DataCombiningRuntime {
                 .distinct()
                 .forEach(ref -> subscribe(ref, false, true));
 
-        // subscribe to the trigger last, gives the other subscriptions a little bit more time to receive a value
+        /// subscribe to the trigger last, gives the other subscriptions a little bit more time to receive a value
         boolean isValueUsed = dataCombining.instructions()
                 .stream()
                 .map(Instruction::dataIdentifierReference)
@@ -133,8 +135,8 @@ public class DataCombiningRuntime {
         final ObjectNode inputValuesAsDictObject = mapper.createObjectNode();
         final var valuesSnapshot = Map.copyOf(values);
 
-        valuesSnapshot.forEach((propertyName, propertyValue) ->
-                inputValuesAsDictObject.set(propertyName, propertyValue.getTagValue4Combiner()));
+        valuesSnapshot.forEach((propertyName, propertyValue) -> inputValuesAsDictObject.set(propertyName,
+                propertyValue.getTagValue4Combiner()));
 
         dataCombiningPublishService.publish(dataCombining.destination(),
                 inputValuesAsDictObject.toString().getBytes(StandardCharsets.UTF_8),
@@ -251,8 +253,8 @@ public class DataCombiningRuntime {
                     return ref.id();
                 }
 
-                // TODO(mschoene) I'm not sure that the TagConsumer should get a scope?
-                // I think it should return the ref, and then the ref has one way to deterministically serialize itself
+                /// TODO(mschoene) I'm not sure that the TagConsumer should get a scope?
+                /// I think it should return the ref, and then the ref has one way to deterministically serialize itself
                 public String getScope() {
                     return ref.scope();
                 }
@@ -278,29 +280,37 @@ public class DataCombiningRuntime {
 
     /// `TopicFilters` are subscribed to the `TopicTree` with a `QueueConsumer` and its `process()` method.
     public final class InternalSubscriptionTopicFilter implements InternalSubscription {
+        private final @NotNull String consumerId;
         private final @NotNull String subscriber;
         private final @NotNull String topicFilter;
-        private final @NotNull String sharedName;
         private final @NotNull QueueConsumer consumer;
 
         InternalSubscriptionTopicFilter(
                 final @NotNull DataIdentifierReference ref,
                 final boolean isTrigger,
                 final boolean isValueUsed) {
-            this.subscriber = dataCombining.id().toString() + "#";
+
+            /// Note that the steps in this method must be done pretty much exactly in this order and with these values
+            /// the whole sequence should have been combined and encapsulated somewhere central
+            /// it is a problem that `DataCombiningRuntime` needs to know so much about how to subscribe a topic filter
+
+            /// `consumerId` must be an id for the subscription to the topic tree
+            /// with the intent that publish can distinguish different subscribers to the same topic filter
+            /// the only requirement for this id is uniqueness, so we simply use the combiner mapping UUID
+            this.consumerId = dataCombining.id().toString();
+
+            /// `subscriber` must be an id for the subscription to the topic tree
+            /// with the intent that we can unsubscribe this exact subscription again later (in `close`)
+            /// the only requirement for this id is also uniqueness, so we use the combiner mapping UUID again
+            /// and append `#` to avoid any risk of clashes with `consumerId`, should they ever be used in the same hash
+            this.subscriber = consumerId + "#";
+
+            /// the topic filter that we subscribe to
             this.topicFilter = ref.id();
-            this.sharedName = dataCombining.id().toString();
-            String queueId = dataCombining.id().toString() + "/" + topicFilter;
 
-            /// TODO(mschoene) figure out, how the subscription of topic filters actually works?
-            /// I'm puzzled, because the consumer is not **directly** added to the topic tree
-            /// So I presume that there must be some connection via the `subscriber` and `queueId`?
-            /// And then what is the `sharedName` for?
-            localTopicTree.addTopic(subscriber,
-                    new Topic(topicFilter, QoS.EXACTLY_ONCE, false, true),
-                    SubscriptionFlag.getDefaultFlags(true, true, false),
-                    sharedName);
-
+            /// create the queue consumer with a callback for the same slot (initially it is inert and not on the queue)
+            /// this must be the same slot that `addTopic` enqueues to, so `queueId` must be `consumerId/topicFilter`
+            String queueId = consumerId + "/" + topicFilter;
             this.consumer = new QueueConsumer(clientQueuePersistence, queueId, singleWriterService) {
                 @Override
                 public void process(final @NotNull PUBLISH message) {
@@ -313,12 +323,23 @@ public class DataCombiningRuntime {
                 }
             };
 
+            /// add the consumer to the queue, start listening for messages enqueued to this slot
             consumer.start();
+
+            /// add the topic filter to the `localTopicTree`, so that when a message is published to `topicFilter`,
+            /// it will be enqueued to `clientPersistenceQueue` in the slot `consumerId/topicFilter`
+            /// first adding the consumer and then the topic filter to the topic tree means that a consumer already
+            /// exists when the messages are being enqueued (though there is an initial `submitPoll` to also handle it)
+            localTopicTree.addTopic(subscriber,
+                    new Topic(topicFilter, QoS.EXACTLY_ONCE, false, true),
+                    SubscriptionFlag.getDefaultFlags(true, true, false),
+                    consumerId);
+
         }
 
         public void unSubscribe() {
+            localTopicTree.removeSubscriber(subscriber, topicFilter, consumerId);
             consumer.close();
-            localTopicTree.removeSubscriber(subscriber, topicFilter, sharedName);
         }
     }
 }
