@@ -40,7 +40,7 @@ public class UnsConfigEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof UnsConfigEntity)) return false;
         final UnsConfigEntity that = (UnsConfigEntity) o;
         return Objects.equals(getIsa95(), that.getIsa95());
     }

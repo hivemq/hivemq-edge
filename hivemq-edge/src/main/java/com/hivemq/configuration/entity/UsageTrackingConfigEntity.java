@@ -44,13 +44,13 @@ public class UsageTrackingConfigEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof UsageTrackingConfigEntity)) return false;
         final UsageTrackingConfigEntity that = (UsageTrackingConfigEntity) o;
         return isEnabled() == that.isEnabled();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(isEnabled());
+        return Boolean.hashCode(isEnabled());
     }
 }

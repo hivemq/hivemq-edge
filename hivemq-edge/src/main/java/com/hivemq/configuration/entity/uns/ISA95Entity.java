@@ -101,7 +101,7 @@ public class ISA95Entity extends DisabledEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof ISA95Entity)) return false;
         final ISA95Entity that = (ISA95Entity) o;
         return isPrefixAllTopics() == that.isPrefixAllTopics()
                 && Objects.equals(getEnterprise(), that.getEnterprise())

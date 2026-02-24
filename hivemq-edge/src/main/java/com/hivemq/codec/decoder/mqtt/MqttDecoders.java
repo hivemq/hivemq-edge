@@ -48,7 +48,10 @@ import org.jetbrains.annotations.Nullable;
 @Singleton
 public class MqttDecoders {
 
+    @SuppressWarnings("MultipleNullnessAnnotations")
     private final @Nullable MqttDecoder @NotNull [] mqtt3Decoder;
+
+    @SuppressWarnings("MultipleNullnessAnnotations")
     private final @Nullable MqttDecoder @NotNull [] mqtt5Decoder;
 
     @Inject

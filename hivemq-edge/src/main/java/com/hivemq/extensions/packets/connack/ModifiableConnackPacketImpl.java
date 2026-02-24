@@ -161,7 +161,7 @@ public class ModifiableConnackPacketImpl implements ModifiableConnackPacket {
 
     @Override
     public void setSessionPresent(final boolean sessionPresent) {
-        if (Objects.equals(this.sessionPresent, sessionPresent)) {
+        if (this.sessionPresent == sessionPresent) {
             return;
         }
         this.sessionPresent = sessionPresent;

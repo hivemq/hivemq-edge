@@ -82,11 +82,14 @@ public enum Mqtt5ConnAckReasonCode implements Mqtt5ReasonCode {
 
     private static final int ERROR_CODE_MIN = UNSPECIFIED_ERROR.code;
     private static final int ERROR_CODE_MAX = CONNECTION_RATE_EXCEEDED.code;
+    @SuppressWarnings("MultipleNullnessAnnotations")
     private static final @Nullable Mqtt5ConnAckReasonCode @NotNull [] ERROR_CODE_LOOKUP =
             new Mqtt5ConnAckReasonCode[ERROR_CODE_MAX - ERROR_CODE_MIN + 1];
 
+    @SuppressWarnings("MultipleNullnessAnnotations")
     private static final @NotNull Mqtt5ConnAckReasonCode @NotNull [] CONNACK_LOOKUP =
             new Mqtt5ConnAckReasonCode[ConnackReasonCode.values().length];
+    @SuppressWarnings("MultipleNullnessAnnotations")
     private static final @Nullable Mqtt5ConnAckReasonCode @NotNull [] DISCONNECTED_LOOKUP =
             new Mqtt5ConnAckReasonCode[DisconnectedReasonCode.values().length];
 

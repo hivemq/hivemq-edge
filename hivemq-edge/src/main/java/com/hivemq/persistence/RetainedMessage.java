@@ -209,7 +209,7 @@ public class RetainedMessage {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof RetainedMessage)) {
             return false;
         }
 

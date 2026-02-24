@@ -53,7 +53,7 @@ public class DataGovernanceDataImpl implements DataGovernanceData {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof DataGovernanceDataImpl)) {
             return false;
         }
         DataGovernanceDataImpl that = (DataGovernanceDataImpl) o;

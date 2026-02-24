@@ -235,7 +235,7 @@ public class HiveMQConfigEntity {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof HiveMQConfigEntity)) {
             return false;
         }
         final HiveMQConfigEntity that = (HiveMQConfigEntity) o;

@@ -135,7 +135,7 @@ public class SimulationSpecificAdapterConfig implements ProtocolSpecificAdapterC
 
     @Override
     public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof SimulationSpecificAdapterConfig)) return false;
         final SimulationSpecificAdapterConfig that = (SimulationSpecificAdapterConfig) o;
         return getMinValue() == that.getMinValue()
                 && getMaxValue() == that.getMaxValue()

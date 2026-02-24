@@ -93,7 +93,7 @@ public class LocalSubscription {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof LocalSubscription)) return false;
 
         final LocalSubscription that = (LocalSubscription) o;
 

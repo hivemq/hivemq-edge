@@ -54,7 +54,7 @@ public class UserEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof UserEntity)) return false;
         final UserEntity that = (UserEntity) o;
         return Objects.equals(getUserName(), that.getUserName())
                 && Objects.equals(getPassword(), that.getPassword())

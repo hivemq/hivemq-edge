@@ -162,7 +162,7 @@ public class Topic implements Serializable, Comparable<Topic>, Mqtt3Topic, Mqtt5
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof Topic)) return false;
 
         final Topic topic1 = (Topic) o;
 

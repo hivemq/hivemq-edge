@@ -43,7 +43,7 @@ public class ResourcePath {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof ResourcePath)) return false;
         final ResourcePath that = (ResourcePath) o;
         return Objects.equals(getPath(), that.getPath()) && Objects.equals(getUri(), that.getUri());
     }

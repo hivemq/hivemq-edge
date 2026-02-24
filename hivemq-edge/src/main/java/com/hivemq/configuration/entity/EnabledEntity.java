@@ -42,13 +42,13 @@ public abstract class EnabledEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof EnabledEntity)) return false;
         final EnabledEntity that = (EnabledEntity) o;
         return isEnabled() == that.isEnabled();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(isEnabled());
+        return Boolean.hashCode(isEnabled());
     }
 }

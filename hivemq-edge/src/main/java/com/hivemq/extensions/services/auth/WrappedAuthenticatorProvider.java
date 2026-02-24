@@ -121,7 +121,7 @@ public class WrappedAuthenticatorProvider {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof WrappedAuthenticatorProvider)) return false;
         final WrappedAuthenticatorProvider that = (WrappedAuthenticatorProvider) o;
         return Objects.equals(classLoader, that.classLoader);
     }

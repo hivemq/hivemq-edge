@@ -62,12 +62,12 @@ public class WebsocketListenerEntity extends ListenerEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof WebsocketListenerEntity)) return false;
         if (!super.equals(o)) return false;
         final WebsocketListenerEntity that = (WebsocketListenerEntity) o;
         return Objects.equals(getPath(), that.getPath())
                 && Objects.equals(getSubprotocols(), that.getSubprotocols())
-                && Objects.equals(isAllowExtensions(), that.isAllowExtensions());
+                && isAllowExtensions() == that.isAllowExtensions();
     }
 
     @Override

@@ -75,7 +75,7 @@ public class FieldMappingEntity implements EntityValidatable {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof FieldMappingEntity)) return false;
         final FieldMappingEntity that = (FieldMappingEntity) o;
         return Objects.equals(getInstructions(), that.getInstructions());
     }

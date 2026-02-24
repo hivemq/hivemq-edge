@@ -52,7 +52,7 @@ public class CustomUserPropertyEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof CustomUserPropertyEntity)) return false;
         final CustomUserPropertyEntity that = (CustomUserPropertyEntity) o;
         return Objects.equals(getKey(), that.getKey()) && Objects.equals(getValue(), that.getValue());
     }

@@ -347,7 +347,7 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof PUBLISH)) {
             return false;
         }
         final PUBLISH publish = (PUBLISH) o;

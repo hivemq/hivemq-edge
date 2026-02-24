@@ -42,7 +42,7 @@ public abstract class ApiListenerEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof ApiListenerEntity)) return false;
         final ApiListenerEntity that = (ApiListenerEntity) o;
         return getPort() == that.getPort() && Objects.equals(getBindAddress(), that.getBindAddress());
     }

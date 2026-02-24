@@ -33,6 +33,7 @@ class ErrorProneConventionPlugin : Plugin<Project> {
                 disable("EmptyBlockTag")
                 disable("InvalidBlockTag")
                 disable("EffectivelyPrivate")
+                disable("ImmutableEnumChecker")
             }
             options.compilerArgs.addAll(listOf("-Xmaxwarns", "9999", "-Xmaxerrs", "9999"))
 

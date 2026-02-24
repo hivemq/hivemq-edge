@@ -42,13 +42,13 @@ public class PacketsConfigEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof PacketsConfigEntity)) return false;
         final PacketsConfigEntity that = (PacketsConfigEntity) o;
         return getMaxPacketSize() == that.getMaxPacketSize();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(getMaxPacketSize());
+        return Integer.hashCode(getMaxPacketSize());
     }
 }

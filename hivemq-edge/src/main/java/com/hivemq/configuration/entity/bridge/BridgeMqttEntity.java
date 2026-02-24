@@ -74,7 +74,7 @@ public class BridgeMqttEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof BridgeMqttEntity)) return false;
         final BridgeMqttEntity that = (BridgeMqttEntity) o;
         return isCleanStart() == that.isCleanStart()
                 && getSessionExpiry() == that.getSessionExpiry()

@@ -69,7 +69,7 @@ public class TlsWebsocketListenerEntity extends ListenerEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof TlsWebsocketListenerEntity)) return false;
         if (!super.equals(o)) return false;
         final TlsWebsocketListenerEntity that = (TlsWebsocketListenerEntity) o;
         return isAllowExtensions() == that.isAllowExtensions()
