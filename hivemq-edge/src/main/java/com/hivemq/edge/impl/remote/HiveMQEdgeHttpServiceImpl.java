@@ -253,6 +253,7 @@ public class HiveMQEdgeHttpServiceImpl {
         waitForNextRetry((long) retryTimeMillis * backoffMultiplier);
     }
 
+    @SuppressWarnings("WaitNotInLoop") // intentional timed wait for retry backoff
     private void waitForNextRetry(final long waitTimeMillis) {
         synchronized (monitor) {
             try {

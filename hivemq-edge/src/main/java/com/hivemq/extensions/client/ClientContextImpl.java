@@ -455,7 +455,7 @@ public class ClientContextImpl {
         int low = 0;
         int high = interceptors.size() - 1;
         while (low <= high) {
-            final int mid = low + high >>> 1;
+            final int mid = (low + high) >>> 1;
             final T midInterceptor = interceptors.get(mid);
             final int midPriority = getExtensionPriority(midInterceptor);
 
@@ -492,7 +492,7 @@ public class ClientContextImpl {
         int low = 0;
         int high = interceptors.size() - 1;
         while (low <= high) {
-            final int mid = low + high >>> 1;
+            final int mid = (low + high) >>> 1;
             final T midInterceptor = interceptors.get(mid);
             final int midPriority = getExtensionPriority(midInterceptor);
 

@@ -107,9 +107,8 @@ public class PluginTaskExecutor {
         final String identifier = pluginTaskExecution.getPluginContext().getIdentifier();
 
         final Lock lock = stripedLock.get(identifier);
-
+        lock.lock();
         try {
-            lock.lock();
             final Queue<PluginTaskExecution> queueForId =
                     taskQueues.computeIfAbsent(identifier, new CreateQueueIfNotPresent());
             queueForId.add(pluginTaskExecution);
@@ -222,8 +221,8 @@ public class PluginTaskExecutor {
             // the lock is required to prevent the threads which are adding tasks from adding entries
             // while the queue is removed and cleaned up
             final Lock lock = stripedLock.get(key);
+            lock.lock();
             try {
-                lock.lock();
                 final Queue<PluginTaskExecution> possiblyEmptyQueue = taskQueues.get(key);
                 if (possiblyEmptyQueue.isEmpty()) {
                     taskQueues.remove(key);

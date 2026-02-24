@@ -489,6 +489,7 @@ public class ConfigFileReaderWriter {
                                 configurator.getClass().getSimpleName());
                         return false;
                     }
+                    default -> {}
                 }
             }
 
@@ -513,6 +514,7 @@ public class ConfigFileReaderWriter {
                                 extractor.getClass().getSimpleName());
                         return false;
                     }
+                    default -> {}
                 }
             }
             return true;

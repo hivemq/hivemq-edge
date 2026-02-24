@@ -81,7 +81,7 @@ public class Utf8Utils {
             final byte byte1 = bytes[i];
 
             // control byte1s
-            if (byte1 >= 1 && byte1 <= 31 || byte1 == (byte) 0x7F) {
+            if ((byte1 >= 1 && byte1 <= 31) || byte1 == (byte) 0x7F) {
                 return true;
             }
 
@@ -166,12 +166,12 @@ public class Utf8Utils {
             final char character = text.charAt(i);
 
             // control characters
-            if (character >= '\u0001' && character <= '\u001F' || character >= '\u007F' && character <= '\u009F') {
+            if ((character >= '\u0001' && character <= '\u001F') || (character >= '\u007F' && character <= '\u009F')) {
                 return true;
             }
 
             // non characters
-            if (character >= '\uFDD0' && character <= '\uFDEF' || character == '\uFFFE' || character == '\uFFFF') {
+            if ((character >= '\uFDD0' && character <= '\uFDEF') || character == '\uFFFE' || character == '\uFFFF') {
                 return true;
             }
 
@@ -292,8 +292,8 @@ public class Utf8Utils {
 
                     byte2 = byteBuf.readByte();
                     if (byte2 > -65
-                            || byte1 == -32 && byte2 < -96
-                            || byte1 == -19 && -96 <= byte2
+                            || (byte1 == -32 && byte2 < -96)
+                            || (byte1 == -19 && -96 <= byte2)
                             || byteBuf.readByte() > -65) {
                         return false;
                     }
@@ -304,7 +304,7 @@ public class Utf8Utils {
 
                     byte2 = byteBuf.readByte();
                     if (byte2 > -65
-                            || (byte1 << 28) + (byte2 - -112) >> 30 != 0
+                            || (((byte1 << 28) + (byte2 - -112)) >> 30) != 0
                             || byteBuf.readByte() > -65
                             || byteBuf.readByte() > -65) {
                         return false;

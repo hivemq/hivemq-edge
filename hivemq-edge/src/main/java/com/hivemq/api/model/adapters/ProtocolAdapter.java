@@ -189,7 +189,7 @@ public class ProtocolAdapter {
 
     @Override
     public boolean equals(final @Nullable Object o) {
-        return this == o || o instanceof final ProtocolAdapter that && Objects.equals(id, that.id);
+        return this == o || (o instanceof final ProtocolAdapter that && Objects.equals(id, that.id));
     }
 
     @Override

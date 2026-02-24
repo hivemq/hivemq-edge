@@ -227,8 +227,8 @@ public class NorthboundMappingEntity implements EntityValidatable {
                     && Objects.equals(topic, that.topic)
                     && maxQoS == that.maxQoS
                     && Objects.equals(messageHandlingOptions, that.messageHandlingOptions)
-                    && includeTagNames == that.includeTagNames
-                    && includeTimestamp == that.includeTimestamp
+                    && Objects.equals(includeTagNames, that.includeTagNames)
+                    && Objects.equals(includeTimestamp, that.includeTimestamp)
                     && Objects.equals(userProperties, that.userProperties)
                     && Objects.equals(messageExpiryInterval, that.messageExpiryInterval);
         }

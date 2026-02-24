@@ -165,6 +165,8 @@ public class Mqtt5ToMqttsnTranscoder implements ITranscoder<Message, List<IMqtts
                     out = factory.createDisconnect();
                     list.add(out);
                     break;
+                default:
+                    break;
             }
 
             if (!list.isEmpty()) {

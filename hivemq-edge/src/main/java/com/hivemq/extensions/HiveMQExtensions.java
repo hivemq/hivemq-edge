@@ -76,8 +76,8 @@ public class HiveMQExtensions {
 
     public @NotNull Map<String, HiveMQExtension> getEnabledHiveMQExtensions() {
         final Lock lock = extensionsLock.readLock();
+        lock.lock();
         try {
-            lock.lock();
             return knownExtensions.values().stream()
                     .filter(HiveMQExtension::isEnabled)
                     .sorted(Comparator.comparingInt(HiveMQExtension::getPriority))
@@ -95,8 +95,8 @@ public class HiveMQExtensions {
         checkNotNull(extension, "can only add valid extensions");
 
         final Lock lock = extensionsLock.writeLock();
+        lock.lock();
         try {
-            lock.lock();
             final HiveMQExtension oldExtension = knownExtensions.get(extension.getId());
             if (oldExtension != null) {
                 extension.setPreviousVersion(oldExtension.getVersion());
@@ -111,8 +111,8 @@ public class HiveMQExtensions {
         checkNotNull(hiveMQExtensionID, "every extension must have an id");
 
         final Lock lock = extensionsLock.readLock();
+        lock.lock();
         try {
-            lock.lock();
             return knownExtensions.containsKey(hiveMQExtensionID);
         } finally {
             lock.unlock();
@@ -136,8 +136,8 @@ public class HiveMQExtensions {
 
     public @Nullable HiveMQExtension getExtension(final @NotNull String xtensionId, final boolean enabled) {
         final Lock lock = extensionsLock.readLock();
+        lock.lock();
         try {
-            lock.lock();
             final HiveMQExtension extension = knownExtensions.get(xtensionId);
             return ((extension == null) || extension.isEnabled() != enabled) ? null : extension;
         } finally {
@@ -147,8 +147,8 @@ public class HiveMQExtensions {
 
     public @Nullable HiveMQExtension getExtension(final @NotNull String extensionId) {
         final Lock lock = extensionsLock.readLock();
+        lock.lock();
         try {
-            lock.lock();
             return knownExtensions.get(extensionId);
         } finally {
             lock.unlock();
@@ -162,8 +162,8 @@ public class HiveMQExtensions {
      */
     public @Nullable HiveMQExtension getExtensionForClassloader(final @NotNull ClassLoader classloader) {
         final Lock lock = classloaderLock.readLock();
+        lock.lock();
         try {
-            lock.lock();
             return classloaderToExtension.get(classloader);
         } finally {
             lock.unlock();
@@ -173,8 +173,8 @@ public class HiveMQExtensions {
     private void addClassLoaderMapping(
             final @NotNull ClassLoader classloader, final @NotNull HiveMQExtension extension) {
         final Lock loaderLock = classloaderLock.writeLock();
+        loaderLock.lock();
         try {
-            loaderLock.lock();
             if (extension.isEmbedded() && extension.getExtensionMainClazz() != null) {
                 // for embedded extensions also add the original (delegate) classloader
                 classloaderToExtension.put(extension.getExtensionMainClazz().getClassLoader(), extension);
@@ -187,8 +187,8 @@ public class HiveMQExtensions {
 
     private void removeClassLoaderMapping(final @NotNull ClassLoader classloader) {
         final Lock loaderLock = classloaderLock.writeLock();
+        loaderLock.lock();
         try {
-            loaderLock.lock();
             classloaderToExtension.remove(classloader);
         } finally {
             loaderLock.unlock();
@@ -266,8 +266,8 @@ public class HiveMQExtensions {
         final HiveMQExtension extension;
 
         final Lock lock = extensionsLock.readLock();
+        lock.lock();
         try {
-            lock.lock();
             extension = knownExtensions.get(extensionId);
             if ((extension == null) || !extension.isEnabled()) {
                 return false;
@@ -322,8 +322,8 @@ public class HiveMQExtensions {
      */
     public void addBeforeExtensionStopCallback(final @NotNull Consumer<HiveMQExtension> callback) {
         final Lock lock = beforeExtensionStopCallbacksLock.writeLock();
+        lock.lock();
         try {
-            lock.lock();
             beforeExtensionStopCallbacks.add(callback);
         } finally {
             lock.unlock();
@@ -337,8 +337,8 @@ public class HiveMQExtensions {
      */
     public void addAfterExtensionStopCallback(final @NotNull Consumer<HiveMQExtension> callback) {
         final Lock lock = afterExtensionStopCallbacksLock.writeLock();
+        lock.lock();
         try {
-            lock.lock();
             afterExtensionStopCallbacks.add(callback);
         } finally {
             lock.unlock();
@@ -347,8 +347,8 @@ public class HiveMQExtensions {
 
     private void notifyBeforeExtensionStopCallbacks(final @NotNull HiveMQExtension extension) {
         final Lock lock = beforeExtensionStopCallbacksLock.readLock();
+        lock.lock();
         try {
-            lock.lock();
             for (final Consumer<HiveMQExtension> callback : beforeExtensionStopCallbacks) {
                 callback.accept(extension);
             }
@@ -359,8 +359,8 @@ public class HiveMQExtensions {
 
     private void notifyAfterExtensionStopCallbacks(final @NotNull HiveMQExtension extension) {
         final Lock lock = afterExtensionStopCallbacksLock.readLock();
+        lock.lock();
         try {
-            lock.lock();
             for (final Consumer<HiveMQExtension> callback : afterExtensionStopCallbacks) {
                 callback.accept(extension);
             }

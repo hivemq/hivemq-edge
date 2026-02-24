@@ -105,6 +105,7 @@ public class UdpServerChannel extends AbstractServerChannel {
         });
     }
 
+    @SuppressWarnings("ReferenceEquality") // intentional identity check for channel deregistration
     protected void doUserChannelRemove(UdpChannel userChannel) {
         this.userChannels.compute(
                 (InetSocketAddress) userChannel.remoteAddress(),

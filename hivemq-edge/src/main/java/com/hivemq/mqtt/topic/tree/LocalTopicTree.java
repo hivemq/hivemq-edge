@@ -398,6 +398,7 @@ public class LocalTopicTree {
         return !foundSubscriberList.isEmpty();
     }
 
+    @SuppressWarnings("ReferenceEquality") // intentional identity check for node lookup in array
     public void removeSubscriber(
             final @NotNull String subscriber, final @NotNull String topic, final @Nullable String sharedName) {
 

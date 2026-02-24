@@ -31,7 +31,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 public class RollingList<T> extends ArrayList<T> {
     public static final int DEFAULT_CEILING = 25;
     protected final int ceiling;
-    protected volatile AtomicInteger internalIdx = new AtomicInteger(0);
+    protected final AtomicInteger internalIdx = new AtomicInteger(0);
 
     public RollingList() {
         super(DEFAULT_CEILING);

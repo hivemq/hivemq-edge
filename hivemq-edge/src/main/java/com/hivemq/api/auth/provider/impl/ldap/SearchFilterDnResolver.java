@@ -81,6 +81,7 @@ public class SearchFilterDnResolver implements UserDnResolver {
     }
 
     @Override
+    @SuppressWarnings("ReferenceEquality") // LDAP SDK ResultCode uses identity comparison by design
     public @NotNull String resolveDn(final @NotNull String username) {
         if (username.isBlank()) {
             throw new IllegalArgumentException("Username cannot be empty");

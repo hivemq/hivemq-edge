@@ -52,7 +52,7 @@ public class GatewayBroadcastServiceImpl implements IGatewayBroadcastService {
     private final @NotNull ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
     final @NotNull MqttsnConfigurationService mqttsnConfigurationService;
     private volatile ScheduledFuture task;
-    private volatile Object mutex = new Object();
+    private final @NotNull Object mutex = new Object();
 
     @Inject
     public GatewayBroadcastServiceImpl(
