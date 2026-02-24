@@ -15,7 +15,13 @@ import type { CombinerContext } from '@/modules/Mappings/types'
 
 interface EntityReferenceSelectProps extends Omit<BoxProps, 'onChange'> {
   id?: string
+  /**
+   * @deprecated Use formContext.selectedSources instead. This prop is kept for backward compatibility during migration.
+   */
   tags?: Array<string>
+  /**
+   * @deprecated Use formContext.selectedSources instead. This prop is kept for backward compatibility during migration.
+   */
   topicFilters?: Array<string>
   formContext?: CombinerContext
   onChange: (value: MultiValue<EntityOption>) => void
@@ -39,27 +45,33 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
 }) => {
   const { t } = useTranslation()
   const isLoading = useMemo(() => {
-    return formContext?.queries?.some((query) => query.isLoading) || false
-  }, [formContext?.queries])
+    return formContext?.entityQueries?.some((eq) => eq?.query?.isLoading) || false
+  }, [formContext?.entityQueries])
 
   const allOptions = useMemo(() => {
     if (isLoading) return []
 
     const combinedOptions =
-      formContext?.queries?.reduce<EntityOption[]>((acc, queryResult) => {
-        if (!queryResult.data) return acc
-        if (!queryResult.data.items.length) return acc
-        if ((queryResult.data.items[0] as DomainTag).name) {
-          const options = (queryResult.data.items as DomainTag[]).map<EntityOption>((tag, index) => ({
+      formContext?.entityQueries?.reduce<EntityOption[]>((acc, entityQuery) => {
+        // Safety check: handle undefined entityQuery or query
+        if (!entityQuery || !entityQuery.query) return acc
+
+        const { entity, query } = entityQuery
+
+        if (!query.data) return acc
+        if (!query.data.items.length) return acc
+
+        if ((query.data.items[0] as DomainTag).name) {
+          const options = (query.data.items as DomainTag[]).map<EntityOption>((tag) => ({
             label: tag.name,
             value: tag.name,
             description: tag.description,
-            adapterId: formContext.entities?.[index]?.id,
+            adapterId: entity.id,
             type: DataIdentifierReference.type.TAG,
           }))
           acc.push(...options)
-        } else if ((queryResult.data.items[0] as TopicFilter).topicFilter) {
-          const options = (queryResult.data.items as TopicFilter[]).map<EntityOption>((topicFilter) => ({
+        } else if ((query.data.items[0] as TopicFilter).topicFilter) {
+          const options = (query.data.items as TopicFilter[]).map<EntityOption>((topicFilter) => ({
             label: topicFilter.topicFilter,
             value: topicFilter.topicFilter,
             description: topicFilter.description,
@@ -73,15 +85,38 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
       }, []) || []
 
     return combinedOptions.reduce<EntityOption[]>((acc, current) => {
-      const isAlreadyIn = acc.find((item) => item.value === current.value && item.type === current.type)
+      // Check for duplicates by value, type, AND adapterId (scope)
+      // This allows tags with same name from different adapters
+      const isAlreadyIn = acc.find(
+        (item) => item.value === current.value && item.type === current.type && item.adapterId === current.adapterId
+      )
       if (!isAlreadyIn) {
         return acc.concat([current])
       }
       return acc
     }, [])
-  }, [formContext?.entities, formContext?.queries, isLoading])
+  }, [formContext?.entityQueries, isLoading])
 
   const values = useMemo(() => {
+    // Prefer selectedSources from context (Option B implementation)
+    if (formContext?.selectedSources) {
+      const tagValue = formContext.selectedSources.tags.map<EntityOption>((ref) => ({
+        value: ref.id,
+        label: ref.id,
+        type: ref.type,
+        adapterId: ref.scope || undefined, // Include scope for display
+      }))
+
+      const topicFilterValue = formContext.selectedSources.topicFilters.map<EntityOption>((ref) => ({
+        value: ref.id,
+        label: ref.id,
+        type: ref.type,
+      }))
+
+      return [...tagValue, ...topicFilterValue]
+    }
+
+    // Backward compatibility: fall back to deprecated props during migration
     const tagValue =
       tags?.map<EntityOption>((value) => ({ value: value, label: value, type: DataIdentifierReference.type.TAG })) || []
     const topicFilter =
@@ -91,7 +126,7 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
         type: DataIdentifierReference.type.TOPIC_FILTER,
       })) || []
     return [...tagValue, ...topicFilter]
-  }, [tags, topicFilters])
+  }, [formContext?.selectedSources, tags, topicFilters])
 
   return (
     <Box {...boxProps}>
@@ -104,6 +139,9 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
         isMulti
         value={values}
         aria-label={t('Combiner.mappings.items.sources.description', { ns: 'schemas' })}
+        // Make options unique by combining value + adapterId + type
+        // This allows tags with the same name from different adapters to coexist
+        getOptionValue={(option) => `${option.value}@${option.adapterId || 'null'}@${option.type}`}
         onChange={(newValue) => {
           if (newValue) onChange(newValue)
         }}
