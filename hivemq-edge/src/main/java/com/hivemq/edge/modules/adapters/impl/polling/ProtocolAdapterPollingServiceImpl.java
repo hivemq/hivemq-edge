@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
  * @author Daniel Krüger
  */
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPollingService {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdapterPollingServiceImpl.class);

@@ -55,6 +55,7 @@ import org.jetbrains.annotations.Nullable;
  * @author Christoph Schäbel
  */
 @ThreadSafe
+@SuppressWarnings("FutureReturnValueIgnored")
 public class PluginTaskExecutor {
 
     private static final @NotNull AtomicInteger COUNTER = new AtomicInteger();

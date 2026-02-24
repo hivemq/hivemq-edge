@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("FutureReturnValueIgnored")
 public class PersistenceStartup implements HiveMQShutdownHook {
 
     private static final Logger log = LoggerFactory.getLogger(PersistenceStartup.class);

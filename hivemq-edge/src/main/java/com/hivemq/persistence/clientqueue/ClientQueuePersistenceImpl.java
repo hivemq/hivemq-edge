@@ -54,6 +54,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class ClientQueuePersistenceImpl extends AbstractPersistence implements ClientQueuePersistence {
 
     public static final int SHARED_IN_FLIGHT_MARKER = 1;

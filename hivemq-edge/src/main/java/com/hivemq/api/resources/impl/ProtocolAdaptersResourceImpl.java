@@ -123,6 +123,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class ProtocolAdaptersResourceImpl extends AbstractApi implements ProtocolAdaptersApi {
 
     private static final @NotNull TypeReference<@NotNull Map<String, Object>> AS_MAP_TYPE_REF = new TypeReference<>() {

@@ -56,6 +56,7 @@ import org.jetbrains.annotations.Nullable;
  * @since 4.0.0
  */
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class ClientServiceImpl implements ClientService {
 
     private final @NotNull PluginServiceRateLimitService pluginServiceRateLimitService;

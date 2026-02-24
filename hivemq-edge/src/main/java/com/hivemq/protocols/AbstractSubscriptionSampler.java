@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@SuppressWarnings("FutureReturnValueIgnored")
 public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPollingSampler {
 
     private final long initialDelay;

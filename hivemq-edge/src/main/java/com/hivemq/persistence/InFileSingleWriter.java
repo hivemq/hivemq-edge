@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Lukas Brandl
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 public class InFileSingleWriter implements SingleWriterService {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(InFileSingleWriter.class);

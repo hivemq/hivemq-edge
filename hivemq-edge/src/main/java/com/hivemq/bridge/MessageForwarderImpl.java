@@ -57,6 +57,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class MessageForwarderImpl implements MessageForwarder {
 
     public static final @NotNull String FORWARDER_PREFIX = "forwarder#";

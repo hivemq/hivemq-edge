@@ -29,6 +29,7 @@ import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
 
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class DataCombiningPublishService {
 
     private final @NotNull HivemqId hiveMQId;
