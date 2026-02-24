@@ -29,7 +29,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import org.jctools.queues.MpscUnboundedArrayQueue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -67,8 +66,6 @@ public class InMemoryProducerQueues implements ProducerQueues {
         bucketsPerQueue = persistenceBucketCount / amountOfQueues;
         shutdownGracePeriod = InternalConfigurations.PERSISTENCE_SHUTDOWN_GRACE_PERIOD_MSEC.get();
 
-        final ImmutableList.Builder<AtomicLong> counterBuilder = ImmutableList.builder();
-
         queues = new MpscUnboundedArrayQueue[amountOfQueues];
         wips = new AtomicInteger[amountOfQueues];
         for (int i = 0; i < amountOfQueues; i++) {
@@ -76,9 +73,6 @@ public class InMemoryProducerQueues implements ProducerQueues {
             wips[i] = new AtomicInteger();
         }
 
-        for (int i = 0; i < amountOfQueues; i++) {
-            counterBuilder.add(new AtomicLong(0));
-        }
     }
 
     @VisibleForTesting

@@ -202,16 +202,12 @@ public class JwtAuthenticationProvider implements ITokenGenerator, ITokenVerifie
 
         try {
             Preconditions.checkNotNull(tokenValue);
-            JwtClaims claims = buildConsumer().processToClaims(tokenValue);
+            final JwtClaims claims = buildConsumer().processToClaims(tokenValue);
             return Optional.of(claims.getExpirationTime().getValueInMillis());
-        } catch (MalformedClaimException e) {
+        } catch (final MalformedClaimException e) {
             log.warn("jwt parse failed, reason {}", e.getMessage());
-        } catch (InvalidJwtException e) {
-            if (!e.hasExpired()) {
-                log.trace("jwt validation failed, reason {}", e.getMessage());
-            } else {
-                log.trace("jwt validation failed, reason {}", e.getMessage());
-            }
+        } catch (final InvalidJwtException e) {
+            log.trace("jwt validation failed, reason {}", e.getMessage());
         }
         return Optional.empty();
     }

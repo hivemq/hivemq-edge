@@ -19,7 +19,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
@@ -98,8 +97,6 @@ public class NorthboundTagConsumer implements TagConsumer {
                 pollingContext.getMqttQos() <= 2 && pollingContext.getMqttQos() >= 0,
                 "QoS needs to be a valid QoS value (0,1,2)");
         try {
-            final ImmutableList.Builder<CompletableFuture<?>> publishFutures = ImmutableList.builder();
-
             final List<byte[]> jsonPayloadsAsBytes = new ArrayList<>();
 
             final JsonPayloadCreator jsonPayloadCreatorOverride = pollingContext.getJsonPayloadCreator();
@@ -161,7 +158,6 @@ public class NorthboundTagConsumer implements TagConsumer {
                             log.warn("Error publishing adapter payload", throwable);
                             return null;
                         });
-                publishFutures.add(publishFuture);
             }
         } catch (final Exception e) {
             log.warn("Exception during polling of data for adapters '{}':", protocolAdapter.getId(), e);
