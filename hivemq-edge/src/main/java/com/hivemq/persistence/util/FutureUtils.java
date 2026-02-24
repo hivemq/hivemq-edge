@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Lukas Brandl
  */
-@SuppressWarnings("FutureReturnValueIgnored")
+@SuppressWarnings({"FutureReturnValueIgnored", "CheckReturnValue"})
 public class FutureUtils {
 
     private static final Logger log = LoggerFactory.getLogger(FutureUtils.class);
