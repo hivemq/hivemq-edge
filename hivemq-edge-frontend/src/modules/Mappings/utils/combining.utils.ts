@@ -24,6 +24,40 @@ export const STUB_TOPIC_FILTER_PROPERTY = 'tf'
 // TODO[NVL] wrong data structure; simplify
 /* istanbul ignore next -- @preserve */
 export const getDataReference = (formContext?: CombinerContext): DataReference[] => {
+  if (!formContext) return []
+
+  // Use new entityQueries structure
+  if (formContext.entityQueries) {
+    return formContext.entityQueries.reduce<DataReference[]>((acc, entityQuery) => {
+      const { entity, query } = entityQuery
+      const items = query.data?.items || []
+      if (!items.length) return acc
+
+      const firstItem = items[0]
+
+      if ((firstItem as DomainTag).name) {
+        // For tags, use entity.id as scope (only for ADAPTER/EDGE_BROKER types)
+        const scope = entity.type === EntityType.ADAPTER || entity.type === EntityType.EDGE_BROKER ? entity.id : null
+        const tagDataReferences = (items as DomainTag[]).map<DataReference>((tag) => ({
+          id: tag.name,
+          type: DataIdentifierReference.type.TAG,
+          scope,
+        }))
+        acc.push(...tagDataReferences)
+      } else if ((firstItem as TopicFilter).topicFilter) {
+        const topicFilterDataReferences = (items as TopicFilter[]).map<DataReference>((topicFilter) => ({
+          id: topicFilter.topicFilter,
+          type: DataIdentifierReference.type.TOPIC_FILTER,
+          scope: null,
+        }))
+        acc.push(...topicFilterDataReferences)
+      }
+
+      return acc
+    }, [])
+  }
+
+  // Backward compatibility: fall back to old structure during migration
   const tagsAndTopicFilters =
     formContext?.queries?.reduce<(DomainTag[] | TopicFilter[])[]>((acc, cur) => {
       const firstItem = cur.data?.items?.[0]
@@ -59,7 +93,7 @@ export const getCombinedDataEntityReference = (
       const topicFilterDataReferences = (cur as TopicFilter[]).map<DataReference>((topicFilter) => ({
         id: topicFilter.topicFilter,
         type: DataIdentifierReference.type.TOPIC_FILTER,
-        scope: null, // ✅ Topic filters always have null scope
+        scope: null,
       }))
       acc.push(...topicFilterDataReferences)
     }
@@ -69,6 +103,26 @@ export const getCombinedDataEntityReference = (
 }
 
 export const getFilteredDataReferences = (formData?: DataCombining, formContext?: CombinerContext) => {
+  // Use selectedSources from context if available (Phase 2+)
+  // This provides full ownership information without reconstruction
+  if (formContext?.selectedSources) {
+    const { tags, topicFilters } = formContext.selectedSources
+    const allReferences = [...tags, ...topicFilters]
+
+    // Deduplicate by id + type + scope
+    // This allows tags with same name from different adapters to load separate schemas
+    return allReferences.reduce<DataReference[]>((acc, current) => {
+      const isAlreadyIn = acc.find(
+        (item) => item.id === current.id && item.type === current.type && item.scope === current.scope
+      )
+      if (!isAlreadyIn) {
+        return acc.concat([current])
+      }
+      return acc
+    }, [])
+  }
+
+  // Fallback to old behavior (Phase 1, backward compatibility)
   const tags = formData?.sources?.tags || []
   const topicFilters = formData?.sources?.topicFilters || []
   const indexes = [...tags, ...topicFilters]
@@ -147,11 +201,31 @@ export const findBestMatch = (
  * Used for looking up scope when only tag name is available.
  *
  * @param tagId - The tag identifier
- * @param formContext - The combiner context with queries and entities
+ * @param formContext - The combiner context with entityQueries
  * @returns The adapterId (scope) or undefined if not found
  */
 export const getAdapterIdForTag = (tagId: string, formContext?: CombinerContext): string | undefined => {
-  if (!formContext?.queries || !formContext?.entities) return undefined
+  if (!formContext) return undefined
+
+  // Use new entityQueries structure
+  if (formContext.entityQueries) {
+    for (const { entity, query } of formContext.entityQueries) {
+      if (entity.type !== EntityType.ADAPTER) continue
+
+      const items = query.data?.items || []
+      if (items.length > 0 && (items[0] as DomainTag).name) {
+        const tags = items as DomainTag[]
+        const found = tags.find((tag) => tag.name === tagId)
+        if (found) {
+          return entity.id // ✅ Direct access, no index needed
+        }
+      }
+    }
+    return undefined
+  }
+
+  // Backward compatibility: fall back to old structure during migration
+  if (!formContext.queries || !formContext.entities) return undefined
 
   const adapterEntities = formContext.entities.filter((e) => e.type === EntityType.ADAPTER)
 
@@ -169,4 +243,84 @@ export const getAdapterIdForTag = (tagId: string, formContext?: CombinerContext)
   }
 
   return undefined
+}
+
+/**
+ * Reconstructs selectedSources from existing combiner data.
+ * Used when loading an existing combiner to rebuild ownership information.
+ *
+ * Strategy:
+ * 1. Try to find scope from primary (if it matches)
+ * 2. Try to find scope from instructions
+ * 3. Fallback to context lookup
+ *
+ * @param formData - The combiner data
+ * @param formContext - The combiner context with entityQueries
+ * @returns Selected sources with full ownership information
+ */
+export const reconstructSelectedSources = (
+  formData?: DataCombining,
+  formContext?: CombinerContext
+): { tags: DataIdentifierReference[]; topicFilters: DataIdentifierReference[] } => {
+  if (!formData?.sources) {
+    return { tags: [], topicFilters: [] }
+  }
+
+  // Reconstruct tags with scope
+  const tags =
+    formData.sources.tags?.map((tagId) => {
+      // Strategy 1: Check if this is the primary
+      if (
+        formData.sources.primary?.id === tagId &&
+        formData.sources.primary?.type === DataIdentifierReference.type.TAG &&
+        formData.sources.primary?.scope
+      ) {
+        return formData.sources.primary
+      }
+
+      // Strategy 2: Find scope from instructions
+      const instruction = formData.instructions?.find(
+        (inst) => inst.sourceRef?.id === tagId && inst.sourceRef?.type === DataIdentifierReference.type.TAG
+      )
+      if (instruction?.sourceRef?.scope) {
+        return instruction.sourceRef
+      }
+
+      // Strategy 3: Fallback to context lookup
+      const adapterId = getAdapterIdForTag(tagId, formContext)
+      return {
+        id: tagId,
+        type: DataIdentifierReference.type.TAG,
+        scope: adapterId ?? null,
+      }
+    }) || []
+
+  // Reconstruct topic filters (scope always null)
+  const topicFilters =
+    formData.sources.topicFilters?.map((tfId) => {
+      // Check if this is the primary (to preserve exact reference)
+      if (
+        formData.sources.primary?.id === tfId &&
+        formData.sources.primary?.type === DataIdentifierReference.type.TOPIC_FILTER
+      ) {
+        return { ...formData.sources.primary, scope: null }
+      }
+
+      // Check instructions
+      const instruction = formData.instructions?.find(
+        (inst) => inst.sourceRef?.id === tfId && inst.sourceRef?.type === DataIdentifierReference.type.TOPIC_FILTER
+      )
+      if (instruction?.sourceRef) {
+        return { ...instruction.sourceRef, scope: null }
+      }
+
+      // Default topic filter
+      return {
+        id: tfId,
+        type: DataIdentifierReference.type.TOPIC_FILTER,
+        scope: null,
+      }
+    }) || []
+
+  return { tags, topicFilters }
 }

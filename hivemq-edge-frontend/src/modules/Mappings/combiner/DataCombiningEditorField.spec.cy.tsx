@@ -1,12 +1,14 @@
 /// <reference types="cypress" />
 
 import type { UiSchema } from '@rjsf/utils'
+import type { UseQueryResult } from '@tanstack/react-query'
 import { CustomFormTesting } from '@/__test-utils__/rjsf/CustomFormTesting'
 import { mockCombinerMapping } from '@/api/hooks/useCombiners/__handlers__'
 import { combinerMappingJsonSchema } from '@/api/schemas/combiner-mapping.json-schema'
-import type { DataCombining } from '@/api/__generated__'
-import { DataIdentifierReference } from '@/api/__generated__'
+import type { DataCombining, DomainTag, DomainTagList } from '@/api/__generated__'
+import { DataIdentifierReference, EntityType } from '@/api/__generated__'
 import { mockAdapter_OPCUA, mockProtocolAdapter_OPCUA } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import type { CombinerContext } from '@/modules/Mappings/types'
 
 import { DataCombiningEditorField } from './DataCombiningEditorField'
 
@@ -130,6 +132,130 @@ describe('DataCombiningEditorField', () => {
 
   it.skip('should render the schema handlers', () => {
     // TODO[NVL] add the tests
+  })
+
+  it('should handle queries not loaded initially (race condition fix)', () => {
+    // Helper to create mock query
+    const mockTagQuery = (tags: string[], isLoaded: boolean): Partial<UseQueryResult<DomainTagList, Error>> => {
+      if (isLoaded) {
+        return {
+          data: {
+            items: tags.map((name) => ({ name, description: `${name} description` }) as DomainTag),
+          },
+          isLoading: false,
+          isSuccess: true,
+          isError: false,
+        }
+      }
+      return {
+        data: undefined,
+        isLoading: true,
+        isSuccess: false,
+        isError: false,
+      }
+    }
+
+    const formDataWithTags: DataCombining = {
+      id: 'test-mapping-1',
+      sources: {
+        primary: { id: 'tag1', type: DataIdentifierReference.type.TAG, scope: 'adapter-1' },
+        tags: ['tag1', 'tag2'], // tag2 needs context lookup
+        topicFilters: [],
+      },
+      destination: { topic: 'my/topic' },
+      instructions: [
+        {
+          sourceRef: { id: 'tag1', type: DataIdentifierReference.type.TAG, scope: 'adapter-1' },
+          destination: 'dest1',
+          source: 'tag1',
+        },
+      ],
+    }
+
+    // Test with queries NOT loaded
+    const contextQueriesNotLoaded: CombinerContext = {
+      entityQueries: [
+        {
+          entity: { id: 'adapter-1', type: EntityType.ADAPTER },
+          query: mockTagQuery(['tag1', 'tag2'], false) as UseQueryResult<DomainTagList, Error>,
+        },
+      ],
+    }
+
+    cy.mountWithProviders(
+      <CustomFormTesting
+        schema={mockDataCombiningTableSchema}
+        uiSchema={mockDataCombiningTableUISchema}
+        formData={formDataWithTags}
+        formContext={contextQueriesNotLoaded}
+      />
+    )
+
+    // Component should render even when queries not loaded
+    cy.getByTestId('combining-editor-sources-attributes').should('exist')
+    cy.getByTestId('combining-editor-destination-topic').should('exist')
+  })
+
+  it('should handle queries loaded (race condition fix)', () => {
+    // Helper to create mock query
+    const mockTagQuery = (tags: string[], isLoaded: boolean): Partial<UseQueryResult<DomainTagList, Error>> => {
+      if (isLoaded) {
+        return {
+          data: {
+            items: tags.map((name) => ({ name, description: `${name} description` }) as DomainTag),
+          },
+          isLoading: false,
+          isSuccess: true,
+          isError: false,
+        }
+      }
+      return {
+        data: undefined,
+        isLoading: true,
+        isSuccess: false,
+        isError: false,
+      }
+    }
+
+    const formDataWithTags: DataCombining = {
+      id: 'test-mapping-2',
+      sources: {
+        primary: { id: 'tag1', type: DataIdentifierReference.type.TAG, scope: 'adapter-1' },
+        tags: ['tag1', 'tag2'],
+        topicFilters: [],
+      },
+      destination: { topic: 'my/topic' },
+      instructions: [
+        {
+          sourceRef: { id: 'tag1', type: DataIdentifierReference.type.TAG, scope: 'adapter-1' },
+          destination: 'dest1',
+          source: 'tag1',
+        },
+      ],
+    }
+
+    // Test with queries LOADED
+    const contextQueriesLoaded: CombinerContext = {
+      entityQueries: [
+        {
+          entity: { id: 'adapter-1', type: EntityType.ADAPTER },
+          query: mockTagQuery(['tag1', 'tag2'], true) as UseQueryResult<DomainTagList, Error>,
+        },
+      ],
+    }
+
+    cy.mountWithProviders(
+      <CustomFormTesting
+        schema={mockDataCombiningTableSchema}
+        uiSchema={mockDataCombiningTableUISchema}
+        formData={formDataWithTags}
+        formContext={contextQueriesLoaded}
+      />
+    )
+
+    // Component should render successfully with loaded queries
+    cy.getByTestId('combining-editor-sources-attributes').should('exist')
+    cy.getByTestId('combining-editor-destination-topic').should('exist')
   })
 
   it('should be accessible', () => {
