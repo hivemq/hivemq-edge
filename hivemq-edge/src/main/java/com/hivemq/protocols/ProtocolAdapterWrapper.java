@@ -267,6 +267,7 @@ public class ProtocolAdapterWrapper {
                                 future.complete(false);
                             }
                         }
+                        default -> {}
                     }
                 });
             } else {

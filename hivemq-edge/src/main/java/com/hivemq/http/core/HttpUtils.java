@@ -74,7 +74,7 @@ public class HttpUtils {
             try {
                 String[] keyValuePair = param.split("=", 2);
                 String name = URLDecoder.decode(keyValuePair[0], "UTF-8");
-                if (name == "") {
+                if (name.isEmpty()) {
                     continue;
                 }
                 String value = keyValuePair.length > 1 ? URLDecoder.decode(keyValuePair[1], "UTF-8") : "";

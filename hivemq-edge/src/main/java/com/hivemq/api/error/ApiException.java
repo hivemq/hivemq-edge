@@ -89,6 +89,7 @@ public class ApiException extends RuntimeException {
     }
 
     @JsonIgnore
+    @SuppressWarnings("UnsynchronizedOverridesSynchronized") // ApiException is not designed for concurrent access
     public Throwable getCause() {
         return cause;
     }

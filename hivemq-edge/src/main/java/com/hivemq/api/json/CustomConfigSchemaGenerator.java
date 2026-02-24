@@ -131,7 +131,7 @@ public class CustomConfigSchemaGenerator {
 
         private Boolean arrayUniqueItems(final @NotNull MemberScope<?, ?> memberScope) {
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
-            return fieldInfo != null && fieldInfo.arrayUniqueItems() ? true : null;
+            return (fieldInfo != null && fieldInfo.arrayUniqueItems()) ? true : null;
         }
 
         private Integer arrayMinItems(final @NotNull MemberScope<?, ?> memberScope) {

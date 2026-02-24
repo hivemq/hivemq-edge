@@ -56,8 +56,8 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
     @Override
     public void feed(final @NotNull String tagName, final @NotNull List<DataPoint> dataPoints) {
         lastValueForTag.put(tagName, dataPoints);
+        readWriteLock.readLock().lock();
         try {
-            readWriteLock.readLock().lock();
             final var tagConsumers = consumers.get(tagName);
             if (tagConsumers != null) {
                 consumers.get(tagName).forEach(consumer -> {
@@ -74,8 +74,8 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
     }
 
     public void addConsumer(final @NotNull TagConsumer consumer) {
+        readWriteLock.writeLock().lock();
         try {
-            readWriteLock.writeLock().lock();
             final String tagName = consumer.getTagName();
             consumers.compute(tagName, (tag, current) -> {
                 if (current != null) {
@@ -99,8 +99,8 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
     }
 
     public void removeConsumer(final @NotNull TagConsumer consumer) {
+        readWriteLock.writeLock().lock();
         try {
-            readWriteLock.writeLock().lock();
             consumers.computeIfPresent(consumer.getTagName(), (tag, current) -> {
                 current.remove(consumer);
                 return current;
