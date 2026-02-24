@@ -15,8 +15,6 @@
  */
 package com.hivemq.edge.adapters.opcua.northbound;
 
-import static com.hivemq.edge.adapters.opcua.Constants.EMPTY_BYTES;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -66,39 +64,57 @@ public class OpcUaToJsonConverter {
 
     public static @NotNull ByteBuffer convertPayload(
             final @NotNull EncodingContext serializationContext, final @NotNull DataValue dataValue) {
+        return convertPayload(serializationContext, dataValue, false);
+    }
+
+    public static @NotNull ByteBuffer convertPayload(
+            final @NotNull EncodingContext serializationContext,
+            final @NotNull DataValue dataValue,
+            final boolean includeMetadata) {
         final Object value = dataValue.getValue().getValue();
-        if (value == null) {
-            return ByteBuffer.wrap(EMPTY_BYTES);
-        }
+
         final JsonObject jsonObject = new JsonObject();
-        if (value instanceof final DataValue v) {
-            if (v.getStatusCode().getValue() > 0) {
-                jsonObject.add("statusCode", convertStatusCode(v.getStatusCode()));
-            }
-            if (v.getSourceTime() != null) {
+
+        // Extract metadata from the outer DataValue when includeMetadata is enabled
+        if (includeMetadata) {
+            jsonObject.add("statusCode", convertStatusCode(dataValue.getStatusCode()));
+            if (dataValue.getSourceTime() != null) {
                 jsonObject.add(
-                        "sourceTimestamp",
+                        "sourceTime",
                         new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(
-                                v.getSourceTime().getJavaInstant())));
+                                dataValue.getSourceTime().getJavaInstant())));
+            } else {
+                jsonObject.add("sourceTime", JsonNull.INSTANCE);
             }
-            if (v.getSourcePicoseconds() != null) {
+            if (dataValue.getSourcePicoseconds() != null) {
                 jsonObject.add(
                         "sourcePicoseconds",
-                        new JsonPrimitive(v.getSourcePicoseconds().intValue()));
+                        new JsonPrimitive(dataValue.getSourcePicoseconds().intValue()));
+            } else {
+                jsonObject.add("sourcePicoseconds", JsonNull.INSTANCE);
             }
-            if (v.getServerTime() != null) {
+            if (dataValue.getServerTime() != null) {
                 jsonObject.add(
-                        "serverTimestamp",
+                        "serverTime",
                         new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(
-                                v.getServerTime().getJavaInstant())));
+                                dataValue.getServerTime().getJavaInstant())));
+            } else {
+                jsonObject.add("serverTime", JsonNull.INSTANCE);
             }
-            if (v.getServerPicoseconds() != null) {
+            if (dataValue.getServerPicoseconds() != null) {
                 jsonObject.add(
                         "serverPicoseconds",
-                        new JsonPrimitive(v.getServerPicoseconds().intValue()));
+                        new JsonPrimitive(dataValue.getServerPicoseconds().intValue()));
+            } else {
+                jsonObject.add("serverPicoseconds", JsonNull.INSTANCE);
             }
         }
-        jsonObject.add("value", convertValue(value, serializationContext));
+
+        if (value != null) {
+            jsonObject.add("value", convertValue(value, serializationContext));
+        } else {
+            jsonObject.add("value", JsonNull.INSTANCE);
+        }
         return ByteBuffer.wrap(GSON.toJson(jsonObject).getBytes(StandardCharsets.UTF_8));
     }
 

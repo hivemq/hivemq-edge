@@ -71,7 +71,8 @@ class OpcUaSubscriptionLifecycleHandlerTest {
                 null, // tls
                 OpcUaToMqttConfig.defaultOpcUaToMqttConfig(), // opcuaToMqtt
                 null, // security
-                connectionOptions // connectionOptions
+                connectionOptions, // connectionOptions
+                null // includeMetadata
                 );
     }
 
