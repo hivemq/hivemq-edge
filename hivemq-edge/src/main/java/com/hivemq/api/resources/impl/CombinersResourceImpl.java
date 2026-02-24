@@ -47,7 +47,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -210,53 +209,59 @@ public class CombinersResourceImpl implements CombinersApi {
 
         for (final DataCombining dataCombining : dataCombiner.dataCombinings()) {
             final DataIdentifierReference primaryRef = dataCombining.sources().primaryReference();
-            if (primaryRef.type() == DataIdentifierReference.Type.PULSE_ASSET) {
-                return Optional.of(
-                        ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForCombinerError(
-                                DataIdentifierReference.Type.PULSE_ASSET)));
-            }
-            // Validate primary TAG reference has scope and exists
-            if (primaryRef.type() == DataIdentifierReference.Type.TAG) {
-                if (primaryRef.scope() == null || primaryRef.scope().isBlank()) {
-                    return Optional.of(ErrorResponseUtil.errorResponse(new MissingScopeForTagError(primaryRef.id())));
+            if (primaryRef != null) {
+                switch (primaryRef.type()) {
+                    case PULSE_ASSET -> {
+                        return Optional.of(
+                                ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForCombinerError(
+                                        DataIdentifierReference.Type.PULSE_ASSET)));
+                    }
+                    case TAG -> {
+                        if (primaryRef.scope() == null || primaryRef.scope().isBlank()) {
+                            return Optional.of(
+                                    ErrorResponseUtil.errorResponse(new MissingScopeForTagError(primaryRef.id())));
+                        }
+                        final Optional<Response> optionalResponse = validateTagExists(primaryRef, adapterToTags);
+                        if (optionalResponse.isPresent()) {
+                            return optionalResponse;
+                        }
+                    }
+                    case TOPIC_FILTER -> {
+                        if (primaryRef.scope() != null && !primaryRef.scope().isBlank()) {
+                            return Optional.of(ErrorResponseUtil.errorResponse(
+                                    new UnexpectedScopeError(primaryRef.type(), primaryRef.id())));
+                        }
+                    }
+                    default -> {}
                 }
-                final Optional<Response> optionalResponse = validateTagExists(primaryRef, adapterToTags);
-                if (optionalResponse.isPresent()) {
-                    return optionalResponse;
-                }
-            }
-            // Validate primary TOPIC_FILTER reference has no scope
-            if (primaryRef.type() == DataIdentifierReference.Type.TOPIC_FILTER) {
-                if (primaryRef.scope() != null && !primaryRef.scope().isBlank()) {
-                    return Optional.of(ErrorResponseUtil.errorResponse(
-                            new UnexpectedScopeError(primaryRef.type(), primaryRef.id())));
-                }
-            }
-            if (dataCombining.instructions().stream()
-                    .filter(instruction -> Objects.nonNull(instruction.dataIdentifierReference()))
-                    .anyMatch(instruction ->
-                            instruction.dataIdentifierReference().type() == DataIdentifierReference.Type.PULSE_ASSET)) {
-                return Optional.of(
-                        ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForCombinerError(
-                                DataIdentifierReference.Type.PULSE_ASSET)));
             }
             // Validate TAG references in instructions have scope and exist, and TOPIC_FILTER references have no scope
             for (final Instruction instruction : dataCombining.instructions()) {
                 final DataIdentifierReference ref = instruction.dataIdentifierReference();
                 if (ref != null) {
-                    if (ref.type() == DataIdentifierReference.Type.TAG) {
-                        if (ref.scope() == null || ref.scope().isBlank()) {
-                            return Optional.of(ErrorResponseUtil.errorResponse(new MissingScopeForTagError(ref.id())));
+                    switch (ref.type()) {
+                        case PULSE_ASSET -> {
+                            return Optional.of(ErrorResponseUtil.errorResponse(
+                                    new InvalidDataIdentifierReferenceTypeForCombinerError(
+                                            DataIdentifierReference.Type.PULSE_ASSET)));
                         }
-                        final Optional<Response> optionalResponse = validateTagExists(ref, adapterToTags);
-                        if (optionalResponse.isPresent()) {
-                            return optionalResponse;
+                        case TAG -> {
+                            if (ref.scope() == null || ref.scope().isBlank()) {
+                                return Optional.of(
+                                        ErrorResponseUtil.errorResponse(new MissingScopeForTagError(ref.id())));
+                            }
+                            final Optional<Response> optionalResponse = validateTagExists(ref, adapterToTags);
+                            if (optionalResponse.isPresent()) {
+                                return optionalResponse;
+                            }
                         }
-                    } else if (ref.type() == DataIdentifierReference.Type.TOPIC_FILTER) {
-                        if (ref.scope() != null && !ref.scope().isBlank()) {
-                            return Optional.of(
-                                    ErrorResponseUtil.errorResponse(new UnexpectedScopeError(ref.type(), ref.id())));
+                        case TOPIC_FILTER -> {
+                            if (ref.scope() != null && !ref.scope().isBlank()) {
+                                return Optional.of(ErrorResponseUtil.errorResponse(
+                                        new UnexpectedScopeError(ref.type(), ref.id())));
+                            }
                         }
+                        default -> {}
                     }
                 }
             }
