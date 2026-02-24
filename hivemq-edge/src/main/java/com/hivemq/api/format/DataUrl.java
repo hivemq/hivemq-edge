@@ -81,7 +81,7 @@ public class DataUrl {
     @Override
     public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof DataUrl)) return false;
 
         final DataUrl dataUrl = (DataUrl) o;
         return mimeType.equals(dataUrl.mimeType)

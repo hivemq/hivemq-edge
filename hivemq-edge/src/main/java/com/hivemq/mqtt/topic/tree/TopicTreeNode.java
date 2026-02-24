@@ -157,7 +157,7 @@ class TopicTreeNode {
     @Override
     public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof TopicTreeNode)) return false;
         final TopicTreeNode node = (TopicTreeNode) o;
         return topicPart.equals(node.topicPart);
     }

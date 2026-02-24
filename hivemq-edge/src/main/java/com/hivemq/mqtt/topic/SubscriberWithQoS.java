@@ -122,7 +122,7 @@ public class SubscriberWithQoS implements Comparable<SubscriberWithQoS> {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof SubscriberWithQoS)) return false;
         final SubscriberWithQoS that = (SubscriberWithQoS) o;
         return qos == that.qos
                 && flags == that.flags

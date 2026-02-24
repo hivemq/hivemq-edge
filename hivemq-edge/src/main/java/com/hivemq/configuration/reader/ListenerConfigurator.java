@@ -292,7 +292,7 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
         @Override
         public boolean equals(final Object o) {
             if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (!(o instanceof Listeners)) return false;
             final Listeners listeners = (Listeners) o;
             return Objects.equals(mqttListeners, listeners.mqttListeners)
                     && Objects.equals(mqttsnListeners, listeners.mqttsnListeners);

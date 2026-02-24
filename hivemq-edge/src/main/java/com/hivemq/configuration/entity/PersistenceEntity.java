@@ -59,7 +59,7 @@ public class PersistenceEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof PersistenceEntity)) return false;
         final PersistenceEntity that = (PersistenceEntity) o;
         return getMode() == that.getMode();
     }

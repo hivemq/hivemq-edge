@@ -60,7 +60,7 @@ public class TrustStoreEntity {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof TrustStoreEntity)) {
             return false;
         }
         final TrustStoreEntity that = (TrustStoreEntity) o;

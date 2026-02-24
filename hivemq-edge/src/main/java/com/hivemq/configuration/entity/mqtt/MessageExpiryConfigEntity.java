@@ -43,13 +43,13 @@ public class MessageExpiryConfigEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof MessageExpiryConfigEntity)) return false;
         final MessageExpiryConfigEntity that = (MessageExpiryConfigEntity) o;
         return getMaxInterval() == that.getMaxInterval();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(getMaxInterval());
+        return Long.hashCode(getMaxInterval());
     }
 }

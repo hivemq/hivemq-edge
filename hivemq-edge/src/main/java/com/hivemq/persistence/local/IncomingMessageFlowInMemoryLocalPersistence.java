@@ -106,7 +106,7 @@ public class IncomingMessageFlowInMemoryLocalPersistence implements IncomingMess
         @Override
         public boolean equals(final Object o) {
             if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (!(o instanceof MessageFlowKey)) return false;
 
             final MessageFlowKey that = (MessageFlowKey) o;
 

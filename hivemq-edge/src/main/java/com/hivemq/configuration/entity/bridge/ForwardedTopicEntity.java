@@ -113,7 +113,7 @@ public class ForwardedTopicEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof ForwardedTopicEntity)) return false;
         final ForwardedTopicEntity that = (ForwardedTopicEntity) o;
         return getMaxQoS() == that.getMaxQoS()
                 && isPreserveRetain() == that.isPreserveRetain()

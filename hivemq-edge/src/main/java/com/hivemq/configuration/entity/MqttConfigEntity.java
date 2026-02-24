@@ -121,7 +121,7 @@ public class MqttConfigEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof MqttConfigEntity)) return false;
         final MqttConfigEntity that = (MqttConfigEntity) o;
         return Objects.equals(getQueuedMessagesConfigEntity(), that.getQueuedMessagesConfigEntity())
                 && Objects.equals(getRetainedMessagesConfigEntity(), that.getRetainedMessagesConfigEntity())

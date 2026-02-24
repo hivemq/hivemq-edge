@@ -40,7 +40,7 @@ public class TlsTCPListenerEntity extends ListenerEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof TlsTCPListenerEntity)) return false;
         if (!super.equals(o)) return false;
         final TlsTCPListenerEntity that = (TlsTCPListenerEntity) o;
         return Objects.equals(getTls(), that.getTls());

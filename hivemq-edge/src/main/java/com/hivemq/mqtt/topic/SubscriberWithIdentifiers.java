@@ -135,7 +135,7 @@ public class SubscriberWithIdentifiers implements Comparable<SubscriberWithIdent
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof SubscriberWithIdentifiers)) return false;
         final SubscriberWithIdentifiers that = (SubscriberWithIdentifiers) o;
         return qos == that.qos
                 && flags == that.flags

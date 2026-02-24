@@ -57,7 +57,7 @@ public abstract class ListenerEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof ListenerEntity)) return false;
         final ListenerEntity that = (ListenerEntity) o;
         return getPort() == that.getPort()
                 && Objects.equals(getBindAddress(), that.getBindAddress())

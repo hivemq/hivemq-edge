@@ -22,11 +22,11 @@ import org.jetbrains.annotations.Nullable;
 public record AddResult(PutStatus putStatus, Optional<String> errorMessage) {
 
     public static @NotNull AddResult success() {
-        return new AddResult(PutStatus.SUCCESS, null);
+        return new AddResult(PutStatus.SUCCESS, Optional.empty());
     }
 
     public static @NotNull AddResult failed(final @NotNull PutStatus putStatus) {
-        return new AddResult(putStatus, null);
+        return new AddResult(putStatus, Optional.empty());
     }
 
     public static @NotNull AddResult failed(final @NotNull PutStatus putStatus, final @Nullable String errorMessage) {
@@ -37,7 +37,7 @@ public record AddResult(PutStatus putStatus, Optional<String> errorMessage) {
         return putStatus;
     }
 
-    public @Nullable Optional<String> getErrorMessage() {
+    public @NotNull Optional<String> getErrorMessage() {
         return errorMessage;
     }
 

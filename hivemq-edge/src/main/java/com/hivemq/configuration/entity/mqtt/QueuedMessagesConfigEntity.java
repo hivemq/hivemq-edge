@@ -50,7 +50,7 @@ public class QueuedMessagesConfigEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof QueuedMessagesConfigEntity)) return false;
         final QueuedMessagesConfigEntity that = (QueuedMessagesConfigEntity) o;
         return getMaxQueueSize() == that.getMaxQueueSize()
                 && getQueuedMessagesStrategy() == that.getQueuedMessagesStrategy();

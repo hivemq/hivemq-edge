@@ -61,7 +61,7 @@ public class MqttUserPropertyModel {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof MqttUserPropertyModel)) {
             return false;
         }
         final MqttUserPropertyModel that = (MqttUserPropertyModel) o;

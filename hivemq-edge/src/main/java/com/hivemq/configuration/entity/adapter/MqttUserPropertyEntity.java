@@ -62,7 +62,7 @@ public class MqttUserPropertyEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof MqttUserPropertyEntity)) return false;
         final MqttUserPropertyEntity that = (MqttUserPropertyEntity) o;
         return Objects.equals(getName(), that.getName()) && Objects.equals(getValue(), that.getValue());
     }

@@ -425,7 +425,7 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
             if (this == o) {
                 return true;
             }
-            if (o == null || getClass() != o.getClass()) {
+            if (!(o instanceof Key)) {
                 return false;
             }
             final Key key = (Key) o;

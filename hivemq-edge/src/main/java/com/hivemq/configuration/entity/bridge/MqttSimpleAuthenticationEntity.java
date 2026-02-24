@@ -51,7 +51,7 @@ public class MqttSimpleAuthenticationEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof MqttSimpleAuthenticationEntity)) return false;
         final MqttSimpleAuthenticationEntity that = (MqttSimpleAuthenticationEntity) o;
         return Objects.equals(getUser(), that.getUser()) && Objects.equals(getPassword(), that.getPassword());
     }

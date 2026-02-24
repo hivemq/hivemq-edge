@@ -53,7 +53,7 @@ public class LdapServerEntity {
 
     @Override
     public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof LdapServerEntity)) return false;
         final LdapServerEntity that = (LdapServerEntity) o;
         return getPort() == that.getPort() && Objects.equals(getHost(), that.getHost());
     }

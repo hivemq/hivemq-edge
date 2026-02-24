@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
 public class DomainTagAddResult {
 
     private final @NotNull DomainTagPutStatus dataPolicyPutStatus;
-    private final @Nullable Optional<String> errorMessage;
+    private final @NotNull Optional<String> errorMessage;
     private final @NotNull Optional<String> adapterIdOfOwningAdapter;
 
     public DomainTagAddResult(
@@ -54,7 +54,7 @@ public class DomainTagAddResult {
         return dataPolicyPutStatus;
     }
 
-    public @Nullable Optional<String> getErrorMessage() {
+    public @NotNull Optional<String> getErrorMessage() {
         return errorMessage;
     }
 

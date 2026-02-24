@@ -129,7 +129,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof AbstractSubscriptionSampler)) {
             return false;
         }
         final AbstractSubscriptionSampler that = (AbstractSubscriptionSampler) o;

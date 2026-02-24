@@ -100,7 +100,7 @@ public class ProtocolAdapterConfig {
 
     @Override
     public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof ProtocolAdapterConfig)) return false;
         final ProtocolAdapterConfig that = (ProtocolAdapterConfig) o;
         return getConfigVersion() == that.getConfigVersion()
                 && Objects.equals(getAdapterConfig(), that.getAdapterConfig())

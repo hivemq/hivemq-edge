@@ -94,7 +94,7 @@ public class InstructionEntity implements EntityValidatable {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof InstructionEntity)) {
             return false;
         }
         final InstructionEntity that = (InstructionEntity) o;

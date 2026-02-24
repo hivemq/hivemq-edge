@@ -40,13 +40,13 @@ public class ReceiveMaximumConfigEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof ReceiveMaximumConfigEntity)) return false;
         final ReceiveMaximumConfigEntity that = (ReceiveMaximumConfigEntity) o;
         return getServerReceiveMaximum() == that.getServerReceiveMaximum();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(getServerReceiveMaximum());
+        return Integer.hashCode(getServerReceiveMaximum());
     }
 }

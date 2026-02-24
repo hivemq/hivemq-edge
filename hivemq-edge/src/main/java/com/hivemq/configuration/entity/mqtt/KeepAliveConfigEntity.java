@@ -47,7 +47,7 @@ public class KeepAliveConfigEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof KeepAliveConfigEntity)) return false;
         final KeepAliveConfigEntity that = (KeepAliveConfigEntity) o;
         return getMaxKeepAlive() == that.getMaxKeepAlive() && isAllowUnlimted() == that.isAllowUnlimted();
     }

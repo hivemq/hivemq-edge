@@ -525,7 +525,7 @@ public class MessageForwarderImpl implements MessageForwarder {
         }
         final var qPersistence = queuePersistence.get();
         if (qPersistence != null) {
-            return Futures.transformAsync(
+            return Futures.transform(
                     qPersistence.readShared(queueId, FORWARDER_POLL_THRESHOLD_MESSAGES, PUBLISH_POLL_BATCH_SIZE_BYTES),
                     publishes -> {
                         if (publishes == null) {
@@ -533,7 +533,7 @@ public class MessageForwarderImpl implements MessageForwarder {
                                 log.trace("Queue '{}' is empty, removing from non-empty queues", queueId);
                             }
                             notEmptyQueues.remove(queueId);
-                            return Futures.immediateFuture(false);
+                            return false;
                         }
 
                         final int messageCount = publishes.size();
@@ -548,7 +548,7 @@ public class MessageForwarderImpl implements MessageForwarder {
                         for (final PUBLISH publish : publishes) {
                             mqttForwarder.onMessage(publish, queueId);
                         }
-                        return Futures.immediateFuture(!publishes.isEmpty());
+                        return !publishes.isEmpty();
                     },
                     executorService);
         } else {

@@ -42,13 +42,13 @@ public class QoSConfigEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof QoSConfigEntity)) return false;
         final QoSConfigEntity that = (QoSConfigEntity) o;
         return getMaxQos() == that.getMaxQos();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(getMaxQos());
+        return Integer.hashCode(getMaxQos());
     }
 }

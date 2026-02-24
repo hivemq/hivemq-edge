@@ -30,7 +30,7 @@ public class MqttsnTopicAlias {
         SHORT(0x10),
         FULL(0x11);
 
-        int topicAliasTypeId;
+        final int topicAliasTypeId;
 
         TYPE(int topicAliasTypeId) {
             this.topicAliasTypeId = topicAliasTypeId;
@@ -71,7 +71,7 @@ public class MqttsnTopicAlias {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof MqttsnTopicAlias)) return false;
         MqttsnTopicAlias that = (MqttsnTopicAlias) o;
         return topicName.equals(that.topicName);
     }

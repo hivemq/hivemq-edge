@@ -51,7 +51,7 @@ public class LoopPreventionEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof LoopPreventionEntity)) return false;
         final LoopPreventionEntity that = (LoopPreventionEntity) o;
         return isEnabled() == that.isEnabled() && getHopCountLimit() == that.getHopCountLimit();
     }

@@ -84,7 +84,7 @@ public class SimulationTag implements Tag {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof SimulationTag)) return false;
         final SimulationTag opcuaTag = (SimulationTag) o;
         return Objects.equals(name, opcuaTag.name)
                 && Objects.equals(description, opcuaTag.description)

@@ -63,7 +63,7 @@ public class BridgeWebsocketConfigurationEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof BridgeWebsocketConfigurationEntity)) return false;
         final BridgeWebsocketConfigurationEntity that = (BridgeWebsocketConfigurationEntity) o;
         return isEnabled() == that.isEnabled()
                 && Objects.equals(getServerPath(), that.getServerPath())

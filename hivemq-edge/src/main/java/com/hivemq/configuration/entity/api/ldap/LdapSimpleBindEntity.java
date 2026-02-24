@@ -51,7 +51,7 @@ public class LdapSimpleBindEntity {
 
     @Override
     public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof LdapSimpleBindEntity)) return false;
         final LdapSimpleBindEntity that = (LdapSimpleBindEntity) o;
         return Objects.equals(getRdns(), that.getRdns()) && Objects.equals(getUserPassword(), that.getUserPassword());
     }
