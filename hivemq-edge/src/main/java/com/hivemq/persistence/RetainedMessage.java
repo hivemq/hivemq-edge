@@ -225,7 +225,7 @@ public class RetainedMessage {
     @Override
     public int hashCode() {
 
-        int result = Objects.hash(qos, publishId, messageExpiryInterval, userProperties);
+        int result = Objects.hash(qos, messageExpiryInterval);
         result = 31 * result + Arrays.hashCode(message);
         return result;
     }

@@ -296,9 +296,7 @@ public class IntMap implements Iterable<IntMap.IntMapEntry> {
         @Override
         public boolean equals(final Object o) {
             if (this == o) return true;
-            if (!(o instanceof IntMap)) return false;
-
-            final IntMapEntry that = (IntMapEntry) o;
+            if (!(o instanceof IntMapEntry that)) return false;
 
             if (key != that.key) return false;
             return value == that.value;

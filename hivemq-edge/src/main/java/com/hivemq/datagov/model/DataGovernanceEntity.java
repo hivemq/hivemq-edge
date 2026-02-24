@@ -28,6 +28,5 @@ public interface DataGovernanceEntity {
     @NotNull
     String getName();
 
-    @NotNull
     boolean isEnabled();
 }
