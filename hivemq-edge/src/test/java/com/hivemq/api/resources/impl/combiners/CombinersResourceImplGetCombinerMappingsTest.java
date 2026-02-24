@@ -43,13 +43,15 @@ public class CombinersResourceImplGetCombinerMappingsTest extends AbstractCombin
     @Test
     public void whenCombinerExists_thenReturnsMappings() {
         final Combiner combiner = createCombiner(EntityType.ADAPTER, DataIdentifierReference.TypeEnum.TOPIC_FILTER);
-        when(dataCombiningExtractor.getCombinerById(combiner.getId())).thenReturn(Optional.of(toDataCombiner(combiner)));
+        when(dataCombiningExtractor.getCombinerById(combiner.getId()))
+                .thenReturn(Optional.of(toDataCombiner(combiner)));
 
         try (final Response response = combinersApi.getCombinerMappings(combiner.getId())) {
             assertThat(response.getStatus()).isEqualTo(200);
             assertThat(response.getEntity()).isInstanceOf(DataCombiningList.class);
             final DataCombiningList list = (DataCombiningList) response.getEntity();
-            assertThat(list.getItems()).hasSize(combiner.getMappings().getItems().size());
+            assertThat(list.getItems())
+                    .hasSize(combiner.getMappings().getItems().size());
         }
     }
 }

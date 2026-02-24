@@ -212,8 +212,8 @@ public class CombinersResourceImpl implements CombinersApi {
             if (primaryRef != null) {
                 switch (primaryRef.type()) {
                     case PULSE_ASSET -> {
-                        return Optional.of(ErrorResponseUtil.errorResponse(
-                                new InvalidDataIdentifierReferenceTypeForCombinerError(
+                        return Optional.of(
+                                ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForCombinerError(
                                         DataIdentifierReference.Type.PULSE_ASSET)));
                     }
                     case TAG -> {
@@ -232,8 +232,7 @@ public class CombinersResourceImpl implements CombinersApi {
                                     new UnexpectedScopeError(primaryRef.type(), primaryRef.id())));
                         }
                     }
-                    default -> {
-                    }
+                    default -> {}
                 }
             }
             // Validate TAG references in instructions have scope and exist, and TOPIC_FILTER references have no scope
@@ -262,8 +261,7 @@ public class CombinersResourceImpl implements CombinersApi {
                                         new UnexpectedScopeError(ref.type(), ref.id())));
                             }
                         }
-                        default -> {
-                        }
+                        default -> {}
                     }
                 }
             }

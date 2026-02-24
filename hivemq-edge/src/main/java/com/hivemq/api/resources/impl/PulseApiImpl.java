@@ -29,10 +29,10 @@ import com.hivemq.api.errors.pulse.ActivationTokenNotDeletedError;
 import com.hivemq.api.errors.pulse.AssetMapperNotFoundError;
 import com.hivemq.api.errors.pulse.AssetMapperReferencedError;
 import com.hivemq.api.errors.pulse.DuplicatedManagedAssetIdError;
+import com.hivemq.api.errors.pulse.InvalidDataIdentifierReferenceTypeForAssetMapperError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetMappingIdError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetSchemaError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetTopicError;
-import com.hivemq.api.errors.pulse.InvalidDataIdentifierReferenceTypeForAssetMapperError;
 import com.hivemq.api.errors.pulse.ManagedAssetAlreadyExistsError;
 import com.hivemq.api.errors.pulse.ManagedAssetNotFoundError;
 import com.hivemq.api.errors.pulse.MissingEntityTypePulseAgentForAssetMapperError;
@@ -707,8 +707,7 @@ public class PulseApiImpl implements PulseApi {
                                     new UnexpectedScopeError(primaryRef.type(), primaryRef.id())));
                         }
                     }
-                    default -> {
-                    }
+                    default -> {}
                 }
             }
             // Validate TAG references in instructions have scope and exist, and TOPIC_FILTER has no scope
@@ -717,12 +716,14 @@ public class PulseApiImpl implements PulseApi {
                 if (ref != null) {
                     switch (ref.type()) {
                         case PULSE_ASSET -> {
-                            return Optional.of(ErrorResponseUtil.errorResponse(new InvalidDataIdentifierReferenceTypeForAssetMapperError(
-                                    DataIdentifierReference.Type.PULSE_ASSET)));
+                            return Optional.of(ErrorResponseUtil.errorResponse(
+                                    new InvalidDataIdentifierReferenceTypeForAssetMapperError(
+                                            DataIdentifierReference.Type.PULSE_ASSET)));
                         }
                         case TAG -> {
                             if (ref.scope() == null || ref.scope().isBlank()) {
-                                return Optional.of(ErrorResponseUtil.errorResponse(new MissingScopeForTagError(ref.id())));
+                                return Optional.of(
+                                        ErrorResponseUtil.errorResponse(new MissingScopeForTagError(ref.id())));
                             }
                             final Optional<Response> tagValidationError = validateTagExists(ref, adapterToTags);
                             if (tagValidationError.isPresent()) {
@@ -731,12 +732,11 @@ public class PulseApiImpl implements PulseApi {
                         }
                         case TOPIC_FILTER -> {
                             if (ref.scope() != null && !ref.scope().isBlank()) {
-                                return Optional.of(ErrorResponseUtil.errorResponse(new UnexpectedScopeError(ref.type(),
-                                        ref.id())));
+                                return Optional.of(ErrorResponseUtil.errorResponse(
+                                        new UnexpectedScopeError(ref.type(), ref.id())));
                             }
                         }
-                        default -> {
-                        }
+                        default -> {}
                     }
                 }
             }

@@ -42,7 +42,8 @@ public class CombinersResourceImplGetCombinersByIdTest extends AbstractCombiners
     @Test
     public void whenCombinerExists_thenReturnsCombiner() {
         final Combiner combiner = createCombiner(EntityType.ADAPTER, DataIdentifierReference.TypeEnum.TOPIC_FILTER);
-        when(dataCombiningExtractor.getCombinerById(combiner.getId())).thenReturn(Optional.of(toDataCombiner(combiner)));
+        when(dataCombiningExtractor.getCombinerById(combiner.getId()))
+                .thenReturn(Optional.of(toDataCombiner(combiner)));
 
         try (final Response response = combinersApi.getCombinersById(combiner.getId())) {
             assertThat(response.getStatus()).isEqualTo(200);

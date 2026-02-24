@@ -59,9 +59,8 @@ public class CombinersResourceImplUpdateCombinerTest extends AbstractCombinersRe
         final Combiner combiner = createCombiner(EntityType.ADAPTER, DataIdentifierReference.TypeEnum.TOPIC_FILTER);
         combiner.getMappings()
                 .getItems()
-                .forEach(dataCombining -> dataCombining.getSources()
-                        .getPrimary()
-                        .setType(DataIdentifierReference.TypeEnum.PULSE_ASSET));
+                .forEach(dataCombining ->
+                        dataCombining.getSources().getPrimary().setType(DataIdentifierReference.TypeEnum.PULSE_ASSET));
 
         when(dataCombiningExtractor.getCombinerById(any())).thenReturn(Optional.of(toDataCombiner(combiner)));
 
@@ -76,7 +75,8 @@ public class CombinersResourceImplUpdateCombinerTest extends AbstractCombinersRe
         final Combiner combiner = createCombiner(EntityType.ADAPTER, DataIdentifierReference.TypeEnum.TOPIC_FILTER);
         combiner.getMappings().getItems().forEach(dataCombining -> dataCombining
                 .getInstructions()
-                .forEach(instruction -> instruction.getSourceRef().setType(DataIdentifierReference.TypeEnum.PULSE_ASSET)));
+                .forEach(instruction ->
+                        instruction.getSourceRef().setType(DataIdentifierReference.TypeEnum.PULSE_ASSET)));
 
         when(dataCombiningExtractor.getCombinerById(any())).thenReturn(Optional.of(toDataCombiner(combiner)));
 

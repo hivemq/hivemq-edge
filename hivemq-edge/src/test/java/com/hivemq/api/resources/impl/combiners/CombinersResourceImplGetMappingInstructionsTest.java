@@ -46,20 +46,27 @@ public class CombinersResourceImplGetMappingInstructionsTest extends AbstractCom
     public void whenMappingExists_thenReturnsInstructions() {
         final Combiner combiner = createCombiner(EntityType.ADAPTER, DataIdentifierReference.TypeEnum.TOPIC_FILTER);
         final UUID mappingId = combiner.getMappings().getItems().getFirst().getId();
-        when(dataCombiningExtractor.getCombinerById(combiner.getId())).thenReturn(Optional.of(toDataCombiner(combiner)));
+        when(dataCombiningExtractor.getCombinerById(combiner.getId()))
+                .thenReturn(Optional.of(toDataCombiner(combiner)));
 
         try (final Response response = combinersApi.getMappingInstructions(combiner.getId(), mappingId)) {
             assertThat(response.getStatus()).isEqualTo(200);
             assertThat(response.getEntity()).isInstanceOf(ItemsResponse.class);
             final ItemsResponse<Instruction> list = (ItemsResponse<Instruction>) response.getEntity();
-            assertThat(list.getItems()).hasSize(combiner.getMappings().getItems().getFirst().getInstructions().size());
+            assertThat(list.getItems())
+                    .hasSize(combiner.getMappings()
+                            .getItems()
+                            .getFirst()
+                            .getInstructions()
+                            .size());
         }
     }
 
     @Test
     public void whenMappingDoesNotExist_thenReturnsEmptyInstructions() {
         final Combiner combiner = createCombiner(EntityType.ADAPTER, DataIdentifierReference.TypeEnum.TOPIC_FILTER);
-        when(dataCombiningExtractor.getCombinerById(combiner.getId())).thenReturn(Optional.of(toDataCombiner(combiner)));
+        when(dataCombiningExtractor.getCombinerById(combiner.getId()))
+                .thenReturn(Optional.of(toDataCombiner(combiner)));
 
         try (final Response response = combinersApi.getMappingInstructions(combiner.getId(), UUID.randomUUID())) {
             assertThat(response.getStatus()).isEqualTo(200);
