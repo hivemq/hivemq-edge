@@ -18,7 +18,7 @@ describe('formatTopicString', () => {
     // only path slashes in the id segment are formatted.
     { topic: 'my-adapter :: my/tag/t1', expected: 'my-adapter :: my / tag / t1' },
     { topic: 'opcua-adapter :: a/b/c/d', expected: 'opcua-adapter :: a / b / c / d' },
-  ])('should returns $expected with $topic', ({ topic, expected }) => {
+  ])('should return $expected with $topic', ({ topic, expected }) => {
     expect(formatTopicString(topic)).toStrictEqual(expected)
   })
 })
