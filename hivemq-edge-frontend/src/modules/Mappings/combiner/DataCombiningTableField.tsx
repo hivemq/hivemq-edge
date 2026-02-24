@@ -47,6 +47,8 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
       id: uuidv4(),
       sources: {
         primary: { id: '', type: DataIdentifierReference.type.TAG },
+        // DEPRECATED: sources.tags and sources.topicFilters will be removed in future API version
+        // Backend reconstructs from instructions, so empty arrays are acceptable
         tags: [],
         topicFilters: [],
       },
@@ -62,6 +64,8 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
         id: uuidv4(),
         sources: {
           primary: { id: '', type: DataIdentifierReference.type.TAG },
+          // DEPRECATED: sources.tags and sources.topicFilters will be removed in future API version
+          // Backend reconstructs from instructions, so empty arrays are acceptable
           tags: [],
           topicFilters: [],
         },
