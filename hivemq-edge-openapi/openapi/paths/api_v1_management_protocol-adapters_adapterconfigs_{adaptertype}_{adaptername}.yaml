@@ -38,6 +38,12 @@ put:
           schema:
             $ref: ../components/schemas/ProblemDetails.yaml
       description: Adapter type not found
+    '409':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Tag already exists
     '500':
       content:
         application/json:
