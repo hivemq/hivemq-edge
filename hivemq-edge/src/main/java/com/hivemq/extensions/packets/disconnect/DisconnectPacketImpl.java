@@ -93,10 +93,9 @@ public class DisconnectPacketImpl implements DisconnectPacket {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof DisconnectPacketImpl)) {
+        if (!(o instanceof DisconnectPacketImpl that)) {
             return false;
         }
-        final DisconnectPacketImpl that = (DisconnectPacketImpl) o;
         return (reasonCode == that.reasonCode)
                 && Objects.equals(reasonString, that.reasonString)
                 && (sessionExpiryInterval == that.sessionExpiryInterval)

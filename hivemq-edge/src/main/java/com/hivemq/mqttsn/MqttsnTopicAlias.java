@@ -71,8 +71,7 @@ public class MqttsnTopicAlias {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof MqttsnTopicAlias)) return false;
-        MqttsnTopicAlias that = (MqttsnTopicAlias) o;
+        if (!(o instanceof MqttsnTopicAlias that)) return false;
         return topicName.equals(that.topicName);
     }
 

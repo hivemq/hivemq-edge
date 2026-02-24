@@ -55,8 +55,7 @@ public class TruststoreEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof TruststoreEntity)) return false;
-        final TruststoreEntity that = (TruststoreEntity) o;
+        if (!(o instanceof TruststoreEntity that)) return false;
         return Objects.equals(getPath(), that.getPath()) && Objects.equals(getPassword(), that.getPassword());
     }
 

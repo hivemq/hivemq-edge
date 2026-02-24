@@ -94,8 +94,7 @@ public class RemoteBrokerEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof RemoteBrokerEntity)) return false;
-        final RemoteBrokerEntity that = (RemoteBrokerEntity) o;
+        if (!(o instanceof RemoteBrokerEntity that)) return false;
         return getPort() == that.getPort()
                 && Objects.equals(getHost(), that.getHost())
                 && Objects.equals(getMqtt(), that.getMqtt())

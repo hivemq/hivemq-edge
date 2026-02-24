@@ -42,8 +42,7 @@ public abstract class EnabledEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof EnabledEntity)) return false;
-        final EnabledEntity that = (EnabledEntity) o;
+        if (!(o instanceof EnabledEntity that)) return false;
         return isEnabled() == that.isEnabled();
     }
 

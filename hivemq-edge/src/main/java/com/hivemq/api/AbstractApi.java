@@ -62,9 +62,9 @@ public abstract class AbstractApi {
             throw new ApiException("secure principal not available on context", HttpConstants.SC_UNAUTHORIZED);
         }
         Principal principal = securityContext.getUserPrincipal();
-        if (!(principal instanceof ApiPrincipal)) {
+        if (!(principal instanceof ApiPrincipal apiPrincipal)) {
             throw new ApiException("invalid principal type set on context", HttpConstants.SC_UNAUTHORIZED);
         }
-        return (ApiPrincipal) principal;
+        return apiPrincipal;
     }
 }

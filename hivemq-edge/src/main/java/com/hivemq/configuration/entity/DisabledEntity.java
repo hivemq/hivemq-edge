@@ -42,8 +42,7 @@ public abstract class DisabledEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof DisabledEntity)) return false;
-        final DisabledEntity that = (DisabledEntity) o;
+        if (!(o instanceof DisabledEntity that)) return false;
         return isEnabled() == that.isEnabled();
     }
 

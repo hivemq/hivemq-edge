@@ -347,10 +347,9 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PUBLISH)) {
+        if (!(o instanceof PUBLISH publish)) {
             return false;
         }
-        final PUBLISH publish = (PUBLISH) o;
         return timestamp == publish.timestamp
                 && duplicateDelivery == publish.duplicateDelivery
                 && retain == publish.retain

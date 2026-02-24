@@ -37,9 +37,8 @@ public class HttpsListenerEntity extends ApiListenerEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof HttpsListenerEntity)) return false;
+        if (!(o instanceof HttpsListenerEntity that)) return false;
         if (!super.equals(o)) return false;
-        final HttpsListenerEntity that = (HttpsListenerEntity) o;
         return Objects.equals(getTls(), that.getTls());
     }
 

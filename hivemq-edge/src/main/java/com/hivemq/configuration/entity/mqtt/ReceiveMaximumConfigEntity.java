@@ -40,8 +40,7 @@ public class ReceiveMaximumConfigEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof ReceiveMaximumConfigEntity)) return false;
-        final ReceiveMaximumConfigEntity that = (ReceiveMaximumConfigEntity) o;
+        if (!(o instanceof ReceiveMaximumConfigEntity that)) return false;
         return getServerReceiveMaximum() == that.getServerReceiveMaximum();
     }
 

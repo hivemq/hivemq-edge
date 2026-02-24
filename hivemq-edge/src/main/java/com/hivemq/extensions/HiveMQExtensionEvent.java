@@ -82,8 +82,7 @@ public class HiveMQExtensionEvent {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof HiveMQExtensionEvent)) return false;
-        HiveMQExtensionEvent that = (HiveMQExtensionEvent) o;
+        if (!(o instanceof HiveMQExtensionEvent that)) return false;
         return priority == that.priority
                 && change == that.change
                 && Objects.equals(extensionId, that.extensionId)

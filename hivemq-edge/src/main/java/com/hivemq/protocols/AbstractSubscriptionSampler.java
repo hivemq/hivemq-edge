@@ -129,10 +129,9 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
         if (this == o) {
             return true;
         }
-        if (!(o instanceof AbstractSubscriptionSampler)) {
+        if (!(o instanceof AbstractSubscriptionSampler that)) {
             return false;
         }
-        final AbstractSubscriptionSampler that = (AbstractSubscriptionSampler) o;
         return uuid.equals(that.uuid);
     }
 

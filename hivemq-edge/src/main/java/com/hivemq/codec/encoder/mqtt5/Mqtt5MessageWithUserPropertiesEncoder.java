@@ -79,13 +79,13 @@ abstract class Mqtt5MessageWithUserPropertiesEncoder<T extends Message> implemen
             final long maximumPacketSize = calculateMaxMessageSize(clientConnection);
 
             // PUBLISH must not omit any properties
-            if (msg instanceof PUBLISH) {
+            if (msg instanceof PUBLISH publish) {
                 // The maximal packet size exceeds the clients accepted packet size
-                clientConnection.getChannel().pipeline().fireUserEventTriggered(new PublishDroppedEvent((PUBLISH) msg));
+                clientConnection.getChannel().pipeline().fireUserEventTriggered(new PublishDroppedEvent(publish));
                 messageDroppedService.publishMaxPacketSizeExceeded(
                         clientId,
-                        ((PUBLISH) msg).getTopic(),
-                        ((PUBLISH) msg).getQoS().getQosNumber(),
+                        publish.getTopic(),
+                        publish.getQoS().getQosNumber(),
                         maximumPacketSize,
                         msg.getEncodedLength());
                 if (log.isTraceEnabled()) {

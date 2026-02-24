@@ -72,11 +72,9 @@ public class TopicFilterPojo {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof TopicFilterPojo)) {
+        if (!(o instanceof TopicFilterPojo that)) {
             return false;
         }
-
-        final TopicFilterPojo that = (TopicFilterPojo) o;
         return topicFilter.equals(that.topicFilter);
     }
 

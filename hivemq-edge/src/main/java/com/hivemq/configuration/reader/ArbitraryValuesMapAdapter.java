@@ -85,11 +85,10 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
         //        System.err.println("---> currentKeyName="+ currentKeyName + ", object=" + value + ", parentName=" +
         // parentName);
 
-        if (value instanceof Map) {
+        if (value instanceof Map map) {
             currentEl.add(new JAXBElement<>(
-                    new QName(currentKeyName), ElementMap.class, marshalInternal((Map) value, currentKeyName)));
-        } else if (value instanceof List) {
-            final List list = (List) value;
+                    new QName(currentKeyName), ElementMap.class, marshalInternal(map, currentKeyName)));
+        } else if (value instanceof List list) {
             if ("mqttUserProperties".equals(currentKeyName)) {
                 final List children = new ArrayList();
                 readChildren("mqttUserProperty", list, children, currentKeyName);
@@ -206,8 +205,8 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
         final Object prevValue = map.get(key);
         if (prevValue == null) {
             map.put(key, Lists.newArrayList(value));
-        } else if (prevValue instanceof List) {
-            ((List) prevValue).add(value);
+        } else if (prevValue instanceof List list) {
+            list.add(value);
         } else {
             map.replace(key, Lists.newArrayList(prevValue, value));
         }

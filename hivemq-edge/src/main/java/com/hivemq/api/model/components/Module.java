@@ -148,8 +148,7 @@ public class Module {
     @Override
     public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
-        if (!(o instanceof Module)) return false;
-        Module extension = (Module) o;
+        if (!(o instanceof Module extension)) return false;
         return Objects.equals(id, extension.id);
     }
 

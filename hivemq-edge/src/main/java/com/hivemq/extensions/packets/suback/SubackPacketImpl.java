@@ -84,10 +84,9 @@ public class SubackPacketImpl implements SubackPacket {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof SubackPacketImpl)) {
+        if (!(o instanceof SubackPacketImpl that)) {
             return false;
         }
-        final SubackPacketImpl that = (SubackPacketImpl) o;
         return reasonCodes.equals(that.reasonCodes)
                 && Objects.equals(reasonString, that.reasonString)
                 && (packetIdentifier == that.packetIdentifier)

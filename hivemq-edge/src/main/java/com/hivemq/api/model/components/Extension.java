@@ -124,8 +124,7 @@ public class Extension {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof Extension)) return false;
-        Extension extension = (Extension) o;
+        if (!(o instanceof Extension extension)) return false;
         return Objects.equals(id, extension.id);
     }
 

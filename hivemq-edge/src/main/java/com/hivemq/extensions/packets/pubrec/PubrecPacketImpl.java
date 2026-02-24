@@ -82,10 +82,9 @@ public class PubrecPacketImpl implements PubrecPacket {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PubrecPacketImpl)) {
+        if (!(o instanceof PubrecPacketImpl that)) {
             return false;
         }
-        final PubrecPacketImpl that = (PubrecPacketImpl) o;
         return (packetIdentifier == that.packetIdentifier)
                 && (reasonCode == that.reasonCode)
                 && Objects.equals(reasonString, that.reasonString)

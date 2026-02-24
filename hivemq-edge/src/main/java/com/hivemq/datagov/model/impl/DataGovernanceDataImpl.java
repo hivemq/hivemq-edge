@@ -53,10 +53,9 @@ public class DataGovernanceDataImpl implements DataGovernanceData {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof DataGovernanceDataImpl)) {
+        if (!(o instanceof DataGovernanceDataImpl that)) {
             return false;
         }
-        DataGovernanceDataImpl that = (DataGovernanceDataImpl) o;
         return Objects.equals(clientId, that.clientId) && Objects.equals(publish, that.publish);
     }
 

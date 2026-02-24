@@ -437,8 +437,8 @@ public class ConfigFileReaderWriter {
             log.error("Not able to parse configuration file because {}", sb);
             throw new UnrecoverableException(false);
         } catch (final Exception e) {
-            if (e.getCause() instanceof UnrecoverableException) {
-                if (((UnrecoverableException) e.getCause()).isShowException()) {
+            if (e.getCause() instanceof UnrecoverableException unrecoverableException) {
+                if (unrecoverableException.isShowException()) {
                     log.error("An unrecoverable Exception occurred. Exiting HiveMQ", e);
                     log.debug("Original error message:", e);
                 }

@@ -102,11 +102,11 @@ public class PublishServiceImpl implements PublishService {
         if (rateLimitService.rateLimitExceeded()) {
             return CompletableFuture.failedFuture(PluginServiceRateLimitService.RATE_LIMIT_EXCEEDED_EXCEPTION);
         }
-        if (!(publish instanceof PublishImpl)) {
+        if (!(publish instanceof PublishImpl publishImpl)) {
             return CompletableFuture.failedFuture(new DoNotImplementException(Publish.class.getSimpleName()));
         }
 
-        final PUBLISH internalPublish = publishToPUBLISH((PublishImpl) publish);
+        final PUBLISH internalPublish = publishToPUBLISH(publishImpl);
 
         final DataGovernanceData data = new DataGovernanceDataImpl.Builder()
                 .withPublish(internalPublish)
@@ -129,10 +129,10 @@ public class PublishServiceImpl implements PublishService {
         if (rateLimitService.rateLimitExceeded()) {
             return CompletableFuture.failedFuture(PluginServiceRateLimitService.RATE_LIMIT_EXCEEDED_EXCEPTION);
         }
-        if (!(publish instanceof PublishImpl)) {
+        if (!(publish instanceof PublishImpl publishImpl)) {
             return CompletableFuture.failedFuture(new DoNotImplementException(Publish.class.getSimpleName()));
         }
-        final PUBLISH internalPublish = publishToPUBLISH((PublishImpl) publish);
+        final PUBLISH internalPublish = publishToPUBLISH(publishImpl);
 
         final SettableFuture<PublishToClientResult> sendPublishFuture = SettableFuture.create();
         final SubscriberWithIdentifiers subscriber = topicTree.findSubscriber(clientId, publish.getTopic());

@@ -84,8 +84,7 @@ public class JaxrsRequestFilter implements ContainerRequestFilter {
 
     protected void printRequest(final @NotNull Request request) {
 
-        if (request instanceof ContainerRequest) {
-            ContainerRequest r = (ContainerRequest) request;
+        if (request instanceof ContainerRequest r) {
             logger.debug("*** Http-Request-Length: {}", r.getLength());
             logger.debug("*** Http-Request-Language: {}", r.getLanguage());
             logger.debug("*** Http-Request-Media-Types: {}", r.getAcceptableMediaTypes());

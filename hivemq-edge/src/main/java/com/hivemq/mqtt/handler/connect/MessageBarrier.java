@@ -56,7 +56,7 @@ public class MessageBarrier extends ChannelDuplexHandler {
     @Override
     public void channelRead(final @NotNull ChannelHandlerContext ctx, final @NotNull Object msg) {
 
-        if (msg instanceof Message) {
+        if (msg instanceof Message message) {
             if (msg instanceof CONNECT) {
                 connectReceived = true;
                 suspendRead(ctx.channel());
@@ -69,7 +69,7 @@ public class MessageBarrier extends ChannelDuplexHandler {
             } else if (msg instanceof AUTH) {
                 suspendRead(ctx.channel());
             } else if (!connackSent) {
-                messageQueue.add((Message) msg);
+                messageQueue.add(message);
                 return;
             }
         }
@@ -82,7 +82,7 @@ public class MessageBarrier extends ChannelDuplexHandler {
             final @NotNull Object msg,
             final @NotNull ChannelPromise promise) {
 
-        if ((msg instanceof CONNACK) && (((CONNACK) msg).getReasonCode() == Mqtt5ConnAckReasonCode.SUCCESS)) {
+        if ((msg instanceof CONNACK connack) && (connack.getReasonCode() == Mqtt5ConnAckReasonCode.SUCCESS)) {
             promise.addListener((ChannelFutureListener) future -> {
                 if (future.isSuccess()) {
                     future.channel().pipeline().remove(this);

@@ -104,10 +104,9 @@ public class MqttUserProperty implements UserProperty {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof MqttUserProperty)) {
+        if (!(o instanceof MqttUserProperty that)) {
             return false;
         }
-        final MqttUserProperty that = (MqttUserProperty) o;
         return name.equals(that.name) && value.equals(that.value);
     }
 

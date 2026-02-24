@@ -60,26 +60,26 @@ public class ChannelInitializerFactoryImpl implements ChannelInitializerFactory 
 
         checkNotNull(listener, "Listener must not be null");
 
-        if (listener instanceof MqttTcpListener) {
+        if (listener instanceof MqttTcpListener mqttTcpListener) {
 
-            if (listener instanceof MqttTlsTcpListener) {
-                return createTlsTcpInitializer((MqttTlsTcpListener) listener);
+            if (listener instanceof MqttTlsTcpListener mqttTlsTcpListener) {
+                return createTlsTcpInitializer(mqttTlsTcpListener);
             } else {
-                return createTcpInitializer((MqttTcpListener) listener);
+                return createTcpInitializer(mqttTcpListener);
             }
         }
 
-        if (listener instanceof MqttWebsocketListener) {
+        if (listener instanceof MqttWebsocketListener mqttWebsocketListener) {
 
-            if (listener instanceof MqttTlsWebsocketListener) {
-                return createTlsWebsocketInitializer((MqttTlsWebsocketListener) listener);
+            if (listener instanceof MqttTlsWebsocketListener mqttTlsWebsocketListener) {
+                return createTlsWebsocketInitializer(mqttTlsWebsocketListener);
             } else {
-                return createWebsocketInitializer((MqttWebsocketListener) listener);
+                return createWebsocketInitializer(mqttWebsocketListener);
             }
         }
 
-        if (listener instanceof MqttsnUdpListener) {
-            return createUdpInitializer((MqttsnUdpListener) listener);
+        if (listener instanceof MqttsnUdpListener mqttsnUdpListener) {
+            return createUdpInitializer(mqttsnUdpListener);
         }
 
         throw new IllegalArgumentException("Unknown listener type");

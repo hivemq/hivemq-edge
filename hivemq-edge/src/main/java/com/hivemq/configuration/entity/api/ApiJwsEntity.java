@@ -65,8 +65,7 @@ public class ApiJwsEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof ApiJwsEntity)) return false;
-        final ApiJwsEntity that = (ApiJwsEntity) o;
+        if (!(o instanceof ApiJwsEntity that)) return false;
         return getKeySize() == that.getKeySize()
                 && getExpiryTimeMinutes() == that.getExpiryTimeMinutes()
                 && getTokenEarlyEpochThresholdMinutes() == that.getTokenEarlyEpochThresholdMinutes()

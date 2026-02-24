@@ -291,8 +291,7 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
     @Override
     public void userEventTriggered(final @NotNull ChannelHandlerContext ctx, final @NotNull Object evt)
             throws Exception {
-        if (evt instanceof AuthorizeWillResultEvent) {
-            final AuthorizeWillResultEvent resultEvent = (AuthorizeWillResultEvent) evt;
+        if (evt instanceof AuthorizeWillResultEvent resultEvent) {
             afterPublishAuthorizer(ctx, resultEvent.getConnect(), resultEvent.getResult());
         } else {
             super.userEventTriggered(ctx, evt);

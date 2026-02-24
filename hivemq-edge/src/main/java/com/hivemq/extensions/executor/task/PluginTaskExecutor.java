@@ -244,8 +244,7 @@ public class PluginTaskExecutor {
                 }
 
                 final PluginTaskContext pluginContext = task.getPluginContext();
-                if (pluginContext instanceof PluginTaskPost) {
-                    final PluginTaskPost pluginPost = (PluginTaskPost) pluginContext;
+                if (pluginContext instanceof PluginTaskPost pluginPost) {
                     //noinspection unchecked: generics extends a PluginTaskOutput
                     pluginPost.pluginPost(outputObject);
                 }
@@ -313,12 +312,12 @@ public class PluginTaskExecutor {
                 final PluginTask pluginTask = task.getPluginTask();
                 thread.setContextClassLoader(pluginTask.getPluginClassLoader());
                 final PluginTaskOutput output;
-                if (pluginTask instanceof PluginInOutTask) {
-                    output = runInOutTask(task, (PluginInOutTask) pluginTask);
-                } else if (pluginTask instanceof PluginInTask) {
-                    output = runInTask(task, (PluginInTask) pluginTask);
-                } else if (pluginTask instanceof PluginOutTask) {
-                    output = runOutTask(task, (PluginOutTask) pluginTask);
+                if (pluginTask instanceof PluginInOutTask pluginInOutTask) {
+                    output = runInOutTask(task, pluginInOutTask);
+                } else if (pluginTask instanceof PluginInTask pluginInTask) {
+                    output = runInTask(task, pluginInTask);
+                } else if (pluginTask instanceof PluginOutTask pluginOutTask) {
+                    output = runOutTask(task, pluginOutTask);
                 } else {
                     throw new IllegalArgumentException("Unknown task type for extension task queue");
                 }

@@ -60,11 +60,9 @@ public class EntityReferenceEntity {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof EntityReferenceEntity)) {
+        if (!(o instanceof EntityReferenceEntity that)) {
             return false;
         }
-
-        final EntityReferenceEntity that = (EntityReferenceEntity) o;
         return type == that.type && id.equals(that.id);
     }
 

@@ -156,8 +156,7 @@ public class LdapAuthenticationEntity {
 
     @Override
     public boolean equals(final Object o) {
-        if (!(o instanceof LdapAuthenticationEntity)) return false;
-        final LdapAuthenticationEntity that = (LdapAuthenticationEntity) o;
+        if (!(o instanceof LdapAuthenticationEntity that)) return false;
         return getConnectTimeoutMillis() == that.getConnectTimeoutMillis()
                 && getResponseTimeoutMillis() == that.getResponseTimeoutMillis()
                 && getMaxConnections() == that.getMaxConnections()

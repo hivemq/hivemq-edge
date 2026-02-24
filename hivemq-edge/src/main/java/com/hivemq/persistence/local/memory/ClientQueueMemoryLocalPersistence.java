@@ -289,10 +289,9 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         final Iterator<MessageWithID> iterator = messages.qos1Or2Messages.iterator();
         while (iterator.hasNext()) {
             final MessageWithID messageWithID = iterator.next();
-            if (!(messageWithID instanceof PublishWithRetained)) {
+            if (!(messageWithID instanceof PublishWithRetained publishWithRetained)) {
                 continue;
             }
-            final PublishWithRetained publishWithRetained = (PublishWithRetained) messageWithID;
             if (publishWithRetained.getPacketIdentifier() != NO_PACKET_ID) {
                 // already inflight
                 continue;
@@ -359,10 +358,9 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         // Qos 1 and 2 has prio
         for (int index = 0; index < messages.qos1Or2Messages.size() && messageCount < maxMessages; index++) {
             final MessageWithID messageWithID = messages.qos1Or2Messages.get(index);
-            if (!(messageWithID instanceof PublishWithRetained)) {
+            if (!(messageWithID instanceof PublishWithRetained publishWithRetained)) {
                 continue;
             }
-            final PublishWithRetained publishWithRetained = (PublishWithRetained) messageWithID;
             if (publishWithRetained.getPacketIdentifier() != NO_PACKET_ID) {
                 // already inflight
                 continue;
@@ -466,8 +464,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
             publishes.add(messageWithID);
             messageCount++;
 
-            if (messageWithID instanceof PublishWithRetained) {
-                final PublishWithRetained publishWithRetained = (PublishWithRetained) messageWithID;
+            if (messageWithID instanceof PublishWithRetained publishWithRetained) {
                 bytes += publishWithRetained.getEstimatedSizeInMemory();
                 publishWithRetained.setDuplicateDelivery(true);
             }
@@ -511,8 +508,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
             }
             if (packetId == pubrel.getPacketIdentifier()) {
                 packetIdFound = true;
-                if (messageWithID instanceof PublishWithRetained) {
-                    final PublishWithRetained publish = (PublishWithRetained) messageWithID;
+                if (messageWithID instanceof PublishWithRetained publish) {
                     retained = publish.retained;
                     // the payloads for QoS-0 messages are not extracted and their reference count is not incremented.
                     // therefor it must not be decremented
@@ -523,8 +519,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
                     pubrel.setMessageExpiryInterval(publish.getMessageExpiryInterval());
                     pubrel.setPublishTimestamp(publish.getTimestamp());
                     replacedId = publish.getUniqueId();
-                } else if (messageWithID instanceof PubrelWithRetained) {
-                    final PubrelWithRetained pubrelWithRetained = (PubrelWithRetained) messageWithID;
+                } else if (messageWithID instanceof PubrelWithRetained pubrelWithRetained) {
                     pubrel.setMessageExpiryInterval(pubrelWithRetained.getMessageExpiryInterval());
                     pubrel.setPublishTimestamp(pubrelWithRetained.getPublishTimestamp());
                     retained = pubrelWithRetained.retained;
@@ -574,8 +569,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
             final MessageWithID messageWithID = iterator.next();
             if (messageWithID.getPacketIdentifier() == packetId) {
                 String removedId = null;
-                if (messageWithID instanceof PublishWithRetained) {
-                    final PublishWithRetained publish = (PublishWithRetained) messageWithID;
+                if (messageWithID instanceof PublishWithRetained publish) {
                     if (uniqueId != null && !uniqueId.equals(publish.getUniqueId())) {
                         break;
                     }
@@ -627,8 +621,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         }
 
         for (final MessageWithID messageWithID : messages.qos1Or2Messages) {
-            if (messageWithID instanceof PublishWithRetained) {
-                final PublishWithRetained publish = (PublishWithRetained) messageWithID;
+            if (messageWithID instanceof PublishWithRetained publish) {
                 // the payloads for QoS-0 messages are not extracted and their reference count is not incremented.
                 // therefor it must not be decremented
                 if (publish.getQoS() != QoS.AT_MOST_ONCE) {
@@ -713,8 +706,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         final Iterator<MessageWithID> iterator = messages.qos1Or2Messages.iterator();
         while (iterator.hasNext()) {
             final MessageWithID messageWithID = iterator.next();
-            if (messageWithID instanceof PublishWithRetained) {
-                final PublishWithRetained publish = (PublishWithRetained) messageWithID;
+            if (messageWithID instanceof PublishWithRetained publish) {
                 if (!uniqueId.equals(publish.getUniqueId())) {
                     continue;
                 }
@@ -751,8 +743,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         }
 
         for (final MessageWithID messageWithID : messages.qos1Or2Messages) {
-            if (messageWithID instanceof PublishWithRetained) {
-                final PublishWithRetained publish = (PublishWithRetained) messageWithID;
+            if (messageWithID instanceof PublishWithRetained publish) {
                 if (!uniqueId.equals(publish.getUniqueId())) {
                     continue;
                 }
@@ -778,8 +769,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         }
 
         for (final MessageWithID messageWithID : messages.qos1Or2Messages) {
-            if (messageWithID instanceof PublishWithRetained) {
-                final PublishWithRetained publish = (PublishWithRetained) messageWithID;
+            if (messageWithID instanceof PublishWithRetained publish) {
                 publish.setPacketIdentifier(NO_PACKET_ID);
             }
         }
@@ -796,21 +786,21 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
     }
 
     private int getMessageSize(final @NotNull MessageWithID messageWithID) {
-        if (messageWithID instanceof PublishWithRetained) {
-            return ((PublishWithRetained) messageWithID).getEstimatedSize();
+        if (messageWithID instanceof PublishWithRetained publishWithRetained) {
+            return publishWithRetained.getEstimatedSize();
         }
-        if (messageWithID instanceof PubrelWithRetained) {
-            return ((PubrelWithRetained) messageWithID).getEstimatedSize();
+        if (messageWithID instanceof PubrelWithRetained pubrelWithRetained) {
+            return pubrelWithRetained.getEstimatedSize();
         }
         return 0;
     }
 
     private boolean isRetained(final @NotNull MessageWithID messageWithID) {
-        if (messageWithID instanceof PublishWithRetained) {
-            return ((PublishWithRetained) messageWithID).retained;
+        if (messageWithID instanceof PublishWithRetained publishWithRetained) {
+            return publishWithRetained.retained;
         }
-        if (messageWithID instanceof PubrelWithRetained) {
-            return ((PubrelWithRetained) messageWithID).retained;
+        if (messageWithID instanceof PubrelWithRetained pubrelWithRetained) {
+            return pubrelWithRetained.retained;
         }
         return false;
     }
@@ -875,10 +865,9 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         final Iterator<MessageWithID> iterator = messages.qos1Or2Messages.iterator();
         while (iterator.hasNext()) {
             final MessageWithID messageWithID = iterator.next();
-            if (!(messageWithID instanceof PublishWithRetained)) {
+            if (!(messageWithID instanceof PublishWithRetained publish)) {
                 continue;
             }
-            final PublishWithRetained publish = (PublishWithRetained) messageWithID;
             // we must no discard inflight messages
             if (publish.getPacketIdentifier() != NO_PACKET_ID) {
                 continue;
@@ -922,8 +911,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         final Iterator<MessageWithID> qos12iterator = messages.qos1Or2Messages.iterator();
         while (qos12iterator.hasNext()) {
             final MessageWithID messageWithID = qos12iterator.next();
-            if (messageWithID instanceof PubrelWithRetained) {
-                final PubrelWithRetained pubrel = (PubrelWithRetained) messageWithID;
+            if (messageWithID instanceof PubrelWithRetained pubrel) {
                 if (!InternalConfigurations.EXPIRE_INFLIGHT_PUBRELS_ENABLED) {
                     continue;
                 }
@@ -939,8 +927,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
                 increaseMessagesMemory(-pubrel.getEstimatedSize());
                 qos12iterator.remove();
 
-            } else if (messageWithID instanceof PublishWithRetained) {
-                final PublishWithRetained publish = (PublishWithRetained) messageWithID;
+            } else if (messageWithID instanceof PublishWithRetained publish) {
                 final boolean expireInflight = InternalConfigurations.EXPIRE_INFLIGHT_MESSAGES_ENABLED;
                 final boolean isInflight = publish.getQoS() == QoS.EXACTLY_ONCE && publish.getPacketIdentifier() > 0;
                 final boolean drop = publish.isExpired() && (!isInflight || expireInflight);

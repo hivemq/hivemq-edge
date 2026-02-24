@@ -112,8 +112,7 @@ public record LdapConnectionProperties(
 
         @Override
         public boolean equals(final Object o) {
-            if (!(o instanceof LdapSimpleBind)) return false;
-            final LdapSimpleBind that = (LdapSimpleBind) o;
+            if (!(o instanceof LdapSimpleBind that)) return false;
             return Objects.equals(rdns(), that.rdns()) && Objects.equals(userPassword(), that.userPassword());
         }
 
@@ -147,8 +146,7 @@ public record LdapConnectionProperties(
 
         @Override
         public boolean equals(final Object o) {
-            if (!(o instanceof LdapServers)) return false;
-            final LdapServers that = (LdapServers) o;
+            if (!(o instanceof LdapServers that)) return false;
             return Objects.deepEquals(hosts(), that.hosts()) && Objects.deepEquals(ports(), that.ports());
         }
 
@@ -174,8 +172,7 @@ public record LdapConnectionProperties(
 
         @Override
         public boolean equals(final Object o) {
-            if (!(o instanceof TrustStore)) return false;
-            final TrustStore that = (TrustStore) o;
+            if (!(o instanceof TrustStore that)) return false;
             return Objects.equals(trustStorePath(), that.trustStorePath())
                     && Objects.equals(trustStoreType(), that.trustStoreType())
                     && Objects.equals(trustStorePassword(), that.trustStorePassword());
@@ -457,8 +454,7 @@ public record LdapConnectionProperties(
 
     @Override
     public boolean equals(final Object o) {
-        if (!(o instanceof LdapConnectionProperties)) return false;
-        final LdapConnectionProperties that = (LdapConnectionProperties) o;
+        if (!(o instanceof LdapConnectionProperties that)) return false;
         return maxConnections() == that.maxConnections()
                 && connectTimeoutMillis() == that.connectTimeoutMillis()
                 && searchTimeoutSeconds() == that.searchTimeoutSeconds()

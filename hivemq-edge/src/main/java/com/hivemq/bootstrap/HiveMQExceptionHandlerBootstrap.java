@@ -46,15 +46,15 @@ public class HiveMQExceptionHandlerBootstrap {
 
     @VisibleForTesting
     static void handleUncaughtException(final Thread t, final Throwable e) {
-        if (e instanceof UnrecoverableException) {
-            if (((UnrecoverableException) e).isShowException()) {
+        if (e instanceof UnrecoverableException unrecoverableException) {
+            if (unrecoverableException.isShowException()) {
                 log.error("An unrecoverable Exception occurred. Exiting HiveMQ", t, e);
             }
             terminator.get().run();
         }
         final Throwable rootCause = Throwables.getRootCause(e);
-        if (rootCause instanceof UnrecoverableException) {
-            final boolean showException = ((UnrecoverableException) rootCause).isShowException();
+        if (rootCause instanceof UnrecoverableException unrecoverableRootCause) {
+            final boolean showException = unrecoverableRootCause.isShowException();
             if (showException) {
                 log.error("Cause: ", e);
             }

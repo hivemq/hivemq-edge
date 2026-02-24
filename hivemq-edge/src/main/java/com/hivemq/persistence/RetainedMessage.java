@@ -209,11 +209,9 @@ public class RetainedMessage {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof RetainedMessage)) {
+        if (!(o instanceof RetainedMessage that)) {
             return false;
         }
-
-        final RetainedMessage that = (RetainedMessage) o;
 
         if (messageExpiryInterval != that.messageExpiryInterval) {
             return false;

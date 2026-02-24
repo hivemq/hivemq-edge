@@ -42,8 +42,7 @@ public class QoSConfigEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof QoSConfigEntity)) return false;
-        final QoSConfigEntity that = (QoSConfigEntity) o;
+        if (!(o instanceof QoSConfigEntity that)) return false;
         return getMaxQos() == that.getMaxQos();
     }
 

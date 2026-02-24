@@ -52,8 +52,7 @@ public class DataPointImpl implements DataPoint {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof DataPointImpl)) return false;
-        final DataPointImpl dataPoint = (DataPointImpl) o;
+        if (!(o instanceof DataPointImpl dataPoint)) return false;
         return treatAsJson == dataPoint.treatAsJson
                 && Objects.equals(getTagValue(), dataPoint.getTagValue())
                 && Objects.equals(getTagName(), dataPoint.getTagName());

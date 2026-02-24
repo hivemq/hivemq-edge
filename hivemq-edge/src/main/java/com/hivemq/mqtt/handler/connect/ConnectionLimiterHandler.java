@@ -78,9 +78,7 @@ public class ConnectionLimiterHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(final @NotNull ChannelHandlerContext ctx, final @NotNull Object msg) throws Exception {
-        if (msg instanceof CONNECT) {
-
-            final CONNECT connect = (CONNECT) msg;
+        if (msg instanceof CONNECT connect) {
 
             final long currentCount = openConnectionsGauge.getValue();
 

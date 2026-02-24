@@ -94,10 +94,9 @@ public class InstructionEntity implements EntityValidatable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof InstructionEntity)) {
+        if (!(o instanceof InstructionEntity that)) {
             return false;
         }
-        final InstructionEntity that = (InstructionEntity) o;
         return Objects.equals(getSourceFieldName(), that.getSourceFieldName())
                 && Objects.equals(getDestinationFieldName(), that.getDestinationFieldName());
     }
