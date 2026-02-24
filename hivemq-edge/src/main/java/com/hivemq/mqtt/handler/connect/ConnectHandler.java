@@ -93,6 +93,7 @@ import org.slf4j.LoggerFactory;
  */
 @Singleton
 @ChannelHandler.Sharable
+@SuppressWarnings("FutureReturnValueIgnored")
 public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(ConnectHandler.class);

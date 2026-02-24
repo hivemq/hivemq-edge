@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * @author Silvio Giebl
  */
+@SuppressWarnings("EnumOrdinal")
 public enum Mqtt5SubAckReasonCode implements Mqtt5ReasonCode {
     GRANTED_QOS_0(0x00),
     GRANTED_QOS_1(0x01),

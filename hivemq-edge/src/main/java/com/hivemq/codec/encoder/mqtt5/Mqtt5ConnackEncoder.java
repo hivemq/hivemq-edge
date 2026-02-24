@@ -31,6 +31,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * @author Florian Limpöck
  */
+@SuppressWarnings("EnumOrdinal")
 public class Mqtt5ConnackEncoder
         extends Mqtt5MessageWithUserPropertiesEncoder.Mqtt5MessageWithReasonStringEncoder<CONNACK> {
 

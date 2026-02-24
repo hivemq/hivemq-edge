@@ -35,6 +35,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Florian Limpöck
  */
 @Singleton
+@SuppressWarnings("EnumOrdinal")
 public class Mqtt5PublishEncoder extends Mqtt5MessageWithUserPropertiesEncoder<PUBLISH> {
 
     private static final int FIXED_HEADER = MessageType.PUBLISH.ordinal() << 4;

@@ -59,6 +59,7 @@ import org.slf4j.LoggerFactory;
  * @author Florian Limpöck
  * @since 4.0.0
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 public class PluginInitializerHandler extends ChannelOutboundHandlerAdapter {
 
     private static final Logger log = LoggerFactory.getLogger(PluginInitializerHandler.class);

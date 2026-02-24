@@ -57,6 +57,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("FutureReturnValueIgnored")
 public abstract class AbstractChannelInitializer<T extends Channel> extends ChannelInitializer<T> {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractChannelInitializer.class);

@@ -65,6 +65,7 @@ import org.slf4j.LoggerFactory;
  * @author Christoph Schäbel
  * @author Simon L Johnson
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 public class UdpChannelInitializer extends AbstractChannelInitializer<UdpChannel> {
 
     private static final Logger logger = LoggerFactory.getLogger(UdpChannelInitializer.class);

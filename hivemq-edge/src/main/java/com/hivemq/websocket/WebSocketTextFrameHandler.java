@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Lukas Brandl
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 public class WebSocketTextFrameHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {
 
     private static final Logger log = LoggerFactory.getLogger(WebSocketTextFrameHandler.class);

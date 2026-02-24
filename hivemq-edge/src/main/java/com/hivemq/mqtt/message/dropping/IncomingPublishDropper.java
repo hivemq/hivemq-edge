@@ -35,6 +35,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class IncomingPublishDropper {
 
     private final @NotNull MqttServerDisconnector mqttDisconnector;

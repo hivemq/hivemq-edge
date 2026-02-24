@@ -41,6 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class MqttServerDisconnectorImpl implements MqttServerDisconnector {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(MqttServerDisconnectorImpl.class);

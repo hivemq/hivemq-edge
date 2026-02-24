@@ -34,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Florian Limpöck
  * @since 4.0
  */
+@SuppressWarnings("EnumOrdinal")
 public class Mqtt5AuthEncoder
         extends Mqtt5MessageWithUserPropertiesEncoder.Mqtt5MessageWithOmissibleReasonCodeEncoder<
                 AUTH, Mqtt5AuthReasonCode> {

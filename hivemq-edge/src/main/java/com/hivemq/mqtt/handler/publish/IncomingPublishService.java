@@ -55,6 +55,7 @@ import org.jetbrains.annotations.Nullable;
  * @author Florian Limpöck
  */
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class IncomingPublishService {
 
     private final @NotNull MqttConfigurationService mqttConfigurationService;

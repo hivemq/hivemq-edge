@@ -45,6 +45,7 @@ import org.jetbrains.annotations.Nullable;
  * @author Dominik Obermaier
  * @author Christoph Schäbel
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 public class SendRetainedMessagesListener implements ChannelFutureListener {
 
     private final @NotNull RetainedMessagePersistence retainedMessagePersistence;

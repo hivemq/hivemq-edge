@@ -13,6 +13,7 @@ digitalpetri-modbus-tcp = "2.1.4"
 dropwizard-metrics = "4.2.38"
 equalsverifier = "3.19.4"
 errorprone = "2.45.0"
+
 freemarker = "2.3.34"
 future-converter = "1.2.0"
 guava = "33.4.8-jre"

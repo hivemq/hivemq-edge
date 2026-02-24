@@ -57,6 +57,7 @@ import org.jetbrains.annotations.NotNull;
  * @since 4.1.0
  */
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class PluginAuthorizerServiceImpl implements PluginAuthorizerService {
 
     private final @NotNull Authorizers authorizers;

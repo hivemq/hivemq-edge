@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
  */
 @Singleton
 @ChannelHandler.Sharable
+@SuppressWarnings("FutureReturnValueIgnored")
 public class PingRequestHandler extends SimpleChannelInboundHandler<PINGREQ> {
 
     private final Logger log = LoggerFactory.getLogger(PingRequestHandler.class);

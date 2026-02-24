@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 /**
  * A message barrier which blocks (or queues) messages if they are sent before the connection was approved
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 public class MessageBarrier extends ChannelDuplexHandler {
 
     private static final Logger log = LoggerFactory.getLogger(MessageBarrier.class);

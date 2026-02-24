@@ -59,6 +59,7 @@ import org.slf4j.LoggerFactory;
  * @since 4.1.0
  */
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class IncomingSubscribeHandler {
 
     private static final Logger log = LoggerFactory.getLogger(IncomingSubscribeHandler.class);

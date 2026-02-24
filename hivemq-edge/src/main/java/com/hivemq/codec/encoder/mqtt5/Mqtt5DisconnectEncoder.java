@@ -34,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Florian Limpöck
  */
 @Singleton
+@SuppressWarnings("EnumOrdinal")
 public class Mqtt5DisconnectEncoder
         extends Mqtt5MessageWithOmissibleReasonCodeEncoder<DISCONNECT, Mqtt5DisconnectReasonCode> {
 

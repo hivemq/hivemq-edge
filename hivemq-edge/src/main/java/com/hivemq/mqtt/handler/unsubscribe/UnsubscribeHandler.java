@@ -50,6 +50,7 @@ import org.slf4j.LoggerFactory;
  */
 @Singleton
 @ChannelHandler.Sharable
+@SuppressWarnings("FutureReturnValueIgnored")
 public class UnsubscribeHandler extends SimpleChannelInboundHandler<UNSUBSCRIBE> {
 
     private static final Logger log = LoggerFactory.getLogger(UnsubscribeHandler.class);

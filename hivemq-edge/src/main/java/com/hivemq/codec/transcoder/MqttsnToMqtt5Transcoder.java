@@ -58,6 +58,7 @@ import org.slj.mqtt.sn.wire.version1_2.payload.*;
  * @author Simon L Johnson
  */
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class MqttsnToMqtt5Transcoder implements ITranscoder<IMqttsnMessage, Message> {
 
     private static final Logger log = LoggerFactory.getLogger(MqttsnToMqtt5Transcoder.class);

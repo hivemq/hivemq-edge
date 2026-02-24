@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Singleton
 public class PluginServiceRateLimitService {
 
+    @SuppressWarnings("StaticAssignmentOfThrowable")
     public static final RateLimitExceededException RATE_LIMIT_EXCEEDED_EXCEPTION = new RateLimitExceededException();
 
     private final AtomicInteger counter = new AtomicInteger(0);
