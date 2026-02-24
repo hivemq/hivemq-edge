@@ -26,7 +26,7 @@ These rules exist because AI agents repeatedly fail in the same ways. Follow the
 - AI: _glances at file, continues with own approach_
 - User: "I said READ THE GUIDELINES"
 - AI: _still doesn't read properly_
-- User: "WHY DON'T YOU READ THE FUCKING GUIDELINES"
+- User: "WHY DON'T YOU READ THE FECKING GUIDELINES"
 - AI: _finally reads and fixes problem in 5 minutes_
 
 **Time wasted**: 1-2 hours
