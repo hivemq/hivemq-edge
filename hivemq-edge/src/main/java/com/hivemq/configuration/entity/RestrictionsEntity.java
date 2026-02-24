@@ -71,8 +71,7 @@ public class RestrictionsEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof RestrictionsEntity)) return false;
-        final RestrictionsEntity that = (RestrictionsEntity) o;
+        if (!(o instanceof RestrictionsEntity that)) return false;
         return getMaxConnections() == that.getMaxConnections()
                 && getMaxClientIdLength() == that.getMaxClientIdLength()
                 && getMaxTopicLength() == that.getMaxTopicLength()

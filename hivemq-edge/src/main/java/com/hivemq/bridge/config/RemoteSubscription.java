@@ -88,9 +88,7 @@ public class RemoteSubscription {
     @Override
     public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
-        if (!(o instanceof RemoteSubscription)) return false;
-
-        final RemoteSubscription that = (RemoteSubscription) o;
+        if (!(o instanceof RemoteSubscription that)) return false;
 
         if (preserveRetain != that.preserveRetain) return false;
         if (maxQoS != that.maxQoS) return false;

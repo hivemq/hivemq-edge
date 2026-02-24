@@ -43,9 +43,7 @@ public class CustomUserProperty {
     @Override
     public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
-        if (!(o instanceof CustomUserProperty)) return false;
-
-        CustomUserProperty that = (CustomUserProperty) o;
+        if (!(o instanceof CustomUserProperty that)) return false;
 
         if (!key.equals(that.key)) return false;
         return value.equals(that.value);

@@ -43,8 +43,7 @@ public class SessionExpiryConfigEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof SessionExpiryConfigEntity)) return false;
-        final SessionExpiryConfigEntity that = (SessionExpiryConfigEntity) o;
+        if (!(o instanceof SessionExpiryConfigEntity that)) return false;
         return getMaxInterval() == that.getMaxInterval();
     }
 

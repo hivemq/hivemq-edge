@@ -66,8 +66,7 @@ public class KeystoreEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof KeystoreEntity)) return false;
-        final KeystoreEntity that = (KeystoreEntity) o;
+        if (!(o instanceof KeystoreEntity that)) return false;
         return Objects.equals(getPath(), that.getPath())
                 && Objects.equals(getPassword(), that.getPassword())
                 && Objects.equals(getPrivateKeyPassword(), that.getPrivateKeyPassword());

@@ -44,8 +44,7 @@ public class UsageTrackingConfigEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof UsageTrackingConfigEntity)) return false;
-        final UsageTrackingConfigEntity that = (UsageTrackingConfigEntity) o;
+        if (!(o instanceof UsageTrackingConfigEntity that)) return false;
         return isEnabled() == that.isEnabled();
     }
 

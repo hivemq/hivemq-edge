@@ -90,10 +90,9 @@ public class SubscribePacketImpl implements SubscribePacket {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof SubscribePacketImpl)) {
+        if (!(o instanceof SubscribePacketImpl that)) {
             return false;
         }
-        final SubscribePacketImpl that = (SubscribePacketImpl) o;
         return subscriptions.equals(that.subscriptions)
                 && userProperties.equals(that.userProperties)
                 && (subscriptionIdentifier == that.subscriptionIdentifier)

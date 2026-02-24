@@ -108,11 +108,9 @@ public class BridgeTls {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof BridgeTls)) {
+        if (!(o instanceof BridgeTls bridgeTls)) {
             return false;
         }
-
-        BridgeTls bridgeTls = (BridgeTls) o;
 
         if (!Objects.equals(keystorePath, bridgeTls.keystorePath)) {
             return false;

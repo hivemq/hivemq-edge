@@ -99,10 +99,9 @@ public class WillPublishPacketImpl extends PublishPacketImpl implements WillPubl
         if (this == o) {
             return true;
         }
-        if (!(o instanceof WillPublishPacketImpl) || !super.equals(o)) {
+        if (!(o instanceof WillPublishPacketImpl that) || !super.equals(o)) {
             return false;
         }
-        final WillPublishPacketImpl that = (WillPublishPacketImpl) o;
         return willDelay == that.willDelay;
     }
 

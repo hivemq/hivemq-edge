@@ -111,8 +111,7 @@ public class BridgeTlsEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof BridgeTlsEntity)) return false;
-        final BridgeTlsEntity that = (BridgeTlsEntity) o;
+        if (!(o instanceof BridgeTlsEntity that)) return false;
         return isEnabled() == that.isEnabled()
                 && getHandshakeTimeout() == that.getHandshakeTimeout()
                 && isVerifyHostname() == that.isVerifyHostname()

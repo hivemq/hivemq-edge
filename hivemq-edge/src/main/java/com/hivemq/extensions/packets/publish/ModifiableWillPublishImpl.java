@@ -81,10 +81,9 @@ public class ModifiableWillPublishImpl extends ModifiablePublishPacketImpl imple
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ModifiableWillPublishImpl) || !super.equals(o)) {
+        if (!(o instanceof ModifiableWillPublishImpl that) || !super.equals(o)) {
             return false;
         }
-        final ModifiableWillPublishImpl that = (ModifiableWillPublishImpl) o;
         return willDelay == that.willDelay;
     }
 

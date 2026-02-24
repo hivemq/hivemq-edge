@@ -120,10 +120,9 @@ public class Mqtt5UserProperties {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Mqtt5UserProperties)) {
+        if (!(o instanceof Mqtt5UserProperties that)) {
             return false;
         }
-        final Mqtt5UserProperties that = (Mqtt5UserProperties) o;
         return userProperties.equals(that.userProperties);
     }
 

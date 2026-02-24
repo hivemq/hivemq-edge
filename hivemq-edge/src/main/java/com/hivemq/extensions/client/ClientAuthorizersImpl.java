@@ -55,11 +55,11 @@ public class ClientAuthorizersImpl implements ClientAuthorizers {
         final Lock lock = authorizerLock.writeLock();
         lock.lock();
         try {
-            if (authorizer instanceof SubscriptionAuthorizer) {
-                subscriptionAuthorizerMap.put(pluginId, (SubscriptionAuthorizer) authorizer);
+            if (authorizer instanceof SubscriptionAuthorizer subscriptionAuthorizer) {
+                subscriptionAuthorizerMap.put(pluginId, subscriptionAuthorizer);
             }
-            if (authorizer instanceof PublishAuthorizer) {
-                publishAuthorizerMap.put(pluginId, (PublishAuthorizer) authorizer);
+            if (authorizer instanceof PublishAuthorizer publishAuthorizer) {
+                publishAuthorizerMap.put(pluginId, publishAuthorizer);
             }
         } finally {
             lock.unlock();

@@ -40,8 +40,7 @@ public class BridgeWebsocketConfig {
     @Override
     public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
-        if (!(o instanceof BridgeWebsocketConfig)) return false;
-        final BridgeWebsocketConfig that = (BridgeWebsocketConfig) o;
+        if (!(o instanceof BridgeWebsocketConfig that)) return false;
         return Objects.equals(path, that.path) && Objects.equals(subProtocol, that.subProtocol);
     }
 

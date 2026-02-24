@@ -67,8 +67,7 @@ public class SecurityConfigEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof SecurityConfigEntity)) return false;
-        final SecurityConfigEntity that = (SecurityConfigEntity) o;
+        if (!(o instanceof SecurityConfigEntity that)) return false;
         return Objects.equals(getPayloadFormatValidationEntity(), that.getPayloadFormatValidationEntity())
                 && Objects.equals(getUtf8ValidationEntity(), that.getUtf8ValidationEntity())
                 && Objects.equals(getAllowEmptyClientIdEntity(), that.getAllowEmptyClientIdEntity())

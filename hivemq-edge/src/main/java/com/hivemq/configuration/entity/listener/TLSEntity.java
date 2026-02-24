@@ -88,8 +88,7 @@ public class TLSEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof TLSEntity)) return false;
-        final TLSEntity tlsEntity = (TLSEntity) o;
+        if (!(o instanceof TLSEntity tlsEntity)) return false;
         return Objects.equals(getKeystoreEntity(), tlsEntity.getKeystoreEntity())
                 && Objects.equals(getTruststoreEntity(), tlsEntity.getTruststoreEntity())
                 && getHandshakeTimeout() == tlsEntity.getHandshakeTimeout()

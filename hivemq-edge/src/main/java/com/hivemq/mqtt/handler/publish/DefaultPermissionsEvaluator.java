@@ -240,8 +240,7 @@ public final class DefaultPermissionsEvaluator {
             final @NotNull String[] splitTopic) {
 
         try {
-            if (topicPermission instanceof InternalTopicPermission) {
-                final InternalTopicPermission internalTopicPermission = (InternalTopicPermission) topicPermission;
+            if (topicPermission instanceof InternalTopicPermission internalTopicPermission) {
                 return PermissionTopicMatcherUtils.matches(
                         StringUtils.stripEnd(topicPermission.getTopicFilter(), "/"),
                         ((InternalTopicPermission) topicPermission).getSplitTopic(),

@@ -84,10 +84,9 @@ public class UnsubackPacketImpl implements UnsubackPacket {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof UnsubackPacketImpl)) {
+        if (!(o instanceof UnsubackPacketImpl that)) {
             return false;
         }
-        final UnsubackPacketImpl that = (UnsubackPacketImpl) o;
         return reasonCodes.equals(that.reasonCodes)
                 && Objects.equals(reasonString, that.reasonString)
                 && (packetIdentifier == that.packetIdentifier)

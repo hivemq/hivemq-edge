@@ -61,8 +61,8 @@ public class SubscribeMessageBarrier extends ChannelDuplexHandler {
 
     @Override
     public void channelRead(final @NotNull ChannelHandlerContext ctx, final @NotNull Object msg) throws Exception {
-        if (msg instanceof Message && !(msg instanceof PINGREQ)) {
-            messageQueue.add((Message) msg);
+        if (msg instanceof Message message && !(msg instanceof PINGREQ)) {
+            messageQueue.add(message);
             return;
         }
 

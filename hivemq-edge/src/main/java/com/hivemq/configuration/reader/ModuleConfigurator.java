@@ -50,12 +50,12 @@ public class ModuleConfigurator implements Configurator<Map<String, Object>> {
         final Map<String, Object> configMap = new HashMap<>();
         for (final String key : configEntity.keySet()) {
             Object value = configEntity.get(key);
-            if (value instanceof List) {
+            if (value instanceof List list) {
                 // if its a <structural element> ie. a list, create a shallow copy to additions and removals are
                 // distinct
-                value = new ArrayList((List) value);
-            } else if (value instanceof Map) {
-                value = new HashMap<>((Map) value);
+                value = new ArrayList(list);
+            } else if (value instanceof Map map) {
+                value = new HashMap<>(map);
             }
             configMap.put(key, value);
         }

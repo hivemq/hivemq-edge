@@ -42,8 +42,7 @@ public class PacketsConfigEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof PacketsConfigEntity)) return false;
-        final PacketsConfigEntity that = (PacketsConfigEntity) o;
+        if (!(o instanceof PacketsConfigEntity that)) return false;
         return getMaxPacketSize() == that.getMaxPacketSize();
     }
 

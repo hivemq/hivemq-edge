@@ -60,10 +60,9 @@ public class TrustStoreEntity {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof TrustStoreEntity)) {
+        if (!(o instanceof TrustStoreEntity that)) {
             return false;
         }
-        final TrustStoreEntity that = (TrustStoreEntity) o;
         return Objects.equals(trustStorePath, that.trustStorePath)
                 && Objects.equals(trustStorePassword, that.trustStorePassword)
                 && Objects.equals(trustStoreType, that.trustStoreType);

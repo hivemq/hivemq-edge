@@ -72,10 +72,9 @@ public class UnsubscribePacketImpl implements UnsubscribePacket {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof UnsubscribePacketImpl)) {
+        if (!(o instanceof UnsubscribePacketImpl that)) {
             return false;
         }
-        final UnsubscribePacketImpl that = (UnsubscribePacketImpl) o;
         return topicFilters.equals(that.topicFilters)
                 && userProperties.equals(that.userProperties)
                 && (packetIdentifier == that.packetIdentifier);

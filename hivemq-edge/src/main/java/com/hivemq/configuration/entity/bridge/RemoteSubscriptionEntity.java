@@ -92,8 +92,7 @@ public class RemoteSubscriptionEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof RemoteSubscriptionEntity)) return false;
-        final RemoteSubscriptionEntity that = (RemoteSubscriptionEntity) o;
+        if (!(o instanceof RemoteSubscriptionEntity that)) return false;
         return getMaxQoS() == that.getMaxQoS()
                 && isPreserveRetain() == that.isPreserveRetain()
                 && Objects.equals(getFilters(), that.getFilters())

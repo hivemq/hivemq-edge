@@ -234,10 +234,9 @@ public class ConnackPacketImpl implements ConnackPacket {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ConnackPacketImpl)) {
+        if (!(o instanceof ConnackPacketImpl that)) {
             return false;
         }
-        final ConnackPacketImpl that = (ConnackPacketImpl) o;
         return (reasonCode == that.reasonCode)
                 && (sessionPresent == that.sessionPresent)
                 && (sessionExpiryInterval == that.sessionExpiryInterval)

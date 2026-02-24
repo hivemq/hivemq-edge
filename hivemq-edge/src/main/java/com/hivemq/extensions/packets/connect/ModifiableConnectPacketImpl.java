@@ -342,11 +342,11 @@ public class ModifiableConnectPacketImpl implements ModifiableConnectPacket {
         final ModifiableWillPublishImpl modifiableWillPublish;
         if (willPublish == null) {
             modifiableWillPublish = null;
-        } else if (willPublish instanceof WillPublishPacketImpl) {
+        } else if (willPublish instanceof WillPublishPacketImpl willPublishPacketImpl) {
             modifiableWillPublish =
-                    new ModifiableWillPublishImpl((WillPublishPacketImpl) willPublish, configurationService);
-        } else if (willPublish instanceof ModifiableWillPublishImpl) {
-            modifiableWillPublish = (ModifiableWillPublishImpl) willPublish;
+                    new ModifiableWillPublishImpl(willPublishPacketImpl, configurationService);
+        } else if (willPublish instanceof ModifiableWillPublishImpl modifiableWillPublishImpl) {
+            modifiableWillPublish = modifiableWillPublishImpl;
         } else {
             throw new DoNotImplementException(WillPublishPacket.class.getSimpleName());
         }

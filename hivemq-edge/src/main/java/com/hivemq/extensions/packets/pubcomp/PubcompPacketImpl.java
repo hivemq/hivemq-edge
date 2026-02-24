@@ -82,10 +82,9 @@ public class PubcompPacketImpl implements PubcompPacket {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PubcompPacketImpl)) {
+        if (!(o instanceof PubcompPacketImpl that)) {
             return false;
         }
-        final PubcompPacketImpl that = (PubcompPacketImpl) o;
         return (packetIdentifier == that.packetIdentifier)
                 && (reasonCode == that.reasonCode)
                 && Objects.equals(reasonString, that.reasonString)

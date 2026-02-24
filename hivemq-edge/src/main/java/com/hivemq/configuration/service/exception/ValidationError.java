@@ -39,9 +39,7 @@ public class ValidationError {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof ValidationError)) return false;
-
-        final ValidationError that = (ValidationError) o;
+        if (!(o instanceof ValidationError that)) return false;
 
         return message != null ? message.equals(that.message) : that.message == null;
     }

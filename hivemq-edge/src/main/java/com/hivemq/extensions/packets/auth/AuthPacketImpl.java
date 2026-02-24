@@ -105,10 +105,9 @@ public class AuthPacketImpl implements AuthPacket {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof AuthPacketImpl)) {
+        if (!(o instanceof AuthPacketImpl that)) {
             return false;
         }
-        final AuthPacketImpl that = (AuthPacketImpl) o;
         return (reasonCode == that.reasonCode)
                 && method.equals(that.method)
                 && Arrays.equals(data, that.data)

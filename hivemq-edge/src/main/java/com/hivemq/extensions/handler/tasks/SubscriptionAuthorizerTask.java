@@ -100,8 +100,8 @@ public class SubscriptionAuthorizerTask
         if (authorizer == null) {
             try {
                 final Authorizer authorizerProvided = authorizerProvider.getAuthorizer(authorizerProviderInput);
-                if (authorizerProvided instanceof SubscriptionAuthorizer) {
-                    authorizer = (SubscriptionAuthorizer) authorizerProvided;
+                if (authorizerProvided instanceof SubscriptionAuthorizer subscriptionAuthorizer) {
+                    authorizer = subscriptionAuthorizer;
                     clientAuthorizers.put(pluginId, authorizer);
                 }
             } catch (final Throwable t) {

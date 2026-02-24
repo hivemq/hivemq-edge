@@ -72,11 +72,9 @@ public class DataCombiningSourcesEntity {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof DataCombiningSourcesEntity)) {
+        if (!(o instanceof DataCombiningSourcesEntity that)) {
             return false;
         }
-
-        final DataCombiningSourcesEntity that = (DataCombiningSourcesEntity) o;
         return primaryIdentifier.equals(that.primaryIdentifier)
                 && tags.equals(that.tags)
                 && topicFilters.equals(that.topicFilters);

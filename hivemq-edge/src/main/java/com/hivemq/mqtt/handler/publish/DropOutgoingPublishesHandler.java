@@ -60,17 +60,16 @@ public class DropOutgoingPublishesHandler {
             throws Exception {
         if (!ctx.channel().isWritable()) {
 
-            if (msg instanceof PUBLISH) {
+            if (msg instanceof PUBLISH publish) {
                 if (notWritableMessages.get() < notWritableQueueSize) {
                     notWritableMessages.incrementAndGet();
                     promise.addListeners(decrementCounterListener);
                     return false;
                 }
 
-                final PUBLISH publish = (PUBLISH) msg;
-                if ((publish).getQoS() == QoS.AT_MOST_ONCE) {
-                    if (msg instanceof PublishWithFuture) {
-                        final SettableFuture<PublishStatus> future = ((PublishWithFuture) msg).getFuture();
+                if (publish.getQoS() == QoS.AT_MOST_ONCE) {
+                    if (msg instanceof PublishWithFuture publishWithFuture) {
+                        final SettableFuture<PublishStatus> future = publishWithFuture.getFuture();
                         future.set(PublishStatus.CHANNEL_NOT_WRITABLE);
                     }
                     // Drop message

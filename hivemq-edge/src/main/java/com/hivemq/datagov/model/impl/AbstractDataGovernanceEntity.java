@@ -70,8 +70,7 @@ public abstract class AbstractDataGovernanceEntity implements DataGovernanceEnti
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof AbstractDataGovernanceEntity)) return false;
-        AbstractDataGovernanceEntity that = (AbstractDataGovernanceEntity) o;
+        if (!(o instanceof AbstractDataGovernanceEntity that)) return false;
         return Objects.equals(id, that.id);
     }
 

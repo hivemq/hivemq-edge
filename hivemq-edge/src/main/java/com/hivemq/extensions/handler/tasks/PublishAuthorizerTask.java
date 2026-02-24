@@ -112,8 +112,8 @@ public class PublishAuthorizerTask implements PluginInOutTask<PublishAuthorizerI
         if (authorizer == null) {
             try {
                 final Authorizer authorizerProvided = authorizerProvider.getAuthorizer(authorizerProviderInput);
-                if (authorizerProvided instanceof PublishAuthorizer) {
-                    authorizer = (PublishAuthorizer) authorizerProvided;
+                if (authorizerProvided instanceof PublishAuthorizer publishAuthorizer) {
+                    authorizer = publishAuthorizer;
                     clientAuthorizers.put(pluginId, authorizer);
                 }
             } catch (final Throwable t) {

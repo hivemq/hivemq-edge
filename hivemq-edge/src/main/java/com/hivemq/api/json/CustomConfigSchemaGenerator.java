@@ -254,11 +254,11 @@ public class CustomConfigSchemaGenerator {
         protected @Nullable ModuleConfigField getModuleFieldInfo(MemberScope<?, ?> member) {
             ModuleConfigField annotation = member.getAnnotation(ModuleConfigField.class);
             if (annotation == null) {
-                MemberScope<?, ?> source;
-                if (member instanceof FieldScope) {
-                    source = ((FieldScope) member).findGetter();
-                } else if (member instanceof MethodScope) {
-                    source = ((MethodScope) member).findGetterField();
+                final MemberScope<?, ?> source;
+                if (member instanceof FieldScope fieldScope) {
+                    source = fieldScope.findGetter();
+                } else if (member instanceof MethodScope methodScope) {
+                    source = methodScope.findGetterField();
                 } else {
                     source = null;
                 }

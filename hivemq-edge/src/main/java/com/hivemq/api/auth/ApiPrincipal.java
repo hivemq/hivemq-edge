@@ -71,8 +71,7 @@ public class ApiPrincipal implements Principal {
 
     @Override
     public boolean equals(final Object o) {
-        if (!(o instanceof ApiPrincipal)) return false;
-        final ApiPrincipal that = (ApiPrincipal) o;
+        if (!(o instanceof ApiPrincipal that)) return false;
         return Objects.equals(getName(), that.getName()) && Objects.equals(getRoles(), that.getRoles());
     }
 

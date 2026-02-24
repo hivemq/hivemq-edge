@@ -68,8 +68,7 @@ public class ApiJwtConfiguration {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof ApiJwtConfiguration)) return false;
-        ApiJwtConfiguration that = (ApiJwtConfiguration) o;
+        if (!(o instanceof ApiJwtConfiguration that)) return false;
         return keySize == that.keySize
                 && expiryTimeMinutes == that.expiryTimeMinutes
                 && tokenEarlyEpochThresholdMinutes == that.tokenEarlyEpochThresholdMinutes
