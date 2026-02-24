@@ -30,7 +30,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings("FutureReturnValueIgnored")
+@SuppressWarnings({"FutureReturnValueIgnored", "CheckReturnValue"})
 public abstract class QueueConsumer {
 
     private static final int READ_LIMIT = 1;

@@ -18,7 +18,6 @@ package com.hivemq.http;
 import jakarta.ws.rs.core.MediaType;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
@@ -149,31 +148,28 @@ public interface HttpConstants {
     int SC_HTTP_VERSION_NOT_SUPPORTED = 505;
 
     @NotNull
-    Map<String, String> MIME_MAP = new HashMap<>() {
-        {
-            put("appcache", "text/cache-manifest");
-            put("css", "text/css");
-            put("woff", "font/woff");
-            put("woff2", "font/woff2");
-            put("ttf", "font/ttf");
-            put("gif", "image/gif");
-            put("htm", "text/html");
-            put("html", "text/html");
-            put("ico", "image/vnd.microsoft.icon");
-            put("js", "application/javascript");
-            put("json", "application/json");
-            put("jpg", "image/jpeg");
-            put("jpeg", "image/jpeg");
-            put("mp4", "video/mp4");
-            put("pdf", "application/pdf");
-            put("png", "image/png");
-            put("svg", "image/svg+xml");
-            put("xml", "application/xml");
-            put("zip", "application/zip");
-            put("md", "text/plain");
-            put("txt", "text/plain");
-            put("webp", "image/webp");
-            put("webmanifest", "application/manifest+json");
-        }
-    };
+    Map<String, String> MIME_MAP = Map.ofEntries(
+            Map.entry("appcache", "text/cache-manifest"),
+            Map.entry("css", "text/css"),
+            Map.entry("woff", "font/woff"),
+            Map.entry("woff2", "font/woff2"),
+            Map.entry("ttf", "font/ttf"),
+            Map.entry("gif", "image/gif"),
+            Map.entry("htm", "text/html"),
+            Map.entry("html", "text/html"),
+            Map.entry("ico", "image/vnd.microsoft.icon"),
+            Map.entry("js", "application/javascript"),
+            Map.entry("json", "application/json"),
+            Map.entry("jpg", "image/jpeg"),
+            Map.entry("jpeg", "image/jpeg"),
+            Map.entry("mp4", "video/mp4"),
+            Map.entry("pdf", "application/pdf"),
+            Map.entry("png", "image/png"),
+            Map.entry("svg", "image/svg+xml"),
+            Map.entry("xml", "application/xml"),
+            Map.entry("zip", "application/zip"),
+            Map.entry("md", "text/plain"),
+            Map.entry("txt", "text/plain"),
+            Map.entry("webp", "image/webp"),
+            Map.entry("webmanifest", "application/manifest+json"));
 }
