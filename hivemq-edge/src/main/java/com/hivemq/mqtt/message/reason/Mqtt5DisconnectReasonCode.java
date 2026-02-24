@@ -94,6 +94,7 @@ public enum Mqtt5DisconnectReasonCode implements Mqtt5ReasonCode {
     @SuppressWarnings("MultipleNullnessAnnotations")
     private static final @NotNull Mqtt5DisconnectReasonCode @NotNull [] DISCONNECT_LOOKUP =
             new Mqtt5DisconnectReasonCode[DisconnectReasonCode.values().length];
+
     @SuppressWarnings("MultipleNullnessAnnotations")
     private static final @Nullable Mqtt5DisconnectReasonCode @NotNull [] DISCONNECTED_LOOKUP =
             new Mqtt5DisconnectReasonCode[DisconnectedReasonCode.values().length];

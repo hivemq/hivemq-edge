@@ -15,8 +15,6 @@
  */
 package com.hivemq.persistence;
 
-import com.hivemq.persistence.SingleWriterService.Task;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.FutureCallback;
@@ -25,6 +23,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
+import com.hivemq.persistence.SingleWriterService.Task;
 import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
 import com.hivemq.util.ThreadFactoryUtil;
 import java.util.List;

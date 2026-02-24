@@ -20,7 +20,6 @@ import com.hivemq.mqtt.message.MessageWithID;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Iterator;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

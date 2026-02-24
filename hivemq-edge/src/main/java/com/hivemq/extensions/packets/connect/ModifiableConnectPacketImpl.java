@@ -343,8 +343,7 @@ public class ModifiableConnectPacketImpl implements ModifiableConnectPacket {
         if (willPublish == null) {
             modifiableWillPublish = null;
         } else if (willPublish instanceof WillPublishPacketImpl willPublishPacketImpl) {
-            modifiableWillPublish =
-                    new ModifiableWillPublishImpl(willPublishPacketImpl, configurationService);
+            modifiableWillPublish = new ModifiableWillPublishImpl(willPublishPacketImpl, configurationService);
         } else if (willPublish instanceof ModifiableWillPublishImpl modifiableWillPublishImpl) {
             modifiableWillPublish = modifiableWillPublishImpl;
         } else {
