@@ -18,7 +18,6 @@ package com.hivemq.configuration.entity;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
-import java.util.Objects;
 
 /**
  * @author Florian Limpöck

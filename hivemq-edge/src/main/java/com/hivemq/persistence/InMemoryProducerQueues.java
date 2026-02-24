@@ -72,7 +72,6 @@ public class InMemoryProducerQueues implements ProducerQueues {
             queues[i] = new MpscUnboundedArrayQueue<>(32);
             wips[i] = new AtomicInteger();
         }
-
     }
 
     @VisibleForTesting
