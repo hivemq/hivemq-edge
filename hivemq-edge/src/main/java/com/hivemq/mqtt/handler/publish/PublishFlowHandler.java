@@ -52,6 +52,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Florian Limpöck
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 public class PublishFlowHandler extends ChannelDuplexHandler {
 
     @NotNull

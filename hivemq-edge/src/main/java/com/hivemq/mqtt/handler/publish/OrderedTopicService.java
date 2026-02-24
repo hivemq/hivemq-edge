@@ -43,9 +43,11 @@ import org.slf4j.LoggerFactory;
  * @author Christoph Schäbel
  * @author Florian Limpöck
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 public class OrderedTopicService {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(OrderedTopicService.class);
+    @SuppressWarnings("StaticAssignmentOfThrowable")
     private static final @NotNull ClosedChannelException CLOSED_CHANNEL_EXCEPTION = new ClosedChannelException();
 
     static {

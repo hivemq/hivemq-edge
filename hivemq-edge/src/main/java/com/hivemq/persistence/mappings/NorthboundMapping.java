@@ -26,6 +26,7 @@ import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@SuppressWarnings("EnumOrdinal")
 public class NorthboundMapping implements PollingContext {
 
     private static final int DEFAULT_QOS = QoS.EXACTLY_ONCE.ordinal();

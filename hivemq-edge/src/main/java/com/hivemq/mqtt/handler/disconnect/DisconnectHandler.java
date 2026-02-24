@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @ChannelHandler.Sharable
+@SuppressWarnings("FutureReturnValueIgnored")
 public class DisconnectHandler extends SimpleChannelInboundHandler<DISCONNECT> {
 
     private static final Logger log = LoggerFactory.getLogger(DisconnectHandler.class);

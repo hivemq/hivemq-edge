@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * @author Silvio Giebl
  */
+@SuppressWarnings("EnumOrdinal")
 public enum Mqtt5ConnAckReasonCode implements Mqtt5ReasonCode {
     SUCCESS(MqttCommonReasonCode.SUCCESS),
     UNSPECIFIED_ERROR(MqttCommonReasonCode.UNSPECIFIED_ERROR),

@@ -39,6 +39,7 @@ import org.jetbrains.annotations.NotNull;
  */
 @Singleton
 @ChannelHandler.Sharable
+@SuppressWarnings("FutureReturnValueIgnored")
 public class InterceptorHandler extends ChannelDuplexHandler {
 
     private final @NotNull ConnectInboundInterceptorHandler connectInboundInterceptorHandler;

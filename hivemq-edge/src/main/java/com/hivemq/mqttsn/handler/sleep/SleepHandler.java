@@ -29,6 +29,7 @@ import org.slj.mqtt.sn.wire.version1_2.payload.MqttsnDisconnect;
 
 @Singleton
 @ChannelHandler.Sharable
+@SuppressWarnings("FutureReturnValueIgnored")
 public class SleepHandler extends SimpleChannelInboundHandler<MqttsnDisconnect> {
 
     private static final Logger log = LoggerFactory.getLogger(SleepHandler.class);

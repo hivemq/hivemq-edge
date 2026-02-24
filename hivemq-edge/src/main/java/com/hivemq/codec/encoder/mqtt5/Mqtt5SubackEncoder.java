@@ -32,6 +32,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Florian Limpöck
  */
 @Singleton
+@SuppressWarnings("EnumOrdinal")
 public class Mqtt5SubackEncoder extends Mqtt5MessageWithReasonStringEncoder<SUBACK> {
 
     private static final int FIXED_HEADER = MessageType.SUBACK.ordinal() << 4;

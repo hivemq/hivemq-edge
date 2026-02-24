@@ -33,6 +33,7 @@ import org.jctools.queues.MpscLinkedQueue;
 import org.jetbrains.annotations.NotNull;
 
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class KeepAliveDisconnectService {
 
     private final @NotNull MqttServerDisconnector mqttServerDisconnector;

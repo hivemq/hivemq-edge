@@ -29,6 +29,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("FutureReturnValueIgnored")
 public class SendRetainedMessageResultListener implements FutureCallback<Void> {
 
     private static final Logger log = LoggerFactory.getLogger(SendRetainedMessageResultListener.class);

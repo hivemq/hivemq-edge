@@ -23,6 +23,7 @@ package com.hivemq.persistence;
  * @author Waldemar Ruck
  */
 public class NoSessionException extends RuntimeException {
+    @SuppressWarnings("StaticAssignmentOfThrowable")
     public static final NoSessionException INSTANCE = new NoSessionException();
 
     static {

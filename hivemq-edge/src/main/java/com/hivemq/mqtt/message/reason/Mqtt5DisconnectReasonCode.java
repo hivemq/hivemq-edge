@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * @author Silvio Giebl
  */
+@SuppressWarnings("EnumOrdinal")
 public enum Mqtt5DisconnectReasonCode implements Mqtt5ReasonCode {
     NORMAL_DISCONNECTION(0x00),
     DISCONNECT_WITH_WILL_MESSAGE(0x04),

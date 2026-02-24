@@ -29,6 +29,7 @@ import org.jetbrains.annotations.Nullable;
  * Represents an MQTTSN connection in the system
  * @author Simon L Johnson
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 public class MqttsnClientConnection extends ClientConnection {
 
     private volatile @NotNull MqttsnClientState mqttsnClientState = MqttsnClientState.DISCONNECTED;

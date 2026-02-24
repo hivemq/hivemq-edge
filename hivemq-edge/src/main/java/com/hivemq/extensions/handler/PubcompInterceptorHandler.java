@@ -53,6 +53,7 @@ import org.slf4j.LoggerFactory;
  * @author Silvio Giebl
  */
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class PubcompInterceptorHandler {
 
     private static final Logger log = LoggerFactory.getLogger(PubcompInterceptorHandler.class);

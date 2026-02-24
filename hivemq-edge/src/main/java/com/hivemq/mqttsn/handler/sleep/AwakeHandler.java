@@ -32,6 +32,7 @@ import org.slj.mqtt.sn.wire.version1_2.payload.MqttsnPingreq;
 
 @Singleton
 @ChannelHandler.Sharable
+@SuppressWarnings("FutureReturnValueIgnored")
 public class AwakeHandler extends SimpleChannelInboundHandler<MqttsnPingreq> {
 
     private static final Logger log = LoggerFactory.getLogger(AwakeHandler.class);

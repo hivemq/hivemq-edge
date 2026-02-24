@@ -28,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
  * @since 4.0
  */
 @Singleton
+@SuppressWarnings("EnumOrdinal")
 public class Mqtt5PubrecEncoder
         extends Mqtt5MessageWithUserPropertiesEncoder.Mqtt5MessageWithIdAndOmissibleReasonCodeEncoder<
                 PUBREC, Mqtt5PubRecReasonCode> {

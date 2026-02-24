@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * @author Florian Limpöck
  */
+@SuppressWarnings("EnumOrdinal")
 public class MetaInformationSerializer {
 
     @NotNull

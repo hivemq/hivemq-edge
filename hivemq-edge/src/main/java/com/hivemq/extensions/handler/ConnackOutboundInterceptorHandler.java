@@ -58,6 +58,7 @@ import org.slf4j.LoggerFactory;
  * @since 4.2.0
  */
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class ConnackOutboundInterceptorHandler {
 
     private static final Logger log = LoggerFactory.getLogger(ConnackOutboundInterceptorHandler.class);

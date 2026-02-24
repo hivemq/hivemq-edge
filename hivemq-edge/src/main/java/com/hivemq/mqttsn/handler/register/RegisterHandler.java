@@ -38,6 +38,7 @@ import org.slj.mqtt.sn.wire.version1_2.payload.MqttsnRegister;
  */
 @Singleton
 @ChannelHandler.Sharable
+@SuppressWarnings("FutureReturnValueIgnored")
 public class RegisterHandler extends SimpleChannelInboundHandler<MqttsnRegister> {
 
     private static final Logger log = LoggerFactory.getLogger(RegisterHandler.class);

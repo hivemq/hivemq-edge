@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Dominik Obermaier
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 public class SendRetainedMessageListenerAndScheduleNext implements FutureCallback<Void> {
 
     private static final Logger log = LoggerFactory.getLogger(SendRetainedMessageListenerAndScheduleNext.class);

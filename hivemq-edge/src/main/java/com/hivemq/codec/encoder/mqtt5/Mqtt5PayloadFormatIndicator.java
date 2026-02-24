@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * @author Silvio Giebl
  */
+@SuppressWarnings("EnumOrdinal")
 public enum Mqtt5PayloadFormatIndicator {
     UNSPECIFIED,
     UTF_8;
