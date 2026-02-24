@@ -29,6 +29,7 @@ import com.hivemq.api.errors.pulse.ActivationTokenNotDeletedError;
 import com.hivemq.api.errors.pulse.AssetMapperNotFoundError;
 import com.hivemq.api.errors.pulse.AssetMapperReferencedError;
 import com.hivemq.api.errors.pulse.DuplicatedManagedAssetIdError;
+import com.hivemq.api.errors.pulse.InvalidDataIdentifierReferenceTypeForAssetMapperError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetMappingIdError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetSchemaError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetTopicError;
@@ -684,39 +685,58 @@ public class PulseApiImpl implements PulseApi {
             // Validate primary TAG reference has scope and exists, and TOPIC_FILTER has no scope
             final DataIdentifierReference primaryRef = dataCombining.sources().primaryReference();
             if (primaryRef != null) {
-                if (primaryRef.type() == DataIdentifierReference.Type.TAG) {
-                    if (primaryRef.scope() == null || primaryRef.scope().isBlank()) {
-                        return Optional.of(
-                                ErrorResponseUtil.errorResponse(new MissingScopeForTagError(primaryRef.id())));
-                    }
-                    final Optional<Response> tagValidationError = validateTagExists(primaryRef, adapterToTags);
-                    if (tagValidationError.isPresent()) {
-                        return tagValidationError;
-                    }
-                } else if (primaryRef.type() == DataIdentifierReference.Type.TOPIC_FILTER) {
-                    if (primaryRef.scope() != null && !primaryRef.scope().isBlank()) {
+                switch (primaryRef.type()) {
+                    case PULSE_ASSET -> {
                         return Optional.of(ErrorResponseUtil.errorResponse(
-                                new UnexpectedScopeError(primaryRef.type(), primaryRef.id())));
+                                new InvalidDataIdentifierReferenceTypeForAssetMapperError(
+                                        DataIdentifierReference.Type.PULSE_ASSET)));
                     }
+                    case TAG -> {
+                        if (primaryRef.scope() == null || primaryRef.scope().isBlank()) {
+                            return Optional.of(
+                                    ErrorResponseUtil.errorResponse(new MissingScopeForTagError(primaryRef.id())));
+                        }
+                        final Optional<Response> tagValidationError = validateTagExists(primaryRef, adapterToTags);
+                        if (tagValidationError.isPresent()) {
+                            return tagValidationError;
+                        }
+                    }
+                    case TOPIC_FILTER -> {
+                        if (primaryRef.scope() != null && !primaryRef.scope().isBlank()) {
+                            return Optional.of(ErrorResponseUtil.errorResponse(
+                                    new UnexpectedScopeError(primaryRef.type(), primaryRef.id())));
+                        }
+                    }
+                    default -> {}
                 }
             }
             // Validate TAG references in instructions have scope and exist, and TOPIC_FILTER has no scope
             for (final var instruction : dataCombining.instructions()) {
                 final DataIdentifierReference ref = instruction.dataIdentifierReference();
                 if (ref != null) {
-                    if (ref.type() == DataIdentifierReference.Type.TAG) {
-                        if (ref.scope() == null || ref.scope().isBlank()) {
-                            return Optional.of(ErrorResponseUtil.errorResponse(new MissingScopeForTagError(ref.id())));
+                    switch (ref.type()) {
+                        case PULSE_ASSET -> {
+                            return Optional.of(ErrorResponseUtil.errorResponse(
+                                    new InvalidDataIdentifierReferenceTypeForAssetMapperError(
+                                            DataIdentifierReference.Type.PULSE_ASSET)));
                         }
-                        final Optional<Response> tagValidationError = validateTagExists(ref, adapterToTags);
-                        if (tagValidationError.isPresent()) {
-                            return tagValidationError;
+                        case TAG -> {
+                            if (ref.scope() == null || ref.scope().isBlank()) {
+                                return Optional.of(
+                                        ErrorResponseUtil.errorResponse(new MissingScopeForTagError(ref.id())));
+                            }
+                            final Optional<Response> tagValidationError = validateTagExists(ref, adapterToTags);
+                            if (tagValidationError.isPresent()) {
+                                return tagValidationError;
+                            }
                         }
-                    } else if (ref.type() == DataIdentifierReference.Type.TOPIC_FILTER) {
-                        if (ref.scope() != null && !ref.scope().isBlank()) {
-                            return Optional.of(
-                                    ErrorResponseUtil.errorResponse(new UnexpectedScopeError(ref.type(), ref.id())));
+                        case TOPIC_FILTER -> {
+                            if (ref.scope() != null && !ref.scope().isBlank()) {
+                                return Optional.of(ErrorResponseUtil.errorResponse(
+                                        new UnexpectedScopeError(ref.type(), ref.id())));
+                            }
                         }
+                        default -> {}
                     }
                 }
             }
