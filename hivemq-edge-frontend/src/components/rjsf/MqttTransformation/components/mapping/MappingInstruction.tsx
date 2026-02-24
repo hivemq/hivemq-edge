@@ -1,4 +1,4 @@
-import type { FC } from 'react'
+import type { FC, ReactNode } from 'react'
 import { useMemo } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -20,9 +20,12 @@ import {
 } from '@chakra-ui/react'
 import { RiDeleteBin2Fill, RiFormula } from 'react-icons/ri'
 
-import type { DataIdentifierReference, Instruction } from '@/api/__generated__'
+import { DataIdentifierReference } from '@/api/__generated__'
+import type { Instruction } from '@/api/__generated__'
 import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import IconButton from '@/components/Chakra/IconButton.tsx'
+import { PLCTag, TopicFilter } from '@/components/MQTT/EntityTag.tsx'
+import { formatOwnershipString } from '@/components/MQTT/topic-utils.ts'
 import PropertyItem from '@/components/rjsf/MqttTransformation/components/schema/PropertyItem.tsx'
 import {
   formatPath,
@@ -34,6 +37,12 @@ import {
 import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import { useAccessibleDraggable } from '@/hooks/useAccessibleDraggable'
 import { getDropZoneBorder } from '@/modules/Theme/utils.ts'
+
+function resolveSourceOwner(ref: DataIdentifierReference | null | undefined): ReactNode {
+  if (ref?.type === DataIdentifierReference.type.TAG) return <PLCTag tagTitle={formatOwnershipString(ref)} />
+  if (ref?.type === DataIdentifierReference.type.TOPIC_FILTER) return <TopicFilter tagTitle={ref.id} />
+  return null
+}
 
 enum DropState {
   IDLE = 'IDLE',
@@ -110,6 +119,8 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
 
   const isSupported = isMappingSupported(property)
 
+  const sourceOwner = resolveSourceOwner(instruction?.sourceRef)
+
   const onHandleClear = () => {
     setState(DropState.IDLE)
     const fullPath = [...property.path, property.key].join('.')
@@ -149,73 +160,76 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
           <PropertyItem property={property} hasTooltip hasPathAsName={showPathAsName} />
         </CardHeader>
 
-        <CardBody display="flex" flexDirection="row" gap={2}>
-          <Box
-            tabIndex={isDragging && source && isValidDrop(property) ? 0 : undefined}
-            {...getDropZoneBorder(activeColor)}
-            backgroundColor={backgroundColor}
-            p={4}
-            py={2}
-            margin="auto"
-            ref={dropTargetRef}
-            data-testid="mapping-instruction-dropzone"
-            role="group"
-            aria-label={t('rjsf.MqttTransformationField.instructions.dropzone.role')}
-            flex={3}
-            onKeyUp={(e) => {
-              if (isDragging && source && e.key === 'Enter' && isValidDrop(property)) {
-                const sourceRef: DataIdentifierReference | undefined = source?.dataReference
-                  ? {
-                      id: source?.dataReference.id,
-                      type: source?.dataReference.type,
-                      scope: source?.dataReference.scope ?? null,
-                    }
-                  : undefined
-                onChange?.(
-                  [...source.property.path, source.property.key].join('.') as string,
-                  [...property.path, property.key].join('.') as string,
-                  sourceRef
-                )
+        <CardBody display="flex" flexDirection="column" gap={0}>
+          {sourceOwner && <HStack data-testid="mapping-instruction-source-owner">{sourceOwner}</HStack>}
+          <HStack gap={2}>
+            <Box
+              tabIndex={isDragging && source && isValidDrop(property) ? 0 : undefined}
+              {...getDropZoneBorder(activeColor)}
+              backgroundColor={backgroundColor}
+              p={4}
+              py={2}
+              margin="auto"
+              ref={dropTargetRef}
+              data-testid="mapping-instruction-dropzone"
+              role="group"
+              aria-label={t('rjsf.MqttTransformationField.instructions.dropzone.role')}
+              flex={3}
+              onKeyUp={(e) => {
+                if (isDragging && source && e.key === 'Enter' && isValidDrop(property)) {
+                  const sourceRef: DataIdentifierReference | undefined = source?.dataReference
+                    ? {
+                        id: source?.dataReference.id,
+                        type: source?.dataReference.type,
+                        scope: source?.dataReference.scope ?? null,
+                      }
+                    : undefined
+                  onChange?.(
+                    [...source.property.path, source.property.key].join('.') as string,
+                    [...property.path, property.key].join('.') as string,
+                    sourceRef
+                  )
 
-                endDragging(property)
-              }
-            }}
-            sx={{
-              '&:focus-visible': {
-                boxShadow: 'var(--chakra-shadows-outline)',
-                outline: 'unset',
-              },
-            }}
-          >
+                  endDragging(property)
+                }
+              }}
+              sx={{
+                '&:focus-visible': {
+                  boxShadow: 'var(--chakra-shadows-outline)',
+                  outline: 'unset',
+                },
+              }}
+            >
+              {instruction?.source ? (
+                <Code>{formatPath(fromJsonPath(instruction.source))}</Code>
+              ) : (
+                <Text as="span" color="var(--chakra-colors-chakra-placeholder-color)" userSelect="none">
+                  {t('rjsf.MqttTransformationField.instructions.dropzone.arial-label')}
+                </Text>
+              )}
+            </Box>
+            <ButtonGroup isAttached size="xs" role="toolbar">
+              <IconButton
+                aria-label={t('rjsf.MqttTransformationField.instructions.actions.clear.aria-label')}
+                icon={<RiDeleteBin2Fill />}
+                onClick={onHandleClear}
+                isDisabled={Boolean(!instruction?.source)}
+              />
+            </ButtonGroup>
             {instruction?.source ? (
-              <Code>{formatPath(fromJsonPath(instruction.source))}</Code>
+              <Alert status="success" size="sm" variant="left-accent" w="140px">
+                <AlertIcon />
+                {t('rjsf.MqttTransformationField.validation.matching')}
+              </Alert>
+            ) : property.required ? (
+              <Alert status="error" size="sm" variant="left-accent" w="140px">
+                <AlertIcon />
+                {t('rjsf.MqttTransformationField.validation.required')}
+              </Alert>
             ) : (
-              <Text as="span" color="var(--chakra-colors-chakra-placeholder-color)" userSelect="none">
-                {t('rjsf.MqttTransformationField.instructions.dropzone.arial-label')}
-              </Text>
+              <Box w="140px" />
             )}
-          </Box>
-          <ButtonGroup isAttached size="xs" role="toolbar">
-            <IconButton
-              aria-label={t('rjsf.MqttTransformationField.instructions.actions.clear.aria-label')}
-              icon={<RiDeleteBin2Fill />}
-              onClick={onHandleClear}
-              isDisabled={Boolean(!instruction?.source)}
-            />
-          </ButtonGroup>
-          {instruction?.source ? (
-            <Alert status="success" size="sm" variant="left-accent" w="140px">
-              <AlertIcon />
-              {t('rjsf.MqttTransformationField.validation.matching')}
-            </Alert>
-          ) : property.required ? (
-            <Alert status="error" size="sm" variant="left-accent" w="140px">
-              <AlertIcon />
-              {t('rjsf.MqttTransformationField.validation.required')}
-            </Alert>
-          ) : (
-            <Box w="140px" />
-          )}
+          </HStack>
         </CardBody>
 
         {state === DropState.COMPLETED && showTransformation && (
