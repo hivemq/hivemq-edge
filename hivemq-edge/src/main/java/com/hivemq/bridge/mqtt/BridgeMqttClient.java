@@ -76,6 +76,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("FutureReturnValueIgnored")
 public class BridgeMqttClient {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(BridgeMqttClient.class);

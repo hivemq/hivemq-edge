@@ -28,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Florian Limpöck
  * @since 4.0.0
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 public class ManagedExecutorServicePerExtension implements ManagedExtensionExecutorService {
 
     @NotNull

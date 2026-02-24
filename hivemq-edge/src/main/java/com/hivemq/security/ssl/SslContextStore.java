@@ -47,6 +47,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class SslContextStore {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(SslContextStore.class);

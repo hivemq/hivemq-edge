@@ -40,6 +40,7 @@ import org.slf4j.MarkerFactory;
  *
  * @author Dominik Obermaier
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 public class ShutdownHooks {
 
     private static final Logger log = LoggerFactory.getLogger(ShutdownHooks.class);

@@ -25,6 +25,7 @@ import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@SuppressWarnings("FutureReturnValueIgnored")
 public class ClientSessionCleanUpTask implements SingleWriterService.Task<Void> {
 
     private final @NotNull ClientSessionLocalPersistence localPersistence;

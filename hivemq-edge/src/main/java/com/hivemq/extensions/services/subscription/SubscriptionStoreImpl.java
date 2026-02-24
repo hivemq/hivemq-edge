@@ -68,6 +68,7 @@ import org.jetbrains.annotations.Nullable;
  * @since 4.0.0
  */
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class SubscriptionStoreImpl implements SubscriptionStore {
 
     private final @NotNull ClientSessionSubscriptionPersistence subscriptionPersistence;

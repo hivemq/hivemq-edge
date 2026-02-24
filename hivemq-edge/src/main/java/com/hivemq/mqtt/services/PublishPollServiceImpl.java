@@ -66,6 +66,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class PublishPollServiceImpl implements PublishPollService {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(PublishPollService.class);

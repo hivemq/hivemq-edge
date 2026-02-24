@@ -56,6 +56,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("FutureReturnValueIgnored")
 public class RemoteMqttForwarder implements MqttForwarder {
 
     public static final String DEFAULT_DESTINATION_PATTERN = "{#}";

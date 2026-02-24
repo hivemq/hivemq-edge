@@ -50,6 +50,7 @@ import org.jetbrains.annotations.NotNull;
  * @since 4.0.0
  */
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class RetainedMessageStoreImpl implements RetainedMessageStore {
 
     private final @NotNull RetainedMessagePersistence retainedMessagePersistence;

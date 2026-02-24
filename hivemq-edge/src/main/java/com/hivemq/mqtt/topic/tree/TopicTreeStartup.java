@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
  * @author Dominik Obermaier
  */
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class TopicTreeStartup {
 
     private static final Logger log = LoggerFactory.getLogger(TopicTreeStartup.class);
