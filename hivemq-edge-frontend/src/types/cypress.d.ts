@@ -21,6 +21,7 @@ declare global {
         }
       ): Cypress.Chainable<MountReturn>
       checkI18nKeys(): Chainable<void>
+      saveHTMLSnapshot(name: string): Chainable<void>
     }
   }
 }
