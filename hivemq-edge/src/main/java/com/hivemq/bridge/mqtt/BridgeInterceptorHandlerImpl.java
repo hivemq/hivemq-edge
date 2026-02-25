@@ -536,7 +536,7 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
                             bridge.getId(),
                             publish.getTopic());
                 }
-                dropMessage(output);
+                dropMessage();
                 resultFuture.set(PublishReturnCode.FAILED);
             } else {
                 if (log.isTraceEnabled()) {
@@ -555,7 +555,7 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
             }
         }
 
-        private void dropMessage(final @NotNull BridgePublishInboundOutputImpl output) {
+        private void dropMessage() {
             messageDroppedService.extensionPrevented(
                     bridge.getClientId(), publish.getTopic(), publish.getQoS().getQosNumber());
         }

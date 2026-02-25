@@ -15,7 +15,6 @@
  */
 package com.hivemq.codec.encoder.mqttsn;
 
-import com.hivemq.bootstrap.netty.ChannelDependencies;
 import com.hivemq.mqttsn.MqttsnConnectionHelper;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -25,11 +24,8 @@ import org.slj.mqtt.sn.spi.IMqttsnCodec;
 import org.slj.mqtt.sn.spi.IMqttsnMessage;
 
 public class MqttSnEncoder extends MessageToByteEncoder<IMqttsnMessage> {
-    private final @NotNull ChannelDependencies channelDependencies;
 
-    public MqttSnEncoder(final @NotNull ChannelDependencies channelDependencies) {
-        this.channelDependencies = channelDependencies;
-    }
+    public MqttSnEncoder() {}
 
     @Override
     protected void encode(

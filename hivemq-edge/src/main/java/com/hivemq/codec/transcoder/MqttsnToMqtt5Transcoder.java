@@ -169,7 +169,6 @@ public class MqttsnToMqtt5Transcoder implements ITranscoder<IMqttsnMessage, Mess
                     out = pubcomp;
                 }
                 case MqttsnConstants.PINGREQ -> {
-                    MqttsnPingreq mqttsnPingreq = (MqttsnPingreq) messageIn;
                     if (connection.getClientState() == ClientState.DISCONNECTING) {
                         log.trace("detected ping-req from client in sleep state, move to WakingHandler {}", connection);
                     } else {

@@ -130,8 +130,6 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 // no-op
             };
     private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdaptersResourceImpl.class);
-    private static final long RETRY_TIMEOUT_MILLIS = 5000;
-    private static final long RETRY_INTERVAL_MILLIS = 200;
 
     private final @NotNull HiveMQEdgeRemoteService remoteService;
     private final @NotNull ConfigurationService configurationService;

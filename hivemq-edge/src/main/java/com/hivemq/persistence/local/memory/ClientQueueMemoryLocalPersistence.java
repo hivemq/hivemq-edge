@@ -66,7 +66,6 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
 
     private final @NotNull Map<String, Messages> @NotNull [] buckets;
     private final @NotNull Map<String, Messages> @NotNull [] sharedBuckets;
-    private final @NotNull InternalConfigurationService internalConfigurationService;
 
     private static class Messages {
         final @NotNull LinkedList<MessageWithID> qos1Or2Messages = new LinkedList<>();
@@ -91,7 +90,6 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
             final @NotNull MessageDroppedService messageDroppedService,
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull InternalConfigurationService internalConfigurationService) {
-        this.internalConfigurationService = internalConfigurationService;
 
         final int bucketCount =
                 internalConfigurationService.getInteger(InternalConfigurations.PERSISTENCE_BUCKET_COUNT);

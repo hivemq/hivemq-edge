@@ -124,6 +124,7 @@ public abstract class ApiModule {
 
     @Provides
     @IntoSet
+    @SuppressWarnings("UnusedVariable")
     static @NotNull Boolean eagerSingletons(final @NotNull ApiResourceRegistry apiResourceRegistry) {
         // this is used to instantiate all the params, similar to guice's asEagerSingleton and returns nothing
         return Boolean.TRUE;

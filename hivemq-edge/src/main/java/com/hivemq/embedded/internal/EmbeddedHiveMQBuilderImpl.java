@@ -32,7 +32,6 @@ public class EmbeddedHiveMQBuilderImpl implements EmbeddedHiveMQBuilder {
     private @Nullable Path configFolder = null;
     private @Nullable Path dataFolder = null;
     private @Nullable Path extensionsFolder = null;
-    private @Nullable EmbeddedExtension embeddedExtension = null;
     private @Nullable Path licenseFolder;
 
     @Override
@@ -61,7 +60,7 @@ public class EmbeddedHiveMQBuilderImpl implements EmbeddedHiveMQBuilder {
 
     @Override
     public @NotNull EmbeddedHiveMQBuilder withEmbeddedExtension(final @NotNull EmbeddedExtension embeddedExtension) {
-        this.embeddedExtension = embeddedExtension;
+        // embedded extensions are not supported in HiveMQ Edge
         return this;
     }
 

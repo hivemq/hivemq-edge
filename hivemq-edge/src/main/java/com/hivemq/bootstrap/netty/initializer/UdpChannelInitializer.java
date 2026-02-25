@@ -97,7 +97,7 @@ public class UdpChannelInitializer extends AbstractChannelInitializer<UdpChannel
         ClientConnection connection = createClientConnection(ch);
 
         // Add MQTT-SN Encoder/Decoders (cannot be shared versions for byte->message de/encoders)
-        ch.pipeline().addLast(MQTTSN_MESSAGE_ENCODER, new MqttSnEncoder(channelDependencies));
+        ch.pipeline().addLast(MQTTSN_MESSAGE_ENCODER, new MqttSnEncoder());
         ch.pipeline().addLast(MQTTSN_MESSAGE_DECODER, new MqttSnDecoder(channelDependencies));
         ch.pipeline().addLast(MQTT_MESSAGE_ENCODER, new M2MMqttSnTranscodingEncoder(channelDependencies));
 
@@ -112,7 +112,7 @@ public class UdpChannelInitializer extends AbstractChannelInitializer<UdpChannel
         ch.pipeline().addLast(MESSAGE_EXPIRY_HANDLER, channelDependencies.getPublishMessageExpiryHandler());
         ch.pipeline().addLast(MQTT_SUBSCRIBE_HANDLER, channelDependencies.getSubscribeHandler());
 
-        ch.pipeline().addLast(MQTTSN_REGACK_HANDLER, new RegackHandler(channelDependencies.getMqttsnTopicRegistry()));
+        ch.pipeline().addLast(MQTTSN_REGACK_HANDLER, new RegackHandler());
 
         ch.pipeline()
                 .addLast(MQTTSN_REGISTER_HANDLER, new RegisterHandler(channelDependencies.getMqttsnTopicRegistry()));

@@ -26,7 +26,6 @@ public class Statistic {
     private long hivemqUptime;
     private Number connectedClients;
     private long officialExtensions;
-    private long enterpriseExtensions;
     private long customExtensions;
     private long tcpListeners;
     private long tlsListeners;
@@ -36,7 +35,6 @@ public class Statistic {
     private long maxKeepalive;
     private long sessionExpiry;
     private long messageExpiry;
-    private boolean overloadProtection;
     private long connectionThrottling;
     private long bandwithIncoming;
     private String javaVendor;

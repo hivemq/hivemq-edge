@@ -337,7 +337,6 @@ public class ProtocolAdapterManager {
                 final ProtocolAdapter protocolAdapter = factory.createAdapter(
                         factory.getInformation(),
                         new ProtocolAdapterInputImpl(
-                                configProtocolId,
                                 config.getAdapterId(),
                                 config.getAdapterConfig(),
                                 config.getTags(),
