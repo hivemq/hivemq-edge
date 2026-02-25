@@ -275,11 +275,11 @@ public class CustomConfigSchemaGenerator {
             }
             try {
                 return Long.parseLong(format);
-            } catch (NumberFormatException e) {
+            } catch (NumberFormatException ignored) {
             }
             try {
                 return Double.parseDouble(format);
-            } catch (NumberFormatException e) {
+            } catch (NumberFormatException ignored) {
             }
         }
         return format;
