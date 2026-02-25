@@ -62,12 +62,8 @@ abstract class AuthContext<T extends AuthOutput<?>> extends PluginInOutTaskConte
     public void pluginPost(final @NotNull T output) {
         if (output.isTimedOut()) {
             switch (output.getTimeoutFallback()) {
-                case FAILURE:
-                    output.failByTimeout();
-                    break;
-                case SUCCESS:
-                    output.nextByTimeout();
-                    break;
+                case FAILURE -> output.failByTimeout();
+                case SUCCESS -> output.nextByTimeout();
             }
         } else if ((output.getAuthenticationState() == AuthenticationState.UNDECIDED)
                 && output.isAuthenticatorPresent()) {
@@ -102,19 +98,13 @@ abstract class AuthContext<T extends AuthOutput<?>> extends PluginInOutTaskConte
         try {
             ctx.executor().execute(() -> {
                 switch (state) {
-                    case CONTINUE:
-                        continueAuthentication(output);
-                        break;
-                    case SUCCESS:
-                        succeedAuthentication(output);
-                        break;
-                    case FAILED:
-                    case NEXT_EXTENSION_OR_DEFAULT:
-                        failAuthentication(output);
-                        break;
-                    case UNDECIDED:
+                    case CONTINUE -> continueAuthentication(output);
+                    case SUCCESS -> succeedAuthentication(output);
+                    case FAILED, NEXT_EXTENSION_OR_DEFAULT -> failAuthentication(output);
+                    case UNDECIDED -> {
                         assert !output.isAuthenticatorPresent(); // happens only if all providers return null
                         undecidedAuthentication(output);
+                    }
                 }
             });
         } catch (final RejectedExecutionException ex) {

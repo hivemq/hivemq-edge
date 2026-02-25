@@ -78,33 +78,31 @@ public class AllTopicsProcessedTask implements Runnable {
                 }
 
                 switch (output.getAuthorizationState()) {
-                    case CONTINUE:
-                        break;
-                    case DISCONNECT:
+                    case CONTINUE -> {}
+                    case DISCONNECT -> {
                         disconnectClient(i, output);
                         return;
-                    case FAIL:
+                    }
+                    case FAIL -> {
                         if (output.getSubackReasonCode() != null) {
                             answerCodes[i] = Mqtt5SubAckReasonCode.from(output.getSubackReasonCode());
                             reasonStrings[i] = output.getReasonString();
                         } else {
                             answerCodes[i] = Mqtt5SubAckReasonCode.NOT_AUTHORIZED;
                         }
-                        break;
-                    case UNDECIDED:
+                    }
+                    case UNDECIDED -> {
                         if (!output.isAuthorizerPresent()) {
                             // providers never returned an authorizer, same as continue
                             break;
                         }
                         answerCodes[i] = Mqtt5SubAckReasonCode.NOT_AUTHORIZED;
                         reasonStrings[i] = "Sent a SUBSCRIBE with an unauthorized subscription";
-                        break;
-                    case SUCCESS:
+                    }
+                    case SUCCESS ->
                         answerCodes[i] = Mqtt5SubAckReasonCode.fromCode(
                                 msg.getTopics().get(i).getQoS().getQosNumber());
-                        break;
-                    default:
-                        break;
+                    default -> {}
                 }
             }
 

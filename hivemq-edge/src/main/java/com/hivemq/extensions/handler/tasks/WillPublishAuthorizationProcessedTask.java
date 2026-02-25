@@ -52,31 +52,28 @@ public class WillPublishAuthorizationProcessedTask implements FutureCallback<Pub
         String reasonString = null;
 
         switch (output.getAuthorizationState()) {
-            case DISCONNECT:
+            case DISCONNECT -> {
                 disconnectReasonCode = output.getDisconnectReasonCode();
                 reasonCode =
                         output.getAckReasonCode() != null ? output.getAckReasonCode() : AckReasonCode.NOT_AUTHORIZED;
                 reasonString = output.getReasonString() != null ? output.getReasonString() : getReasonString(connect);
-                break;
-            case FAIL:
+            }
+            case FAIL -> {
                 reasonCode =
                         output.getAckReasonCode() != null ? output.getAckReasonCode() : AckReasonCode.NOT_AUTHORIZED;
                 reasonString = output.getReasonString() != null ? output.getReasonString() : getReasonString(connect);
-                break;
-            case UNDECIDED:
+            }
+            case UNDECIDED -> {
                 if (!output.isAuthorizerPresent()) {
                     // providers never returned an authorizer, same as continue
                     break;
                 }
                 reasonCode = AckReasonCode.NOT_AUTHORIZED;
                 reasonString = getReasonString(connect);
-                break;
-            case SUCCESS:
-                reasonCode = AckReasonCode.SUCCESS;
-                break;
-            case CONTINUE:
-                break;
-            default:
+            }
+            case SUCCESS -> reasonCode = AckReasonCode.SUCCESS;
+            case CONTINUE -> {}
+            default ->
                 // no state left
                 throw new IllegalStateException("Unknown type");
         }

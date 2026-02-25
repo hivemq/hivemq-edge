@@ -265,17 +265,13 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
 
     @NotNull
     Tls.ClientAuthMode getClientAuthMode(final @NotNull ClientAuthenticationModeEntity entity) {
-        switch (entity) {
-            case OPTIONAL:
-                return Tls.ClientAuthMode.OPTIONAL;
-            case REQUIRED:
-                return Tls.ClientAuthMode.REQUIRED;
-            case NONE:
-                return Tls.ClientAuthMode.NONE;
-            default:
-                // This should never happen
-                return Tls.ClientAuthMode.NONE;
-        }
+        return switch (entity) {
+            case OPTIONAL -> Tls.ClientAuthMode.OPTIONAL;
+            case REQUIRED -> Tls.ClientAuthMode.REQUIRED;
+            case NONE -> Tls.ClientAuthMode.NONE;
+            // This should never happen
+            default -> Tls.ClientAuthMode.NONE;
+        };
     }
 
     public static class Listeners {

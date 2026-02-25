@@ -95,41 +95,23 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayEndpointA
     private String getProtocolForPort(final int port) {
         // -- Uses IANA ports to map, otherwise its unknown
         // -- TODO Add element to config for protocol
-        switch (port) {
-            case 8080:
-            case 80:
-            case 3000:
-                return "http";
-            case 8443:
-            case 443:
-                return "https";
-            case 1883:
-                return "mqtt";
-            case 8883:
-                return "mqtt (secure)";
-            case 2442:
-                return "mqtt-sn";
-            default:
-                return null;
-        }
+        return switch (port) {
+            case 8080, 80, 3000 -> "http";
+            case 8443, 443 -> "https";
+            case 1883 -> "mqtt";
+            case 8883 -> "mqtt (secure)";
+            case 2442 -> "mqtt-sn";
+            default -> null;
+        };
     }
 
     private Listener.TRANSPORT getTransportForPort(final int port) {
         // -- Uses IANA ports to map, otherwise its unknown
         // -- TODO Add element to config for protocol
-        switch (port) {
-            case 8080:
-            case 80:
-            case 3000:
-            case 8443:
-            case 443:
-            case 1883:
-            case 8883:
-                return Listener.TRANSPORT.TCP;
-            case 2442:
-                return Listener.TRANSPORT.UDP;
-            default:
-                return null;
-        }
+        return switch (port) {
+            case 8080, 80, 3000, 8443, 443, 1883, 8883 -> Listener.TRANSPORT.TCP;
+            case 2442 -> Listener.TRANSPORT.UDP;
+            default -> null;
+        };
     }
 }

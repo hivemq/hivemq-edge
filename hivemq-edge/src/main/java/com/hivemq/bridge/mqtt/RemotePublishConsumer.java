@@ -220,7 +220,7 @@ class RemotePublishConsumer implements Consumer<Mqtt5Publish> {
                             }
 
                             switch (returnCode) {
-                                case DELIVERED:
+                                case DELIVERED -> {
                                     perBridgeMetrics
                                             .getPublishLocalSuccessCounter()
                                             .inc();
@@ -230,8 +230,8 @@ class RemotePublishConsumer implements Consumer<Mqtt5Publish> {
                                                 publish.getTopic(),
                                                 bridge.getId());
                                     }
-                                    break;
-                                case NO_MATCHING_SUBSCRIBERS:
+                                }
+                                case NO_MATCHING_SUBSCRIBERS -> {
                                     perBridgeMetrics
                                             .getPublishLocalSuccessCounter()
                                             .inc();
@@ -244,8 +244,8 @@ class RemotePublishConsumer implements Consumer<Mqtt5Publish> {
                                                 publish.getTopic(),
                                                 bridge.getId());
                                     }
-                                    break;
-                                case FAILED:
+                                }
+                                case FAILED -> {
                                     perBridgeMetrics
                                             .getPublishLocalFailCounter()
                                             .inc();
@@ -253,7 +253,7 @@ class RemotePublishConsumer implements Consumer<Mqtt5Publish> {
                                             "Failed to publish remote message on topic '{}' to local broker for bridge '{}'",
                                             publish.getTopic(),
                                             bridge.getId());
-                                    break;
+                                }
                             }
                         } catch (final InterruptedException e) {
                             Thread.currentThread().interrupt();

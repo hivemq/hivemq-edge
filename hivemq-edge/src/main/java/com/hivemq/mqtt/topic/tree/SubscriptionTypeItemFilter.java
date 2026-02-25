@@ -30,15 +30,12 @@ public class SubscriptionTypeItemFilter implements Predicate<SubscriberWithQoS> 
 
     @Override
     public boolean test(final @NotNull SubscriberWithQoS subscriber) {
-        switch (subscriptionType) {
-            case ALL:
-                return true;
-            case INDIVIDUAL:
-                return !subscriber.isSharedSubscription();
-            case SHARED:
-                return subscriber.isSharedSubscription();
-        }
-        // to support potential new types
-        return false;
+        return switch (subscriptionType) {
+            case ALL -> true;
+            case INDIVIDUAL -> !subscriber.isSharedSubscription();
+            case SHARED -> subscriber.isSharedSubscription();
+            // to support potential new types
+            default -> false;
+        };
     }
 }

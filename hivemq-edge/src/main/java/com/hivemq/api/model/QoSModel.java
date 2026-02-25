@@ -52,15 +52,11 @@ public enum QoSModel {
     }
 
     public static @NotNull QoSModel fromNumber(final int qos) {
-        switch (qos) {
-            case 0:
-                return QoSModel.AT_MOST_ONCE;
-            case 1:
-                return QoSModel.AT_LEAST_ONCE;
-            case 2:
-                return QoSModel.EXACTLY_ONCE;
-            default:
-                throw new IllegalArgumentException("Can not parse '" + qos + "' to QoSModel.");
-        }
+        return switch (qos) {
+            case 0 -> QoSModel.AT_MOST_ONCE;
+            case 1 -> QoSModel.AT_LEAST_ONCE;
+            case 2 -> QoSModel.EXACTLY_ONCE;
+            default -> throw new IllegalArgumentException("Can not parse '" + qos + "' to QoSModel.");
+        };
     }
 }

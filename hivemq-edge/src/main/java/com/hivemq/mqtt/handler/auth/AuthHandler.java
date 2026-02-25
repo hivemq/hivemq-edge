@@ -81,15 +81,9 @@ public class AuthHandler extends SimpleChannelInboundHandler<AUTH> {
         authSender.logAuth(channel, msg.getReasonCode(), true);
 
         switch (msg.getReasonCode()) {
-            case SUCCESS:
-                onReceivedSuccess(ctx, msg, clientConnection);
-                break;
-            case CONTINUE_AUTHENTICATION:
-                onReceivedContinue(ctx, msg, clientConnection);
-                break;
-            case REAUTHENTICATE:
-                onReceivedReAuthenticate(ctx, msg, clientConnection);
-                break;
+            case SUCCESS -> onReceivedSuccess(ctx, msg, clientConnection);
+            case CONTINUE_AUTHENTICATION -> onReceivedContinue(ctx, msg, clientConnection);
+            case REAUTHENTICATE -> onReceivedReAuthenticate(ctx, msg, clientConnection);
         }
     }
 

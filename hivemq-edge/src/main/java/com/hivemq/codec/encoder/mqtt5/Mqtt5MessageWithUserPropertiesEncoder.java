@@ -188,14 +188,11 @@ abstract class Mqtt5MessageWithUserPropertiesEncoder<T extends Message> implemen
     abstract int calculatePropertyLength(@NotNull T message);
 
     int propertyLength(final @NotNull T message, final int propertyLength, final int omittedProperties) {
-        switch (omittedProperties) {
-            case 0:
-                return propertyLength;
-            case 1:
-                return propertyLength - getUserProperties(message).encodedLength();
-            default:
-                return -1;
-        }
+        return switch (omittedProperties) {
+            case 0 -> propertyLength;
+            case 1 -> propertyLength - getUserProperties(message).encodedLength();
+            default -> -1;
+        };
     }
 
     /**
@@ -244,16 +241,12 @@ abstract class Mqtt5MessageWithUserPropertiesEncoder<T extends Message> implemen
 
         @Override
         int propertyLength(final @NotNull M message, final int propertyLength, final int omittedProperties) {
-            switch (omittedProperties) {
-                case 0:
-                    return propertyLength;
-                case 1:
-                    return propertyLength - reasonStringLength(message);
-                case 2:
-                    return propertyLength - getUserProperties(message).encodedLength();
-                default:
-                    return -1;
-            }
+            return switch (omittedProperties) {
+                case 0 -> propertyLength;
+                case 1 -> propertyLength - reasonStringLength(message);
+                case 2 -> propertyLength - getUserProperties(message).encodedLength();
+                default -> -1;
+            };
         }
 
         @Override

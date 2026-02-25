@@ -254,15 +254,11 @@ public class MqttConnackerImpl implements MqttConnacker {
         if (reasonCode == null) {
             return null;
         }
-        switch (reasonCode) {
-            case UNSPECIFIED_ERROR:
-            case MALFORMED_PACKET:
-            case PROTOCOL_ERROR:
-            case IMPLEMENTATION_SPECIFIC_ERROR:
+        return switch (reasonCode) {
+            case UNSPECIFIED_ERROR, MALFORMED_PACKET, PROTOCOL_ERROR, IMPLEMENTATION_SPECIFIC_ERROR ->
                 // no reason code for mqtt 3 available for these cases
-                return null;
-            default:
-                return Mqtt3ConnAckReturnCode.fromReasonCode(reasonCode);
-        }
+                null;
+            default -> Mqtt3ConnAckReturnCode.fromReasonCode(reasonCode);
+        };
     }
 }

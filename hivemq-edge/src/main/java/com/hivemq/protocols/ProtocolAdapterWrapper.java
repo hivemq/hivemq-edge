@@ -345,7 +345,7 @@ public class ProtocolAdapterWrapper {
     private @Nullable CompletableFuture<Void> getOngoingOperationIfPresent(
             final @NotNull OperationState currentState, final @NotNull OperationState targetState) {
         switch (currentState) {
-            case STARTING:
+            case STARTING -> {
                 if (targetState == OperationState.STARTING) {
                     // If already starting, return existing future
                     final var existingStartFuture = startFutureRef.get();
@@ -359,8 +359,8 @@ public class ProtocolAdapterWrapper {
                     log.warn("Cannot stop adapter with id '{}' while start operation is in progress", getId());
                     return CompletableFuture.failedFuture(new AdapterStopConflictException(getId()));
                 }
-                break;
-            case STOPPING:
+            }
+            case STOPPING -> {
                 if (targetState == OperationState.STOPPING) {
                     // If already stopping, return existing future
                     final var existingStopFuture = stopFutureRef.get();
@@ -370,14 +370,15 @@ public class ProtocolAdapterWrapper {
                                 getId());
                         return existingStopFuture;
                     }
-                    break;
+                } else {
+                    // If stopping, return failed future immediately
+                    log.warn("Cannot start adapter with id '{}' while stop operation is in progress", getId());
+                    return CompletableFuture.failedFuture(new AdapterStartConflictException(getId()));
                 }
-                // If stopping, return failed future immediately
-                log.warn("Cannot start adapter with id '{}' while stop operation is in progress", getId());
-                return CompletableFuture.failedFuture(new AdapterStartConflictException(getId()));
-            case IDLE:
+            }
+            case IDLE -> {
                 // Proceed with start operation
-                break;
+            }
         }
         return null;
     }
