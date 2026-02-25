@@ -315,8 +315,8 @@ public class ConnectHandlerTest {
             @Override
             public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelPromise promise)
                     throws Exception {
-                if (msg instanceof CONNACK) {
-                    keepAliveFromCONNACK.set(((CONNACK) msg).getServerKeepAlive());
+                if (msg instanceof CONNACK connack) {
+                    keepAliveFromCONNACK.set(connack.getServerKeepAlive());
                     connackLatch.countDown();
                 }
                 super.write(ctx, msg, promise);
@@ -361,8 +361,8 @@ public class ConnectHandlerTest {
             @Override
             public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelPromise promise)
                     throws Exception {
-                if (msg instanceof CONNACK) {
-                    keepAliveFromCONNACK.set(((CONNACK) msg).getServerKeepAlive());
+                if (msg instanceof CONNACK connack) {
+                    keepAliveFromCONNACK.set(connack.getServerKeepAlive());
                     connackLatch.countDown();
                 }
                 super.write(ctx, msg, promise);
@@ -517,8 +517,8 @@ public class ConnectHandlerTest {
             @Override
             public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelPromise promise)
                     throws Exception {
-                if (msg instanceof CONNACK) {
-                    sessionExpiryFromCONNACK.set(((CONNACK) msg).getSessionExpiryInterval());
+                if (msg instanceof CONNACK connack) {
+                    sessionExpiryFromCONNACK.set(connack.getSessionExpiryInterval());
                     connackLatch.countDown();
                 }
                 super.write(ctx, msg, promise);
@@ -562,8 +562,8 @@ public class ConnectHandlerTest {
             @Override
             public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelPromise promise)
                     throws Exception {
-                if (msg instanceof CONNACK) {
-                    clientID.set(((CONNACK) msg).getAssignedClientIdentifier());
+                if (msg instanceof CONNACK connack) {
+                    clientID.set(connack.getAssignedClientIdentifier());
                     connackLatch.countDown();
                 }
                 super.write(ctx, msg, promise);
@@ -604,8 +604,8 @@ public class ConnectHandlerTest {
             @Override
             public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelPromise promise)
                     throws Exception {
-                if (msg instanceof CONNACK) {
-                    clientID.set(((CONNACK) msg).getAssignedClientIdentifier());
+                if (msg instanceof CONNACK connack) {
+                    clientID.set(connack.getAssignedClientIdentifier());
                     connackLatch.countDown();
                 }
                 super.write(ctx, msg, promise);
@@ -642,8 +642,8 @@ public class ConnectHandlerTest {
             @Override
             public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelPromise promise)
                     throws Exception {
-                if (msg instanceof CONNACK) {
-                    userProps.set(((CONNACK) msg).getUserProperties());
+                if (msg instanceof CONNACK connack) {
+                    userProps.set(connack.getUserProperties());
                     connackLatch.countDown();
                 }
                 super.write(ctx, msg, promise);
@@ -1895,8 +1895,8 @@ public class ConnectHandlerTest {
 
         @Override
         public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) {
-            if (evt instanceof OnServerDisconnectEvent) {
-                final UserProperties userProperties = ((OnServerDisconnectEvent) evt).getUserProperties();
+            if (evt instanceof OnServerDisconnectEvent onServerDisconnectEvent) {
+                final UserProperties userProperties = onServerDisconnectEvent.getUserProperties();
                 if (userProperties == null || userProperties.isEmpty()) {
                     eventLatch.countDown();
                 }
@@ -1927,8 +1927,8 @@ public class ConnectHandlerTest {
         public void write(
                 final ChannelHandlerContext channelHandlerContext, final Object o, final ChannelPromise channelPromise)
                 throws Exception {
-            if (o instanceof DISCONNECT) {
-                disconnectMessage = (DISCONNECT) o;
+            if (o instanceof DISCONNECT disconnect) {
+                disconnectMessage = disconnect;
                 if (disconnectExpected) {
                     waiter.resume();
                 } else {

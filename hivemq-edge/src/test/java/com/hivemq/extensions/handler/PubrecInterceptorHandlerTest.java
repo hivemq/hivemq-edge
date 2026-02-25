@@ -160,7 +160,7 @@ public class PubrecInterceptorHandlerTest {
         assertEquals(testPubrec.getReasonCode(), pubrec.getReasonCode());
     }
 
-    @Test()
+    @Test
     public void test_inbound_modify() throws Exception {
         final PubrecInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
                 temporaryFolder.toPath(), TestModifyInboundInterceptor.class);

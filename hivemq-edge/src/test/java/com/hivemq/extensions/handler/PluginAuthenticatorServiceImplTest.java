@@ -387,22 +387,22 @@ public class PluginAuthenticatorServiceImplTest {
     private Map<String, WrappedAuthenticatorProvider> createSimple() {
         return ImmutableMap.of(
                 "extension1",
-                new WrappedAuthenticatorProvider((AuthenticatorProvider) (i -> simpleAuthenticator), classloader1));
+                new WrappedAuthenticatorProvider((AuthenticatorProvider) i -> simpleAuthenticator, classloader1));
     }
 
     private Map<String, WrappedAuthenticatorProvider> createEnhanced() {
         return ImmutableMap.of(
                 "extension1",
                 new WrappedAuthenticatorProvider(
-                        (EnhancedAuthenticatorProvider) (i -> enhancedAuthenticator), classloader1));
+                        (EnhancedAuthenticatorProvider) i -> enhancedAuthenticator, classloader1));
     }
 
     private Map<String, WrappedAuthenticatorProvider> createMulti() {
         return ImmutableMap.of(
                 "extension1",
-                new WrappedAuthenticatorProvider((AuthenticatorProvider) (i -> simpleAuthenticator), classloader1),
+                new WrappedAuthenticatorProvider((AuthenticatorProvider) i -> simpleAuthenticator, classloader1),
                 "extension2",
                 new WrappedAuthenticatorProvider(
-                        (EnhancedAuthenticatorProvider) (i -> enhancedAuthenticator), classloader2));
+                        (EnhancedAuthenticatorProvider) i -> enhancedAuthenticator, classloader2));
     }
 }
