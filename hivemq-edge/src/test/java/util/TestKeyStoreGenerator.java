@@ -15,25 +15,6 @@
  */
 package util;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.math.BigInteger;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.KeyStore;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.SecureRandom;
-import java.security.Security;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.security.spec.ECGenParameterSpec;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -52,6 +33,28 @@ import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.bc.BcECContentSignerBuilder;
 import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.SecureRandom;
+import java.security.Security;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.security.spec.ECGenParameterSpec;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 public class TestKeyStoreGenerator {
 
@@ -128,8 +131,8 @@ public class TestKeyStoreGenerator {
         final X509v3CertificateBuilder builder = new X509v3CertificateBuilder(
                 x500Name,
                 BigInteger.valueOf(new SecureRandom().nextLong()),
-                new Date(System.currentTimeMillis() - 10000),
-                new Date(System.currentTimeMillis() + 24L * 3600 * 1000),
+                Date.from(Instant.now().minus(10000, ChronoUnit.MILLIS)),
+                Date.from(Instant.now().plus(24L * 3600 * 1000, ChronoUnit.MILLIS)),
                 x500Name,
                 SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()));
 
