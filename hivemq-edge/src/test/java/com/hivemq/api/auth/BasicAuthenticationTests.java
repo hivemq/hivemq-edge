@@ -63,7 +63,7 @@ public class BasicAuthenticationTests {
     public static void setUp() throws Exception {
         final var config = new JaxrsHttpServerConfiguration();
         config.setPort(TEST_HTTP_PORT);
-        // -- ensure we supplied our own test mapper as this can effect output
+        // -- ensure we supplied our own test mapper as this can affect output
         config.setObjectMapper(new ObjectMapper());
 
         final Set<IAuthenticationHandler> authenticationHandlers = new HashSet<>();
