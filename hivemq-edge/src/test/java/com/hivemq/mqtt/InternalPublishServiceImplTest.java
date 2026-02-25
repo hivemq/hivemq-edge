@@ -58,7 +58,7 @@ import org.mockito.ArgumentCaptor;
 import util.TestException;
 import util.TestMessageUtil;
 
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
 public class InternalPublishServiceImplTest {
 
     private final @NotNull RetainedMessagePersistence retainedMessagePersistence = mock();

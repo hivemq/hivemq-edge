@@ -34,6 +34,7 @@ public class Mqtt5PubrelEncoderTest extends AbstractMqtt5EncoderTest {
 
     private static final Mqtt5PubRelReasonCode SUCCESS = Mqtt5PubRelReasonCode.SUCCESS;
 
+    @Override
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
@@ -422,8 +423,7 @@ public class Mqtt5PubrelEncoderTest extends AbstractMqtt5EncoderTest {
             0,
             1
         };
-        final Mqtt5PubrelEncoderTest.MaximumPacketBuilder maxPacket =
-                new Mqtt5PubrelEncoderTest.MaximumPacketBuilder().build(MAX_PACKET_SIZE);
+        final MaximumPacketBuilder maxPacket = new MaximumPacketBuilder().build(MAX_PACKET_SIZE);
 
         final PUBREL pubRel =
                 new PUBREL(1, SUCCESS, null, getUserProperties(maxPacket.getMaxUserPropertiesCount() + 1));

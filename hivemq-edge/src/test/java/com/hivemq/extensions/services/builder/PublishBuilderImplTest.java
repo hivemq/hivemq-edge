@@ -317,7 +317,7 @@ public class PublishBuilderImplTest {
         assertEquals("value", copy.getUserProperties().getFirst("key").get());
     }
 
-    private class TestPublish implements Publish {
+    private static class TestPublish implements Publish {
 
         @Override
         public Qos getQos() {

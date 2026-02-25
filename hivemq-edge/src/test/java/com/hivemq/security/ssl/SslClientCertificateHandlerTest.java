@@ -159,7 +159,7 @@ public class SslClientCertificateHandlerTest {
         verify(mqttServerDisconnector).logAndClose(eq(channel), isNull(), anyString());
     }
 
-    private class WrongHandler extends SimpleChannelInboundHandler<Object> {
+    private static class WrongHandler extends SimpleChannelInboundHandler<Object> {
 
         @Override
         protected void channelRead0(final ChannelHandlerContext channelHandlerContext, final Object o)

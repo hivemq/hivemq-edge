@@ -15,6 +15,7 @@
  */
 package com.hivemq.extensions.services.builder;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -228,9 +229,9 @@ public class RetainedPublishBuilderImplTest {
                 PayloadFormatIndicator.UTF_8,
                 12345L,
                 "response_topic",
-                ByteBuffer.wrap("correlation_data".getBytes()),
+                ByteBuffer.wrap("correlation_data".getBytes(UTF_8)),
                 "content_type",
-                ByteBuffer.wrap("test3".getBytes()),
+                ByteBuffer.wrap("test3".getBytes(UTF_8)),
                 userProperties);
 
         final RetainedPublish built =
@@ -261,12 +262,13 @@ public class RetainedPublishBuilderImplTest {
         assertEquals("response_topic", built.getResponseTopic().get());
         assertTrue(built.getCorrelationData().isPresent());
         assertEquals(
-                ByteBuffer.wrap("correlation_data".getBytes()),
+                ByteBuffer.wrap("correlation_data".getBytes(UTF_8)),
                 built.getCorrelationData().get());
         assertTrue(built.getContentType().isPresent());
         assertEquals("content_type", built.getContentType().get());
         assertTrue(built.getPayload().isPresent());
-        assertEquals(ByteBuffer.wrap("test3".getBytes()), built.getPayload().get());
+        assertEquals(
+                ByteBuffer.wrap("test3".getBytes(UTF_8)), built.getPayload().get());
         assertEquals(
                 userProperties.asList().size(),
                 built.getUserProperties().asList().size());
@@ -304,12 +306,13 @@ public class RetainedPublishBuilderImplTest {
         assertEquals("response topic", built.getResponseTopic().get());
         assertTrue(built.getCorrelationData().isPresent());
         assertEquals(
-                ByteBuffer.wrap("correlation data".getBytes()),
+                ByteBuffer.wrap("correlation data".getBytes(UTF_8)),
                 built.getCorrelationData().get());
         assertTrue(built.getContentType().isPresent());
         assertEquals("content type", built.getContentType().get());
         assertTrue(built.getPayload().isPresent());
-        assertEquals(ByteBuffer.wrap("payload".getBytes()), built.getPayload().get());
+        assertEquals(
+                ByteBuffer.wrap("payload".getBytes(UTF_8)), built.getPayload().get());
         assertEquals(2, built.getUserProperties().asList().size());
     }
 
@@ -332,13 +335,13 @@ public class RetainedPublishBuilderImplTest {
     public void test_minimum() {
         final RetainedPublish retainedPublish = retainedPublishBuilder
                 .topic("topic")
-                .payload(ByteBuffer.wrap("payload".getBytes()))
+                .payload(ByteBuffer.wrap("payload".getBytes(UTF_8)))
                 .build();
 
         assertEquals(Qos.AT_MOST_ONCE, retainedPublish.getQos());
         assertEquals("topic", retainedPublish.getTopic());
         assertArrayEquals(
-                "payload".getBytes(), retainedPublish.getPayload().get().array());
+                "payload".getBytes(UTF_8), retainedPublish.getPayload().get().array());
         assertEquals(Optional.empty(), retainedPublish.getPayloadFormatIndicator());
         assertTrue(retainedPublish.getMessageExpiryInterval().isPresent());
         assertEquals(
@@ -350,7 +353,7 @@ public class RetainedPublishBuilderImplTest {
         assertEquals(0, retainedPublish.getUserProperties().asList().size());
     }
 
-    class TestPublishPacket implements PublishPacket {
+    static class TestPublishPacket implements PublishPacket {
 
         @Override
         public boolean getDupFlag() {
@@ -400,7 +403,7 @@ public class RetainedPublishBuilderImplTest {
         @NotNull
         @Override
         public Optional<ByteBuffer> getCorrelationData() {
-            return Optional.of(ByteBuffer.wrap("correlation_data".getBytes()));
+            return Optional.of(ByteBuffer.wrap("correlation_data".getBytes(UTF_8)));
         }
 
         @Override
@@ -417,7 +420,7 @@ public class RetainedPublishBuilderImplTest {
         @NotNull
         @Override
         public Optional<ByteBuffer> getPayload() {
-            return Optional.of(ByteBuffer.wrap("test3".getBytes()));
+            return Optional.of(ByteBuffer.wrap("test3".getBytes(UTF_8)));
         }
 
         @NotNull
@@ -435,7 +438,7 @@ public class RetainedPublishBuilderImplTest {
         }
     }
 
-    private class TestPublish implements Publish {
+    private static class TestPublish implements Publish {
 
         @Override
         public Qos getQos() {

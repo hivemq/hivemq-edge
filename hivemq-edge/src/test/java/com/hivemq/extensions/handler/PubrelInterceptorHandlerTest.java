@@ -70,6 +70,7 @@ import util.TestConfigurationBootstrap;
 /**
  * @since 4.3.0
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 public class PubrelInterceptorHandlerTest {
 
     @TempDir

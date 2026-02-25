@@ -429,7 +429,7 @@ public class PluginTaskExecutorTest {
 
         final CountDownLatch latch = new CountDownLatch(1);
 
-        addInTask(pluginTaskExecutor, latch, "client", false, 1, executionOrder, 0, classloader);
+        addInTask(pluginTaskExecutor, latch, "client", 1, executionOrder, 0, classloader);
 
         assertTrue(latch.await(30, TimeUnit.SECONDS));
     }
@@ -442,7 +442,7 @@ public class PluginTaskExecutorTest {
         final CountDownLatch latch = new CountDownLatch(tries);
 
         for (int i = 0; i < tries; i++) {
-            addInTask(pluginTaskExecutor, latch, "clientid", false, i, executionOrder, 0, classloader);
+            addInTask(pluginTaskExecutor, latch, "clientid", i, executionOrder, 0, classloader);
         }
 
         assertTrue(latch.await(30, TimeUnit.SECONDS));
@@ -461,7 +461,7 @@ public class PluginTaskExecutorTest {
         final CountDownLatch latch = new CountDownLatch(tries);
 
         for (int i = 0; i < tries; i++) {
-            addInTask(pluginTaskExecutor, latch, "" + (i % 100), false, i, executionOrder, 0, classloader);
+            addInTask(pluginTaskExecutor, latch, "" + (i % 100), i, executionOrder, 0, classloader);
         }
 
         assertTrue(latch.await(30, TimeUnit.SECONDS));
@@ -482,7 +482,7 @@ public class PluginTaskExecutorTest {
             final int finalJ = j;
             executorService.execute(() -> {
                 for (int i = finalJ * tries; i < (tries * finalJ) + tries; i++) {
-                    addInTask(pluginTaskExecutor, latch, "" + (i % 100), false, i, executionOrder, 1, classloader);
+                    addInTask(pluginTaskExecutor, latch, "" + (i % 100), i, executionOrder, 1, classloader);
                 }
             });
         }
@@ -605,7 +605,6 @@ public class PluginTaskExecutorTest {
             final PluginTaskExecutor pluginTaskExecutor,
             final @NotNull CountDownLatch latch,
             final @NotNull String clientId,
-            final boolean async,
             final int number,
             final @NotNull List<Integer> executionOrder,
             final int delay,

@@ -8,6 +8,7 @@ import eslintConfigPrettier from 'eslint-config-prettier'
 import pluginCypress from 'eslint-plugin-cypress'
 import pluginQuery from '@tanstack/eslint-plugin-query'
 import sonarjs from 'eslint-plugin-sonarjs'
+import { noBareIntercept } from './eslint-rules/no-bare-cy-intercept.mjs'
 
 export default tsEslint.config(
   { ignores: ['dist', '**/__generated__/*'] },
@@ -31,11 +32,13 @@ export default tsEslint.config(
       'react-refresh': reactRefresh,
       cypress: pluginCypress,
       sonarjs,
+      local: { rules: { 'no-bare-cy-intercept': noBareIntercept } },
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
 
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      'local/no-bare-cy-intercept': 'off',
       '@typescript-eslint/ban-ts-comment': 0,
       '@typescript-eslint/no-unused-vars': [
         'error',
@@ -68,9 +71,10 @@ export default tsEslint.config(
     },
   },
   {
-    files: ['**/*.spec.cy.tsx'],
+    files: ['**/*.spec.cy.tsx', '**/*.spec.cy.ts', 'cypress/e2e/**/*.{ts,tsx}', 'cypress/utils/**/*.{ts,tsx}'],
     rules: {
       'sonarjs/no-duplicate-string': 'off',
+      'local/no-bare-cy-intercept': 'warn',
     },
   }
 )

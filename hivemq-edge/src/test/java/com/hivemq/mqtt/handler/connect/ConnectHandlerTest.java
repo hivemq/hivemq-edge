@@ -19,6 +19,7 @@ import static com.hivemq.configuration.service.InternalConfigurations.MQTT_CONNE
 import static com.hivemq.extension.sdk.api.auth.parameter.OverloadProtectionThrottlingLevel.NONE;
 import static com.hivemq.mqtt.message.connack.CONNACK.KEEP_ALIVE_NOT_SET;
 import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRY_MAX;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -123,7 +124,7 @@ import util.DummyHandler;
 import util.TestConfigurationBootstrap;
 import util.TestMqttDecoder;
 
-@SuppressWarnings("NullabilityAnnotations")
+@SuppressWarnings({"NullabilityAnnotations", "MockNotUsedInProduction"})
 public class ConnectHandlerTest {
 
     private EmbeddedChannel channel;
@@ -315,8 +316,8 @@ public class ConnectHandlerTest {
             @Override
             public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelPromise promise)
                     throws Exception {
-                if (msg instanceof CONNACK) {
-                    keepAliveFromCONNACK.set(((CONNACK) msg).getServerKeepAlive());
+                if (msg instanceof CONNACK connack) {
+                    keepAliveFromCONNACK.set(connack.getServerKeepAlive());
                     connackLatch.countDown();
                 }
                 super.write(ctx, msg, promise);
@@ -361,8 +362,8 @@ public class ConnectHandlerTest {
             @Override
             public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelPromise promise)
                     throws Exception {
-                if (msg instanceof CONNACK) {
-                    keepAliveFromCONNACK.set(((CONNACK) msg).getServerKeepAlive());
+                if (msg instanceof CONNACK connack) {
+                    keepAliveFromCONNACK.set(connack.getServerKeepAlive());
                     connackLatch.countDown();
                 }
                 super.write(ctx, msg, promise);
@@ -517,8 +518,8 @@ public class ConnectHandlerTest {
             @Override
             public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelPromise promise)
                     throws Exception {
-                if (msg instanceof CONNACK) {
-                    sessionExpiryFromCONNACK.set(((CONNACK) msg).getSessionExpiryInterval());
+                if (msg instanceof CONNACK connack) {
+                    sessionExpiryFromCONNACK.set(connack.getSessionExpiryInterval());
                     connackLatch.countDown();
                 }
                 super.write(ctx, msg, promise);
@@ -562,8 +563,8 @@ public class ConnectHandlerTest {
             @Override
             public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelPromise promise)
                     throws Exception {
-                if (msg instanceof CONNACK) {
-                    clientID.set(((CONNACK) msg).getAssignedClientIdentifier());
+                if (msg instanceof CONNACK connack) {
+                    clientID.set(connack.getAssignedClientIdentifier());
                     connackLatch.countDown();
                 }
                 super.write(ctx, msg, promise);
@@ -604,8 +605,8 @@ public class ConnectHandlerTest {
             @Override
             public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelPromise promise)
                     throws Exception {
-                if (msg instanceof CONNACK) {
-                    clientID.set(((CONNACK) msg).getAssignedClientIdentifier());
+                if (msg instanceof CONNACK connack) {
+                    clientID.set(connack.getAssignedClientIdentifier());
                     connackLatch.countDown();
                 }
                 super.write(ctx, msg, promise);
@@ -642,8 +643,8 @@ public class ConnectHandlerTest {
             @Override
             public void write(final ChannelHandlerContext ctx, final Object msg, final ChannelPromise promise)
                     throws Exception {
-                if (msg instanceof CONNACK) {
-                    userProps.set(((CONNACK) msg).getUserProperties());
+                if (msg instanceof CONNACK connack) {
+                    userProps.set(connack.getUserProperties());
                     connackLatch.countDown();
                 }
                 super.write(ctx, msg, promise);
@@ -1037,7 +1038,7 @@ public class ConnectHandlerTest {
         final CountDownLatch latch = new CountDownLatch(1);
 
         final MqttWillPublish willPublish = new MqttWillPublish.Mqtt5Builder()
-                .withPayload("message".getBytes())
+                .withPayload("message".getBytes(UTF_8))
                 .withQos(QoS.EXACTLY_ONCE)
                 .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
                 .withTopic("topic")
@@ -1238,6 +1239,7 @@ public class ConnectHandlerTest {
 
     @Test
     @Timeout(5)
+    @SuppressWarnings("DirectInvocationOnMock")
     public void test_auth_in_progress_message_handler_is_removed() {
         createHandler();
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setAuthMethod("someMethod");
@@ -1629,6 +1631,7 @@ public class ConnectHandlerTest {
 
     @Test
     @Timeout(5)
+    @SuppressWarnings("DirectInvocationOnMock")
     public void test_set_client_settings() {
         createHandler();
         when(connectionPersistence.persistIfAbsent(any()))
@@ -1895,8 +1898,8 @@ public class ConnectHandlerTest {
 
         @Override
         public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) {
-            if (evt instanceof OnServerDisconnectEvent) {
-                final UserProperties userProperties = ((OnServerDisconnectEvent) evt).getUserProperties();
+            if (evt instanceof OnServerDisconnectEvent onServerDisconnectEvent) {
+                final UserProperties userProperties = onServerDisconnectEvent.getUserProperties();
                 if (userProperties == null || userProperties.isEmpty()) {
                     eventLatch.countDown();
                 }
@@ -1927,8 +1930,8 @@ public class ConnectHandlerTest {
         public void write(
                 final ChannelHandlerContext channelHandlerContext, final Object o, final ChannelPromise channelPromise)
                 throws Exception {
-            if (o instanceof DISCONNECT) {
-                disconnectMessage = (DISCONNECT) o;
+            if (o instanceof DISCONNECT disconnect) {
+                disconnectMessage = disconnect;
                 if (disconnectExpected) {
                     waiter.resume();
                 } else {

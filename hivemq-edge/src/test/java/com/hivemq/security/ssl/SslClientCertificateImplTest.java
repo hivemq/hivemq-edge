@@ -160,6 +160,7 @@ public class SslClientCertificateImplTest {
         clientCertificate = new SslClientCertificateImpl(certificates);
     }
 
+    @SuppressWarnings("JavaUtilDate") // JcaX509v3CertificateBuilder API requires java.util.Date
     private Certificate generateBadCert() throws Exception {
         final KeyPair keyPair = createKeyPair();
 
@@ -174,6 +175,7 @@ public class SslClientCertificateImplTest {
         return getCertificate(keyPair, certificateBuilder);
     }
 
+    @SuppressWarnings("JavaUtilDate") // JcaX509v3CertificateBuilder API requires java.util.Date
     private Certificate generateCert() throws Exception {
         final KeyPair keyPair = createKeyPair();
 
@@ -190,6 +192,7 @@ public class SslClientCertificateImplTest {
         return getCertificate(keyPair, certificateBuilder);
     }
 
+    @SuppressWarnings("JavaUtilDate") // JcaX509v3CertificateBuilder API requires java.util.Date
     private Certificate generateCertWithExtension() throws Exception {
         final KeyPair keyPair = createKeyPair();
 

@@ -63,7 +63,7 @@ public class FutureUtilsTest {
                                 latch.await();
                                 future.set(null);
                             } catch (final InterruptedException e) {
-                                e.printStackTrace();
+                                Thread.currentThread().interrupt();
                             }
                         }
                     })

@@ -125,11 +125,11 @@ public class ClientContextPluginImplTest {
     private void addInterceptors(
             final List<Interceptor> interceptorList, final @NotNull ClientContextPluginImpl contextPlugin) {
         for (final Interceptor interceptor : interceptorList) {
-            if (interceptor instanceof PublishInboundInterceptor) {
-                contextPlugin.addPublishInboundInterceptor((PublishInboundInterceptor) interceptor);
+            if (interceptor instanceof PublishInboundInterceptor publishInboundInterceptor) {
+                contextPlugin.addPublishInboundInterceptor(publishInboundInterceptor);
             }
-            if (interceptor instanceof SubscribeInboundInterceptor) {
-                contextPlugin.addSubscribeInboundInterceptor((SubscribeInboundInterceptor) interceptor);
+            if (interceptor instanceof SubscribeInboundInterceptor subscribeInboundInterceptor) {
+                contextPlugin.addSubscribeInboundInterceptor(subscribeInboundInterceptor);
             }
         }
     }
@@ -137,11 +137,11 @@ public class ClientContextPluginImplTest {
     private void removeInterceptors(
             final List<Interceptor> interceptorList, final @NotNull ClientContextPluginImpl contextPlugin) {
         for (final Interceptor interceptor : interceptorList) {
-            if (interceptor instanceof PublishInboundInterceptor) {
-                contextPlugin.removePublishInboundInterceptor((PublishInboundInterceptor) interceptor);
+            if (interceptor instanceof PublishInboundInterceptor publishInboundInterceptor) {
+                contextPlugin.removePublishInboundInterceptor(publishInboundInterceptor);
             }
-            if (interceptor instanceof SubscribeInboundInterceptor) {
-                contextPlugin.removeSubscribeInboundInterceptor((SubscribeInboundInterceptor) interceptor);
+            if (interceptor instanceof SubscribeInboundInterceptor subscribeInboundInterceptor) {
+                contextPlugin.removeSubscribeInboundInterceptor(subscribeInboundInterceptor);
             }
         }
     }

@@ -58,7 +58,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestSingleWriterFactory;
 
-@SuppressWarnings("NullabilityAnnotations")
+@SuppressWarnings({"NullabilityAnnotations", "FutureReturnValueIgnored"})
 public class ClientSessionSubscriptionPersistenceImplTest {
 
     private AutoCloseable closeableMock;

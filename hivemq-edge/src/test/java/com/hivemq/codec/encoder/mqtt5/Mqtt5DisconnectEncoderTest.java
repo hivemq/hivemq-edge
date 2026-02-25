@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
  * @author Florian Limpöck
  */
 public class Mqtt5DisconnectEncoderTest extends AbstractMqtt5EncoderTest {
+    @Override
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();

@@ -55,7 +55,7 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "MockNotUsedInProduction"})
 class SimulationProtocolAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());

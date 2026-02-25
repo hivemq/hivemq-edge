@@ -219,7 +219,7 @@ class DirectoryDescentIntegrationTest {
             conn.modify(
                     new ModifyRequest(userDn, new Modification(ModificationType.REPLACE, "userPassword", password)));
         } catch (final LDAPException e) {
-            if (e.getResultCode() != ResultCode.ENTRY_ALREADY_EXISTS) {
+            if (!e.getResultCode().equals(ResultCode.ENTRY_ALREADY_EXISTS)) {
                 throw new RuntimeException(e);
             }
         }
@@ -276,8 +276,9 @@ class DirectoryDescentIntegrationTest {
         assertThat(resolvedDn).as("Should find alice using Directory Descent").isEqualTo(expectedDn);
 
         try (final var conn = config.pool.getConnection()) {
-            final boolean success =
-                    conn.bind(new SimpleBindRequest(resolvedDn, "alice123")).getResultCode() == ResultCode.SUCCESS;
+            final boolean success = conn.bind(new SimpleBindRequest(resolvedDn, "alice123"))
+                    .getResultCode()
+                    .equals(ResultCode.SUCCESS);
 
             assertThat(success)
                     .as("Should authenticate with correctly resolved DN")

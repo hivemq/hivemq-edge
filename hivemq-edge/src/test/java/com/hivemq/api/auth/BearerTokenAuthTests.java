@@ -62,6 +62,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Simon L Johnson
  */
+@SuppressWarnings("MockNotUsedInProduction")
 public class BearerTokenAuthTests {
 
     protected final Logger logger = LoggerFactory.getLogger(BearerTokenAuthTests.class);

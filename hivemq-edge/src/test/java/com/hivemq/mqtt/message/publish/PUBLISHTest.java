@@ -15,6 +15,7 @@
  */
 package com.hivemq.mqtt.message.publish;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -156,11 +157,11 @@ public class PUBLISHTest {
                 .withQoS(QoS.AT_MOST_ONCE)
                 .withOnwardQos(QoS.AT_MOST_ONCE)
                 .withHivemqId("hivemqId") // 16+38 = 54 bytes
-                .withPayload("payload".getBytes()) // 7+12 = 19 bytes
+                .withPayload("payload".getBytes(UTF_8)) // 7+12 = 19 bytes
                 .withPublishId(1L)
                 .withTopic("topic") // 10+38 = 48 bytes
                 .withResponseTopic("response") // 16+38 = 54 bytes
-                .withCorrelationData("correlation".getBytes()) // 11+12 = 23 bytes
+                .withCorrelationData("correlation".getBytes(UTF_8)) // 11+12 = 23 bytes
                 .withUserProperties(Mqtt5UserProperties.of(
                         MqttUserProperty.of("name", "value"))) //   ((4 + 5) * 2) + 24 + 38 + 38 = 118
                 .build();
@@ -194,7 +195,7 @@ public class PUBLISHTest {
                 .withQoS(QoS.AT_MOST_ONCE)
                 .withOnwardQos(QoS.AT_MOST_ONCE)
                 .withHivemqId("hivemqId") // 16+38 = 54 bytes
-                .withPayload("payload".getBytes()) // 7+12 = 19 bytes
+                .withPayload("payload".getBytes(UTF_8)) // 7+12 = 19 bytes
                 .withTopic("topic") // 10+38 = 48 bytes
                 .build();
 
@@ -234,7 +235,7 @@ public class PUBLISHTest {
                 .withUserProperties(getManyProperties()) // 12.777.790 bytes
                 .build();
 
-        final long estimatedSize = ((1024 * 1024 * 5) * 2)
+        final long estimatedSize = ((1024L * 1024 * 5) * 2)
                 + 54
                 + 24
                 + (130_038 * 2)

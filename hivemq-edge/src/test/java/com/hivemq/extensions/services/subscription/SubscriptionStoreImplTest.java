@@ -83,7 +83,7 @@ import util.TestException;
 /**
  * @since 4.0.0
  */
-@SuppressWarnings("NullabilityAnnotations")
+@SuppressWarnings({"NullabilityAnnotations", "FutureReturnValueIgnored"})
 public class SubscriptionStoreImplTest {
 
     private SubscriptionStore subscriptionStore;
@@ -920,7 +920,7 @@ public class SubscriptionStoreImplTest {
                     }
                 });
 
-        final CompletableFuture<Void> finishFuture = subscriptionStore.iterateAllSubscriptions((context, value) -> {});
+        subscriptionStore.iterateAllSubscriptions((context, value) -> {});
 
         resultFuture.complete(null);
 

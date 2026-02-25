@@ -65,6 +65,7 @@ import util.IsolatedExtensionClassloaderUtil;
 /**
  * @author Robin Atherton
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 public class PingInterceptorHandlerTest {
 
     // this needs to be public, so it's accessible from the interceptors

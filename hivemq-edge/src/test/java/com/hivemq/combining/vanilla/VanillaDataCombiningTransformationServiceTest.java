@@ -15,6 +15,7 @@
  */
 package com.hivemq.combining.vanilla;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -90,11 +91,11 @@ public class VanillaDataCombiningTransformationServiceTest {
 
     @Test
     public void whenInstructionsAreEmpty_thenPublishesEmptyObject() {
-        when(publish.getPayload()).thenReturn(EMPTY_OBJECT.getBytes());
+        when(publish.getPayload()).thenReturn(EMPTY_OBJECT.getBytes(UTF_8));
         when(dataCombining.instructions()).thenReturn(List.of());
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo(EMPTY_OBJECT);
+        assertThat(new String(publishCaptor.getValue().getPayload(), UTF_8)).isEqualTo(EMPTY_OBJECT);
     }
 
     @Test
@@ -104,7 +105,7 @@ public class VanillaDataCombiningTransformationServiceTest {
                   "TOPIC_FILTER:topic/a": {
                     "a": 1
                   }
-                }""".getBytes());
+                }""".getBytes(UTF_8));
         when(dataCombining.instructions())
                 .thenReturn(List.of(new Instruction(
                         "$.a",
@@ -112,7 +113,7 @@ public class VanillaDataCombiningTransformationServiceTest {
                         new DataIdentifierReference("topic/a", DataIdentifierReference.Type.TOPIC_FILTER))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+        assertThat(new String(publishCaptor.getValue().getPayload(), UTF_8)).isEqualTo("""
                 {"dest":{"a":1}}""");
     }
 
@@ -126,7 +127,7 @@ public class VanillaDataCombiningTransformationServiceTest {
                   "TOPIC_FILTER:topic/b": {
                     "b": 2
                   }
-                }""".getBytes());
+                }""".getBytes(UTF_8));
         when(dataCombining.instructions())
                 .thenReturn(List.of(
                         new Instruction(
@@ -139,13 +140,13 @@ public class VanillaDataCombiningTransformationServiceTest {
                                 new DataIdentifierReference("topic/b", DataIdentifierReference.Type.TOPIC_FILTER))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+        assertThat(new String(publishCaptor.getValue().getPayload(), UTF_8)).isEqualTo("""
                 {"dest":{"a":1,"b":2}}""");
     }
 
     @Test
     public void when1TagMatches_thenPublishPasses() {
-        when(publish.getPayload()).thenReturn(EMPTY_OBJECT.getBytes());
+        when(publish.getPayload()).thenReturn(EMPTY_OBJECT.getBytes(UTF_8));
         when(dataCombining.instructions())
                 .thenReturn(List.of(new Instruction(
                         "$.value",
@@ -153,13 +154,13 @@ public class VanillaDataCombiningTransformationServiceTest {
                         new DataIdentifierReference("TAG1", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+        assertThat(new String(publishCaptor.getValue().getPayload(), UTF_8)).isEqualTo("""
                 {"dest":{"tag1":"TAG1"}}""");
     }
 
     @Test
     public void when2TagsMatch_thenPublishPasses() {
-        when(publish.getPayload()).thenReturn(EMPTY_OBJECT.getBytes());
+        when(publish.getPayload()).thenReturn(EMPTY_OBJECT.getBytes(UTF_8));
         when(dataCombining.instructions())
                 .thenReturn(List.of(
                         new Instruction(
@@ -172,14 +173,14 @@ public class VanillaDataCombiningTransformationServiceTest {
                                 new DataIdentifierReference("TAG2", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+        assertThat(new String(publishCaptor.getValue().getPayload(), UTF_8)).isEqualTo("""
                 {"dest":{"tag1":"TAG1","tag2":"TAG2"}}""");
     }
 
     @Test
     public void when1AssetMatches_thenPublishPasses() {
         final String assetId = UUID.randomUUID().toString();
-        when(publish.getPayload()).thenReturn(EMPTY_OBJECT.getBytes());
+        when(publish.getPayload()).thenReturn(EMPTY_OBJECT.getBytes(UTF_8));
         when(dataCombining.instructions())
                 .thenReturn(List.of(new Instruction(
                         "$.value",
@@ -187,7 +188,7 @@ public class VanillaDataCombiningTransformationServiceTest {
                         new DataIdentifierReference(assetId, DataIdentifierReference.Type.PULSE_ASSET))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload()))
+        assertThat(new String(publishCaptor.getValue().getPayload(), UTF_8))
                 .isEqualTo(StringTemplate.format("""
                 {"dest":{"asset":"${assetId}"}}""", Map.of("assetId", assetId)));
     }
@@ -202,7 +203,7 @@ public class VanillaDataCombiningTransformationServiceTest {
                   "TOPIC_FILTER:topic/b": {
                     "b": 2
                   }
-                }""".getBytes());
+                }""".getBytes(UTF_8));
         when(dataCombining.instructions())
                 .thenReturn(List.of(
                         new Instruction(
@@ -231,7 +232,7 @@ public class VanillaDataCombiningTransformationServiceTest {
                                 new DataIdentifierReference("ASSET2", DataIdentifierReference.Type.PULSE_ASSET))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+        assertThat(new String(publishCaptor.getValue().getPayload(), UTF_8)).isEqualTo("""
                 {"dest":{"a":1,"b":2,"tag1":"TAG1","tag2":"TAG2","asset1":"ASSET1","asset2":"ASSET2"}}""");
     }
 
@@ -245,7 +246,7 @@ public class VanillaDataCombiningTransformationServiceTest {
                   "TOPIC_FILTER:topic/b": {
                     "b": 2
                   }
-                }""".getBytes());
+                }""".getBytes(UTF_8));
         when(dataCombining.instructions())
                 .thenReturn(List.of(
                         new Instruction(
@@ -258,13 +259,13 @@ public class VanillaDataCombiningTransformationServiceTest {
                                 new DataIdentifierReference("topic/b", DataIdentifierReference.Type.TOPIC_FILTER))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+        assertThat(new String(publishCaptor.getValue().getPayload(), UTF_8)).isEqualTo("""
                 {"dest":{"x":2}}""");
     }
 
     @Test
     public void when2TagsOverlap_thenLast1WinsAndPublishPasses() {
-        when(publish.getPayload()).thenReturn(EMPTY_OBJECT.getBytes());
+        when(publish.getPayload()).thenReturn(EMPTY_OBJECT.getBytes(UTF_8));
         when(dataCombining.instructions())
                 .thenReturn(List.of(
                         new Instruction(
@@ -277,7 +278,7 @@ public class VanillaDataCombiningTransformationServiceTest {
                                 new DataIdentifierReference("TAG2", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+        assertThat(new String(publishCaptor.getValue().getPayload(), UTF_8)).isEqualTo("""
                 {"dest":{"tag":"TAG2"}}""");
     }
 
@@ -291,7 +292,7 @@ public class VanillaDataCombiningTransformationServiceTest {
                   "TOPIC_FILTER:topic/double\\"quote": {
                     "b": 2
                   }
-                }""".getBytes());
+                }""".getBytes(UTF_8));
         when(dataCombining.instructions())
                 .thenReturn(List.of(
                         new Instruction(
@@ -306,7 +307,7 @@ public class VanillaDataCombiningTransformationServiceTest {
                                         "topic/double\"quote", DataIdentifierReference.Type.TOPIC_FILTER))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+        assertThat(new String(publishCaptor.getValue().getPayload(), UTF_8)).isEqualTo("""
                 {"dest":{"a":1,"b":2}}""");
     }
 
@@ -320,7 +321,7 @@ public class VanillaDataCombiningTransformationServiceTest {
                   "TOPIC_FILTER:topic/b": {
                     "b": 2
                   }
-                }""".getBytes());
+                }""".getBytes(UTF_8));
         when(dataCombining.instructions())
                 .thenReturn(List.of(
                         new Instruction(
@@ -333,7 +334,7 @@ public class VanillaDataCombiningTransformationServiceTest {
                                 new DataIdentifierReference("topic/b", DataIdentifierReference.Type.TOPIC_FILTER))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+        assertThat(new String(publishCaptor.getValue().getPayload(), UTF_8)).isEqualTo("""
                 {"dest":{"a":1,"b":2}}""");
     }
 }

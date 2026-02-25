@@ -65,6 +65,7 @@ import util.TestConfigurationBootstrap;
 /**
  * @since 4.3
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 public class DisconnectInboundInterceptorHandlerTest {
 
     @TempDir

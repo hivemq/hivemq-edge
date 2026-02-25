@@ -56,13 +56,13 @@ public class GlobalInterceptorRegistryImplTest {
 
     @Test
     public void test_add_connect_inbound_success() {
-        globalInterceptorRegistry.setConnectInboundInterceptorProvider(((e) -> null));
+        globalInterceptorRegistry.setConnectInboundInterceptorProvider(e -> null);
         verify(interceptors).addConnectInboundInterceptorProvider(any(ConnectInboundInterceptorProvider.class));
     }
 
     @Test
     public void test_add_connack_outbound_success() {
-        globalInterceptorRegistry.setConnackOutboundInterceptorProvider(((e) -> null));
+        globalInterceptorRegistry.setConnackOutboundInterceptorProvider(e -> null);
         verify(interceptors).addConnackOutboundInterceptorProvider(any(ConnackOutboundInterceptorProvider.class));
     }
 }

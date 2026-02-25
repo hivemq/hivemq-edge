@@ -42,15 +42,12 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Simon L Johnson
  */
+@SuppressWarnings("MockNotUsedInProduction")
 public class BasicAuthenticationTests {
-
-    protected final Logger logger = LoggerFactory.getLogger(BasicAuthenticationTests.class);
 
     static final int TEST_HTTP_PORT = 8088;
     static final int CONNECT_TIMEOUT = 1000;

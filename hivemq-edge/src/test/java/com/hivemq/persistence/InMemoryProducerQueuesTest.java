@@ -19,8 +19,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.collect.ImmutableList;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,14 +61,14 @@ public class InMemoryProducerQueuesTest {
     }
 
     @Test
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void test_submit_whenManyThreadsSubmitConcurrently_thenOnlyOneThreadWorksConcurrently()
             throws InterruptedException {
 
-        final LinkedList<Integer> list = new LinkedList<>();
+        final ArrayDeque<Integer> list = new ArrayDeque<>();
         list.add(0);
 
         final List<Thread> threads = new ArrayList<>();
-        final int numberOfConcurrentThreads = 4;
 
         // this is highly un-thread-safe, when this is concurrently executed
         // there are many sources for exceptions

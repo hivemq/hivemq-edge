@@ -69,6 +69,7 @@ public class RetainedMessagePersistenceImplTest {
     }
 
     @AfterEach
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void tearDown() throws Exception {
         retainedMessagePersistence.closeDB();
         singleWriterService.stop();

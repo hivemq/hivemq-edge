@@ -19,6 +19,7 @@ import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENC
 import static com.hivemq.configuration.service.MqttConfigurationService.QueuedMessagesStrategy.DISCARD;
 import static com.hivemq.configuration.service.MqttConfigurationService.QueuedMessagesStrategy.DISCARD_OLDEST;
 import static com.hivemq.persistence.clientqueue.ClientQueuePersistenceImpl.SHARED_IN_FLIGHT_MARKER;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -1498,7 +1499,7 @@ public class ClientQueueMemoryLocalPersistenceTest {
                 .withQoS(qos)
                 .withOnwardQos(qos)
                 .withPublishId(1L)
-                .withPayload("message".getBytes())
+                .withPayload("message".getBytes(UTF_8))
                 .withTopic("topic")
                 .withHivemqId("hivemqId")
                 .withPersistence(payloadPersistence)
@@ -1513,7 +1514,7 @@ public class ClientQueueMemoryLocalPersistenceTest {
                 .withQoS(qos)
                 .withOnwardQos(qos)
                 .withPublishId(1L)
-                .withPayload("message".getBytes())
+                .withPayload("message".getBytes(UTF_8))
                 .withTopic(topic)
                 .withHivemqId("hivemqId")
                 .withPersistence(payloadPersistence)
@@ -1526,7 +1527,7 @@ public class ClientQueueMemoryLocalPersistenceTest {
                 .withQoS(qos)
                 .withOnwardQos(qos)
                 .withPublishId(1L)
-                .withPayload("message".getBytes())
+                .withPayload("message".getBytes(UTF_8))
                 .withTopic(topic)
                 .withHivemqId("hivemqId")
                 .withPersistence(payloadPersistence)
@@ -1556,8 +1557,8 @@ public class ClientQueueMemoryLocalPersistenceTest {
                 .withQoS(qos)
                 .withOnwardQos(qos)
                 .withPublishId(1L)
-                .withPayload(RandomStringUtils.randomAlphanumeric(queueLimit).getBytes())
-                .withCorrelationData(RandomStringUtils.randomAlphanumeric(65000).getBytes())
+                .withPayload(RandomStringUtils.randomAlphanumeric(queueLimit).getBytes(UTF_8))
+                .withCorrelationData(RandomStringUtils.randomAlphanumeric(65000).getBytes(UTF_8))
                 .withResponseTopic(RandomStringUtils.randomAlphanumeric(65000))
                 .withTopic(topic)
                 .withHivemqId("hivemqId")

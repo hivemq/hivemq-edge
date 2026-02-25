@@ -30,6 +30,7 @@ public class Mqtt5AuthEncoderTest extends AbstractMqtt5EncoderTest {
 
     private static final Mqtt5AuthReasonCode CONTINUE = Mqtt5AuthReasonCode.CONTINUE_AUTHENTICATION;
 
+    @Override
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();

@@ -32,11 +32,13 @@ import com.hivemq.bootstrap.factories.PrePublishProcessorHandlingProvider;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+@SuppressWarnings("FutureReturnValueIgnored")
 class PrePublishProcessorServiceImplTest {
 
     private final @NotNull InternalPublishService internalPublishService = mock();
@@ -79,6 +81,7 @@ class PrePublishProcessorServiceImplTest {
     }
 
     @Test
+    @SuppressWarnings("ReferenceEquality")
     void test_publish_twoPreprocessor_applyPreprocessorAndRedirectToInternalPublishService() {
         final PUBLISH publish = mock(PUBLISH.class);
         final PUBLISH modifiedPublish = mock(PUBLISH.class);

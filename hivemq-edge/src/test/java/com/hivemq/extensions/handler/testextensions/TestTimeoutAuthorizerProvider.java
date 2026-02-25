@@ -45,7 +45,7 @@ public final class TestTimeoutAuthorizerProvider implements AuthorizerProvider {
             try {
                 Thread.sleep(100);
             } catch (final InterruptedException e) {
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
             }
 
             countDownLatch.countDown();

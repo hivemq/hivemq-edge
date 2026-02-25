@@ -15,6 +15,7 @@
  */
 package com.hivemq.extensions.services.publish;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -105,7 +106,7 @@ public class PublishServiceImplTest {
         when(rateLimitService.rateLimitExceeded()).thenReturn(true);
         final Publish publish = new PublishBuilderImpl(fullConfigurationService)
                 .topic("topic")
-                .payload(ByteBuffer.wrap("message".getBytes()))
+                .payload(ByteBuffer.wrap("message".getBytes(UTF_8)))
                 .build();
 
         assertThatThrownBy(() -> publishService.publish(publish).get())
@@ -127,7 +128,7 @@ public class PublishServiceImplTest {
         when(rateLimitService.rateLimitExceeded()).thenReturn(true);
         final Publish publish = new PublishBuilderImpl(fullConfigurationService)
                 .topic("topic")
-                .payload(ByteBuffer.wrap("message".getBytes()))
+                .payload(ByteBuffer.wrap("message".getBytes(UTF_8)))
                 .build();
 
         assertThatThrownBy(
@@ -141,7 +142,7 @@ public class PublishServiceImplTest {
     public void test_publish() throws Throwable {
         final Publish publish = new PublishBuilderImpl(fullConfigurationService)
                 .topic("topic")
-                .payload(ByteBuffer.wrap("message".getBytes()))
+                .payload(ByteBuffer.wrap("message".getBytes(UTF_8)))
                 .build();
         when(dataGovernanceService.applyAndPublish(any()))
                 .thenReturn(Futures.immediateFuture(PublishingResult.DELIVERED));
@@ -156,7 +157,7 @@ public class PublishServiceImplTest {
         final byte subscriptionFlags = SubscriptionFlag.getDefaultFlags(false, false, false);
         final Publish publish = new PublishBuilderImpl(fullConfigurationService)
                 .topic("topic")
-                .payload(ByteBuffer.wrap("message".getBytes()))
+                .payload(ByteBuffer.wrap("message".getBytes(UTF_8)))
                 .build();
         when(topicTree.findSubscriber("client", "topic"))
                 .thenReturn(new SubscriberWithIdentifiers("client", 1, subscriptionFlags, null));
@@ -178,7 +179,7 @@ public class PublishServiceImplTest {
     public void test_publish_to_client_not_subscribed() throws Exception {
         final Publish publish = new PublishBuilderImpl(fullConfigurationService)
                 .topic("topic")
-                .payload(ByteBuffer.wrap("message".getBytes()))
+                .payload(ByteBuffer.wrap("message".getBytes(UTF_8)))
                 .build();
         when(topicTree.findSubscriber("client", "topic")).thenReturn(null);
         final PublishToClientResult result =

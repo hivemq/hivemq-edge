@@ -15,6 +15,7 @@
  */
 package com.hivemq.extensions.services.builder;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -373,7 +374,7 @@ public class WillPublishBuilderImplTest {
                 () -> willPublishBuilder.contentType(RandomStringUtils.randomAlphanumeric(65536)));
     }
 
-    class TestPublishPacket implements PublishPacket {
+    static class TestPublishPacket implements PublishPacket {
 
         @Override
         public boolean getDupFlag() {
@@ -423,7 +424,7 @@ public class WillPublishBuilderImplTest {
         @NotNull
         @Override
         public Optional<ByteBuffer> getCorrelationData() {
-            return Optional.of(ByteBuffer.wrap("correlation_data".getBytes()));
+            return Optional.of(ByteBuffer.wrap("correlation_data".getBytes(UTF_8)));
         }
 
         @Override
@@ -440,7 +441,7 @@ public class WillPublishBuilderImplTest {
         @NotNull
         @Override
         public Optional<ByteBuffer> getPayload() {
-            return Optional.of(ByteBuffer.wrap("test3".getBytes()));
+            return Optional.of(ByteBuffer.wrap("test3".getBytes(UTF_8)));
         }
 
         @NotNull
@@ -458,7 +459,7 @@ public class WillPublishBuilderImplTest {
         }
     }
 
-    private class TestWillPublishPacket implements WillPublishPacket {
+    private static class TestWillPublishPacket implements WillPublishPacket {
 
         @Override
         public long getWillDelay() {
@@ -536,7 +537,7 @@ public class WillPublishBuilderImplTest {
         }
     }
 
-    private class TestPublish implements Publish {
+    private static class TestPublish implements Publish {
 
         @Override
         public Qos getQos() {

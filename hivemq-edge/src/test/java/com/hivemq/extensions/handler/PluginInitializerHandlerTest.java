@@ -172,6 +172,7 @@ public class PluginInitializerHandlerTest {
 
     @Test
     @Timeout(10)
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void test_write_connack_with_initializer_channel_inactive() throws Exception {
         channel.close();
 
@@ -186,6 +187,7 @@ public class PluginInitializerHandlerTest {
 
     @Test
     @Timeout(10)
+    @SuppressWarnings("DirectInvocationOnMock")
     public void test_write_connack_fire_initialize() throws Exception {
         when(initializers.getClientInitializerMap()).thenReturn(createClientInitializerMap());
 

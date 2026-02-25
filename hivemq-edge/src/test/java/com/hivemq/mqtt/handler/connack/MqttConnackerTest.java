@@ -15,6 +15,7 @@
  */
 package com.hivemq.mqtt.handler.connack;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -544,7 +545,7 @@ public class MqttConnackerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
         clientConnection.setClientId("luke_skywalker");
-        clientConnection.setAuthData(ByteBuffer.wrap("decent_guy".getBytes()));
+        clientConnection.setAuthData(ByteBuffer.wrap("decent_guy".getBytes(UTF_8)));
         clientConnection.setAuthMethod("face_check");
         assertTrue(channel.isActive());
 
@@ -571,7 +572,7 @@ public class MqttConnackerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
         clientConnection.setClientId("luke_skywalker");
-        clientConnection.setAuthData(ByteBuffer.wrap("decent_guy".getBytes()));
+        clientConnection.setAuthData(ByteBuffer.wrap("decent_guy".getBytes(UTF_8)));
         assertTrue(channel.isActive());
 
         mqttConnacker.connackError(
@@ -642,6 +643,7 @@ public class MqttConnackerTest {
     }
 
     @Test
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void test_connackSuccess() {
         mqttConnacker.connackSuccess(
                 clientConnection.getChannel().pipeline().firstContext(),

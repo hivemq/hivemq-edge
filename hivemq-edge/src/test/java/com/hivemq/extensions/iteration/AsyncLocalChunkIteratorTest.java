@@ -170,6 +170,7 @@ public class AsyncLocalChunkIteratorTest {
         }
 
         @Override
+        @SuppressWarnings("FutureReturnValueIgnored")
         public @NotNull ListenableFuture<ChunkResult<String>> fetchNextResults(final @Nullable ChunkCursor cursor) {
 
             if (exception != null) {
@@ -202,14 +203,6 @@ public class AsyncLocalChunkIteratorTest {
 
         public void setChunks(final Queue<Collection<String>> chunks) {
             this.chunks.set(chunks);
-        }
-
-        public void setBlockDuringFetch(final boolean block) {
-            this.block.set(block);
-        }
-
-        public CountDownLatch getBlockingLatch() {
-            return blockingLatch;
         }
 
         public void setException(final Exception exception) {

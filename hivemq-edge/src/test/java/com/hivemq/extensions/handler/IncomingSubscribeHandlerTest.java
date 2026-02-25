@@ -135,6 +135,7 @@ public class IncomingSubscribeHandlerTest {
     }
 
     @AfterEach
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void tearDown() {
         executor.stop();
         channel.close();
@@ -142,6 +143,7 @@ public class IncomingSubscribeHandlerTest {
 
     @Test
     @Timeout(5)
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void test_read_subscribe_channel_closed() {
         channel.close();
 
@@ -267,8 +269,8 @@ public class IncomingSubscribeHandlerTest {
                     final @NotNull ChannelPromise promise)
                     throws Exception {
 
-                if (msg instanceof SUBACK
-                        && ((SUBACK) msg).getReasonCodes().get(0).equals(Mqtt5SubAckReasonCode.UNSPECIFIED_ERROR)) {
+                if (msg instanceof SUBACK suback
+                        && suback.getReasonCodes().get(0).equals(Mqtt5SubAckReasonCode.UNSPECIFIED_ERROR)) {
                     subackLatch.countDown();
                 }
 
@@ -362,8 +364,8 @@ public class IncomingSubscribeHandlerTest {
                     final @NotNull ChannelPromise promise)
                     throws Exception {
 
-                if (msg instanceof SUBACK
-                        && ((SUBACK) msg).getReasonCodes().get(0).equals(Mqtt5SubAckReasonCode.UNSPECIFIED_ERROR)) {
+                if (msg instanceof SUBACK suback
+                        && suback.getReasonCodes().get(0).equals(Mqtt5SubAckReasonCode.UNSPECIFIED_ERROR)) {
                     subackLatch.countDown();
                 }
 
@@ -410,8 +412,8 @@ public class IncomingSubscribeHandlerTest {
                     final @NotNull ChannelPromise promise)
                     throws Exception {
 
-                if (msg instanceof SUBACK
-                        && ((SUBACK) msg).getReasonCodes().get(0).equals(Mqtt5SubAckReasonCode.UNSPECIFIED_ERROR)) {
+                if (msg instanceof SUBACK suback
+                        && suback.getReasonCodes().get(0).equals(Mqtt5SubAckReasonCode.UNSPECIFIED_ERROR)) {
                     subackLatch.countDown();
                 }
 
@@ -457,8 +459,8 @@ public class IncomingSubscribeHandlerTest {
                     final @NotNull ChannelPromise promise)
                     throws Exception {
 
-                if (msg instanceof SUBACK
-                        && ((SUBACK) msg).getReasonCodes().get(0).equals(Mqtt5SubAckReasonCode.GRANTED_QOS_1)) {
+                if (msg instanceof SUBACK suback
+                        && suback.getReasonCodes().get(0).equals(Mqtt5SubAckReasonCode.GRANTED_QOS_1)) {
                     subackLatch.countDown();
                 }
 
@@ -526,7 +528,7 @@ public class IncomingSubscribeHandlerTest {
                 Thread.sleep(100);
                 async.resume();
             } catch (final InterruptedException e) {
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
             }
         }
     }

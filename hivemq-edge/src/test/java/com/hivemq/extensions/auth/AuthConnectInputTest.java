@@ -15,6 +15,7 @@
  */
 package com.hivemq.extensions.auth;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.hivemq.bootstrap.ClientConnection;
@@ -23,7 +24,6 @@ import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.connect.CONNECT;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -49,7 +49,7 @@ public class AuthConnectInputTest {
         connect = new CONNECT.Mqtt5Builder()
                 .withClientIdentifier("client")
                 .withUsername("user")
-                .withPassword("password".getBytes(Charset.defaultCharset()))
+                .withPassword("password".getBytes(UTF_8))
                 .withAuthMethod("method")
                 .withAuthData(new byte[] {'a', 'b', 'c'})
                 .build();
@@ -65,10 +65,10 @@ public class AuthConnectInputTest {
         assertEquals("method", connectPacket.getAuthenticationMethod().get());
         assertEquals("user", connectPacket.getUserName().get());
         assertEquals(
-                ByteBuffer.wrap("password".getBytes()),
+                ByteBuffer.wrap("password".getBytes(UTF_8)),
                 connectPacket.getPassword().get());
         assertEquals(
-                ByteBuffer.wrap("abc".getBytes()),
+                ByteBuffer.wrap("abc".getBytes(UTF_8)),
                 connectPacket.getAuthenticationData().get());
         assertEquals(taskInput, taskInput.get());
     }

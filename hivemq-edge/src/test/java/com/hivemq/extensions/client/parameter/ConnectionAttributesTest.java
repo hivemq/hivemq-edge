@@ -15,6 +15,7 @@
  */
 package com.hivemq.extensions.client.parameter;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -30,7 +31,6 @@ import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.lang3.RandomUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -91,7 +91,7 @@ public class ConnectionAttributesTest {
     @Test
     public void test_put() {
         final String key = "test.key";
-        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes());
+        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes(UTF_8));
 
         connectionAttributes.put(key, value);
 
@@ -101,7 +101,7 @@ public class ConnectionAttributesTest {
     @Test
     public void test_put_present() {
         final String key = "test.key";
-        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes());
+        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes(UTF_8));
 
         connectionAttributes.put(key, value);
         connectionAttributes.put(key, value);
@@ -112,7 +112,7 @@ public class ConnectionAttributesTest {
     @Test
     public void test_put_readOnly() {
         final String key = "test.key";
-        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes());
+        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes(UTF_8));
 
         final ByteBuffer putValue = value.duplicate();
         connectionAttributes.put(key, putValue);
@@ -131,7 +131,7 @@ public class ConnectionAttributesTest {
     @SuppressWarnings("ConstantConditions")
     public void test_put_null_key() {
         final String key = null;
-        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes());
+        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes(UTF_8));
 
         assertThatThrownBy(() -> connectionAttributes.put(key, value)).isInstanceOf(NullPointerException.class);
     }
@@ -148,7 +148,7 @@ public class ConnectionAttributesTest {
     @Test
     public void test_get() {
         final String key = "test.key";
-        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes());
+        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes(UTF_8));
 
         connectionAttributes.put(key, value);
 
@@ -170,7 +170,7 @@ public class ConnectionAttributesTest {
     @Test
     public void test_get_immutable() {
         final String key = "test.key";
-        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes());
+        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes(UTF_8));
 
         connectionAttributes.put(key, value);
 
@@ -193,9 +193,9 @@ public class ConnectionAttributesTest {
     public void test_getAll() {
         final ImmutableMap<String, ByteBuffer> values = ImmutableMap.of(
                 "test.key1",
-                ByteBuffer.wrap("test.value1".getBytes()),
+                ByteBuffer.wrap("test.value1".getBytes(UTF_8)),
                 "test.key2",
-                ByteBuffer.wrap("test.value2".getBytes()));
+                ByteBuffer.wrap("test.value2".getBytes(UTF_8)));
 
         for (final Map.Entry<String, ByteBuffer> value : values.entrySet()) {
             connectionAttributes.put(value.getKey(), value.getValue());
@@ -218,9 +218,9 @@ public class ConnectionAttributesTest {
     public void test_getAll_immutable() {
         final ImmutableMap<String, ByteBuffer> values = ImmutableMap.of(
                 "test.key1",
-                ByteBuffer.wrap("test.value1".getBytes()),
+                ByteBuffer.wrap("test.value1".getBytes(UTF_8)),
                 "test.key2",
-                ByteBuffer.wrap("test.value2".getBytes()));
+                ByteBuffer.wrap("test.value2".getBytes(UTF_8)));
 
         for (final Map.Entry<String, ByteBuffer> value : values.entrySet()) {
             connectionAttributes.put(value.getKey(), value.getValue());
@@ -231,13 +231,13 @@ public class ConnectionAttributesTest {
         assertTrue(returnValues1.isPresent());
         assertAllEquals(values, returnValues1.get());
 
-        final AtomicInteger exceptions = new AtomicInteger(0);
+        int exceptions = 0;
 
         for (final String key : values.keySet()) {
             try {
                 returnValues1.get().get(key).put(0, (byte) 10);
             } catch (final ReadOnlyBufferException e) {
-                exceptions.incrementAndGet();
+                exceptions++;
             }
         }
 
@@ -245,13 +245,13 @@ public class ConnectionAttributesTest {
 
         assertTrue(returnValues2.isPresent());
         assertAllEquals(values, returnValues2.get());
-        assertEquals(values.size(), exceptions.get());
+        assertEquals(values.size(), exceptions);
     }
 
     @Test
     public void test_remove() {
         final String key = "test.key";
-        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes());
+        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes(UTF_8));
 
         connectionAttributes.put(key, value);
 
@@ -281,9 +281,9 @@ public class ConnectionAttributesTest {
     @Test
     public void test_clear() {
         final String key1 = "test.key1";
-        final ByteBuffer value1 = ByteBuffer.wrap("test.value1".getBytes());
+        final ByteBuffer value1 = ByteBuffer.wrap("test.value1".getBytes(UTF_8));
         final String key2 = "test.key2";
-        final ByteBuffer value2 = ByteBuffer.wrap("test.value2".getBytes());
+        final ByteBuffer value2 = ByteBuffer.wrap("test.value2".getBytes(UTF_8));
 
         connectionAttributes.put(key1, value1);
         connectionAttributes.put(key2, value2);

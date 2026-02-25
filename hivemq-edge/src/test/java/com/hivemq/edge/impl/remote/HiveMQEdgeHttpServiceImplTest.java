@@ -40,8 +40,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -235,12 +233,13 @@ class HiveMQEdgeHttpServiceImplTest {
     }
 
     @Test
+    @SuppressWarnings("FutureReturnValueIgnored")
     void testStopCleansUpResources_concurrentStopDuringConfigFetch() throws Exception {
         final int iterations = 50;
-        final AtomicInteger failures = new AtomicInteger(0);
-        final AtomicBoolean testFailed = new AtomicBoolean(false);
+        int failures = 0;
+        boolean testFailed = false;
 
-        for (int i = 0; i < iterations && !testFailed.get(); i++) {
+        for (int i = 0; i < iterations && !testFailed; i++) {
             final CountDownLatch configRequestReceived = new CountDownLatch(1);
             final CountDownLatch allowConfigResponse = new CountDownLatch(1);
 
@@ -306,9 +305,9 @@ class HiveMQEdgeHttpServiceImplTest {
                 Thread.sleep(50);
 
                 if (localService.getRemoteConfiguration().isPresent()) {
-                    failures.incrementAndGet();
-                    if (failures.get() > 5) {
-                        testFailed.set(true);
+                    failures++;
+                    if (failures > 5) {
+                        testFailed = true;
                     }
                 }
             } finally {
@@ -319,9 +318,8 @@ class HiveMQEdgeHttpServiceImplTest {
 
         assertEquals(
                 0,
-                failures.get(),
-                "Configuration should be cleared after stop in all iterations, but failed " + failures.get()
-                        + " times");
+                failures,
+                "Configuration should be cleared after stop in all iterations, but failed " + failures + " times");
     }
 
     @Test
@@ -434,7 +432,7 @@ class HiveMQEdgeHttpServiceImplTest {
         boolean getAsBoolean();
     }
 
-    private class JsonResponseHandler implements HttpHandler {
+    private static class JsonResponseHandler implements HttpHandler {
         private final @NotNull String jsonResponse;
 
         JsonResponseHandler(final @NotNull String jsonResponse) {

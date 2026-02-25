@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
  * @since 4.0.0
  */
 public class Mqtt5UnsubackEncoderTest extends AbstractMqtt5EncoderTest {
+    @Override
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();

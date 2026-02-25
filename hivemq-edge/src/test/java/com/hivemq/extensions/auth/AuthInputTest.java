@@ -15,6 +15,7 @@
  */
 package com.hivemq.extensions.auth;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.hivemq.bootstrap.ClientConnection;
@@ -38,7 +39,7 @@ import org.junit.jupiter.api.Test;
 public class AuthInputTest {
 
     private final String method = "test";
-    private final byte[] authData = "test".getBytes();
+    private final byte[] authData = "test".getBytes(UTF_8);
     private final Mqtt5AuthReasonCode reasonCode = Mqtt5AuthReasonCode.CONTINUE_AUTHENTICATION;
     private final Mqtt5UserProperties userProperties = Mqtt5UserProperties.of(new MqttUserProperty("test", "1"));
     private final String reasonString = "testString";

@@ -32,6 +32,7 @@ public class Mqtt5PubrecEncoderTest extends AbstractMqtt5EncoderTest {
 
     private static final Mqtt5PubRecReasonCode SUCCESS = Mqtt5PubRecReasonCode.SUCCESS;
 
+    @Override
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();

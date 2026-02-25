@@ -124,7 +124,6 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
     void test_concurrentStopAndStatusChange_noRaceCondition() throws Exception {
         final int numIterations = 20;
         final ExecutorService executor = Executors.newFixedThreadPool(10);
-        final AtomicInteger failedAssertions = new AtomicInteger(0);
 
         for (int i = 0; i < numIterations; i++) {
             final ProtocolAdapterStateImpl adapterState =
@@ -190,7 +189,6 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
 
         executor.shutdown();
         assertThat(executor.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
-        assertThat(failedAssertions.get()).isEqualTo(0);
     }
 
     @Test

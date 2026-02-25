@@ -33,6 +33,7 @@ public class NettyUdpConfigurationTest {
     }
 
     @AfterEach
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void tearDown() throws Exception {
         if (eventloop != null) {
             eventloop.shutdownGracefully();

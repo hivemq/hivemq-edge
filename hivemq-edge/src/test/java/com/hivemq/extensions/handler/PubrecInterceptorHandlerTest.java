@@ -67,6 +67,7 @@ import org.junit.jupiter.api.io.TempDir;
 import util.IsolatedExtensionClassloaderUtil;
 import util.TestConfigurationBootstrap;
 
+@SuppressWarnings("FutureReturnValueIgnored")
 public class PubrecInterceptorHandlerTest {
 
     @TempDir
@@ -160,7 +161,7 @@ public class PubrecInterceptorHandlerTest {
         assertEquals(testPubrec.getReasonCode(), pubrec.getReasonCode());
     }
 
-    @Test()
+    @Test
     public void test_inbound_modify() throws Exception {
         final PubrecInboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
                 temporaryFolder.toPath(), TestModifyInboundInterceptor.class);

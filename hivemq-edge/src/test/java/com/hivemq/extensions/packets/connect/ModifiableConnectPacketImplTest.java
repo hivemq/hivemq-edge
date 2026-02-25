@@ -15,6 +15,7 @@
  */
 package com.hivemq.extensions.packets.connect;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -883,10 +884,10 @@ public class ModifiableConnectPacketImplTest {
 
         assertFalse(modifiablePacket.isModified());
 
-        modifiablePacket.setPassword(ByteBuffer.wrap("password".getBytes()));
+        modifiablePacket.setPassword(ByteBuffer.wrap("password".getBytes(UTF_8)));
 
         assertTrue(modifiablePacket.isModified());
-        assertEquals(Optional.of(ByteBuffer.wrap("password".getBytes())), modifiablePacket.getPassword());
+        assertEquals(Optional.of(ByteBuffer.wrap("password".getBytes(UTF_8))), modifiablePacket.getPassword());
     }
 
     @Test
@@ -903,7 +904,7 @@ public class ModifiableConnectPacketImplTest {
                 true,
                 true,
                 null,
-                ByteBuffer.wrap("password".getBytes()),
+                ByteBuffer.wrap("password".getBytes(UTF_8)),
                 null,
                 null,
                 null,
@@ -913,10 +914,10 @@ public class ModifiableConnectPacketImplTest {
 
         assertFalse(modifiablePacket.isModified());
 
-        modifiablePacket.setPassword(ByteBuffer.wrap("password".getBytes()));
+        modifiablePacket.setPassword(ByteBuffer.wrap("password".getBytes(UTF_8)));
 
         assertFalse(modifiablePacket.isModified());
-        assertEquals(Optional.of(ByteBuffer.wrap("password".getBytes())), modifiablePacket.getPassword());
+        assertEquals(Optional.of(ByteBuffer.wrap("password".getBytes(UTF_8))), modifiablePacket.getPassword());
     }
 
     @Test
@@ -933,7 +934,7 @@ public class ModifiableConnectPacketImplTest {
                 true,
                 true,
                 null,
-                ByteBuffer.wrap("password".getBytes()),
+                ByteBuffer.wrap("password".getBytes(UTF_8)),
                 null,
                 null,
                 null,
@@ -1089,10 +1090,11 @@ public class ModifiableConnectPacketImplTest {
 
         assertFalse(modifiablePacket.isModified());
 
-        modifiablePacket.setAuthenticationData(ByteBuffer.wrap("authData".getBytes()));
+        modifiablePacket.setAuthenticationData(ByteBuffer.wrap("authData".getBytes(UTF_8)));
 
         assertTrue(modifiablePacket.isModified());
-        assertEquals(Optional.of(ByteBuffer.wrap("authData".getBytes())), modifiablePacket.getAuthenticationData());
+        assertEquals(
+                Optional.of(ByteBuffer.wrap("authData".getBytes(UTF_8))), modifiablePacket.getAuthenticationData());
     }
 
     @Test
@@ -1111,7 +1113,7 @@ public class ModifiableConnectPacketImplTest {
                 null,
                 null,
                 null,
-                ByteBuffer.wrap("authData".getBytes()),
+                ByteBuffer.wrap("authData".getBytes(UTF_8)),
                 null,
                 UserPropertiesImpl.of(ImmutableList.of()));
         final ModifiableConnectPacketImpl modifiablePacket =
@@ -1119,10 +1121,11 @@ public class ModifiableConnectPacketImplTest {
 
         assertFalse(modifiablePacket.isModified());
 
-        modifiablePacket.setAuthenticationData(ByteBuffer.wrap("authData".getBytes()));
+        modifiablePacket.setAuthenticationData(ByteBuffer.wrap("authData".getBytes(UTF_8)));
 
         assertFalse(modifiablePacket.isModified());
-        assertEquals(Optional.of(ByteBuffer.wrap("authData".getBytes())), modifiablePacket.getAuthenticationData());
+        assertEquals(
+                Optional.of(ByteBuffer.wrap("authData".getBytes(UTF_8))), modifiablePacket.getAuthenticationData());
     }
 
     @Test
@@ -1141,7 +1144,7 @@ public class ModifiableConnectPacketImplTest {
                 null,
                 null,
                 null,
-                ByteBuffer.wrap("authData".getBytes()),
+                ByteBuffer.wrap("authData".getBytes(UTF_8)),
                 null,
                 UserPropertiesImpl.of(ImmutableList.of()));
         final ModifiableConnectPacketImpl modifiablePacket =
@@ -1434,9 +1437,9 @@ public class ModifiableConnectPacketImplTest {
         modifiablePacket.setRequestProblemInformation(false);
         modifiablePacket.setRequestResponseInformation(false);
         modifiablePacket.setUserName("username");
-        modifiablePacket.setPassword(ByteBuffer.wrap("password".getBytes()));
+        modifiablePacket.setPassword(ByteBuffer.wrap("password".getBytes(UTF_8)));
         modifiablePacket.setAuthenticationMethod("authMethod");
-        modifiablePacket.setAuthenticationData(ByteBuffer.wrap("authData".getBytes()));
+        modifiablePacket.setAuthenticationData(ByteBuffer.wrap("authData".getBytes(UTF_8)));
         modifiablePacket.setWillPublish(new WillPublishPacketImpl(
                 "topic",
                 Qos.AT_LEAST_ONCE,
@@ -1465,9 +1468,9 @@ public class ModifiableConnectPacketImplTest {
                 false,
                 false,
                 "username",
-                ByteBuffer.wrap("password".getBytes()),
+                ByteBuffer.wrap("password".getBytes(UTF_8)),
                 "authMethod",
-                ByteBuffer.wrap("authData".getBytes()),
+                ByteBuffer.wrap("authData".getBytes(UTF_8)),
                 new WillPublishPacketImpl(
                         "topic",
                         Qos.AT_LEAST_ONCE,

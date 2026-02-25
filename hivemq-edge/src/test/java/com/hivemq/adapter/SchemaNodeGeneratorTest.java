@@ -140,6 +140,7 @@ public class SchemaNodeGeneratorTest {
 
     static class TestNestedEntity implements ProtocolSpecificAdapterConfig {
 
+        @SuppressWarnings("UnusedVariable") // used via Jackson reflection
         @JsonProperty("subscriptions")
         @ModuleConfigField(
                 title = "Subscriptions",

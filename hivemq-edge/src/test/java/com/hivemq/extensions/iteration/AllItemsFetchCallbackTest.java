@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 public class AllItemsFetchCallbackTest {
 
     @Test
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void createsCursor() {
         final AllItemsFetchCallback<Object, Object> allItemsFetchCallback = new AllItemsFetchCallback<>() {
 

@@ -23,15 +23,11 @@ import static org.mockito.Mockito.when;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
-import com.hivemq.persistence.retained.RetainedMessagePersistence;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import util.TestException;
 
 /**
@@ -39,14 +35,6 @@ import util.TestException;
  * @since 4.0.0
  */
 public class ListenableFutureConverterTest {
-
-    @Mock
-    private RetainedMessagePersistence retainedMessagePersistence;
-
-    @BeforeEach
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-    }
 
     @Test
     public void test_cancel() {

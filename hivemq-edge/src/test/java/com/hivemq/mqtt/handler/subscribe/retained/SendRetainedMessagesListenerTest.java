@@ -59,7 +59,7 @@ import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-@SuppressWarnings("NullabilityAnnotations")
+@SuppressWarnings({"NullabilityAnnotations", "FutureReturnValueIgnored"})
 public class SendRetainedMessagesListenerTest {
 
     private final @NotNull RetainedMessagePersistence retainedMessagePersistence = mock();

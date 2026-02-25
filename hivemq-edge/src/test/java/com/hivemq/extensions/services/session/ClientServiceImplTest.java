@@ -436,6 +436,7 @@ public class ClientServiceImplTest {
 
     @Test
     @Timeout(10)
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void test_iteration_started() throws Exception {
 
         final CountDownLatch latch = new CountDownLatch(1);

@@ -116,11 +116,6 @@ public class AbstractMqtt5EncoderTest {
             remainingPropertyBytes = maxPropertyLength % userPropertyBytes;
 
             maxUserPropertyCount = maxPropertyLength / userPropertyBytes;
-            final ImmutableList.Builder<MqttUserProperty> userPropertiesBuilder = new ImmutableList.Builder<>();
-            final MqttUserProperty userProperty = new MqttUserProperty(user, property);
-            for (int i = 0; i < maxUserPropertyCount; i++) {
-                userPropertiesBuilder.add(userProperty);
-            }
 
             return this;
         }

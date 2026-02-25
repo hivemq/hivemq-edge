@@ -137,7 +137,7 @@ public class LdapAuthenticationTests {
     }
 
     protected static String getTestServerAddress(
-            final @NotNull String protocol, final @NotNull int port, final @NotNull String uri) {
+            final @NotNull String protocol, final int port, final @NotNull String uri) {
         return String.format("%s://%s:%s/%s", protocol, "localhost", port, uri);
     }
 

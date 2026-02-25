@@ -17,6 +17,7 @@ package com.hivemq.persistence.local.memory;
 
 import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRE_ON_DISCONNECT;
 import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRY_MAX;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -60,6 +61,7 @@ import com.hivemq.util.LocalPersistenceFileUtil;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -74,6 +76,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestBucketUtil;
 
+@SuppressWarnings("MockNotUsedInProduction")
 public class ClientSessionMemoryLocalPersistenceTest {
 
     private static final int BUCKET_COUNT = 4;
@@ -391,7 +394,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
 
         final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt3Builder()
                 .withTopic("topic")
-                .withPayload("message".getBytes())
+                .withPayload("message".getBytes(UTF_8))
                 .withQos(QoS.AT_LEAST_ONCE)
                 .withRetain(true)
                 .withHivemqId("hivemqId")
@@ -447,7 +450,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
                 BucketUtils.getBucket(clientid, BUCKET_COUNT));
         final ClientSession clientSession =
                 persistence.getSession(clientid, BucketUtils.getBucket(clientid, BUCKET_COUNT));
-        Assert.assertEquals(clientSession.getSessionExpiryIntervalSec(), SESSION_EXPIRY_MAX);
+        Assert.assertEquals(SESSION_EXPIRY_MAX, clientSession.getSessionExpiryIntervalSec());
 
         persistence.setSessionExpiryInterval(clientid, 12345, BucketUtils.getBucket(clientid, BUCKET_COUNT));
         final ClientSession updatedClientSession =
@@ -475,7 +478,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
                 BucketUtils.getBucket(clientid, BUCKET_COUNT));
         final ClientSession clientSession =
                 persistence.getSession(clientid, BucketUtils.getBucket(clientid, BUCKET_COUNT));
-        Assert.assertEquals(clientSession.getSessionExpiryIntervalSec(), SESSION_EXPIRY_MAX);
+        Assert.assertEquals(SESSION_EXPIRY_MAX, clientSession.getSessionExpiryIntervalSec());
 
         assertThatThrownBy(() -> persistence.setSessionExpiryInterval(
                         clientid, -1, BucketUtils.getBucket(clientid, BUCKET_COUNT)))
@@ -510,7 +513,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
     @Test
     public void get_pending_wills() {
         final MqttWillPublish.Mqtt5Builder willPublish = new MqttWillPublish.Mqtt5Builder()
-                .withPayload("payload".getBytes())
+                .withPayload("payload".getBytes(UTF_8))
                 .withTopic("topic")
                 .withQos(QoS.AT_MOST_ONCE)
                 .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
@@ -541,7 +544,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
                                 new MqttWillPublish.Mqtt5Builder()
                                         .withTopic("topic")
                                         .withQos(QoS.AT_MOST_ONCE)
-                                        .withPayload("message".getBytes())
+                                        .withPayload("message".getBytes(UTF_8))
                                         .withDelayInterval(0)
                                         .withHivemqId("HiveMQId")
                                         .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
@@ -574,7 +577,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
                                 new MqttWillPublish.Mqtt5Builder()
                                         .withTopic("topic")
                                         .withQos(QoS.AT_MOST_ONCE)
-                                        .withPayload("message".getBytes())
+                                        .withPayload("message".getBytes(UTF_8))
                                         .withDelayInterval(0)
                                         .withHivemqId("HiveMQId")
                                         .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
@@ -605,7 +608,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
                                 new MqttWillPublish.Mqtt5Builder()
                                         .withTopic("topic")
                                         .withQos(QoS.AT_MOST_ONCE)
-                                        .withPayload("message".getBytes())
+                                        .withPayload("message".getBytes(UTF_8))
                                         .withDelayInterval(0)
                                         .withHivemqId("HiveMQId")
                                         .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
@@ -637,7 +640,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
                                 new MqttWillPublish.Mqtt5Builder()
                                         .withTopic("topic")
                                         .withQos(QoS.AT_MOST_ONCE)
-                                        .withPayload("message".getBytes())
+                                        .withPayload("message".getBytes(UTF_8))
                                         .withDelayInterval(0)
                                         .withHivemqId("HiveMQId")
                                         .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
@@ -770,7 +773,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
     @Timeout(30)
     public void test_get_chunk_many_clients_random_ids() {
 
-        final ArrayList<String> clientIdList = getRandomUniqueIds();
+        final List<String> clientIdList = getRandomUniqueIds();
 
         for (int i = 0; i < 100; i++) {
             persistence.put(clientIdList.get(i), new ClientSession(true, 1000), System.currentTimeMillis(), 1);
@@ -802,7 +805,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
 
         final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt3Builder()
                 .withTopic("topic")
-                .withPayload("message".getBytes())
+                .withPayload("message".getBytes(UTF_8))
                 .withQos(QoS.AT_LEAST_ONCE)
                 .withRetain(true)
                 .withHivemqId("hivemqId")
@@ -833,7 +836,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
 
         final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt3Builder()
                 .withTopic("topic")
-                .withPayload("message".getBytes())
+                .withPayload("message".getBytes(UTF_8))
                 .withQos(QoS.AT_LEAST_ONCE)
                 .withRetain(true)
                 .withHivemqId("hivemqId")
@@ -861,7 +864,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
     }
 
     @NotNull
-    public ArrayList<String> getRandomUniqueIds() {
+    public List<String> getRandomUniqueIds() {
         final Set<String> clientIdSet = new HashSet<>();
 
         final Random random = new Random();

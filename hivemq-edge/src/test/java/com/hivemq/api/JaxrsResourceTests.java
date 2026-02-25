@@ -15,6 +15,7 @@
  */
 package com.hivemq.api;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
@@ -110,7 +111,9 @@ public class JaxrsResourceTests {
                 READ_TIMEOUT);
         assertEquals(200, response.getStatusCode(), "Resource should exist");
         assertEquals(
-                JSON_ENTITY, new String(response.getResponseBody()), "Resource should have been echod back and match");
+                JSON_ENTITY,
+                new String(response.getResponseBody(), UTF_8),
+                "Resource should have been echod back and match");
     }
 
     @Test
@@ -122,7 +125,7 @@ public class JaxrsResourceTests {
                 new ByteArrayInputStream(formParams.getBytes(StandardCharsets.UTF_8)),
                 CONNECT_TIMEOUT,
                 READ_TIMEOUT);
-        System.err.println(new String(response.getResponseBody()));
+        System.err.println(new String(response.getResponseBody(), UTF_8));
         assertEquals(200, response.getStatusCode(), "Resource should exist");
         assertEquals(58, response.getContentLength(), "Form data should be marshalled back matching expected format");
     }
@@ -137,7 +140,9 @@ public class JaxrsResourceTests {
                 READ_TIMEOUT);
         assertEquals(200, response.getStatusCode(), "Resource should exist");
         assertEquals(
-                JSON_ENTITY, new String(response.getResponseBody()), "Resource should have been echod back and match");
+                JSON_ENTITY,
+                new String(response.getResponseBody(), UTF_8),
+                "Resource should have been echod back and match");
     }
 
     @Test
@@ -150,7 +155,9 @@ public class JaxrsResourceTests {
                 READ_TIMEOUT);
         assertEquals(200, response.getStatusCode(), "Resource should exist");
         assertEquals(
-                JSON_ENTITY, new String(response.getResponseBody()), "Resource should have been echod back and match");
+                JSON_ENTITY,
+                new String(response.getResponseBody(), UTF_8),
+                "Resource should have been echod back and match");
     }
 
     @Test
@@ -159,7 +166,9 @@ public class JaxrsResourceTests {
                 null, getTestServerAddress("test/get/myparam"), CONNECT_TIMEOUT, READ_TIMEOUT);
         assertEquals(200, response.getStatusCode(), "Resource should exist");
         assertEquals(
-                "myparam", new String(response.getResponseBody()), "Resource should have been echod back and match");
+                "myparam",
+                new String(response.getResponseBody(), UTF_8),
+                "Resource should have been echod back and match");
     }
 
     @Test
@@ -167,6 +176,7 @@ public class JaxrsResourceTests {
         final HttpResponse response = HttpUrlConnectionClient.get(
                 null, getTestServerAddress("test/get/query?param=foo"), CONNECT_TIMEOUT, READ_TIMEOUT);
         assertEquals(200, response.getStatusCode(), "Resource should exist");
-        assertEquals("foo", new String(response.getResponseBody()), "Resource should have been echod back and match");
+        assertEquals(
+                "foo", new String(response.getResponseBody(), UTF_8), "Resource should have been echod back and match");
     }
 }

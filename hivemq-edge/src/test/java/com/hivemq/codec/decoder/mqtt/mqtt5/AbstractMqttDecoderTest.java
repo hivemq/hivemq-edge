@@ -44,6 +44,7 @@ public class AbstractMqttDecoderTest {
     }
 
     @AfterEach
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void tearDown() {
         LogbackCapturingAppender.Factory.cleanUp();
         channel.close();

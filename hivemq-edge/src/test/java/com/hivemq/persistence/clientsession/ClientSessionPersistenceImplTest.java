@@ -15,6 +15,7 @@
  */
 package com.hivemq.persistence.clientsession;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -48,6 +49,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import util.TestSingleWriterFactory;
 
+@SuppressWarnings({"DirectInvocationOnMock", "FutureReturnValueIgnored"})
 public class ClientSessionPersistenceImplTest {
 
     private ClientSessionLocalPersistence localPersistence;
@@ -276,7 +278,7 @@ public class ClientSessionPersistenceImplTest {
     private MqttWillPublish createWillPublish() {
         return new MqttWillPublish.Mqtt3Builder()
                 .withTopic("topic")
-                .withPayload("message".getBytes())
+                .withPayload("message".getBytes(UTF_8))
                 .withHivemqId("hivemqId")
                 .withRetain(false)
                 .withQos(QoS.AT_LEAST_ONCE)

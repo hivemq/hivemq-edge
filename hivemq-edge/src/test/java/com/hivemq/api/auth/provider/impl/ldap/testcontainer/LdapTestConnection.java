@@ -187,7 +187,7 @@ public class LdapTestConnection {
             final StartTLSExtendedRequest startTLSRequest = new StartTLSExtendedRequest(sslContext);
             final ExtendedResult startTLSResult = connection.processExtendedOperation(startTLSRequest);
 
-            if (startTLSResult.getResultCode() != ResultCode.SUCCESS) {
+            if (!startTLSResult.getResultCode().equals(ResultCode.SUCCESS)) {
                 throw new LDAPException(
                         startTLSResult.getResultCode(), "StartTLS failed: " + startTLSResult.getDiagnosticMessage());
             }

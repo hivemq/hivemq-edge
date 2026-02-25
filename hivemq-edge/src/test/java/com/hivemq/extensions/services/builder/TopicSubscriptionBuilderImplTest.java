@@ -45,7 +45,7 @@ import util.TestConfigurationBootstrap;
  * @author Florian Limpöck
  * @since 4.0.0
  */
-@SuppressWarnings("NullabilityAnnotations")
+@SuppressWarnings({"NullabilityAnnotations", "MockNotUsedInProduction"})
 public class TopicSubscriptionBuilderImplTest {
 
     private ConfigurationService fullConfigurationService;

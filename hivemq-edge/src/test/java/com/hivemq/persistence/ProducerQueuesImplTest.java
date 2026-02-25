@@ -51,6 +51,7 @@ public class ProducerQueuesImplTest {
     }
 
     @Test
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void submit_task() throws Exception {
         producerQueues.submit("key", bucketIndex -> null);
         final int queueIndex = producerQueues.getBucket("key") / producerQueues.bucketsPerQueue;

@@ -113,6 +113,7 @@ public class SubackOutboundInterceptorHandlerTest {
     }
 
     @AfterEach
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void tearDown() {
         executor.stop();
         channel.close();
@@ -194,7 +195,7 @@ public class SubackOutboundInterceptorHandlerTest {
         assertTrue(isTriggered.get());
     }
 
-    @Test()
+    @Test
     public void test_set_too_many_reasonCodes() throws Exception {
         final ClientContextImpl clientContext =
                 new ClientContextImpl(hiveMQExtensions, new ModifiableDefaultPermissionsImpl());

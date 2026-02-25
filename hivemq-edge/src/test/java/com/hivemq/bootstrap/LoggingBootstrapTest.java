@@ -93,7 +93,8 @@ public class LoggingBootstrapTest {
 
             final File configFolder = temporaryFolder;
 
-            Files.write(overridenContents, new File(configFolder, "logback.xml"), StandardCharsets.UTF_8);
+            Files.asCharSink(new File(configFolder, "logback.xml"), StandardCharsets.UTF_8)
+                    .write(overridenContents);
 
             LoggingBootstrap.initLogging(configFolder);
 
@@ -186,7 +187,8 @@ public class LoggingBootstrapTest {
             LoggingBootstrap.prepareLogging();
             final File configFolder = temporaryFolder;
 
-            Files.write(overridenContents, new File(configFolder, "logback.xml"), StandardCharsets.UTF_8);
+            Files.asCharSink(new File(configFolder, "logback.xml"), StandardCharsets.UTF_8)
+                    .write(overridenContents);
 
             LoggingBootstrap.initLogging(configFolder);
 

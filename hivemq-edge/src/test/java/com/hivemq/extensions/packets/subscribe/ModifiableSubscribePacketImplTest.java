@@ -40,14 +40,6 @@ public class ModifiableSubscribePacketImplTest {
     @BeforeEach
     public void setUp() throws Exception {
         configurationService = new TestConfigurationBootstrap().getConfigurationService();
-
-        final SubscribePacketImpl packet = new SubscribePacketImpl(
-                ImmutableList.of(new SubscriptionImpl("topic", Qos.AT_LEAST_ONCE, RetainHandling.SEND, false, false)),
-                UserPropertiesImpl.of(ImmutableList.of()),
-                1,
-                1);
-        final ModifiableSubscribePacketImpl modifiablePacket =
-                new ModifiableSubscribePacketImpl(packet, configurationService);
     }
 
     @Test

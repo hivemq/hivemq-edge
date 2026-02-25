@@ -51,6 +51,7 @@ import org.slf4j.LoggerFactory;
  * but this time we do NOT enforce the user roles, so the tests that expect role enforcement now return success!
  * these tests have a message "Resource should be allowed (because auth is not enforced)" or similar
  */
+@SuppressWarnings("MockNotUsedInProduction")
 public class EnforceApiAuthTest {
 
     protected final Logger logger = LoggerFactory.getLogger(BasicAuthenticationTests.class);

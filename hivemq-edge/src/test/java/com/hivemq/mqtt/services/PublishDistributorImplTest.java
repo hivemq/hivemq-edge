@@ -15,6 +15,7 @@
  */
 package com.hivemq.mqtt.services;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -167,6 +168,7 @@ public class PublishDistributorImplTest {
     }
 
     @Test
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void test_distribute_to_non_shared() {
         when(clientSessionPersistence.getSession("client1", false)).thenReturn(new ClientSession(true, 1000L));
         when(clientSessionPersistence.getSession("client2", false)).thenReturn(new ClientSession(true, 1000L));
@@ -187,6 +189,7 @@ public class PublishDistributorImplTest {
     }
 
     @Test
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void test_distribute_to_shared_subs() {
         when(clientQueuePersistence.add(eq("name/topic1"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong()))
                 .thenReturn(Futures.immediateFuture(null));
@@ -207,7 +210,7 @@ public class PublishDistributorImplTest {
                 .withPacketIdentifier(0)
                 .withQoS(qos)
                 .withOnwardQos(qos)
-                .withPayload("message".getBytes())
+                .withPayload("message".getBytes(UTF_8))
                 .withTopic("topic")
                 .withHivemqId("hivemqId")
                 .build();

@@ -232,6 +232,7 @@ public class ClientLifecycleEventHandlerTest {
     }
 
     @Test
+    @SuppressWarnings("DirectInvocationOnMock")
     public void test_on_auth_success_client_id_null() throws Exception {
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
@@ -249,6 +250,7 @@ public class ClientLifecycleEventHandlerTest {
     }
 
     @Test
+    @SuppressWarnings("DirectInvocationOnMock")
     public void test_on_auth_failed_client_id_null() throws Exception {
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
@@ -267,6 +269,7 @@ public class ClientLifecycleEventHandlerTest {
     }
 
     @Test
+    @SuppressWarnings("DirectInvocationOnMock")
     public void test_on_client_disconnect_graceful_client_id_null() throws Exception {
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
@@ -286,6 +289,7 @@ public class ClientLifecycleEventHandlerTest {
     }
 
     @Test
+    @SuppressWarnings("DirectInvocationOnMock")
     public void test_on_client_disconnect_ungraceful_client_id_null() throws Exception {
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
@@ -304,6 +308,7 @@ public class ClientLifecycleEventHandlerTest {
     }
 
     @Test
+    @SuppressWarnings("DirectInvocationOnMock")
     public void test_on_server_disconnect_null_client_id_null() throws Exception {
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
@@ -322,6 +327,7 @@ public class ClientLifecycleEventHandlerTest {
     }
 
     @Test
+    @SuppressWarnings("DirectInvocationOnMock")
     public void test_on_server_disconnect_client_id_null() throws Exception {
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);

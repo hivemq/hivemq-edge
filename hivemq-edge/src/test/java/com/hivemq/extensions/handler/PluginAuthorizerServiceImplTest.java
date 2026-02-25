@@ -15,6 +15,7 @@
  */
 package com.hivemq.extensions.handler;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -193,7 +194,7 @@ public class PluginAuthorizerServiceImplTest {
     @Test
     @Timeout(2)
     public void test_published_to_invalid_topic() {
-        final PUBLISH publish = TestMessageUtil.createMqtt3Publish("#", "1234".getBytes(), QoS.AT_LEAST_ONCE);
+        final PUBLISH publish = TestMessageUtil.createMqtt3Publish("#", "1234".getBytes(UTF_8), QoS.AT_LEAST_ONCE);
 
         pluginAuthorizerService.authorizePublish(channelHandlerContext, publish);
 
@@ -204,7 +205,7 @@ public class PluginAuthorizerServiceImplTest {
     @Test
     @Timeout(2)
     public void test_dollar_topic_disconnect() {
-        final PUBLISH publish = TestMessageUtil.createMqtt3Publish("$", "payload".getBytes(), QoS.AT_LEAST_ONCE);
+        final PUBLISH publish = TestMessageUtil.createMqtt3Publish("$", "payload".getBytes(UTF_8), QoS.AT_LEAST_ONCE);
 
         pluginAuthorizerService.authorizePublish(channelHandlerContext, publish);
 

@@ -16,6 +16,7 @@
 package com.hivemq.mqtt.handler.auth;
 
 import static com.hivemq.mqtt.message.disconnect.DISCONNECT.SESSION_EXPIRY_NOT_SET;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.hivemq.bootstrap.ClientConnection;
@@ -97,7 +98,7 @@ public class AuthInProgressMessageHandlerTest {
                 .withTopic("topic")
                 .withQoS(QoS.AT_LEAST_ONCE)
                 .withOnwardQos(QoS.AT_LEAST_ONCE)
-                .withPayload("payload".getBytes())
+                .withPayload("payload".getBytes(UTF_8))
                 .withHivemqId("hivemqId")
                 .build();
 
