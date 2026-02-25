@@ -28,6 +28,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -44,8 +45,8 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayEndpointA
 
     @Override
     public @NotNull Response getXmlConfiguration() {
-        return Response.ok((StreamingOutput)
-                        output -> configurationService.writeConfiguration(new OutputStreamWriter(output)))
+        return Response.ok((StreamingOutput) output ->
+                        configurationService.writeConfiguration(new OutputStreamWriter(output, StandardCharsets.UTF_8)))
                 .build();
     }
 

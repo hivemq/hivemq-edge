@@ -959,7 +959,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         }
         return SouthboundMappingEntity.fromApi(
                 model,
-                new String(Base64.getDecoder().decode(topicFilter.getSchema().getData())));
+                new String(Base64.getDecoder().decode(topicFilter.getSchema().getData()), StandardCharsets.UTF_8));
     }
 
     private @NotNull TagEntity toTagEntity(final @NotNull DomainTag dmt) {

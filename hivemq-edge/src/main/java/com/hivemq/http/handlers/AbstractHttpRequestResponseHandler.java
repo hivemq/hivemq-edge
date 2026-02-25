@@ -269,7 +269,7 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
         String value = httpRequestResponse.getRequestHeader(HttpConstants.AUTH_HEADER);
         if (value != null) {
             value = value.substring(value.lastIndexOf(" ") + 1);
-            value = new String(Base64.getDecoder().decode(value));
+            value = new String(Base64.getDecoder().decode(value), StandardCharsets.UTF_8);
             final var userNamePassword = value.split(":");
             if (usernamePassword.getUserName().equals(userNamePassword[0])
                     && Objects.deepEquals(
