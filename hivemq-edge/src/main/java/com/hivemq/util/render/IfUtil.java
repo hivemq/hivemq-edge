@@ -16,10 +16,11 @@
 package com.hivemq.util.render;
 
 import com.hivemq.exceptions.UnrecoverableException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.List;
-import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
@@ -92,17 +93,17 @@ public class IfUtil {
         }
 
         // Match opening and closing tags using a stack
-        final Stack<IfToken> stack = new Stack<>();
+        final Deque<IfToken> stack = new ArrayDeque<>();
         final List<IfTokenPair> pairs = new ArrayList<>();
 
         for (final var token : allTokens) {
-            if (!stack.isEmpty() && stack.peek().getContent().equals(token.getContent())) {
+            if (!stack.isEmpty() && stack.peekFirst().getContent().equals(token.getContent())) {
                 // This is a closing tag - matches the top of the stack
-                final var opening = stack.pop();
+                final var opening = stack.removeFirst();
                 pairs.add(new IfTokenPair(opening, token));
             } else {
                 // This is an opening tag
-                stack.push(token);
+                stack.addFirst(token);
             }
         }
 

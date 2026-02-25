@@ -28,7 +28,7 @@ import com.hivemq.embedded.EmbeddedExtension;
 import com.hivemq.embedded.EmbeddedHiveMQ;
 import com.hivemq.util.ThreadFactoryUtil;
 import java.io.File;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -64,8 +64,8 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
     private @NotNull State desiredState = State.STOPPED;
     private @Nullable Exception failedException;
 
-    private @NotNull LinkedList<CompletableFuture<Void>> startFutures = new LinkedList<>();
-    private @NotNull LinkedList<CompletableFuture<Void>> stopFutures = new LinkedList<>();
+    private @NotNull List<CompletableFuture<Void>> startFutures = new ArrayList<>();
+    private @NotNull List<CompletableFuture<Void>> stopFutures = new ArrayList<>();
     private @Nullable Future<?> shutDownFuture;
 
     EmbeddedHiveMQImpl(
@@ -136,8 +136,8 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
             localStartFutures = startFutures;
             localStopFutures = stopFutures;
             localDesiredState = desiredState;
-            startFutures = new LinkedList<>();
-            stopFutures = new LinkedList<>();
+            startFutures = new ArrayList<>();
+            stopFutures = new ArrayList<>();
         }
 
         // Try to perform a stop regardless
