@@ -287,7 +287,7 @@ public class ExtensionInformationUtilTest {
 
         @Override
         public String toString() {
-            return null;
+            return "";
         }
 
         @Override

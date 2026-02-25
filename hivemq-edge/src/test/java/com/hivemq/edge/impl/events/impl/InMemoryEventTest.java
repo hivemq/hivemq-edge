@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import com.google.common.base.Splitter;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.edge.impl.events.InMemoryEventImpl;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
@@ -343,11 +344,11 @@ public class InMemoryEventTest {
         for (final Event event : events) {
             final String message = event.getMessage();
             assertNotNull(message, "Message should not be null");
-            final String[] parts = message.split("-");
-            assertEquals(2, parts.length, "Message format should be 'threadId-eventNum': " + message);
+            final List<String> parts = Splitter.on("-").splitToList(message);
+            assertEquals(2, parts.size(), "Message format should be 'threadId-eventNum': " + message);
             try {
-                Integer.parseInt(parts[0]);
-                Integer.parseInt(parts[1]);
+                Integer.parseInt(parts.get(0));
+                Integer.parseInt(parts.get(1));
             } catch (final NumberFormatException e) {
                 fail("Message parts should be parseable integers: " + message);
             }

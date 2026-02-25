@@ -54,7 +54,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +69,6 @@ public class ChainedAuthTests {
     protected static @NotNull JaxrsHttpServer server;
     protected final Logger logger = LoggerFactory.getLogger(ChainedAuthTests.class);
 
-    @Mock
     private static ApiConfigurationService apiConfigurationService;
 
     @BeforeAll

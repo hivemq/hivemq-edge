@@ -204,14 +204,6 @@ public class AsyncLocalChunkIteratorTest {
             this.chunks.set(chunks);
         }
 
-        public void setBlockDuringFetch(final boolean block) {
-            this.block.set(block);
-        }
-
-        public CountDownLatch getBlockingLatch() {
-            return blockingLatch;
-        }
-
         public void setException(final Exception exception) {
             this.exception = exception;
         }

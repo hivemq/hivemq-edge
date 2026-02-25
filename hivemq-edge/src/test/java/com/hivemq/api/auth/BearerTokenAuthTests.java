@@ -31,7 +31,6 @@ import com.hivemq.api.auth.handler.impl.BearerTokenAuthenticationHandler;
 import com.hivemq.api.auth.jwt.JwtAuthenticationProvider;
 import com.hivemq.api.config.ApiJwtConfiguration;
 import com.hivemq.api.resources.impl.AuthenticationResourceImpl;
-import com.hivemq.bootstrap.ioc.Injector;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.edge.api.model.ApiBearerToken;
 import com.hivemq.edge.api.model.UsernamePasswordCredentials;
@@ -53,13 +52,11 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Simon L Johnson
  */
+@SuppressWarnings("MockNotUsedInProduction")
 public class BearerTokenAuthTests {
 
     static final int TEST_HTTP_PORT = 8088;
@@ -68,12 +65,6 @@ public class BearerTokenAuthTests {
     static final String HTTP = "http";
     protected static JaxrsHttpServer server;
 
-    @Mock
-    private static Injector injector;
-
-    protected final Logger logger = LoggerFactory.getLogger(BearerTokenAuthTests.class);
-
-    @Mock
     private static ApiConfigurationService apiConfigurationService;
 
     @BeforeAll

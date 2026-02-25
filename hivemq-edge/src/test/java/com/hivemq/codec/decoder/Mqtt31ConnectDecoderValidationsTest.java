@@ -41,6 +41,7 @@ import org.mockito.MockitoAnnotations;
 import util.TestChannelAttribute;
 import util.TestConfigurationBootstrap;
 
+@SuppressWarnings("MockNotUsedInProduction")
 public class Mqtt31ConnectDecoderValidationsTest {
 
     @Mock

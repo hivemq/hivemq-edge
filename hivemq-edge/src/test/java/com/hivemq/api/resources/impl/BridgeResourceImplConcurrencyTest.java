@@ -375,25 +375,23 @@ class BridgeResourceImplConcurrencyTest {
                             final String bridgeId = bridgeIds.get((threadIndex + j) % bridgeIds.size());
 
                             switch (operation) {
-                                case 0: // Add
+                                case 0 -> { // Add
                                     final String newBridgeId = "stress-bridge-" + threadIndex + "-" + j;
                                     bridgeIds.add(newBridgeId);
                                     bridgeResource.addBridge(createTestBridge(newBridgeId));
-                                    break;
-                                case 1: // Remove
+                                }
+                                case 1 -> // Remove
                                     bridgeResource.removeBridge(bridgeId);
-                                    break;
-                                case 2: // Update
+                                case 2 -> { // Update
                                     final Bridge updatedBridge =
                                             createTestBridge(bridgeId).port(9000 + j);
                                     bridgeResource.updateBridge(bridgeId, updatedBridge);
-                                    break;
-                                case 3: // Read by name
+                                }
+                                case 3 -> // Read by name
                                     bridgeResource.getBridgeByName(bridgeId);
-                                    break;
-                                case 4: // Read all
+                                case 4 -> // Read all
                                     bridgeResource.getBridges();
-                                    break;
+                                default -> {}
                             }
 
                             if (j % 5 == 0) {
@@ -851,7 +849,6 @@ class BridgeResourceImplConcurrencyTest {
         final CountDownLatch startLatch = new CountDownLatch(1);
         final CountDownLatch completionLatch = new CountDownLatch(2);
         final AtomicBoolean errorOccurred = new AtomicBoolean(false);
-        final AtomicInteger inconsistentSnapshotCount = new AtomicInteger(0);
 
         try (final ExecutorService executor = Executors.newFixedThreadPool(2)) {
             // Thread 1: Constantly read bridge list

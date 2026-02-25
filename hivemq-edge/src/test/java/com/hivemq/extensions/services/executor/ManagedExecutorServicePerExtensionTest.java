@@ -310,7 +310,7 @@ public class ManagedExecutorServicePerExtensionTest {
             try {
                 Thread.sleep(100);
             } catch (final InterruptedException e) {
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
             }
             runLatch.countDown();
         };
@@ -344,7 +344,7 @@ public class ManagedExecutorServicePerExtensionTest {
             try {
                 Thread.sleep(100);
             } catch (final InterruptedException e) {
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
             }
             runLatch.countDown();
 
@@ -379,7 +379,7 @@ public class ManagedExecutorServicePerExtensionTest {
                     try {
                         Thread.sleep(10);
                     } catch (final InterruptedException e) {
-                        e.printStackTrace();
+                        Thread.currentThread().interrupt();
                     }
                 },
                 10,

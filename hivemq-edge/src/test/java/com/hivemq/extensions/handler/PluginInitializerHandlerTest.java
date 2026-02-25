@@ -186,6 +186,7 @@ public class PluginInitializerHandlerTest {
 
     @Test
     @Timeout(10)
+    @SuppressWarnings("DirectInvocationOnMock")
     public void test_write_connack_fire_initialize() throws Exception {
         when(initializers.getClientInitializerMap()).thenReturn(createClientInitializerMap());
 

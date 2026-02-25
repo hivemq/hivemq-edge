@@ -124,7 +124,7 @@ import util.DummyHandler;
 import util.TestConfigurationBootstrap;
 import util.TestMqttDecoder;
 
-@SuppressWarnings("NullabilityAnnotations")
+@SuppressWarnings({"NullabilityAnnotations", "MockNotUsedInProduction"})
 public class ConnectHandlerTest {
 
     private EmbeddedChannel channel;
@@ -1239,6 +1239,7 @@ public class ConnectHandlerTest {
 
     @Test
     @Timeout(5)
+    @SuppressWarnings("DirectInvocationOnMock")
     public void test_auth_in_progress_message_handler_is_removed() {
         createHandler();
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setAuthMethod("someMethod");
@@ -1630,6 +1631,7 @@ public class ConnectHandlerTest {
 
     @Test
     @Timeout(5)
+    @SuppressWarnings("DirectInvocationOnMock")
     public void test_set_client_settings() {
         createHandler();
         when(connectionPersistence.persistIfAbsent(any()))

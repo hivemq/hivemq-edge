@@ -56,6 +56,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TlsTestUtil;
 
+@SuppressWarnings("MockNotUsedInProduction")
 public class TlsWebsocketChannelInitializerTest {
 
     @Mock
@@ -87,9 +88,6 @@ public class TlsWebsocketChannelInitializerTest {
 
     @Mock
     private RestrictionsConfigurationService restrictionsConfigurationService;
-
-    @Mock
-    private Tls tls;
 
     private ChannelPipeline pipeline;
 

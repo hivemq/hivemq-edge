@@ -65,21 +65,6 @@ class DataCombiningExtractorTest {
 
     @Test
     void test_update_whenPresent_thenUpdated() {
-        final DataCombiner updatedDataCombiner = new DataCombiner(
-                generatedUuid,
-                "update",
-                null,
-                List.of(new EntityReference(
-                        EntityType.EDGE_BROKER, UUID.randomUUID().toString())),
-                List.of(new DataCombining(
-                        UUID.randomUUID(),
-                        new DataCombiningSources(
-                                new DataIdentifierReference("#", DataIdentifierReference.Type.TOPIC_FILTER),
-                                List.of(),
-                                List.of("#")),
-                        new DataCombiningDestination(null, "dest", "{}"),
-                        List.of())));
-
         dataCombiningExtractor.addDataCombiner(defaultCombinerInstance);
 
         final List<DataCombiner> allCombiners = dataCombiningExtractor.getAllCombiners();

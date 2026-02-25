@@ -18,6 +18,7 @@ package com.hivemq.mqtt.topic;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Locale;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -38,7 +39,7 @@ public class PermissionTopicMatcherUtilsTest {
         assertFalse(matches(actual + "/getCacheImpl", actual));
         assertFalse(matches("my/test/topic/for/the/unit", actual));
 
-        assertFalse(matches(actual.toUpperCase(), actual));
+        assertFalse(matches(actual.toUpperCase(Locale.ROOT), actual));
     }
 
     @Test

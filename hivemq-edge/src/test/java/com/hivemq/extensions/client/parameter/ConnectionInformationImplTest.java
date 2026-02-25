@@ -411,7 +411,7 @@ public class ConnectionInformationImplTest {
 
         @Override
         public String toString() {
-            return null;
+            return "";
         }
 
         @Override

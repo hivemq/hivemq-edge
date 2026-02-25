@@ -54,7 +54,7 @@ public class EventLogTest {
     private final LogbackCapturingAppender sessionExpiredAppender =
             LogbackCapturingAppender.Factory.weaveInto(LoggerFactory.getLogger(EventLog.EVENT_CLIENT_SESSION_EXPIRED));
 
-    private StringBuffer logMessageBuffer;
+    private StringBuilder logMessageBuffer;
 
     private final int qos = 1;
     private final String topic = "topic/a";
@@ -82,7 +82,7 @@ public class EventLogTest {
         when(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)).thenReturn(clientConnectionAttribute);
         when(clientConnectionAttribute.get()).thenReturn(clientConnection);
 
-        logMessageBuffer = new StringBuffer();
+        logMessageBuffer = new StringBuilder();
     }
 
     @AfterEach

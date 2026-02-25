@@ -235,7 +235,7 @@ public class PUBLISHTest {
                 .withUserProperties(getManyProperties()) // 12.777.790 bytes
                 .build();
 
-        final long estimatedSize = ((1024 * 1024 * 5) * 2)
+        final long estimatedSize = ((1024L * 1024 * 5) * 2)
                 + 54
                 + 24
                 + (130_038 * 2)

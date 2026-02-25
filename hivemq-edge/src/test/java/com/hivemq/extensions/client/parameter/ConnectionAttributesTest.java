@@ -31,7 +31,6 @@ import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.lang3.RandomUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -232,13 +231,13 @@ public class ConnectionAttributesTest {
         assertTrue(returnValues1.isPresent());
         assertAllEquals(values, returnValues1.get());
 
-        final AtomicInteger exceptions = new AtomicInteger(0);
+        int exceptions = 0;
 
         for (final String key : values.keySet()) {
             try {
                 returnValues1.get().get(key).put(0, (byte) 10);
             } catch (final ReadOnlyBufferException e) {
-                exceptions.incrementAndGet();
+                exceptions++;
             }
         }
 
@@ -246,7 +245,7 @@ public class ConnectionAttributesTest {
 
         assertTrue(returnValues2.isPresent());
         assertAllEquals(values, returnValues2.get());
-        assertEquals(values.size(), exceptions.get());
+        assertEquals(values.size(), exceptions);
     }
 
     @Test

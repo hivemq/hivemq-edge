@@ -25,7 +25,6 @@ import com.hivemq.api.TestApiResource;
 import com.hivemq.api.TestPermitAllApiResource;
 import com.hivemq.api.TestResourceLevelRolesApiResource;
 import com.hivemq.api.auth.handler.IAuthenticationHandler;
-import com.hivemq.bootstrap.ioc.Injector;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.HttpConstants;
@@ -41,9 +40,6 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author martin Schoenert
@@ -54,9 +50,8 @@ import org.slf4j.LoggerFactory;
  * these tests have a comment
  * // succeeds because api auth is not enforced
  */
+@SuppressWarnings("MockNotUsedInProduction")
 public class EnforceApiAuthTest {
-
-    protected final Logger logger = LoggerFactory.getLogger(EnforceApiAuthTest.class);
 
     static final int TEST_HTTP_PORT = 8088;
     static final int CONNECT_TIMEOUT = 1000;
@@ -65,10 +60,6 @@ public class EnforceApiAuthTest {
 
     protected static JaxrsHttpServer server;
 
-    @Mock
-    private static Injector injector;
-
-    @Mock
     private static ApiConfigurationService apiConfigurationService;
 
     @BeforeAll
@@ -103,7 +94,7 @@ public class EnforceApiAuthTest {
     }
 
     protected static String getTestServerAddress(
-            final @NotNull String protocol, final @NotNull int port, final @NotNull String uri) {
+            final @NotNull String protocol, final int port, final @NotNull String uri) {
         return String.format("%s://%s:%s/%s", protocol, "localhost", port, uri);
     }
 

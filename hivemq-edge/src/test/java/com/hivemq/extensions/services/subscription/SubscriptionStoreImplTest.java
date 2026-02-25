@@ -920,7 +920,7 @@ public class SubscriptionStoreImplTest {
                     }
                 });
 
-        final CompletableFuture<Void> finishFuture = subscriptionStore.iterateAllSubscriptions((context, value) -> {});
+        subscriptionStore.iterateAllSubscriptions((context, value) -> {});
 
         resultFuture.complete(null);
 
