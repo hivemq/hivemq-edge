@@ -268,6 +268,7 @@ public class CustomConfigSchemaGenerator {
         }
     }
 
+    @SuppressWarnings("EmptyCatch")
     private static Object getNativeObject(final @NotNull String format) {
         if (format != null) {
             if ("true".equalsIgnoreCase(format.trim()) || "false".equalsIgnoreCase(format.trim())) {

@@ -29,6 +29,7 @@ public class RetainedMessagesGauge implements Gauge<Long> {
         this.retainedMessagePersistence = retainedMessagePersistence;
     }
 
+    @SuppressWarnings("EmptyCatch")
     @Override
     public Long getValue() {
         try {

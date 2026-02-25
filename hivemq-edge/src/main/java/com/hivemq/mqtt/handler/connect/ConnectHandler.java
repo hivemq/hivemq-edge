@@ -254,6 +254,7 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
         }
     }
 
+    @SuppressWarnings("EmptyCatch")
     private static void cleanChannelAttributesAfterAuth(final @NotNull ClientConnection clientConnection) {
         final ChannelPipeline pipeline = clientConnection.getChannel().pipeline();
         if (pipeline.context(AUTH_IN_PROGRESS_MESSAGE_HANDLER) != null) {

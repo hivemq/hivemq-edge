@@ -29,7 +29,6 @@ import com.hivemq.api.model.components.LinkList;
 import com.hivemq.api.model.components.ModuleList;
 import com.hivemq.api.model.components.Notification;
 import com.hivemq.api.model.components.NotificationList;
-import com.hivemq.api.model.components.PreLoginNotice;
 import com.hivemq.api.model.firstuse.FirstUseInformation;
 import com.hivemq.api.utils.ApiUtils;
 import com.hivemq.api.utils.LoremIpsum;
@@ -161,10 +160,6 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
                         null,
                         null,
                         Boolean.FALSE)));
-    }
-
-    private @NotNull PreLoginNotice getPreLoginNotice() {
-        return configurationService.apiConfiguration().getPreLoginNotice();
     }
 
     private @NotNull Link getCloudLink() {

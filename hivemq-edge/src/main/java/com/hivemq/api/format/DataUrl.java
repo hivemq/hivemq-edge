@@ -19,8 +19,10 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import com.google.common.base.Splitter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,11 +39,11 @@ public class DataUrl {
 
     DataUrl(
             final @NotNull String mimeType,
-            final @NotNull String charSet,
+            final @NotNull String charset,
             final @NotNull String encoding,
             final @NotNull String data) {
         this.mimeType = mimeType;
-        this.charset = charSet;
+        this.charset = charset;
         this.encoding = encoding;
         this.data = data;
     }
@@ -56,22 +58,22 @@ public class DataUrl {
         final String dataUrlWithoutDataPrefix = dataUrlAsString.substring(5);
         // split meta data and data  on the ','
         checkSeparator(dataUrlWithoutDataPrefix, dataUrlAsString);
-        final String[] metaDataAndDataSplit = dataUrlWithoutDataPrefix.split(",");
-        if (metaDataAndDataSplit.length != 2) {
+        final List<String> metaDataAndDataSplit = Splitter.on(',').splitToList(dataUrlWithoutDataPrefix);
+        if (metaDataAndDataSplit.size() != 2) {
             throw new IllegalArgumentException(
                     dataUrlAsString
                             + " is not a valid data URL, because it did not contain metadata and data separated by exactly one ','.");
         }
-        final String metadata = metaDataAndDataSplit[0];
-        final String data = metaDataAndDataSplit[1];
+        final String metadata = metaDataAndDataSplit.get(0);
+        final String data = metaDataAndDataSplit.get(1);
         if (!metadata.contains(BASE64_TOKEN)) {
             throw new IllegalArgumentException("Only base64 encoding is allowed for data URLs.");
         }
         final String metaDataWithoutEncoding = metadata.replaceAll(BASE64_TOKEN, "");
         if (metaDataWithoutEncoding.contains(";charset=")) {
-            final String[] mimeAndCharSetSplit = metaDataWithoutEncoding.split(";charset=");
-            final String mimeType = mimeAndCharSetSplit[0];
-            final String charset = mimeAndCharSetSplit[1];
+            final List<String> mimeAndCharSetSplit = Splitter.on(";charset=").splitToList(metaDataWithoutEncoding);
+            final String mimeType = mimeAndCharSetSplit.get(0);
+            final String charset = mimeAndCharSetSplit.get(1);
             return new DataUrl(mimeType, charset, "base64", data);
         } else {
             return new DataUrl(metaDataWithoutEncoding, StandardCharsets.US_ASCII.displayName(), "base64", data);

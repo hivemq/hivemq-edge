@@ -18,6 +18,7 @@ package com.hivemq.combining.vanilla;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Splitter;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.hivemq.combining.mapping.DataCombiningTransformationService;
@@ -29,6 +30,7 @@ import com.hivemq.mqtt.services.PrePublishProcessorService;
 import com.hivemq.util.JsonUtils;
 import com.jayway.jsonpath.DocumentContext;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -87,13 +89,14 @@ public final class VanillaDataCombiningTransformationService implements DataComb
                     }
                     if (value != null) {
                         final String destinationJsonPath = instruction.toDestinationJsonPath();
-                        final String[] fieldNames = destinationJsonPath.split("\\.+");
-                        if (fieldNames.length == 0) {
+                        final List<String> fieldNames =
+                                Splitter.onPattern("\\.+").splitToList(destinationJsonPath);
+                        if (fieldNames.isEmpty()) {
                             LOGGER.warn("No destination field name specified in instruction {}", instruction);
                         } else {
                             ObjectNode currentNode = destinationObjectNode;
-                            for (int i = 0; i < fieldNames.length - 1; i++) {
-                                final String fieldName = fieldNames[i];
+                            for (int i = 0; i < fieldNames.size() - 1; i++) {
+                                final String fieldName = fieldNames.get(i);
                                 final ObjectNode childObjectNode;
                                 if (currentNode.has(fieldName)) {
                                     final JsonNode childJsonNode = currentNode.get(fieldName);
@@ -109,7 +112,7 @@ public final class VanillaDataCombiningTransformationService implements DataComb
                                 }
                                 currentNode = childObjectNode;
                             }
-                            final String lastFieldName = fieldNames[fieldNames.length - 1];
+                            final String lastFieldName = fieldNames.get(fieldNames.size() - 1);
                             currentNode.replace(lastFieldName, objectMapper.valueToTree(value));
                         }
                     }

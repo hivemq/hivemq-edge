@@ -90,7 +90,7 @@ public class PulseAssetEntity implements EntityValidatable {
         return new Builder();
     }
 
-    public boolean equals(final @NotNull Asset remoteAsset) {
+    public boolean contentEquals(final @NotNull Asset remoteAsset) {
         if (!Objects.equals(id.toString(), remoteAsset.id())) {
             return false;
         }

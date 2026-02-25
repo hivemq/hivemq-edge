@@ -32,7 +32,7 @@ public class EventBuilderImpl implements EventBuilder {
 
     private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new Jdk8Module());
 
-    private @Nullable EventImpl.SEVERITY severity;
+    private @Nullable Event.SEVERITY severity;
     private @Nullable String message;
     private @Nullable Payload payload;
     private @Nullable Long timestamp;
@@ -45,7 +45,7 @@ public class EventBuilderImpl implements EventBuilder {
     }
 
     @Override
-    public @NotNull EventBuilder withSeverity(final EventImpl.@NotNull SEVERITY severity) {
+    public @NotNull EventBuilder withSeverity(final Event.@NotNull SEVERITY severity) {
         this.severity = severity;
         return this;
     }

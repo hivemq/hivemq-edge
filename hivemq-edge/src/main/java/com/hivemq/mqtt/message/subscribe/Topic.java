@@ -128,9 +128,9 @@ public class Topic implements Serializable, Comparable<Topic>, Mqtt3Topic, Mqtt5
         return qoS;
     }
 
-    public void setQoS(final @NotNull QoS qos) {
-        checkNotNull(qos, "QoS must not be null");
-        this.qoS = qos;
+    public void setQoS(final @NotNull QoS qoS) {
+        checkNotNull(qoS, "QoS must not be null");
+        this.qoS = qoS;
     }
 
     /**

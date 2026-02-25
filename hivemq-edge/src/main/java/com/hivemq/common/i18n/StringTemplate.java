@@ -23,6 +23,7 @@ import java.util.Locale;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
+@SuppressWarnings("JavaLangClash")
 public final class StringTemplate {
     private static final @NotNull Configuration CONFIGURATION = new Configuration(Configuration.VERSION_2_3_22);
 

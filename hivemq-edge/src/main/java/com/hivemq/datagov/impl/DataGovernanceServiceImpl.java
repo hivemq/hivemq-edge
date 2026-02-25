@@ -115,7 +115,7 @@ public class DataGovernanceServiceImpl implements DataGovernanceService {
         return context.getExecutorService() == null ? executorService : context.getExecutorService();
     }
 
-    class PolicyExecution implements Callable<DataGovernanceResult> {
+    static class PolicyExecution implements Callable<DataGovernanceResult> {
 
         private final @NotNull List<DataGovernancePolicy> policies;
         private final @NotNull DataGovernanceContext context;

@@ -80,7 +80,7 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
             final @NotNull String hivemqId,
             final @NotNull String topic,
             final @Nullable byte[] payload,
-            final @NotNull QoS qos,
+            final @NotNull QoS qoS,
             final @NotNull QoS onwardQos,
             final boolean isRetain,
             final long messageExpiryInterval,
@@ -101,11 +101,11 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
 
         Preconditions.checkNotNull(hivemqId, "HivemqId may never be null");
         Preconditions.checkNotNull(topic, "Topic may never be null");
-        Preconditions.checkNotNull(qos, "Quality of service may never be null");
+        Preconditions.checkNotNull(qoS, "Quality of service may never be null");
 
         this.topic = topic;
         this.payload = payload;
-        this.qoS = qos;
+        this.qoS = qoS;
         this.onwardQos = onwardQos;
         this.retain = isRetain;
         this.duplicateDelivery = isDup;
@@ -141,7 +141,7 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
             final @NotNull String hivemqId,
             final @NotNull String topic,
             final @Nullable byte[] payload,
-            final @NotNull QoS qos,
+            final @NotNull QoS qoS,
             final @NotNull QoS onwardQos,
             final boolean isRetain,
             final long messageExpiryInterval,
@@ -155,12 +155,12 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
 
         Preconditions.checkNotNull(hivemqId, "Hivemq Id may never be null");
         Preconditions.checkNotNull(topic, "Topic may never be null");
-        Preconditions.checkNotNull(qos, "Quality of service may never be null");
+        Preconditions.checkNotNull(qoS, "Quality of service may never be null");
 
         this.hivemqId = hivemqId;
         this.topic = topic;
         this.payload = payload;
-        this.qoS = qos;
+        this.qoS = qoS;
         this.onwardQos = onwardQos;
         this.retain = isRetain;
         this.messageExpiryInterval = messageExpiryInterval;

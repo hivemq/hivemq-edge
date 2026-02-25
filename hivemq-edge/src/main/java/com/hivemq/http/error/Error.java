@@ -26,6 +26,7 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@SuppressWarnings("JavaLangClash")
 public class Error {
     public static final @NotNull String REQUIRED_FIELD_MISSING_TITLE = "Required field missing";
     public static final @NotNull String AT_LEAST_ONE_FIELD_MISSING_TITLE = "One of the fields must be present.";

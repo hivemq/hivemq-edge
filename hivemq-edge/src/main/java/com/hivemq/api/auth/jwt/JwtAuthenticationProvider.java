@@ -88,6 +88,7 @@ public class JwtAuthenticationProvider implements ITokenGenerator, ITokenVerifie
         return jwtKey;
     }
 
+    @SuppressWarnings("ThreadPriorityCheck")
     private void initializeKey() throws AuthenticationException {
         Thread initThread = new Thread(() -> {
             synchronized (intializationMonitor) {

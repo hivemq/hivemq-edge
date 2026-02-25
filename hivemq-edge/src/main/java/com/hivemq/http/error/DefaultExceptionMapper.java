@@ -52,9 +52,8 @@ public class DefaultExceptionMapper implements ExceptionMapper<Throwable> {
     public Response toResponse(final @NotNull Throwable exception) {
 
         // matches all default exceptions, e.g. NotFoundException, BadRequestException,...
-        if (exception instanceof WebApplicationException webApplicationException) {
+        if (exception instanceof WebApplicationException) {
             log.trace("WebApplicationException in REST API: {}", exception.getMessage());
-            final Response response = webApplicationException.getResponse();
 
             if (exception instanceof NotFoundException) {
                 return ErrorResponseUtil.errorResponse(new NotFoundError());

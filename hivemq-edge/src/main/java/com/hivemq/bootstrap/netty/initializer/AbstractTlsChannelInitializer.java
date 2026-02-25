@@ -41,6 +41,8 @@ public abstract class AbstractTlsChannelInitializer extends AbstractChannelIniti
 
     private final @NotNull MqttTlsListener mqttTlsListener;
     private final @NotNull SslFactory sslFactory;
+
+    @SuppressWarnings("HidingField") // Intentionally stored for TLS-specific access
     private final @NotNull ChannelDependencies channelDependencies;
 
     public AbstractTlsChannelInitializer(

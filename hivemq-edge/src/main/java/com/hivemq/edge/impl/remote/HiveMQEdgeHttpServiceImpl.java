@@ -76,6 +76,7 @@ public class HiveMQEdgeHttpServiceImpl {
     private volatile @Nullable HiveMQEdgeRemoteServices remoteServices;
     private volatile @Nullable Thread usageClientThread;
 
+    @SuppressWarnings("ThreadPriorityCheck")
     public HiveMQEdgeHttpServiceImpl(
             final @NotNull String hiveMqEdgeVersion,
             final @NotNull ObjectMapper mapper,
@@ -185,6 +186,7 @@ public class HiveMQEdgeHttpServiceImpl {
         }
     }
 
+    @SuppressWarnings("ThreadPriorityCheck")
     private void startUsageThreadIfNeeded() {
         if (activateUsage && usageClientThread == null) {
             synchronized (monitor) {

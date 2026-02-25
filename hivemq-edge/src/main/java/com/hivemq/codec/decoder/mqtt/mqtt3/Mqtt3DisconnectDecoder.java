@@ -34,7 +34,7 @@ import org.jetbrains.annotations.Nullable;
 @Singleton
 public class Mqtt3DisconnectDecoder extends AbstractMqttDecoder<DISCONNECT> {
 
-    private static final DISCONNECT DISCONNECT = new DISCONNECT();
+    private static final DISCONNECT disconnect = new DISCONNECT();
 
     @Inject
     public Mqtt3DisconnectDecoder(
@@ -53,6 +53,6 @@ public class Mqtt3DisconnectDecoder extends AbstractMqttDecoder<DISCONNECT> {
                 return null;
             }
         }
-        return DISCONNECT;
+        return disconnect;
     }
 }

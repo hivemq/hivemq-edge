@@ -126,6 +126,7 @@ public record LdapConnectionProperties(
     /**
      * This class represents the simple bind credentials for an LDAP connection.
      */
+    @SuppressWarnings("ArrayRecordComponent")
     public record LdapServers(@NotNull String[] hosts, int @NotNull [] ports) {
 
         /**

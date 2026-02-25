@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
  * Bean to transport process details across the API
  * @author Simon L Johnson
  */
+@SuppressWarnings("JavaLangClash")
 public class Process {
 
     @JsonProperty("processId")
