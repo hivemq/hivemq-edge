@@ -40,7 +40,6 @@ import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.message.unsuback.UNSUBACK;
 import com.hivemq.mqtt.message.unsubscribe.UNSUBSCRIBE;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
-
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -405,7 +404,11 @@ public class TestMessageUtil {
 
     public static AUTH createFullMqtt5Auth() {
         return new AUTH(
-                "auth method", "auth data".getBytes(StandardCharsets.UTF_8), Mqtt5AuthReasonCode.SUCCESS, TEST_USER_PROPERTIES, "reason");
+                "auth method",
+                "auth data".getBytes(StandardCharsets.UTF_8),
+                Mqtt5AuthReasonCode.SUCCESS,
+                TEST_USER_PROPERTIES,
+                "reason");
     }
 
     @NotNull

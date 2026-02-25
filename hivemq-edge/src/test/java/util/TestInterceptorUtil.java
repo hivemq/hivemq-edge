@@ -25,7 +25,6 @@ import com.hivemq.extension.sdk.api.interceptor.subscribe.parameter.SubscribeInb
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
