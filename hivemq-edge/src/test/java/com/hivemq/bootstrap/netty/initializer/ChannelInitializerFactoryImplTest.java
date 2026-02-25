@@ -25,7 +25,6 @@ import com.hivemq.bootstrap.netty.ChannelInitializerFactoryImpl;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.entity.*;
-import com.hivemq.logging.EventLog;
 import com.hivemq.security.ssl.NonSslHandler;
 import com.hivemq.security.ssl.SslFactory;
 import io.netty.channel.Channel;
@@ -53,9 +52,6 @@ public class ChannelInitializerFactoryImplTest {
 
     @Mock
     private Provider<NonSslHandler> nonSslHandlerProvider;
-
-    @Mock
-    private EventLog eventLog;
 
     @Mock
     private ConfigurationService fullConfigurationService;
@@ -129,7 +125,7 @@ public class ChannelInitializerFactoryImplTest {
     public void test_create_tcp() {
 
         channelInitializerFactory =
-                new ChannelInitializerFactoryImpl(channelDependencies, sslFactory, nonSslHandlerProvider, eventLog);
+                new ChannelInitializerFactoryImpl(channelDependencies, sslFactory, nonSslHandlerProvider);
         final MqttTcpListener mqttTcpListener = new MqttTcpListener(0, "0");
         final AbstractChannelInitializer channelInitializer =
                 channelInitializerFactory.getChannelInitializer(mqttTcpListener);
@@ -140,7 +136,7 @@ public class ChannelInitializerFactoryImplTest {
     public void test_create_tcp_tls() {
 
         channelInitializerFactory =
-                new ChannelInitializerFactoryImpl(channelDependencies, sslFactory, nonSslHandlerProvider, eventLog);
+                new ChannelInitializerFactoryImpl(channelDependencies, sslFactory, nonSslHandlerProvider);
         final Tls tls = createDefaultTLS();
         final MqttTlsTcpListener mqttTlsTcpListener = new MqttTlsTcpListener(0, "0", tls);
         final AbstractChannelInitializer channelInitializer =
@@ -152,7 +148,7 @@ public class ChannelInitializerFactoryImplTest {
     public void test_create_websocket() {
 
         channelInitializerFactory =
-                new ChannelInitializerFactoryImpl(channelDependencies, sslFactory, nonSslHandlerProvider, eventLog);
+                new ChannelInitializerFactoryImpl(channelDependencies, sslFactory, nonSslHandlerProvider);
         final MqttWebsocketListener mqttWebsocketListener =
                 new MqttWebsocketListener.Builder().bindAddress("0").port(0).build();
         final AbstractChannelInitializer channelInitializer =
@@ -164,7 +160,7 @@ public class ChannelInitializerFactoryImplTest {
     public void test_create_websocket_tls() {
 
         channelInitializerFactory =
-                new ChannelInitializerFactoryImpl(channelDependencies, sslFactory, nonSslHandlerProvider, eventLog);
+                new ChannelInitializerFactoryImpl(channelDependencies, sslFactory, nonSslHandlerProvider);
         final Tls tls = createDefaultTLS();
 
         final MqttTlsWebsocketListener websocketListener = new MqttTlsWebsocketListener.Builder()
@@ -184,7 +180,7 @@ public class ChannelInitializerFactoryImplTest {
                 final ChannelDependencies channelDependencies,
                 final SslFactory sslFactory,
                 final Provider<NonSslHandler> nonSslHandlerProvider) {
-            super(channelDependencies, sslFactory, nonSslHandlerProvider, eventLog);
+            super(channelDependencies, sslFactory, nonSslHandlerProvider);
         }
 
         @NotNull

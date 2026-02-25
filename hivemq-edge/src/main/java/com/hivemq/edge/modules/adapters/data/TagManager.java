@@ -17,7 +17,6 @@ package com.hivemq.edge.modules.adapters.data;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
-import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.protocols.northbound.TagConsumer;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -36,8 +35,6 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
 
     private static final Logger log = LoggerFactory.getLogger(TagManager.class);
 
-    private final @NotNull MetricsHolder metricsHolder;
-
     // TODO this is basically a memory leak. The problem is when shall we remove the last value?
     // We would need to add a callback/logic to the lifecycle of tags
     // is it intended that we might send very old data?
@@ -47,9 +44,7 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
     private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
     @Inject
-    public TagManager(final @NotNull MetricsHolder metricsHolder) {
-        this.metricsHolder = metricsHolder;
-    }
+    public TagManager() {}
 
     private final @NotNull ConcurrentHashMap<String, List<TagConsumer>> consumers = new ConcurrentHashMap<>();
 

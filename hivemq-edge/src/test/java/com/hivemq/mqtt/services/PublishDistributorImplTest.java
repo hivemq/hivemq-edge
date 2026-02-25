@@ -81,11 +81,7 @@ public class PublishDistributorImplTest {
         when(configurationService.bridgeExtractor()).thenReturn(bridgeConfiguration);
         singleWriterService = TestSingleWriterFactory.defaultSingleWriter(internalConfigurationService);
         publishDistributor = new PublishDistributorImpl(
-                payloadPersistence,
-                clientQueuePersistence,
-                () -> clientSessionPersistence,
-                singleWriterService,
-                configurationService);
+                clientQueuePersistence, () -> clientSessionPersistence, configurationService);
         when(bridgeConfiguration.getBridges()).thenReturn(List.of(bridge));
     }
 

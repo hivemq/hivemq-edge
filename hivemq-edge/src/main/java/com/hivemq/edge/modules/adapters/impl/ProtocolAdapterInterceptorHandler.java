@@ -252,7 +252,7 @@ public class ProtocolAdapterInterceptorHandler {
         public void run() {
             final ProtocolAdapterPublishInboundOutputImpl output = outputHolder.get();
             if (output.isPreventDelivery()) {
-                dropMessage(output);
+                dropMessage();
                 resultFuture.set(PublishingResult.failed(
                         "adapter interceptor prevented delivery.", AckReasonCode.UNSPECIFIED_ERROR));
             } else {
@@ -262,7 +262,7 @@ public class ProtocolAdapterInterceptorHandler {
             }
         }
 
-        private void dropMessage(final @NotNull ProtocolAdapterPublishInboundOutputImpl output) {
+        private void dropMessage() {
             messageDroppedService.extensionPrevented(
                     protocolAdapter.getId(),
                     publish.getTopic(),

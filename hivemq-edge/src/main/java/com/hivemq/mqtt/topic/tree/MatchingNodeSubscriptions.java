@@ -231,11 +231,7 @@ class MatchingNodeSubscriptions {
 
     private static class SubscriptionInfoPresenceStatus {
 
-        public final boolean subscriptionInfoSame;
-
-        SubscriptionInfoPresenceStatus(final boolean subscriptionInfoSame) {
-            this.subscriptionInfoSame = subscriptionInfoSame;
-        }
+        SubscriptionInfoPresenceStatus() {}
     }
 
     private @Nullable SubscriptionInfoPresenceStatus storeSubscriberInStructures(
@@ -253,7 +249,7 @@ class MatchingNodeSubscriptions {
                             key -> new SubscriptionGroup())
                     .put(subscriberToAdd);
 
-            return prev == null ? null : new SubscriptionInfoPresenceStatus(prev.equals(subscriberToAdd));
+            return prev == null ? null : new SubscriptionInfoPresenceStatus();
         }
 
         // Possible initialization of map and moving the data
@@ -277,7 +273,7 @@ class MatchingNodeSubscriptions {
         if (nonSharedSubscribersMap != null) {
             final SubscriberWithQoS prev =
                     nonSharedSubscribersMap.put(subscriberToAdd.getSubscriber(), subscriberToAdd);
-            return prev == null ? null : new SubscriptionInfoPresenceStatus(prev.equals(subscriberToAdd));
+            return prev == null ? null : new SubscriptionInfoPresenceStatus();
         }
 
         if (nonSharedSubscribersArray == null) {
@@ -291,7 +287,7 @@ class MatchingNodeSubscriptions {
                     && subscriberToAdd.getSubscriber().equals(nonSharedSubscribersArray[i].getSubscriber())) {
                 // This entry is already present in the array, we can override and abort
                 final SubscriptionInfoPresenceStatus subscriptionInfoPresenceStatus =
-                        new SubscriptionInfoPresenceStatus(this.nonSharedSubscribersArray[i].equals(subscriberToAdd));
+                        new SubscriptionInfoPresenceStatus();
 
                 this.nonSharedSubscribersArray[i] = subscriberToAdd;
                 return subscriptionInfoPresenceStatus;
@@ -314,11 +310,7 @@ class MatchingNodeSubscriptions {
 
     private static class SubscriptionInfoRemovalStatus {
 
-        public final boolean wasSharedSubscription;
-
-        SubscriptionInfoRemovalStatus(final boolean wasSharedSubscription) {
-            this.wasSharedSubscription = wasSharedSubscription;
-        }
+        SubscriptionInfoRemovalStatus() {}
     }
 
     private @Nullable SubscriptionInfoRemovalStatus removeSubscriberFromStructures(
@@ -352,7 +344,7 @@ class MatchingNodeSubscriptions {
             }
         }
 
-        return remove == null ? null : new SubscriptionInfoRemovalStatus(remove.isSharedSubscription());
+        return remove == null ? null : new SubscriptionInfoRemovalStatus();
     }
 
     private static boolean isEmptyArray(final @Nullable Object @Nullable [] array) {

@@ -50,7 +50,6 @@ import com.hivemq.edge.api.model.ManagedAsset;
 import com.hivemq.edge.api.model.ManagedAssetList;
 import com.hivemq.edge.api.model.PulseActivationToken;
 import com.hivemq.edge.api.model.PulseStatus;
-import com.hivemq.pulse.asset.AssetProviderRegistry;
 import com.hivemq.pulse.asset.PulseAgentAsset;
 import com.hivemq.pulse.asset.PulseAgentAssetMapping;
 import com.hivemq.pulse.asset.PulseAgentAssets;
@@ -90,7 +89,6 @@ import org.slf4j.LoggerFactory;
 @Singleton
 public class PulseApiImpl implements PulseApi {
     private static final @NotNull Logger LOGGER = LoggerFactory.getLogger(PulseApiImpl.class);
-    private final @NotNull AssetProviderRegistry assetProviderRegistry;
     private final @NotNull AssetMappingExtractor assetMappingExtractor;
     private final @NotNull PulseExtractor pulseExtractor;
     private final @NotNull StatusProviderRegistry statusProviderRegistry;
@@ -101,9 +99,7 @@ public class PulseApiImpl implements PulseApi {
             final @NotNull SystemInformation systemInformation,
             final @NotNull AssetMappingExtractor assetMappingExtractor,
             final @NotNull PulseExtractor pulseExtractor,
-            final @NotNull AssetProviderRegistry assetProviderRegistry,
             final @NotNull StatusProviderRegistry statusProviderRegistry) {
-        this.assetProviderRegistry = assetProviderRegistry;
         this.assetMappingExtractor = assetMappingExtractor;
         this.pulseExtractor = pulseExtractor;
         this.statusProviderRegistry = statusProviderRegistry;

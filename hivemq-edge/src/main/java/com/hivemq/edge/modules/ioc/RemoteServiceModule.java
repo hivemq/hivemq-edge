@@ -55,6 +55,7 @@ public class RemoteServiceModule {
 
     @Provides
     @IntoSet
+    @SuppressWarnings("UnusedVariable")
     Boolean eagerSingletons(final @NotNull HiveMQEdgeRemoteService httpService) {
         // this is used to instantiate all the params, similar to guice's asEagerSingleton and returns nothing
         return Boolean.TRUE;

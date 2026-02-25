@@ -151,8 +151,7 @@ public class PublishPollServiceImplTest {
                 connectionPersistence,
                 publishPayloadPersistence,
                 messageDroppedService,
-                () -> sharedSubscriptionService,
-                singleWriterService);
+                () -> sharedSubscriptionService);
     }
 
     @AfterEach

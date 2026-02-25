@@ -26,6 +26,7 @@ public class Client {
 
     @JsonProperty("clientId")
     @Schema(description = "The clientIdentifier as known by the system")
+    @SuppressWarnings("UnusedVariable")
     private final @NotNull String clientId;
 
     public Client(@JsonProperty("clientId") final @NotNull String clientId) {

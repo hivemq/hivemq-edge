@@ -139,7 +139,6 @@ public class RetainedMessageMemoryLocalPersistence implements RetainedMessageLoc
         if (retainedMessage.hasExpired()) {
             return null;
         }
-        final RetainedMessage copy = retainedMessage.copyWithoutPayload();
         return retainedMessage;
     }
 

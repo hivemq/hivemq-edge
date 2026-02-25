@@ -45,8 +45,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The implementation of the {@link ConfigurationService}
@@ -55,8 +53,6 @@ import org.slf4j.LoggerFactory;
  * @author Christoph Schäbel
  */
 public class ConfigurationServiceImpl implements ConfigurationService {
-
-    private static final @NotNull Logger log = LoggerFactory.getLogger(ConfigurationServiceImpl.class);
 
     private final @NotNull ListenerConfigurationService listenerConfigurationService;
     private final @NotNull MqttConfigurationService mqttConfigurationService;

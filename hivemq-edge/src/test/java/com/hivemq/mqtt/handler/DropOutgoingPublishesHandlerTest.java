@@ -59,10 +59,10 @@ public class DropOutgoingPublishesHandlerTest {
     MessageDroppedService messageDroppedService;
 
     @Mock
-    Counter counter;
+    PublishPayloadPersistence publishPayloadPersistence;
 
     @Mock
-    PublishPayloadPersistence publishPayloadPersistence;
+    Counter counter;
 
     private DropOutgoingPublishesHandler handler;
 
@@ -75,7 +75,7 @@ public class DropOutgoingPublishesHandlerTest {
         when(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME))
                 .thenReturn(new TestChannelAttribute<>(clientConnection));
         InternalConfigurations.NOT_WRITABLE_QUEUE_SIZE.set(0);
-        handler = new DropOutgoingPublishesHandler(publishPayloadPersistence, messageDroppedService);
+        handler = new DropOutgoingPublishesHandler(messageDroppedService);
     }
 
     @Test

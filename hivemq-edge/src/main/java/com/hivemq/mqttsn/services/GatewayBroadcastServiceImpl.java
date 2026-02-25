@@ -20,7 +20,6 @@ import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.MqttsnConfigurationService;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.net.InetAddress;
@@ -125,7 +124,7 @@ public class GatewayBroadcastServiceImpl implements IGatewayBroadcastService {
                                 .getDiscoveryBroadcastAddresses()
                                 .size());
 
-                ChannelFuture future = channel.writeAndFlush(MqttsnCodecs.MQTTSN_CODEC_VERSION_1_2
+                channel.writeAndFlush(MqttsnCodecs.MQTTSN_CODEC_VERSION_1_2
                         .createMessageFactory()
                         .createAdvertise(
                                 mqttsnConfigurationService.getGatewayId(),

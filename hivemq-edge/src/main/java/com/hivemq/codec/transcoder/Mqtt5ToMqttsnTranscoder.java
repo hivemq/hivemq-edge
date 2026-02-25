@@ -156,12 +156,10 @@ public class Mqtt5ToMqttsnTranscoder implements ITranscoder<Message, List<IMqtts
                     list.add(out);
                 }
                 case PINGRESP -> {
-                    PINGRESP pingresp = (PINGRESP) messageIn;
                     IMqttsnMessage out = factory.createPingresp();
                     list.add(out);
                 }
                 case DISCONNECT -> {
-                    DISCONNECT disconnect = (DISCONNECT) messageIn;
                     IMqttsnMessage out = factory.createDisconnect();
                     list.add(out);
                 }

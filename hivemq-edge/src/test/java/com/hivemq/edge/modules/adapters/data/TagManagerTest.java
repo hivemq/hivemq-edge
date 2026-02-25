@@ -17,9 +17,7 @@ package com.hivemq.edge.modules.adapters.data;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.codahale.metrics.NoopMetricRegistry;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.protocols.northbound.TagConsumer;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -31,7 +29,7 @@ public class TagManagerTest {
 
     @Test
     public void test_allSucceeds() throws Exception {
-        var tagManager = new TagManager(new MetricsHolder(new NoopMetricRegistry()));
+        var tagManager = new TagManager();
         var countDownLatch = new CountDownLatch(3);
         tagManager.addConsumer(new SucceedingConsumer("tag1", countDownLatch));
         tagManager.feed("tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
@@ -43,7 +41,7 @@ public class TagManagerTest {
 
     @Test
     public void test_succeedForMultipleConsumers() throws Exception {
-        var tagManager = new TagManager(new MetricsHolder(new NoopMetricRegistry()));
+        var tagManager = new TagManager();
         var countDownLatch = new CountDownLatch(3);
         var countDownLatch1 = new CountDownLatch(3);
         var countDownLatch2 = new CountDownLatch(3);
@@ -61,7 +59,7 @@ public class TagManagerTest {
 
     @Test
     public void test_succeedForMultipleConsumers_withOneBroken() throws Exception {
-        var tagManager = new TagManager(new MetricsHolder(new NoopMetricRegistry()));
+        var tagManager = new TagManager();
         var countDownLatch = new CountDownLatch(3);
         var countDownLatch1 = new CountDownLatch(3);
         tagManager.addConsumer(new SucceedingConsumer("tag1", countDownLatch));
