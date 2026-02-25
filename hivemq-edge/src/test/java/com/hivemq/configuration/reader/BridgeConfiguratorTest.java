@@ -268,7 +268,7 @@ public class BridgeConfiguratorTest extends AbstractConfigurationTest {
     @Test
     public void whenFullConfig_thenNoDefaultsSet() throws IOException {
         final String contents = """
-                <hivemq> 
+                <hivemq>
                     <mqtt-bridges>"
                         <mqtt-bridge>"
                             <id>my-bridge-1</id>"

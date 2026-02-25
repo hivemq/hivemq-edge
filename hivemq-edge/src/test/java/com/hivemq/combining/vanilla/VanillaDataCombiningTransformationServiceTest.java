@@ -23,12 +23,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.combining.model.DataCombining;
 import com.hivemq.combining.model.DataCombiningDestination;
 import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.common.i18n.StringTemplate;
-import com.hivemq.mqtt.handler.publish.PublishingResult;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.publish.PUBLISH;
