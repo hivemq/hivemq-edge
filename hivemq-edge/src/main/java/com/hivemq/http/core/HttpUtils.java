@@ -90,7 +90,7 @@ public class HttpUtils {
         try {
             new URL(url);
             return true;
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
         return false;
     }

@@ -57,7 +57,7 @@ public class HttpUrlConnectionClient {
         } finally {
             try {
                 connection.disconnect();
-            } catch (Throwable t) {
+            } catch (Throwable ignored) {
             }
         }
     }
@@ -84,11 +84,11 @@ public class HttpUrlConnectionClient {
         } finally {
             try {
                 connection.disconnect();
-            } catch (Throwable t) {
+            } catch (Throwable ignored) {
             }
             try {
                 is.close();
-            } catch (Throwable t) {
+            } catch (Throwable ignored) {
             }
         }
     }
@@ -119,11 +119,11 @@ public class HttpUrlConnectionClient {
         } finally {
             try {
                 connection.disconnect();
-            } catch (Throwable t) {
+            } catch (Throwable ignored) {
             }
             try {
                 is.close();
-            } catch (Throwable t) {
+            } catch (Throwable ignored) {
             }
         }
     }
@@ -205,7 +205,7 @@ public class HttpUrlConnectionClient {
             } finally {
                 try {
                     is.close();
-                } catch (Exception e) {
+                } catch (Exception ignored) {
                 }
             }
         }

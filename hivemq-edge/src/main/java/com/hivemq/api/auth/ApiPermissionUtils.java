@@ -79,7 +79,7 @@ public class ApiPermissionUtils {
                     if (annotation != null) {
                         return Optional.of(annotation);
                     }
-                } catch (NoSuchMethodException e) {
+                } catch (NoSuchMethodException ignored) {
                 }
             }
             return Optional.empty();

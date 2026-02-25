@@ -60,7 +60,7 @@ public class HiveMQEdgeEnvironmentUtils {
         try {
             return MacAddressUtil.formatAddress(MacAddressUtil.defaultMachineId())
                     .toUpperCase();
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
         return "<unknown>";
     }

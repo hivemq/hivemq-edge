@@ -33,7 +33,7 @@ public class RetainedMessagesGauge implements Gauge<Long> {
     public Long getValue() {
         try {
             return retainedMessagePersistence.size();
-        } catch (final Exception ignore) {
+        } catch (final Exception ignored) {
         }
         return 0L;
     }
