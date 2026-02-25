@@ -134,8 +134,8 @@ public class TopicPermissionBuilderImpl implements TopicPermissionBuilder {
         Preconditions.checkArgument(
                 !(sharedGroup.length() > 1 && sharedGroup.contains("#")),
                 "Shared group cannot contain wildcard character '#' inside the name");
-        Preconditions.checkArgument(!(sharedGroup.contains("+")), "Shared group cannot contain wildcard character '+'");
-        Preconditions.checkArgument(!(sharedGroup.contains("/")), "Shared group cannot contain character '/'");
+        Preconditions.checkArgument(!sharedGroup.contains("+"), "Shared group cannot contain wildcard character '+'");
+        Preconditions.checkArgument(!sharedGroup.contains("/"), "Shared group cannot contain character '/'");
         Preconditions.checkArgument(
                 PluginBuilderUtil.isValidUtf8String(sharedGroup, securityConfigurationService.validateUTF8()),
                 "Shared group contains invalid UTF-8 character");

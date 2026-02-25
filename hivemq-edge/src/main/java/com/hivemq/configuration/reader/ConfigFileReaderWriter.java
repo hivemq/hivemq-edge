@@ -536,7 +536,7 @@ public class ConfigFileReaderWriter {
             int idx = 1;
             File copyFile;
             do {
-                final String copyFilename = fileNameNoExt + '_' + (idx++) + (fileExt != null ? "." + fileExt : "");
+                final String copyFilename = fileNameNoExt + '_' + idx++ + (fileExt != null ? "." + fileExt : "");
                 copyFile = new File(copyPath, copyFilename);
             } while (idx < MAX_BACK_FILES && copyFile.exists());
 

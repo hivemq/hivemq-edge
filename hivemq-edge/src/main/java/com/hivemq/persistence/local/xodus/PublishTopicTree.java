@@ -120,7 +120,7 @@ public class PublishTopicTree {
                     final ArrayList<String> nextSubTopics = new ArrayList<>(subTopics);
                     nextSubTopics.remove(0);
                     final boolean removed = child.remove(nextSubTopics);
-                    if (removed && (!child.directMatch)) {
+                    if (removed && !child.directMatch) {
                         child = null;
                         return true;
                     }

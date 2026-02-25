@@ -91,7 +91,7 @@ public class ExtensionBootstrapImpl implements ExtensionBootstrap {
         final ImmutableList<HiveMQExtensionEvent> allExtensions = extensionEventBuilder.build();
         return lifecycleHandler
                 .handleExtensionEvents(allExtensions)
-                .thenAccept(((v) -> authenticators.checkAuthenticationSafetyAndLifeness()));
+                .thenAccept(v -> authenticators.checkAuthenticationSafetyAndLifeness());
     }
 
     @Override

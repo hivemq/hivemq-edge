@@ -66,7 +66,7 @@ public class HttpUtils {
 
     public static Map<String, String> parseQueryString(String queryString) {
         Map<String, String> map = new HashMap<>();
-        if ((queryString == null) || (queryString.equals(""))) {
+        if (queryString == null || queryString.equals("")) {
             return map;
         }
         String[] params = queryString.split("&");
