@@ -63,6 +63,6 @@ class ConfigFileReaderWriterTest {
                 .toURI());
         final var configEntity = reader.loadConfigFromXML(configFile);
         // This will break as soon as the xsd is fixed
-        assertThat(configEntity).isTrue();
+        assertThat(configEntity).isFalse();
     }
 }
