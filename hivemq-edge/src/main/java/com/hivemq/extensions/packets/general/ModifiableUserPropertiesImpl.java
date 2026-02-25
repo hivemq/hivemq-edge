@@ -24,7 +24,7 @@ import com.hivemq.extension.sdk.api.packets.general.UserProperty;
 import com.hivemq.extension.sdk.api.services.exception.DoNotImplementException;
 import com.hivemq.extensions.services.builder.PluginBuilderUtil;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -187,7 +187,7 @@ public class ModifiableUserPropertiesImpl implements ModifiableUserProperties {
         lock.lock();
         try {
             modified = true;
-            list = new LinkedList<>();
+            list = new ArrayList<>();
         } finally {
             lock.unlock();
         }
@@ -197,12 +197,12 @@ public class ModifiableUserPropertiesImpl implements ModifiableUserProperties {
         return UserPropertiesImpl.of(asInternalList());
     }
 
-    private @NotNull LinkedList<MqttUserProperty> modify() {
-        if (list instanceof LinkedList) {
-            return (LinkedList<MqttUserProperty>) list;
+    private @NotNull List<MqttUserProperty> modify() {
+        if (list instanceof ArrayList) {
+            return list;
         }
         modified = true;
-        final LinkedList<MqttUserProperty> modifiableList = new LinkedList<>(list);
+        final ArrayList<MqttUserProperty> modifiableList = new ArrayList<>(list);
         list = modifiableList;
         return modifiableList;
     }

@@ -18,8 +18,8 @@ package com.hivemq.protocols.params;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.discovery.NodeTree;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -87,7 +87,7 @@ public class NodeTreeImpl implements NodeTree {
         private final boolean selectable;
 
         @JsonProperty("children")
-        private final @NotNull List<ObjectNode> children = new LinkedList<>();
+        private final @NotNull List<ObjectNode> children = new ArrayList<>();
 
         public ObjectNode(
                 final @NotNull String name,
