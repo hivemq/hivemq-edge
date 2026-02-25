@@ -82,6 +82,7 @@ public class ScheduledCleanUpServiceTest {
     }
 
     @Test
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void cleanUp_invokesRespectivePersistenceCleanUps() {
         scheduledCleanUpService.cleanUp(0, ScheduledCleanUpService.CLIENT_SESSION_PERSISTENCE_INDEX);
         verify(clientSessionPersistence).cleanUp(eq(ScheduledCleanUpService.CLIENT_SESSION_PERSISTENCE_INDEX));

@@ -106,6 +106,7 @@ public class UnsubscribeInboundInterceptorHandlerTest {
     }
 
     @AfterEach
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void tearDown() {
         executor.stop();
         channel.close();

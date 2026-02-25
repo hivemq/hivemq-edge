@@ -41,6 +41,7 @@ public class ChunkerTest {
     }
 
     @Test
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void calculatesMaxResults() {
         final Chunker chunker = new Chunker(internalConfigurationService);
 

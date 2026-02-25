@@ -37,6 +37,7 @@ public class NettyUdpConfigurationProviderTest {
     }
 
     @AfterEach
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void tearDown() throws Exception {
         nettyConfiguration.getChildEventLoopGroup().shutdownGracefully();
     }

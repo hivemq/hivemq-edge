@@ -58,6 +58,7 @@ import org.junit.jupiter.api.Timeout;
  * 4. Remove vs Remove race conditions (double removal)
  * 5. Concurrent reads during modifications (inconsistent snapshots)
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 class BridgeResourceImplConcurrencyTest {
 
     private BridgeResourceImpl bridgeResource;

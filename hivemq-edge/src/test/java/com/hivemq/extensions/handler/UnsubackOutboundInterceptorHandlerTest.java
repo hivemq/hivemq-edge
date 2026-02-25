@@ -112,6 +112,7 @@ public class UnsubackOutboundInterceptorHandlerTest {
     }
 
     @AfterEach
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void tearDown() {
         executor.stop();
         channel.close();

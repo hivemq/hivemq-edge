@@ -643,6 +643,7 @@ public class MqttConnackerTest {
     }
 
     @Test
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void test_connackSuccess() {
         mqttConnacker.connackSuccess(
                 clientConnection.getChannel().pipeline().firstContext(),

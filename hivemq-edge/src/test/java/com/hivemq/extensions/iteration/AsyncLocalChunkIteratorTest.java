@@ -170,6 +170,7 @@ public class AsyncLocalChunkIteratorTest {
         }
 
         @Override
+        @SuppressWarnings("FutureReturnValueIgnored")
         public @NotNull ListenableFuture<ChunkResult<String>> fetchNextResults(final @Nullable ChunkCursor cursor) {
 
             if (exception != null) {

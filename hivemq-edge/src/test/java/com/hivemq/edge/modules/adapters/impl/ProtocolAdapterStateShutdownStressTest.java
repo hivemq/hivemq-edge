@@ -46,6 +46,7 @@ import org.junit.jupiter.api.Timeout;
  */
 class ProtocolAdapterStateShutdownStressTest {
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     @Test
     @Timeout(30)
     void test_massiveConcurrency_shutdownRaceCondition() throws Exception {
@@ -139,6 +140,7 @@ class ProtocolAdapterStateShutdownStressTest {
         assertThat(blockedStateChanges.get()).isGreaterThan(0);
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     @Test
     @Timeout(30)
     void test_listenerConcurrency_noMemoryLeaksOrRaceConditions() throws Exception {
@@ -217,6 +219,7 @@ class ProtocolAdapterStateShutdownStressTest {
         }
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     @Test
     @Timeout(30)
     void test_rapidStartStopCycles_noStateCorruption() throws Exception {

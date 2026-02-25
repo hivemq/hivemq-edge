@@ -144,6 +144,7 @@ public class IncomingPublishHandlerTest {
     }
 
     @AfterEach
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void tearDown() {
         executor.stop();
         channel.close();
@@ -151,6 +152,7 @@ public class IncomingPublishHandlerTest {
 
     @Test
     @Timeout(5)
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void test_read_publish_channel_closed() {
         channel.close();
         assertThatThrownBy(() -> channel.writeInbound(TestMessageUtil.createFullMqtt5Publish()))
