@@ -16,6 +16,7 @@
 package com.hivemq.mqtt.handler.publish;
 
 import static com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties.NO_USER_PROPERTIES;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
@@ -129,7 +130,7 @@ public class IncomingPublishServiceTest {
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv3_1);
 
         final PUBLISH publish =
-                TestMessageUtil.createMqtt3Publish("testtopic", "123456790".getBytes(), QoS.AT_MOST_ONCE);
+                TestMessageUtil.createMqtt3Publish("testtopic", "123456790".getBytes(UTF_8), QoS.AT_MOST_ONCE);
 
         incomingPublishService.processPublish(ctx, publish, null);
 
@@ -142,7 +143,8 @@ public class IncomingPublishServiceTest {
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setMaxPacketSizeSend(5L);
 
-        final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.AT_MOST_ONCE);
+        final PUBLISH publish =
+                TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(UTF_8), QoS.AT_MOST_ONCE);
 
         incomingPublishService.processPublish(ctx, publish, null);
 
@@ -152,7 +154,8 @@ public class IncomingPublishServiceTest {
     @Test
     public void test_publish_valid_qos0_with_ordering() throws InterruptedException {
 
-        final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.AT_MOST_ONCE);
+        final PUBLISH publish =
+                TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(UTF_8), QoS.AT_MOST_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
 
         assertTrue(channel.isActive());
@@ -168,7 +171,8 @@ public class IncomingPublishServiceTest {
         when(dataGovernanceService.applyAndPublish(any()))
                 .thenReturn(Futures.immediateFailedFuture(TestException.INSTANCE));
 
-        final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.AT_MOST_ONCE);
+        final PUBLISH publish =
+                TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(UTF_8), QoS.AT_MOST_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
 
         assertTrue(channel.isActive());
@@ -181,7 +185,8 @@ public class IncomingPublishServiceTest {
     @Test
     public void test_publish_valid_qos1() throws InterruptedException {
 
-        final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.AT_LEAST_ONCE);
+        final PUBLISH publish =
+                TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(UTF_8), QoS.AT_LEAST_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
 
         assertTrue(channel.isActive());
@@ -582,7 +587,8 @@ public class IncomingPublishServiceTest {
         when(dataGovernanceService.applyAndPublish(any()))
                 .thenReturn(Futures.immediateFuture(PublishingResult.NO_MATCHING_SUBSCRIBERS));
 
-        final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.AT_LEAST_ONCE);
+        final PUBLISH publish =
+                TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(UTF_8), QoS.AT_LEAST_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
 
         assertTrue(channel.isActive());
@@ -608,7 +614,8 @@ public class IncomingPublishServiceTest {
         when(dataGovernanceService.applyAndPublish(any()))
                 .thenReturn(Futures.immediateFailedFuture(TestException.INSTANCE));
 
-        final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.AT_LEAST_ONCE);
+        final PUBLISH publish =
+                TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(UTF_8), QoS.AT_LEAST_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
 
         assertTrue(channel.isActive());
@@ -631,7 +638,8 @@ public class IncomingPublishServiceTest {
     @Test
     public void test_publish_valid_qos2() throws InterruptedException {
 
-        final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.EXACTLY_ONCE);
+        final PUBLISH publish =
+                TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(UTF_8), QoS.EXACTLY_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
 
         assertTrue(channel.isActive());
@@ -659,7 +667,8 @@ public class IncomingPublishServiceTest {
         when(dataGovernanceService.applyAndPublish(any()))
                 .thenReturn(Futures.immediateFuture(PublishingResult.NO_MATCHING_SUBSCRIBERS));
 
-        final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.EXACTLY_ONCE);
+        final PUBLISH publish =
+                TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(UTF_8), QoS.EXACTLY_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
 
         assertTrue(channel.isActive());
@@ -684,7 +693,8 @@ public class IncomingPublishServiceTest {
         when(dataGovernanceService.applyAndPublish(any()))
                 .thenReturn(Futures.immediateFailedFuture(TestException.INSTANCE));
 
-        final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.EXACTLY_ONCE);
+        final PUBLISH publish =
+                TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(UTF_8), QoS.EXACTLY_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
 
         assertTrue(channel.isActive());
@@ -705,7 +715,8 @@ public class IncomingPublishServiceTest {
     @Test
     public void test_publish_no_callback() {
 
-        final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.AT_MOST_ONCE);
+        final PUBLISH publish =
+                TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(UTF_8), QoS.AT_MOST_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
 
         assertTrue(channel.isActive());

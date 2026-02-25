@@ -15,6 +15,8 @@
  */
 package com.hivemq.api.auth.provider.impl.ldap.testcontainer;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.hivemq.api.auth.provider.impl.ldap.LdapConnectionProperties;
 import java.io.File;
 import java.io.FileWriter;
@@ -526,13 +528,13 @@ public class LldapContainer extends GenericContainer<LldapContainer> {
 
         // Write certificate to PEM file
         final var certFile = Files.createTempFile("ldap-cert", ".pem").toFile();
-        try (final var pemWriter = new PemWriter(new FileWriter(certFile))) {
+        try (final var pemWriter = new PemWriter(new FileWriter(certFile, UTF_8))) {
             pemWriter.writeObject(new PemObject("CERTIFICATE", cert.getEncoded()));
         }
 
         // Write private key to PEM file
         final var keyFile = Files.createTempFile("ldap-key", ".pem").toFile();
-        try (final var pemWriter = new PemWriter(new FileWriter(keyFile))) {
+        try (final var pemWriter = new PemWriter(new FileWriter(keyFile, UTF_8))) {
             pemWriter.writeObject(
                     new PemObject("PRIVATE KEY", keyPair.getPrivate().getEncoded()));
         }

@@ -15,6 +15,7 @@
  */
 package com.hivemq.mqtt.handler.publish;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -832,7 +833,7 @@ public class PublishFlowHandlerTest {
                 .withQoS(qoS)
                 .withOnwardQos(qoS)
                 .withPacketIdentifier(messageId)
-                .withPayload("payload".getBytes())
+                .withPayload("payload".getBytes(UTF_8))
                 .withDuplicateDelivery(dup)
                 .build();
     }

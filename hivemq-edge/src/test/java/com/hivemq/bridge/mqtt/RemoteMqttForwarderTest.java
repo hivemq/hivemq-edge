@@ -15,6 +15,7 @@
  */
 package com.hivemq.bridge.mqtt;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -283,7 +284,7 @@ class RemoteMqttForwarderTest {
         assertTrue(callbackCalled.get());
 
         assertEquals("topic", publish.getTopic().toString());
-        assertEquals("payload", new String(publish.getPayloadAsBytes()));
+        assertEquals("payload", new String(publish.getPayloadAsBytes(), UTF_8));
         assertEquals(1, publish.getQos().getCode());
         assertFalse(publish.isRetain());
         assertFalse(publish.getMessageExpiryInterval().isPresent());
@@ -400,7 +401,7 @@ class RemoteMqttForwarderTest {
 
     private void verifyFullPublish(Mqtt5Publish publish, final @NotNull String topic) {
         assertEquals(topic, publish.getTopic().toString());
-        assertEquals("payload", new String(publish.getPayloadAsBytes()));
+        assertEquals("payload", new String(publish.getPayloadAsBytes(), UTF_8));
         assertEquals(2, publish.getQos().getCode());
         assertFalse(publish.isRetain());
         assertEquals(360, publish.getMessageExpiryInterval().getAsLong());

@@ -15,6 +15,7 @@
  */
 package com.hivemq.codec.decoder;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.hivemq.bootstrap.ClientConnection;
@@ -349,7 +350,7 @@ public class Mqtt3SubscribeDecoderTest {
         buf.writeBytes(new byte[] {(byte) 0xFF, (byte) 0xFF});
 
         // topic bytes
-        buf.writeBytes(maxTopic1.getBytes());
+        buf.writeBytes(maxTopic1.getBytes(UTF_8));
 
         // QoS 1
         buf.writeByte(1);

@@ -15,6 +15,7 @@
  */
 package com.hivemq.extensions.packets.connect;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.hivemq.extension.sdk.api.packets.connect.WillPublishPacket;
@@ -48,9 +49,9 @@ public class ConnectPacketImplTest {
         final CONNECT connect = new CONNECT.Mqtt5Builder()
                 .withClientIdentifier("client")
                 .withUsername("user")
-                .withPassword("password".getBytes())
+                .withPassword("password".getBytes(UTF_8))
                 .withAuthMethod("method")
-                .withAuthData("data".getBytes())
+                .withAuthData("data".getBytes(UTF_8))
                 .withSessionExpiryInterval(Long.MAX_VALUE)
                 .withCleanStart(true)
                 .withKeepAlive(Integer.MAX_VALUE)
@@ -61,7 +62,7 @@ public class ConnectPacketImplTest {
                 .withProblemInformationRequested(true)
                 .withWillPublish(new MqttWillPublish.Mqtt5Builder()
                         .withTopic("topic")
-                        .withPayload("payload".getBytes())
+                        .withPayload("payload".getBytes(UTF_8))
                         .withQos(QoS.AT_LEAST_ONCE)
                         .build())
                 .withUserProperties(Mqtt5UserProperties.of(new MqttUserProperty("one", "one")))
@@ -162,7 +163,7 @@ public class ConnectPacketImplTest {
     @Timeout(5)
     public void test_password() {
         assertEquals(
-                ByteBuffer.wrap("password".getBytes()),
+                ByteBuffer.wrap("password".getBytes(UTF_8)),
                 connectPacket.getPassword().get());
         assertFalse(emptyPacket.getPassword().isPresent());
     }
@@ -178,7 +179,7 @@ public class ConnectPacketImplTest {
     @Timeout(5)
     public void test_auth_data() {
         assertEquals(
-                ByteBuffer.wrap("data".getBytes()),
+                ByteBuffer.wrap("data".getBytes(UTF_8)),
                 connectPacket.getAuthenticationData().get());
         assertFalse(emptyPacket.getAuthenticationData().isPresent());
     }

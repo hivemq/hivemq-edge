@@ -16,6 +16,7 @@
 package com.hivemq.mqtt.handler.auth;
 
 import static com.hivemq.mqtt.handler.auth.AuthHandler.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.never;
@@ -84,7 +85,7 @@ public class AuthHandlerTest {
 
         channel.writeInbound(new AUTH(
                 "auth method",
-                "auth data".getBytes(),
+                "auth data".getBytes(UTF_8),
                 Mqtt5AuthReasonCode.SUCCESS,
                 Mqtt5UserProperties.NO_USER_PROPERTIES,
                 "reason"));
@@ -107,7 +108,7 @@ public class AuthHandlerTest {
 
         channel.writeInbound(new AUTH(
                 "auth method",
-                "auth data".getBytes(),
+                "auth data".getBytes(UTF_8),
                 Mqtt5AuthReasonCode.SUCCESS,
                 Mqtt5UserProperties.NO_USER_PROPERTIES,
                 "reason"));
@@ -131,7 +132,7 @@ public class AuthHandlerTest {
 
         channel.writeInbound(new AUTH(
                 "auth method",
-                "auth data".getBytes(),
+                "auth data".getBytes(UTF_8),
                 Mqtt5AuthReasonCode.REAUTHENTICATE,
                 Mqtt5UserProperties.NO_USER_PROPERTIES,
                 "reason"));
@@ -157,7 +158,7 @@ public class AuthHandlerTest {
 
         channel.writeInbound(new AUTH(
                 "auth method",
-                "auth data".getBytes(),
+                "auth data".getBytes(UTF_8),
                 Mqtt5AuthReasonCode.REAUTHENTICATE,
                 Mqtt5UserProperties.NO_USER_PROPERTIES,
                 "reason"));
@@ -180,7 +181,7 @@ public class AuthHandlerTest {
 
         channel.writeInbound(new AUTH(
                 "auth method",
-                "auth data".getBytes(),
+                "auth data".getBytes(UTF_8),
                 Mqtt5AuthReasonCode.CONTINUE_AUTHENTICATION,
                 Mqtt5UserProperties.NO_USER_PROPERTIES,
                 "reason"));
@@ -193,7 +194,7 @@ public class AuthHandlerTest {
         clientConnection.proposeClientState(ClientState.RE_AUTHENTICATING);
         channel.writeInbound(new AUTH(
                 "auth method",
-                "auth data".getBytes(),
+                "auth data".getBytes(UTF_8),
                 Mqtt5AuthReasonCode.CONTINUE_AUTHENTICATION,
                 Mqtt5UserProperties.NO_USER_PROPERTIES,
                 "reason"));
@@ -205,7 +206,7 @@ public class AuthHandlerTest {
 
         channel.writeInbound(new AUTH(
                 "auth method",
-                "auth data".getBytes(),
+                "auth data".getBytes(UTF_8),
                 Mqtt5AuthReasonCode.REAUTHENTICATE,
                 Mqtt5UserProperties.NO_USER_PROPERTIES,
                 "reason"));

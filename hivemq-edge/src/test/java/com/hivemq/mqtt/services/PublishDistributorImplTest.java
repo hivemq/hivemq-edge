@@ -15,6 +15,7 @@
  */
 package com.hivemq.mqtt.services;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -207,7 +208,7 @@ public class PublishDistributorImplTest {
                 .withPacketIdentifier(0)
                 .withQoS(qos)
                 .withOnwardQos(qos)
-                .withPayload("message".getBytes())
+                .withPayload("message".getBytes(UTF_8))
                 .withTopic("topic")
                 .withHivemqId("hivemqId")
                 .build();

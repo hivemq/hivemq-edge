@@ -15,6 +15,7 @@
  */
 package com.hivemq.extensions.packets.publish;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.google.common.collect.ImmutableList;
@@ -50,7 +51,7 @@ public class ModifiableWillPublishImplTest {
         final WillPublishPacketImpl packet = new WillPublishPacketImpl(
                 "topic",
                 Qos.AT_LEAST_ONCE,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -75,7 +76,7 @@ public class ModifiableWillPublishImplTest {
         final WillPublishPacketImpl packet = new WillPublishPacketImpl(
                 "topic",
                 Qos.AT_LEAST_ONCE,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -100,7 +101,7 @@ public class ModifiableWillPublishImplTest {
         final WillPublishPacketImpl packet = new WillPublishPacketImpl(
                 "topic",
                 Qos.AT_LEAST_ONCE,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -122,7 +123,7 @@ public class ModifiableWillPublishImplTest {
         final WillPublishPacketImpl packet = new WillPublishPacketImpl(
                 "topic",
                 Qos.AT_LEAST_ONCE,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -136,13 +137,13 @@ public class ModifiableWillPublishImplTest {
 
         modifiablePacket.setTopic("modifiedTopic");
         modifiablePacket.setQos(Qos.EXACTLY_ONCE);
-        modifiablePacket.setPayload(ByteBuffer.wrap("modifiedPayload".getBytes()));
+        modifiablePacket.setPayload(ByteBuffer.wrap("modifiedPayload".getBytes(UTF_8)));
         modifiablePacket.setRetain(true);
         modifiablePacket.setMessageExpiryInterval(30);
         modifiablePacket.setPayloadFormatIndicator(PayloadFormatIndicator.UNSPECIFIED);
         modifiablePacket.setContentType("contentType");
         modifiablePacket.setResponseTopic("responseTopic");
-        modifiablePacket.setCorrelationData(ByteBuffer.wrap("correlationData".getBytes()));
+        modifiablePacket.setCorrelationData(ByteBuffer.wrap("correlationData".getBytes(UTF_8)));
         modifiablePacket.getUserProperties().addUserProperty("testName", "testValue");
         modifiablePacket.setWillDelay(10);
         final WillPublishPacketImpl copy = modifiablePacket.copy();
@@ -150,13 +151,13 @@ public class ModifiableWillPublishImplTest {
         final WillPublishPacketImpl expectedPacket = new WillPublishPacketImpl(
                 "modifiedTopic",
                 Qos.AT_LEAST_ONCE,
-                ByteBuffer.wrap("modifiedPayload".getBytes()),
+                ByteBuffer.wrap("modifiedPayload".getBytes(UTF_8)),
                 true,
                 30,
                 PayloadFormatIndicator.UNSPECIFIED,
                 "contentType",
                 "responseTopic",
-                ByteBuffer.wrap("correlationData".getBytes()),
+                ByteBuffer.wrap("correlationData".getBytes(UTF_8)),
                 UserPropertiesImpl.of(ImmutableList.of(new MqttUserProperty("testName", "testValue"))),
                 10,
                 1234L);

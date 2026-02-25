@@ -19,6 +19,7 @@ import static com.hivemq.configuration.service.InternalConfigurations.MQTT_CONNE
 import static com.hivemq.extension.sdk.api.auth.parameter.OverloadProtectionThrottlingLevel.NONE;
 import static com.hivemq.mqtt.message.connack.CONNACK.KEEP_ALIVE_NOT_SET;
 import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRY_MAX;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -1037,7 +1038,7 @@ public class ConnectHandlerTest {
         final CountDownLatch latch = new CountDownLatch(1);
 
         final MqttWillPublish willPublish = new MqttWillPublish.Mqtt5Builder()
-                .withPayload("message".getBytes())
+                .withPayload("message".getBytes(UTF_8))
                 .withQos(QoS.EXACTLY_ONCE)
                 .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
                 .withTopic("topic")

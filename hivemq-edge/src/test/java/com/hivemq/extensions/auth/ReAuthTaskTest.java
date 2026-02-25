@@ -15,6 +15,7 @@
  */
 package com.hivemq.extensions.auth;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -118,7 +119,7 @@ public class ReAuthTaskTest {
         when(input.getAuthPacket())
                 .thenReturn(new AuthPacketImpl(new AUTH(
                         "method",
-                        "data".getBytes(),
+                        "data".getBytes(UTF_8),
                         Mqtt5AuthReasonCode.REAUTHENTICATE,
                         Mqtt5UserProperties.NO_USER_PROPERTIES,
                         "reason")));
@@ -136,7 +137,7 @@ public class ReAuthTaskTest {
         when(input.getAuthPacket())
                 .thenReturn(new AuthPacketImpl(new AUTH(
                         "method",
-                        "data".getBytes(),
+                        "data".getBytes(UTF_8),
                         Mqtt5AuthReasonCode.CONTINUE_AUTHENTICATION,
                         Mqtt5UserProperties.NO_USER_PROPERTIES,
                         "reason")));
@@ -154,7 +155,7 @@ public class ReAuthTaskTest {
         when(input.getAuthPacket())
                 .thenReturn(new AuthPacketImpl(new AUTH(
                         "method",
-                        "data".getBytes(),
+                        "data".getBytes(UTF_8),
                         Mqtt5AuthReasonCode.CONTINUE_AUTHENTICATION,
                         Mqtt5UserProperties.NO_USER_PROPERTIES,
                         "reason")));
@@ -175,7 +176,7 @@ public class ReAuthTaskTest {
         when(input.getAuthPacket())
                 .thenReturn(new AuthPacketImpl(new AUTH(
                         "method",
-                        "data".getBytes(),
+                        "data".getBytes(UTF_8),
                         Mqtt5AuthReasonCode.REAUTHENTICATE,
                         Mqtt5UserProperties.NO_USER_PROPERTIES,
                         "reason")));
@@ -193,7 +194,7 @@ public class ReAuthTaskTest {
         when(input.getAuthPacket())
                 .thenReturn(new AuthPacketImpl(new AUTH(
                         "method",
-                        "data".getBytes(),
+                        "data".getBytes(UTF_8),
                         Mqtt5AuthReasonCode.CONTINUE_AUTHENTICATION,
                         Mqtt5UserProperties.NO_USER_PROPERTIES,
                         "reason")));
@@ -211,7 +212,7 @@ public class ReAuthTaskTest {
         when(input.getAuthPacket())
                 .thenReturn(new AuthPacketImpl(new AUTH(
                         "method",
-                        "data".getBytes(),
+                        "data".getBytes(UTF_8),
                         Mqtt5AuthReasonCode.CONTINUE_AUTHENTICATION,
                         Mqtt5UserProperties.NO_USER_PROPERTIES,
                         "reason")));

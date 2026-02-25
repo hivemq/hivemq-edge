@@ -262,7 +262,7 @@ public class Mqtt31ConnectDecoderValidationsTest {
         buffer.writeShort(60);
 
         buffer.writeShort(invalidLength);
-        buffer.writeBytes("clientID".getBytes());
+        buffer.writeBytes("clientID".getBytes(UTF_8));
 
         assertNull(decoder.decode(clientConnection, buffer, fixedHeader));
 
@@ -289,7 +289,7 @@ public class Mqtt31ConnectDecoderValidationsTest {
         Strings.createPrefixedBytesFromString("clientID", buffer);
 
         buffer.writeShort(invalidLength);
-        buffer.writeBytes("willTopic".getBytes());
+        buffer.writeBytes("willTopic".getBytes(UTF_8));
 
         assertNull(decoder.decode(clientConnection, buffer, fixedHeader));
 
@@ -316,7 +316,7 @@ public class Mqtt31ConnectDecoderValidationsTest {
         Strings.createPrefixedBytesFromString("clientID", buffer);
 
         buffer.writeShort(invalidLength);
-        buffer.writeBytes("user".getBytes());
+        buffer.writeBytes("user".getBytes(UTF_8));
 
         assertNull(decoder.decode(clientConnection, buffer, fixedHeader));
 

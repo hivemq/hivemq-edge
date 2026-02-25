@@ -15,6 +15,7 @@
  */
 package com.hivemq.extensions.packets.publish;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -56,7 +57,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -85,7 +86,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -114,7 +115,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -138,7 +139,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -162,7 +163,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -187,7 +188,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -212,7 +213,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -237,7 +238,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -267,7 +268,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -296,7 +297,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -325,7 +326,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -349,7 +350,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -375,7 +376,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -390,10 +391,10 @@ public class ModifiablePublishPacketImplTest {
 
         assertFalse(modifiablePacket.isModified());
 
-        modifiablePacket.setPayload(ByteBuffer.wrap("modifiedPayload".getBytes()));
+        modifiablePacket.setPayload(ByteBuffer.wrap("modifiedPayload".getBytes(UTF_8)));
 
         assertTrue(modifiablePacket.isModified());
-        assertEquals(Optional.of(ByteBuffer.wrap("modifiedPayload".getBytes())), modifiablePacket.getPayload());
+        assertEquals(Optional.of(ByteBuffer.wrap("modifiedPayload".getBytes(UTF_8))), modifiablePacket.getPayload());
     }
 
     @Test
@@ -404,7 +405,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -419,10 +420,10 @@ public class ModifiablePublishPacketImplTest {
 
         assertFalse(modifiablePacket.isModified());
 
-        modifiablePacket.setPayload(ByteBuffer.wrap("payload".getBytes()));
+        modifiablePacket.setPayload(ByteBuffer.wrap("payload".getBytes(UTF_8)));
 
         assertFalse(modifiablePacket.isModified());
-        assertEquals(Optional.of(ByteBuffer.wrap("payload".getBytes())), modifiablePacket.getPayload());
+        assertEquals(Optional.of(ByteBuffer.wrap("payload".getBytes(UTF_8))), modifiablePacket.getPayload());
     }
 
     @Test
@@ -433,7 +434,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -457,7 +458,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -486,7 +487,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -515,7 +516,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -540,7 +541,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -569,7 +570,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -598,7 +599,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -624,7 +625,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -653,7 +654,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 PayloadFormatIndicator.UNSPECIFIED,
@@ -682,7 +683,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 PayloadFormatIndicator.UNSPECIFIED,
@@ -711,7 +712,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -740,7 +741,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -769,7 +770,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -798,7 +799,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -823,7 +824,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -848,7 +849,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -878,7 +879,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -907,7 +908,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -936,7 +937,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -965,7 +966,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -990,7 +991,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -1015,7 +1016,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -1045,7 +1046,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -1060,10 +1061,11 @@ public class ModifiablePublishPacketImplTest {
 
         assertFalse(modifiablePacket.isModified());
 
-        modifiablePacket.setCorrelationData(ByteBuffer.wrap("correlationData".getBytes()));
+        modifiablePacket.setCorrelationData(ByteBuffer.wrap("correlationData".getBytes(UTF_8)));
 
         assertTrue(modifiablePacket.isModified());
-        assertEquals(Optional.of(ByteBuffer.wrap("correlationData".getBytes())), modifiablePacket.getCorrelationData());
+        assertEquals(
+                Optional.of(ByteBuffer.wrap("correlationData".getBytes(UTF_8))), modifiablePacket.getCorrelationData());
     }
 
     @Test
@@ -1074,13 +1076,13 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
                 null,
                 null,
-                ByteBuffer.wrap("correlationData".getBytes()),
+                ByteBuffer.wrap("correlationData".getBytes(UTF_8)),
                 ImmutableIntArray.of(),
                 UserPropertiesImpl.of(ImmutableList.of()),
                 System.currentTimeMillis());
@@ -1089,10 +1091,11 @@ public class ModifiablePublishPacketImplTest {
 
         assertFalse(modifiablePacket.isModified());
 
-        modifiablePacket.setCorrelationData(ByteBuffer.wrap("correlationData".getBytes()));
+        modifiablePacket.setCorrelationData(ByteBuffer.wrap("correlationData".getBytes(UTF_8)));
 
         assertFalse(modifiablePacket.isModified());
-        assertEquals(Optional.of(ByteBuffer.wrap("correlationData".getBytes())), modifiablePacket.getCorrelationData());
+        assertEquals(
+                Optional.of(ByteBuffer.wrap("correlationData".getBytes(UTF_8))), modifiablePacket.getCorrelationData());
     }
 
     @Test
@@ -1103,13 +1106,13 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
                 null,
                 null,
-                ByteBuffer.wrap("correlationData".getBytes()),
+                ByteBuffer.wrap("correlationData".getBytes(UTF_8)),
                 ImmutableIntArray.of(),
                 UserPropertiesImpl.of(ImmutableList.of()),
                 System.currentTimeMillis());
@@ -1132,7 +1135,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -1162,7 +1165,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -1188,7 +1191,7 @@ public class ModifiablePublishPacketImplTest {
                 Qos.AT_LEAST_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("payload".getBytes()),
+                ByteBuffer.wrap("payload".getBytes(UTF_8)),
                 false,
                 60,
                 null,
@@ -1203,13 +1206,13 @@ public class ModifiablePublishPacketImplTest {
 
         modifiablePacket.setTopic("modifiedTopic");
         modifiablePacket.setQos(Qos.EXACTLY_ONCE);
-        modifiablePacket.setPayload(ByteBuffer.wrap("modifiedPayload".getBytes()));
+        modifiablePacket.setPayload(ByteBuffer.wrap("modifiedPayload".getBytes(UTF_8)));
         modifiablePacket.setRetain(true);
         modifiablePacket.setMessageExpiryInterval(30);
         modifiablePacket.setPayloadFormatIndicator(PayloadFormatIndicator.UNSPECIFIED);
         modifiablePacket.setContentType("contentType");
         modifiablePacket.setResponseTopic("responseTopic");
-        modifiablePacket.setCorrelationData(ByteBuffer.wrap("correlationData".getBytes()));
+        modifiablePacket.setCorrelationData(ByteBuffer.wrap("correlationData".getBytes(UTF_8)));
         modifiablePacket.getUserProperties().addUserProperty("testName", "testValue");
         final PublishPacketImpl copy = modifiablePacket.copy();
 
@@ -1219,13 +1222,13 @@ public class ModifiablePublishPacketImplTest {
                 Qos.EXACTLY_ONCE,
                 1,
                 false,
-                ByteBuffer.wrap("modifiedPayload".getBytes()),
+                ByteBuffer.wrap("modifiedPayload".getBytes(UTF_8)),
                 true,
                 30,
                 PayloadFormatIndicator.UNSPECIFIED,
                 "contentType",
                 "responseTopic",
-                ByteBuffer.wrap("correlationData".getBytes()),
+                ByteBuffer.wrap("correlationData".getBytes(UTF_8)),
                 ImmutableIntArray.of(),
                 UserPropertiesImpl.of(ImmutableList.of(new MqttUserProperty("testName", "testValue"))),
                 1234L);
