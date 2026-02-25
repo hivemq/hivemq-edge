@@ -81,6 +81,7 @@ class PrePublishProcessorServiceImplTest {
     }
 
     @Test
+    @SuppressWarnings("ReferenceEquality")
     void test_publish_twoPreprocessor_applyPreprocessorAndRedirectToInternalPublishService() {
         final PUBLISH publish = mock(PUBLISH.class);
         final PUBLISH modifiedPublish = mock(PUBLISH.class);
@@ -97,7 +98,7 @@ class PrePublishProcessorServiceImplTest {
                         },
                         (originalPublish, sender, executorService2, messageDroppedService) -> {
                             final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
-                            if (Objects.equals(originalPublish, modifiedPublish)) {
+                            if (originalPublish == modifiedPublish) {
                                 correctModifiedPublish.set(true);
                             }
                             settableFuture.set(new HandlerResult(false, modifiedPublish2, null));
