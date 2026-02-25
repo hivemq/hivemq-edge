@@ -79,6 +79,6 @@ public final class PermissionTopicMatcherUtils {
         // everything is alright.
         return splitPermissionTopic.length == splitActualTopic.length
                 || (splitPermissionTopic.length - splitActualTopic.length == 1
-                        && ("#".equals(splitPermissionTopic[splitPermissionTopic.length - 1])));
+                        && "#".equals(splitPermissionTopic[splitPermissionTopic.length - 1]));
     }
 }

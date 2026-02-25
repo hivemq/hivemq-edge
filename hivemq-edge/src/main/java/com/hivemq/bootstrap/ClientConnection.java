@@ -135,7 +135,7 @@ public class ClientConnection {
 
     // ONLY VISIBLE FOR TESTING !!!
     // DO NOT USE IN PROD !!!
-    @VisibleForTesting()
+    @VisibleForTesting
     public void setClientStateUnsafe(final @NotNull ClientState clientState) {
         this.clientState = clientState;
     }
