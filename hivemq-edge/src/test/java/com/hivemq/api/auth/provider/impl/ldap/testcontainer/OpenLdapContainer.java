@@ -15,6 +15,7 @@
  */
 package com.hivemq.api.auth.provider.impl.ldap.testcontainer;
 
+import com.google.common.base.Splitter;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -220,13 +221,13 @@ public class OpenLdapContainer extends GenericContainer<OpenLdapContainer> {
      * @return the base DN
      */
     private static @NotNull String domainToBaseDn(final @NotNull String domain) {
-        final String[] parts = domain.split("\\.");
+        final List<String> parts = Splitter.on('.').splitToList(domain);
         final StringBuilder baseDn = new StringBuilder();
-        for (int i = 0; i < parts.length; i++) {
+        for (int i = 0; i < parts.size(); i++) {
             if (i > 0) {
                 baseDn.append(",");
             }
-            baseDn.append("dc=").append(parts[i]);
+            baseDn.append("dc=").append(parts.get(i));
         }
         return baseDn.toString();
     }

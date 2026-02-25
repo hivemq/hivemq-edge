@@ -59,7 +59,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestConfigurationBootstrap;
 
-@SuppressWarnings("ALL")
+@SuppressWarnings({"ALL", "MockNotUsedInProduction"})
 public class IncomingSubscribeServiceTest {
 
     @Mock
@@ -88,9 +88,6 @@ public class IncomingSubscribeServiceTest {
 
     @Mock
     private RestrictionsConfigurationService restrictionsConfigurationService;
-
-    @Mock
-    private IMqttsnTopicRegistry topicRegistry;
 
     private EmbeddedChannel channel;
     private IncomingSubscribeService incomingSubscribeService;
@@ -577,7 +574,6 @@ public class IncomingSubscribeServiceTest {
     public void test_subscribe_topic_length_exceeded() throws Exception {
         when(restrictionsConfigurationService.maxTopicLength()).thenReturn(5);
 
-        final ArgumentCaptor<ImmutableSet> captor = ArgumentCaptor.forClass(ImmutableSet.class);
         final Topic topic1 = new Topic("123456", QoS.AT_LEAST_ONCE);
 
         final SUBSCRIBE subscribe = new SUBSCRIBE(ImmutableList.copyOf(Lists.newArrayList(topic1)), 10);

@@ -728,7 +728,7 @@ public class IncomingPublishHandlerTest {
                 Thread.sleep(100);
                 async.resume();
             } catch (final InterruptedException e) {
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
             }
         }
     }

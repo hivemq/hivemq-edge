@@ -260,7 +260,7 @@ public class ConnectInboundInterceptorHandlerTest {
                 try {
                     Thread.sleep(100);
                 } catch (final InterruptedException e) {
-                    e.printStackTrace();
+                    Thread.currentThread().interrupt();
                 }
             };
         }

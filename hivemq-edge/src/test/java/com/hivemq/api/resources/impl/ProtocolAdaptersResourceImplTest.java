@@ -50,7 +50,6 @@ import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
-import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import jakarta.ws.rs.core.Response;
 import java.net.URLEncoder;
@@ -73,7 +72,6 @@ class ProtocolAdaptersResourceImplTest {
     private final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService = mock();
     private final @NotNull ObjectMapper objectMapper = new ObjectMapper();
     private final @NotNull VersionProvider versionProvider = mock();
-    private final @NotNull ProtocolAdapterConfigConverter configConverter = mock();
     private final @NotNull TopicFilterPersistence topicFilterPersistence = mock();
     private final @NotNull SystemInformation systemInformation = mock();
     private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor = mock();

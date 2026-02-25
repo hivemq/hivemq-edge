@@ -458,6 +458,7 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
     }
 
     @Test
+    @SuppressWarnings("DirectInvocationOnMock")
     public void test_process_single_extension_folder_state_already_known() throws Exception {
         final File extensionsFolder = new File(temporaryFolder, "extension");
         final File extensionFolder = new File(extensionsFolder, "extension1");
@@ -488,6 +489,7 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
     }
 
     @Test
+    @SuppressWarnings("DirectInvocationOnMock")
     public void test_process_single_extension_folder_and_extension_same_folder_other_id_disabled() throws Exception {
         final File extensionsFolder = new File(temporaryFolder, "extension");
         final File extensionFolder = new File(extensionsFolder, "extension1");
@@ -519,6 +521,7 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
     }
 
     @Test
+    @SuppressWarnings("DirectInvocationOnMock")
     public void test_process_single_extension_folder_and_extension_other_folder_same_id_enabling() throws Exception {
         final File extensionsFolder = new File(temporaryFolder, "extension");
         final File extensionFolder1 = new File(extensionsFolder, "extension1");
@@ -551,6 +554,7 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
     }
 
     @Test
+    @SuppressWarnings("DirectInvocationOnMock")
     public void test_process_single_extension_folder_and_extension_other_folder_same_id_disabling() throws Exception {
         final File extensionsFolder = new File(temporaryFolder, "extension");
         final File extensionFolder1 = new File(extensionsFolder, "extension1");
@@ -585,6 +589,7 @@ public class ExtensionLoaderImplExtensionTest extends AbstractExtensionTest {
     }
 
     @Test
+    @SuppressWarnings("DirectInvocationOnMock")
     public void test_process_single_extension_folder_disabled() throws Exception {
         final File extensionsFolder = new File(temporaryFolder, "extension");
         final File extensionFolder = new File(extensionsFolder, "extension1");

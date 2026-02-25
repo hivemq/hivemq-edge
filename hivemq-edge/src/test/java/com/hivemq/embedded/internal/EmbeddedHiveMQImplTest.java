@@ -240,7 +240,7 @@ public class EmbeddedHiveMQImplTest {
                     try {
                         embeddedHiveMQ.close();
                     } catch (final Exception e) {
-                        e.printStackTrace();
+                        throw new RuntimeException(e);
                     }
                 })
                 .start();
@@ -249,7 +249,7 @@ public class EmbeddedHiveMQImplTest {
                     try {
                         embeddedHiveMQ.close();
                     } catch (final Exception e) {
-                        e.printStackTrace();
+                        throw new RuntimeException(e);
                     }
                 })
                 .start();

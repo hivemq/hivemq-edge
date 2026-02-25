@@ -43,6 +43,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import util.IsolatedExtensionClassloaderUtil;
 
+@SuppressWarnings("MockNotUsedInProduction")
 public class InterceptorsImplTest {
 
     @TempDir

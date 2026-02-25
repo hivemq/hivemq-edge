@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Test;
  */
 class LdapConnectionPropertiesTest {
 
-    private static final String DEFAULT_BASE_DN = "ou=people,dc=example,dc=com";
     private static final LdapConnectionProperties.LdapSimpleBind DEFAULT_SIMPLE_BIND =
             new LdapConnectionProperties.LdapSimpleBind("cn=admin", "admin");
 

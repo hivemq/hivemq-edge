@@ -45,6 +45,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
@@ -64,7 +65,7 @@ import org.mockito.MockitoAnnotations;
 /**
  * @author Florian Limpöck
  */
-@SuppressWarnings("NullabilityAnnotations")
+@SuppressWarnings({"NullabilityAnnotations", "MockNotUsedInProduction"})
 public class ClientSessionSubscriptionMemoryLocalPersistenceTest {
 
     @TempDir
@@ -682,27 +683,28 @@ public class ClientSessionSubscriptionMemoryLocalPersistenceTest {
         int found = 0;
         for (final Topic subscription : subscriptions) {
             switch (subscription.getTopic()) {
-                case "topic/a":
+                case "topic/a" -> {
                     assertEquals(
                             Objects.requireNonNull(subscription.getSubscriptionIdentifier())
                                     .intValue(),
                             1);
                     found++;
-                    break;
-                case "topic/#":
+                }
+                case "topic/#" -> {
                     assertEquals(
                             Objects.requireNonNull(subscription.getSubscriptionIdentifier())
                                     .intValue(),
                             2);
                     found++;
-                    break;
-                case "topic/+":
+                }
+                case "topic/+" -> {
                     assertEquals(
                             Objects.requireNonNull(subscription.getSubscriptionIdentifier())
                                     .intValue(),
                             3);
                     found++;
-                    break;
+                }
+                default -> {}
             }
         }
         assertEquals(3, found);
@@ -924,7 +926,7 @@ public class ClientSessionSubscriptionMemoryLocalPersistenceTest {
     @Timeout(30)
     public void test_get_chunk_many_clients_no_duplicates_random_ids() {
 
-        final ArrayList<String> clientIdList = getRandomUniqueIds();
+        final List<String> clientIdList = getRandomUniqueIds();
 
         for (int i = 0; i < 100; i++) {
             for (int j = 0; j < 10; j++) {
@@ -953,7 +955,7 @@ public class ClientSessionSubscriptionMemoryLocalPersistenceTest {
     }
 
     @NotNull
-    public ArrayList<String> getRandomUniqueIds() {
+    public List<String> getRandomUniqueIds() {
         final Set<String> clientIdSet = new HashSet<>();
 
         final Random random = new Random();

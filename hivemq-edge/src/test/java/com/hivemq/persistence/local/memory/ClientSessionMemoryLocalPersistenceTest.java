@@ -61,6 +61,7 @@ import com.hivemq.util.LocalPersistenceFileUtil;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -75,6 +76,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestBucketUtil;
 
+@SuppressWarnings("MockNotUsedInProduction")
 public class ClientSessionMemoryLocalPersistenceTest {
 
     private static final int BUCKET_COUNT = 4;
@@ -771,7 +773,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
     @Timeout(30)
     public void test_get_chunk_many_clients_random_ids() {
 
-        final ArrayList<String> clientIdList = getRandomUniqueIds();
+        final List<String> clientIdList = getRandomUniqueIds();
 
         for (int i = 0; i < 100; i++) {
             persistence.put(clientIdList.get(i), new ClientSession(true, 1000), System.currentTimeMillis(), 1);
@@ -862,7 +864,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
     }
 
     @NotNull
-    public ArrayList<String> getRandomUniqueIds() {
+    public List<String> getRandomUniqueIds() {
         final Set<String> clientIdSet = new HashSet<>();
 
         final Random random = new Random();

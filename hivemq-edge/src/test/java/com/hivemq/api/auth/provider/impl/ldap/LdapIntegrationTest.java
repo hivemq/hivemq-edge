@@ -58,8 +58,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 class LdapIntegrationTest {
 
-    private static final String LDAP_DN_TEMPLATE = "uid={username},ou=people,{baseDn}";
-
     @Container
     private static final LldapContainer LLDAP_CONTAINER =
             LldapContainer.builder().withLdaps().build();

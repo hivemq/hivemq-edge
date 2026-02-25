@@ -46,6 +46,7 @@ import org.mockito.MockitoAnnotations;
 import util.TestChannelAttribute;
 import util.TestConfigurationBootstrap;
 
+@SuppressWarnings("MockNotUsedInProduction")
 public class Mqtt311ConnectDecoderTest {
 
     @Mock
@@ -424,6 +425,7 @@ public class Mqtt311ConnectDecoderTest {
     }
 
     @Test
+    @SuppressWarnings("DirectInvocationOnMock")
     public void test_wrong_client_id_length() {
 
         final ChannelFuture cf = mock(ChannelFuture.class);
@@ -448,6 +450,7 @@ public class Mqtt311ConnectDecoderTest {
     }
 
     @Test
+    @SuppressWarnings("DirectInvocationOnMock")
     public void test_client_id_contains_control_character() {
 
         final ByteBuf buf = Unpooled.buffer();
@@ -474,6 +477,7 @@ public class Mqtt311ConnectDecoderTest {
     }
 
     @Test
+    @SuppressWarnings("DirectInvocationOnMock")
     public void test_client_id_contains_non_character() {
 
         final ByteBuf buf = Unpooled.buffer();
@@ -500,6 +504,7 @@ public class Mqtt311ConnectDecoderTest {
     }
 
     @Test
+    @SuppressWarnings("DirectInvocationOnMock")
     public void test_client_id_contains_bad_utf8_character() {
 
         final byte[] bytes = {(byte) 0xE0, (byte) 0x80};
@@ -527,6 +532,7 @@ public class Mqtt311ConnectDecoderTest {
     }
 
     @Test
+    @SuppressWarnings("DirectInvocationOnMock")
     public void test_decode_bad_will_topic() {
 
         final byte[] bytes = {(byte) 0xE0, (byte) 0x80};

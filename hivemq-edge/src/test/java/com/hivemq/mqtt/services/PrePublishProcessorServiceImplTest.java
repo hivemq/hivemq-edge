@@ -32,6 +32,7 @@ import com.hivemq.bootstrap.factories.PrePublishProcessorHandlingProvider;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -95,7 +96,7 @@ class PrePublishProcessorServiceImplTest {
                         },
                         (originalPublish, sender, executorService2, messageDroppedService) -> {
                             final SettableFuture<HandlerResult> settableFuture = SettableFuture.create();
-                            if (originalPublish == modifiedPublish) {
+                            if (Objects.equals(originalPublish, modifiedPublish)) {
                                 correctModifiedPublish.set(true);
                             }
                             settableFuture.set(new HandlerResult(false, modifiedPublish2, null));

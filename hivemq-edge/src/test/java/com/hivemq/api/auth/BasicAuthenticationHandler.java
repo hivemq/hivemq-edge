@@ -16,6 +16,7 @@
 package com.hivemq.api.auth;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Splitter;
 import com.hivemq.api.auth.handler.AuthenticationResult;
 import com.hivemq.api.auth.handler.impl.AbstractHeaderAuthenticationHandler;
 import com.hivemq.api.auth.provider.IUsernameRolesProvider;
@@ -74,11 +75,11 @@ public class BasicAuthenticationHandler extends AbstractHeaderAuthenticationHand
         Preconditions.checkNotNull(headerValue);
         final var userPass = new String(Base64.getDecoder().decode(headerValue.trim()), StandardCharsets.UTF_8);
         if (userPass.contains(SEP)) {
-            final var userNamePassword = userPass.split(SEP);
-            if (userNamePassword.length == 2) {
+            final var userNamePassword = Splitter.on(SEP).splitToList(userPass);
+            if (userNamePassword.size() == 2) {
                 final var usernamePassword = new UsernamePasswordRoles();
-                usernamePassword.setUserName(userNamePassword[0]);
-                usernamePassword.setPassword(userNamePassword[1].getBytes(StandardCharsets.UTF_8));
+                usernamePassword.setUserName(userNamePassword.get(0));
+                usernamePassword.setPassword(userNamePassword.get(1).getBytes(StandardCharsets.UTF_8));
                 return Optional.of(usernamePassword);
             }
         }
