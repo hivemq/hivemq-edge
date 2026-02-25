@@ -25,27 +25,20 @@ import org.jetbrains.annotations.NotNull;
 public class MqttVersionUtil {
     @NotNull
     public static MqttVersion toMqttVersion(final @NotNull ProtocolVersion protocolVersion) {
-        switch (protocolVersion) {
-            case MQTTv3_1:
-                return MqttVersion.V_3_1;
-            case MQTTv3_1_1:
-                return MqttVersion.V_3_1_1;
-            default:
-                return MqttVersion.V_5;
-        }
+        return switch (protocolVersion) {
+            case MQTTv3_1 -> MqttVersion.V_3_1;
+            case MQTTv3_1_1 -> MqttVersion.V_3_1_1;
+            default -> MqttVersion.V_5;
+        };
     }
 
     @NotNull
     public static ProtocolVersion toProtocolVersion(final @NotNull MqttVersion mqttVersion) {
-        switch (mqttVersion) {
-            case V_3_1:
-                return ProtocolVersion.MQTTv3_1;
-            case V_3_1_1:
-                return ProtocolVersion.MQTTv3_1_1;
-            case V_5:
-                return ProtocolVersion.MQTTv5;
-            default:
-                throw new IllegalArgumentException();
-        }
+        return switch (mqttVersion) {
+            case V_3_1 -> ProtocolVersion.MQTTv3_1;
+            case V_3_1_1 -> ProtocolVersion.MQTTv3_1_1;
+            case V_5 -> ProtocolVersion.MQTTv5;
+            default -> throw new IllegalArgumentException();
+        };
     }
 }

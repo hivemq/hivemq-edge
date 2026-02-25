@@ -88,7 +88,7 @@ public class MqttConnectDecoder {
         final int lengthLSB = lengthLSBBuf.readByte();
         final ProtocolVersion protocolVersion;
         switch (lengthLSB) {
-            case 4:
+            case 4 -> {
                 if (buf.readableBytes() < 7) {
                     connackInvalidProtocolVersion(clientConnection);
                     return null;
@@ -103,13 +103,12 @@ public class MqttConnectDecoder {
                     connackInvalidProtocolVersion(clientConnection);
                     return null;
                 }
-                break;
-            case 6:
-                protocolVersion = ProtocolVersion.MQTTv3_1;
-                break;
-            default:
+            }
+            case 6 -> protocolVersion = ProtocolVersion.MQTTv3_1;
+            default -> {
                 connackInvalidProtocolVersion(clientConnection);
                 return null;
+            }
         }
 
         clientConnection.setProtocolVersion(protocolVersion);

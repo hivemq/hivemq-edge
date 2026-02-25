@@ -242,7 +242,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
                                 }
 
                                 switch (result.getOutcome()) {
-                                    case DROP:
+                                    case DROP -> {
                                         if (log.isDebugEnabled()) {
                                             log.debug(
                                                     "Message on topic '{}' dropped by interceptor for bridge '{}'",
@@ -250,14 +250,13 @@ public class RemoteMqttForwarder implements MqttForwarder {
                                                     bridge.getId());
                                         }
                                         finishProcessing(originalQoS, publish.getUniqueId(), queueId);
-                                        break;
-                                    case SUCCESS:
+                                    }
+                                    case SUCCESS ->
                                         sendPublishToRemote(
                                                 Objects.requireNonNull(result.getPublish()),
                                                 queueId,
                                                 publish.getQoS(),
                                                 originalUniqueId);
-                                        break;
                                 }
                             } catch (final Throwable t) {
                                 handlePublishError(publish, t);

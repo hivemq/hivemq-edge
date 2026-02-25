@@ -96,24 +96,23 @@ public class Mqtt5PubrecDecoder extends AbstractMqttDecoder<PUBREC> {
             final int propertyIdentifier = buf.readByte();
 
             switch (propertyIdentifier) {
-                case REASON_STRING:
+                case REASON_STRING -> {
                     reasonString = decodeReasonString(clientConnection, buf, reasonString, MessageType.PUBREC);
                     if (reasonString == null) {
                         return null;
                     }
-                    break;
-
-                case USER_PROPERTY:
+                }
+                case USER_PROPERTY -> {
                     userPropertiesBuilder =
                             readUserProperty(clientConnection, buf, userPropertiesBuilder, MessageType.PUBREC);
                     if (userPropertiesBuilder == null) {
                         return null;
                     }
-                    break;
-
-                default:
+                }
+                default -> {
                     disconnectByInvalidPropertyIdentifier(clientConnection, propertyIdentifier, MessageType.PUBREC);
                     return null;
+                }
             }
         }
 

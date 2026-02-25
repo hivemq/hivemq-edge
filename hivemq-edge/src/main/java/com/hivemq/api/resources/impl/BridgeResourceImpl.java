@@ -199,20 +199,16 @@ public class BridgeResourceImpl extends AbstractApi implements BridgesApi {
                 return ErrorResponseUtil.errorResponse(new InvalidQueryParameterErrors(errorMessages.toErrorList()));
             } else {
                 switch (command.getCommand()) {
-                    case START:
-                        bridgeService.startBridge(bridgeId);
-                        break;
-                    case STOP:
-                        bridgeService.stopBridgeAndRemoveQueues(bridgeId);
-                        break;
-                    case RESTART:
+                    case START -> bridgeService.startBridge(bridgeId);
+                    case STOP -> bridgeService.stopBridgeAndRemoveQueues(bridgeId);
+                    case RESTART -> {
                         final MqttBridge bridgeConfig = getBridge(bridgeId);
                         if (bridgeConfig == null) {
                             return ErrorResponseUtil.errorResponse(
                                     new BridgeNotFoundError(String.format("Bridge not found by id '%s'", bridgeId)));
                         }
                         bridgeService.restartBridge(bridgeId, bridgeConfig);
-                        break;
+                    }
                 }
 
                 return Response.ok(new StatusTransitionResult()

@@ -216,22 +216,20 @@ public final class DefaultPermissionsEvaluator {
             return true;
         }
 
-        switch (qos) {
-            case AT_MOST_ONCE:
-                return (permissionQos == TopicPermission.Qos.ZERO
+        return switch (qos) {
+            case AT_MOST_ONCE ->
+                (permissionQos == TopicPermission.Qos.ZERO
                         || permissionQos == TopicPermission.Qos.ZERO_ONE
                         || permissionQos == TopicPermission.Qos.ZERO_TWO);
-            case AT_LEAST_ONCE:
-                return (permissionQos == TopicPermission.Qos.ONE
+            case AT_LEAST_ONCE ->
+                (permissionQos == TopicPermission.Qos.ONE
                         || permissionQos == TopicPermission.Qos.ZERO_ONE
                         || permissionQos == TopicPermission.Qos.ONE_TWO);
-            case EXACTLY_ONCE:
-                return (permissionQos == TopicPermission.Qos.TWO
+            case EXACTLY_ONCE ->
+                (permissionQos == TopicPermission.Qos.TWO
                         || permissionQos == TopicPermission.Qos.ZERO_TWO
                         || permissionQos == TopicPermission.Qos.ONE_TWO);
-        }
-
-        return false;
+        };
     }
 
     private static boolean topicImplied(

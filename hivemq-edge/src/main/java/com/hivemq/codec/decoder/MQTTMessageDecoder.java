@@ -235,7 +235,7 @@ public class MQTTMessageDecoder extends ByteToMessageDecoder {
             return decoder.decode(clientConnection, messageBuffer, fixedHeader);
         } else {
             switch (messageType) {
-                case RESERVED_ZERO:
+                case RESERVED_ZERO -> {
                     mqttServerDisconnector.disconnect(
                             clientConnection.getChannel(),
                             "A client (IP: {}) sent a message with an invalid message type '0'. This message type is reserved. Disconnecting client.",
@@ -243,7 +243,8 @@ public class MQTTMessageDecoder extends ByteToMessageDecoder {
                             Mqtt5DisconnectReasonCode.PROTOCOL_ERROR,
                             ReasonStrings.DISCONNECT_MESSAGE_TYPE_ZERO);
                     return null;
-                case CONNACK:
+                }
+                case CONNACK -> {
                     mqttServerDisconnector.disconnect(
                             clientConnection.getChannel(),
                             "A client (IP: {}) sent a CONNACK message. This is invalid because clients are not allowed to send CONNACKs. Disconnecting client.",
@@ -251,7 +252,8 @@ public class MQTTMessageDecoder extends ByteToMessageDecoder {
                             Mqtt5DisconnectReasonCode.PROTOCOL_ERROR,
                             ReasonStrings.DISCONNECT_CONNACK_RECEIVED);
                     return null;
-                case SUBACK:
+                }
+                case SUBACK -> {
                     mqttServerDisconnector.disconnect(
                             clientConnection.getChannel(),
                             "A client (IP: {}) sent a SUBACK message. This is invalid because clients are not allowed to send SUBACKs. Disconnecting client.",
@@ -259,7 +261,8 @@ public class MQTTMessageDecoder extends ByteToMessageDecoder {
                             Mqtt5DisconnectReasonCode.PROTOCOL_ERROR,
                             ReasonStrings.DISCONNECT_SUBACK_RECEIVED);
                     return null;
-                case UNSUBACK:
+                }
+                case UNSUBACK -> {
                     mqttServerDisconnector.disconnect(
                             clientConnection.getChannel(),
                             "A client (IP: {}) sent a UNSUBACK message. This is invalid because clients are not allowed to send UNSUBACKs. Disconnecting client.",
@@ -267,7 +270,8 @@ public class MQTTMessageDecoder extends ByteToMessageDecoder {
                             Mqtt5DisconnectReasonCode.PROTOCOL_ERROR,
                             ReasonStrings.DISCONNECT_UNSUBACK_RECEIVED);
                     return null;
-                case PINGRESP:
+                }
+                case PINGRESP -> {
                     mqttServerDisconnector.disconnect(
                             clientConnection.getChannel(),
                             "A client (IP: {}) sent a PINGRESP message. This is invalid because clients are not allowed to send PINGRESPs. Disconnecting client.",
@@ -275,7 +279,8 @@ public class MQTTMessageDecoder extends ByteToMessageDecoder {
                             Mqtt5DisconnectReasonCode.PROTOCOL_ERROR,
                             ReasonStrings.DISCONNECT_PINGRESP_RECEIVED);
                     return null;
-                case AUTH:
+                }
+                case AUTH -> {
                     mqttServerDisconnector.disconnect(
                             clientConnection.getChannel(),
                             "A client (IP: {}) sent a message with an invalid message type '15'. This message type is reserved. Disconnecting client.",
@@ -283,7 +288,8 @@ public class MQTTMessageDecoder extends ByteToMessageDecoder {
                             Mqtt5DisconnectReasonCode.PROTOCOL_ERROR,
                             ReasonStrings.DISCONNECT_MESSAGE_TYPE_FIFTEEN);
                     return null;
-                default:
+                }
+                default -> {
                     mqttServerDisconnector.disconnect(
                             clientConnection.getChannel(),
                             "A client (IP: {}) connected but the message type could not get determined. Disconnecting client.",
@@ -291,6 +297,7 @@ public class MQTTMessageDecoder extends ByteToMessageDecoder {
                             Mqtt5DisconnectReasonCode.PROTOCOL_ERROR,
                             ReasonStrings.DISCONNECT_MESSAGE_TYPE_INVALID);
                     return null;
+                }
             }
         }
     }

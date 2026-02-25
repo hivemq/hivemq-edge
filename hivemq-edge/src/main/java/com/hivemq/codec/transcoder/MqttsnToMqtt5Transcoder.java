@@ -78,7 +78,7 @@ public class MqttsnToMqtt5Transcoder implements ITranscoder<IMqttsnMessage, Mess
         try {
             Message out = null;
             switch (messageIn.getMessageType()) {
-                case MqttsnConstants.CONNECT:
+                case MqttsnConstants.CONNECT -> {
                     preProcessSNConnect(pipelineContext, result, messageIn);
                     if (!result.isComplete()) {
                         final CONNECT.Mqtt5Builder connectBuilder = new CONNECT.Mqtt5Builder();
@@ -90,8 +90,8 @@ public class MqttsnToMqtt5Transcoder implements ITranscoder<IMqttsnMessage, Mess
                         out = connectBuilder.build();
                         processConnection(connection, (CONNECT) out);
                     }
-                    break;
-                case MqttsnConstants.DISCONNECT:
+                }
+                case MqttsnConstants.DISCONNECT -> {
                     long duration = codec.getDuration(messageIn);
                     if (duration > 0) {
                         // the device wants to go to sleep - let the custom SN DISCONNECT handler
@@ -113,9 +113,8 @@ public class MqttsnToMqtt5Transcoder implements ITranscoder<IMqttsnMessage, Mess
                                 .writeAndFlush(MqttsnConnectionHelper.getMessageFactoryForConnection(connection)
                                         .createDisconnect());
                     }
-                    break;
-                case MqttsnConstants.PUBLISH:
-                case MqttsnConstants.PUBLISH_M1:
+                }
+                case MqttsnConstants.PUBLISH, MqttsnConstants.PUBLISH_M1 -> {
                     MqttsnPublish mqttsnPublish = (MqttsnPublish) messageIn;
                     QoS qos = QoS.valueOf(Math.min(2, Math.max(mqttsnPublish.getQoS(), 0)));
                     if (mqttsnPublish.getId() > 0) {
@@ -142,8 +141,8 @@ public class MqttsnToMqtt5Transcoder implements ITranscoder<IMqttsnMessage, Mess
                                             false))
                             .build();
                     out = publish;
-                    break;
-                case MqttsnConstants.PUBACK:
+                }
+                case MqttsnConstants.PUBACK -> {
                     MqttsnPuback mqttsnPuback = (MqttsnPuback) messageIn;
                     final PUBACK puback = new PUBACK(
                             mqttsnPuback.getId(),
@@ -153,23 +152,23 @@ public class MqttsnToMqtt5Transcoder implements ITranscoder<IMqttsnMessage, Mess
                             null,
                             Mqtt5UserProperties.NO_USER_PROPERTIES);
                     out = puback;
-                    break;
-                case MqttsnConstants.PUBREC:
+                }
+                case MqttsnConstants.PUBREC -> {
                     MqttsnPubrec mqttsnPubrec = (MqttsnPubrec) messageIn;
                     final PUBREC pubrec = new PUBREC(mqttsnPubrec.getId());
                     out = pubrec;
-                    break;
-                case MqttsnConstants.PUBREL:
+                }
+                case MqttsnConstants.PUBREL -> {
                     MqttsnPubrel mqttsnPubrel = (MqttsnPubrel) messageIn;
                     final PUBREL pubrel = new PUBREL(mqttsnPubrel.getId());
                     out = pubrel;
-                    break;
-                case MqttsnConstants.PUBCOMP:
+                }
+                case MqttsnConstants.PUBCOMP -> {
                     MqttsnPubcomp mqttsnPubcomp = (MqttsnPubcomp) messageIn;
                     final PUBCOMP pubcomp = new PUBCOMP(mqttsnPubcomp.getId());
                     out = pubcomp;
-                    break;
-                case MqttsnConstants.PINGREQ:
+                }
+                case MqttsnConstants.PINGREQ -> {
                     MqttsnPingreq mqttsnPingreq = (MqttsnPingreq) messageIn;
                     if (connection.getClientState() == ClientState.DISCONNECTING) {
                         log.trace("detected ping-req from client in sleep state, move to WakingHandler {}", connection);
@@ -177,8 +176,8 @@ public class MqttsnToMqtt5Transcoder implements ITranscoder<IMqttsnMessage, Mess
                         final PINGREQ pingreq = new PINGREQ();
                         out = pingreq;
                     }
-                    break;
-                case MqttsnConstants.SUBSCRIBE:
+                }
+                case MqttsnConstants.SUBSCRIBE -> {
                     MqttsnSubscribe mqttsnSubscribe = (MqttsnSubscribe) messageIn;
                     String topicName = null;
                     // -- If its short its encoded in the message
@@ -196,8 +195,8 @@ public class MqttsnToMqtt5Transcoder implements ITranscoder<IMqttsnMessage, Mess
                     final SUBSCRIBE subscribe = new SUBSCRIBE(
                             mqttsnSubscribe.getId(), new Topic(topicName, QoS.valueOf(mqttsnSubscribe.getQoS())));
                     out = subscribe;
-                    break;
-                case MqttsnConstants.UNSUBSCRIBE:
+                }
+                case MqttsnConstants.UNSUBSCRIBE -> {
                     MqttsnUnsubscribe mqttsnUnsubscribe = (MqttsnUnsubscribe) messageIn;
                     String topicNameFromUnsubscribe = pipelineContext
                             .getTopicRegistry()
@@ -209,13 +208,13 @@ public class MqttsnToMqtt5Transcoder implements ITranscoder<IMqttsnMessage, Mess
                     final UNSUBSCRIBE unsubscribe =
                             new UNSUBSCRIBE(ImmutableList.of(topicNameFromUnsubscribe), mqttsnUnsubscribe.getId());
                     out = unsubscribe;
-                    break;
-                case MqttsnConstants.ENCAPSMSG:
+                }
+                case MqttsnConstants.ENCAPSMSG -> {
                     // recurse point
                     MqttsnEncapsmsg mqttsnEncapsmsg = (MqttsnEncapsmsg) messageIn;
                     return transcode(context, codec.decode(mqttsnEncapsmsg.getEncapsulatedMsg()));
-                case MqttsnConstants.HELO:
-                    break;
+                }
+                case MqttsnConstants.HELO -> {}
             }
 
             if (out != null) {

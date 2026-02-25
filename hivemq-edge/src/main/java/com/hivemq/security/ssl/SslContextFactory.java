@@ -67,15 +67,10 @@ public class SslContextFactory {
     }
 
     private static @NotNull ClientAuth toClientAuth(final @NotNull Tls.ClientAuthMode clientAuthMode) {
-        switch (clientAuthMode) {
-            case NONE:
-                return ClientAuth.NONE;
-            case OPTIONAL:
-                return ClientAuth.OPTIONAL;
-            case REQUIRED:
-                return ClientAuth.REQUIRE;
-        }
-
-        throw new SslException("Invalid auth mode: " + clientAuthMode);
+        return switch (clientAuthMode) {
+            case NONE -> ClientAuth.NONE;
+            case OPTIONAL -> ClientAuth.OPTIONAL;
+            case REQUIRED -> ClientAuth.REQUIRE;
+        };
     }
 }

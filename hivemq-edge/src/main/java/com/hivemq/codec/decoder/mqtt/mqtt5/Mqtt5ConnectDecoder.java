@@ -309,74 +309,66 @@ public class Mqtt5ConnectDecoder extends AbstractMqttConnectDecoder {
             final int propertyIdentifier = buf.readByte();
 
             switch (propertyIdentifier) {
-                case SESSION_EXPIRY_INTERVAL:
+                case SESSION_EXPIRY_INTERVAL -> {
                     sessionExpiryInterval = decodeSessionExpiryInterval(clientConnection, buf, sessionExpiryInterval);
                     if (sessionExpiryInterval == DISCONNECTED) {
                         return false;
                     }
-                    break;
-
-                case RECEIVE_MAXIMUM:
+                }
+                case RECEIVE_MAXIMUM -> {
                     receiveMaximum = readReceiveMaximum(clientConnection, buf, receiveMaximum);
                     if (receiveMaximum == DISCONNECTED) {
                         return false;
                     }
-                    break;
-
-                case MAXIMUM_PACKET_SIZE:
+                }
+                case MAXIMUM_PACKET_SIZE -> {
                     maximumPacketSize = readMaximumPacketSize(clientConnection, buf, maximumPacketSize);
                     if (maximumPacketSize == DISCONNECTED) {
                         return false;
                     }
-                    break;
-
-                case TOPIC_ALIAS_MAXIMUM:
+                }
+                case TOPIC_ALIAS_MAXIMUM -> {
                     topicAliasMaximum = readTopicAliasMaximum(clientConnection, buf, topicAliasMaximum);
                     if (topicAliasMaximum == DISCONNECTED) {
                         return false;
                     }
-                    break;
-
-                case REQUEST_RESPONSE_INFORMATION:
+                }
+                case REQUEST_RESPONSE_INFORMATION -> {
                     requestResponseInformation = readBoolean(
                             clientConnection, buf, requestResponseInformation, "request response information");
                     if (requestResponseInformation == null) {
                         return false;
                     }
-                    break;
-
-                case REQUEST_PROBLEM_INFORMATION:
+                }
+                case REQUEST_PROBLEM_INFORMATION -> {
                     requestProblemInformation = readBoolean(
                             clientConnection, buf, requestProblemInformation, "request problem information");
                     if (requestProblemInformation == null) {
                         return false;
                     }
-                    break;
-
-                case USER_PROPERTY:
+                }
+                case USER_PROPERTY -> {
                     userPropertiesBuilder = readUserProperty(clientConnection, buf, userPropertiesBuilder);
                     if (userPropertiesBuilder == null) {
                         return false;
                     }
-                    break;
-
-                case AUTHENTICATION_METHOD:
+                }
+                case AUTHENTICATION_METHOD -> {
                     authMethod = readAuthMethod(clientConnection, buf, authMethod);
                     if (authMethod == null) {
                         return false;
                     }
-                    break;
-
-                case AUTHENTICATION_DATA:
+                }
+                case AUTHENTICATION_DATA -> {
                     authData = readAuthData(clientConnection, buf, authData);
                     if (authData == null) {
                         return false;
                     }
-                    break;
-
-                default:
+                }
+                default -> {
                     connackByInvalidPropertyIdentifier(clientConnection, propertyIdentifier);
                     return false;
+                }
             }
         }
 
@@ -596,62 +588,56 @@ public class Mqtt5ConnectDecoder extends AbstractMqttConnectDecoder {
             final int propertyIdentifier = buf.readByte();
 
             switch (propertyIdentifier) {
-                case WILL_DELAY_INTERVAL:
+                case WILL_DELAY_INTERVAL -> {
                     if (willDelayIntervalInvalid(clientConnection, buf, willDelayInterval)) {
                         return null;
                     }
                     willDelayInterval = buf.readUnsignedInt();
-                    break;
-
-                case PAYLOAD_FORMAT_INDICATOR:
+                }
+                case PAYLOAD_FORMAT_INDICATOR -> {
                     payloadFormatIndicator = readPayloadFormatIndicator(clientConnection, buf, payloadFormatIndicator);
                     if (payloadFormatIndicator == null) {
                         return null;
                     }
                     mqtt5Builder.withPayloadFormatIndicator(payloadFormatIndicator);
-                    break;
-
-                case MESSAGE_EXPIRY_INTERVAL:
+                }
+                case MESSAGE_EXPIRY_INTERVAL -> {
                     if (messageExpiryIntervalInvalid(clientConnection, buf, messageExpiryInterval)) {
                         return null;
                     }
                     messageExpiryInterval = buf.readUnsignedInt();
-                    break;
-
-                case CONTENT_TYPE:
+                }
+                case CONTENT_TYPE -> {
                     contentType = readContentType(clientConnection, buf, contentType);
                     if (contentType == null) {
                         return null;
                     }
                     mqtt5Builder.withContentType(contentType);
-                    break;
-
-                case RESPONSE_TOPIC:
+                }
+                case RESPONSE_TOPIC -> {
                     responseTopic = readResponseTopic(clientConnection, buf, responseTopic);
                     if (responseTopic == null) {
                         return null;
                     }
                     mqtt5Builder.withResponseTopic(responseTopic);
-                    break;
-
-                case CORRELATION_DATA:
+                }
+                case CORRELATION_DATA -> {
                     correlationData = readCorrelationData(clientConnection, buf, correlationData);
                     if (correlationData == null) {
                         return null;
                     }
                     mqtt5Builder.withCorrelationData(correlationData);
-                    break;
-
-                case USER_PROPERTY:
+                }
+                case USER_PROPERTY -> {
                     willUserPropertiesBuilder = readUserProperty(clientConnection, buf, willUserPropertiesBuilder);
                     if (willUserPropertiesBuilder == null) {
                         return null;
                     }
-                    break;
-
-                default:
+                }
+                default -> {
                     connackByInvalidPropertyIdentifier(clientConnection, propertyIdentifier);
                     return null;
+                }
             }
         }
 
