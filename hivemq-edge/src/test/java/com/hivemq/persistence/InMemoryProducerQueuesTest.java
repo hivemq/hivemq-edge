@@ -61,6 +61,7 @@ public class InMemoryProducerQueuesTest {
     }
 
     @Test
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void test_submit_whenManyThreadsSubmitConcurrently_thenOnlyOneThreadWorksConcurrently()
             throws InterruptedException {
 

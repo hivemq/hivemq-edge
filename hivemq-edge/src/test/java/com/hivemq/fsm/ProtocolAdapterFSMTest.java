@@ -308,6 +308,7 @@ class ProtocolAdapterFSMTest {
     }
 
     @Test
+    @SuppressWarnings("FutureReturnValueIgnored")
     void southbound_errorWhileNorthboundConnected() {
         final var fsm = createFSMWithAutoSouthbound();
         fsm.startAdapter();

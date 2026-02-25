@@ -138,6 +138,7 @@ class ProtocolAdapterStateImplTest {
         assertThat(callCount.get()).isEqualTo(11);
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     @Test
     void test_concurrentStateChanges_duringShutdown_areThreadSafe() throws InterruptedException {
         final int numThreads = 50;

@@ -24,6 +24,7 @@ import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.entity.MqttTcpListener;
 import io.netty.channel.Channel;
 import io.netty.util.Attribute;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -165,7 +166,7 @@ public class EventLogTest {
     @Test
     public void clientConnected_with_ip() {
 
-        when(channel.remoteAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 1234));
+        when(channel.remoteAddress()).thenReturn(new InetSocketAddress(InetAddress.getLoopbackAddress(), 1234));
 
         eventLog.clientConnected(channel);
 
@@ -233,7 +234,7 @@ public class EventLogTest {
     @Test
     public void clientWasDisconnected_with_ip() {
 
-        when(channel.remoteAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 1234));
+        when(channel.remoteAddress()).thenReturn(new InetSocketAddress(InetAddress.getLoopbackAddress(), 1234));
 
         eventLog.clientWasDisconnected(channel, reason);
 

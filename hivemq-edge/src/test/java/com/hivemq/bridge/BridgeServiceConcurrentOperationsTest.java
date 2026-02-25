@@ -190,6 +190,7 @@ class BridgeServiceConcurrentOperationsTest {
     /**
      * Test concurrent add/remove operations on multiple bridges
      */
+    @SuppressWarnings("FutureReturnValueIgnored")
     @Test
     void testConcurrentBridgeOperations_noRaceConditions() throws Exception {
         final int numThreads = 5;
@@ -438,6 +439,7 @@ class BridgeServiceConcurrentOperationsTest {
      * CORNER CASE: Concurrent updates to different bridges
      * Ensures multiple bridge operations don't interfere with each other
      */
+    @SuppressWarnings("FutureReturnValueIgnored")
     @Test
     void testConcurrentUpdatesToDifferentBridges() throws Exception {
         final int numBridges = 5;

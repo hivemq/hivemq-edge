@@ -83,7 +83,7 @@ import util.TestException;
 /**
  * @since 4.0.0
  */
-@SuppressWarnings("NullabilityAnnotations")
+@SuppressWarnings({"NullabilityAnnotations", "FutureReturnValueIgnored"})
 public class SubscriptionStoreImplTest {
 
     private SubscriptionStore subscriptionStore;

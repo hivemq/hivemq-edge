@@ -135,6 +135,7 @@ public class IncomingSubscribeHandlerTest {
     }
 
     @AfterEach
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void tearDown() {
         executor.stop();
         channel.close();
@@ -142,6 +143,7 @@ public class IncomingSubscribeHandlerTest {
 
     @Test
     @Timeout(5)
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void test_read_subscribe_channel_closed() {
         channel.close();
 

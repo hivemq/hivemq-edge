@@ -35,6 +35,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
+@SuppressWarnings("FutureReturnValueIgnored")
 public class InMemoryEventTest {
 
     private static long timestampCounter = 0;

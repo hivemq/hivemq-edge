@@ -56,6 +56,7 @@ import org.junit.jupiter.api.Timeout;
 /**
  * @since 4.0.0
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 public class ManagedExecutorServicePerExtensionTest {
 
     private final @NotNull ShutdownHooks shutdownHooks = mock(ShutdownHooks.class);

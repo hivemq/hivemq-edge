@@ -49,7 +49,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import util.TestSingleWriterFactory;
 
-@SuppressWarnings("DirectInvocationOnMock")
+@SuppressWarnings({"DirectInvocationOnMock", "FutureReturnValueIgnored"})
 public class ClientSessionPersistenceImplTest {
 
     private ClientSessionLocalPersistence localPersistence;

@@ -168,6 +168,7 @@ public class PublishDistributorImplTest {
     }
 
     @Test
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void test_distribute_to_non_shared() {
         when(clientSessionPersistence.getSession("client1", false)).thenReturn(new ClientSession(true, 1000L));
         when(clientSessionPersistence.getSession("client2", false)).thenReturn(new ClientSession(true, 1000L));
@@ -188,6 +189,7 @@ public class PublishDistributorImplTest {
     }
 
     @Test
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void test_distribute_to_shared_subs() {
         when(clientQueuePersistence.add(eq("name/topic1"), eq(true), any(PUBLISH.class), anyBoolean(), anyLong()))
                 .thenReturn(Futures.immediateFuture(null));

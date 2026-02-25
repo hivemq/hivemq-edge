@@ -44,6 +44,7 @@ import org.junit.jupiter.api.io.TempDir;
 import util.RandomPortGenerator;
 import util.TestExtensionUtil;
 
+@SuppressWarnings("FutureReturnValueIgnored")
 public class EmbeddedHiveMQImplTest {
 
     @TempDir

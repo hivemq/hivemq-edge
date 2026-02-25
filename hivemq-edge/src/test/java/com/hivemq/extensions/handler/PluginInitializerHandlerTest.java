@@ -172,6 +172,7 @@ public class PluginInitializerHandlerTest {
 
     @Test
     @Timeout(10)
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void test_write_connack_with_initializer_channel_inactive() throws Exception {
         channel.close();
 

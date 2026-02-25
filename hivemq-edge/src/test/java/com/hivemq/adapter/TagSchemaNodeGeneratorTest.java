@@ -119,6 +119,7 @@ public class TagSchemaNodeGeneratorTest {
         }
     }
 
+    @SuppressWarnings("UnusedVariable") // fields used via Jackson reflection
     static class TestTagDefinition implements TagDefinition {
 
         @JsonProperty(value = "address")

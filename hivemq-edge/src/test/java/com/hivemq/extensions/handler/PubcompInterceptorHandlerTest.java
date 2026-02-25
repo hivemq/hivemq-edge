@@ -66,6 +66,7 @@ import org.junit.jupiter.api.io.TempDir;
 import util.IsolatedExtensionClassloaderUtil;
 import util.TestConfigurationBootstrap;
 
+@SuppressWarnings("FutureReturnValueIgnored")
 public class PubcompInterceptorHandlerTest {
 
     @TempDir

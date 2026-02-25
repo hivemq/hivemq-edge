@@ -233,6 +233,7 @@ class HiveMQEdgeHttpServiceImplTest {
     }
 
     @Test
+    @SuppressWarnings("FutureReturnValueIgnored")
     void testStopCleansUpResources_concurrentStopDuringConfigFetch() throws Exception {
         final int iterations = 50;
         int failures = 0;

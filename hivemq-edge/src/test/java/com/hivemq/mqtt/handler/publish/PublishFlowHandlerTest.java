@@ -67,7 +67,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.TestMessageUtil;
 
-@SuppressWarnings("NullabilityAnnotations")
+@SuppressWarnings({"NullabilityAnnotations", "FutureReturnValueIgnored"})
 public class PublishFlowHandlerTest {
 
     public static final String CLIENT_ID = "client";

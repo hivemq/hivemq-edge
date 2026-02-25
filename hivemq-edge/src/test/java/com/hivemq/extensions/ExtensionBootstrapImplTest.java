@@ -46,6 +46,7 @@ import org.junit.jupiter.api.io.TempDir;
 /**
  * @author Christoph Schäbel
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 public class ExtensionBootstrapImplTest {
 
     @TempDir
