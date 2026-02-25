@@ -109,8 +109,8 @@ public class ModifiableConnectPacketImpl implements ModifiableConnectPacket {
     public void setClientId(final @NotNull String clientId) {
         final int clientIdLength =
                 configurationService.restrictionsConfiguration().maxClientIdLength();
-        checkArgument(!Utf8Utils.containsMustNotCharacters(clientId), clientId + " is not a valid client id");
-        checkArgument(!Utf8Utils.hasControlOrNonCharacter(clientId), clientId + " is not a valid client id");
+        checkArgument(!Utf8Utils.containsMustNotCharacters(clientId), "%s is not a valid client id", clientId);
+        checkArgument(!Utf8Utils.hasControlOrNonCharacter(clientId), "%s is not a valid client id", clientId);
         checkArgument(clientId.length() < clientIdLength, "client ID exceeds the maximum client ID length");
         checkArgument(!clientId.isEmpty(), "client ID must not be empty");
         if (this.clientId.equals(clientId)) {
@@ -145,7 +145,8 @@ public class ModifiableConnectPacketImpl implements ModifiableConnectPacket {
         checkArgument(sessionExpiryInterval >= 0, "Session expiry interval must NOT be less than 0");
         checkArgument(
                 sessionExpiryInterval < configuredMaximum,
-                "Expiry interval must be less than the configured maximum of" + configuredMaximum);
+                "Expiry interval must be less than the configured maximum of %s",
+                configuredMaximum);
         if (this.sessionExpiryInterval == sessionExpiryInterval) {
             return;
         }
@@ -164,7 +165,8 @@ public class ModifiableConnectPacketImpl implements ModifiableConnectPacket {
         checkArgument(keepAlive >= 0, "Keep alive must NOT be less than 0");
         checkArgument(
                 keepAlive < configuredMaximum,
-                "Keep alive must be less than the configured maximum of " + configuredMaximum);
+                "Keep alive must be less than the configured maximum of %s",
+                configuredMaximum);
         if (this.keepAlive == keepAlive) {
             return;
         }
@@ -200,7 +202,8 @@ public class ModifiableConnectPacketImpl implements ModifiableConnectPacket {
         checkArgument(maximumPacketSize > 0, "Maximum packet size must be bigger than 0");
         checkArgument(
                 maximumPacketSize < configuredMaximum,
-                "Maximum packet must be less than the configured maximum of " + configuredMaximum);
+                "Maximum packet must be less than the configured maximum of %s",
+                configuredMaximum);
         if (this.maximumPacketSize == maximumPacketSize) {
             return;
         }
@@ -301,10 +304,12 @@ public class ModifiableConnectPacketImpl implements ModifiableConnectPacket {
         if (authenticationMethod != null) {
             checkArgument(
                     !Utf8Utils.containsMustNotCharacters(authenticationMethod),
-                    authenticationMethod + " is not a valid authentication method");
+                    "%s is not a valid authentication method",
+                    authenticationMethod);
             checkArgument(
                     !Utf8Utils.hasControlOrNonCharacter(authenticationMethod),
-                    authenticationMethod + " is not a valid authentication method");
+                    "%s is not a valid authentication method",
+                    authenticationMethod);
         }
         if (Objects.equals(this.authenticationMethod, authenticationMethod)) {
             return;

@@ -282,7 +282,8 @@ public class SubscriptionStoreImpl implements SubscriptionStore {
         Preconditions.checkNotNull(callbackExecutor, "Executor cannot be null");
         Preconditions.checkArgument(
                 Topics.isValidTopicToPublish(topic),
-                "Topic must be a valid topic and cannot contain wildcard characters, got '" + topic + "'");
+                "Topic must be a valid topic and cannot contain wildcard characters, got '%s'",
+                topic);
 
         if (rateLimitService.rateLimitExceeded()) {
             return CompletableFuture.failedFuture(PluginServiceRateLimitService.RATE_LIMIT_EXCEEDED_EXCEPTION);
@@ -357,7 +358,8 @@ public class SubscriptionStoreImpl implements SubscriptionStore {
         Preconditions.checkNotNull(subscriptionType, "SubscriptionType cannot be null");
         Preconditions.checkArgument(
                 Topics.isValidToSubscribe(topicFilter),
-                "Topic filter must be a valid MQTT topic filter, got '" + topicFilter + "'");
+                "Topic filter must be a valid MQTT topic filter, got '%s'",
+                topicFilter);
 
         if (rateLimitService.rateLimitExceeded()) {
             return CompletableFuture.failedFuture(PluginServiceRateLimitService.RATE_LIMIT_EXCEEDED_EXCEPTION);

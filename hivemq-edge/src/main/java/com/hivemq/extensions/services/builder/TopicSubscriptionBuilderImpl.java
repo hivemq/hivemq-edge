@@ -80,8 +80,9 @@ public class TopicSubscriptionBuilderImpl implements TopicSubscriptionBuilder {
         Preconditions.checkNotNull(topicFilter, "Topic filter must never be null");
         Preconditions.checkArgument(
                 topicFilter.length() <= restrictionsConfig.maxTopicLength(),
-                "Topic filter length must not exceed '" + restrictionsConfig.maxTopicLength()
-                        + "' characters, but has '" + topicFilter.length() + "' characters");
+                "Topic filter length must not exceed '%s' characters, but has '%s' characters",
+                restrictionsConfig.maxTopicLength(),
+                topicFilter.length());
         Preconditions.checkArgument(
                 !(!mqttConfig.wildcardSubscriptionsEnabled() && Topics.containsWildcard(topicFilter)),
                 "Wildcard characters '+' or '#' are not allowed");

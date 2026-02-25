@@ -62,8 +62,9 @@ public class TopicPermissionBuilderImpl implements TopicPermissionBuilder {
         Preconditions.checkArgument(!topicFilter.isEmpty(), "Topic filter cannot be empty");
         Preconditions.checkArgument(
                 topicFilter.length() <= restrictionsConfig.maxTopicLength(),
-                "Topic filter length must not exceed '" + restrictionsConfig.maxTopicLength()
-                        + "' characters, but has '" + topicFilter.length() + "' characters");
+                "Topic filter length must not exceed '%s' characters, but has '%s' characters",
+                restrictionsConfig.maxTopicLength(),
+                topicFilter.length());
         Preconditions.checkArgument(Topics.isValidToSubscribe(topicFilter), "Topic filter is invalid");
 
         if (Topics.isSharedSubscriptionTopic(topicFilter)) {
