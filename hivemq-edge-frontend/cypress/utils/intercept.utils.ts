@@ -18,26 +18,27 @@ import type {
 import { mockAuthApi, mockValidCredentials } from '@/api/hooks/usePostAuthentication/__handlers__'
 import { mockGatewayConfiguration } from '@/api/hooks/useFrontendServices/__handlers__'
 import { mockAdapter_OPCUA } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { API_ROUTES } from '@cypr/support/__generated__/apiRoutes'
 
 export const cy_interceptCoreE2E = () => {
   // requests sent but not necessary to logic
   cy.intercept('https://api.github.com/repos/hivemq/hivemq-edge/releases', { statusCode: 202, log: false })
-  cy.intercept('/api/v1/frontend/notifications', { statusCode: 202, log: false })
-  cy.intercept('/api/v1/management/protocol-adapters/status', { statusCode: 202, log: false })
-  cy.intercept('/api/v1/management/bridges/status', { statusCode: 202, log: false })
-  cy.intercept('/api/v1/frontend/capabilities', { statusCode: 202, log: false })
-  cy.intercept('/api/v1/gateway/listeners', { statusCode: 202, log: false })
-  cy.intercept('/api/v1/management/combiners', { statusCode: 202, log: false })
+  cy.interceptApi(API_ROUTES.frontend.getNotifications, { statusCode: 202, log: false })
+  cy.interceptApi(API_ROUTES.protocolAdapters.getAdaptersStatus, { statusCode: 202, log: false })
+  cy.interceptApi(API_ROUTES.bridges.getBridgesStatus, { statusCode: 202, log: false })
+  cy.interceptApi(API_ROUTES.frontend.getCapabilities, { statusCode: 202, log: false })
+  cy.interceptApi(API_ROUTES.gatewayEndpoint.getListeners, { statusCode: 202, log: false })
+  cy.interceptApi(API_ROUTES.combiners.getCombiners, { statusCode: 202, log: false })
 
   // code business requests
-  cy.intercept('/api/v1/auth/authenticate', mockAuthApi(mockValidCredentials))
-  cy.intercept('/api/v1/frontend/configuration', { ...mockGatewayConfiguration, preLoginNotice: undefined })
+  cy.interceptApi(API_ROUTES.authentication.authenticate, mockAuthApi(mockValidCredentials))
+  cy.interceptApi(API_ROUTES.frontend.getConfiguration, { ...mockGatewayConfiguration, preLoginNotice: undefined })
 
   // Add a dummy element so we can check uniqueness
-  cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [mockAdapter_OPCUA] }).as('getAdapters')
+  cy.interceptApi(API_ROUTES.protocolAdapters.getAdapters, { items: [mockAdapter_OPCUA] }).as('getAdapters')
 
   // block Pulse
-  cy.intercept('/api/v1/management/pulse/asset-mappers', { statusCode: 202, log: false })
+  cy.interceptApi(API_ROUTES.pulse.getAssetMappers, { statusCode: 202, log: false })
 }
 
 type PrimaryKeyGetter = {
@@ -186,7 +187,7 @@ export const cy_interceptWithMockDB = (factory: EdgeFactory) => {
   }
 
   if (factory.adapter) {
-    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [MOCK_PROTOCOL_OPC_UA] }).as('getProtocols')
+    cy.interceptApi(API_ROUTES.protocolAdapters.getAdapterTypes, { items: [MOCK_PROTOCOL_OPC_UA] }).as('getProtocols')
     interceptAdapters(factory)
   }
 
