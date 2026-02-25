@@ -15,6 +15,7 @@
  */
 package com.hivemq.persistence.local.memory;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.codahale.metrics.MetricRegistry;
@@ -58,13 +59,13 @@ public class RetainedMessageMemoryLocalPersistenceTest {
     public void test_persist_same_topic() {
         persistence.put(
                 new RetainedMessage(
-                        "message1".getBytes(), QoS.AT_MOST_ONCE, 0L, MqttConfigurationDefaults.TTL_DISABLED),
+                        "message1".getBytes(UTF_8), QoS.AT_MOST_ONCE, 0L, MqttConfigurationDefaults.TTL_DISABLED),
                 "topic",
                 BucketUtils.getBucket("topic", bucketCount));
         final long firstMessageSize = persistence.currentMemorySize.get();
         persistence.put(
                 new RetainedMessage(
-                        "message2".getBytes(), QoS.AT_MOST_ONCE, 0L, MqttConfigurationDefaults.TTL_DISABLED),
+                        "message2".getBytes(UTF_8), QoS.AT_MOST_ONCE, 0L, MqttConfigurationDefaults.TTL_DISABLED),
                 "topic",
                 BucketUtils.getBucket("topic", bucketCount));
         final long secondMessageSize = persistence.currentMemorySize.get();
@@ -74,33 +75,39 @@ public class RetainedMessageMemoryLocalPersistenceTest {
         // existing entry has newer timestamp, so we expect the "old" value
         assertEquals(
                 "message2",
-                new String(persistence
-                        .get("topic", BucketUtils.getBucket("topic", bucketCount))
-                        .getMessage()));
+                new String(
+                        persistence
+                                .get("topic", BucketUtils.getBucket("topic", bucketCount))
+                                .getMessage(),
+                        UTF_8));
 
         persistence.put(
                 new RetainedMessage(
-                        "message3".getBytes(), QoS.AT_MOST_ONCE, 3L, MqttConfigurationDefaults.TTL_DISABLED),
+                        "message3".getBytes(UTF_8), QoS.AT_MOST_ONCE, 3L, MqttConfigurationDefaults.TTL_DISABLED),
                 "topic",
                 BucketUtils.getBucket("topic", bucketCount));
 
         assertEquals(
                 "message3",
-                new String(persistence
-                        .get("topic", BucketUtils.getBucket("topic", bucketCount))
-                        .getMessage()));
+                new String(
+                        persistence
+                                .get("topic", BucketUtils.getBucket("topic", bucketCount))
+                                .getMessage(),
+                        UTF_8));
 
         persistence.put(
                 new RetainedMessage(
-                        "message4".getBytes(), QoS.AT_MOST_ONCE, 4L, MqttConfigurationDefaults.TTL_DISABLED),
+                        "message4".getBytes(UTF_8), QoS.AT_MOST_ONCE, 4L, MqttConfigurationDefaults.TTL_DISABLED),
                 "topic",
                 BucketUtils.getBucket("topic", bucketCount));
 
         assertEquals(
                 "message4",
-                new String(persistence
-                        .get("topic", BucketUtils.getBucket("topic", bucketCount))
-                        .getMessage()));
+                new String(
+                        persistence
+                                .get("topic", BucketUtils.getBucket("topic", bucketCount))
+                                .getMessage(),
+                        UTF_8));
     }
 
     @Test

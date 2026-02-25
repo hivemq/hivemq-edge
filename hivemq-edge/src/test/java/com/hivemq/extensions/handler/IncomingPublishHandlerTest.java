@@ -15,6 +15,7 @@
  */
 package com.hivemq.extensions.handler;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
@@ -244,7 +245,7 @@ public class IncomingPublishHandlerTest {
         when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
                 .thenReturn(extension);
 
-        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_LEAST_ONCE));
+        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(UTF_8), QoS.AT_LEAST_ONCE));
 
         Object o = channel.readOutbound();
         while (o == null) {
@@ -275,7 +276,7 @@ public class IncomingPublishHandlerTest {
         when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
                 .thenReturn(extension);
 
-        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_MOST_ONCE));
+        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(UTF_8), QoS.AT_MOST_ONCE));
 
         assertNull(channel.readInbound());
         assertNull(channel.readOutbound());
@@ -339,7 +340,7 @@ public class IncomingPublishHandlerTest {
         when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
                 .thenReturn(extension);
 
-        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_LEAST_ONCE));
+        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(UTF_8), QoS.AT_LEAST_ONCE));
 
         Object o = channel.readOutbound();
         while (o == null) {
@@ -370,7 +371,7 @@ public class IncomingPublishHandlerTest {
         when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
                 .thenReturn(extension);
 
-        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_MOST_ONCE));
+        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(UTF_8), QoS.AT_MOST_ONCE));
 
         while (dropLatch.getCount() != 0) {
             channel.runPendingTasks();
@@ -400,7 +401,7 @@ public class IncomingPublishHandlerTest {
         when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
                 .thenReturn(extension);
 
-        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_MOST_ONCE));
+        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(UTF_8), QoS.AT_MOST_ONCE));
 
         while (dropLatch.getCount() != 0) {
             channel.runPendingTasks();
@@ -429,7 +430,7 @@ public class IncomingPublishHandlerTest {
         when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
                 .thenReturn(extension);
 
-        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_MOST_ONCE));
+        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(UTF_8), QoS.AT_MOST_ONCE));
 
         while (messageAtomicReference.get() == null) {
             channel.runPendingTasks();
@@ -457,7 +458,7 @@ public class IncomingPublishHandlerTest {
         when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
                 .thenReturn(extension);
 
-        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_MOST_ONCE));
+        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(UTF_8), QoS.AT_MOST_ONCE));
 
         while (messageAtomicReference.get() == null) {
             channel.runPendingTasks();
@@ -485,7 +486,7 @@ public class IncomingPublishHandlerTest {
         when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
                 .thenReturn(extension);
 
-        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_MOST_ONCE));
+        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(UTF_8), QoS.AT_MOST_ONCE));
 
         while (dropLatch.getCount() != 0) {
             channel.runPendingTasks();
@@ -517,7 +518,7 @@ public class IncomingPublishHandlerTest {
         when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
                 .thenReturn(extension);
 
-        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_LEAST_ONCE));
+        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(UTF_8), QoS.AT_LEAST_ONCE));
 
         PUBACK puback = channel.readOutbound();
         while (puback == null) {
@@ -550,7 +551,7 @@ public class IncomingPublishHandlerTest {
         when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
                 .thenReturn(extension);
 
-        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_LEAST_ONCE));
+        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(UTF_8), QoS.AT_LEAST_ONCE));
 
         PUBACK puback = channel.readOutbound();
         while (puback == null) {
@@ -601,7 +602,7 @@ public class IncomingPublishHandlerTest {
         when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
                 .thenReturn(extension);
 
-        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_LEAST_ONCE));
+        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(UTF_8), QoS.AT_LEAST_ONCE));
 
         while (dropLatch.getCount() != 0) {
             channel.runPendingTasks();
@@ -646,7 +647,7 @@ public class IncomingPublishHandlerTest {
         when(hiveMQExtensions.getExtensionForClassloader(any(IsolatedExtensionClassloader.class)))
                 .thenReturn(extension);
 
-        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(), QoS.AT_LEAST_ONCE));
+        channel.writeInbound(TestMessageUtil.createMqtt3Publish("topic", "payload".getBytes(UTF_8), QoS.AT_LEAST_ONCE));
 
         while (dropLatch.getCount() != 0) {
             channel.runPendingTasks();

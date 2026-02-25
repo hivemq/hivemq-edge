@@ -15,6 +15,7 @@
  */
 package com.hivemq.persistence.clientsession;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyBoolean;
@@ -83,7 +84,7 @@ public class PendingWillMessagesTest {
         final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder()
                 .withHivemqId("hivemqId")
                 .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
-                .withPayload("message".getBytes())
+                .withPayload("message".getBytes(UTF_8))
                 .withQos(QoS.AT_MOST_ONCE)
                 .withTopic("topic")
                 .withDelayInterval(5)
@@ -102,7 +103,7 @@ public class PendingWillMessagesTest {
         final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder()
                 .withHivemqId("hivemqId")
                 .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
-                .withPayload("message".getBytes())
+                .withPayload("message".getBytes(UTF_8))
                 .withQos(QoS.AT_MOST_ONCE)
                 .withTopic("topic")
                 .withDelayInterval(10)
@@ -121,7 +122,7 @@ public class PendingWillMessagesTest {
         final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder()
                 .withHivemqId("hivemqId")
                 .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
-                .withPayload("message".getBytes())
+                .withPayload("message".getBytes(UTF_8))
                 .withQos(QoS.AT_MOST_ONCE)
                 .withTopic("topic")
                 .withDelayInterval(0)
@@ -139,7 +140,7 @@ public class PendingWillMessagesTest {
         final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder()
                 .withHivemqId("hivemqId")
                 .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
-                .withPayload("message".getBytes())
+                .withPayload("message".getBytes(UTF_8))
                 .withQos(QoS.AT_MOST_ONCE)
                 .withTopic("topic")
                 .withDelayInterval(10)
@@ -157,7 +158,7 @@ public class PendingWillMessagesTest {
         final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder()
                 .withHivemqId("hivemqId")
                 .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
-                .withPayload("message".getBytes())
+                .withPayload("message".getBytes(UTF_8))
                 .withQos(QoS.AT_MOST_ONCE)
                 .withTopic("topic")
                 .withDelayInterval(5)
@@ -181,7 +182,7 @@ public class PendingWillMessagesTest {
         final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder()
                 .withHivemqId("hivemqId")
                 .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
-                .withPayload("message".getBytes())
+                .withPayload("message".getBytes(UTF_8))
                 .withQos(QoS.AT_MOST_ONCE)
                 .withTopic("topic")
                 .withDelayInterval(5)
@@ -202,7 +203,7 @@ public class PendingWillMessagesTest {
         final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder()
                 .withHivemqId("hivemqId")
                 .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
-                .withPayload("message".getBytes())
+                .withPayload("message".getBytes(UTF_8))
                 .withQos(QoS.AT_MOST_ONCE)
                 .withTopic("topic")
                 .withDelayInterval(5)
@@ -225,7 +226,7 @@ public class PendingWillMessagesTest {
         final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt5Builder()
                 .withHivemqId("hivemqId")
                 .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
-                .withPayload("message".getBytes())
+                .withPayload("message".getBytes(UTF_8))
                 .withQos(QoS.AT_MOST_ONCE)
                 .withTopic("topic")
                 .withDelayInterval(1000)

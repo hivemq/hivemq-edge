@@ -16,6 +16,7 @@
 package com.hivemq.extensions.auth;
 
 import static com.hivemq.extensions.auth.AuthenticationState.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -116,17 +117,17 @@ public class ReAuthOutputTest {
     @Test
     @Timeout(5)
     public void test_success_bytes_data() {
-        authTaskOutput.authenticateSuccessfully("data".getBytes());
+        authTaskOutput.authenticateSuccessfully("data".getBytes(UTF_8));
         assertEquals(SUCCESS, authTaskOutput.getAuthenticationState());
-        assertArrayEquals("data".getBytes(), Bytes.fromReadOnlyBuffer(authTaskOutput.getAuthenticationData()));
+        assertArrayEquals("data".getBytes(UTF_8), Bytes.fromReadOnlyBuffer(authTaskOutput.getAuthenticationData()));
     }
 
     @Test
     @Timeout(5)
     public void test_success_buffer_data() {
-        authTaskOutput.authenticateSuccessfully(ByteBuffer.wrap("data".getBytes()));
+        authTaskOutput.authenticateSuccessfully(ByteBuffer.wrap("data".getBytes(UTF_8)));
         assertEquals(SUCCESS, authTaskOutput.getAuthenticationState());
-        assertArrayEquals("data".getBytes(), Bytes.fromReadOnlyBuffer(authTaskOutput.getAuthenticationData()));
+        assertArrayEquals("data".getBytes(UTF_8), Bytes.fromReadOnlyBuffer(authTaskOutput.getAuthenticationData()));
     }
 
     @Test
@@ -139,17 +140,17 @@ public class ReAuthOutputTest {
     @Test
     @Timeout(5)
     public void test_continue_bytes_data() {
-        authTaskOutput.continueAuthentication("data".getBytes());
+        authTaskOutput.continueAuthentication("data".getBytes(UTF_8));
         assertEquals(CONTINUE, authTaskOutput.getAuthenticationState());
-        assertArrayEquals("data".getBytes(), Bytes.fromReadOnlyBuffer(authTaskOutput.getAuthenticationData()));
+        assertArrayEquals("data".getBytes(UTF_8), Bytes.fromReadOnlyBuffer(authTaskOutput.getAuthenticationData()));
     }
 
     @Test
     @Timeout(5)
     public void test_continue_buffer_data() {
-        authTaskOutput.continueAuthentication(ByteBuffer.wrap("data".getBytes()));
+        authTaskOutput.continueAuthentication(ByteBuffer.wrap("data".getBytes(UTF_8)));
         assertEquals(CONTINUE, authTaskOutput.getAuthenticationState());
-        assertArrayEquals("data".getBytes(), Bytes.fromReadOnlyBuffer(authTaskOutput.getAuthenticationData()));
+        assertArrayEquals("data".getBytes(UTF_8), Bytes.fromReadOnlyBuffer(authTaskOutput.getAuthenticationData()));
     }
 
     @Test

@@ -233,7 +233,7 @@ class RemotePublishConsumerTest {
         final PUBLISH publish = captor.getValue();
 
         assertEquals("test/topic", publish.getTopic());
-        assertEquals("payload", new String(publish.getPayload()));
+        assertEquals("payload", new String(publish.getPayload(), UTF_8));
         assertEquals(0, publish.getQoS().getQosNumber());
         assertFalse(publish.isRetain());
         assertEquals(MESSAGE_EXPIRY_INTERVAL_NOT_SET, publish.getMessageExpiryInterval());
@@ -369,7 +369,7 @@ class RemotePublishConsumerTest {
 
     private void verifyFullPublish(PUBLISH publish, final @NotNull String topic) {
         assertEquals(topic, publish.getTopic());
-        assertEquals("payload", new String(publish.getPayload()));
+        assertEquals("payload", new String(publish.getPayload(), UTF_8));
         assertEquals(2, publish.getQoS().getQosNumber());
         assertEquals(2, publish.getOnwardQoS().getQosNumber());
         assertFalse(publish.isRetain());
@@ -378,7 +378,7 @@ class RemotePublishConsumerTest {
                 com.hivemq.codec.encoder.mqtt5.Mqtt5PayloadFormatIndicator.UTF_8, publish.getPayloadFormatIndicator());
         assertEquals("content-type", publish.getContentType());
         assertEquals("resp/topic", publish.getResponseTopic());
-        assertEquals("corrdata", new String(publish.getCorrelationData()));
+        assertEquals("corrdata", new String(publish.getCorrelationData(), UTF_8));
         assertEquals(3, publish.getUserProperties().asList().size());
         final MqttUserProperty prop1 = publish.getUserProperties().asList().get(0);
         assertEquals("testk1", prop1.getName());

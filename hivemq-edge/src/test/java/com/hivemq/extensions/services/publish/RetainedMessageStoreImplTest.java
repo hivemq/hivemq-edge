@@ -15,6 +15,7 @@
  */
 package com.hivemq.extensions.services.publish;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -269,9 +270,9 @@ public class RetainedMessageStoreImplTest {
                 PayloadFormatIndicator.UTF_8,
                 12345L,
                 "response_topic",
-                ByteBuffer.wrap("correlation_data".getBytes()),
+                ByteBuffer.wrap("correlation_data".getBytes(UTF_8)),
                 "content_type",
-                ByteBuffer.wrap("test3".getBytes()),
+                ByteBuffer.wrap("test3".getBytes(UTF_8)),
                 UserPropertiesImpl.of(ImmutableList.of()));
     }
 

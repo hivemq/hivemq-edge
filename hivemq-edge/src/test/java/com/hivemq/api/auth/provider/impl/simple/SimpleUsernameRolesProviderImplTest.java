@@ -15,6 +15,7 @@
  */
 package com.hivemq.api.auth.provider.impl.simple;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.hivemq.api.auth.ApiPrincipal;
@@ -31,8 +32,8 @@ class SimpleUsernameRolesProviderImplTest {
     @Test
     public void testUsingCorrectPasswordSucceeds() {
         final var simpleProvider = new SimpleUsernameRolesProviderImpl();
-        simpleProvider.add(new UsernamePasswordRoles(USER_NAME, "pass1".getBytes(), TEST_ROLES));
-        assertThat(simpleProvider.findByUsernameAndPassword(USER_NAME, "pass1".getBytes()))
+        simpleProvider.add(new UsernamePasswordRoles(USER_NAME, "pass1".getBytes(UTF_8), TEST_ROLES));
+        assertThat(simpleProvider.findByUsernameAndPassword(USER_NAME, "pass1".getBytes(UTF_8)))
                 .isNotEmpty()
                 .get()
                 .satisfies(usernamePasswordRoles -> {
@@ -45,8 +46,8 @@ class SimpleUsernameRolesProviderImplTest {
     @Test
     public void testUsingIncorrectPasswordFails() {
         final var simpleProvider = new SimpleUsernameRolesProviderImpl();
-        simpleProvider.add(new UsernamePasswordRoles(USER_NAME, "pass1".getBytes(), TEST_ROLES));
-        assertThat(simpleProvider.findByUsernameAndPassword(USER_NAME, "incorrect".getBytes()))
+        simpleProvider.add(new UsernamePasswordRoles(USER_NAME, "pass1".getBytes(UTF_8), TEST_ROLES));
+        assertThat(simpleProvider.findByUsernameAndPassword(USER_NAME, "incorrect".getBytes(UTF_8)))
                 .isEmpty();
     }
 }

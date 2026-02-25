@@ -15,6 +15,7 @@
  */
 package com.hivemq.extensions.client.parameter;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -66,7 +67,7 @@ public class ConnectionAttributeStoreImplTest {
     @Test
     public void test_put_get() {
         final String key = "test.key";
-        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes());
+        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes(UTF_8));
 
         clientConnection.setConnectionAttributes(connectionAttributes);
 
@@ -80,8 +81,8 @@ public class ConnectionAttributeStoreImplTest {
     @Test
     public void test_put_present() {
         final String key = "test.key";
-        final ByteBuffer value1 = ByteBuffer.wrap("test.value1".getBytes());
-        final ByteBuffer value2 = ByteBuffer.wrap("test.value2".getBytes());
+        final ByteBuffer value1 = ByteBuffer.wrap("test.value1".getBytes(UTF_8));
+        final ByteBuffer value2 = ByteBuffer.wrap("test.value2".getBytes(UTF_8));
 
         clientConnection.setConnectionAttributes(connectionAttributes);
 
@@ -96,7 +97,7 @@ public class ConnectionAttributeStoreImplTest {
     @Test
     public void test_put_attribute_not_present() {
         final String key = "test.key";
-        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes());
+        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes(UTF_8));
 
         clientConnection.setConnectionAttributes(null);
 
@@ -113,7 +114,7 @@ public class ConnectionAttributeStoreImplTest {
     @SuppressWarnings("ConstantConditions")
     public void test_put_null_key() {
         final String key = null;
-        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes());
+        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes(UTF_8));
 
         assertThatThrownBy(() -> connectionAttributeStore.put(key, value)).isInstanceOf(NullPointerException.class);
     }
@@ -138,7 +139,7 @@ public class ConnectionAttributeStoreImplTest {
 
         final Optional<ByteBuffer> setValue = connectionAttributes.get(key);
         assertTrue(setValue.isPresent());
-        assertEquals(ByteBuffer.wrap(value.getBytes()), setValue.get());
+        assertEquals(ByteBuffer.wrap(value.getBytes(UTF_8)), setValue.get());
     }
 
     @Test
@@ -154,7 +155,7 @@ public class ConnectionAttributeStoreImplTest {
 
         final Optional<ByteBuffer> setValue = connectionAttributes.get(key);
         assertTrue(setValue.isPresent());
-        assertEquals(ByteBuffer.wrap(value2.getBytes()), setValue.get());
+        assertEquals(ByteBuffer.wrap(value2.getBytes(UTF_8)), setValue.get());
     }
 
     @Test
@@ -170,7 +171,7 @@ public class ConnectionAttributeStoreImplTest {
         final Optional<ByteBuffer> setValue =
                 clientConnection.getConnectionAttributes().get(key);
         assertTrue(setValue.isPresent());
-        assertEquals(ByteBuffer.wrap(value.getBytes()), setValue.get());
+        assertEquals(ByteBuffer.wrap(value.getBytes(UTF_8)), setValue.get());
     }
 
     @Test
@@ -312,7 +313,7 @@ public class ConnectionAttributeStoreImplTest {
 
         clientConnection.setConnectionAttributes(connectionAttributes);
 
-        connectionAttributes.put(key, ByteBuffer.wrap(value.getBytes()));
+        connectionAttributes.put(key, ByteBuffer.wrap(value.getBytes(UTF_8)));
 
         final Optional<String> returnValue = connectionAttributeStore.getAsString(key);
 
@@ -414,9 +415,9 @@ public class ConnectionAttributeStoreImplTest {
     public void test_getAll() {
         final ImmutableMap<String, ByteBuffer> values = ImmutableMap.of(
                 "test.key1",
-                ByteBuffer.wrap("test.value1".getBytes()),
+                ByteBuffer.wrap("test.value1".getBytes(UTF_8)),
                 "test.key2",
-                ByteBuffer.wrap("test.value2".getBytes()));
+                ByteBuffer.wrap("test.value2".getBytes(UTF_8)));
 
         clientConnection.setConnectionAttributes(connectionAttributes);
 
@@ -442,12 +443,12 @@ public class ConnectionAttributeStoreImplTest {
     @Test
     public void test_remove() {
         final String key = "test.key";
-        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes());
+        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes(UTF_8));
 
         clientConnection.setConnectionAttributes(connectionAttributes);
 
         connectionAttributes.put(key, value);
-        connectionAttributes.put("test.key2", ByteBuffer.wrap("test.value2".getBytes()));
+        connectionAttributes.put("test.key2", ByteBuffer.wrap("test.value2".getBytes(UTF_8)));
 
         final Optional<ByteBuffer> returnValue = connectionAttributeStore.remove(key);
 
@@ -458,7 +459,7 @@ public class ConnectionAttributeStoreImplTest {
     @Test
     public void test_remove_last() {
         final String key = "test.key";
-        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes());
+        final ByteBuffer value = ByteBuffer.wrap("test.value".getBytes(UTF_8));
 
         clientConnection.setConnectionAttributes(connectionAttributes);
 
@@ -504,8 +505,8 @@ public class ConnectionAttributeStoreImplTest {
     public void test_clear() {
         final String key1 = "test.key1";
         final String key2 = "test.key2";
-        final ByteBuffer value1 = ByteBuffer.wrap("test.value1".getBytes());
-        final ByteBuffer value2 = ByteBuffer.wrap("test.value2".getBytes());
+        final ByteBuffer value1 = ByteBuffer.wrap("test.value1".getBytes(UTF_8));
+        final ByteBuffer value2 = ByteBuffer.wrap("test.value2".getBytes(UTF_8));
 
         clientConnection.setConnectionAttributes(connectionAttributes);
 

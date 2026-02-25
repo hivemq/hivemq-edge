@@ -443,7 +443,7 @@ public class Mqtt3PublishDecoderTest {
 
         final byte[] bytes = {(byte) 0xE0, (byte) 0x80};
 
-        final byte[] topic = Bytes.concat("topic".getBytes(), bytes);
+        final byte[] topic = Bytes.concat("topic".getBytes(UTF_8), bytes);
         final String payload = "payload";
 
         final ByteBuf buf = Unpooled.buffer();
@@ -468,7 +468,7 @@ public class Mqtt3PublishDecoderTest {
 
         final byte[] bytes = {(byte) 0xED, (byte) 0xA0};
 
-        final byte[] topic = Bytes.concat("topic".getBytes(), bytes);
+        final byte[] topic = Bytes.concat("topic".getBytes(UTF_8), bytes);
         final String payload = "payload";
 
         final ByteBuf buf = Unpooled.buffer();

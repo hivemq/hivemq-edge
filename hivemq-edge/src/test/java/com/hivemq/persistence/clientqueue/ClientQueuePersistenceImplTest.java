@@ -16,6 +16,7 @@
 package com.hivemq.persistence.clientqueue;
 
 import static com.hivemq.configuration.service.MqttConfigurationService.QueuedMessagesStrategy;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -351,7 +352,7 @@ public class ClientQueuePersistenceImplTest {
                 .withQoS(qos)
                 .withOnwardQos(qos)
                 .withPublishId(1L)
-                .withPayload("message".getBytes())
+                .withPayload("message".getBytes(UTF_8))
                 .withTopic(topic)
                 .withHivemqId("hivemqId")
                 .withPersistence(payloadPersistence)

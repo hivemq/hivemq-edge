@@ -28,6 +28,7 @@ import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.persistence.RetainedMessage;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -76,16 +77,16 @@ public class RetainedPublishImplTest {
                 PayloadFormatIndicator.UTF_8,
                 12345L,
                 "response_topic",
-                ByteBuffer.wrap("correlation_data".getBytes()),
+                ByteBuffer.wrap("correlation_data".getBytes(StandardCharsets.UTF_8)),
                 "content_type",
-                ByteBuffer.wrap("test3".getBytes()),
+                ByteBuffer.wrap("test3".getBytes(StandardCharsets.UTF_8)),
                 userProperties);
 
         final RetainedMessage convert = RetainedPublishImpl.convert(retainedPublish);
 
         assertEquals(12345L, convert.getMessageExpiryInterval());
-        assertArrayEquals("test3".getBytes(), convert.getMessage());
-        assertArrayEquals("correlation_data".getBytes(), convert.getCorrelationData());
+        assertArrayEquals("test3".getBytes(StandardCharsets.UTF_8), convert.getMessage());
+        assertArrayEquals("correlation_data".getBytes(StandardCharsets.UTF_8), convert.getCorrelationData());
         assertEquals("content_type", convert.getContentType());
         assertEquals(UTF_8, convert.getPayloadFormatIndicator());
         assertEquals("response_topic", convert.getResponseTopic());

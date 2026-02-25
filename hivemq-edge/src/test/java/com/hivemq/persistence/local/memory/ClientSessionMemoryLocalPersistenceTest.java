@@ -17,6 +17,7 @@ package com.hivemq.persistence.local.memory;
 
 import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRE_ON_DISCONNECT;
 import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRY_MAX;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -391,7 +392,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
 
         final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt3Builder()
                 .withTopic("topic")
-                .withPayload("message".getBytes())
+                .withPayload("message".getBytes(UTF_8))
                 .withQos(QoS.AT_LEAST_ONCE)
                 .withRetain(true)
                 .withHivemqId("hivemqId")
@@ -510,7 +511,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
     @Test
     public void get_pending_wills() {
         final MqttWillPublish.Mqtt5Builder willPublish = new MqttWillPublish.Mqtt5Builder()
-                .withPayload("payload".getBytes())
+                .withPayload("payload".getBytes(UTF_8))
                 .withTopic("topic")
                 .withQos(QoS.AT_MOST_ONCE)
                 .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
@@ -541,7 +542,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
                                 new MqttWillPublish.Mqtt5Builder()
                                         .withTopic("topic")
                                         .withQos(QoS.AT_MOST_ONCE)
-                                        .withPayload("message".getBytes())
+                                        .withPayload("message".getBytes(UTF_8))
                                         .withDelayInterval(0)
                                         .withHivemqId("HiveMQId")
                                         .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
@@ -574,7 +575,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
                                 new MqttWillPublish.Mqtt5Builder()
                                         .withTopic("topic")
                                         .withQos(QoS.AT_MOST_ONCE)
-                                        .withPayload("message".getBytes())
+                                        .withPayload("message".getBytes(UTF_8))
                                         .withDelayInterval(0)
                                         .withHivemqId("HiveMQId")
                                         .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
@@ -605,7 +606,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
                                 new MqttWillPublish.Mqtt5Builder()
                                         .withTopic("topic")
                                         .withQos(QoS.AT_MOST_ONCE)
-                                        .withPayload("message".getBytes())
+                                        .withPayload("message".getBytes(UTF_8))
                                         .withDelayInterval(0)
                                         .withHivemqId("HiveMQId")
                                         .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
@@ -637,7 +638,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
                                 new MqttWillPublish.Mqtt5Builder()
                                         .withTopic("topic")
                                         .withQos(QoS.AT_MOST_ONCE)
-                                        .withPayload("message".getBytes())
+                                        .withPayload("message".getBytes(UTF_8))
                                         .withDelayInterval(0)
                                         .withHivemqId("HiveMQId")
                                         .withUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES)
@@ -802,7 +803,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
 
         final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt3Builder()
                 .withTopic("topic")
-                .withPayload("message".getBytes())
+                .withPayload("message".getBytes(UTF_8))
                 .withQos(QoS.AT_LEAST_ONCE)
                 .withRetain(true)
                 .withHivemqId("hivemqId")
@@ -833,7 +834,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
 
         final MqttWillPublish mqttWillPublish = new MqttWillPublish.Mqtt3Builder()
                 .withTopic("topic")
-                .withPayload("message".getBytes())
+                .withPayload("message".getBytes(UTF_8))
                 .withQos(QoS.AT_LEAST_ONCE)
                 .withRetain(true)
                 .withHivemqId("hivemqId")

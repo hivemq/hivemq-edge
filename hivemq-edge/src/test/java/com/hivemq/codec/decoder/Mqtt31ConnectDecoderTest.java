@@ -460,7 +460,7 @@ public class Mqtt31ConnectDecoderTest {
     public void test_client_id_contains_bad_utf8_character() {
 
         final byte[] bytes = {(byte) 0xE0, (byte) 0x80};
-        final byte[] clientId = Bytes.concat("clientId".getBytes(), bytes);
+        final byte[] clientId = Bytes.concat("clientId".getBytes(UTF_8), bytes);
 
         final ByteBuf buf = Unpooled.buffer();
         buf.writeBytes(new byte[] {0, 6});
@@ -487,7 +487,7 @@ public class Mqtt31ConnectDecoderTest {
     public void test_decode_bad_will_topic() {
 
         final byte[] bytes = {(byte) 0xE0, (byte) 0x80};
-        final byte[] willtopic = Bytes.concat("willTopic".getBytes(), bytes);
+        final byte[] willtopic = Bytes.concat("willTopic".getBytes(UTF_8), bytes);
 
         final ByteBuf buf = Unpooled.buffer();
 
@@ -518,7 +518,7 @@ public class Mqtt31ConnectDecoderTest {
     @Test
     public void test_decode_will_topic_non_character() {
 
-        final byte[] willtopic = ("willTopic" + '\uFFFF' + 'a' + 'b').getBytes();
+        final byte[] willtopic = ("willTopic" + '\uFFFF' + 'a' + 'b').getBytes(UTF_8);
 
         final ByteBuf buf = Unpooled.buffer();
 
@@ -549,7 +549,7 @@ public class Mqtt31ConnectDecoderTest {
     @Test
     public void test_decode_will_topic_control_character() {
 
-        final byte[] willtopic = ("willTopic" + '\u0013' + 'a' + 'b').getBytes();
+        final byte[] willtopic = ("willTopic" + '\u0013' + 'a' + 'b').getBytes(UTF_8);
 
         final ByteBuf buf = Unpooled.buffer();
 
