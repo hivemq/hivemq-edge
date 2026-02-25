@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.zip.ZipEntry;
@@ -166,9 +167,9 @@ public class CreateAdapterBlueprint {
             System.exit(1);
         }
 
-        final var adapterModuleName = adapterName.toLowerCase();
+        final var adapterModuleName = adapterName.toLowerCase(Locale.ROOT);
         final Map<String, String> map = new HashMap<>();
-        map.put("nameUC", upperCaseFirst(adapterName.toLowerCase()));
+        map.put("nameUC", upperCaseFirst(adapterName.toLowerCase(Locale.ROOT)));
         map.put("nameLC", adapterModuleName);
         final var zipFile = new File(templateFile);
         final var outputDirectory = new File(moduleDirectory);
