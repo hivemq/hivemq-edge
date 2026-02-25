@@ -50,6 +50,7 @@ public class Mqtt3SubscribeEncoder extends AbstractVariableHeaderLengthEncoder<S
         }
     }
 
+    @Override
     protected int remainingLength(final @NotNull SUBSCRIBE msg) {
         int length = 0;
         length += 2; // message ID

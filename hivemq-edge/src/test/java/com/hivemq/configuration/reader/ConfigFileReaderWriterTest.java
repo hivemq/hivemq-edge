@@ -36,7 +36,7 @@ class ConfigFileReaderWriterTest {
                 .getResource("configs/testing/alltags.xml")
                 .toURI());
         final var configEntity = reader.loadConfigFromXML(configFile);
-        assertThat(configEntity).isNotNull();
+        assertThat(configEntity).isTrue();
     }
 
     @Test
@@ -49,7 +49,7 @@ class ConfigFileReaderWriterTest {
                 .getResource("configs/testing/empty.xml")
                 .toURI());
         final var configEntity = reader.loadConfigFromXML(configFile);
-        assertThat(configEntity).isNotNull();
+        assertThat(configEntity).isTrue();
     }
 
     @Test
@@ -63,6 +63,6 @@ class ConfigFileReaderWriterTest {
                 .toURI());
         final var configEntity = reader.loadConfigFromXML(configFile);
         // This will break as soon as the xsd is fixed
-        assertThat(configEntity).isNotNull();
+        assertThat(configEntity).isTrue();
     }
 }

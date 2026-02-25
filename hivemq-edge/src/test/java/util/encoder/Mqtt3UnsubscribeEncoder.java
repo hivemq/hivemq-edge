@@ -48,6 +48,7 @@ public class Mqtt3UnsubscribeEncoder extends AbstractVariableHeaderLengthEncoder
         }
     }
 
+    @Override
     protected int remainingLength(final @NotNull UNSUBSCRIBE msg) {
         int length = 0;
         length += 2; // message ID

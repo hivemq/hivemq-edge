@@ -188,21 +188,25 @@ public class ChannelInitializerFactoryImplTest {
         }
 
         @NotNull
+        @Override
         protected AbstractChannelInitializer createTcpInitializer(final @NotNull MqttTcpListener listener) {
             return new FakeAbstractChannelInitializer(channelDependencies, TYPE_TCP);
         }
 
         @NotNull
+        @Override
         protected AbstractChannelInitializer createTlsTcpInitializer(final @NotNull MqttTlsTcpListener listener) {
             return new FakeAbstractChannelInitializer(channelDependencies, TYPE_TLS_TCP);
         }
 
         @NotNull
+        @Override
         protected AbstractChannelInitializer createWebsocketInitializer(final @NotNull MqttWebsocketListener listener) {
             return new FakeAbstractChannelInitializer(channelDependencies, TYPE_WEBSOCKET);
         }
 
         @NotNull
+        @Override
         protected AbstractChannelInitializer createTlsWebsocketInitializer(
                 final @NotNull MqttTlsWebsocketListener listener) {
             return new FakeAbstractChannelInitializer(channelDependencies, TYPE_TLS_WEBSOCKET);

@@ -15,6 +15,22 @@
  */
 package com.hivemq.configuration.reader;
 
+import com.google.common.io.Files;
+import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.adapter.MqttUserPropertyEntity;
+import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
+import com.hivemq.configuration.info.SystemInformation;
+import com.hivemq.exceptions.UnrecoverableException;
+import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -22,24 +38,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
-import com.google.common.io.Files;
-import com.hivemq.configuration.entity.HiveMQConfigEntity;
-import com.hivemq.configuration.entity.adapter.MqttUserPropertyEntity;
-import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
-import com.hivemq.configuration.info.SystemInformation;
-import com.hivemq.exceptions.UnrecoverableException;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import org.apache.commons.io.FileUtils;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 @SuppressWarnings("NullabilityAnnotations")
 public class ConfigFileReaderTest {
@@ -146,42 +146,6 @@ public class ConfigFileReaderTest {
 
     private static @NotNull ConfigFileReaderWriter getConfigFileReaderWriter(final File tempFile) {
         final ConfigurationFile configurationFile = new ConfigurationFile(tempFile);
-
-        final RestrictionConfigurator restrictionConfigurator = mock(RestrictionConfigurator.class);
-        when(restrictionConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
-
-        final SecurityConfigurator securityConfigurator = mock(SecurityConfigurator.class);
-        when(securityConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
-
-        final MqttConfigurator mqttConfigurator = mock(MqttConfigurator.class);
-        when(mqttConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
-
-        final ListenerConfigurator listenerConfigurator = mock(ListenerConfigurator.class);
-        when(listenerConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
-
-        final PersistenceConfigurator persistenceConfigurator = mock(PersistenceConfigurator.class);
-        when(persistenceConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
-
-        final MqttsnConfigurator mqttsnConfigurator = mock(MqttsnConfigurator.class);
-        when(mqttsnConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
-
-        final BridgeExtractor bridgeConfigurator = mock(BridgeExtractor.class);
-        when(bridgeConfigurator.updateConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
-
-        final ApiConfigurator apiConfigurator = mock(ApiConfigurator.class);
-        when(apiConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
-
-        final DynamicConfigConfigurator dynamicConfigConfigurator = mock(DynamicConfigConfigurator.class);
-        when(dynamicConfigConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
-
-        final UsageTrackingConfigurator usageTrackingConfigurator = mock(UsageTrackingConfigurator.class);
-        when(usageTrackingConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
-
-        final ModuleConfigurator moduleConfigurator = mock(ModuleConfigurator.class);
-        when(moduleConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
-
-        final InternalConfigurator internalConfigurator = mock(InternalConfigurator.class);
-        when(internalConfigurator.applyConfig(any())).thenReturn(Configurator.ConfigResult.SUCCESS);
 
         final var sysInfo = mock(SystemInformation.class);
         // ALways set to true for the test to ensure the fragment zipping code doesn't interfer with regular file

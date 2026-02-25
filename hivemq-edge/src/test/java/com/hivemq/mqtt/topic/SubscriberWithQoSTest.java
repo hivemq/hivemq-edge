@@ -100,6 +100,7 @@ public class SubscriberWithQoSTest {
     }
 
     @Test
+    @SuppressWarnings("SelfComparison")
     public void test_compareTo_same_is_same() {
         final SubscriberWithQoS subscriber1 = new SubscriberWithQoS("subscriber1", 1, (byte) 14, null, 0, null);
         final SubscriberWithQoS subscriber2 = new SubscriberWithQoS("subscriber1", 2, (byte) 14, null, 0, null);

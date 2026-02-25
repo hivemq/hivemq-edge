@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Timeout;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+@SuppressWarnings("DoNotMock")
 public class PersistenceShutdownHookTest {
 
     @Mock

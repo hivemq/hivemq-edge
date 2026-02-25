@@ -40,6 +40,8 @@ import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.message.unsuback.UNSUBACK;
 import com.hivemq.mqtt.message.unsubscribe.UNSUBSCRIBE;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
+
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -59,7 +61,7 @@ public class TestMessageUtil {
                 .withQoS(QoS.AT_LEAST_ONCE)
                 .withOnwardQos(QoS.AT_LEAST_ONCE)
                 .withTopic("topic")
-                .withPayload("payload".getBytes())
+                .withPayload("payload".getBytes(StandardCharsets.UTF_8))
                 .withPacketIdentifier(1)
                 .withHivemqId("hivemqId")
                 .build();
@@ -162,7 +164,7 @@ public class TestMessageUtil {
                 .withQoS(qoS)
                 .withOnwardQos(qoS)
                 .withTopic("topic")
-                .withPayload("payload".getBytes())
+                .withPayload("payload".getBytes(StandardCharsets.UTF_8))
                 .withHivemqId("hivemqId")
                 .withPacketIdentifier(1)
                 .withPublishId(1L)
@@ -178,7 +180,7 @@ public class TestMessageUtil {
                 .withQoS(qos)
                 .withOnwardQos(qos)
                 .withTopic(topic)
-                .withPayload("payload".getBytes())
+                .withPayload("payload".getBytes(StandardCharsets.UTF_8))
                 .withPacketIdentifier(1)
                 .withHivemqId("hivemqId")
                 .build();
@@ -190,7 +192,7 @@ public class TestMessageUtil {
                 .withQoS(QoS.AT_LEAST_ONCE)
                 .withOnwardQos(QoS.AT_LEAST_ONCE)
                 .withTopic("topic")
-                .withPayload("payload".getBytes())
+                .withPayload("payload".getBytes(StandardCharsets.UTF_8))
                 .withPacketIdentifier(1)
                 .withPublishId(1L)
                 .withPersistence(publishPayloadPersistence)
@@ -202,7 +204,7 @@ public class TestMessageUtil {
                 .withQoS(QoS.AT_LEAST_ONCE)
                 .withOnwardQos(QoS.AT_LEAST_ONCE)
                 .withTopic("topic")
-                .withPayload("payload".getBytes())
+                .withPayload("payload".getBytes(StandardCharsets.UTF_8))
                 .withPacketIdentifier(packetId)
                 .withHivemqId("hivemqId")
                 .build();
@@ -262,7 +264,7 @@ public class TestMessageUtil {
         return createMqtt5Publish(
                 "hivemqId",
                 "topic",
-                "payload".getBytes(),
+                "payload".getBytes(StandardCharsets.UTF_8),
                 QoS.EXACTLY_ONCE,
                 QoS.EXACTLY_ONCE,
                 true,
@@ -270,7 +272,7 @@ public class TestMessageUtil {
                 Mqtt5PayloadFormatIndicator.UTF_8,
                 "content type",
                 "response topic",
-                "correlation data".getBytes(),
+                "correlation data".getBytes(StandardCharsets.UTF_8),
                 TEST_USER_PROPERTIES,
                 1,
                 true,
@@ -292,20 +294,20 @@ public class TestMessageUtil {
                 .withTopicAliasMaximum(10)
                 .withMaximumPacketSize(200)
                 .withUsername("username")
-                .withPassword("password".getBytes())
+                .withPassword("password".getBytes(StandardCharsets.UTF_8))
                 .withAuthMethod("auth method")
-                .withAuthData("auth data".getBytes())
+                .withAuthData("auth data".getBytes(StandardCharsets.UTF_8))
                 .withWillPublish(new MqttWillPublish.Mqtt5Builder()
                         .withHivemqId("hivemqId1")
                         .withTopic("topic")
-                        .withPayload("payload".getBytes())
+                        .withPayload("payload".getBytes(StandardCharsets.UTF_8))
                         .withQos(QoS.EXACTLY_ONCE)
                         .withRetain(true)
                         .withMessageExpiryInterval(360)
                         .withPayloadFormatIndicator(Mqtt5PayloadFormatIndicator.UTF_8)
                         .withContentType("content type")
                         .withResponseTopic("response topic")
-                        .withCorrelationData("correlation data".getBytes())
+                        .withCorrelationData("correlation data".getBytes(StandardCharsets.UTF_8))
                         .withUserProperties(TEST_USER_PROPERTIES)
                         .withDelayInterval(60)
                         .build())
@@ -322,7 +324,7 @@ public class TestMessageUtil {
                 .withServerKeepAlive(120)
                 .withAssignedClientIdentifier("assigned")
                 .withAuthMethod("auth method")
-                .withAuthData("auth data".getBytes())
+                .withAuthData("auth data".getBytes(StandardCharsets.UTF_8))
                 .withReceiveMaximum(100)
                 .withTopicAliasMaximum(5)
                 .withMaximumPacketSize(100)
@@ -403,7 +405,7 @@ public class TestMessageUtil {
 
     public static AUTH createFullMqtt5Auth() {
         return new AUTH(
-                "auth method", "auth data".getBytes(), Mqtt5AuthReasonCode.SUCCESS, TEST_USER_PROPERTIES, "reason");
+                "auth method", "auth data".getBytes(StandardCharsets.UTF_8), Mqtt5AuthReasonCode.SUCCESS, TEST_USER_PROPERTIES, "reason");
     }
 
     @NotNull

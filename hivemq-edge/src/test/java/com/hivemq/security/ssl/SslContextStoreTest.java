@@ -59,6 +59,7 @@ public class SslContextStoreTest {
     private ScheduledExecutorService executorService;
     private ArgumentCaptor<Runnable> captor;
 
+    @SuppressWarnings("DoNotMock")
     @BeforeEach
     public void before() {
         sslContext = mock(SslContext.class);
