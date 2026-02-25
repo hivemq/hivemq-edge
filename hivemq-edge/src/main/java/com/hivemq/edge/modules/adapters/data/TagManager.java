@@ -56,7 +56,8 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
     @Override
     public void feed(final @NotNull String tagName, final @NotNull List<DataPoint> dataPoints) {
         lastValueForTag.put(tagName, dataPoints);
-        readWriteLock.readLock().lock();
+        final var readlock = readWriteLock.readLock();
+        readlock.lock();
         try {
             final var tagConsumers = consumers.get(tagName);
             if (tagConsumers != null) {
@@ -69,12 +70,13 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
                 });
             }
         } finally {
-            readWriteLock.readLock().unlock();
+            readlock.unlock();
         }
     }
 
     public void addConsumer(final @NotNull TagConsumer consumer) {
-        readWriteLock.writeLock().lock();
+        final var writeLock = readWriteLock.writeLock();
+        writeLock.lock();
         try {
             final String tagName = consumer.getTagName();
             consumers.compute(tagName, (tag, current) -> {
@@ -94,19 +96,20 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
                 consumer.accept(dataPoints);
             }
         } finally {
-            readWriteLock.writeLock().unlock();
+            writeLock.unlock();
         }
     }
 
     public void removeConsumer(final @NotNull TagConsumer consumer) {
-        readWriteLock.writeLock().lock();
+        var writeLock = readWriteLock.writeLock();
+        writeLock.lock();
         try {
             consumers.computeIfPresent(consumer.getTagName(), (tag, current) -> {
                 current.remove(consumer);
                 return current;
             });
         } finally {
-            readWriteLock.writeLock().unlock();
+            writeLock.unlock();
         }
     }
 }
