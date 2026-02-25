@@ -307,26 +307,26 @@ public class DataCombiningRuntime {
                 final boolean isTrigger,
                 final boolean isValueUsed) {
 
-            /// Note that the steps here and in `subscribe()` must be done exactly in this order and with these values
-            /// it is a problem that `DataCombiningRuntime` needs to know so much about how to subscribe a topic filter
-            /// the whole sequence should have been combined and encapsulated somewhere central
+            /// Note that the steps here and in `subscribe()` must be done exactly in this order and with these values.
+            /// It is a problem that `DataCombiningRuntime` needs to know so much about how to subscribe a topic filter.
+            /// The whole sequence should have been combined and encapsulated somewhere central.
 
-            /// `consumerId` must be an id for the subscription to the topic tree
-            /// with the intent that publish can distinguish different subscribers to the same topic filter
-            /// the only requirement for this id is uniqueness, so we simply use the combiner mapping UUID
+            /// `consumerId` must be an id for the subscription to the topic tree,
+            /// with the intent that publish can distinguish different subscribers to the same topic filter;
+            /// the only requirement for this id is uniqueness, so we simply use the combiner mapping UUID.
             this.consumerId = dataCombining.id().toString();
 
-            /// `subscriber` must be an id for the subscription to the topic tree
-            /// with the intent that we can unsubscribe this exact subscription again later (in `close`)
+            /// `subscriber` must be an id for the subscription to the topic tree,
+            /// with the intent that we can unsubscribe this exact subscription again later (in `close`);
             /// the only requirement for this id is also uniqueness, so we use the combiner mapping UUID again
-            /// and append `#` to avoid any risk of clashes with `consumerId`, should they ever be used in the same hash
+            /// and append `#` to avoid any risk of clashes with `consumerId` should they ever be used in the same hash.
             this.subscriber = consumerId + "#";
 
             /// the topic filter that we subscribe to
             this.topicFilter = ref.id();
 
-            /// create the queue consumer with a callback for the same slot (initially it is inert and not on the queue)
-            /// this must be the same slot that `addTopic` enqueues to, so `queueId` must be `consumerId/topicFilter`
+            /// Create the queue consumer with a callback for the same slot (initially inactive and not on the queue).
+            /// This must be the same slot that `addTopic` enqueues to, so `queueId` must be `consumerId/topicFilter`.
             String queueId = consumerId + "/" + topicFilter;
             this.consumer = new QueueConsumer(clientQueuePersistence, queueId, singleWriterService) {
                 @Override
@@ -347,10 +347,10 @@ public class DataCombiningRuntime {
             /// add the consumer to the queue, start listening for messages enqueued to this slot
             consumer.start();
 
-            /// add the topic filter to the `localTopicTree`, so that when a message is published to `topicFilter`,
-            /// it will be enqueued to `clientPersistenceQueue` in the slot `consumerId/topicFilter`
-            /// first adding the consumer and then the topic filter to the topic tree means that a consumer already
-            /// exists when the messages are being enqueued (though there is an initial `submitPoll` to also handle it)
+            /// Add the topic filter to the `localTopicTree`, so that when a message is published to `topicFilter`
+            /// it will be enqueued to `clientPersistenceQueue` in the slot `consumerId/topicFilter`.
+            /// First adding the consumer and then the topic filter to the topic tree means that a consumer already
+            /// exists when the messages are being enqueued, though there is an initial `submitPoll` to also handle it.
             localTopicTree.addTopic(subscriber,
                     new Topic(topicFilter, QoS.EXACTLY_ONCE, false, true),
                     SubscriptionFlag.getDefaultFlags(true, true, false),
