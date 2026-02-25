@@ -67,7 +67,7 @@ public class EnforceApiAuthTest {
     public static void setUp() throws Exception {
         final var config = new JaxrsHttpServerConfiguration();
         config.setPort(TEST_HTTP_PORT);
-        //-- ensure we supplied our own test mapper as this can effect output
+        // -- ensure we supplied our own test mapper as this can effect output
         config.setObjectMapper(new ObjectMapper());
 
         final Set<IAuthenticationHandler > authenticationHandlers = new HashSet<>();
@@ -88,17 +88,17 @@ public class EnforceApiAuthTest {
     }
 
     @AfterAll
-    public static void tearDown(){
+    public static void tearDown() {
         server.stopServer();
     }
 
     protected static HttpResponse get(
-            final @NotNull String path,
-            final @Nullable String username,
-            final @Nullable String password) throws IOException {
+            final @NotNull String path, final @Nullable String username, final @Nullable String password)
+            throws IOException {
         final Map<String, String> headers;
         if (username != null && password != null) {
-            headers = Map.of(HttpConstants.AUTH_HEADER,
+            headers = Map.of(
+                    HttpConstants.AUTH_HEADER,
                     BasicAuthenticationHandler.getBasicAuthenticationHeaderValue(username, password));
         } else {
             headers = null;
@@ -110,19 +110,22 @@ public class EnforceApiAuthTest {
     @Test
     public void testGetSecuredResourceWithoutCreds() throws IOException {
         final var response = get("test/get/auth/admin", null, null);
-        assertEquals(200, response.getStatusCode(), "Resource should be allowed (because authentication is not enforced)");
+        assertEquals(
+                200, response.getStatusCode(), "Resource should be allowed (because authentication is not enforced)");
     }
 
     @Test
     public void testGetSecuredResourceWithInvalidUsername() throws IOException {
         final var response = get("test/get/auth/admin", "testaWRONG", "test");
-        assertEquals(200, response.getStatusCode(), "Resource should be allowed (because authentication is not enforced)");
+        assertEquals(
+                200, response.getStatusCode(), "Resource should be allowed (because authentication is not enforced)");
     }
 
     @Test
     public void testGetSecuredResourceWithInvalidPassword() throws IOException {
         final var response = get("test/get/auth/admin", "testadmin", "incorrect");
-        assertEquals(200, response.getStatusCode(), "Resource should be allowed (because authentication is not enforced)");
+        assertEquals(
+                200, response.getStatusCode(), "Resource should be allowed (because authentication is not enforced)");
     }
 
     @Test
@@ -158,13 +161,15 @@ public class EnforceApiAuthTest {
     @Test
     public void testPermitAllRejectsNonAuthenticated() throws IOException {
         final var response = get("test/permitall/get", null, null);
-        assertEquals(200, response.getStatusCode(), "Resource should be allowed (because authentication is not enforced)");
+        assertEquals(
+                200, response.getStatusCode(), "Resource should be allowed (because authentication is not enforced)");
     }
 
     @Test
     public void testResourceLevelRoleRejectsNonAuthenticated() throws IOException {
         final var response = get("test/resource/get", null, null);
-        assertEquals(200, response.getStatusCode(), "Resource should be allowed (because authentication is not enforced)");
+        assertEquals(
+                200, response.getStatusCode(), "Resource should be allowed (because authentication is not enforced)");
     }
 
     @Test
