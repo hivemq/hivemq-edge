@@ -134,8 +134,8 @@ class ProtocolAdaptersResourceImplTest {
 
         final Response response = protocolAdaptersResource.addAdapterDomainTags(
                 "adapter",
-                (new DomainTag("tag", "1", "description", objectMapper.valueToTree(Map.of("address", "addressy")))
-                        .toModel()));
+                new DomainTag("tag", "1", "description", objectMapper.valueToTree(Map.of("address", "addressy")))
+                        .toModel());
 
         assertEquals(200, response.getStatus());
     }
@@ -279,8 +279,8 @@ class ProtocolAdaptersResourceImplTest {
                         final NorthboundMappingOwner item =
                                 northboundMappingOwnerList.getItems().get(i);
                         assertThat(item.getAdapterId()).isEqualTo("adapter" + (i / 2));
-                        assertThat(item.getTagName()).isEqualTo("tagName" + (i / 2) + "." + ((i % 2 == 0 ? "a" : "b")));
-                        assertThat(item.getTopic()).isEqualTo("topic" + (i / 2) + "." + ((i % 2 == 0 ? "a" : "b")));
+                        assertThat(item.getTagName()).isEqualTo("tagName" + (i / 2) + "." + (i % 2 == 0 ? "a" : "b"));
+                        assertThat(item.getTopic()).isEqualTo("topic" + (i / 2) + "." + (i % 2 == 0 ? "a" : "b"));
                         assertThat(item.getMaxQoS()).isEqualTo(QoSConverter.INSTANCE.toRestEntity(i % 2));
                         assertThat(item.getIncludeTagNames()).isFalse();
                         assertThat(item.getIncludeTimestamp()).isTrue();
@@ -331,15 +331,15 @@ class ProtocolAdaptersResourceImplTest {
                         final SouthboundMappingOwner item =
                                 southboundMappingOwnerList.getItems().get(i);
                         assertThat(item.getAdapterId()).isEqualTo("adapter" + (i / 2));
-                        assertThat(item.getTagName()).isEqualTo("tagName" + (i / 2) + "." + ((i % 2 == 0 ? "a" : "b")));
+                        assertThat(item.getTagName()).isEqualTo("tagName" + (i / 2) + "." + (i % 2 == 0 ? "a" : "b"));
                         assertThat(item.getTopicFilter())
-                                .isEqualTo("topicFilter" + (i / 2) + "." + ((i % 2 == 0 ? "a" : "b")));
+                                .isEqualTo("topicFilter" + (i / 2) + "." + (i % 2 == 0 ? "a" : "b"));
                         final FieldMapping fieldMapping = item.getFieldMapping();
                         assertThat(fieldMapping.getInstructions()).hasSize(1);
                         assertThat(fieldMapping.getInstructions().getFirst().getSource())
-                                .isEqualTo("sourceFieldName" + (i / 2) + "." + ((i % 2 == 0 ? "a" : "b")));
+                                .isEqualTo("sourceFieldName" + (i / 2) + "." + (i % 2 == 0 ? "a" : "b"));
                         assertThat(fieldMapping.getInstructions().getFirst().getDestination())
-                                .isEqualTo("destinationFieldName" + (i / 2) + "." + ((i % 2 == 0 ? "a" : "b")));
+                                .isEqualTo("destinationFieldName" + (i / 2) + "." + (i % 2 == 0 ? "a" : "b"));
                         assertThat(fieldMapping.getInstructions().getFirst().getSourceRef())
                                 .isNull();
                     });

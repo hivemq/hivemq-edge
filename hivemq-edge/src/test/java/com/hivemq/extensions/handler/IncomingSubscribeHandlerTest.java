@@ -267,8 +267,8 @@ public class IncomingSubscribeHandlerTest {
                     final @NotNull ChannelPromise promise)
                     throws Exception {
 
-                if (msg instanceof SUBACK
-                        && ((SUBACK) msg).getReasonCodes().get(0).equals(Mqtt5SubAckReasonCode.UNSPECIFIED_ERROR)) {
+                if (msg instanceof SUBACK suback
+                        && suback.getReasonCodes().get(0).equals(Mqtt5SubAckReasonCode.UNSPECIFIED_ERROR)) {
                     subackLatch.countDown();
                 }
 
@@ -362,8 +362,8 @@ public class IncomingSubscribeHandlerTest {
                     final @NotNull ChannelPromise promise)
                     throws Exception {
 
-                if (msg instanceof SUBACK
-                        && ((SUBACK) msg).getReasonCodes().get(0).equals(Mqtt5SubAckReasonCode.UNSPECIFIED_ERROR)) {
+                if (msg instanceof SUBACK suback
+                        && suback.getReasonCodes().get(0).equals(Mqtt5SubAckReasonCode.UNSPECIFIED_ERROR)) {
                     subackLatch.countDown();
                 }
 
@@ -410,8 +410,8 @@ public class IncomingSubscribeHandlerTest {
                     final @NotNull ChannelPromise promise)
                     throws Exception {
 
-                if (msg instanceof SUBACK
-                        && ((SUBACK) msg).getReasonCodes().get(0).equals(Mqtt5SubAckReasonCode.UNSPECIFIED_ERROR)) {
+                if (msg instanceof SUBACK suback
+                        && suback.getReasonCodes().get(0).equals(Mqtt5SubAckReasonCode.UNSPECIFIED_ERROR)) {
                     subackLatch.countDown();
                 }
 
@@ -457,8 +457,8 @@ public class IncomingSubscribeHandlerTest {
                     final @NotNull ChannelPromise promise)
                     throws Exception {
 
-                if (msg instanceof SUBACK
-                        && ((SUBACK) msg).getReasonCodes().get(0).equals(Mqtt5SubAckReasonCode.GRANTED_QOS_1)) {
+                if (msg instanceof SUBACK suback
+                        && suback.getReasonCodes().get(0).equals(Mqtt5SubAckReasonCode.GRANTED_QOS_1)) {
                     subackLatch.countDown();
                 }
 

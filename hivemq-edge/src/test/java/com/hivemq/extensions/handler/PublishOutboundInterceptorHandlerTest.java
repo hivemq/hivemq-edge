@@ -88,8 +88,8 @@ public class PublishOutboundInterceptorHandlerTest {
                     final @NotNull Object msg,
                     final @NotNull ChannelPromise promise)
                     throws Exception {
-                if (msg instanceof PUBLISH) {
-                    handler.handleOutboundPublish(ctx, ((PUBLISH) msg), promise);
+                if (msg instanceof PUBLISH publish) {
+                    handler.handleOutboundPublish(ctx, publish, promise);
                 } else {
                     super.write(ctx, msg, promise);
                 }

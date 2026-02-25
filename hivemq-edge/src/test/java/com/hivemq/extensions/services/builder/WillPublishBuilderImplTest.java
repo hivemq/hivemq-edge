@@ -373,7 +373,7 @@ public class WillPublishBuilderImplTest {
                 () -> willPublishBuilder.contentType(RandomStringUtils.randomAlphanumeric(65536)));
     }
 
-    class TestPublishPacket implements PublishPacket {
+    static class TestPublishPacket implements PublishPacket {
 
         @Override
         public boolean getDupFlag() {
@@ -458,7 +458,7 @@ public class WillPublishBuilderImplTest {
         }
     }
 
-    private class TestWillPublishPacket implements WillPublishPacket {
+    private static class TestWillPublishPacket implements WillPublishPacket {
 
         @Override
         public long getWillDelay() {
@@ -536,7 +536,7 @@ public class WillPublishBuilderImplTest {
         }
     }
 
-    private class TestPublish implements Publish {
+    private static class TestPublish implements Publish {
 
         @Override
         public Qos getQos() {

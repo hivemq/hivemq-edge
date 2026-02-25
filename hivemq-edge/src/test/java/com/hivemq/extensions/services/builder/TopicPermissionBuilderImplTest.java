@@ -70,7 +70,7 @@ public class TopicPermissionBuilderImplTest {
         assertThrows(IllegalArgumentException.class, () -> topicPermissionBuilder.topicFilter("topic" + '\u0001'));
     }
 
-    @Test()
+    @Test
     public void test_topic_valid_utf8_should_not() {
         configurationService.securityConfiguration().setValidateUTF8(false);
         final TopicPermission topicPermission =
@@ -103,7 +103,7 @@ public class TopicPermissionBuilderImplTest {
         assertThrows(IllegalArgumentException.class, () -> topicPermissionBuilder.sharedGroup("group" + '\u0001'));
     }
 
-    @Test()
+    @Test
     public void test_shared_topic_valid_utf8_should_not() {
         configurationService.securityConfiguration().setValidateUTF8(false);
         final TopicPermission topicPermission = topicPermissionBuilder

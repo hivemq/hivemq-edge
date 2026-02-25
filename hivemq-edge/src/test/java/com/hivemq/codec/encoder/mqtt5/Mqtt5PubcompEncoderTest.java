@@ -32,6 +32,7 @@ public class Mqtt5PubcompEncoderTest extends AbstractMqtt5EncoderTest {
 
     private final Mqtt5PubCompReasonCode reasonCode = Mqtt5PubCompReasonCode.SUCCESS;
 
+    @Override
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();

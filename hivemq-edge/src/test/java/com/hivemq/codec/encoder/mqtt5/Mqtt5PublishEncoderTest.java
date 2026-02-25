@@ -45,6 +45,7 @@ public class Mqtt5PublishEncoderTest extends AbstractMqtt5EncoderTest {
 
     private HivemqId hiveMQId;
 
+    @Override
     @BeforeEach
     public void setUp() throws Exception {
         hiveMQId = new HivemqId();

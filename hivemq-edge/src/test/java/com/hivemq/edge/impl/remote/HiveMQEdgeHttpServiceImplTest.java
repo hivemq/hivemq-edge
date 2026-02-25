@@ -434,7 +434,7 @@ class HiveMQEdgeHttpServiceImplTest {
         boolean getAsBoolean();
     }
 
-    private class JsonResponseHandler implements HttpHandler {
+    private static class JsonResponseHandler implements HttpHandler {
         private final @NotNull String jsonResponse;
 
         JsonResponseHandler(final @NotNull String jsonResponse) {

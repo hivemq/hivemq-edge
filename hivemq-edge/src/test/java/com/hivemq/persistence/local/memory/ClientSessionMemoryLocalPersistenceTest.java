@@ -447,7 +447,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
                 BucketUtils.getBucket(clientid, BUCKET_COUNT));
         final ClientSession clientSession =
                 persistence.getSession(clientid, BucketUtils.getBucket(clientid, BUCKET_COUNT));
-        Assert.assertEquals(clientSession.getSessionExpiryIntervalSec(), SESSION_EXPIRY_MAX);
+        Assert.assertEquals(SESSION_EXPIRY_MAX, clientSession.getSessionExpiryIntervalSec());
 
         persistence.setSessionExpiryInterval(clientid, 12345, BucketUtils.getBucket(clientid, BUCKET_COUNT));
         final ClientSession updatedClientSession =
@@ -475,7 +475,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
                 BucketUtils.getBucket(clientid, BUCKET_COUNT));
         final ClientSession clientSession =
                 persistence.getSession(clientid, BucketUtils.getBucket(clientid, BUCKET_COUNT));
-        Assert.assertEquals(clientSession.getSessionExpiryIntervalSec(), SESSION_EXPIRY_MAX);
+        Assert.assertEquals(SESSION_EXPIRY_MAX, clientSession.getSessionExpiryIntervalSec());
 
         assertThatThrownBy(() -> persistence.setSessionExpiryInterval(
                         clientid, -1, BucketUtils.getBucket(clientid, BUCKET_COUNT)))

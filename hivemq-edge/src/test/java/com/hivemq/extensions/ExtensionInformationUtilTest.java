@@ -191,7 +191,7 @@ public class ExtensionInformationUtilTest {
         assertNotNull(((TlsInformation) clientTlsInformation).getCertificateChain());
     }
 
-    private class TestCert extends X509Certificate {
+    private static class TestCert extends X509Certificate {
 
         @Override
         public void checkValidity() {}

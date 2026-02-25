@@ -212,8 +212,8 @@ public class ClientContextImplTest {
 
     @Test
     public void test_add_remove_specific_pingreq_pingresp() {
-        final PingReqInboundInterceptor pingReqInboundInterceptor = ((input, output) -> {});
-        final PingRespOutboundInterceptor pingRespOutboundInterceptor = ((input, output) -> {});
+        final PingReqInboundInterceptor pingReqInboundInterceptor = (input, output) -> {};
+        final PingRespOutboundInterceptor pingRespOutboundInterceptor = (input, output) -> {};
 
         clientContext.addPingReqInboundInterceptor(pingReqInboundInterceptor);
         clientContext.addPingRespOutboundInterceptor(pingRespOutboundInterceptor);
