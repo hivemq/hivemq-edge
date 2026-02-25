@@ -83,7 +83,7 @@ public class PulseAgentAssetUtils {
                     }
                 } else {
                     // Asset is found remotely. We check if it has changed.
-                    if (localAsset.matchesAsset(remoteAsset)) {
+                    if (localAsset.equals(remoteAsset)) {
                         newLocalAssets.add(localAsset.withMapping(localAsset
                                 .getMapping()
                                 .withStatus(
