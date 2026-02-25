@@ -27,7 +27,7 @@ public class PreLoginNotice {
 
     @JsonProperty("enabled")
     @Schema(description = "Whether the pre login notice should be shown prior to login in")
-    private final @NotNull boolean enabled;
+    private final boolean enabled;
 
     @JsonProperty("title")
     @Schema(description = "The title of the notice")
@@ -47,7 +47,7 @@ public class PreLoginNotice {
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public PreLoginNotice(
-            final @Nullable boolean enabled,
+            final boolean enabled,
             final @Nullable String title,
             final @Nullable String message,
             final @Nullable String consent) {

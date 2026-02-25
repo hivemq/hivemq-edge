@@ -52,6 +52,7 @@ import org.slf4j.LoggerFactory;
  * @author Lukas Brandl
  */
 @Singleton
+@SuppressWarnings({"FutureReturnValueIgnored", "CheckReturnValue"})
 public class PendingWillMessages {
 
     private static final Logger log = LoggerFactory.getLogger(PendingWillMessages.class);

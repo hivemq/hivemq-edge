@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
  * @author Dominik Obermaier
  * @since 1.4
  */
+@SuppressWarnings("EnumOrdinal")
 public enum QoS {
 
     /**

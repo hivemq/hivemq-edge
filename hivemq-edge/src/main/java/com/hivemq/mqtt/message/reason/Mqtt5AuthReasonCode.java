@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * @author Silvio Giebl
  */
+@SuppressWarnings("EnumOrdinal")
 public enum Mqtt5AuthReasonCode implements Mqtt5ReasonCode {
     SUCCESS(MqttCommonReasonCode.SUCCESS),
     CONTINUE_AUTHENTICATION(0x18),

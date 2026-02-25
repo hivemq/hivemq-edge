@@ -52,6 +52,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Florian Limpöck
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 public class PublishFlowHandler extends ChannelDuplexHandler {
 
     @NotNull
@@ -91,25 +92,25 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
                 .get()
                 .getClientId();
 
-        if (msg instanceof PUBLISH) {
+        if (msg instanceof PUBLISH publish) {
 
-            handlePublish(ctx, (PUBLISH) msg, client);
+            handlePublish(ctx, publish, client);
 
-        } else if (msg instanceof PUBACK) {
+        } else if (msg instanceof PUBACK puback) {
 
-            handlePuback(ctx, (PUBACK) msg, client);
+            handlePuback(ctx, puback, client);
 
-        } else if (msg instanceof PUBREC) {
+        } else if (msg instanceof PUBREC pubrec) {
 
-            handlePubrec(ctx, (PUBREC) msg, client);
+            handlePubrec(ctx, pubrec, client);
 
-        } else if (msg instanceof PUBREL) {
+        } else if (msg instanceof PUBREL pubrel) {
 
-            handlePubrel(ctx, (PUBREL) msg);
+            handlePubrel(ctx, pubrel);
 
-        } else if (msg instanceof PUBCOMP) {
+        } else if (msg instanceof PUBCOMP pubcomp) {
 
-            handlePubcomp(ctx, (PUBCOMP) msg, client);
+            handlePubcomp(ctx, pubcomp, client);
 
         } else {
             super.channelRead(ctx, msg);
@@ -126,8 +127,7 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
             return;
         }
 
-        if (msg instanceof PUBACK) {
-            final PUBACK puback = (PUBACK) msg;
+        if (msg instanceof PUBACK puback) {
             final int messageId = puback.getPacketIdentifier();
             promise.addListener((ChannelFutureListener) future -> {
                 if (future.isSuccess()) {
@@ -159,15 +159,13 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
     @Override
     public void userEventTriggered(final @NotNull ChannelHandlerContext ctx, final @NotNull Object evt)
             throws Exception {
-        if (evt instanceof PublishDroppedEvent) {
-            final PublishDroppedEvent publishDroppedEvent = (PublishDroppedEvent) evt;
+        if (evt instanceof PublishDroppedEvent publishDroppedEvent) {
             // Already logged, just proceeded with with the next message
             orderedTopicService.messageFlowComplete(
                     ctx, publishDroppedEvent.getMessage().getPacketIdentifier());
             return;
         }
-        if (evt instanceof PubrelDroppedEvent) {
-            final PubrelDroppedEvent pubrelDroppedEvent = (PubrelDroppedEvent) evt;
+        if (evt instanceof PubrelDroppedEvent pubrelDroppedEvent) {
             orderedTopicService.messageFlowComplete(
                     ctx, pubrelDroppedEvent.getMessage().getPacketIdentifier());
             return;

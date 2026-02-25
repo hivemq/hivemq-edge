@@ -55,6 +55,7 @@ import org.jetbrains.annotations.Nullable;
  * @author Christoph Schäbel
  */
 @ThreadSafe
+@SuppressWarnings("FutureReturnValueIgnored")
 public class PluginTaskExecutor {
 
     private static final @NotNull AtomicInteger COUNTER = new AtomicInteger();
@@ -107,9 +108,8 @@ public class PluginTaskExecutor {
         final String identifier = pluginTaskExecution.getPluginContext().getIdentifier();
 
         final Lock lock = stripedLock.get(identifier);
-
+        lock.lock();
         try {
-            lock.lock();
             final Queue<PluginTaskExecution> queueForId =
                     taskQueues.computeIfAbsent(identifier, new CreateQueueIfNotPresent());
             queueForId.add(pluginTaskExecution);
@@ -222,8 +222,8 @@ public class PluginTaskExecutor {
             // the lock is required to prevent the threads which are adding tasks from adding entries
             // while the queue is removed and cleaned up
             final Lock lock = stripedLock.get(key);
+            lock.lock();
             try {
-                lock.lock();
                 final Queue<PluginTaskExecution> possiblyEmptyQueue = taskQueues.get(key);
                 if (possiblyEmptyQueue.isEmpty()) {
                     taskQueues.remove(key);
@@ -244,8 +244,7 @@ public class PluginTaskExecutor {
                 }
 
                 final PluginTaskContext pluginContext = task.getPluginContext();
-                if (pluginContext instanceof PluginTaskPost) {
-                    final PluginTaskPost pluginPost = (PluginTaskPost) pluginContext;
+                if (pluginContext instanceof PluginTaskPost pluginPost) {
                     //noinspection unchecked: generics extends a PluginTaskOutput
                     pluginPost.pluginPost(outputObject);
                 }
@@ -313,12 +312,12 @@ public class PluginTaskExecutor {
                 final PluginTask pluginTask = task.getPluginTask();
                 thread.setContextClassLoader(pluginTask.getPluginClassLoader());
                 final PluginTaskOutput output;
-                if (pluginTask instanceof PluginInOutTask) {
-                    output = runInOutTask(task, (PluginInOutTask) pluginTask);
-                } else if (pluginTask instanceof PluginInTask) {
-                    output = runInTask(task, (PluginInTask) pluginTask);
-                } else if (pluginTask instanceof PluginOutTask) {
-                    output = runOutTask(task, (PluginOutTask) pluginTask);
+                if (pluginTask instanceof PluginInOutTask pluginInOutTask) {
+                    output = runInOutTask(task, pluginInOutTask);
+                } else if (pluginTask instanceof PluginInTask pluginInTask) {
+                    output = runInTask(task, pluginInTask);
+                } else if (pluginTask instanceof PluginOutTask pluginOutTask) {
+                    output = runOutTask(task, pluginOutTask);
                 } else {
                     throw new IllegalArgumentException("Unknown task type for extension task queue");
                 }

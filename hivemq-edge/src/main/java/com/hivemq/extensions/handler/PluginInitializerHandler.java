@@ -59,6 +59,7 @@ import org.slf4j.LoggerFactory;
  * @author Florian Limpöck
  * @since 4.0.0
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 public class PluginInitializerHandler extends ChannelOutboundHandlerAdapter {
 
     private static final Logger log = LoggerFactory.getLogger(PluginInitializerHandler.class);
@@ -95,9 +96,8 @@ public class PluginInitializerHandler extends ChannelOutboundHandlerAdapter {
             final @NotNull ChannelHandlerContext ctx, final @NotNull Object msg, final @NotNull ChannelPromise promise)
             throws Exception {
 
-        if (msg instanceof CONNACK) {
+        if (msg instanceof CONNACK connack) {
 
-            final CONNACK connack = (CONNACK) msg;
             if (connack.getReasonCode() != Mqtt5ConnAckReasonCode.SUCCESS) {
                 super.write(ctx, msg, promise);
                 return;

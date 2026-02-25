@@ -43,9 +43,12 @@ import org.slf4j.LoggerFactory;
  * @author Christoph Schäbel
  * @author Florian Limpöck
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 public class OrderedTopicService {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(OrderedTopicService.class);
+
+    @SuppressWarnings("StaticAssignmentOfThrowable")
     private static final @NotNull ClosedChannelException CLOSED_CHANNEL_EXCEPTION = new ClosedChannelException();
 
     static {
@@ -100,19 +103,17 @@ public class OrderedTopicService {
     public boolean handlePublish(
             final @NotNull Channel channel, final @NotNull Object msg, final @NotNull ChannelPromise promise) {
 
-        if (msg instanceof PubrelWithFuture) {
-            final PubrelWithFuture pubrelWithFuture = (PubrelWithFuture) msg;
+        if (msg instanceof PubrelWithFuture pubrelWithFuture) {
             messageIdToFutureMap.put(pubrelWithFuture.getPacketIdentifier(), pubrelWithFuture.getFuture());
             return false;
         }
 
-        if (!(msg instanceof PUBLISH)) {
+        if (!(msg instanceof PUBLISH publish)) {
             return false;
         }
 
         SettableFuture<PublishStatus> future = null;
-        if (msg instanceof PublishWithFuture) {
-            final PublishWithFuture publishWithFuture = (PublishWithFuture) msg;
+        if (publish instanceof PublishWithFuture publishWithFuture) {
             future = publishWithFuture.getFuture();
         }
 
@@ -126,8 +127,6 @@ public class OrderedTopicService {
         if (clientId == null) {
             return false;
         }
-
-        final PUBLISH publish = (PUBLISH) msg;
         final int qosNumber = publish.getQoS().getQosNumber();
         if (log.isTraceEnabled()) {
             log.trace(

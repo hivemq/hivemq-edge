@@ -58,6 +58,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("FutureReturnValueIgnored")
 public class ProtocolAdapterWrapper {
 
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterWrapper.class);
@@ -267,6 +268,7 @@ public class ProtocolAdapterWrapper {
                                 future.complete(false);
                             }
                         }
+                        default -> {}
                     }
                 });
             } else {

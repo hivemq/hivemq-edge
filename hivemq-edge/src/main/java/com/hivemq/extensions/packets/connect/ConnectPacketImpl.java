@@ -200,10 +200,9 @@ public class ConnectPacketImpl implements ConnectPacket {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ConnectPacketImpl)) {
+        if (!(o instanceof ConnectPacketImpl that)) {
             return false;
         }
-        final ConnectPacketImpl that = (ConnectPacketImpl) o;
         return (mqttVersion == that.mqttVersion)
                 && clientId.equals(that.clientId)
                 && (cleanStart == that.cleanStart)

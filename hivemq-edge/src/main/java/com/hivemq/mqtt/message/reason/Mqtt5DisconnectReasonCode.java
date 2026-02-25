@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * @author Silvio Giebl
  */
+@SuppressWarnings("EnumOrdinal")
 public enum Mqtt5DisconnectReasonCode implements Mqtt5ReasonCode {
     NORMAL_DISCONNECTION(0x00),
     DISCONNECT_WITH_WILL_MESSAGE(0x04),
@@ -90,8 +91,11 @@ public enum Mqtt5DisconnectReasonCode implements Mqtt5ReasonCode {
     private static final @NotNull Mqtt5DisconnectReasonCode[] ERROR_CODE_LOOKUP =
             new Mqtt5DisconnectReasonCode[ERROR_CODE_MAX - ERROR_CODE_MIN + 1];
 
+    @SuppressWarnings("MultipleNullnessAnnotations")
     private static final @NotNull Mqtt5DisconnectReasonCode @NotNull [] DISCONNECT_LOOKUP =
             new Mqtt5DisconnectReasonCode[DisconnectReasonCode.values().length];
+
+    @SuppressWarnings("MultipleNullnessAnnotations")
     private static final @Nullable Mqtt5DisconnectReasonCode @NotNull [] DISCONNECTED_LOOKUP =
             new Mqtt5DisconnectReasonCode[DisconnectedReasonCode.values().length];
 

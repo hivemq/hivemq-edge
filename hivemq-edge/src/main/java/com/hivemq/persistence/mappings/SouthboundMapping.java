@@ -89,8 +89,7 @@ public class SouthboundMapping implements InternalWritingContext {
 
     @Override
     public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        final SouthboundMapping that = (SouthboundMapping) o;
+        if (!(o instanceof SouthboundMapping that)) return false;
         return Objects.equals(getTopicFilter(), that.getTopicFilter())
                 && Objects.equals(getTagName(), that.getTagName())
                 && Objects.equals(getFieldMapping(), that.getFieldMapping())

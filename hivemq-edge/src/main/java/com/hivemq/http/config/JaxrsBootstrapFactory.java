@@ -59,9 +59,8 @@ public class JaxrsBootstrapFactory {
 
         if (listener instanceof HttpListener) {
             jaxrsConfig.setProtocol(JaxrsHttpServerConfiguration.HTTP_PROTOCOL);
-        } else if (listener instanceof HttpsListener) {
+        } else if (listener instanceof HttpsListener httpsListener) {
             jaxrsConfig.setProtocol(JaxrsHttpServerConfiguration.HTTPS_PROTOCOL);
-            final HttpsListener httpsListener = (HttpsListener) listener;
 
             final KeyManagerFactory keyManagerFactory = SslUtil.createKeyManagerFactory(
                     "JKS",

@@ -88,8 +88,8 @@ public class AuthorizersImpl implements Authorizers {
     @Override
     public boolean areAuthorizersAvailable() {
         final Lock lock = readWriteLock.readLock();
+        lock.lock();
         try {
-            lock.lock();
             return !authorizerProviderMap.isEmpty();
         } finally {
             lock.unlock();

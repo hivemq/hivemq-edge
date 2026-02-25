@@ -41,8 +41,8 @@ public class NoTlsHandshakeIdleHandler extends ChannelInboundHandlerAdapter {
     public void userEventTriggered(final @NotNull ChannelHandlerContext ctx, final @NotNull Object evt)
             throws Exception {
 
-        if (evt instanceof IdleStateEvent) {
-            if (((IdleStateEvent) evt).state() == IdleState.READER_IDLE) {
+        if (evt instanceof IdleStateEvent idleStateEvent) {
+            if (idleStateEvent.state() == IdleState.READER_IDLE) {
                 final String eventLogMessage =
                         appendListenerToMessage(ctx.channel(), "TLS handshake not finished in time");
                 mqttServerDisconnector.logAndClose(

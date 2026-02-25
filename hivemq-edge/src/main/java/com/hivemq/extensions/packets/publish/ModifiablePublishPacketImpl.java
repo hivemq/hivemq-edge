@@ -326,10 +326,9 @@ public class ModifiablePublishPacketImpl implements ModifiablePublishPacket {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ModifiablePublishPacketImpl)) {
+        if (!(o instanceof ModifiablePublishPacketImpl that)) {
             return false;
         }
-        final ModifiablePublishPacketImpl that = (ModifiablePublishPacketImpl) o;
         return that.canEqual(this)
                 && topic.equals(that.topic)
                 && (qos == that.qos)

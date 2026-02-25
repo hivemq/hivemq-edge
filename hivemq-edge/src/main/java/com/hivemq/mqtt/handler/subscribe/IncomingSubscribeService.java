@@ -68,6 +68,7 @@ import org.slj.mqtt.sn.spi.IMqttsnMessage;
 /**
  * The service which is responsible for handling the subscriptions of MQTT clients
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 public class IncomingSubscribeService {
 
     protected static final @NotNull Logger log = LoggerFactory.getLogger(IncomingSubscribeService.class);

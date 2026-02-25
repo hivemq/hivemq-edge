@@ -66,6 +66,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class PublishPollServiceImpl implements PublishPollService {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(PublishPollService.class);
@@ -278,8 +279,7 @@ public class PublishPollServiceImpl implements PublishPollService {
                                         "The desired packet ID was not available when polling inflight messages: {}",
                                         e.getMessage());
                             }
-                            if (message instanceof PUBLISH) {
-                                final PUBLISH publish = (PUBLISH) message;
+                            if (message instanceof PUBLISH publish) {
                                 try {
                                     final SettableFuture<PublishStatus> publishFuture = SettableFuture.create();
                                     Futures.addCallback(
@@ -310,11 +310,11 @@ public class PublishPollServiceImpl implements PublishPollService {
                                             publish.getTopic(),
                                             publish.getQoS().getQosNumber());
                                 }
-                            } else if (message instanceof PUBREL) {
+                            } else if (message instanceof PUBREL pubrel) {
                                 // We don't care if the message is delivered successfully here.
                                 // If the client disconnects before we receive a PUBCOMP we will retry anyways.
                                 final SettableFuture<PublishStatus> settableFuture = SettableFuture.create();
-                                channel.writeAndFlush(new PubrelWithFuture((PUBREL) message, settableFuture));
+                                channel.writeAndFlush(new PubrelWithFuture(pubrel, settableFuture));
                                 Futures.addCallback(
                                         settableFuture,
                                         new PubrelResendCallback(client, message, messageIDPool, channel),

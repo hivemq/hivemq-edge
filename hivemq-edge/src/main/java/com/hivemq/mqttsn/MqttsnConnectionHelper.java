@@ -38,8 +38,8 @@ public class MqttsnConnectionHelper {
 
     public static IMqttsnCodec getCodecForConnection(final @NotNull ClientConnection connection) {
         IMqttsnCodec codec = MqttsnCodecs.MQTTSN_CODEC_VERSION_1_2;
-        if (connection instanceof MqttsnClientConnection) {
-            MqttsnProtocolVersion version = ((MqttsnClientConnection) connection).getMqttsnProtocolVersion();
+        if (connection instanceof MqttsnClientConnection mqttsnClientConnection) {
+            MqttsnProtocolVersion version = mqttsnClientConnection.getMqttsnProtocolVersion();
             if (version == MqttsnProtocolVersion.MQTTSNv20) {
                 codec = MqttsnCodecs.MQTTSN_CODEC_VERSION_2_0;
             }
@@ -57,6 +57,6 @@ public class MqttsnConnectionHelper {
                 ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         Preconditions.checkState(
                 clientConnection instanceof MqttsnClientConnection, "Client Connection should be of SN type");
-        return (MqttsnClientConnection) clientConnection;
+        return (MqttsnClientConnection) clientConnection; // cast is safe due to preceding checkState
     }
 }

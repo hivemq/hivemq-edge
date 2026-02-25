@@ -41,8 +41,7 @@ public class BridgeAuthenticationEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final BridgeAuthenticationEntity that = (BridgeAuthenticationEntity) o;
+        if (!(o instanceof BridgeAuthenticationEntity that)) return false;
         return Objects.equals(getMqttSimpleAuthenticationEntity(), that.getMqttSimpleAuthenticationEntity());
     }
 

@@ -70,8 +70,7 @@ public class TypeIdentifierImpl implements TypeIdentifier {
     @Override
     public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final TypeIdentifierImpl that = (TypeIdentifierImpl) o;
+        if (!(o instanceof TypeIdentifierImpl that)) return false;
         return type == that.type && identifier.equals(that.identifier);
     }
 

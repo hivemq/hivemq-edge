@@ -235,10 +235,9 @@ public class HiveMQConfigEntity {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof HiveMQConfigEntity that)) {
             return false;
         }
-        final HiveMQConfigEntity that = (HiveMQConfigEntity) o;
         return getVersion() == that.getVersion()
                 && Objects.equals(mqttListeners, that.mqttListeners)
                 && Objects.equals(mqttsnListeners, that.mqttsnListeners)

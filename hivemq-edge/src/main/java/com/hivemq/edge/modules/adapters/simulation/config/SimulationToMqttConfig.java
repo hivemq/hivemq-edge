@@ -72,8 +72,7 @@ public class SimulationToMqttConfig {
 
     @Override
     public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        final SimulationToMqttConfig that = (SimulationToMqttConfig) o;
+        if (!(o instanceof SimulationToMqttConfig that)) return false;
         return getPollingIntervalMillis() == that.getPollingIntervalMillis()
                 && getMaxPollingErrorsBeforeRemoval() == that.getMaxPollingErrorsBeforeRemoval();
     }

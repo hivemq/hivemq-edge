@@ -54,12 +54,10 @@ public class SslClientCertificateHandler extends ChannelInboundHandlerAdapter {
     public void userEventTriggered(final @NotNull ChannelHandlerContext ctx, final @NotNull Object evt)
             throws Exception {
 
-        if (!(evt instanceof SslHandshakeCompletionEvent)) {
+        if (!(evt instanceof SslHandshakeCompletionEvent sslHandshakeCompletionEvent)) {
             super.userEventTriggered(ctx, evt);
             return;
         }
-
-        final SslHandshakeCompletionEvent sslHandshakeCompletionEvent = (SslHandshakeCompletionEvent) evt;
 
         if (!sslHandshakeCompletionEvent.isSuccess()) {
             log.trace("Handshake failed", sslHandshakeCompletionEvent.cause());

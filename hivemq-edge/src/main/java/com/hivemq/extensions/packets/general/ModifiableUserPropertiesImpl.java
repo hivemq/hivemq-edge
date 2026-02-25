@@ -121,14 +121,14 @@ public class ModifiableUserPropertiesImpl implements ModifiableUserProperties {
     @Override
     public void addUserProperty(final @NotNull UserProperty userProperty) {
         checkNotNull(userProperty, "User property must never be null");
-        if (!(userProperty instanceof MqttUserProperty)) {
+        if (!(userProperty instanceof MqttUserProperty mqttUserProperty)) {
             throw new DoNotImplementException(UserProperty.class.getSimpleName());
         }
 
         final Lock lock = readWriteLock.writeLock();
         lock.lock();
         try {
-            modify().add(((MqttUserProperty) userProperty));
+            modify().add(mqttUserProperty);
         } finally {
             lock.unlock();
         }
@@ -216,10 +216,9 @@ public class ModifiableUserPropertiesImpl implements ModifiableUserProperties {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ModifiableUserPropertiesImpl)) {
+        if (!(o instanceof ModifiableUserPropertiesImpl that)) {
             return false;
         }
-        final ModifiableUserPropertiesImpl that = (ModifiableUserPropertiesImpl) o;
         return list.equals(that.list);
     }
 

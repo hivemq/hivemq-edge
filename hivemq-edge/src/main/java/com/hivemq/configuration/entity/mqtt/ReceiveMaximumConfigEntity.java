@@ -19,7 +19,6 @@ import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
-import java.util.Objects;
 
 /**
  * @author Florian Limpöck
@@ -40,13 +39,12 @@ public class ReceiveMaximumConfigEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final ReceiveMaximumConfigEntity that = (ReceiveMaximumConfigEntity) o;
+        if (!(o instanceof ReceiveMaximumConfigEntity that)) return false;
         return getServerReceiveMaximum() == that.getServerReceiveMaximum();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(getServerReceiveMaximum());
+        return Integer.hashCode(getServerReceiveMaximum());
     }
 }

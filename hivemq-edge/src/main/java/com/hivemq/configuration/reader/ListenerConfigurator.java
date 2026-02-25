@@ -111,16 +111,16 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
 
     @Nullable
     Listener convertListener(final @NotNull ListenerEntity entity) {
-        if (entity instanceof TCPListenerEntity) {
-            return convertTcpListener((TCPListenerEntity) entity);
-        } else if (entity instanceof WebsocketListenerEntity) {
-            return convertWebsocketListener((WebsocketListenerEntity) entity);
-        } else if (entity instanceof TlsTCPListenerEntity) {
-            return convertTlsTcpListener((TlsTCPListenerEntity) entity);
-        } else if (entity instanceof TlsWebsocketListenerEntity) {
-            return convertTlsWebsocketListener((TlsWebsocketListenerEntity) entity);
-        } else if (entity instanceof UDPListenerEntity) {
-            return convertUdpListener((UDPListenerEntity) entity);
+        if (entity instanceof TCPListenerEntity tcpListenerEntity) {
+            return convertTcpListener(tcpListenerEntity);
+        } else if (entity instanceof WebsocketListenerEntity websocketListenerEntity) {
+            return convertWebsocketListener(websocketListenerEntity);
+        } else if (entity instanceof TlsTCPListenerEntity tlsTCPListenerEntity) {
+            return convertTlsTcpListener(tlsTCPListenerEntity);
+        } else if (entity instanceof TlsWebsocketListenerEntity tlsWebsocketListenerEntity) {
+            return convertTlsWebsocketListener(tlsWebsocketListenerEntity);
+        } else if (entity instanceof UDPListenerEntity udpListenerEntity) {
+            return convertUdpListener(udpListenerEntity);
         }
         return null;
     }
@@ -292,8 +292,7 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
         @Override
         public boolean equals(final Object o) {
             if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            final Listeners listeners = (Listeners) o;
+            if (!(o instanceof Listeners listeners)) return false;
             return Objects.equals(mqttListeners, listeners.mqttListeners)
                     && Objects.equals(mqttsnListeners, listeners.mqttsnListeners);
         }

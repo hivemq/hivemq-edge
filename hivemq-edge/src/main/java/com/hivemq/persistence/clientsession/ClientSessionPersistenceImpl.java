@@ -58,6 +58,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class ClientSessionPersistenceImpl extends AbstractPersistence implements ClientSessionPersistence {
 
     private static final Logger log = LoggerFactory.getLogger(ClientSessionPersistenceImpl.class);

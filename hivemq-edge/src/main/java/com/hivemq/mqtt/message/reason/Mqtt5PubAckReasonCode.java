@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * @author Silvio Giebl
  */
+@SuppressWarnings("EnumOrdinal")
 public enum Mqtt5PubAckReasonCode implements Mqtt5ReasonCode {
     SUCCESS(MqttCommonReasonCode.SUCCESS),
     NO_MATCHING_SUBSCRIBERS(MqttCommonReasonCode.NO_MATCHING_SUBSCRIBERS),

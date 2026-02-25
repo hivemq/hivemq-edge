@@ -85,8 +85,8 @@ public class WrappedAuthenticatorProvider {
                 return null;
             }
 
-            if (authenticator instanceof SimpleAuthenticator) {
-                return (SimpleAuthenticator) authenticator;
+            if (authenticator instanceof SimpleAuthenticator simpleAuthenticator) {
+                return simpleAuthenticator;
             }
 
             log.warn(WRONG_CLASS_LOG_STATEMENT, authenticator.getClass());
@@ -121,8 +121,7 @@ public class WrappedAuthenticatorProvider {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final WrappedAuthenticatorProvider that = (WrappedAuthenticatorProvider) o;
+        if (!(o instanceof WrappedAuthenticatorProvider that)) return false;
         return Objects.equals(classLoader, that.classLoader);
     }
 

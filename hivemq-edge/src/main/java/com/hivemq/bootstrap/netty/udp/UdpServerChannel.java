@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
  * @license GNU LGPLv3 - need to confirm this
  * @modified Simon L Johnson - removed EPoll support
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 public class UdpServerChannel extends AbstractServerChannel {
 
     private static final Logger log = LoggerFactory.getLogger(UdpServerChannel.class);
@@ -104,6 +105,7 @@ public class UdpServerChannel extends AbstractServerChannel {
         });
     }
 
+    @SuppressWarnings("ReferenceEquality") // intentional identity check for channel deregistration
     protected void doUserChannelRemove(UdpChannel userChannel) {
         this.userChannels.compute(
                 (InetSocketAddress) userChannel.remoteAddress(),

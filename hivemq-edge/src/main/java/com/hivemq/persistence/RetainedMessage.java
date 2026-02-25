@@ -209,11 +209,9 @@ public class RetainedMessage {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof RetainedMessage that)) {
             return false;
         }
-
-        final RetainedMessage that = (RetainedMessage) o;
 
         if (messageExpiryInterval != that.messageExpiryInterval) {
             return false;
@@ -227,7 +225,7 @@ public class RetainedMessage {
     @Override
     public int hashCode() {
 
-        int result = Objects.hash(qos, publishId, messageExpiryInterval, userProperties);
+        int result = Objects.hash(qos, messageExpiryInterval);
         result = 31 * result + Arrays.hashCode(message);
         return result;
     }

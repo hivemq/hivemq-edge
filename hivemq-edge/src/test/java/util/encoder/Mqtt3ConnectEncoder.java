@@ -73,6 +73,7 @@ public class Mqtt3ConnectEncoder extends AbstractVariableHeaderLengthEncoder<CON
         }
     }
 
+    @Override
     protected int remainingLength(final @NotNull CONNECT msg) {
         int length = 0;
         if (msg.getProtocolVersion() == ProtocolVersion.MQTTv3_1) {
@@ -117,7 +118,7 @@ public class Mqtt3ConnectEncoder extends AbstractVariableHeaderLengthEncoder<CON
 
             connectFlag |= 0b0000_0100;
 
-            connectFlag |= message.getWillPublish().getQos().getQosNumber() << 3;
+            connectFlag |= (byte) (message.getWillPublish().getQos().getQosNumber() << 3);
 
             if (message.getWillPublish().isRetain()) {
                 connectFlag |= 0b0010_0000;

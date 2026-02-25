@@ -24,7 +24,7 @@ import com.hivemq.extension.sdk.api.interceptor.subscribe.parameter.SubscribeInb
 import com.hivemq.extension.sdk.api.interceptor.subscribe.parameter.SubscribeInboundOutput;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
 import java.io.File;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
@@ -49,7 +49,7 @@ public class TestInterceptorUtil {
             final @NotNull List<Class<? extends T>> types, final @NotNull File temporaryFolder) throws Exception {
         try (final IsolatedExtensionClassloader cl = IsolatedExtensionClassloaderUtil.buildClassLoader(
                 temporaryFolder.toPath(), types.toArray(new Class[0]))) {
-            final LinkedList<T> list = new LinkedList<>();
+            final List<T> list = new ArrayList<>();
             for (final Class<? extends T> type : types) {
                 final Class<?> clazz = cl.loadClass(type.getName());
                 //noinspection unchecked

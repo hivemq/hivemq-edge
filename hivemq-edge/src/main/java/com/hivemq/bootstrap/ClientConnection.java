@@ -576,8 +576,8 @@ public class ClientConnection {
         if (socketAddress.isPresent()) {
             final SocketAddress sockAddress = socketAddress.get();
             // If this is not an InetAddress, we're treating this as if there's no address
-            if (sockAddress instanceof InetSocketAddress) {
-                return Optional.ofNullable(((InetSocketAddress) sockAddress).getAddress());
+            if (sockAddress instanceof InetSocketAddress inetSocketAddress) {
+                return Optional.ofNullable(inetSocketAddress.getAddress());
             }
         }
 

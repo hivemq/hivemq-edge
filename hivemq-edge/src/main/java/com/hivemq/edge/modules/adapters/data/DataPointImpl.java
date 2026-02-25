@@ -22,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 public class DataPointImpl implements DataPoint {
     private final @NotNull Object tagValue;
     private final @NotNull String tagName;
-    private final @NotNull boolean treatAsJson;
+    private final boolean treatAsJson;
 
     public DataPointImpl(final @NotNull String tagName, final @NotNull Object tagValue, final boolean treatAsJson) {
         this.tagName = tagName;
@@ -45,15 +45,14 @@ public class DataPointImpl implements DataPoint {
     }
 
     @Override
-    public @NotNull boolean treatTagValueAsJson() {
+    public boolean treatTagValueAsJson() {
         return treatAsJson;
     }
 
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final DataPointImpl dataPoint = (DataPointImpl) o;
+        if (!(o instanceof DataPointImpl dataPoint)) return false;
         return treatAsJson == dataPoint.treatAsJson
                 && Objects.equals(getTagValue(), dataPoint.getTagValue())
                 && Objects.equals(getTagName(), dataPoint.getTagName());

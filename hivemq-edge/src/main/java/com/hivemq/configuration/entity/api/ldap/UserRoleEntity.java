@@ -52,8 +52,7 @@ public class UserRoleEntity {
 
     @Override
     public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        final UserRoleEntity that = (UserRoleEntity) o;
+        if (!(o instanceof UserRoleEntity that)) return false;
         return Objects.equals(getRole(), that.getRole()) && Objects.equals(getQuery(), that.getQuery());
     }
 

@@ -27,7 +27,24 @@ class ErrorProneConventionPlugin : Plugin<Project> {
         }
 
         project.tasks.withType<JavaCompile>().configureEach {
-            options.errorprone.disableWarningsInGeneratedCode.set(true)
+            options.errorprone {
+                disableWarningsInGeneratedCode.set(true)
+                disable("MissingSummary")
+                disable("EmptyBlockTag")
+                disable("InvalidBlockTag")
+                disable("EffectivelyPrivate")
+                disable("ImmutableEnumChecker")
+            }
+            options.compilerArgs.addAll(listOf("-Xmaxwarns", "9999", "-Xmaxerrs", "9999"))
+
+            val reportFile = project.file("${project.layout.buildDirectory.get().asFile}/reports/errorprone/${name}.log")
+            doFirst {
+                reportFile.parentFile.mkdirs()
+                reportFile.delete()
+            }
+            logging.addStandardErrorListener { msg ->
+                reportFile.appendText(msg.toString())
+            }
         }
     }
 }

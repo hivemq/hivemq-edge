@@ -131,7 +131,7 @@ public class CustomConfigSchemaGenerator {
 
         private Boolean arrayUniqueItems(final @NotNull MemberScope<?, ?> memberScope) {
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
-            return fieldInfo != null && fieldInfo.arrayUniqueItems() ? true : null;
+            return (fieldInfo != null && fieldInfo.arrayUniqueItems()) ? true : null;
         }
 
         private Integer arrayMinItems(final @NotNull MemberScope<?, ?> memberScope) {
@@ -254,11 +254,11 @@ public class CustomConfigSchemaGenerator {
         protected @Nullable ModuleConfigField getModuleFieldInfo(MemberScope<?, ?> member) {
             ModuleConfigField annotation = member.getAnnotation(ModuleConfigField.class);
             if (annotation == null) {
-                MemberScope<?, ?> source;
-                if (member instanceof FieldScope) {
-                    source = ((FieldScope) member).findGetter();
-                } else if (member instanceof MethodScope) {
-                    source = ((MethodScope) member).findGetterField();
+                final MemberScope<?, ?> source;
+                if (member instanceof FieldScope fieldScope) {
+                    source = fieldScope.findGetter();
+                } else if (member instanceof MethodScope methodScope) {
+                    source = methodScope.findGetterField();
                 } else {
                     source = null;
                 }

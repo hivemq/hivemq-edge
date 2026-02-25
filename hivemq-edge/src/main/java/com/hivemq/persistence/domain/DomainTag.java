@@ -85,11 +85,9 @@ public class DomainTag {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof DomainTag domainTag)) {
             return false;
         }
-
-        final DomainTag domainTag = (DomainTag) o;
         return tagName.equals(domainTag.tagName);
     }
 

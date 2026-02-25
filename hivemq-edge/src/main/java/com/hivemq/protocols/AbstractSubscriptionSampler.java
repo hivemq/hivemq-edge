@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@SuppressWarnings("FutureReturnValueIgnored")
 public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPollingSampler {
 
     private final long initialDelay;
@@ -128,10 +129,9 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof AbstractSubscriptionSampler that)) {
             return false;
         }
-        final AbstractSubscriptionSampler that = (AbstractSubscriptionSampler) o;
         return uuid.equals(that.uuid);
     }
 

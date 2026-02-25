@@ -15,12 +15,13 @@
  */
 package com.hivemq.configuration.service.impl.listener;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
 import static util.TlsTestUtil.createDefaultTLS;
 
+import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.service.entity.Listener;
 import com.hivemq.configuration.service.entity.MqttTcpListener;
 import com.hivemq.configuration.service.entity.MqttTlsTcpListener;
@@ -146,18 +147,6 @@ public class ListenerConfigurationServiceImplTest {
 
         final List<Listener> listeners = listenerConfigurationService.getListeners();
 
-        try {
-            listeners.add(new MqttTcpListener(1884, "localhost"));
-            fail();
-        } catch (final Exception e) {
-            // Expected
-        }
-
-        try {
-            listeners.clear();
-            fail();
-        } catch (final Exception e) {
-            // Expected
-        }
+        assertThat(listeners).isInstanceOf(ImmutableList.class);
     }
 }

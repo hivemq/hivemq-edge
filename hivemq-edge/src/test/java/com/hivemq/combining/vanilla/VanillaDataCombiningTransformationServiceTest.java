@@ -22,12 +22,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.Futures;
 import com.hivemq.combining.model.DataCombining;
 import com.hivemq.combining.model.DataCombiningDestination;
 import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.common.i18n.StringTemplate;
-import com.hivemq.mqtt.handler.publish.PublishingResult;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.publish.PUBLISH;
@@ -65,9 +64,6 @@ public class VanillaDataCombiningTransformationServiceTest {
     @Mock
     private @NotNull DataCombiningDestination dataCombiningDestination;
 
-    @Mock
-    private @NotNull ListenableFuture<PublishingResult> listenableFuture;
-
     private @NotNull ArgumentCaptor<PUBLISH> publishCaptor;
 
     private @NotNull VanillaDataCombiningTransformationService service;
@@ -82,7 +78,7 @@ public class VanillaDataCombiningTransformationServiceTest {
         when(publish.getHivemqId()).thenReturn("hivemq-id");
         when(publish.getQoS()).thenReturn(QoS.AT_LEAST_ONCE);
         when(publish.getUserProperties()).thenReturn(Mqtt5UserProperties.NO_USER_PROPERTIES);
-        when(prePublishProcessorService.publish(any(), any(), any())).thenReturn(listenableFuture);
+        when(prePublishProcessorService.publish(any(), any(), any())).thenReturn(Futures.immediateFuture(null));
     }
 
     @Test

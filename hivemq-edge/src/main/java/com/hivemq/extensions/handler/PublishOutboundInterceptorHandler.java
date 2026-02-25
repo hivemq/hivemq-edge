@@ -54,6 +54,7 @@ import org.slf4j.LoggerFactory;
  * @author Silvio Giebl
  */
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class PublishOutboundInterceptorHandler {
 
     private static final Logger log = LoggerFactory.getLogger(PublishOutboundInterceptorHandler.class);

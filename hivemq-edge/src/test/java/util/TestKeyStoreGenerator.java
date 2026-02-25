@@ -31,6 +31,8 @@ import java.security.Security;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -128,8 +130,8 @@ public class TestKeyStoreGenerator {
         final X509v3CertificateBuilder builder = new X509v3CertificateBuilder(
                 x500Name,
                 BigInteger.valueOf(new SecureRandom().nextLong()),
-                new Date(System.currentTimeMillis() - 10000),
-                new Date(System.currentTimeMillis() + 24L * 3600 * 1000),
+                Date.from(Instant.now().minus(10000, ChronoUnit.MILLIS)),
+                Date.from(Instant.now().plus(24L * 3600 * 1000, ChronoUnit.MILLIS)),
                 x500Name,
                 SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()));
 

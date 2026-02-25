@@ -92,10 +92,9 @@ public class SubscriptionImpl implements Subscription {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof SubscriptionImpl)) {
+        if (!(o instanceof SubscriptionImpl that)) {
             return false;
         }
-        final SubscriptionImpl that = (SubscriptionImpl) o;
         return topicFilter.equals(that.topicFilter)
                 && (qos == that.qos)
                 && (retainHandling == that.retainHandling)

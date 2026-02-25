@@ -89,9 +89,6 @@ public class TlsWebsocketChannelInitializerTest {
     private RestrictionsConfigurationService restrictionsConfigurationService;
 
     @Mock
-    private MqttTlsWebsocketListener mockListener;
-
-    @Mock
     private Tls tls;
 
     private ChannelPipeline pipeline;
@@ -110,7 +107,6 @@ public class TlsWebsocketChannelInitializerTest {
         when(sslFactory.getSslHandler(any(SocketChannel.class), any(Tls.class), any(SslContext.class)))
                 .thenReturn(sslHandler);
         when(channelDependencies.getConfigurationService()).thenReturn(fullConfigurationService);
-        when(mockListener.getTls()).thenReturn(tls);
         when(channelDependencies.getConfigurationService()).thenReturn(fullConfigurationService);
         when(channelDependencies.getRestrictionsConfigurationService()).thenReturn(restrictionsConfigurationService);
         when(restrictionsConfigurationService.incomingLimit()).thenReturn(0L);

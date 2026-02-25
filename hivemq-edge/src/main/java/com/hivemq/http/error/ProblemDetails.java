@@ -87,8 +87,7 @@ public class ProblemDetails {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final ProblemDetails that = (ProblemDetails) o;
+        if (!(o instanceof ProblemDetails that)) return false;
         return status == that.status
                 && Objects.equals(type, that.type)
                 && Objects.equals(title, that.title)

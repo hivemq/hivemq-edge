@@ -52,9 +52,9 @@ public class DefaultExceptionMapper implements ExceptionMapper<Throwable> {
     public Response toResponse(final @NotNull Throwable exception) {
 
         // matches all default exceptions, e.g. NotFoundException, BadRequestException,...
-        if (exception instanceof WebApplicationException) {
+        if (exception instanceof WebApplicationException webApplicationException) {
             log.trace("WebApplicationException in REST API: {}", exception.getMessage());
-            final Response response = ((WebApplicationException) exception).getResponse();
+            final Response response = webApplicationException.getResponse();
             final int status = response.getStatus();
 
             if (exception instanceof NotFoundException) {
@@ -72,9 +72,9 @@ public class DefaultExceptionMapper implements ExceptionMapper<Throwable> {
         }
 
         if (exception instanceof JsonProcessingException) {
-            if (exception instanceof UnrecognizedPropertyException) {
-                return ErrorResponseUtil.errorResponse(new ValidationError(List.of(new Error(
-                        "Unrecognized field", ((UnrecognizedPropertyException) exception).getPropertyName()))));
+            if (exception instanceof UnrecognizedPropertyException unrecognizedPropertyException) {
+                return ErrorResponseUtil.errorResponse(new ValidationError(
+                        List.of(new Error("Unrecognized field", unrecognizedPropertyException.getPropertyName()))));
             }
 
             log.trace("Not able to parse JSON request for REST API", exception);

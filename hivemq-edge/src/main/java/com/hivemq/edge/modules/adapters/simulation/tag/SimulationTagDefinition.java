@@ -30,7 +30,7 @@ public class SimulationTagDefinition implements TagDefinition {
 
     @Override
     public boolean equals(final Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof SimulationTagDefinition)) return false;
         return true;
     }
 }

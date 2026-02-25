@@ -137,8 +137,7 @@ public class EventImpl implements Event {
     @Override
     public boolean equals(final @NotNull Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final EventImpl event = (EventImpl) o;
+        if (!(o instanceof EventImpl event)) return false;
         return Objects.equals(identifier, event.identifier);
     }
 

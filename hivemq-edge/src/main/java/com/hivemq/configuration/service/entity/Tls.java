@@ -182,9 +182,7 @@ public class Tls {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        final Tls tls = (Tls) o;
+        if (!(o instanceof Tls tls)) return false;
 
         if (!keystorePath.equals(tls.keystorePath)) return false;
         if (!keystorePassword.equals(tls.keystorePassword)) return false;

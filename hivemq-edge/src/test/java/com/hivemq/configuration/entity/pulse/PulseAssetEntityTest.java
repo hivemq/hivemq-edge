@@ -21,6 +21,7 @@ import com.hivemq.pulse.asset.Asset;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
+@SuppressWarnings("EqualsIncompatibleType")
 public class PulseAssetEntityTest {
     @Test
     public void whenAllPropertiesAreIdentical_thenEqualsReturnsTrue() {

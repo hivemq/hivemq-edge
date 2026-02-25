@@ -44,7 +44,6 @@ public class ClientSessionWill implements Sizable {
         return mqttWillPublish;
     }
 
-    @NotNull
     public long getPublishId() {
         return publishId;
     }

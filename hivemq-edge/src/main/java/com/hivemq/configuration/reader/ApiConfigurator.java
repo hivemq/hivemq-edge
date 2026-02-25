@@ -121,8 +121,8 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
             for (final ApiListenerEntity listener : entity.getListeners()) {
                 if (listener instanceof HttpListenerEntity) {
                     listenersBld.add(new HttpListener(listener.getPort(), listener.getBindAddress()));
-                } else if (listener instanceof HttpsListenerEntity) {
-                    final ApiTlsEntity tls = ((HttpsListenerEntity) listener).getTls();
+                } else if (listener instanceof HttpsListenerEntity httpsListenerEntity) {
+                    final ApiTlsEntity tls = httpsListenerEntity.getTls();
                     final KeystoreEntity keystoreEntity = tls.getKeystoreEntity();
                     if (keystoreEntity == null) {
                         log.error("Keystore can not be emtpy for HTTPS listener");

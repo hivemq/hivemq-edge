@@ -65,12 +65,11 @@ public class FlowControlHandler extends ChannelDuplexHandler {
     @Override
     public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
 
-        if (msg instanceof PUBLISH) {
+        if (msg instanceof PUBLISH publish) {
             // client already disconnected. No need to read more publishes.
             if (serverSendQuota.get() < 0) {
                 return;
             }
-            final PUBLISH publish = (PUBLISH) msg;
 
             // decrement sendQuota for qos > 0 publish messages and disconnect client when quota gets negative
             if (QoS.AT_MOST_ONCE != publish.getQoS() && serverSendQuota.getAndDecrement() == 0) {
@@ -105,8 +104,7 @@ public class FlowControlHandler extends ChannelDuplexHandler {
             serverSendQuota.incrementAndGet();
         }
 
-        if (msg instanceof PUBREC) {
-            final PUBREC pubrec = (PUBREC) msg;
+        if (msg instanceof PUBREC pubrec) {
             if (pubrec.getReasonCode().getCode() >= 0x80) {
                 serverSendQuota.incrementAndGet();
             }

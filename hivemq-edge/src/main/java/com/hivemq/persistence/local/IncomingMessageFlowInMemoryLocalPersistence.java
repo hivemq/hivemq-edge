@@ -19,7 +19,7 @@ import com.hivemq.extension.sdk.api.annotations.Immutable;
 import com.hivemq.mqtt.message.MessageWithID;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import java.util.Set;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -76,10 +76,10 @@ public class IncomingMessageFlowInMemoryLocalPersistence implements IncomingMess
         Fortunately we don't block and don't lock, so this shouldn't be much of a problem. However, the calling
         thread will be blocked. In case we have very large maps, it may be a good idea to execute this in a
         separate executor or we do parallel iteration.*/
-        final Set<MessageFlowKey> keys = backingMap.keySet();
-        for (final MessageFlowKey messageFlowKey : keys) {
-            if (messageFlowKey.getClientId().equals(client)) {
-                keys.remove(messageFlowKey);
+        final Iterator<MessageFlowKey> iterator = backingMap.keySet().iterator();
+        while (iterator.hasNext()) {
+            if (iterator.next().getClientId().equals(client)) {
+                iterator.remove();
             }
         }
     }
@@ -105,9 +105,7 @@ public class IncomingMessageFlowInMemoryLocalPersistence implements IncomingMess
         @Override
         public boolean equals(final Object o) {
             if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            final MessageFlowKey that = (MessageFlowKey) o;
+            if (!(o instanceof MessageFlowKey that)) return false;
 
             if (messageId != that.messageId) return false;
             return clientId.equals(that.clientId);

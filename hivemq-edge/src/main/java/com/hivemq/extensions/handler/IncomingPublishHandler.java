@@ -78,6 +78,7 @@ import org.slf4j.LoggerFactory;
  * @since 4.0.0
  */
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class IncomingPublishHandler {
 
     private static final Logger log = LoggerFactory.getLogger(IncomingPublishHandler.class);

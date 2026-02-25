@@ -197,6 +197,7 @@ public class LdapClient {
      * @throws LDAPException            if there's an LDAP protocol error (not authentication failure)
      * @throws IllegalStateException    if the client is not started
      */
+    @SuppressWarnings("ReferenceEquality") // LDAP SDK ResultCode uses identity comparison by design
     public boolean bindUser(final @NotNull String userDn, final byte @NotNull [] password) throws LDAPException {
         ensureStarted();
 
@@ -267,6 +268,7 @@ public class LdapClient {
      * @throws LDAPException         if there's an LDAP protocol error during DN resolution
      * @throws IllegalStateException if the client is not started
      */
+    @SuppressWarnings("ReferenceEquality") // LDAP SDK ResultCode uses identity comparison by design
     public @NotNull Set<String> getRolesForUser(
             final @NotNull String username, final @Nullable List<UserRoleEntity> userRoles) throws LDAPException {
 

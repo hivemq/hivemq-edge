@@ -62,8 +62,7 @@ public class ApiTlsEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final ApiTlsEntity that = (ApiTlsEntity) o;
+        if (!(o instanceof ApiTlsEntity that)) return false;
         return Objects.equals(getKeystoreEntity(), that.getKeystoreEntity())
                 && Objects.equals(getProtocols(), that.getProtocols())
                 && Objects.equals(getCipherSuites(), that.getCipherSuites());

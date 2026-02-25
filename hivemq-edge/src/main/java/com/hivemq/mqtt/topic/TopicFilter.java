@@ -40,8 +40,7 @@ public class TopicFilter {
     @Override
     public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final TopicFilter that = (TopicFilter) o;
+        if (!(o instanceof TopicFilter that)) return false;
         return topic.equals(that.topic) && Objects.equals(sharedName, that.sharedName);
     }
 

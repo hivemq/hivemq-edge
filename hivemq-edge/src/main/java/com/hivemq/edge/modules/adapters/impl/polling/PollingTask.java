@@ -35,6 +35,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("FutureReturnValueIgnored")
 public class PollingTask implements Runnable {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(PollingTask.class);

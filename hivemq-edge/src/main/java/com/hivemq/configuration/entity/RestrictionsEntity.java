@@ -71,13 +71,12 @@ public class RestrictionsEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final RestrictionsEntity that = (RestrictionsEntity) o;
-        return Objects.equals(getMaxConnections(), that.getMaxConnections())
-                && Objects.equals(getMaxClientIdLength(), that.getMaxClientIdLength())
-                && Objects.equals(getMaxTopicLength(), that.getMaxTopicLength())
-                && Objects.equals(getNoConnectIdleTimeout(), that.getNoConnectIdleTimeout())
-                && Objects.equals(getIncomingBandwidthThrottling(), that.getIncomingBandwidthThrottling());
+        if (!(o instanceof RestrictionsEntity that)) return false;
+        return getMaxConnections() == that.getMaxConnections()
+                && getMaxClientIdLength() == that.getMaxClientIdLength()
+                && getMaxTopicLength() == that.getMaxTopicLength()
+                && getNoConnectIdleTimeout() == that.getNoConnectIdleTimeout()
+                && getIncomingBandwidthThrottling() == that.getIncomingBandwidthThrottling();
     }
 
     @Override

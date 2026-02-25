@@ -50,6 +50,7 @@ import org.jetbrains.annotations.NotNull;
  * @since 4.0.0
  */
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class RetainedMessageStoreImpl implements RetainedMessageStore {
 
     private final @NotNull RetainedMessagePersistence retainedMessagePersistence;
@@ -124,11 +125,11 @@ public class RetainedMessageStoreImpl implements RetainedMessageStore {
         if (pluginServiceRateLimitService.rateLimitExceeded()) {
             return CompletableFuture.failedFuture(PluginServiceRateLimitService.RATE_LIMIT_EXCEEDED_EXCEPTION);
         }
-        if (!(retainedPublish instanceof RetainedPublishImpl)) {
+        if (!(retainedPublish instanceof RetainedPublishImpl retainedPublishImpl)) {
             return CompletableFuture.failedFuture(new DoNotImplementException(RetainedPublish.class.getSimpleName()));
         }
         final ListenableFuture<Void> persist = retainedMessagePersistence.persist(
-                retainedPublish.getTopic(), RetainedPublishImpl.convert((RetainedPublishImpl) retainedPublish));
+                retainedPublish.getTopic(), RetainedPublishImpl.convert(retainedPublishImpl));
 
         return ListenableFutureConverter.toCompletable(persist, globalManagedExtensionExecutorService);
     }

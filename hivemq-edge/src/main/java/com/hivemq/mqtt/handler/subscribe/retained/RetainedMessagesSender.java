@@ -56,6 +56,8 @@ import org.slf4j.LoggerFactory;
 public class RetainedMessagesSender {
 
     private static final Logger log = LoggerFactory.getLogger(RetainedMessagesSender.class);
+
+    @SuppressWarnings("StaticAssignmentOfThrowable")
     private static final ClosedChannelException CLOSED_CHANNEL_EXCEPTION = new ClosedChannelException();
 
     static {

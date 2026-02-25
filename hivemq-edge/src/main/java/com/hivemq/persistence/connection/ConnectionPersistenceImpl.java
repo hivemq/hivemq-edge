@@ -40,6 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Singleton
+@SuppressWarnings({"FutureReturnValueIgnored", "CheckReturnValue"})
 public class ConnectionPersistenceImpl implements ConnectionPersistence {
 
     private static final Logger log = LoggerFactory.getLogger(ConnectionPersistenceImpl.class);

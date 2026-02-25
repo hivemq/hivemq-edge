@@ -29,8 +29,9 @@ import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.exceptions.UnrecoverableException;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
@@ -135,7 +136,7 @@ public class ProtocolAdapterExtractorTest {
                         northboundMappingEntity.getUserProperties(),
                         northboundMappingEntity.getMessageExpiryInterval()));
         final File newConfigFile = new File(tempDir, "new-conf.xml");
-        try (final FileWriter fileWriter = new FileWriter(newConfigFile)) {
+        try (final Writer fileWriter = Files.newBufferedWriter(newConfigFile.toPath(), StandardCharsets.UTF_8)) {
             configFileReader.writeConfigToXML(fileWriter);
         }
         final String newConfigString = Files.readString(newConfigFile.toPath());

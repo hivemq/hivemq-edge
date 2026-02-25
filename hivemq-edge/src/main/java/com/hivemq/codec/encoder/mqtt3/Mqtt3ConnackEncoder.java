@@ -55,6 +55,8 @@ public class Mqtt3ConnackEncoder implements MqttEncoder<Mqtt3CONNACK> {
                     out.writeByte(CONNACK_FLAGS_EMPTY);
                 }
                 break;
+            default:
+                break;
         }
         out.writeByte(returnCode.getCode());
     }

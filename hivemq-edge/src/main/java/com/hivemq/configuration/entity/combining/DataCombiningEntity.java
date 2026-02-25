@@ -96,9 +96,7 @@ public class DataCombiningEntity {
     @Override
     public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        final DataCombiningEntity that = (DataCombiningEntity) o;
+        if (!(o instanceof DataCombiningEntity that)) return false;
         return id.equals(that.id)
                 && sources.equals(that.sources)
                 && destination.equals(that.destination)

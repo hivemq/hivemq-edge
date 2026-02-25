@@ -71,8 +71,8 @@ public class ProtocolAdapterSchemaManager {
     public @NotNull List<ProtocolAdapterValidationFailure> validateObject(final @NotNull Object o) {
         Preconditions.checkNotNull(o);
         final JsonNode node;
-        if (o instanceof JsonNode) {
-            node = (JsonNode) o;
+        if (o instanceof JsonNode jsonNode) {
+            node = jsonNode;
         } else {
             node = objectMapper.valueToTree(o);
         }

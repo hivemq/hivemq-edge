@@ -54,6 +54,7 @@ import org.slf4j.LoggerFactory;
  * @author Lukas Brandl
  */
 @Singleton
+@SuppressWarnings({"FutureReturnValueIgnored", "CheckReturnValue"})
 public class ScheduledCleanUpService {
 
     static final int NUMBER_OF_PERSISTENCES = 4;

@@ -103,8 +103,7 @@ public class MqttBridgeEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final MqttBridgeEntity that = (MqttBridgeEntity) o;
+        if (!(o instanceof MqttBridgeEntity that)) return false;
         return getPersist() == that.getPersist()
                 && Objects.equals(getId(), that.getId())
                 && Objects.equals(getRemoteBroker(), that.getRemoteBroker())

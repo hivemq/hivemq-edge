@@ -44,6 +44,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Georg Held
  */
+@SuppressWarnings("FutureReturnValueIgnored")
 class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(EmbeddedHiveMQImpl.class);

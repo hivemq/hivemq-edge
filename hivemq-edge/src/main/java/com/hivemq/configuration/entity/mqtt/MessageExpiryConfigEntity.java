@@ -21,7 +21,6 @@ import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
-import java.util.Objects;
 
 /**
  * @author Florian Limpöck
@@ -43,13 +42,12 @@ public class MessageExpiryConfigEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final MessageExpiryConfigEntity that = (MessageExpiryConfigEntity) o;
+        if (!(o instanceof MessageExpiryConfigEntity that)) return false;
         return getMaxInterval() == that.getMaxInterval();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(getMaxInterval());
+        return Long.hashCode(getMaxInterval());
     }
 }

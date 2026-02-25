@@ -18,7 +18,6 @@ package com.hivemq.configuration.entity;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
-import java.util.Objects;
 
 /**
  * @author Florian Limpöck
@@ -42,13 +41,12 @@ public abstract class EnabledEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final EnabledEntity that = (EnabledEntity) o;
+        if (!(o instanceof EnabledEntity that)) return false;
         return isEnabled() == that.isEnabled();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(isEnabled());
+        return Boolean.hashCode(isEnabled());
     }
 }

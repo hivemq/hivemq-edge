@@ -39,6 +39,7 @@ import org.jetbrains.annotations.NotNull;
  */
 @Singleton
 @ChannelHandler.Sharable
+@SuppressWarnings("FutureReturnValueIgnored")
 public class InterceptorHandler extends ChannelDuplexHandler {
 
     private final @NotNull ConnectInboundInterceptorHandler connectInboundInterceptorHandler;
@@ -90,22 +91,22 @@ public class InterceptorHandler extends ChannelDuplexHandler {
         if (msg instanceof PUBLISH) {
             // shortcut for publish
             ctx.fireChannelRead(msg);
-        } else if (msg instanceof PUBACK) {
-            pubackInterceptorHandler.handleInboundPuback(ctx, (PUBACK) msg);
-        } else if (msg instanceof PUBREC) {
-            pubrecInterceptorHandler.handleInboundPubrec(ctx, (PUBREC) msg);
-        } else if (msg instanceof PUBREL) {
-            pubrelInterceptorHandler.handleInboundPubrel(ctx, (PUBREL) msg);
-        } else if (msg instanceof PUBCOMP) {
-            pubcompInterceptorHandler.handleInboundPubcomp(ctx, (PUBCOMP) msg);
-        } else if (msg instanceof PINGREQ) {
-            pingInterceptorHandler.handleInboundPingReq(ctx, (PINGREQ) msg);
-        } else if (msg instanceof UNSUBSCRIBE) {
-            unsubscribeInboundInterceptorHandler.handleInboundUnsubscribe(ctx, (UNSUBSCRIBE) msg);
-        } else if (msg instanceof DISCONNECT) {
-            disconnectInterceptorHandler.handleInboundDisconnect(ctx, (DISCONNECT) msg);
-        } else if (msg instanceof CONNECT) {
-            connectInboundInterceptorHandler.handleInboundConnect(ctx, (CONNECT) msg);
+        } else if (msg instanceof PUBACK puback) {
+            pubackInterceptorHandler.handleInboundPuback(ctx, puback);
+        } else if (msg instanceof PUBREC pubrec) {
+            pubrecInterceptorHandler.handleInboundPubrec(ctx, pubrec);
+        } else if (msg instanceof PUBREL pubrel) {
+            pubrelInterceptorHandler.handleInboundPubrel(ctx, pubrel);
+        } else if (msg instanceof PUBCOMP pubcomp) {
+            pubcompInterceptorHandler.handleInboundPubcomp(ctx, pubcomp);
+        } else if (msg instanceof PINGREQ pingreq) {
+            pingInterceptorHandler.handleInboundPingReq(ctx, pingreq);
+        } else if (msg instanceof UNSUBSCRIBE unsubscribe) {
+            unsubscribeInboundInterceptorHandler.handleInboundUnsubscribe(ctx, unsubscribe);
+        } else if (msg instanceof DISCONNECT disconnect) {
+            disconnectInterceptorHandler.handleInboundDisconnect(ctx, disconnect);
+        } else if (msg instanceof CONNECT connect) {
+            connectInboundInterceptorHandler.handleInboundConnect(ctx, connect);
         } else {
             ctx.fireChannelRead(msg);
         }
@@ -117,26 +118,26 @@ public class InterceptorHandler extends ChannelDuplexHandler {
             final @NotNull Object msg,
             final @NotNull ChannelPromise promise) {
         // the order is important: it has to be ordered by the expected frequency to avoid instance of checks
-        if (msg instanceof PUBLISH) {
-            publishOutboundInterceptorHandler.handleOutboundPublish(ctx, (PUBLISH) msg, promise);
-        } else if (msg instanceof PUBACK) {
-            pubackInterceptorHandler.handleOutboundPuback(ctx, (PUBACK) msg, promise);
-        } else if (msg instanceof PUBREC) {
-            pubrecInterceptorHandler.handleOutboundPubrec(ctx, (PUBREC) msg, promise);
-        } else if (msg instanceof PUBREL) {
-            pubrelInterceptorHandler.handleOutboundPubrel(ctx, (PUBREL) msg, promise);
-        } else if (msg instanceof PUBCOMP) {
-            pubcompInterceptorHandler.handleOutboundPubcomp(ctx, (PUBCOMP) msg, promise);
-        } else if (msg instanceof PINGRESP) {
-            pingInterceptorHandler.handleOutboundPingResp(ctx, (PINGRESP) msg, promise);
-        } else if (msg instanceof SUBACK) {
-            subackOutboundInterceptorHandler.handleOutboundSuback(ctx, (SUBACK) msg, promise);
-        } else if (msg instanceof UNSUBACK) {
-            unsubackOutboundInterceptorHandler.handleOutboundUnsuback(ctx, (UNSUBACK) msg, promise);
-        } else if (msg instanceof CONNACK) {
-            connackOutboundInterceptorHandler.handleOutboundConnack(ctx, (CONNACK) msg, promise);
-        } else if (msg instanceof DISCONNECT) {
-            disconnectInterceptorHandler.handleOutboundDisconnect(ctx, (DISCONNECT) msg, promise);
+        if (msg instanceof PUBLISH publish) {
+            publishOutboundInterceptorHandler.handleOutboundPublish(ctx, publish, promise);
+        } else if (msg instanceof PUBACK puback) {
+            pubackInterceptorHandler.handleOutboundPuback(ctx, puback, promise);
+        } else if (msg instanceof PUBREC pubrec) {
+            pubrecInterceptorHandler.handleOutboundPubrec(ctx, pubrec, promise);
+        } else if (msg instanceof PUBREL pubrel) {
+            pubrelInterceptorHandler.handleOutboundPubrel(ctx, pubrel, promise);
+        } else if (msg instanceof PUBCOMP pubcomp) {
+            pubcompInterceptorHandler.handleOutboundPubcomp(ctx, pubcomp, promise);
+        } else if (msg instanceof PINGRESP pingresp) {
+            pingInterceptorHandler.handleOutboundPingResp(ctx, pingresp, promise);
+        } else if (msg instanceof SUBACK suback) {
+            subackOutboundInterceptorHandler.handleOutboundSuback(ctx, suback, promise);
+        } else if (msg instanceof UNSUBACK unsuback) {
+            unsubackOutboundInterceptorHandler.handleOutboundUnsuback(ctx, unsuback, promise);
+        } else if (msg instanceof CONNACK connack) {
+            connackOutboundInterceptorHandler.handleOutboundConnack(ctx, connack, promise);
+        } else if (msg instanceof DISCONNECT disconnect) {
+            disconnectInterceptorHandler.handleOutboundDisconnect(ctx, disconnect, promise);
         } else {
             ctx.write(msg, promise);
         }

@@ -43,9 +43,8 @@ public class TopicAliasConfigEntity extends EnabledEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof TopicAliasConfigEntity that)) return false;
         if (!super.equals(o)) return false;
-        final TopicAliasConfigEntity that = (TopicAliasConfigEntity) o;
         return getMaxPerClient() == that.getMaxPerClient();
     }
 

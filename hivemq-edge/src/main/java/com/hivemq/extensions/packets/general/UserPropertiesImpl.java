@@ -83,10 +83,9 @@ public class UserPropertiesImpl implements UserProperties {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof UserPropertiesImpl)) {
+        if (!(o instanceof UserPropertiesImpl that)) {
             return false;
         }
-        final UserPropertiesImpl that = (UserPropertiesImpl) o;
         return list.equals(that.list);
     }
 

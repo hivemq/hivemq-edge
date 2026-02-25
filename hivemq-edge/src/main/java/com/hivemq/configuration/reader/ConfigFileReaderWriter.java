@@ -90,6 +90,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("FutureReturnValueIgnored")
 public class ConfigFileReaderWriter {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(ConfigFileReaderWriter.class);
@@ -436,8 +437,8 @@ public class ConfigFileReaderWriter {
             log.error("Not able to parse configuration file because {}", sb);
             throw new UnrecoverableException(false);
         } catch (final Exception e) {
-            if (e.getCause() instanceof UnrecoverableException) {
-                if (((UnrecoverableException) e.getCause()).isShowException()) {
+            if (e.getCause() instanceof UnrecoverableException unrecoverableException) {
+                if (unrecoverableException.isShowException()) {
                     log.error("An unrecoverable Exception occurred. Exiting HiveMQ", e);
                     log.debug("Original error message:", e);
                 }
@@ -489,6 +490,7 @@ public class ConfigFileReaderWriter {
                                 configurator.getClass().getSimpleName());
                         return false;
                     }
+                    default -> {}
                 }
             }
 
@@ -513,6 +515,7 @@ public class ConfigFileReaderWriter {
                                 extractor.getClass().getSimpleName());
                         return false;
                     }
+                    default -> {}
                 }
             }
             return true;

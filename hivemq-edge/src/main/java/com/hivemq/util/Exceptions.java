@@ -36,8 +36,8 @@ public class Exceptions {
      * @param throwable the throwable to guard HiveMQ from
      */
     public static void rethrowError(final @NotNull String text, final @NotNull Throwable throwable) {
-        if (throwable instanceof Error) {
-            throw (Error) throwable;
+        if (throwable instanceof Error error) {
+            throw error;
         } else {
             log.error(text, throwable);
         }
@@ -48,8 +48,8 @@ public class Exceptions {
      * Otherwise, this is a noop.
      */
     public static void rethrowError(final @NotNull Throwable throwable) {
-        if (throwable instanceof Error) {
-            throw (Error) throwable;
+        if (throwable instanceof Error error) {
+            throw error;
         }
     }
 
@@ -63,8 +63,7 @@ public class Exceptions {
         if (throwable instanceof IOException) {
             return true;
         }
-        if (throwable instanceof BatchedException) {
-            final BatchedException batchedException = (BatchedException) throwable;
+        if (throwable instanceof BatchedException batchedException) {
             for (final Throwable inner : batchedException.getThrowables()) {
                 if (!(inner instanceof ClosedChannelException)) {
                     return false;

@@ -193,10 +193,9 @@ public class PublishPacketImpl implements PublishPacket {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PublishPacketImpl)) {
+        if (!(o instanceof PublishPacketImpl that)) {
             return false;
         }
-        final PublishPacketImpl that = (PublishPacketImpl) o;
         return that.canEqual(this)
                 && topic.equals(that.topic)
                 && (qos == that.qos)

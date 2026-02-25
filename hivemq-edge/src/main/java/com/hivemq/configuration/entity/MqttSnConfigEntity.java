@@ -105,8 +105,7 @@ public class MqttSnConfigEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final MqttSnConfigEntity that = (MqttSnConfigEntity) o;
+        if (!(o instanceof MqttSnConfigEntity that)) return false;
         return getMaxClientIdentifierLength() == that.getMaxClientIdentifierLength()
                 && getGatewayId() == that.getGatewayId()
                 && Objects.equals(getPredefinedTopicAliases(), that.getPredefinedTopicAliases())

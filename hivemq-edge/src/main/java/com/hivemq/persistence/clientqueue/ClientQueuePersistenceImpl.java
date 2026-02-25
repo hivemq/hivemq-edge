@@ -54,6 +54,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 
 @Singleton
+@SuppressWarnings("FutureReturnValueIgnored")
 public class ClientQueuePersistenceImpl extends AbstractPersistence implements ClientQueuePersistence {
 
     public static final int SHARED_IN_FLIGHT_MARKER = 1;
@@ -245,8 +246,7 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
             final @NotNull ImmutableList<T> publishes, final @NotNull String queueId, final boolean shared) {
         List<T> reducedList = null;
         for (final T message : publishes) {
-            if (message instanceof PUBLISH) {
-                final PUBLISH publish = (PUBLISH) message;
+            if (message instanceof PUBLISH publish) {
                 try {
                     publish.dereferencePayload();
                 } catch (final PayloadPersistenceException e) {
@@ -424,10 +424,9 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
             if (this == o) {
                 return true;
             }
-            if (o == null || getClass() != o.getClass()) {
+            if (!(o instanceof Key key)) {
                 return false;
             }
-            final Key key = (Key) o;
             return shared == key.shared && Objects.equals(queueId, key.queueId);
         }
 

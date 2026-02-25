@@ -92,9 +92,7 @@ public class DataCombinerEntity {
     @Override
     public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        final DataCombinerEntity that = (DataCombinerEntity) o;
+        if (!(o instanceof DataCombinerEntity that)) return false;
         return id.equals(that.id)
                 && name.equals(that.name)
                 && description.equals(that.description)
