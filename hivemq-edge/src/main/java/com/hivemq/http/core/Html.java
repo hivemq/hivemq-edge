@@ -52,7 +52,7 @@ public class Html {
     }
 
     public static String heading(String title, int size) {
-        return String.format("<h" + size + ">%s</h" + size + ">", title);
+        return String.format("<h%s>%s</h%s>", size, title, size);
     }
 
     public static String subheading(String title) {
