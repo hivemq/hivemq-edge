@@ -15,6 +15,10 @@
  */
 package com.hivemq.api.auth;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.api.AuthTestUtils;
 import com.hivemq.api.TestApiResource;
@@ -28,23 +32,18 @@ import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;
 import com.hivemq.http.core.HttpResponse;
 import com.hivemq.http.core.HttpUrlConnectionClient;
-import org.glassfish.jersey.server.ResourceConfig;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.glassfish.jersey.server.ResourceConfig;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Simon L Johnson
@@ -64,10 +63,10 @@ public class BasicAuthenticationTests {
     public static void setUp() throws Exception {
         final var config = new JaxrsHttpServerConfiguration();
         config.setPort(TEST_HTTP_PORT);
-        //-- ensure we supplied our own test mapper as this can effect output
+        // -- ensure we supplied our own test mapper as this can effect output
         config.setObjectMapper(new ObjectMapper());
 
-        final Set<IAuthenticationHandler > authenticationHandlers = new HashSet<>();
+        final Set<IAuthenticationHandler> authenticationHandlers = new HashSet<>();
         authenticationHandlers.add(new BasicAuthenticationHandler(AuthTestUtils.createTestUsernamePasswordProvider()));
         final var apiConfigurationService = mock(ApiConfigurationService.class);
         when(apiConfigurationService.isEnforceApiAuth()).thenReturn(true);
@@ -85,17 +84,17 @@ public class BasicAuthenticationTests {
     }
 
     @AfterAll
-    public static void tearDown(){
+    public static void tearDown() {
         server.stopServer();
     }
 
     protected static HttpResponse get(
-            final @NotNull String path,
-            final @Nullable String username,
-            final @Nullable String password) throws IOException {
+            final @NotNull String path, final @Nullable String username, final @Nullable String password)
+            throws IOException {
         final Map<String, String> headers;
         if (username != null && password != null) {
-            headers = Map.of(HttpConstants.AUTH_HEADER,
+            headers = Map.of(
+                    HttpConstants.AUTH_HEADER,
                     BasicAuthenticationHandler.getBasicAuthenticationHeaderValue(username, password));
         } else {
             headers = null;
@@ -193,5 +192,4 @@ public class BasicAuthenticationTests {
         final var response = get("test/permitall/get/adminonly", "testadmin", "test");
         assertEquals(200, response.getStatusCode(), "Resource should be allowed");
     }
-
 }
