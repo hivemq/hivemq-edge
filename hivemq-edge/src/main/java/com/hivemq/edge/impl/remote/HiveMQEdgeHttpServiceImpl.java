@@ -29,6 +29,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
@@ -347,7 +348,7 @@ public class HiveMQEdgeHttpServiceImpl {
             throws HiveMQEdgeRemoteConnectivityException {
         try {
             final String jsonBody = mapper.writeValueAsString(jsonPostObject);
-            try (final InputStream is = new ByteArrayInputStream(jsonBody.getBytes())) {
+            try (final InputStream is = new ByteArrayInputStream(jsonBody.getBytes(StandardCharsets.UTF_8))) {
                 final long start = System.currentTimeMillis();
                 final HttpResponse response = HttpUrlConnectionClient.post(
                         POST_CONTENT_TYPE_HEADER, url, is, connectTimeoutMillis, readTimeoutMillis);
