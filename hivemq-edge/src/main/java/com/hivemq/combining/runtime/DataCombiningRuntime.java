@@ -196,7 +196,7 @@ public class DataCombiningRuntime {
             try {
                 return mapper.readTree(dataPoint.getTagValue().toString());
             } catch (final IOException e) {
-                log.warn("Exception during json parsing of datapoint '{}'", dataPoint.getTagValue().toString());
+                log.warn("Exception during json parsing of datapoint '{}'", dataPoint.getTagValue());
                 throw new RuntimeException(e);
             }
         }
