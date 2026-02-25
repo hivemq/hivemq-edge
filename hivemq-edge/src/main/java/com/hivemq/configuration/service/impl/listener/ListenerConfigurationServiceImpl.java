@@ -93,6 +93,7 @@ public class ListenerConfigurationServiceImpl implements ListenerConfigurationSe
         return filterListeners(MqttsnUdpListener.class);
     }
 
+    @Override
     public void clear() {
         listeners.clear();
     }

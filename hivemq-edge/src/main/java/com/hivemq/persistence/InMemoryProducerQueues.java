@@ -84,11 +84,13 @@ public class InMemoryProducerQueues implements ProducerQueues {
         return builder.build();
     }
 
+    @Override
     public <R> @NotNull ListenableFuture<R> submit(final @NotNull String key, final @NotNull Task<R> task) {
         //noinspection ConstantConditions (future is never null if the callbacks are null)
         return submitInternal(getBucket(key), task, false);
     }
 
+    @Override
     public <R> @NotNull ListenableFuture<R> submit(final int bucketIndex, final @NotNull Task<R> task) {
         //noinspection ConstantConditions (futuer is never null if the callbacks are null)
         return submitInternal(bucketIndex, task, false);
@@ -162,6 +164,7 @@ public class InMemoryProducerQueues implements ProducerQueues {
      * @param <R>  the returned object
      * @return a list of listenableFutures of type R
      */
+    @Override
     public @NotNull <R> List<ListenableFuture<R>> submitToAllBucketsParallel(final @NotNull Task<R> task) {
         return submitToAllBucketsParallel(task, false);
     }
@@ -176,6 +179,7 @@ public class InMemoryProducerQueues implements ProducerQueues {
         return builder.build();
     }
 
+    @Override
     public @NotNull <R> List<ListenableFuture<R>> submitToAllBucketsSequential(final @NotNull Task<R> task) {
 
         final ImmutableList.Builder<ListenableFuture<R>> builder = ImmutableList.builder();
@@ -192,11 +196,13 @@ public class InMemoryProducerQueues implements ProducerQueues {
         return builder.build();
     }
 
+    @Override
     public int getBucket(final @NotNull String key) {
         return BucketUtils.getBucket(key, persistenceBucketCount);
     }
 
     @NotNull
+    @Override
     public ListenableFuture<Void> shutdown(final @Nullable Task<Void> finalTask) {
         if (shutdown.getAndSet(true)) {
             // guard from being called twice

@@ -246,6 +246,7 @@ public class BridgeService {
         Futures.addCallback(
                 bridgeMqttClient.start(),
                 new FutureCallback<>() {
+                    @Override
                     public void onSuccess(@Nullable final Void result) {
                         log.info(
                                 "Bridge '{}' to remote broker {}:{} started in {}ms.",

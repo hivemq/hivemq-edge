@@ -37,10 +37,12 @@ public abstract class ClientBasedInputImpl implements ClientBasedInput, PluginTa
         connectionInformation = ExtensionInformationUtil.getAndSetConnectionInformation(channel);
     }
 
+    @Override
     public @NotNull ClientInformation getClientInformation() {
         return clientInformation;
     }
 
+    @Override
     public @NotNull ConnectionInformation getConnectionInformation() {
         return connectionInformation;
     }

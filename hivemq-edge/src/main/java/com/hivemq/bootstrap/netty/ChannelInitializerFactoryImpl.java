@@ -56,6 +56,7 @@ public class ChannelInitializerFactoryImpl implements ChannelInitializerFactory 
     }
 
     @NotNull
+    @Override
     public AbstractChannelInitializer getChannelInitializer(final @NotNull Listener listener) {
 
         checkNotNull(listener, "Listener must not be null");

@@ -256,6 +256,7 @@ abstract class Mqtt5MessageWithUserPropertiesEncoder<T extends Message> implemen
             }
         }
 
+        @Override
         final int omissiblePropertiesLength(final @NotNull M message) {
             return reasonStringLength(message) + getUserProperties(message).encodedLength();
         }

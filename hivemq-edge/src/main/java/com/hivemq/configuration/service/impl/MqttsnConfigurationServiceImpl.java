@@ -59,6 +59,7 @@ public class MqttsnConfigurationServiceImpl implements MqttsnConfigurationServic
         predefinedTopicAliases.put(alias.getAlias(), alias);
     }
 
+    @Override
     public boolean isAllowEmptyClientIdentifierEnabled() {
         return allowEmptyClientIdentifierEnabled;
     }
@@ -68,6 +69,7 @@ public class MqttsnConfigurationServiceImpl implements MqttsnConfigurationServic
         this.allowEmptyClientIdentifierEnabled = allowEmptyClientIdentifierEnabled;
     }
 
+    @Override
     public boolean isAllowAnonymousPublishMinus1Enabled() {
         return allowAnonymousPublishMinus1Enabled;
     }
@@ -77,6 +79,7 @@ public class MqttsnConfigurationServiceImpl implements MqttsnConfigurationServic
         this.allowAnonymousPublishMinus1Enabled = allowAnonymousPublishMinus1Enabled;
     }
 
+    @Override
     public boolean isAllowWakingPingToHijackSessionEnabled() {
         return allowWakingPingToHijackSessionEnabled;
     }
@@ -86,6 +89,7 @@ public class MqttsnConfigurationServiceImpl implements MqttsnConfigurationServic
         this.allowWakingPingToHijackSessionEnabled = allowWakingPingToHijackSessionEnabled;
     }
 
+    @Override
     public boolean isTopicRegistrationsHeldDuringSleepEnabled() {
         return topicRegistrationsHeldDuringSleepEnabled;
     }
@@ -95,6 +99,7 @@ public class MqttsnConfigurationServiceImpl implements MqttsnConfigurationServic
         this.topicRegistrationsHeldDuringSleepEnabled = topicRegistrationsHeldDuringSleepEnabled;
     }
 
+    @Override
     public int getMaxClientIdentifierLength() {
         return maxClientIdentifierLength;
     }

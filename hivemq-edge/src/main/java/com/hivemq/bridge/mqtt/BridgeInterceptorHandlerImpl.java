@@ -96,6 +96,7 @@ public class BridgeInterceptorHandlerImpl implements BridgeInterceptorHandler {
         this.serverInformation = serverInformation;
     }
 
+    @Override
     public @NotNull ListenableFuture<PublishReturnCode> interceptOrDelegateInbound(
             final @NotNull PUBLISH publish,
             final @NotNull ExecutorService executorService,

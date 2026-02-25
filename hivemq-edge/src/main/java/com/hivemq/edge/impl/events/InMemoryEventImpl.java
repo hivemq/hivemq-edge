@@ -51,6 +51,7 @@ public class InMemoryEventImpl implements EventStore {
         lock = new ReentrantReadWriteLock();
     }
 
+    @Override
     public void storeEvent(final @NotNull Event event) {
         final Lock writeLock = lock.writeLock();
         writeLock.lock();

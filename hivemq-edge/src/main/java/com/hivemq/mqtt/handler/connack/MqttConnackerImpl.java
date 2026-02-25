@@ -81,6 +81,7 @@ public class MqttConnackerImpl implements MqttConnacker {
         return channelFuture;
     }
 
+    @Override
     public void connackError(
             final @NotNull Channel channel,
             final @Nullable String logMessage,
@@ -98,6 +99,7 @@ public class MqttConnackerImpl implements MqttConnacker {
                 false);
     }
 
+    @Override
     public void connackError(
             final @NotNull Channel channel,
             final @Nullable String logMessage,

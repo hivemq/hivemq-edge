@@ -106,6 +106,7 @@ public class SystemInformationImpl implements SystemInformation {
         processorCount = getPhysicalProcessorCount();
     }
 
+    @Override
     public void init() {
         setHivemqVersion();
         setFolders();
@@ -363,6 +364,7 @@ public class SystemInformationImpl implements SystemInformation {
         return this.processorCount;
     }
 
+    @Override
     public boolean isEmbedded() {
         return embedded;
     }

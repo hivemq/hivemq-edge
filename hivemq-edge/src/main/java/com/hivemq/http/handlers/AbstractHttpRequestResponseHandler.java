@@ -46,6 +46,7 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
         this.mapper = mapper;
     }
 
+    @Override
     public void handleRequest(final IHttpRequestResponse httpRequestResponse) throws IOException {
 
         final var start = System.currentTimeMillis();

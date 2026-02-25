@@ -66,6 +66,7 @@ public class InternalPublishServiceImpl implements InternalPublishService {
     }
 
     @NotNull
+    @Override
     public ListenableFuture<PublishingResult> publish(
             @NotNull final PUBLISH publish,
             @NotNull final ExecutorService executorService,

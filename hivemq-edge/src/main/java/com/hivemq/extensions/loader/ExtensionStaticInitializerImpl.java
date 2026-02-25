@@ -49,6 +49,7 @@ public class ExtensionStaticInitializerImpl implements ExtensionStaticInitialize
         this.builderDependencies = builderDependencies;
     }
 
+    @Override
     public void initialize(final @NotNull String pluginId, final @NotNull ClassLoader classLoader)
             throws ExtensionLoadingException {
         checkNotNull(pluginId, "extension id must not be null");

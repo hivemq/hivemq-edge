@@ -142,26 +142,32 @@ public class InFileSingleWriter implements SingleWriterService {
         nonemptyQueueCounter.decrementAndGet();
     }
 
+    @Override
     public @NotNull ProducerQueues getRetainedMessageQueue() {
         return producers[RETAINED_MESSAGE_QUEUE_INDEX];
     }
 
+    @Override
     public @NotNull ProducerQueues getClientSessionQueue() {
         return producers[CLIENT_SESSION_QUEUE_INDEX];
     }
 
+    @Override
     public @NotNull ProducerQueues getSubscriptionQueue() {
         return producers[SUBSCRIPTION_QUEUE_INDEX];
     }
 
+    @Override
     public @NotNull ProducerQueues getQueuedMessagesQueue() {
         return producers[QUEUED_MESSAGES_QUEUE_INDEX];
     }
 
+    @Override
     public @NotNull ProducerQueues getAttributeStoreQueue() {
         return producers[ATTRIBUTE_STORE_QUEUE_INDEX];
     }
 
+    @Override
     public int getPersistenceBucketCount() {
         return persistenceBucketCount;
     }
@@ -186,6 +192,7 @@ public class InFileSingleWriter implements SingleWriterService {
         return runningThreadsCount;
     }
 
+    @Override
     public void stop() {
         final long start = System.currentTimeMillis();
         if (log.isTraceEnabled()) {
@@ -231,6 +238,7 @@ public class InFileSingleWriter implements SingleWriterService {
             probabilities = new int[producers.length];
         }
 
+        @Override
         public void run() {
             try {
                 final SplittableRandom random = RANDOM.split();

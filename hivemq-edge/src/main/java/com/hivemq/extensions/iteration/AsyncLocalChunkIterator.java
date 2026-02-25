@@ -104,6 +104,7 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
     }
 
     @NotNull
+    @Override
     public CompletableFuture<Void> getFinishedFuture() {
         return finishedFuture;
     }

@@ -26,6 +26,7 @@ public class RestComponentsServiceImpl implements RestComponentsService {
         this.genericAPIHolder = genericAPIHolder;
     }
 
+    @Override
     public void add(final @NotNull Object component) {
         genericAPIHolder.addComponent(component);
     }

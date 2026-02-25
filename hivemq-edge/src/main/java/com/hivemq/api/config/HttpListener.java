@@ -30,10 +30,12 @@ public class HttpListener implements ApiListener {
         this.bindAddress = bindAddress;
     }
 
+    @Override
     public int getPort() {
         return port;
     }
 
+    @Override
     public String getBindAddress() {
         return bindAddress;
     }

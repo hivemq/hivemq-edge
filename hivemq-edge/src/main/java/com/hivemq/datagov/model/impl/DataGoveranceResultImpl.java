@@ -45,6 +45,7 @@ public class DataGoveranceResultImpl implements DataGovernanceResult {
         return errors == null ? Collections.emptyList() : errors;
     }
 
+    @Override
     public void addError(final DataGovernanceError error, boolean fatal) {
         Preconditions.checkNotNull(error);
         if (fatal) {
@@ -61,6 +62,7 @@ public class DataGoveranceResultImpl implements DataGovernanceResult {
         return Optional.ofNullable(message);
     }
 
+    @Override
     public void setMessage(final String message) {
         this.message = message;
     }
@@ -70,6 +72,7 @@ public class DataGoveranceResultImpl implements DataGovernanceResult {
         return status;
     }
 
+    @Override
     public void setStatus(final STATUS status) {
         this.status = status;
     }

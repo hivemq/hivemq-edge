@@ -93,6 +93,7 @@ public class PluginAuthorizerServiceImpl implements PluginAuthorizerService {
         this.allowDollarTopics = MQTT_ALLOW_DOLLAR_TOPICS.get();
     }
 
+    @Override
     public void authorizePublish(final @NotNull ChannelHandlerContext ctx, final @NotNull PUBLISH msg) {
 
         // We first check if the topic is allowed to be published
@@ -147,6 +148,7 @@ public class PluginAuthorizerServiceImpl implements PluginAuthorizerService {
                 MoreExecutors.directExecutor());
     }
 
+    @Override
     public void authorizeWillPublish(final @NotNull ChannelHandlerContext ctx, final @NotNull CONNECT connect) {
 
         final String clientId = ctx.channel()
@@ -213,6 +215,7 @@ public class PluginAuthorizerServiceImpl implements PluginAuthorizerService {
         return publishProcessedFuture;
     }
 
+    @Override
     public void authorizeSubscriptions(final @NotNull ChannelHandlerContext ctx, final @NotNull SUBSCRIBE msg) {
 
         final String clientId = ctx.channel()

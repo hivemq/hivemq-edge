@@ -35,10 +35,12 @@ public class GatewayConfigurationServiceImpl implements DynamicConfigurationServ
         return configurationExportEnabled;
     }
 
+    @Override
     public void setMutableConfigurationEnabled(final boolean mutableConfigurationEnabled) {
         this.mutableConfigurationEnabled = mutableConfigurationEnabled;
     }
 
+    @Override
     public void setConfigurationExportEnabled(final boolean configurationExportEnabled) {
         this.configurationExportEnabled = configurationExportEnabled;
     }

@@ -74,30 +74,37 @@ public class InMemorySingleWriter implements SingleWriterService {
         return persistenceBucketCount;
     }
 
+    @Override
     public @NotNull ProducerQueues getRetainedMessageQueue() {
         return producers[RETAINED_MESSAGE_QUEUE_INDEX];
     }
 
+    @Override
     public @NotNull ProducerQueues getClientSessionQueue() {
         return producers[CLIENT_SESSION_QUEUE_INDEX];
     }
 
+    @Override
     public @NotNull ProducerQueues getSubscriptionQueue() {
         return producers[SUBSCRIPTION_QUEUE_INDEX];
     }
 
+    @Override
     public @NotNull ProducerQueues getQueuedMessagesQueue() {
         return producers[QUEUED_MESSAGES_QUEUE_INDEX];
     }
 
+    @Override
     public @NotNull ProducerQueues getAttributeStoreQueue() {
         return producers[ATTRIBUTE_STORE_QUEUE_INDEX];
     }
 
+    @Override
     public int getPersistenceBucketCount() {
         return persistenceBucketCount;
     }
 
+    @Override
     public void stop() {
         if (log.isTraceEnabled()) {
             log.trace("Shutting down single writer");

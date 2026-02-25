@@ -65,6 +65,7 @@ public class UnifiedNamespaceServiceImpl implements UnifiedNamespaceService {
         unsExtractor.setISA95(isa95);
     }
 
+    @Override
     public Map<String, String> getTopicReplacements(final @NotNull ISA95 isa95) {
         return ImmutableMap.<String, String>builder()
                 .put(ISA95.ENTERPRISE, Strings.isNullOrEmpty(isa95.getEnterprise()) ? "" : isa95.getEnterprise())

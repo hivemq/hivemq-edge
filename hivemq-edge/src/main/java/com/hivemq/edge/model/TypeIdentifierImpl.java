@@ -63,6 +63,7 @@ public class TypeIdentifierImpl implements TypeIdentifier {
         return toString();
     }
 
+    @Override
     public @NotNull String toString() {
         return String.format("%s:%s", type.toString().toLowerCase(), identifier);
     }

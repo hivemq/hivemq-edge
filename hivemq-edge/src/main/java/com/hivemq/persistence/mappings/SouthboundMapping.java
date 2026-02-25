@@ -38,14 +38,17 @@ public class SouthboundMapping implements InternalWritingContext {
         this.schema = schema;
     }
 
+    @Override
     public @NotNull String getTopicFilter() {
         return topicFilter;
     }
 
+    @Override
     public @NotNull String getTagName() {
         return tagName;
     }
 
+    @Override
     public @NotNull FieldMapping getFieldMapping() {
         return fieldMapping;
     }

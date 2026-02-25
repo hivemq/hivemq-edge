@@ -89,6 +89,7 @@ public class ExtensionServicesDependenciesImpl implements ExtensionServicesDepen
     }
 
     @NotNull
+    @Override
     public ImmutableMap<String, Object> getDependenciesMap(final @NotNull ClassLoader classLoader) {
         // classLoader is unused but prepared here for future use
         final ImmutableMap.Builder<String, Object> builder = ImmutableMap.builder();

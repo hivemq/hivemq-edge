@@ -114,6 +114,7 @@ public class Topic implements Serializable, Comparable<Topic>, Mqtt3Topic, Mqtt5
      * @return the topic as String representation
      */
     @NotNull
+    @Override
     public String getTopic() {
         return topic;
     }
@@ -122,6 +123,7 @@ public class Topic implements Serializable, Comparable<Topic>, Mqtt3Topic, Mqtt5
      * @return the QoS of a Topic
      */
     @NotNull
+    @Override
     public QoS getQoS() {
         return qoS;
     }
@@ -135,6 +137,7 @@ public class Topic implements Serializable, Comparable<Topic>, Mqtt3Topic, Mqtt5
      * @return whether the client must not receive messages published by itself. The default is {@link
      * #DEFAULT_NO_LOCAL}.
      */
+    @Override
     public boolean isNoLocal() {
         return noLocal;
     }
@@ -143,6 +146,7 @@ public class Topic implements Serializable, Comparable<Topic>, Mqtt3Topic, Mqtt5
      * @return the handling of retained message for this subscription. The default is {@link #DEFAULT_RETAIN_HANDLING}.
      */
     @NotNull
+    @Override
     public Mqtt5RetainHandling getRetainHandling() {
         return retainHandling;
     }
@@ -150,6 +154,7 @@ public class Topic implements Serializable, Comparable<Topic>, Mqtt3Topic, Mqtt5
     /**
      * @return whether the retain flag for incoming publishes must be set to its original value.
      */
+    @Override
     public boolean isRetainAsPublished() {
         return retainAsPublished;
     }

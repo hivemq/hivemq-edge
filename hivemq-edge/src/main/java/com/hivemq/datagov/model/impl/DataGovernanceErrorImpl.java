@@ -39,10 +39,12 @@ public class DataGovernanceErrorImpl implements DataGovernanceError {
         this.message = Optional.of(message);
     }
 
+    @Override
     public @NotNull Optional<Throwable> getError() {
         return error;
     }
 
+    @Override
     public @NotNull Optional<String> getPipelineId() {
         return pipelineId;
     }
@@ -51,6 +53,7 @@ public class DataGovernanceErrorImpl implements DataGovernanceError {
         this.pipelineId = Optional.ofNullable(pipelineId);
     }
 
+    @Override
     public @NotNull Optional<String> getFunctionId() {
         return functionId;
     }
@@ -67,6 +70,7 @@ public class DataGovernanceErrorImpl implements DataGovernanceError {
         this.validatorId = Optional.ofNullable(validatorId);
     }
 
+    @Override
     public @NotNull Optional<String> getMessage() {
         return message;
     }

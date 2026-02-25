@@ -31,6 +31,7 @@ public class SunHttpHandlerProxy implements HttpHandler {
         this.handler = handler;
     }
 
+    @Override
     public void handle(final @NotNull HttpExchange exchange) throws IOException {
         URI requestURI = exchange.getRequestURI();
         String contextPath = exchange.getHttpContext().getPath();

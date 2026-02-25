@@ -316,6 +316,7 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
         return timestamp;
     }
 
+    @Override
     public @Nullable PublishPayloadPersistence getPersistence() {
         return persistence;
     }
