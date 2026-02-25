@@ -15,6 +15,7 @@
  */
 package com.hivemq.common.i18n;
 
+import java.util.Locale;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
@@ -47,7 +48,7 @@ public enum I18nHttpError implements I18nError {
     private final @NotNull String key;
 
     I18nHttpError() {
-        key = name().toLowerCase().replace("_", ".");
+        key = name().toLowerCase(Locale.ROOT).replace("_", ".");
     }
 
     @Override

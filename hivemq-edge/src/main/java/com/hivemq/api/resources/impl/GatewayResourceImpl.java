@@ -29,6 +29,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -80,7 +81,7 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayEndpointA
 
     private Listener convertApiListener(final ApiListener listener) {
         final String protocol = requireNonNullElse(getProtocolForPort(listener.getPort()), "unknown")
-                .toLowerCase();
+                .toLowerCase(Locale.ROOT);
         final String name = protocol + "-listener-" + listener.getPort();
         final String description = "Api " + protocol + " Listener";
         return new Listener(
