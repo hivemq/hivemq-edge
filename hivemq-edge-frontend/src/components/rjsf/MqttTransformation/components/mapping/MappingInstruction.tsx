@@ -94,11 +94,7 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
         const sourceRef: DataIdentifierReference | undefined = target.dataReference
           ? { id: target.dataReference.id, type: target.dataReference.type, scope: target.dataReference.scope ?? null }
           : undefined
-        onChange?.(
-          [...target.path, target.key].join('.') as string,
-          [...property.path, property.key].join('.') as string,
-          sourceRef
-        )
+        onChange?.([...target.path, target.key].join('.'), [...property.path, property.key].join('.'), sourceRef)
       },
     })
   }, [onChange, property])
@@ -185,8 +181,8 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
                       }
                     : undefined
                   onChange?.(
-                    [...source.property.path, source.property.key].join('.') as string,
-                    [...property.path, property.key].join('.') as string,
+                    [...source.property.path, source.property.key].join('.'),
+                    [...property.path, property.key].join('.'),
                     sourceRef
                   )
 
@@ -213,7 +209,7 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
                 aria-label={t('rjsf.MqttTransformationField.instructions.actions.clear.aria-label')}
                 icon={<RiDeleteBin2Fill />}
                 onClick={onHandleClear}
-                isDisabled={Boolean(!instruction?.source)}
+                isDisabled={!instruction?.source}
               />
             </ButtonGroup>
             {instruction?.source ? (
