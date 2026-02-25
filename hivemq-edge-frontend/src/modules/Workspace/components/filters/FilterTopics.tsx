@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FormControl, FormLabel, Text } from '@chakra-ui/react'
+import { FormControl, FormLabel } from '@chakra-ui/react'
 import { chakraComponents, type MultiValue, type MultiValueProps, type OptionProps, Select } from 'chakra-react-select'
 
 import { PLCTag, Topic, TopicFilter } from '@/components/MQTT/EntityTag.tsx'
@@ -75,11 +75,22 @@ const FilterTopics: FC<FilterTopicsProps> = ({ onChange, value, isDisabled }) =>
         }}
         components={{
           Option,
-          MultiValue: (props: MultiValueProps<FilterTopicsOption, true>) => (
-            <chakraComponents.MultiValue {...props}>
-              <Text data-testid="workspace-filter-topics-values">{props.data.label}</Text>
-            </chakraComponents.MultiValue>
-          ),
+          MultiValue: (props: MultiValueProps<FilterTopicsOption, true>) => {
+            const { type, label } = props.data
+            return (
+              <chakraComponents.MultiValue {...props}>
+                {type === SelectEntityType.TAG && (
+                  <PLCTag tagTitle={label} data-testid="workspace-filter-topics-values" />
+                )}
+                {type === SelectEntityType.TOPIC && (
+                  <Topic tagTitle={label} data-testid="workspace-filter-topics-values" />
+                )}
+                {type === SelectEntityType.TOPIC_FILTER && (
+                  <TopicFilter tagTitle={label} data-testid="workspace-filter-topics-values" />
+                )}
+              </chakraComponents.MultiValue>
+            )
+          },
         }}
       />
     </FormControl>
