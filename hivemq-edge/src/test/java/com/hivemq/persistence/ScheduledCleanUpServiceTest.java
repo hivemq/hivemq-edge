@@ -46,7 +46,7 @@ import org.mockito.MockitoAnnotations;
 /**
  * @author Lukas Brandl
  */
-@SuppressWarnings({"unchecked", "NullabilityAnnotations"})
+@SuppressWarnings({"unchecked", "NullabilityAnnotations", "DoNotMock"})
 public class ScheduledCleanUpServiceTest {
 
     private final ListeningScheduledExecutorService scheduledExecutorService =

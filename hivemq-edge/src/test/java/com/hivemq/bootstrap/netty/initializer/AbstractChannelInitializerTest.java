@@ -152,7 +152,7 @@ public class AbstractChannelInitializerTest {
         when(pipeline.addAfter(anyString(), anyString(), any(ChannelHandler.class)))
                 .thenAnswer((Answer<ChannelPipeline>) invocation -> {
                     if (invocation.getArguments()[1].equals(NEW_CONNECTION_IDLE_HANDLER)) {
-                        idleStateHandler[0] = (IdleStateHandler) (invocation.getArguments()[2]);
+                        idleStateHandler[0] = (IdleStateHandler) invocation.getArguments()[2];
                     }
                     return pipeline;
                 });
@@ -174,7 +174,7 @@ public class AbstractChannelInitializerTest {
         verify(eventLog).clientWasDisconnected(any(Channel.class), anyString());
     }
 
-    private class TestAbstractChannelInitializer extends AbstractChannelInitializer {
+    private static class TestAbstractChannelInitializer extends AbstractChannelInitializer {
 
         public TestAbstractChannelInitializer(final ChannelDependencies channelDependencies) {
             super(channelDependencies, new Listener() {
@@ -214,7 +214,7 @@ public class AbstractChannelInitializerTest {
         }
     }
 
-    private class ExceptionThrowingAbstractChannelInitializer extends AbstractChannelInitializer {
+    private static class ExceptionThrowingAbstractChannelInitializer extends AbstractChannelInitializer {
 
         public ExceptionThrowingAbstractChannelInitializer(final ChannelDependencies channelDependencies) {
             super(channelDependencies, new Listener() {

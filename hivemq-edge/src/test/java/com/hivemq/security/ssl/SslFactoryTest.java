@@ -53,6 +53,7 @@ import org.slf4j.LoggerFactory;
 import util.LogbackCapturingAppender;
 import util.TestKeyStoreGenerator;
 
+@SuppressWarnings("DoNotMock")
 public class SslFactoryTest {
 
     @Mock
