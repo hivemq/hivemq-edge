@@ -44,10 +44,12 @@ describe('JsonSchemaBrowser', () => {
       cy.mountWithProviders(<JsonSchemaBrowser schema={MOCK_SCHEMA_TITLED} dataReference={ref} isTagShown />)
 
       cy.getByTestId('topic-wrapper').should('be.visible')
-      cy.getByTestId('topic-wrapper').invoke('text').then((text) => {
-        expect(text).to.include('sensors')
-        expect(text).not.to.include('::')
-      })
+      cy.getByTestId('topic-wrapper')
+        .invoke('text')
+        .then((text) => {
+          expect(text).to.include('sensors')
+          expect(text).not.to.include('::')
+        })
     })
   })
 

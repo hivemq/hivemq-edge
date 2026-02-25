@@ -186,9 +186,11 @@ describe('DataCombiningTableField', () => {
         />
       )
 
-      cy.get('tbody tr td').eq(1).within(() => {
-        cy.getByTestId('topic-wrapper').eq(0).should('contain.text', 'my-adapter ::')
-      })
+      cy.get('tbody tr td')
+        .eq(1)
+        .within(() => {
+          cy.getByTestId('topic-wrapper').eq(0).should('contain.text', 'my-adapter ::')
+        })
     })
 
     it('should show ownership string for tag found in instructions sourceRef', () => {
@@ -222,11 +224,13 @@ describe('DataCombiningTableField', () => {
         />
       )
 
-      cy.get('tbody tr td').eq(1).within(() => {
-        cy.getByTestId('topic-wrapper').should('have.length', 2)
-        cy.getByTestId('topic-wrapper').eq(0).should('contain.text', 'opcua-adapter')
-        cy.getByTestId('topic-wrapper').eq(1).should('contain.text', 'modbus-adapter')
-      })
+      cy.get('tbody tr td')
+        .eq(1)
+        .within(() => {
+          cy.getByTestId('topic-wrapper').should('have.length', 2)
+          cy.getByTestId('topic-wrapper').eq(0).should('contain.text', 'opcua-adapter')
+          cy.getByTestId('topic-wrapper').eq(1).should('contain.text', 'modbus-adapter')
+        })
     })
 
     it('should show plain tag name when scope cannot be reconstructed', () => {
@@ -239,10 +243,12 @@ describe('DataCombiningTableField', () => {
         />
       )
 
-      cy.get('tbody tr td').eq(1).within(() => {
-        cy.getByTestId('topic-wrapper').eq(0).should('have.text', formatTopicString('my/tag/t1'))
-        cy.getByTestId('topic-wrapper').eq(0).should('not.contain.text', '::')
-      })
+      cy.get('tbody tr td')
+        .eq(1)
+        .within(() => {
+          cy.getByTestId('topic-wrapper').eq(0).should('have.text', formatTopicString('my/tag/t1'))
+          cy.getByTestId('topic-wrapper').eq(0).should('not.contain.text', '::')
+        })
     })
   })
 
