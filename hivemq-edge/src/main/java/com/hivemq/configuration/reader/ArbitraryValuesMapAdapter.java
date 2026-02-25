@@ -51,7 +51,7 @@ import org.w3c.dom.NodeList;
  * </subscriptions>
  * </object>
  * <p>
- * Tested in {@see ConfigFileReaderTest}
+ * Tested in {@link ConfigFileReaderTest}
  */
 public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdapter.ElementMap, Map<String, Object>> {
 

@@ -57,6 +57,7 @@ public class HiveMQEdgeEnvironmentUtils {
         return map;
     }
 
+    @SuppressWarnings("EmptyCatch")
     public static String getDefaultMachineId() {
         try {
             return MacAddressUtil.formatAddress(MacAddressUtil.defaultMachineId())

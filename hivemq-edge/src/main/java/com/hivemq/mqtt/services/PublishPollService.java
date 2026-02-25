@@ -25,9 +25,6 @@ import org.jetbrains.annotations.Nullable;
  */
 public interface PublishPollService {
 
-    /**
-     * {@inheritDoc}
-     */
     void pollMessages(@NotNull String client, @NotNull Channel channel);
 
     /**

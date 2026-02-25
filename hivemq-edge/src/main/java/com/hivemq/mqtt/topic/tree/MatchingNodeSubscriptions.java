@@ -67,7 +67,7 @@ class MatchingNodeSubscriptions {
      * @param counters                       container with subscription counters that are updated upon subscription addition.
      * @param subscriberMapCreationThreshold a threshold to decide if the nonSharedSubscribersMap should be initialized
      *                                       instead of nonSharedSubscribersArray.
-     * @return whether the subscription information was replaced with {@param subscriberToAdd}.
+     * @return whether the subscription information was replaced with {@code subscriberToAdd}.
      */
     public boolean addSubscriber(
             final @NotNull SubscriberWithQoS subscriberToAdd,

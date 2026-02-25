@@ -61,6 +61,7 @@ public class ApiPermissionUtils {
     /**
      * Read interfaces for Annotation declarations
      */
+    @SuppressWarnings("EmptyCatch")
     public static <T extends Annotation> Optional<T> getAnnotationIfExists(
             final @NotNull Class<T> t, final @NotNull Method method) {
         Preconditions.checkNotNull(t);

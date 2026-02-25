@@ -124,7 +124,8 @@ public class GatewayBroadcastServiceImpl implements IGatewayBroadcastService {
                                 .getDiscoveryBroadcastAddresses()
                                 .size());
 
-                channel.writeAndFlush(MqttsnCodecs.MQTTSN_CODEC_VERSION_1_2
+                @SuppressWarnings("FutureReturnValueIgnored")
+                var ignored = channel.writeAndFlush(MqttsnCodecs.MQTTSN_CODEC_VERSION_1_2
                         .createMessageFactory()
                         .createAdvertise(
                                 mqttsnConfigurationService.getGatewayId(),

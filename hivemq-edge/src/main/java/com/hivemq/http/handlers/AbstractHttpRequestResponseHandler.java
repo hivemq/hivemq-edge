@@ -16,6 +16,7 @@
 package com.hivemq.http.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Splitter;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.http.core.Files;
 import com.hivemq.http.core.Html;
@@ -32,6 +33,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.List;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -270,10 +272,11 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
         if (value != null) {
             value = value.substring(value.lastIndexOf(" ") + 1);
             value = new String(Base64.getDecoder().decode(value), StandardCharsets.UTF_8);
-            final var userNamePassword = value.split(":");
-            if (usernamePassword.getUserName().equals(userNamePassword[0])
+            final List<String> userNamePassword = Splitter.on(':').splitToList(value);
+            if (usernamePassword.getUserName().equals(userNamePassword.get(0))
                     && Objects.deepEquals(
-                            usernamePassword.getPassword(), userNamePassword[1].getBytes(StandardCharsets.UTF_8))) {
+                            usernamePassword.getPassword(),
+                            userNamePassword.get(1).getBytes(StandardCharsets.UTF_8))) {
                 return true;
             }
         }

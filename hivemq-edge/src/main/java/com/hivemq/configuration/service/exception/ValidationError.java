@@ -15,6 +15,7 @@
  */
 package com.hivemq.configuration.service.exception;
 
+import com.google.errorprone.annotations.FormatMethod;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
 
 /**
@@ -27,6 +28,7 @@ public class ValidationError {
 
     private final String message;
 
+    @FormatMethod
     public ValidationError(final String message, final Object... args) {
 
         this.message = String.format(message, args);

@@ -43,7 +43,7 @@ public class Mqtt3PublishEncoder extends AbstractVariableHeaderLengthEncoder<Mqt
         if (msg.isRetain()) {
             header |= 0b0000_0001;
         }
-        header |= qos << 1;
+        header = (byte) (header | (qos << 1));
 
         out.writeByte(header);
         createRemainingLength(msg.getRemainingLength(), out);

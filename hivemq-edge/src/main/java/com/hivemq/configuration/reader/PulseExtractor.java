@@ -25,15 +25,17 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class PulseExtractor implements ReloadableExtractor<PulseEntity, PulseEntity> {
-    private static final Consumer<PulseEntity> DEFAULT_CONSUMER =
-            pulseEntity -> log.debug("No consumer registered for Pulse configuration changes.");
+    private static void defaultConsumer(final PulseEntity pulseEntity) {
+        log.debug("No consumer registered for Pulse configuration changes.");
+    }
+
     private final @NotNull ConfigFileReaderWriter configFileReaderWriter;
     private final Object lock = new Object();
     private @NotNull Consumer<PulseEntity> consumer;
     private @NotNull PulseEntity pulseEntity;
 
     public PulseExtractor(final @NotNull ConfigFileReaderWriter configFileReaderWriter) {
-        consumer = DEFAULT_CONSUMER;
+        consumer = PulseExtractor::defaultConsumer;
         this.configFileReaderWriter = configFileReaderWriter;
         this.pulseEntity = new PulseEntity();
     }
@@ -89,7 +91,7 @@ public class PulseExtractor implements ReloadableExtractor<PulseEntity, PulseEnt
 
     @Override
     public void registerConsumer(final @Nullable Consumer<PulseEntity> consumer) {
-        this.consumer = consumer == null ? DEFAULT_CONSUMER : consumer;
+        this.consumer = consumer == null ? PulseExtractor::defaultConsumer : consumer;
         notifyConsumer();
     }
 }

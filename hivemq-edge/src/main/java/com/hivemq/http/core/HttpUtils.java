@@ -15,11 +15,13 @@
  */
 package com.hivemq.http.core;
 
+import com.google.common.base.Splitter;
 import com.hivemq.http.HttpConstants;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
@@ -69,15 +71,15 @@ public class HttpUtils {
         if (queryString == null || queryString.equals("")) {
             return map;
         }
-        String[] params = queryString.split("&");
+        List<String> params = Splitter.on('&').splitToList(queryString);
         for (String param : params) {
             try {
-                String[] keyValuePair = param.split("=", 2);
-                String name = URLDecoder.decode(keyValuePair[0], "UTF-8");
+                List<String> keyValuePair = Splitter.on('=').limit(2).splitToList(param);
+                String name = URLDecoder.decode(keyValuePair.get(0), "UTF-8");
                 if (name.isEmpty()) {
                     continue;
                 }
-                String value = keyValuePair.length > 1 ? URLDecoder.decode(keyValuePair[1], "UTF-8") : "";
+                String value = keyValuePair.size() > 1 ? URLDecoder.decode(keyValuePair.get(1), "UTF-8") : "";
                 map.put(name, value);
             } catch (UnsupportedEncodingException e) {
                 // ignore this parameter if it can't be decoded
@@ -86,6 +88,7 @@ public class HttpUtils {
         return map;
     }
 
+    @SuppressWarnings("EmptyCatch")
     public static boolean validHttpOrHttpsUrl(final @NotNull String url) {
         try {
             new URL(url);

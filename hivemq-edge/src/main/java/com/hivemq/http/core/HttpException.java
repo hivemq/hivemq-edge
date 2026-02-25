@@ -32,18 +32,6 @@ public class HttpException extends Exception {
         setResponseMessage(responseMessage);
     }
 
-    private HttpException(String message) {
-        super(message);
-    }
-
-    private HttpException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    private HttpException(Throwable cause) {
-        super(cause);
-    }
-
     public String getResponseMessage() {
         return responseMessage == null ? super.getMessage() : responseMessage;
     }

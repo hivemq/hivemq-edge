@@ -16,10 +16,12 @@
 package com.hivemq.api.auth.handler.impl;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Splitter;
 import com.hivemq.api.auth.handler.AuthenticationResult;
 import com.hivemq.http.HttpConstants;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.MultivaluedMap;
+import java.util.List;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
@@ -44,10 +46,10 @@ public abstract class AbstractHeaderAuthenticationHandler extends AbstractAuthen
 
     protected static Optional<String> extractAuthValue(String expectedMethod, String headerValue) {
         headerValue = headerValue.trim();
-        String[] val = headerValue.split(" ");
-        if (val.length == 2) {
-            if (expectedMethod.equals(val[0])) {
-                return Optional.of(val[1]);
+        List<String> val = Splitter.on(' ').splitToList(headerValue);
+        if (val.size() == 2) {
+            if (expectedMethod.equals(val.get(0))) {
+                return Optional.of(val.get(1));
             }
         }
         return Optional.empty();
