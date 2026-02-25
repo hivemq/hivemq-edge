@@ -17,14 +17,13 @@ package util.encoder;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.encoder.mqtt3.AbstractVariableHeaderLengthEncoder;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;
 import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.util.Strings;
 import com.hivemq.util.Utf8Utils;
 import io.netty.buffer.ByteBuf;
-
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Lukas Brandl
@@ -35,7 +34,9 @@ public class Mqtt3SubscribeEncoder extends AbstractVariableHeaderLengthEncoder<S
 
     @Override
     public void encode(
-            final @NotNull ClientConnection clientConnection, final @NotNull SUBSCRIBE msg, final @NotNull ByteBuf out) {
+            final @NotNull ClientConnection clientConnection,
+            final @NotNull SUBSCRIBE msg,
+            final @NotNull ByteBuf out) {
 
         out.writeByte(SUBSCRIBE_FIXED_HEADER);
         createRemainingLength(msg.getRemainingLength(), out);

@@ -18,7 +18,7 @@ package com.hivemq.extensions.core;
 import com.hivemq.api.resources.GenericAPIHolder;
 import org.jetbrains.annotations.NotNull;
 
-public class RestComponentsServiceImpl implements RestComponentsService{
+public class RestComponentsServiceImpl implements RestComponentsService {
 
     private final @NotNull GenericAPIHolder genericAPIHolder;
 
@@ -29,5 +29,4 @@ public class RestComponentsServiceImpl implements RestComponentsService{
     public void add(final @NotNull Object component) {
         genericAPIHolder.addComponent(component);
     }
-
 }

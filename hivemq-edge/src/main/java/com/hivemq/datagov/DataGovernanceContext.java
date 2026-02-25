@@ -18,16 +18,19 @@ package com.hivemq.datagov;
 import com.hivemq.datagov.model.DataGovernanceData;
 import com.hivemq.datagov.model.DataGovernanceResult;
 import com.hivemq.datagov.provider.DataGovernanceTokenProvider;
-
 import java.util.concurrent.ExecutorService;
 
 public interface DataGovernanceContext {
 
     DataGovernanceData getInput();
+
     DataGovernanceResult getResult();
+
     DataGovernanceTokenProvider getTokenProvider();
+
     void setResult(DataGovernanceResult result);
 
     ExecutorService getExecutorService();
+
     void setExecutorService(ExecutorService executorService);
 }

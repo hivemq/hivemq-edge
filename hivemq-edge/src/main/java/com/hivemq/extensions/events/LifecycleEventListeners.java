@@ -15,10 +15,9 @@
  */
 package com.hivemq.extensions.events;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.events.client.ClientLifecycleEventListenerProvider;
-
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -36,6 +35,6 @@ public interface LifecycleEventListeners {
     /**
      * @return a map of extension ids and ClientLifecycleEventListenerProvider, sorted descending by extension priority.
      */
-    @NotNull Map<@NotNull String, @NotNull ClientLifecycleEventListenerProvider> getClientLifecycleEventListenerProviderMap();
-
+    @NotNull
+    Map<@NotNull String, @NotNull ClientLifecycleEventListenerProvider> getClientLifecycleEventListenerProviderMap();
 }

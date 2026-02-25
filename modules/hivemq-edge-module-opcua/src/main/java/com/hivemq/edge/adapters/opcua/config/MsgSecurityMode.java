@@ -26,7 +26,6 @@ import org.jetbrains.annotations.Nullable;
  * Maps to Eclipse Milo's MessageSecurityMode.
  */
 public enum MsgSecurityMode {
-
     @JsonProperty("IGNORED")
     IGNORED(null),
 
@@ -81,8 +80,8 @@ public enum MsgSecurityMode {
             return null;
         }
         for (final var mode : values()) {
-            if (mode.name().equalsIgnoreCase(value) ||
-                    mode.name().replace("_", "").equalsIgnoreCase(value)) {
+            if (mode.name().equalsIgnoreCase(value)
+                    || mode.name().replace("_", "").equalsIgnoreCase(value)) {
                 return mode;
             }
         }

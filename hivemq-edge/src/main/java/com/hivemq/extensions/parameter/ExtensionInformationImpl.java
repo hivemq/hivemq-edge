@@ -15,12 +15,11 @@
  */
 package com.hivemq.extensions.parameter;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.parameter.ExtensionInformation;
 import com.hivemq.extensions.HiveMQExtension;
-
 import java.io.File;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Georg Held

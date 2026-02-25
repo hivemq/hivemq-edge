@@ -13,19 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.services.initializer;
 
-import org.jetbrains.annotations.NotNull;
-import com.hivemq.extension.sdk.api.services.intializer.ClientInitializer;
-import com.hivemq.extension.sdk.api.services.intializer.InitializerRegistry;
-import org.junit.jupiter.api.Test;
-
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+
+import com.hivemq.extension.sdk.api.services.intializer.ClientInitializer;
+import com.hivemq.extension.sdk.api.services.intializer.InitializerRegistry;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 
 /**
  * @since 4.0.0
@@ -38,8 +35,7 @@ public class InitializerRegistryImplTest {
 
     @Test
     public void test_set() {
-        final ClientInitializer clientInitializer = (input, pipeline) -> {
-        };
+        final ClientInitializer clientInitializer = (input, pipeline) -> {};
 
         registry.setClientInitializer(clientInitializer);
 
@@ -49,7 +45,6 @@ public class InitializerRegistryImplTest {
     @Test
     @SuppressWarnings("ConstantConditions")
     public void test_set_null() {
-        assertThatThrownBy(() -> registry.setClientInitializer(null))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> registry.setClientInitializer(null)).isInstanceOf(NullPointerException.class);
     }
 }

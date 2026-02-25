@@ -15,10 +15,9 @@
  */
 package com.hivemq.extensions;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.nio.file.Path;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Georg Held
@@ -66,16 +65,18 @@ public class HiveMQExtensionEvent {
         return embedded;
     }
 
-    public enum Change {ENABLE, DISABLE}
+    public enum Change {
+        ENABLE,
+        DISABLE
+    }
 
     @Override
     public String toString() {
-        return "HiveMQExtensionEvent{" +
-                "change=" + change +
-                ", extensionId='" + extensionId + '\'' +
-                ", priority=" + priority +
-                ", extensionFolder=" + extensionFolder +
-                '}';
+        return "HiveMQExtensionEvent{" + "change="
+                + change + ", extensionId='"
+                + extensionId + '\'' + ", priority="
+                + priority + ", extensionFolder="
+                + extensionFolder + '}';
     }
 
     @Override
@@ -83,7 +84,10 @@ public class HiveMQExtensionEvent {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         HiveMQExtensionEvent that = (HiveMQExtensionEvent) o;
-        return priority == that.priority && change == that.change && Objects.equals(extensionId, that.extensionId) && Objects.equals(extensionFolder, that.extensionFolder);
+        return priority == that.priority
+                && change == that.change
+                && Objects.equals(extensionId, that.extensionId)
+                && Objects.equals(extensionFolder, that.extensionFolder);
     }
 
     @Override

@@ -21,7 +21,8 @@ import org.jetbrains.annotations.NotNull;
 
 public interface HiveMQCapabilityService {
 
-    @NotNull CapabilityList getList();
+    @NotNull
+    CapabilityList getList();
 
     void addCapability(@NotNull Capability capability);
 

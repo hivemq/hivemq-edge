@@ -15,20 +15,21 @@
  */
 package com.hivemq.mqttsn;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
  */
 public interface IMqttsnTopicRegistry {
 
-    String readTopicName(@NotNull String clientId, int topicIdType, byte[] topicData, boolean readNormalAsFullTopic) throws MqttsnProtocolException ;
+    String readTopicName(@NotNull String clientId, int topicIdType, byte[] topicData, boolean readNormalAsFullTopic)
+            throws MqttsnProtocolException;
 
-    Optional<MqttsnTopicAlias> readTopicAlias(@NotNull String clientId, @NotNull String topicName) throws MqttsnProtocolException ;
+    Optional<MqttsnTopicAlias> readTopicAlias(@NotNull String clientId, @NotNull String topicName)
+            throws MqttsnProtocolException;
 
-    int register(@NotNull String clientId, @NotNull String topicName) throws MqttsnProtocolException ;
+    int register(@NotNull String clientId, @NotNull String topicName) throws MqttsnProtocolException;
 
     void clearSessionAliases(@NotNull String clientId);
 }

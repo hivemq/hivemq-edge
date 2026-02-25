@@ -15,6 +15,11 @@
  */
 package com.hivemq.util;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 import io.netty.buffer.ByteBuf;
@@ -22,13 +27,7 @@ import io.netty.buffer.Unpooled;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.jupiter.api.Test;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 public class BytesTest {
-
 
     @Test
     public void test_get_prefixed_bytes() throws Exception {
@@ -91,7 +90,7 @@ public class BytesTest {
 
     @Test
     public void test_prefix_bytes() throws Exception {
-        final ByteBuf byteBuf = Bytes.prefixBytes(new byte[]{0, 1, (byte) 128}, Unpooled.buffer());
+        final ByteBuf byteBuf = Bytes.prefixBytes(new byte[] {0, 1, (byte) 128}, Unpooled.buffer());
         final int size = byteBuf.readUnsignedShort();
 
         assertEquals(3, size);
@@ -100,7 +99,6 @@ public class BytesTest {
         assertEquals((byte) 128, byteBuf.readByte());
         assertEquals(false, byteBuf.isReadable());
     }
-
 
     @Test
     public void test_prefix_bytes_empty() throws Exception {
@@ -118,7 +116,7 @@ public class BytesTest {
 
     @Test
     public void test_prefixed_bytes_null_buffer() throws Exception {
-        assertThrows(NullPointerException.class, () -> Bytes.prefixBytes(new byte[]{1, 2, 3}, null));
+        assertThrows(NullPointerException.class, () -> Bytes.prefixBytes(new byte[] {1, 2, 3}, null));
     }
 
     @Test

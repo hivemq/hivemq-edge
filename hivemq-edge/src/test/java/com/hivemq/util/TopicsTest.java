@@ -15,17 +15,16 @@
  */
 package com.hivemq.util;
 
-import org.junit.jupiter.api.Test;
-
 import static com.hivemq.util.Topics.*;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Dominik Obermaier
  */
 public class TopicsTest {
-
 
     @Test
     public void test_not_valid_publish() throws Exception {
@@ -38,7 +37,6 @@ public class TopicsTest {
         assertFalse(isValidTopicToPublish("+"));
         assertFalse(isValidTopicToPublish("topic/+"));
         assertFalse(isValidTopicToPublish("topic/+/topic"));
-
 
         assertFalse(isValidTopicToPublish("\u0000"));
         assertFalse(isValidTopicToPublish("topic/\u0000"));
@@ -60,7 +58,6 @@ public class TopicsTest {
 
     @Test
     public void test_valid_publish() throws Exception {
-
 
         assertTrue(isValidTopicToPublish("the/topic"));
         assertTrue(isValidTopicToPublish("t"));
@@ -101,7 +98,6 @@ public class TopicsTest {
         assertTrue(isValidToSubscribe("topic/#"));
         assertTrue(isValidToSubscribe("topic/topic/#"));
 
-
         assertTrue(isValidToSubscribe("+"));
         assertTrue(isValidToSubscribe("topic/+"));
         assertTrue(isValidToSubscribe("topic/+/+"));
@@ -112,10 +108,8 @@ public class TopicsTest {
         assertTrue(isValidToSubscribe("////+/+"));
         assertTrue(isValidToSubscribe("////+////+/"));
 
-
         assertTrue(isValidToSubscribe("+/+/#"));
         assertTrue(isValidToSubscribe("///+/+///#"));
-
     }
 
     @Test

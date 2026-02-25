@@ -16,8 +16,8 @@
 package com.hivemq.mqtt.topic.tree;
 
 import com.google.common.collect.ImmutableSet;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
+import org.jetbrains.annotations.NotNull;
 
 public class TopicSubscribers {
 

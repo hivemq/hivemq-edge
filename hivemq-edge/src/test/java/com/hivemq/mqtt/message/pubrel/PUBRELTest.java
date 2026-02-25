@@ -15,15 +15,15 @@
  */
 package com.hivemq.mqtt.message.pubrel;
 
-import org.jetbrains.annotations.NotNull;
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.hivemq.extensions.packets.pubrel.PubrelPacketImpl;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.reason.Mqtt5PubRelReasonCode;
 import com.hivemq.util.MemoryEstimator;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Yannick Weber
@@ -46,7 +46,9 @@ public class PUBRELTest {
     @Test
     public void test_constructMqtt5() {
         final PUBREL origin = new PUBREL(
-                1, Mqtt5PubRelReasonCode.PACKET_IDENTIFIER_NOT_FOUND, "reasonString",
+                1,
+                Mqtt5PubRelReasonCode.PACKET_IDENTIFIER_NOT_FOUND,
+                "reasonString",
                 Mqtt5UserProperties.NO_USER_PROPERTIES);
         final PubrelPacketImpl packet = new PubrelPacketImpl(origin);
 
@@ -90,12 +92,11 @@ public class PUBRELTest {
                 new MqttUserProperty("user2", "value2"),
                 new MqttUserProperty("user3", "value3"));
 
-        final int userPropertiesSize =
-                3 * (
-                        24 + // overhead
-                                MemoryEstimator.stringSize("userx") +
-                                MemoryEstimator.stringSize("valuex")
-                );
+        final int userPropertiesSize = 3
+                * (24
+                        + // overhead
+                        MemoryEstimator.stringSize("userx")
+                        + MemoryEstimator.stringSize("valuex"));
 
         final String reasonString = "reasonString";
         final int reasonStringSize = MemoryEstimator.stringSize(reasonString);
@@ -103,25 +104,23 @@ public class PUBRELTest {
         final PUBREL pubrel1 = new PUBREL(1);
         final PUBREL pubrel2 = new PUBREL(1, 100L, 100L);
         final PUBREL pubrel3 =
-                new PUBREL(1,
-                        Mqtt5PubRelReasonCode.PACKET_IDENTIFIER_NOT_FOUND,
-                        reasonString,
-                        userProperties);
+                new PUBREL(1, Mqtt5PubRelReasonCode.PACKET_IDENTIFIER_NOT_FOUND, reasonString, userProperties);
 
-        final PUBREL pubrel4 = new PUBREL(1,
-                Mqtt5PubRelReasonCode.PACKET_IDENTIFIER_NOT_FOUND,
-                reasonString,
-                userProperties,
-                100L,
-                100L);
+        final PUBREL pubrel4 = new PUBREL(
+                1, Mqtt5PubRelReasonCode.PACKET_IDENTIFIER_NOT_FOUND, reasonString, userProperties, 100L, 100L);
 
-        final int fixedSize = MemoryEstimator.OBJECT_SHELL_SIZE +
-                MemoryEstimator.INT_SIZE + // sizeInMemory
-                MemoryEstimator.INT_SIZE + // packet id
-                MemoryEstimator.ENUM_OVERHEAD + // reason code
-                MemoryEstimator.LONG_WRAPPER_SIZE + //publish timestamp
-                MemoryEstimator.LONG_WRAPPER_SIZE + //expiry interval
-                24; //user props overhead
+        final int fixedSize = MemoryEstimator.OBJECT_SHELL_SIZE
+                + MemoryEstimator.INT_SIZE
+                + // sizeInMemory
+                MemoryEstimator.INT_SIZE
+                + // packet id
+                MemoryEstimator.ENUM_OVERHEAD
+                + // reason code
+                MemoryEstimator.LONG_WRAPPER_SIZE
+                + // publish timestamp
+                MemoryEstimator.LONG_WRAPPER_SIZE
+                + // expiry interval
+                24; // user props overhead
 
         final int pubrel3Size = fixedSize + reasonStringSize + userPropertiesSize;
         final int pubrel4Size = fixedSize + reasonStringSize + userPropertiesSize;
@@ -130,6 +129,5 @@ public class PUBRELTest {
         assertEquals(fixedSize, pubrel2.getEstimatedSizeInMemory());
         assertEquals(pubrel3Size, pubrel3.getEstimatedSizeInMemory());
         assertEquals(pubrel4Size, pubrel4.getEstimatedSizeInMemory());
-
     }
 }

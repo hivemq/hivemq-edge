@@ -13,8 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.handler;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.bootstrap.ClientConnection;
@@ -39,6 +45,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.io.File;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,15 +55,6 @@ import util.CollectUserEventsHandler;
 import util.IsolatedExtensionClassloaderUtil;
 import util.TestConfigurationBootstrap;
 import util.TestMessageUtil;
-
-import java.io.File;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class PublishOutboundInterceptorHandlerTest {
 
@@ -72,6 +70,7 @@ public class PublishOutboundInterceptorHandlerTest {
     private @NotNull EmbeddedChannel channel;
     private @NotNull ClientConnection clientConnection;
     private @NotNull PublishOutboundInterceptorHandler handler;
+
     @BeforeEach
     public void setUp() throws Exception {
         channel = new EmbeddedChannel();
@@ -79,19 +78,16 @@ public class PublishOutboundInterceptorHandlerTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setClientId("test_client");
 
-        final ConfigurationService configurationService =
-                new TestConfigurationBootstrap().getConfigurationService();
-        handler = new PublishOutboundInterceptorHandler(asyncer,
-                configurationService,
-                pluginTaskExecutorService,
-                hiveMQExtensions,
-                messageDroppedService);
+        final ConfigurationService configurationService = new TestConfigurationBootstrap().getConfigurationService();
+        handler = new PublishOutboundInterceptorHandler(
+                asyncer, configurationService, pluginTaskExecutorService, hiveMQExtensions, messageDroppedService);
         channel.pipeline().addLast("test", new ChannelOutboundHandlerAdapter() {
             @Override
             public void write(
                     final @NotNull ChannelHandlerContext ctx,
                     final @NotNull Object msg,
-                    final @NotNull ChannelPromise promise) throws Exception {
+                    final @NotNull ChannelPromise promise)
+                    throws Exception {
                 if (msg instanceof PUBLISH) {
                     handler.handleOutboundPublish(ctx, ((PUBLISH) msg), promise);
                 } else {
@@ -129,9 +125,8 @@ public class PublishOutboundInterceptorHandlerTest {
     @Test
     @Timeout(5)
     public void test_extension_null() throws Exception {
-        final PublishOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                TestInterceptor.class);
+        final PublishOutboundInterceptor interceptor =
+                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.toPath(), TestInterceptor.class);
         when(clientContext.getPublishOutboundInterceptors()).thenReturn(ImmutableList.of(interceptor));
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setExtensionClientContext(clientContext);
@@ -144,9 +139,8 @@ public class PublishOutboundInterceptorHandlerTest {
     @Test
     @Timeout(5)
     public void test_extension_prevented() throws Exception {
-        final PublishOutboundInterceptor interceptor = IsolatedExtensionClassloaderUtil.loadInstance(
-                temporaryFolder.toPath(),
-                TestInterceptor.class);
+        final PublishOutboundInterceptor interceptor =
+                IsolatedExtensionClassloaderUtil.loadInstance(temporaryFolder.toPath(), TestInterceptor.class);
         when(clientContext.getPublishOutboundInterceptors()).thenReturn(ImmutableList.of(interceptor));
 
         final CollectUserEventsHandler<PublishDroppedEvent> events =
@@ -164,7 +158,8 @@ public class PublishOutboundInterceptorHandlerTest {
 
         final ChannelPromise promise = channel.newPromise();
         final PublishOutboundInterceptorHandler.PublishOutboundInterceptorContext context =
-                new PublishOutboundInterceptorHandler.PublishOutboundInterceptorContext("client",
+                new PublishOutboundInterceptorHandler.PublishOutboundInterceptorContext(
+                        "client",
                         1,
                         ctx,
                         promise,
@@ -189,8 +184,6 @@ public class PublishOutboundInterceptorHandlerTest {
         @Override
         public void onOutboundPublish(
                 final @NotNull PublishOutboundInput publishOutboundInput,
-                final @NotNull PublishOutboundOutput publishOutboundOutput) {
-
-        }
+                final @NotNull PublishOutboundOutput publishOutboundOutput) {}
     }
 }

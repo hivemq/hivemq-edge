@@ -15,9 +15,9 @@
  */
 package util;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.parameter.TopicPermission;
 import com.hivemq.extensions.services.builder.TopicPermissionBuilderImpl;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -27,9 +27,10 @@ import com.hivemq.extensions.services.builder.TopicPermissionBuilderImpl;
 public class TestTopicPermissionsUtil {
 
     public static TopicPermission getTopicPermission() {
-        return new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService()).topicFilter("#").build();
+        return new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService())
+                .topicFilter("#")
+                .build();
     }
-
 
     @SuppressWarnings("NullabilityAnnotations")
     public static class TestTopicPermission implements TopicPermission {
@@ -76,5 +77,4 @@ public class TestTopicPermissionsUtil {
             return null;
         }
     }
-
 }

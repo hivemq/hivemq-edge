@@ -44,15 +44,14 @@ import com.hivemq.metrics.MetricRegistryLogger;
 import com.hivemq.persistence.PersistenceStartup;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.persistence.connection.ConnectionPersistenceImpl;
+import java.io.File;
+import java.io.IOException;
+import java.util.Objects;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Objects;
 
 public class HiveMQEdgeBootstrap {
 
@@ -92,8 +91,9 @@ public class HiveMQEdgeBootstrap {
 
     public @NotNull Injector bootstrap() throws HiveMQEdgeStartupException {
         metricRegistry.addListener(new MetricRegistryLogger());
-        if(systemInformation.isConfigWriteable()) {
-            capabilityService.addCapability(new Capability("config-writeable",
+        if (systemInformation.isConfigWriteable()) {
+            capabilityService.addCapability(new Capability(
+                    "config-writeable",
                     "Config can be manipulated via the REST API",
                     "Changes to the configuration made via the REST API are persisted back into the config.xml."));
         }
@@ -102,7 +102,7 @@ public class HiveMQEdgeBootstrap {
         // Embedded has already called init as it is required to read the config file.
         if (!systemInformation.isEmbedded()) {
             log.trace("Initializing HiveMQ home directory");
-            //Create SystemInformation this early because logging depends on it
+            // Create SystemInformation this early because logging depends on it
             systemInformation.init();
         }
 
@@ -115,7 +115,7 @@ public class HiveMQEdgeBootstrap {
         log.trace("Initializing Exception handlers");
         HiveMQExceptionHandlerBootstrap.addUnrecoverableExceptionHandler();
 
-        //ungraceful shutdown does not delete tmp folders, so we clean them up on broker start
+        // ungraceful shutdown does not delete tmp folders, so we clean them up on broker start
         log.trace("Cleaning up temporary folders");
         deleteTmpFolder(systemInformation.getDataFolder());
 
@@ -155,7 +155,8 @@ public class HiveMQEdgeBootstrap {
         } catch (final InterruptedException e) {
             throw new HiveMQEdgeStartupException(e);
         }
-        log.info("HiveMQ Edge starts with Persistence Mode: '{}'",
+        log.info(
+                "HiveMQ Edge starts with Persistence Mode: '{}'",
                 tmpConfigService.persistenceConfigurationService().getMode());
     }
 
@@ -191,8 +192,13 @@ public class HiveMQEdgeBootstrap {
 
         try {
             commercialModuleLoaderDiscovery = new CommercialModuleLoaderDiscovery(moduleLoader);
-            generalBootstrapService =
-                    new GeneralBootstrapServiceImpl(shutdownHooks, metricRegistry, systemInformation, tmpConfigService, hivemqId, edgeCoreFactoryService);
+            generalBootstrapService = new GeneralBootstrapServiceImpl(
+                    shutdownHooks,
+                    metricRegistry,
+                    systemInformation,
+                    tmpConfigService,
+                    hivemqId,
+                    edgeCoreFactoryService);
             commercialModuleLoaderDiscovery.generalBootstrap(generalBootstrapService);
         } catch (final Exception e) {
             log.warn("Error on loading the commercial module loader.", e);
@@ -200,13 +206,11 @@ public class HiveMQEdgeBootstrap {
         }
     }
 
-
     private void bootstrapPersistences() {
         Preconditions.checkNotNull(generalBootstrapService);
         Preconditions.checkNotNull(configService);
         Preconditions.checkNotNull(commercialModuleLoaderDiscovery);
         Preconditions.checkNotNull(injector);
-
 
         try {
             final var persistenceBootstrapService = injector.persistenceBootstrapService();
@@ -232,19 +236,17 @@ public class HiveMQEdgeBootstrap {
         }
     }
 
-
     private static void deleteTmpFolder(final @NotNull File dataFolder) {
         final String tmpFolder = dataFolder.getPath() + File.separator + "tmp";
         try {
-            //ungraceful shutdown does not delete tmp folders, so we clean them up on broker start
+            // ungraceful shutdown does not delete tmp folders, so we clean them up on broker start
             FileUtils.deleteDirectory(new File(tmpFolder));
         } catch (final IOException e) {
-            //No error because it's not business breaking
+            // No error because it's not business breaking
             log.warn("The temporary folder could not be deleted ({}).", tmpFolder);
             if (log.isDebugEnabled()) {
                 log.debug("Original Exception: ", e);
             }
         }
     }
-
 }

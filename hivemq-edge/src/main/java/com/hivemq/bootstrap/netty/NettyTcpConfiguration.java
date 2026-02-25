@@ -15,13 +15,12 @@
  */
 package com.hivemq.bootstrap.netty;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.hivemq.extension.sdk.api.annotations.Immutable;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.ServerSocketChannel;
-
 import jakarta.inject.Singleton;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * The configuration for Netty
@@ -38,10 +37,10 @@ public class NettyTcpConfiguration {
 
     private final EventLoopGroup childEventLoopGroup;
 
-
-    public NettyTcpConfiguration(final Class<? extends ServerSocketChannel> serverSocketChannelClass,
-                                 final EventLoopGroup parentEventLoopGroup,
-                                 final EventLoopGroup childEventLoopGroup) {
+    public NettyTcpConfiguration(
+            final Class<? extends ServerSocketChannel> serverSocketChannelClass,
+            final EventLoopGroup parentEventLoopGroup,
+            final EventLoopGroup childEventLoopGroup) {
 
         checkNotNull(serverSocketChannelClass, "Server Socket Channel Class must not be null");
         checkNotNull(parentEventLoopGroup, "Parent Event Loop Group must not be null");
@@ -63,5 +62,4 @@ public class NettyTcpConfiguration {
     public EventLoopGroup getChildEventLoopGroup() {
         return childEventLoopGroup;
     }
-
 }

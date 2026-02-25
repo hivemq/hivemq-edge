@@ -15,24 +15,25 @@
  */
 package com.hivemq.codec.decoder;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import util.TestMqttDecoder;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 public class Mqtt3SubscribeDecoderTest {
 
     private @NotNull EmbeddedChannel channel;
+
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -47,22 +48,21 @@ public class Mqtt3SubscribeDecoderTest {
 
         final ByteBuf buf = Unpooled.buffer();
         buf.writeByte(0b1000_0010);
-        //Remaining length
+        // Remaining length
         buf.writeByte(14);
 
-        //MessageID
+        // MessageID
         buf.writeShort(55555);
 
         // "a/b"
-        buf.writeBytes(new byte[]{0, 3, 0x61, 0x2F, 0x62});
-        //QoS 1
+        buf.writeBytes(new byte[] {0, 3, 0x61, 0x2F, 0x62});
+        // QoS 1
         buf.writeByte(1);
 
         // "c/d"
-        buf.writeBytes(new byte[]{0, 3, 0x63, 0x2F, 0x64});
-        //QoS 1
+        buf.writeBytes(new byte[] {0, 3, 0x63, 0x2F, 0x64});
+        // QoS 1
         buf.writeByte(2);
-
 
         channel.writeInbound(buf);
 
@@ -87,22 +87,21 @@ public class Mqtt3SubscribeDecoderTest {
 
         final ByteBuf buf = Unpooled.buffer();
         buf.writeByte(0b1000_0010);
-        //Remaining length
+        // Remaining length
         buf.writeByte(14);
 
-        //MessageID
+        // MessageID
         buf.writeShort(0);
 
         // "a/b"
-        buf.writeBytes(new byte[]{0, 3, 0x61, 0x2F, 0x62});
-        //QoS 1
+        buf.writeBytes(new byte[] {0, 3, 0x61, 0x2F, 0x62});
+        // QoS 1
         buf.writeByte(1);
 
         // "c/d"
-        buf.writeBytes(new byte[]{0, 3, 0x63, 0x2F, 0x64});
-        //QoS 1
+        buf.writeBytes(new byte[] {0, 3, 0x63, 0x2F, 0x64});
+        // QoS 1
         buf.writeByte(2);
-
 
         channel.writeInbound(buf);
 
@@ -116,10 +115,10 @@ public class Mqtt3SubscribeDecoderTest {
 
         final ByteBuf buf = Unpooled.buffer();
         buf.writeByte(0b1000_0010);
-        //Remaining length
+        // Remaining length
         buf.writeByte(2);
 
-        //MessageID
+        // MessageID
         buf.writeShort(55555);
 
         channel.writeInbound(buf);
@@ -128,8 +127,7 @@ public class Mqtt3SubscribeDecoderTest {
 
         assertNull(subscribe);
 
-
-        //Client got disconnected
+        // Client got disconnected
         assertFalse(channel.isActive());
     }
 
@@ -138,32 +136,29 @@ public class Mqtt3SubscribeDecoderTest {
 
         final ByteBuf buf = Unpooled.buffer();
         buf.writeByte(0b1000_0010);
-        //Remaining length
+        // Remaining length
         buf.writeByte(14);
 
-        //MessageID
+        // MessageID
         buf.writeShort(55555);
 
         // "a/b"
-        buf.writeBytes(new byte[]{0, 3, 0x61, 0x2F, 0x62});
-        //QoS 3. Invalid!
+        buf.writeBytes(new byte[] {0, 3, 0x61, 0x2F, 0x62});
+        // QoS 3. Invalid!
         buf.writeByte(3);
 
         // "c/d"
-        buf.writeBytes(new byte[]{0, 3, 0x63, 0x2F, 0x64});
-        //QoS 2
+        buf.writeBytes(new byte[] {0, 3, 0x63, 0x2F, 0x64});
+        // QoS 2
         buf.writeByte(2);
 
-
         channel.writeInbound(buf);
-
 
         final SUBSCRIBE subscribe = channel.readInbound();
 
         assertNull(subscribe);
 
-
-        //Client got disconnected
+        // Client got disconnected
         assertFalse(channel.isActive());
     }
 
@@ -172,31 +167,29 @@ public class Mqtt3SubscribeDecoderTest {
 
         final ByteBuf buf = Unpooled.buffer();
         buf.writeByte(0b1000_0010);
-        //Remaining length
+        // Remaining length
         buf.writeByte(14);
 
-        //MessageID
+        // MessageID
         buf.writeShort(55555);
 
         // "a/b"
-        buf.writeBytes(new byte[]{0, 3, 0x61, 0x2F, 0x62});
-        //QoS -1. Invalid!
+        buf.writeBytes(new byte[] {0, 3, 0x61, 0x2F, 0x62});
+        // QoS -1. Invalid!
         buf.writeByte(-1);
 
         // "c/d"
-        buf.writeBytes(new byte[]{0, 3, 0x63, 0x2F, 0x64});
-        //QoS 2
+        buf.writeBytes(new byte[] {0, 3, 0x63, 0x2F, 0x64});
+        // QoS 2
         buf.writeByte(2);
 
-
         channel.writeInbound(buf);
-
 
         final SUBSCRIBE subscribe = channel.readInbound();
 
         assertNull(subscribe);
 
-        //Client got disconnected
+        // Client got disconnected
         assertFalse(channel.isActive());
     }
 
@@ -205,31 +198,29 @@ public class Mqtt3SubscribeDecoderTest {
 
         final ByteBuf buf = Unpooled.buffer();
         buf.writeByte(0b1000_0010);
-        //Remaining length
+        // Remaining length
         buf.writeByte(14);
 
-        //MessageID
+        // MessageID
         buf.writeShort(55555);
 
         // "a/b"
-        buf.writeBytes(new byte[]{0, 3, 0x61, 0x2F, 0x62});
-        //QoS 0. Invalid!
+        buf.writeBytes(new byte[] {0, 3, 0x61, 0x2F, 0x62});
+        // QoS 0. Invalid!
         buf.writeByte(0);
 
         // "c/NULL"
-        buf.writeBytes(new byte[]{0, 3, 0x63, 0x2F, 0x0});
-        //QoS 2
+        buf.writeBytes(new byte[] {0, 3, 0x63, 0x2F, 0x0});
+        // QoS 2
         buf.writeByte(2);
 
-
         channel.writeInbound(buf);
-
 
         final SUBSCRIBE subscribe = channel.readInbound();
 
         assertNull(subscribe);
 
-        //Client got disconnected
+        // Client got disconnected
         assertFalse(channel.isActive());
     }
 
@@ -238,26 +229,24 @@ public class Mqtt3SubscribeDecoderTest {
 
         final ByteBuf buf = Unpooled.buffer();
         buf.writeByte(0b1000_0010);
-        //Remaining length
+        // Remaining length
         buf.writeByte(5);
 
-        //MessageID
+        // MessageID
         buf.writeShort(55555);
 
         // Empty
-        buf.writeBytes(new byte[]{0, 0});
-        //QoS 0. Invalid!
+        buf.writeBytes(new byte[] {0, 0});
+        // QoS 0. Invalid!
         buf.writeByte(0);
 
-
         channel.writeInbound(buf);
-
 
         final SUBSCRIBE subscribe = channel.readInbound();
 
         assertNull(subscribe);
 
-        //Client got disconnected
+        // Client got disconnected
         assertFalse(channel.isActive());
     }
 
@@ -266,10 +255,10 @@ public class Mqtt3SubscribeDecoderTest {
 
         final ByteBuf buf = Unpooled.buffer();
         buf.writeByte(0b1000_0010);
-        //Remaining length
+        // Remaining length
         buf.writeByte(1);
 
-        //MessageID
+        // MessageID
         buf.writeByte(5);
 
         channel.writeInbound(buf);
@@ -278,7 +267,7 @@ public class Mqtt3SubscribeDecoderTest {
 
         assertNull(subscribe);
 
-        //Client got disconnected
+        // Client got disconnected
         assertFalse(channel.isActive());
     }
 
@@ -289,26 +278,25 @@ public class Mqtt3SubscribeDecoderTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setProtocolVersion(ProtocolVersion.MQTTv3_1_1);
         final ByteBuf buf = Unpooled.buffer();
         buf.writeByte(0b1000_0100);
-        //Remaining length
+        // Remaining length
         buf.writeByte(14);
 
-        //MessageID
+        // MessageID
         buf.writeShort(55555);
 
         // "a/b"
-        buf.writeBytes(new byte[]{0, 3, 0x61, 0x2F, 0x62});
-        //QoS 1
+        buf.writeBytes(new byte[] {0, 3, 0x61, 0x2F, 0x62});
+        // QoS 1
         buf.writeByte(1);
 
         // "c/d"
-        buf.writeBytes(new byte[]{0, 3, 0x63, 0x2F, 0x64});
-        //QoS 1
+        buf.writeBytes(new byte[] {0, 3, 0x63, 0x2F, 0x64});
+        // QoS 1
         buf.writeByte(2);
 
         channel.writeInbound(buf);
 
-
-        //The client needs to get disconnected
+        // The client needs to get disconnected
         assertFalse(channel.isActive());
     }
 
@@ -320,29 +308,27 @@ public class Mqtt3SubscribeDecoderTest {
 
         final ByteBuf buf = Unpooled.buffer();
         buf.writeByte(0b1000_0100);
-        //Remaining length
+        // Remaining length
         buf.writeByte(14);
 
-        //MessageID
+        // MessageID
         buf.writeShort(55555);
 
         // "a/b"
-        buf.writeBytes(new byte[]{0, 3, 0x61, 0x2F, 0x62});
-        //QoS 1
+        buf.writeBytes(new byte[] {0, 3, 0x61, 0x2F, 0x62});
+        // QoS 1
         buf.writeByte(1);
 
         // "c/d"
-        buf.writeBytes(new byte[]{0, 3, 0x63, 0x2F, 0x64});
-        //QoS 1
+        buf.writeBytes(new byte[] {0, 3, 0x63, 0x2F, 0x64});
+        // QoS 1
         buf.writeByte(2);
 
         channel.writeInbound(buf);
 
-
-        //The client needs to get disconnected
+        // The client needs to get disconnected
         assertFalse(channel.isActive());
     }
-
 
     @Test
     public void test_subscribe_topic_length_max() {
@@ -353,19 +339,19 @@ public class Mqtt3SubscribeDecoderTest {
 
         final ByteBuf buf = Unpooled.buffer();
         buf.writeByte(0b1000_0010);
-        //Remaining length
-        buf.writeBytes(new byte[]{(byte) 0x84, (byte) 0x80, 4});
+        // Remaining length
+        buf.writeBytes(new byte[] {(byte) 0x84, (byte) 0x80, 4});
 
-        //MessageID
+        // MessageID
         buf.writeShort(12345);
 
         // topic length
-        buf.writeBytes(new byte[]{(byte) 0xFF, (byte) 0xFF});
+        buf.writeBytes(new byte[] {(byte) 0xFF, (byte) 0xFF});
 
-        //topic bytes
+        // topic bytes
         buf.writeBytes(maxTopic1.getBytes());
 
-        //QoS 1
+        // QoS 1
         buf.writeByte(1);
 
         channel.writeInbound(buf);
@@ -381,6 +367,5 @@ public class Mqtt3SubscribeDecoderTest {
         assertEquals(maxTopic1, subscribe.getTopics().get(0).getTopic());
 
         assertTrue(channel.isActive());
-
     }
 }

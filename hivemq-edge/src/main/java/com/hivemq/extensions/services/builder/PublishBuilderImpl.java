@@ -15,6 +15,9 @@
  */
 package com.hivemq.extensions.services.builder;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hivemq.mqtt.message.publish.PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.service.ConfigurationService;
@@ -34,15 +37,11 @@ import com.hivemq.extensions.services.publish.PublishImpl;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.util.Topics;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.inject.Inject;
 import java.nio.ByteBuffer;
 import java.util.Optional;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hivemq.mqtt.message.publish.PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Lukas Brandl
@@ -100,7 +99,8 @@ public class PublishBuilderImpl implements PublishBuilder {
             throw new DoNotImplementException(PublishPacket.class.getSimpleName());
         }
 
-        return fromComplete(publish.getQos(),
+        return fromComplete(
+                publish.getQos(),
                 publish.getRetain(),
                 publish.getTopic(),
                 publish.getPayloadFormatIndicator(),
@@ -122,7 +122,8 @@ public class PublishBuilderImpl implements PublishBuilder {
             throw new DoNotImplementException(Publish.class.getSimpleName());
         }
 
-        return fromComplete(publish.getQos(),
+        return fromComplete(
+                publish.getQos(),
                 publish.getRetain(),
                 publish.getTopic(),
                 publish.getPayloadFormatIndicator(),
@@ -150,14 +151,12 @@ public class PublishBuilderImpl implements PublishBuilder {
         this.contentType(publish.getContentType());
         if (publish.getPayload() != null) {
             this.payload = ByteBuffer.wrap(publish.getPayload());
-
         }
         for (final UserProperty userProperty : publish.getUserProperties().asList()) {
             this.userProperty(userProperty.getName(), userProperty.getValue());
         }
         return this;
     }
-
 
     @NotNull
     private PublishBuilder fromComplete(
@@ -231,8 +230,8 @@ public class PublishBuilderImpl implements PublishBuilder {
     @NotNull
     @Override
     public PublishBuilder messageExpiryInterval(final long messageExpiryInterval) {
-        PluginBuilderUtil.checkMessageExpiryInterval(messageExpiryInterval,
-                mqttConfigurationService.maxMessageExpiryInterval());
+        PluginBuilderUtil.checkMessageExpiryInterval(
+                messageExpiryInterval, mqttConfigurationService.maxMessageExpiryInterval());
         this.messageExpiryInterval = messageExpiryInterval;
         return this;
     }
@@ -287,7 +286,8 @@ public class PublishBuilderImpl implements PublishBuilder {
             messageExpiryInterval = mqttConfigurationService.maxMessageExpiryInterval();
         }
 
-        return new PublishImpl(qos,
+        return new PublishImpl(
+                qos,
                 retain,
                 topic,
                 payloadFormatIndicator,

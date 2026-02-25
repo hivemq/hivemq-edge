@@ -16,9 +16,9 @@
 package com.hivemq.extensions.executor.task;
 
 import com.google.common.util.concurrent.SettableFuture;
+import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 
 /**
  * @author Christoph Schäbel
@@ -57,8 +57,7 @@ public class AbstractOutput implements PluginTaskOutput {
     }
 
     @Override
-    public @NotNull
-    TimeoutFallback getTimeoutFallback() {
+    public @NotNull TimeoutFallback getTimeoutFallback() {
         return TimeoutFallback.FAILURE;
     }
 }

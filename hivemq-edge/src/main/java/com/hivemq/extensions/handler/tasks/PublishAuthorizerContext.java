@@ -17,13 +17,12 @@ package com.hivemq.extensions.handler.tasks;
 
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extensions.auth.parameter.PublishAuthorizerOutputImpl;
 import com.hivemq.extensions.executor.task.PluginInOutTaskContext;
 import io.netty.channel.ChannelHandlerContext;
-
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
@@ -54,8 +53,10 @@ public class PublishAuthorizerContext extends PluginInOutTaskContext<PublishAuth
     @Override
     public void pluginPost(final @NotNull PublishAuthorizerOutputImpl pluginOutput) {
 
-        if (pluginOutput.isAsync() && pluginOutput.isTimedOut() && pluginOutput.getTimeoutFallback() == TimeoutFallback.FAILURE) {
-            //Timeout fallback failure means publish delivery prevention
+        if (pluginOutput.isAsync()
+                && pluginOutput.isTimedOut()
+                && pluginOutput.getTimeoutFallback() == TimeoutFallback.FAILURE) {
+            // Timeout fallback failure means publish delivery prevention
             pluginOutput.forceFailedAuthorization();
         }
 
@@ -64,8 +65,7 @@ public class PublishAuthorizerContext extends PluginInOutTaskContext<PublishAuth
             ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setIncomingPublishesSkipRest(true);
         }
 
-
-        //the publish is done if any authorizer sets the outcome
+        // the publish is done if any authorizer sets the outcome
         if (pluginOutput.isCompleted()) {
             authorizeFuture.set(pluginOutput);
             return;
@@ -77,7 +77,7 @@ public class PublishAuthorizerContext extends PluginInOutTaskContext<PublishAuth
     }
 
     public void increment() {
-        //we must set the future when no more authorizers are registered
+        // we must set the future when no more authorizers are registered
         if (counter.incrementAndGet() == authorizerCount) {
             authorizeFuture.set(output);
         }

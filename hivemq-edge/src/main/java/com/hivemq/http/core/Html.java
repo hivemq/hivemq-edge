@@ -52,7 +52,7 @@ public class Html {
     }
 
     public static String heading(String title, int size) {
-        return String.format("<h"+size+">%s</h"+size+">", title);
+        return String.format("<h" + size + ">%s</h" + size + ">", title);
     }
 
     public static String subheading(String title) {
@@ -79,7 +79,8 @@ public class Html {
         return span(text, colorCode, embolden, backgroundColor, false, classes);
     }
 
-    public static String span(String text, String colorCode, boolean embolden, String backgroundColor, boolean italic, String classes) {
+    public static String span(
+            String text, String colorCode, boolean embolden, String backgroundColor, boolean italic, String classes) {
         String weight = embolden ? "bold" : "normal";
         backgroundColor = backgroundColor == null ? "" : backgroundColor;
         colorCode = colorCode == null ? "" : colorCode;
@@ -89,7 +90,8 @@ public class Html {
         weight = weight == null ? "" : String.format("font-weight: %s", weight);
         colorCode = colorCode == null ? "" : String.format("color: %s", colorCode);
 
-        return String.format("<span style=\"%s;%s;%s;%s\" class=\"%s\">%s</span>",
+        return String.format(
+                "<span style=\"%s;%s;%s;%s\" class=\"%s\">%s</span>",
                 colorCode,
                 weight,
                 backgroundColor,
@@ -141,14 +143,14 @@ public class Html {
 
     public static String anchor(String link, String label, boolean targetBlank) {
         String mask = targetBlank ? "<a href=\"%s\" target=\"_blank\">%s</a>" : "<a href=\"%s\">%s</a>";
-        return String.format(mask,link, label);
+        return String.format(mask, link, label);
     }
 
     public static String linespace(int count) {
         return String.join("", Collections.nCopies(count, "&nbsp;"));
     }
 
-    public static String getErrorMessage(int code, String message){
+    public static String getErrorMessage(int code, String message) {
         return String.format("<h1>Http %s</h1><hr>%s", code, message);
     }
 }

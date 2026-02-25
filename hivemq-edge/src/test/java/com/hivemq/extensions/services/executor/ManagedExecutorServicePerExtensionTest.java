@@ -13,8 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.services.executor;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.InternalConfigurations;
@@ -22,12 +30,6 @@ import com.hivemq.extension.sdk.api.services.CompletableScheduledFuture;
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensions;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -45,15 +47,11 @@ import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * @since 4.0.0
@@ -67,6 +65,7 @@ public class ManagedExecutorServicePerExtensionTest {
 
     private @NotNull ManagedExecutorServicePerExtension managedExecutorServicePerExtension;
     private @NotNull GlobalManagedExtensionExecutorService globalManagedPluginExecutorService;
+
     @BeforeEach
     public void setUp() throws Exception {
         InternalConfigurations.MANAGED_EXTENSION_THREAD_POOL_KEEP_ALIVE_SEC.set(60);
@@ -77,10 +76,10 @@ public class ManagedExecutorServicePerExtensionTest {
         globalManagedPluginExecutorService = new GlobalManagedExtensionExecutorService(shutdownHooks);
         globalManagedPluginExecutorService.postConstruct();
 
-        managedExecutorServicePerExtension = new ManagedExecutorServicePerExtension(globalManagedPluginExecutorService,
-                classLoader,
-                hiveMQExtensions);
+        managedExecutorServicePerExtension = new ManagedExecutorServicePerExtension(
+                globalManagedPluginExecutorService, classLoader, hiveMQExtensions);
     }
+
     @AfterEach
     public void tearDown() {
         new ManagedPluginExecutorShutdownHook(globalManagedPluginExecutorService, 10).run();
@@ -173,10 +172,13 @@ public class ManagedExecutorServicePerExtensionTest {
         final CountDownLatch runLatch = new CountDownLatch(1);
         final CountDownLatch futureLatch = new CountDownLatch(1);
 
-        final CompletableScheduledFuture<String> scheduledFuture = managedExecutorServicePerExtension.schedule(() -> {
-            runLatch.countDown();
-            return "test";
-        }, 500, TimeUnit.MILLISECONDS);
+        final CompletableScheduledFuture<String> scheduledFuture = managedExecutorServicePerExtension.schedule(
+                () -> {
+                    runLatch.countDown();
+                    return "test";
+                },
+                500,
+                TimeUnit.MILLISECONDS);
 
         scheduledFuture.whenComplete((string, throwable) -> {
             if (string.equals("test")) {
@@ -196,10 +198,13 @@ public class ManagedExecutorServicePerExtensionTest {
         final CountDownLatch runLatch = new CountDownLatch(1);
         final CountDownLatch exceptionLatch = new CountDownLatch(1);
 
-        final CompletableScheduledFuture<String> scheduledFuture = managedExecutorServicePerExtension.schedule(() -> {
-            runLatch.countDown();
-            return "test";
-        }, 10, TimeUnit.MILLISECONDS);
+        final CompletableScheduledFuture<String> scheduledFuture = managedExecutorServicePerExtension.schedule(
+                () -> {
+                    runLatch.countDown();
+                    return "test";
+                },
+                10,
+                TimeUnit.MILLISECONDS);
 
         scheduledFuture.whenComplete((string, throwable) -> {
             // check for cancellation exception
@@ -221,10 +226,13 @@ public class ManagedExecutorServicePerExtensionTest {
 
         when(hiveMQExtensions.getExtensionForClassloader(classLoader)).thenReturn(null);
 
-        final CompletableScheduledFuture<String> scheduledFuture = managedExecutorServicePerExtension.schedule(() -> {
-            runLatch.countDown();
-            return "test";
-        }, 500, TimeUnit.MILLISECONDS);
+        final CompletableScheduledFuture<String> scheduledFuture = managedExecutorServicePerExtension.schedule(
+                () -> {
+                    runLatch.countDown();
+                    return "test";
+                },
+                500,
+                TimeUnit.MILLISECONDS);
 
         assertTrue(runLatch.await(2, TimeUnit.SECONDS));
 
@@ -315,7 +323,6 @@ public class ManagedExecutorServicePerExtensionTest {
         final long delay = scheduledFuture.getDelay(TimeUnit.MILLISECONDS);
         assertTrue(delay <= 10);
 
-
         // does not complete normally
         scheduledFuture.whenComplete((object, throwable) -> completeLatch.countDown());
 
@@ -367,13 +374,16 @@ public class ManagedExecutorServicePerExtensionTest {
 
     @Test
     public void test_await_termination() throws Exception {
-        managedExecutorServicePerExtension.schedule(() -> {
-            try {
-                Thread.sleep(10);
-            } catch (final InterruptedException e) {
-                e.printStackTrace();
-            }
-        }, 10, TimeUnit.MILLISECONDS);
+        managedExecutorServicePerExtension.schedule(
+                () -> {
+                    try {
+                        Thread.sleep(10);
+                    } catch (final InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                },
+                10,
+                TimeUnit.MILLISECONDS);
 
         assertFalse(managedExecutorServicePerExtension.awaitTermination(100, TimeUnit.MILLISECONDS));
 
@@ -428,8 +438,7 @@ public class ManagedExecutorServicePerExtensionTest {
     public void test_submit_runnable() throws Exception {
         final CountDownLatch runLatch = new CountDownLatch(1);
 
-        final Runnable runnable = () -> {
-        };
+        final Runnable runnable = () -> {};
 
         final CompletableFuture<?> submit = managedExecutorServicePerExtension.submit(runnable);
 
@@ -466,8 +475,7 @@ public class ManagedExecutorServicePerExtensionTest {
     public void test_submit_runnable_with_result() throws Exception {
         final CountDownLatch runLatch = new CountDownLatch(1);
 
-        final Runnable runnable = () -> {
-        };
+        final Runnable runnable = () -> {};
 
         final CompletableFuture<CountDownLatch> submit = managedExecutorServicePerExtension.submit(runnable, runLatch);
 
@@ -484,8 +492,7 @@ public class ManagedExecutorServicePerExtensionTest {
 
         when(hiveMQExtensions.getExtensionForClassloader(classLoader)).thenReturn(null);
 
-        final Runnable runnable = () -> {
-        };
+        final Runnable runnable = () -> {};
 
         final CompletableFuture<CountDownLatch> submit = managedExecutorServicePerExtension.submit(runnable, runLatch);
 
@@ -526,8 +533,9 @@ public class ManagedExecutorServicePerExtensionTest {
     public void test_invokeAll_callable() throws Exception {
         final CountDownLatch invokeAllLatch = new CountDownLatch(5);
 
-        final List<Callable<String>> callableList =
-                Stream.generate((Supplier<Callable<String>>) () -> () -> "test").limit(5).collect(Collectors.toList());
+        final List<Callable<String>> callableList = Stream.generate((Supplier<Callable<String>>) () -> () -> "test")
+                .limit(5)
+                .collect(Collectors.toList());
 
         final List<Future<String>> futures = managedExecutorServicePerExtension.invokeAll(callableList);
 
@@ -557,11 +565,13 @@ public class ManagedExecutorServicePerExtensionTest {
         final CountDownLatch waitLatch = new CountDownLatch(1);
 
         final List<Callable<String>> callableList = Stream.generate((Supplier<Callable<String>>) () -> () -> {
-            calledLatch.countDown();
-            // force timeout
-            waitLatch.await();
-            return "test";
-        }).limit(5).collect(Collectors.toList());
+                    calledLatch.countDown();
+                    // force timeout
+                    waitLatch.await();
+                    return "test";
+                })
+                .limit(5)
+                .collect(Collectors.toList());
 
         final List<Future<String>> futures =
                 managedExecutorServicePerExtension.invokeAll(callableList, 50, TimeUnit.MILLISECONDS);
@@ -592,11 +602,13 @@ public class ManagedExecutorServicePerExtensionTest {
         final CountDownLatch calledLatch = new CountDownLatch(1);
 
         final List<Callable<String>> callableList = Stream.generate((Supplier<Callable<String>>) () -> () -> {
-            // wait 80 milliseconds to guarantee no timeout
-            Thread.sleep(150);
-            calledLatch.countDown();
-            return "test";
-        }).limit(5).collect(Collectors.toList());
+                    // wait 80 milliseconds to guarantee no timeout
+                    Thread.sleep(150);
+                    calledLatch.countDown();
+                    return "test";
+                })
+                .limit(5)
+                .collect(Collectors.toList());
 
         assertThatThrownBy(() -> managedExecutorServicePerExtension.invokeAny(callableList, 100, TimeUnit.MILLISECONDS))
                 .isInstanceOf(TimeoutException.class);
@@ -607,11 +619,13 @@ public class ManagedExecutorServicePerExtensionTest {
         final CountDownLatch calledLatch = new CountDownLatch(1);
 
         final List<Callable<String>> callableList = Stream.generate((Supplier<Callable<String>>) () -> () -> {
-            // wait 20 milliseconds to guarantee no timeout
-            Thread.sleep(20);
-            calledLatch.countDown();
-            return "test";
-        }).limit(5).collect(Collectors.toList());
+                    // wait 20 milliseconds to guarantee no timeout
+                    Thread.sleep(20);
+                    calledLatch.countDown();
+                    return "test";
+                })
+                .limit(5)
+                .collect(Collectors.toList());
 
         final String invoked = managedExecutorServicePerExtension.invokeAny(callableList, 100, TimeUnit.MILLISECONDS);
 

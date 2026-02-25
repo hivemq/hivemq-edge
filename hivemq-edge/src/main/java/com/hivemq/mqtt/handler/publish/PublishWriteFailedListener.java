@@ -16,11 +16,11 @@
 package com.hivemq.mqtt.handler.publish;
 
 import com.google.common.util.concurrent.SettableFuture;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.util.Exceptions;
 import io.netty.handler.codec.EncoderException;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

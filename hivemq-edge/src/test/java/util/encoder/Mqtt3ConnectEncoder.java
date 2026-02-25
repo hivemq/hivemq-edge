@@ -17,13 +17,13 @@ package util.encoder;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.encoder.mqtt3.AbstractVariableHeaderLengthEncoder;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.connect.CONNECT;
 import com.hivemq.util.Bytes;
 import com.hivemq.util.Strings;
 import com.hivemq.util.Utf8Utils;
 import io.netty.buffer.ByteBuf;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A MQTT Encoder which encodes {@link com.hivemq.mqtt.message.connect.CONNECT} messages.
@@ -34,12 +34,12 @@ public class Mqtt3ConnectEncoder extends AbstractVariableHeaderLengthEncoder<CON
 
     private static final byte CONNECT_FIXED_HEADER = (byte) 0b0001_0000;
 
-    private static final byte[] PROTOCOL_NAME_V311 =             //'MQTT4'
-            new byte[]{0, 4, 0b0100_1101, 0b0101_0001, 0b0101_0100, 0b0101_0100, 4};
+    private static final byte[] PROTOCOL_NAME_V311 = // 'MQTT4'
+            new byte[] {0, 4, 0b0100_1101, 0b0101_0001, 0b0101_0100, 0b0101_0100, 4};
 
     private static final byte[] PROTOCOL_NAME_V31 =
-            //'MQIsdp3'
-            new byte[]{0, 6, 0b0100_1101, 0b0101_0001, 0b0100_1001, 0b0111_0011, 0b0110_0100, 0b0111_0000, 3};
+            // 'MQIsdp3'
+            new byte[] {0, 6, 0b0100_1101, 0b0101_0001, 0b0100_1001, 0b0111_0011, 0b0110_0100, 0b0111_0000, 3};
 
     @Override
     public void encode(
@@ -123,7 +123,7 @@ public class Mqtt3ConnectEncoder extends AbstractVariableHeaderLengthEncoder<CON
                 connectFlag |= 0b0010_0000;
             }
         }
-        //Mqtt 3 Clean Session = Mqtt 5 CleanStart + Expiry 0
+        // Mqtt 3 Clean Session = Mqtt 5 CleanStart + Expiry 0
         if (message.isCleanStart() && message.getSessionExpiryInterval() == 0) {
             connectFlag |= 0b0000_0010;
         }

@@ -19,23 +19,20 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
  */
-public class ModBusData  {
+public class ModBusData {
     protected @NotNull PollingContext pollingContext;
 
-    //-- Handle multiple tags in the same sample
+    // -- Handle multiple tags in the same sample
     protected @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
 
-    public ModBusData(
-            final @NotNull PollingContext pollingContext) {
+    public ModBusData(final @NotNull PollingContext pollingContext) {
         this.pollingContext = pollingContext;
     }
 
@@ -47,7 +44,6 @@ public class ModBusData  {
     public void addDataPoint(final @NotNull DataPoint tagValue) {
         dataPoints.add(tagValue);
     }
-
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public @NotNull List<DataPoint> getDataPoints() {

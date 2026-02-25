@@ -15,7 +15,6 @@
  */
 package com.hivemq.mqtt.handler;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.handler.*;
 import com.hivemq.mqtt.message.PINGREQ;
 import com.hivemq.mqtt.message.PINGRESP;
@@ -31,9 +30,9 @@ import com.hivemq.mqtt.message.suback.SUBACK;
 import com.hivemq.mqtt.message.unsuback.UNSUBACK;
 import com.hivemq.mqtt.message.unsubscribe.UNSUBSCRIBE;
 import io.netty.channel.*;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Daniel Krüger
@@ -56,7 +55,6 @@ public class InterceptorHandler extends ChannelDuplexHandler {
     private final @NotNull UnsubackOutboundInterceptorHandler unsubackOutboundInterceptorHandler;
     private final @NotNull PingInterceptorHandler pingInterceptorHandler;
     private final @NotNull DisconnectInterceptorHandler disconnectInterceptorHandler;
-
 
     @Inject
     public InterceptorHandler(
@@ -88,9 +86,9 @@ public class InterceptorHandler extends ChannelDuplexHandler {
 
     @Override
     public void channelRead(final @NotNull ChannelHandlerContext ctx, final @NotNull Object msg) {
-        //the order is important: it has to be ordered by the expected frequency to avoid instance of checks
+        // the order is important: it has to be ordered by the expected frequency to avoid instance of checks
         if (msg instanceof PUBLISH) {
-            //shortcut for publish
+            // shortcut for publish
             ctx.fireChannelRead(msg);
         } else if (msg instanceof PUBACK) {
             pubackInterceptorHandler.handleInboundPuback(ctx, (PUBACK) msg);
@@ -118,7 +116,7 @@ public class InterceptorHandler extends ChannelDuplexHandler {
             final @NotNull ChannelHandlerContext ctx,
             final @NotNull Object msg,
             final @NotNull ChannelPromise promise) {
-        //the order is important: it has to be ordered by the expected frequency to avoid instance of checks
+        // the order is important: it has to be ordered by the expected frequency to avoid instance of checks
         if (msg instanceof PUBLISH) {
             publishOutboundInterceptorHandler.handleOutboundPublish(ctx, (PUBLISH) msg, promise);
         } else if (msg instanceof PUBACK) {
@@ -143,5 +141,4 @@ public class InterceptorHandler extends ChannelDuplexHandler {
             ctx.write(msg, promise);
         }
     }
-
 }

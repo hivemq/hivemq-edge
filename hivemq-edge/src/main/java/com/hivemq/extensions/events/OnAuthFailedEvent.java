@@ -16,10 +16,10 @@
 package com.hivemq.extensions.events;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.general.DisconnectedReasonCode;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The event to fire when client auth failed.

@@ -16,12 +16,11 @@
 package com.hivemq.configuration.service.impl;
 
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Singleton;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Dominik Obermaier
@@ -76,7 +75,9 @@ public class RestrictionsConfigurationServiceImpl implements RestrictionsConfigu
 
     @Override
     public void setNoConnectIdleTimeout(final long noConnectIdleTimeout) {
-        log.debug("Setting the timeout for disconnecting idle tcp connections before a connect message was received to {} milliseconds", noConnectIdleTimeout);
+        log.debug(
+                "Setting the timeout for disconnecting idle tcp connections before a connect message was received to {} milliseconds",
+                noConnectIdleTimeout);
         this.noConnectIdleTimeout.set(noConnectIdleTimeout);
     }
 
@@ -91,5 +92,4 @@ public class RestrictionsConfigurationServiceImpl implements RestrictionsConfigu
         log.debug("Setting the maximum topic length to {}", maxTopicLength);
         this.maxTopicLength.set(maxTopicLength);
     }
-
 }

@@ -23,8 +23,7 @@ class ProtocolAdapterStartInputImpl implements ProtocolAdapterStartInput {
 
     private final @NotNull ModuleServices moduleServices;
 
-    ProtocolAdapterStartInputImpl(
-            final @NotNull ModuleServices moduleServices) {
+    ProtocolAdapterStartInputImpl(final @NotNull ModuleServices moduleServices) {
         this.moduleServices = moduleServices;
     }
 

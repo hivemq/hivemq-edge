@@ -37,5 +37,4 @@ public class HttpStatus {
     public static final int INTERNAL_SERVER_ERROR_500 = 500;
     public static final int SERVICE_UNAVAILABLE_503 = 503;
     public static final int INSUFFICIENT_STORAGE_507 = 507;
-
 }

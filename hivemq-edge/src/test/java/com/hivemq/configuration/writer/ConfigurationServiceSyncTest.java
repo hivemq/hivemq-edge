@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.configuration.writer;
 
 import com.google.common.collect.ImmutableList;
@@ -27,14 +26,13 @@ import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.uns.ISA95Entity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.uns.config.ISA95;
-import org.jetbrains.annotations.NotNull;
-import org.junit.Assert;
-import org.junit.jupiter.api.Test;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.jupiter.api.Test;
 
 public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
 
@@ -46,7 +44,8 @@ public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
         final HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
         configurationService.setConfigFileReaderWriter(configFileReader);
 
-        final ISA95 isa95 = new ISA95.Builder().withArea("testingArea")
+        final ISA95 isa95 = new ISA95.Builder()
+                .withArea("testingArea")
                 .withSite("testingSite")
                 .withEnterprise("testingEnterprise")
                 .withProductionLine("testProductionLine")
@@ -56,10 +55,10 @@ public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
 
         configurationService.unsExtractor().setISA95(isa95);
 
-        //-- Check the writes have been proxied onto the configuration model
+        // -- Check the writes have been proxied onto the configuration model
         assertISA95Equals(isa95, hiveMQConfigEntity.getUns().getIsa95());
 
-        //-- Check the writes have been written to disk
+        // -- Check the writes have been written to disk
         final ConfigFileReaderWriter updatedVersionFileReader = createFileReaderWriter(tempFile);
         final HiveMQConfigEntity updatedHiveMQConfigEntity = updatedVersionFileReader.applyConfig();
         assertISA95Equals(isa95, updatedHiveMQConfigEntity.getUns().getIsa95());
@@ -73,24 +72,25 @@ public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
         final HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
         configurationService.setConfigFileReaderWriter(configFileReader);
 
-        final List<ProtocolAdapterEntity> entities = configurationService.protocolAdapterExtractor().getAllConfigs();
+        final List<ProtocolAdapterEntity> entities =
+                configurationService.protocolAdapterExtractor().getAllConfigs();
         Assert.assertEquals("Adapter type count should match", 3, entities.size());
 
-
-        //-- Remove an adapter
+        // -- Remove an adapter
         final var newEntities = new ArrayList<ProtocolAdapterEntity>();
         newEntities.add(entities.get(0));
         newEntities.add(entities.get(2));
 
-
-        //-- Ensure the original config is NOT YET UPDATED
-        Assert.assertEquals("instance count should NOT be reflected in configuration",
+        // -- Ensure the original config is NOT YET UPDATED
+        Assert.assertEquals(
+                "instance count should NOT be reflected in configuration",
                 3,
                 hiveMQConfigEntity.getProtocolAdapterConfig().size());
 
         configurationService.protocolAdapterExtractor().updateAllAdapters(newEntities);
 
-        Assert.assertEquals("instance count be reflected in configuration",
+        Assert.assertEquals(
+                "instance count be reflected in configuration",
                 2,
                 hiveMQConfigEntity.getProtocolAdapterConfig().size());
     }
@@ -104,14 +104,16 @@ public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
         configurationService.setConfigFileReaderWriter(configFileReader);
 
         final ImmutableList.Builder<RemoteSubscription> remoteSubscriptionBuilder = ImmutableList.builder();
-        remoteSubscriptionBuilder.add(new RemoteSubscription(List.of("filter1", "filter2"),
+        remoteSubscriptionBuilder.add(new RemoteSubscription(
+                List.of("filter1", "filter2"),
                 "destination/filter",
                 List.of(CustomUserProperty.of("someKey", "someValue")),
                 true,
                 2));
 
         final ImmutableList.Builder<LocalSubscription> localSubscriptionBuilder = ImmutableList.builder();
-        localSubscriptionBuilder.add(new LocalSubscription(List.of("filter1", "filter2"),
+        localSubscriptionBuilder.add(new LocalSubscription(
+                List.of("filter1", "filter2"),
                 "destination/filter",
                 List.of("excludes1", "excludes2"),
                 List.of(CustomUserProperty.of("someKey", "someValue")),
@@ -119,7 +121,8 @@ public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
                 2,
                 1000L));
 
-        final MqttBridge newBridge = new MqttBridge.Builder().withId("MyNewBridge")
+        final MqttBridge newBridge = new MqttBridge.Builder()
+                .withId("MyNewBridge")
                 .withClientId("MyNewBridgeClientId")
                 .withHost("MyNewBridgeHost")
                 .withKeepAlive(120)
@@ -130,7 +133,8 @@ public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
                 .withCleanStart(false)
                 .withLoopPreventionEnabled(true)
                 .withLoopPreventionHopCount(44)
-                .withBridgeTls(new BridgeTls("MyBridgeKeyStorePath",
+                .withBridgeTls(new BridgeTls(
+                        "MyBridgeKeyStorePath",
                         "MyBridgeKeyStorePassword",
                         "MyBridgeKeyStorePath",
                         "MyBridgeTruststorePath",
@@ -147,43 +151,47 @@ public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
 
         configurationService.bridgeExtractor().addBridge(newBridge);
 
-        //-- Check the writes have been proxied onto the configuration model
-        Assert.assertEquals("New bridge should be in config model",
+        // -- Check the writes have been proxied onto the configuration model
+        Assert.assertEquals(
+                "New bridge should be in config model",
                 1,
-                hiveMQConfigEntity.getBridgeConfig().stream().filter(b -> b.getId().equals(newBridge.getId())).count());
-
-        //-- Check the writes have been written to disk
-        final ConfigFileReaderWriter updatedVersionFileReader = createFileReaderWriter(tempFile);
-        final HiveMQConfigEntity updatedHiveMQConfigEntity = updatedVersionFileReader.applyConfig();
-
-        //-- Check the writes persist an XML  re-read
-        Assert.assertEquals("New bridge count should be 2", 2, updatedHiveMQConfigEntity.getBridgeConfig().size());
-
-        Assert.assertEquals("New bridge should be in re-read model",
-                1,
-                updatedHiveMQConfigEntity.getBridgeConfig()
-                        .stream()
+                hiveMQConfigEntity.getBridgeConfig().stream()
                         .filter(b -> b.getId().equals(newBridge.getId()))
                         .count());
 
-        //TODO ensure the model details are correct
+        // -- Check the writes have been written to disk
+        final ConfigFileReaderWriter updatedVersionFileReader = createFileReaderWriter(tempFile);
+        final HiveMQConfigEntity updatedHiveMQConfigEntity = updatedVersionFileReader.applyConfig();
 
-//        String copiedFileContent = FileUtils.readFileToString(tempFile, UTF_8);
-//        System.err.println(copiedFileContent);
+        // -- Check the writes persist an XML  re-read
+        Assert.assertEquals(
+                "New bridge count should be 2",
+                2,
+                updatedHiveMQConfigEntity.getBridgeConfig().size());
+
+        Assert.assertEquals(
+                "New bridge should be in re-read model",
+                1,
+                updatedHiveMQConfigEntity.getBridgeConfig().stream()
+                        .filter(b -> b.getId().equals(newBridge.getId()))
+                        .count());
+
+        // TODO ensure the model details are correct
+
+        //        String copiedFileContent = FileUtils.readFileToString(tempFile, UTF_8);
+        //        System.err.println(copiedFileContent);
 
     }
 
     protected void assertISA95Equals(final @NotNull ISA95 isa95, final @NotNull ISA95Entity config) {
         Assert.assertEquals("Objects should be updated by flush", isa95.getArea(), config.getArea());
-        Assert.assertEquals("Objects should be updated by flush",
-                isa95.getProductionLine(),
-                config.getProductionLine());
+        Assert.assertEquals(
+                "Objects should be updated by flush", isa95.getProductionLine(), config.getProductionLine());
         Assert.assertEquals("Objects should be updated by flush", isa95.getSite(), config.getSite());
         Assert.assertEquals("Objects should be updated by flush", isa95.getEnterprise(), config.getEnterprise());
         Assert.assertEquals("Objects should be updated by flush", isa95.getWorkCell(), config.getWorkCell());
-        Assert.assertEquals("Objects should be updated by flush",
-                isa95.isPrefixAllTopics(),
-                config.isPrefixAllTopics());
+        Assert.assertEquals(
+                "Objects should be updated by flush", isa95.isPrefixAllTopics(), config.isPrefixAllTopics());
         Assert.assertEquals("Objects should be updated by flush", isa95.isEnabled(), config.isEnabled());
     }
 }

@@ -13,16 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions;
 
 import com.hivemq.extension.sdk.api.ExtensionMain;
+import java.io.File;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
 
 /**
  * @author Christoph Schäbel
@@ -43,8 +41,15 @@ public class HiveMQEmbeddedExtensionImpl extends AbstractHiveMQExtension {
             final int startPriority,
             final @NotNull ExtensionMain extensionMain,
             final boolean enabled) {
-        super(id, version, name, author, priority,
-                startPriority, extensionMain, enabled,
+        super(
+                id,
+                version,
+                name,
+                author,
+                priority,
+                startPriority,
+                extensionMain,
+                enabled,
                 new File(System.getProperty("java.io.tmpdir")).toPath());
 
         classLoader = extensionMain.getClass().getClassLoader();

@@ -15,9 +15,9 @@
  */
 package com.hivemq.mqtt.message;
 
+import com.hivemq.extension.sdk.api.packets.general.Qos;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.extension.sdk.api.packets.general.Qos;
 
 /**
  * The Quality of Service level

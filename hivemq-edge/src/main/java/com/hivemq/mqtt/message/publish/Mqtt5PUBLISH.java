@@ -127,5 +127,4 @@ public interface Mqtt5PUBLISH extends Message {
      * @return the publish payload persistence
      */
     PublishPayloadPersistence getPersistence();
-
 }

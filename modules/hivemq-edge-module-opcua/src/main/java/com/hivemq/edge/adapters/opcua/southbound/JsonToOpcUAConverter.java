@@ -15,8 +15,15 @@
  */
 package com.hivemq.edge.adapters.opcua.southbound;
 
+import static com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverterUtil.collectCustomDatatypes;
+import static com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverterUtil.generateArrayFromArrayNode;
+import static com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverterUtil.parsetoOpcUAObject;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Optional;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.core.types.DynamicStructType;
 import org.eclipse.milo.opcua.sdk.core.types.codec.DynamicStructCodec;
@@ -30,14 +37,6 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.Optional;
-
-import static com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverterUtil.collectCustomDatatypes;
-import static com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverterUtil.generateArrayFromArrayNode;
-import static com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverterUtil.parsetoOpcUAObject;
 
 public class JsonToOpcUAConverter {
 
@@ -58,20 +57,20 @@ public class JsonToOpcUAConverter {
     }
 
     public @NotNull Object convertToOpcUAValue(
-            final @NotNull JsonNode rootNode,
-            final @NotNull NodeId destinationNodeId) {
+            final @NotNull JsonNode rootNode, final @NotNull NodeId destinationNodeId) {
         if (log.isDebugEnabled()) {
-            log.debug("Convert json '{}' to opcua compatible object for destination nodeId '{}'.",
+            log.debug(
+                    "Convert json '{}' to opcua compatible object for destination nodeId '{}'.",
                     rootNode,
                     destinationNodeId);
         }
         try {
-            final NodeId dataTypeNodeId = client.getAddressSpace().getVariableNode(destinationNodeId).getDataType();
+            final NodeId dataTypeNodeId =
+                    client.getAddressSpace().getVariableNode(destinationNodeId).getDataType();
             if (dataTypeNodeId == null) {
                 log.warn("No dataType-nodeId was found for the destination nodeId '{}'.", destinationNodeId);
-                throw new RuntimeException("No dataType-nodeId was found for the destination nodeId " +
-                        destinationNodeId +
-                        "'");
+                throw new RuntimeException(
+                        "No dataType-nodeId was found for the destination nodeId " + destinationNodeId + "'");
             }
             if (log.isDebugEnabled()) {
                 log.debug("Destination NodeId '{}' has DataType NodeId '{}'.", destinationNodeId, dataTypeNodeId);
@@ -80,12 +79,12 @@ public class JsonToOpcUAConverter {
             final var dataType = tree.getDataType(dataTypeNodeId);
             if (dataType == null) {
                 log.warn("No data type was found in the DataTypeTree for dataType with nodeId '{}'.", dataTypeNodeId);
-                throw new RuntimeException("No data type was found in the DataTypeTree for node id '" +
-                        dataTypeNodeId +
-                        "'");
+                throw new RuntimeException(
+                        "No data type was found in the DataTypeTree for node id '" + dataTypeNodeId + "'");
             }
             if (log.isDebugEnabled()) {
-                log.debug("DataType NodeId '{}' represents data type '{}'.",
+                log.debug(
+                        "DataType NodeId '{}' represents data type '{}'.",
                         dataTypeNodeId,
                         dataType.getBrowseName().getName());
             }
@@ -117,7 +116,8 @@ public class JsonToOpcUAConverter {
             dataTypesToRegister.forEach(dataTypeToRegister -> {
                 try {
                     client.getStaticDataTypeManager()
-                            .registerType(dataTypeToRegister.getNodeId(),
+                            .registerType(
+                                    dataTypeToRegister.getNodeId(),
                                     new DynamicStructCodec(dataTypeToRegister, client.getDataTypeTree()),
                                     dataTypeToRegister.getBinaryEncodingId(),
                                     null,
@@ -134,22 +134,21 @@ public class JsonToOpcUAConverter {
                 dataTypeMap.put(key, parseToOpcUACompatibleObject(jsonNode, nestedField));
             });
 
-            return ExtensionObject.encode(client.getDynamicEncodingContext(),
-                    new DynamicStructType(dataType, dataTypeMap));
+            return ExtensionObject.encode(
+                    client.getDynamicEncodingContext(), new DynamicStructType(dataType, dataTypeMap));
         } catch (final UaException e) {
             throw new RuntimeException(e);
         }
     }
 
     private @NotNull Object parseToOpcUACompatibleObject(
-            final @NotNull JsonNode jsonNode,
-            final @NotNull JsonSchemaGenerator.FieldInformation fieldType) {
+            final @NotNull JsonNode jsonNode, final @NotNull JsonSchemaGenerator.FieldInformation fieldType) {
         final OpcUaDataType builtinDataType = fieldType.dataType();
 
         if (builtinDataType == OpcUaDataType.ExtensionObject || fieldType.customDataType() != null) {
             final String namespaceURI = fieldType.namespaceUri();
-            final ExpandedNodeId expandedNodeId =
-                    ExpandedNodeId.of(namespaceURI, fieldType.customDataType().getBrowseName().getName());
+            final ExpandedNodeId expandedNodeId = ExpandedNodeId.of(
+                    namespaceURI, fieldType.customDataType().getBrowseName().getName());
 
             final Optional<NodeId> optionalDataTypeId = expandedNodeId.toNodeId(client.getNamespaceTable());
             if (optionalDataTypeId.isEmpty()) {
@@ -162,9 +161,8 @@ public class JsonToOpcUAConverter {
 
             if (dataType == null) {
                 log.warn("No data type was found in the DataTypeTree for dataType with nodeId '{}'.", dataTypeId);
-                throw new RuntimeException("No data type was found in the DataTypeTree for node id '" +
-                        dataTypeId +
-                        "'");
+                throw new RuntimeException(
+                        "No data type was found in the DataTypeTree for node id '" + dataTypeId + "'");
             }
 
             final NodeId binaryEncodingId = dataType.getBinaryEncodingId();
@@ -188,8 +186,7 @@ public class JsonToOpcUAConverter {
     }
 
     private @NotNull DynamicStructType extractExtensionObject(
-            final @NotNull JsonNode jsonNode,
-            final @NotNull JsonSchemaGenerator.FieldInformation fieldInformation) {
+            final @NotNull JsonNode jsonNode, final @NotNull JsonSchemaGenerator.FieldInformation fieldInformation) {
 
         final var fields = new LinkedHashMap<String, Object>();
         fieldInformation.nestedFields().forEach(field -> {

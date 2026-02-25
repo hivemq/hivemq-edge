@@ -21,8 +21,4 @@ package com.hivemq.codec.transcoder;
  *
  * @author Simon L Johnson
  */
-public interface ITranscodingContext {
-
-
-
-}
+public interface ITranscodingContext {}

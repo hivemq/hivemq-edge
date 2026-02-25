@@ -24,5 +24,4 @@ package com.hivemq.mqttsn;
 public interface IAwakeFlushCompleteCallback {
 
     void flushComplete();
-
 }

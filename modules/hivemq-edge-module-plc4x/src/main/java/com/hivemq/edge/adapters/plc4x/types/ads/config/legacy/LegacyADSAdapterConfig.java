@@ -16,10 +16,8 @@
 package com.hivemq.edge.adapters.plc4x.types.ads.config.legacy;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.edge.adapters.plc4x.config.legacy.LegacyPlc4xAdapterConfig;
 import org.jetbrains.annotations.NotNull;
-
 
 public class LegacyADSAdapterConfig extends LegacyPlc4xAdapterConfig {
 
@@ -58,5 +56,4 @@ public class LegacyADSAdapterConfig extends LegacyPlc4xAdapterConfig {
     public String getTargetAmsNetId() {
         return targetAmsNetId;
     }
-
 }

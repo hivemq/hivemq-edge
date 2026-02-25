@@ -23,25 +23,35 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.edge.adapters.opcua.Constants;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @JsonDeserialize(using = Security.SecurityDeserializer.class)
-public record Security(@JsonProperty("policy") @ModuleConfigField(title = "OPC UA security policy",
-                                                                  description = "Security policy to use for communication with the server.",
-                                                                  defaultValue = "NONE") @NotNull SecPolicy policy,
-                       @JsonProperty("messageSecurityMode")
-                       @JsonInclude(JsonInclude.Include.NON_NULL)
-                       @ModuleConfigField(title = "Message Security Mode",
-                                         description = "Message security mode (None, Sign, SignAndEncrypt). If not specified, defaults based on the select OPC UA Security Policy: None→None, others→SignAndEncrypt.",
-                                         defaultValue = "NONE") @Nullable MsgSecurityMode messageSecurityMode) {
+public record Security(
+        @JsonProperty("policy")
+        @ModuleConfigField(
+                title = "OPC UA security policy",
+                description = "Security policy to use for communication with the server.",
+                defaultValue = "NONE")
+        @NotNull
+        SecPolicy policy,
 
-    public Security(@JsonProperty("policy") final @Nullable SecPolicy policy,
-                    @JsonProperty("messageSecurityMode") final @Nullable MsgSecurityMode messageSecurityMode) {
+        @JsonProperty("messageSecurityMode")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @ModuleConfigField(
+                title = "Message Security Mode",
+                description =
+                        "Message security mode (None, Sign, SignAndEncrypt). If not specified, defaults based on the select OPC UA Security Policy: None→None, others→SignAndEncrypt.",
+                defaultValue = "NONE")
+        @Nullable
+        MsgSecurityMode messageSecurityMode) {
+
+    public Security(
+            @JsonProperty("policy") final @Nullable SecPolicy policy,
+            @JsonProperty("messageSecurityMode") final @Nullable MsgSecurityMode messageSecurityMode) {
         this.policy = Objects.requireNonNullElse(policy, Constants.DEFAULT_SECURITY_POLICY);
         this.messageSecurityMode = Objects.requireNonNullElse(messageSecurityMode, MsgSecurityMode.IGNORED);
     }
@@ -59,8 +69,7 @@ public record Security(@JsonProperty("policy") @ModuleConfigField(title = "OPC U
     static class SecurityDeserializer extends JsonDeserializer<Security> {
         @Override
         public @NotNull Security deserialize(
-                final @NotNull JsonParser parser,
-                final @NotNull DeserializationContext context) throws IOException {
+                final @NotNull JsonParser parser, final @NotNull DeserializationContext context) throws IOException {
             final String text = parser.getText();
             if (text != null && text.isEmpty()) {
                 return new Security(Constants.DEFAULT_SECURITY_POLICY, MsgSecurityMode.IGNORED);

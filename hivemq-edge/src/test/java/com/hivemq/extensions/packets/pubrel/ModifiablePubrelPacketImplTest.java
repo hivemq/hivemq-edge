@@ -15,19 +15,18 @@
  */
 package com.hivemq.extensions.packets.pubrel;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.configuration.service.ConfigurationService;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.packets.pubrel.PubrelReasonCode;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
+import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import util.TestConfigurationBootstrap;
-
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Yannick Weber
@@ -36,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ModifiablePubrelPacketImplTest {
 
     private @NotNull ConfigurationService configurationService;
+
     @BeforeEach
     public void setUp() {
         configurationService = new TestConfigurationBootstrap().getConfigurationService();
@@ -43,8 +43,8 @@ public class ModifiablePubrelPacketImplTest {
 
     @Test
     public void setReasonString() {
-        final PubrelPacketImpl packet = new PubrelPacketImpl(
-                1, PubrelReasonCode.SUCCESS, null, UserPropertiesImpl.of(ImmutableList.of()));
+        final PubrelPacketImpl packet =
+                new PubrelPacketImpl(1, PubrelReasonCode.SUCCESS, null, UserPropertiesImpl.of(ImmutableList.of()));
         final ModifiablePubrelPacketImpl modifiablePacket =
                 new ModifiablePubrelPacketImpl(packet, configurationService);
 
@@ -58,8 +58,8 @@ public class ModifiablePubrelPacketImplTest {
 
     @Test
     public void setReasonString_null() {
-        final PubrelPacketImpl packet = new PubrelPacketImpl(
-                1, PubrelReasonCode.SUCCESS, "reason", UserPropertiesImpl.of(ImmutableList.of()));
+        final PubrelPacketImpl packet =
+                new PubrelPacketImpl(1, PubrelReasonCode.SUCCESS, "reason", UserPropertiesImpl.of(ImmutableList.of()));
         final ModifiablePubrelPacketImpl modifiablePacket =
                 new ModifiablePubrelPacketImpl(packet, configurationService);
 
@@ -73,8 +73,8 @@ public class ModifiablePubrelPacketImplTest {
 
     @Test
     public void setReasonString_same() {
-        final PubrelPacketImpl packet = new PubrelPacketImpl(
-                1, PubrelReasonCode.SUCCESS, "same", UserPropertiesImpl.of(ImmutableList.of()));
+        final PubrelPacketImpl packet =
+                new PubrelPacketImpl(1, PubrelReasonCode.SUCCESS, "same", UserPropertiesImpl.of(ImmutableList.of()));
         final ModifiablePubrelPacketImpl modifiablePacket =
                 new ModifiablePubrelPacketImpl(packet, configurationService);
 
@@ -88,8 +88,8 @@ public class ModifiablePubrelPacketImplTest {
 
     @Test
     public void copy_noChanges() {
-        final PubrelPacketImpl packet = new PubrelPacketImpl(
-                1, PubrelReasonCode.SUCCESS, null, UserPropertiesImpl.of(ImmutableList.of()));
+        final PubrelPacketImpl packet =
+                new PubrelPacketImpl(1, PubrelReasonCode.SUCCESS, null, UserPropertiesImpl.of(ImmutableList.of()));
         final ModifiablePubrelPacketImpl modifiablePacket =
                 new ModifiablePubrelPacketImpl(packet, configurationService);
 
@@ -100,8 +100,8 @@ public class ModifiablePubrelPacketImplTest {
 
     @Test
     public void copy_changes() {
-        final PubrelPacketImpl packet = new PubrelPacketImpl(
-                1, PubrelReasonCode.SUCCESS, null, UserPropertiesImpl.of(ImmutableList.of()));
+        final PubrelPacketImpl packet =
+                new PubrelPacketImpl(1, PubrelReasonCode.SUCCESS, null, UserPropertiesImpl.of(ImmutableList.of()));
         final ModifiablePubrelPacketImpl modifiablePacket =
                 new ModifiablePubrelPacketImpl(packet, configurationService);
 

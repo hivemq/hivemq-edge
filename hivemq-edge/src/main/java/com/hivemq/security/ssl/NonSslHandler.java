@@ -15,18 +15,17 @@
  */
 package com.hivemq.security.ssl;
 
-import org.jetbrains.annotations.NotNull;
+import static com.hivemq.logging.LoggingUtils.appendListenerToMessage;
+
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.ssl.SslHandler;
-
 import jakarta.inject.Inject;
 import java.util.List;
-
-import static com.hivemq.logging.LoggingUtils.appendListenerToMessage;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
@@ -41,27 +40,30 @@ public class NonSslHandler extends ByteToMessageDecoder {
     }
 
     @Override
-    protected void decode(final @NotNull ChannelHandlerContext ctx, final @NotNull ByteBuf in, final @NotNull List<Object> out) throws Exception {
+    protected void decode(
+            final @NotNull ChannelHandlerContext ctx, final @NotNull ByteBuf in, final @NotNull List<Object> out)
+            throws Exception {
 
-        //Needs minimum 5 bytes to be able to tell what it is.
+        // Needs minimum 5 bytes to be able to tell what it is.
         if (in.readableBytes() < 11) {
             return;
         }
 
-        //Check for SSL bytes
+        // Check for SSL bytes
         final boolean encrypted = SslHandler.isEncrypted(in);
 
-        //With MQTT5 it is possible to craft a valid CONNECT packet, that matches an SSLv2 packet
+        // With MQTT5 it is possible to craft a valid CONNECT packet, that matches an SSLv2 packet
         final boolean isConnectPacket = in.getUnsignedByte(0) == 16;
-        final boolean isMqttPacket = in.getUnsignedByte(7) == 'M' &&
-                in.getUnsignedByte(8) == 'Q' &&
-                in.getUnsignedByte(9) == 'T' &&
-                in.getUnsignedByte(10) == 'T';
+        final boolean isMqttPacket = in.getUnsignedByte(7) == 'M'
+                && in.getUnsignedByte(8) == 'Q'
+                && in.getUnsignedByte(9) == 'T'
+                && in.getUnsignedByte(10) == 'T';
 
         if (encrypted && !(isConnectPacket && isMqttPacket)) {
             final Channel channel = ctx.channel();
             final String eventLogMessage = appendListenerToMessage(channel, "SSL connection to non-SSL listener");
-            mqttServerDisconnector.logAndClose(ctx.channel(),
+            mqttServerDisconnector.logAndClose(
+                    ctx.channel(),
                     "SSL connection on non-SSL listener, dropping connection for client with IP '{}'",
                     eventLogMessage);
             in.clear();
@@ -70,5 +72,4 @@ public class NonSslHandler extends ByteToMessageDecoder {
 
         ctx.pipeline().remove(this);
     }
-
 }

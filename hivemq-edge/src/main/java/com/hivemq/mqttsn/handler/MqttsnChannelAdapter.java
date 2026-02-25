@@ -19,10 +19,9 @@ import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.bootstrap.netty.ChannelDependencies;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.validation.constraints.NotNull;
 
 /**
  * MQTT-SN specific adapter to handle some non standard lifecycle things.
@@ -41,9 +40,10 @@ public class MqttsnChannelAdapter extends ChannelInboundHandlerAdapter {
     @Override
     public void channelInactive(final ChannelHandlerContext ctx) throws Exception {
         super.channelInactive(ctx);
-        final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
-        if(clientConnection != null){
-            if(log.isTraceEnabled()){
+        final ClientConnection clientConnection =
+                ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        if (clientConnection != null) {
+            if (log.isTraceEnabled()) {
                 log.trace("Clearing session alias registry with clientId {}", clientConnection.getClientId());
             }
             channelDependencies.getMqttsnTopicRegistry().clearSessionAliases(clientConnection.getClientId());

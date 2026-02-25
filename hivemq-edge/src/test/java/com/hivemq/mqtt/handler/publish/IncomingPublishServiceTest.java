@@ -13,8 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.mqtt.handler.publish;
+
+import static com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties.NO_USER_PROPERTIES;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.google.common.util.concurrent.Futures;
 import com.hivemq.bootstrap.ClientConnection;
@@ -52,17 +62,6 @@ import util.TestConfigurationBootstrap;
 import util.TestException;
 import util.TestMessageUtil;
 
-import static com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties.NO_USER_PROPERTIES;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 @SuppressWarnings("NullabilityAnnotations")
 public class IncomingPublishServiceTest {
 
@@ -77,10 +76,12 @@ public class IncomingPublishServiceTest {
     private IncomingPublishService incomingPublishService;
     private final ClientConnection clientConnection = new ClientConnection(channel, null);
     private final @NotNull DataGovernanceService dataGovernanceService = mock(DataGovernanceService.class);
+
     @BeforeEach
     public void setUp() throws Exception {
 
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishingResult.DELIVERED));
+        when(dataGovernanceService.applyAndPublish(any()))
+                .thenReturn(Futures.immediateFuture(PublishingResult.DELIVERED));
 
         setupHandlerAndChannel();
 
@@ -92,7 +93,8 @@ public class IncomingPublishServiceTest {
 
     private void setupHandlerAndChannel() {
 
-        incomingPublishService = new IncomingPublishService(mqttConfigurationService,
+        incomingPublishService = new IncomingPublishService(
+                mqttConfigurationService,
                 restrictionsConfigurationService,
                 mqttServerDisconnector,
                 dataGovernanceService);
@@ -111,11 +113,13 @@ public class IncomingPublishServiceTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setIncomingPublishesSkipRest(true);
         incomingPublishService.processPublish(ctx, TestMessageUtil.createMqtt5Publish(), null);
 
-        verify(mqttServerDisconnector, never()).disconnect(any(Channel.class),
-                anyString(),
-                anyString(),
-                any(Mqtt5DisconnectReasonCode.class),
-                anyString());
+        verify(mqttServerDisconnector, never())
+                .disconnect(
+                        any(Channel.class),
+                        anyString(),
+                        anyString(),
+                        any(Mqtt5DisconnectReasonCode.class),
+                        anyString());
     }
 
     @Test
@@ -129,11 +133,8 @@ public class IncomingPublishServiceTest {
 
         incomingPublishService.processPublish(ctx, publish, null);
 
-        verify(mqttServerDisconnector).disconnect(any(),
-                any(),
-                any(),
-                eq(Mqtt5DisconnectReasonCode.PACKET_TOO_LARGE),
-                any());
+        verify(mqttServerDisconnector)
+                .disconnect(any(), any(), any(), eq(Mqtt5DisconnectReasonCode.PACKET_TOO_LARGE), any());
     }
 
     @Test
@@ -164,7 +165,8 @@ public class IncomingPublishServiceTest {
     @Test
     public void test_publish_valid_qos0_failed_return_code() throws InterruptedException {
 
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFailedFuture(TestException.INSTANCE));
+        when(dataGovernanceService.applyAndPublish(any()))
+                .thenReturn(Futures.immediateFailedFuture(TestException.INSTANCE));
 
         final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.AT_MOST_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
@@ -194,8 +196,9 @@ public class IncomingPublishServiceTest {
         final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic1", QoS.AT_LEAST_ONCE);
 
         final ModifiableDefaultPermissionsImpl permissions = new ModifiableDefaultPermissionsImpl();
-        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService()).topicFilter(
-                "#").build());
+        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService())
+                .topicFilter("#")
+                .build());
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setAuthPermissions(permissions);
 
@@ -248,16 +251,17 @@ public class IncomingPublishServiceTest {
 
         incomingPublishService.processPublish(ctx, publish, authorizerResult);
 
-        verify(mqttServerDisconnector).disconnect(eq(channel),
-                anyString(),
-                anyString(),
-                eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
-                anyString());
+        verify(mqttServerDisconnector)
+                .disconnect(
+                        eq(channel),
+                        anyString(),
+                        anyString(),
+                        eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
+                        anyString());
         verify(dataGovernanceService, never()).applyAndPublish(any());
 
         final PUBACK puback = (PUBACK) channel.outboundMessages().poll();
         assertEquals(Mqtt5PubAckReasonCode.NOT_AUTHORIZED, puback.getReasonCode());
-
     }
 
     @Test
@@ -285,17 +289,18 @@ public class IncomingPublishServiceTest {
 
         incomingPublishService.processPublish(ctx, publish, authorizerResult);
 
-        verify(mqttServerDisconnector).disconnect(eq(channel),
-                anyString(),
-                anyString(),
-                eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
-                anyString());
+        verify(mqttServerDisconnector)
+                .disconnect(
+                        eq(channel),
+                        anyString(),
+                        anyString(),
+                        eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
+                        anyString());
         verify(dataGovernanceService, never()).applyAndPublish(any());
 
         final PUBACK puback = (PUBACK) channel.outboundMessages().poll();
         assertEquals(Mqtt5PubAckReasonCode.PACKET_IDENTIFIER_IN_USE, puback.getReasonCode());
         assertEquals("abc", puback.getReasonString());
-
     }
 
     @Test
@@ -309,13 +314,14 @@ public class IncomingPublishServiceTest {
 
         incomingPublishService.processPublish(ctx, publish, authorizerResult);
 
-        verify(mqttServerDisconnector).disconnect(eq(channel),
-                anyString(),
-                anyString(),
-                eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
-                anyString());
+        verify(mqttServerDisconnector)
+                .disconnect(
+                        eq(channel),
+                        anyString(),
+                        anyString(),
+                        eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
+                        anyString());
         verify(dataGovernanceService, never()).applyAndPublish(any());
-
     }
 
     @Test
@@ -352,17 +358,18 @@ public class IncomingPublishServiceTest {
 
         incomingPublishService.processPublish(ctx, publish, authorizerResult);
 
-        verify(mqttServerDisconnector).disconnect(eq(channel),
-                anyString(),
-                anyString(),
-                eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
-                anyString());
+        verify(mqttServerDisconnector)
+                .disconnect(
+                        eq(channel),
+                        anyString(),
+                        anyString(),
+                        eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
+                        anyString());
         verify(dataGovernanceService, never()).applyAndPublish(any());
 
         final PUBREC puback = (PUBREC) channel.outboundMessages().poll();
         assertEquals(Mqtt5PubRecReasonCode.PACKET_IDENTIFIER_IN_USE, puback.getReasonCode());
         assertEquals("abc", puback.getReasonString());
-
     }
 
     @Test
@@ -372,8 +379,9 @@ public class IncomingPublishServiceTest {
         final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic1", QoS.AT_LEAST_ONCE);
 
         final ModifiableDefaultPermissionsImpl permissions = new ModifiableDefaultPermissionsImpl();
-        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService()).topicFilter(
-                "#").build());
+        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService())
+                .topicFilter("#")
+                .build());
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setAuthPermissions(permissions);
 
@@ -392,27 +400,31 @@ public class IncomingPublishServiceTest {
         final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic1", QoS.AT_LEAST_ONCE);
 
         final ModifiableDefaultPermissionsImpl permissions = new ModifiableDefaultPermissionsImpl();
-        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService()).topicFilter(
-                "#").type(TopicPermission.PermissionType.DENY).build());
+        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService())
+                .topicFilter("#")
+                .type(TopicPermission.PermissionType.DENY)
+                .build());
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setAuthPermissions(permissions);
 
         incomingPublishService.processPublish(ctx, publish, null);
 
-        verify(mqttServerDisconnector).disconnect(eq(channel),
-                anyString(),
-                anyString(),
-                eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
-                anyString());
+        verify(mqttServerDisconnector)
+                .disconnect(
+                        eq(channel),
+                        anyString(),
+                        anyString(),
+                        eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
+                        anyString());
 
         verify(dataGovernanceService, never()).applyAndPublish(any());
 
         final PUBACK puback = channel.readOutbound();
 
         assertEquals(Mqtt5PubAckReasonCode.NOT_AUTHORIZED, puback.getReasonCode());
-        assertEquals("Not authorized to publish on topic 'topic1' with QoS '1' and retain 'false'",
+        assertEquals(
+                "Not authorized to publish on topic 'topic1' with QoS '1' and retain 'false'",
                 puback.getReasonString());
-
     }
 
     @Test
@@ -423,18 +435,17 @@ public class IncomingPublishServiceTest {
         final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic1", QoS.AT_LEAST_ONCE);
 
         final ModifiableDefaultPermissionsImpl permissions = new ModifiableDefaultPermissionsImpl();
-        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService()).topicFilter(
-                "#").type(TopicPermission.PermissionType.DENY).build());
+        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService())
+                .topicFilter("#")
+                .type(TopicPermission.PermissionType.DENY)
+                .build());
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setAuthPermissions(permissions);
 
         incomingPublishService.processPublish(ctx, publish, null);
 
-        verify(mqttServerDisconnector).disconnect(any(),
-                any(),
-                any(),
-                eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
-                any());
+        verify(mqttServerDisconnector)
+                .disconnect(any(), any(), any(), eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED), any());
 
         verify(dataGovernanceService, never()).applyAndPublish(any());
     }
@@ -447,18 +458,17 @@ public class IncomingPublishServiceTest {
         final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic1", QoS.EXACTLY_ONCE);
 
         final ModifiableDefaultPermissionsImpl permissions = new ModifiableDefaultPermissionsImpl();
-        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService()).topicFilter(
-                "#").type(TopicPermission.PermissionType.DENY).build());
+        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService())
+                .topicFilter("#")
+                .type(TopicPermission.PermissionType.DENY)
+                .build());
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setAuthPermissions(permissions);
 
         incomingPublishService.processPublish(ctx, publish, null);
 
-        verify(mqttServerDisconnector).disconnect(any(),
-                any(),
-                any(),
-                eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
-                any());
+        verify(mqttServerDisconnector)
+                .disconnect(any(), any(), any(), eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED), any());
 
         verify(dataGovernanceService, never()).applyAndPublish(any());
     }
@@ -470,8 +480,9 @@ public class IncomingPublishServiceTest {
         final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic1", QoS.AT_MOST_ONCE);
 
         final ModifiableDefaultPermissionsImpl permissions = new ModifiableDefaultPermissionsImpl();
-        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService()).topicFilter(
-                "#").build());
+        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService())
+                .topicFilter("#")
+                .build());
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setAuthPermissions(permissions);
 
@@ -490,21 +501,24 @@ public class IncomingPublishServiceTest {
         final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic1", QoS.AT_MOST_ONCE);
 
         final ModifiableDefaultPermissionsImpl permissions = new ModifiableDefaultPermissionsImpl();
-        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService()).topicFilter(
-                "#").type(TopicPermission.PermissionType.DENY).build());
+        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService())
+                .topicFilter("#")
+                .type(TopicPermission.PermissionType.DENY)
+                .build());
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setAuthPermissions(permissions);
 
         incomingPublishService.processPublish(ctx, publish, null);
 
-        verify(mqttServerDisconnector).disconnect(eq(channel),
-                anyString(),
-                anyString(),
-                eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
-                anyString());
+        verify(mqttServerDisconnector)
+                .disconnect(
+                        eq(channel),
+                        anyString(),
+                        anyString(),
+                        eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
+                        anyString());
 
         verify(dataGovernanceService, never()).applyAndPublish(any());
-
     }
 
     @Test
@@ -514,8 +528,9 @@ public class IncomingPublishServiceTest {
         final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic1", QoS.EXACTLY_ONCE);
 
         final ModifiableDefaultPermissionsImpl permissions = new ModifiableDefaultPermissionsImpl();
-        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService()).topicFilter(
-                "#").build());
+        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService())
+                .topicFilter("#")
+                .build());
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setAuthPermissions(permissions);
 
@@ -534,33 +549,38 @@ public class IncomingPublishServiceTest {
         final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic1", QoS.EXACTLY_ONCE);
 
         final ModifiableDefaultPermissionsImpl permissions = new ModifiableDefaultPermissionsImpl();
-        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService()).topicFilter(
-                "#").type(TopicPermission.PermissionType.DENY).build());
+        permissions.add(new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService())
+                .topicFilter("#")
+                .type(TopicPermission.PermissionType.DENY)
+                .build());
 
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setAuthPermissions(permissions);
 
         incomingPublishService.processPublish(ctx, publish, null);
 
-        verify(mqttServerDisconnector).disconnect(eq(channel),
-                anyString(),
-                anyString(),
-                eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
-                anyString());
+        verify(mqttServerDisconnector)
+                .disconnect(
+                        eq(channel),
+                        anyString(),
+                        anyString(),
+                        eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
+                        anyString());
 
         verify(dataGovernanceService, never()).applyAndPublish(any());
 
         final PUBREC pubrec = channel.readOutbound();
 
         assertEquals(Mqtt5PubRecReasonCode.NOT_AUTHORIZED, pubrec.getReasonCode());
-        assertEquals("Not authorized to publish on topic 'topic1' with QoS '2' and retain 'false'",
+        assertEquals(
+                "Not authorized to publish on topic 'topic1' with QoS '2' and retain 'false'",
                 pubrec.getReasonString());
-
     }
 
     @Test
     public void test_publish_valid_qos1_no_matching_subs() throws InterruptedException {
 
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishingResult.NO_MATCHING_SUBSCRIBERS));
+        when(dataGovernanceService.applyAndPublish(any()))
+                .thenReturn(Futures.immediateFuture(PublishingResult.NO_MATCHING_SUBSCRIBERS));
 
         final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.AT_LEAST_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
@@ -585,7 +605,8 @@ public class IncomingPublishServiceTest {
     @Test
     public void test_publish_valid_qos1_failed_publish() throws InterruptedException {
 
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFailedFuture(TestException.INSTANCE));
+        when(dataGovernanceService.applyAndPublish(any()))
+                .thenReturn(Futures.immediateFailedFuture(TestException.INSTANCE));
 
         final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.AT_LEAST_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
@@ -635,7 +656,8 @@ public class IncomingPublishServiceTest {
     @Test
     public void test_publish_valid_qos2_no_matching_subs() throws InterruptedException {
 
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishingResult.NO_MATCHING_SUBSCRIBERS));
+        when(dataGovernanceService.applyAndPublish(any()))
+                .thenReturn(Futures.immediateFuture(PublishingResult.NO_MATCHING_SUBSCRIBERS));
 
         final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.EXACTLY_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
@@ -659,7 +681,8 @@ public class IncomingPublishServiceTest {
 
     @Test
     public void test_publish_valid_qos2_failed_publish() throws InterruptedException {
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFailedFuture(TestException.INSTANCE));
+        when(dataGovernanceService.applyAndPublish(any()))
+                .thenReturn(Futures.immediateFailedFuture(TestException.INSTANCE));
 
         final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.EXACTLY_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
@@ -696,7 +719,8 @@ public class IncomingPublishServiceTest {
         setupHandlerAndChannel();
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
 
-        final PUBLISH publish = TestMessageUtil.createMqtt5Publish("none",
+        final PUBLISH publish = TestMessageUtil.createMqtt5Publish(
+                "none",
                 "topic",
                 new byte[0],
                 QoS.EXACTLY_ONCE,
@@ -715,11 +739,13 @@ public class IncomingPublishServiceTest {
 
         incomingPublishService.processPublish(ctx, publish, null);
 
-        verify(mqttServerDisconnector).disconnect(eq(ctx.channel()),
-                anyString(),
-                anyString(),
-                eq(Mqtt5DisconnectReasonCode.QOS_NOT_SUPPORTED),
-                anyString());
+        verify(mqttServerDisconnector)
+                .disconnect(
+                        eq(ctx.channel()),
+                        anyString(),
+                        anyString(),
+                        eq(Mqtt5DisconnectReasonCode.QOS_NOT_SUPPORTED),
+                        anyString());
 
         // Verify PUBLISH not processed
         verify(dataGovernanceService, never()).applyAndPublish(any());
@@ -736,11 +762,8 @@ public class IncomingPublishServiceTest {
 
         incomingPublishService.processPublish(ctx, publish, null);
 
-        verify(mqttServerDisconnector).disconnect(any(),
-                any(),
-                any(),
-                eq(Mqtt5DisconnectReasonCode.QOS_NOT_SUPPORTED),
-                any());
+        verify(mqttServerDisconnector)
+                .disconnect(any(), any(), any(), eq(Mqtt5DisconnectReasonCode.QOS_NOT_SUPPORTED), any());
 
         // Verify PUBLISH not processed
         verify(dataGovernanceService, never()).applyAndPublish(any());
@@ -752,16 +775,11 @@ public class IncomingPublishServiceTest {
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().setIncomingPublishesDefaultFailedSkipRest(true);
 
         final PUBLISH publish = TestMessageUtil.createMqtt3Publish();
-        incomingPublishService.processPublish(ctx,
-                publish,
-                new PublishAuthorizerResult(AckReasonCode.SUCCESS, null, true));
+        incomingPublishService.processPublish(
+                ctx, publish, new PublishAuthorizerResult(AckReasonCode.SUCCESS, null, true));
 
-        verify(mqttServerDisconnector).disconnect(any(),
-                any(),
-                any(),
-                eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
-                any());
-
+        verify(mqttServerDisconnector)
+                .disconnect(any(), any(), any(), eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED), any());
     }
 
     @Test
@@ -771,15 +789,11 @@ public class IncomingPublishServiceTest {
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv3_1);
 
         final PUBLISH publish = TestMessageUtil.createMqtt3Publish();
-        incomingPublishService.processPublish(ctx,
-                publish,
-                new PublishAuthorizerResult(AckReasonCode.SUCCESS, null, true));
+        incomingPublishService.processPublish(
+                ctx, publish, new PublishAuthorizerResult(AckReasonCode.SUCCESS, null, true));
 
-        verify(mqttServerDisconnector).disconnect(any(),
-                any(),
-                any(),
-                eq(Mqtt5DisconnectReasonCode.TOPIC_NAME_INVALID),
-                any());
+        verify(mqttServerDisconnector)
+                .disconnect(any(), any(), any(), eq(Mqtt5DisconnectReasonCode.TOPIC_NAME_INVALID), any());
     }
 
     @Test
@@ -789,15 +803,11 @@ public class IncomingPublishServiceTest {
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
 
         final PUBLISH publish = TestMessageUtil.createMqtt5Publish("topic", QoS.AT_LEAST_ONCE);
-        incomingPublishService.processPublish(ctx,
-                publish,
-                new PublishAuthorizerResult(AckReasonCode.SUCCESS, null, true));
+        incomingPublishService.processPublish(
+                ctx, publish, new PublishAuthorizerResult(AckReasonCode.SUCCESS, null, true));
 
-        verify(mqttServerDisconnector).disconnect(any(),
-                anyString(),
-                anyString(),
-                eq(Mqtt5DisconnectReasonCode.TOPIC_NAME_INVALID),
-                anyString());
+        verify(mqttServerDisconnector)
+                .disconnect(
+                        any(), anyString(), anyString(), eq(Mqtt5DisconnectReasonCode.TOPIC_NAME_INVALID), anyString());
     }
-
 }

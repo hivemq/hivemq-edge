@@ -17,16 +17,15 @@ package com.hivemq.extensions.packets.subscribe;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.subscribe.SubscribePacket;
 import com.hivemq.extension.sdk.api.packets.subscribe.Subscription;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.subscribe.Mqtt5SUBSCRIBE;
 import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;
-
 import java.util.Objects;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -95,10 +94,10 @@ public class SubscribePacketImpl implements SubscribePacket {
             return false;
         }
         final SubscribePacketImpl that = (SubscribePacketImpl) o;
-        return subscriptions.equals(that.subscriptions) &&
-                userProperties.equals(that.userProperties) &&
-                (subscriptionIdentifier == that.subscriptionIdentifier) &&
-                (packetIdentifier == that.packetIdentifier);
+        return subscriptions.equals(that.subscriptions)
+                && userProperties.equals(that.userProperties)
+                && (subscriptionIdentifier == that.subscriptionIdentifier)
+                && (packetIdentifier == that.packetIdentifier);
     }
 
     @Override

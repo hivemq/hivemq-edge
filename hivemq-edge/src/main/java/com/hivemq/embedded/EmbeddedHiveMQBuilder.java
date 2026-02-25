@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.embedded;
 
 import com.hivemq.embedded.internal.EmbeddedHiveMQBuilderImpl;
 import com.hivemq.extension.sdk.api.annotations.DoNotImplement;
+import java.nio.file.Path;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.nio.file.Path;
 
 @DoNotImplement
 public interface EmbeddedHiveMQBuilder {
@@ -42,7 +40,8 @@ public interface EmbeddedHiveMQBuilder {
      * @see <a href="https://www.hivemq.com/docs/hivemq/latest/user-guide/configuration.html#folders">HiveMQ
      *         folders</a>
      */
-    @NotNull EmbeddedHiveMQBuilder withConfigurationFolder(@Nullable Path configFolder);
+    @NotNull
+    EmbeddedHiveMQBuilder withConfigurationFolder(@Nullable Path configFolder);
 
     /**
      * Sets the HIVEMQ_DATA_FOLDER to the given argument. Using this method overrides all other ways to configure the
@@ -53,7 +52,8 @@ public interface EmbeddedHiveMQBuilder {
      * @see <a href="https://www.hivemq.com/docs/hivemq/latest/user-guide/configuration.html#folders">HiveMQ
      *         folders</a>
      */
-    @NotNull EmbeddedHiveMQBuilder withDataFolder(@Nullable Path dataFolder);
+    @NotNull
+    EmbeddedHiveMQBuilder withDataFolder(@Nullable Path dataFolder);
 
     /**
      * Sets the HIVEMQ_EXTENSION_FOLDER to the given argument. Using this method overrides all other ways to configure
@@ -64,9 +64,11 @@ public interface EmbeddedHiveMQBuilder {
      * @see <a href="https://www.hivemq.com/docs/hivemq/latest/user-guide/configuration.html#folders">HiveMQ
      *         folders</a>
      */
-    @NotNull EmbeddedHiveMQBuilder withExtensionsFolder(@Nullable Path extensionsFolder);
+    @NotNull
+    EmbeddedHiveMQBuilder withExtensionsFolder(@Nullable Path extensionsFolder);
 
-    @NotNull EmbeddedHiveMQBuilder withLicenseFolder(@Nullable Path licenseFolder);
+    @NotNull
+    EmbeddedHiveMQBuilder withLicenseFolder(@Nullable Path licenseFolder);
 
     /**
      * Sets the {@link EmbeddedExtension} to the given argument.
@@ -74,7 +76,8 @@ public interface EmbeddedHiveMQBuilder {
      * @param embeddedExtension the used embedded extension.
      * @return this builder.
      */
-    @NotNull EmbeddedHiveMQBuilder withEmbeddedExtension(@Nullable EmbeddedExtension embeddedExtension);
+    @NotNull
+    EmbeddedHiveMQBuilder withEmbeddedExtension(@Nullable EmbeddedExtension embeddedExtension);
 
     /**
      * Concludes the EmbeddedHiveMQ build process.
@@ -85,6 +88,6 @@ public interface EmbeddedHiveMQBuilder {
      *
      * @return a new EmbeddedHiveMQ with the configured HiveMQ folders.
      */
-    @NotNull EmbeddedHiveMQ build();
-
+    @NotNull
+    EmbeddedHiveMQ build();
 }

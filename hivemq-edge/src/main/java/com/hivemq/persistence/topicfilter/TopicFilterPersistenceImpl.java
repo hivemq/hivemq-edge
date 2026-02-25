@@ -16,15 +16,14 @@
 package com.hivemq.persistence.topicfilter;
 
 import com.hivemq.exceptions.UnrecoverableException;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Singleton
 public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
@@ -59,12 +58,11 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
         }
     }
 
-
     @Override
-    public synchronized @NotNull TopicFilterAddResult addTopicFilter(
-            final @NotNull TopicFilterPojo topicFilter) {
+    public synchronized @NotNull TopicFilterAddResult addTopicFilter(final @NotNull TopicFilterPojo topicFilter) {
         if (filterToTopicFilter.containsKey(topicFilter.getTopicFilter())) {
-            return TopicFilterAddResult.failed(TopicFilterAddResult.TopicFilterPutStatus.TOPIC_FILTER_ALREADY_PRESENT,
+            return TopicFilterAddResult.failed(
+                    TopicFilterAddResult.TopicFilterPutStatus.TOPIC_FILTER_ALREADY_PRESENT,
                     "An identical TopicFilter exists already for the filter '" + topicFilter.getTopicFilter() + "'");
         }
 
@@ -81,13 +79,15 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
             topicFilterPersistenceReaderWriter.writePersistence(filterToTopicFilter.values());
             return TopicFilterUpdateResult.success();
         } else {
-            return TopicFilterUpdateResult.failed(TopicFilterUpdateResult.TopicFilterUpdateStatus.NOT_FOUND,
+            return TopicFilterUpdateResult.failed(
+                    TopicFilterUpdateResult.TopicFilterUpdateStatus.NOT_FOUND,
                     "No topic filter with filter '" + topicFilter.getTopicFilter() + "' was found.");
         }
     }
 
     @Override
-    public synchronized @NotNull TopicFilterUpdateResult updateAllTopicFilters(final @NotNull List<TopicFilterPojo> topicFilters) {
+    public synchronized @NotNull TopicFilterUpdateResult updateAllTopicFilters(
+            final @NotNull List<TopicFilterPojo> topicFilters) {
         filterToTopicFilter.clear();
         for (final TopicFilterPojo topicFilter : topicFilters) {
             filterToTopicFilter.put(topicFilter.getTopicFilter(), topicFilter);
@@ -100,7 +100,8 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
     public synchronized @NotNull TopicFilterDeleteResult deleteTopicFilter(final @NotNull String filter) {
         final TopicFilterPojo topicFilter = filterToTopicFilter.remove(filter);
         if (topicFilter == null) {
-            return TopicFilterDeleteResult.failed(TopicFilterDeleteResult.TopicFilterDeleteStatus.NOT_FOUND,
+            return TopicFilterDeleteResult.failed(
+                    TopicFilterDeleteResult.TopicFilterDeleteStatus.NOT_FOUND,
                     "No topic filter with name '{}' was found.");
         } else {
             topicFilterPersistenceReaderWriter.writePersistence(filterToTopicFilter.values());

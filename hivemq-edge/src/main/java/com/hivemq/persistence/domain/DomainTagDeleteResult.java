@@ -34,7 +34,7 @@ public class DomainTagDeleteResult {
     }
 
     public static @NotNull DomainTagDeleteResult failed(final @NotNull DomainTagDeleteStatus putStatus) {
-        return new DomainTagDeleteResult(putStatus,  null);
+        return new DomainTagDeleteResult(putStatus, null);
     }
 
     public static @NotNull DomainTagDeleteResult failed(
@@ -46,11 +46,9 @@ public class DomainTagDeleteResult {
         return dataPolicyUpdateStatus;
     }
 
-
     public @Nullable String getErrorMessage() {
         return errorMessage;
     }
-
 
     public enum DomainTagDeleteStatus {
         SUCCESS(),

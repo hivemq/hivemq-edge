@@ -15,13 +15,13 @@
  */
 package com.hivemq.configuration.service;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 public interface ModuleConfigurationService {
 
-    @NotNull Map<String, Object> getAllConfigs();
+    @NotNull
+    Map<String, Object> getAllConfigs();
 
     void setAllConfigs(@NotNull Map<String, Object> allConfigs);
 }

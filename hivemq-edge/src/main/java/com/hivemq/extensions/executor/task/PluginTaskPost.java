@@ -33,7 +33,6 @@ public interface PluginTaskPost<O extends PluginTaskOutput> {
      */
     void pluginPost(final @NotNull O pluginOutput);
 
-
     /**
      * A tangible identifier for the async option.
      *

@@ -15,15 +15,15 @@
  */
 package com.hivemq.persistence.local;
 
-import com.hivemq.mqtt.message.MessageWithID;
-import com.hivemq.mqtt.message.puback.PUBACK;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+
+import com.hivemq.mqtt.message.MessageWithID;
+import com.hivemq.mqtt.message.puback.PUBACK;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Lukas Brandl
@@ -31,13 +31,12 @@ import static org.junit.jupiter.api.Assertions.assertSame;
  */
 public class IncomingMessageFlowInMemoryLocalPersistenceTest {
 
-
     private IncomingMessageFlowInMemoryLocalPersistence persistence;
+
     @BeforeEach
     public void setUp() throws Exception {
 
         persistence = new IncomingMessageFlowInMemoryLocalPersistence();
-
     }
 
     @Test
@@ -87,7 +86,7 @@ public class IncomingMessageFlowInMemoryLocalPersistenceTest {
     public void test_remove_nonexistant_entry() throws Exception {
         persistence.remove("nonexistant", 1);
 
-        //Nothing happens
+        // Nothing happens
     }
 
     @Test
@@ -106,7 +105,6 @@ public class IncomingMessageFlowInMemoryLocalPersistenceTest {
 
         assertNotNull(persistence.get("client", 1));
     }
-
 
     @Test
     public void test_delete() throws Exception {

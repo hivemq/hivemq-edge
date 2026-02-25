@@ -15,21 +15,23 @@
  */
 package com.hivemq.datagov.model;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
  */
 public interface DataGovernanceError {
 
-    @NotNull Optional<Throwable> getError();
+    @NotNull
+    Optional<Throwable> getError();
 
-    @NotNull Optional<String> getPipelineId();
+    @NotNull
+    Optional<String> getPipelineId();
 
-    @NotNull Optional<String> getFunctionId();
+    @NotNull
+    Optional<String> getFunctionId();
 
-    @NotNull Optional<String> getMessage();
-
+    @NotNull
+    Optional<String> getMessage();
 }

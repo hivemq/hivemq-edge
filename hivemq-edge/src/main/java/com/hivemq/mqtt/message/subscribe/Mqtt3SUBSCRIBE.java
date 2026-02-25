@@ -27,5 +27,6 @@ public interface Mqtt3SUBSCRIBE {
     /**
      * @return a List of topics and their corresponding QoS the SUBSCRIBE message contains
      */
-    @NotNull ImmutableList<Topic> getTopics();
+    @NotNull
+    ImmutableList<Topic> getTopics();
 }

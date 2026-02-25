@@ -25,12 +25,11 @@ import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import com.hivemq.protocols.InternalWritingContext;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 @Singleton
 public class WritingServiceProvider {
@@ -57,26 +56,21 @@ public class WritingServiceProvider {
         if (writingServiceFactory == null) {
             return new WritingServiceNoop();
         }
-        return writingServiceFactory.build(objectMapper,
-                localTopicTree,
-                singleWriterService);
+        return writingServiceFactory.build(objectMapper, localTopicTree, singleWriterService);
     }
-
 
     public static class WritingServiceNoop implements InternalProtocolAdapterWritingService {
 
         private static final @NotNull Logger log = LoggerFactory.getLogger(WritingServiceNoop.class);
 
         @Override
-        public void addWritingChangedCallback(final @NotNull InternalProtocolAdapterWritingService.WritingChangedCallback callback) {
-
-        }
+        public void addWritingChangedCallback(
+                final @NotNull InternalProtocolAdapterWritingService.WritingChangedCallback callback) {}
 
         @Override
         public boolean writingEnabled() {
             return false;
         }
-
 
         @Override
         public @NotNull CompletableFuture<Boolean> startWritingAsync(

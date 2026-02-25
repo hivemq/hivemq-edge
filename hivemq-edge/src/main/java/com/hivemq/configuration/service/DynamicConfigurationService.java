@@ -24,8 +24,7 @@ public interface DynamicConfigurationService {
 
     boolean isConfigurationExportEnabled();
 
-    void setMutableConfigurationEnabled(final boolean mutableConfigurationEnabled) ;
+    void setMutableConfigurationEnabled(final boolean mutableConfigurationEnabled);
 
     void setConfigurationExportEnabled(final boolean configurationExportEnabled);
-
 }

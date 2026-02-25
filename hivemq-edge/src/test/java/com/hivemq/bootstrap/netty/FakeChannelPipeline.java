@@ -18,7 +18,6 @@ package com.hivemq.bootstrap.netty;
 import com.google.common.collect.Lists;
 import io.netty.channel.*;
 import io.netty.util.concurrent.EventExecutorGroup;
-
 import java.net.SocketAddress;
 import java.util.Iterator;
 import java.util.List;
@@ -62,7 +61,8 @@ public class FakeChannelPipeline implements ChannelPipeline {
     }
 
     @Override
-    public ChannelPipeline addBefore(final EventExecutorGroup group, final String baseName, final String name, final ChannelHandler handler) {
+    public ChannelPipeline addBefore(
+            final EventExecutorGroup group, final String baseName, final String name, final ChannelHandler handler) {
         names.add(names.indexOf(baseName), name);
         return this;
     }
@@ -74,7 +74,8 @@ public class FakeChannelPipeline implements ChannelPipeline {
     }
 
     @Override
-    public ChannelPipeline addAfter(final EventExecutorGroup group, final String baseName, final String name, final ChannelHandler handler) {
+    public ChannelPipeline addAfter(
+            final EventExecutorGroup group, final String baseName, final String name, final ChannelHandler handler) {
         names.add(names.indexOf(baseName) + 1, name);
         return this;
     }
@@ -128,7 +129,8 @@ public class FakeChannelPipeline implements ChannelPipeline {
     }
 
     @Override
-    public ChannelPipeline replace(final ChannelHandler oldHandler, final String newName, final ChannelHandler newHandler) {
+    public ChannelPipeline replace(
+            final ChannelHandler oldHandler, final String newName, final ChannelHandler newHandler) {
         return this;
     }
 
@@ -138,7 +140,8 @@ public class FakeChannelPipeline implements ChannelPipeline {
     }
 
     @Override
-    public <T extends ChannelHandler> T replace(final Class<T> oldHandlerType, final String newName, final ChannelHandler newHandler) {
+    public <T extends ChannelHandler> T replace(
+            final Class<T> oldHandlerType, final String newName, final ChannelHandler newHandler) {
         return null;
     }
 
@@ -288,7 +291,8 @@ public class FakeChannelPipeline implements ChannelPipeline {
     }
 
     @Override
-    public ChannelFuture connect(final SocketAddress remoteAddress, final SocketAddress localAddress, final ChannelPromise promise) {
+    public ChannelFuture connect(
+            final SocketAddress remoteAddress, final SocketAddress localAddress, final ChannelPromise promise) {
         return null;
     }
 

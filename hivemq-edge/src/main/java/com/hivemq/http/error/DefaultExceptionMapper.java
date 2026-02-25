@@ -26,10 +26,6 @@ import com.hivemq.api.errors.UnsupportedMediaTypeError;
 import com.hivemq.api.errors.ValidationError;
 import com.hivemq.util.ErrorResponseUtil;
 import com.hivemq.util.Exceptions;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotAllowedException;
@@ -41,7 +37,9 @@ import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 import java.io.EOFException;
 import java.util.List;
-
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Provider
 @Singleton
@@ -53,7 +51,7 @@ public class DefaultExceptionMapper implements ExceptionMapper<Throwable> {
     @Override
     public Response toResponse(final @NotNull Throwable exception) {
 
-        //matches all default exceptions, e.g. NotFoundException, BadRequestException,...
+        // matches all default exceptions, e.g. NotFoundException, BadRequestException,...
         if (exception instanceof WebApplicationException) {
             log.trace("WebApplicationException in REST API: {}", exception.getMessage());
             final Response response = ((WebApplicationException) exception).getResponse();
@@ -68,24 +66,28 @@ public class DefaultExceptionMapper implements ExceptionMapper<Throwable> {
             } else if (exception instanceof NotSupportedException) {
                 return ErrorResponseUtil.errorResponse(new UnsupportedMediaTypeError());
             }
-            //build a new response to prevent additional information from being passed out to the http clients by the exception
+            // build a new response to prevent additional information from being passed out to the http clients by the
+            // exception
             return ErrorResponseUtil.errorResponse(new InternalServerError("Internal error"));
         }
 
         if (exception instanceof JsonProcessingException) {
             if (exception instanceof UnrecognizedPropertyException) {
-                return ErrorResponseUtil.errorResponse(new ValidationError(List.of(new Error("Unrecognized field", ((UnrecognizedPropertyException) exception).getPropertyName()))));
+                return ErrorResponseUtil.errorResponse(new ValidationError(List.of(new Error(
+                        "Unrecognized field", ((UnrecognizedPropertyException) exception).getPropertyName()))));
             }
 
             log.trace("Not able to parse JSON request for REST API", exception);
-            return ErrorResponseUtil.errorResponse(new InvalidInputError("Unparseable JSOn: " +exception.getMessage()));
+            return ErrorResponseUtil.errorResponse(
+                    new InvalidInputError("Unparseable JSOn: " + exception.getMessage()));
         }
 
-        //handle EOF exception if connection is closed while the request/response is in progress
+        // handle EOF exception if connection is closed while the request/response is in progress
         if (exception instanceof EOFException) {
             log.trace("EOF in REST API, connection has been closed before request/response could complete");
-            //build a new response to prevent additional information from being passed out to the http clients by the exception
-            //response code does not really matter here as it cannot be transmitted anyway
+            // build a new response to prevent additional information from being passed out to the http clients by the
+            // exception
+            // response code does not really matter here as it cannot be transmitted anyway
             return ErrorResponseUtil.errorResponse(new InternalServerError(null));
         }
 

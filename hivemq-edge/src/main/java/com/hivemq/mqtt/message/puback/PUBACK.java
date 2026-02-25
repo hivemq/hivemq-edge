@@ -15,13 +15,13 @@
  */
 package com.hivemq.mqtt.message.puback;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extensions.packets.puback.PubackPacketImpl;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttMessageWithUserProperties;
 import com.hivemq.mqtt.message.reason.Mqtt5PubAckReasonCode;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The MQTT PUBACK message
@@ -33,12 +33,12 @@ import com.hivemq.mqtt.message.reason.Mqtt5PubAckReasonCode;
 public class PUBACK extends MqttMessageWithUserProperties.MqttMessageWithIdAndReasonCode<Mqtt5PubAckReasonCode>
         implements Mqtt3PUBACK, Mqtt5PUBACK {
 
-    //MQTT 3
+    // MQTT 3
     public PUBACK(final int packetIdentifier) {
         super(packetIdentifier, Mqtt5PubAckReasonCode.SUCCESS, null, Mqtt5UserProperties.NO_USER_PROPERTIES);
     }
 
-    //MQTT 5
+    // MQTT 5
     public PUBACK(
             final int packetIdentifier,
             final @NotNull Mqtt5PubAckReasonCode reasonCode,

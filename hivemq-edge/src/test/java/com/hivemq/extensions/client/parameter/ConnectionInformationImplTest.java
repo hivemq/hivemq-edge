@@ -13,13 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.client.parameter;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Lists;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.entity.*;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ClientTlsInformation;
 import com.hivemq.extension.sdk.api.client.parameter.Listener;
 import com.hivemq.extension.sdk.api.client.parameter.ListenerType;
@@ -29,13 +33,6 @@ import com.hivemq.mqtt.handler.publish.PublishFlushHandler;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.security.auth.SslClientCertificate;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import org.mockito.Mockito;
-
 import java.math.BigInteger;
 import java.security.Principal;
 import java.security.PublicKey;
@@ -43,10 +40,10 @@ import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.Optional;
 import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 /**
  * @since 4.0.0
@@ -55,6 +52,7 @@ public class ConnectionInformationImplTest {
 
     private @NotNull ClientConnection clientConnection;
     private @NotNull EmbeddedChannel channel;
+
     @BeforeEach
     public void setUp() throws Exception {
         channel = new EmbeddedChannel();
@@ -65,8 +63,7 @@ public class ConnectionInformationImplTest {
     @Test
     @SuppressWarnings("ConstantConditions")
     public void test_null_channel() {
-        assertThatThrownBy(() -> new ConnectionInformationImpl(null))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new ConnectionInformationImpl(null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -92,7 +89,7 @@ public class ConnectionInformationImplTest {
 
     @Test
     public void test_mqtt_version_not_set() {
-    
+
         assertThrows(NullPointerException.class, () -> new ConnectionInformationImpl(clientConnection));
     }
 
@@ -139,11 +136,8 @@ public class ConnectionInformationImplTest {
     @Test
     public void test_tls_tcp_listener() {
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
-        clientConnection.setConnectedListener(new MqttTlsTcpListener(
-                1337,
-                "127.0.0.1",
-                createDefaultTls().build(),
-                "test", null));
+        clientConnection.setConnectedListener(
+                new MqttTlsTcpListener(1337, "127.0.0.1", createDefaultTls().build(), "test", null));
 
         final ConnectionInformationImpl connectionInformation = new ConnectionInformationImpl(clientConnection);
 
@@ -161,7 +155,8 @@ public class ConnectionInformationImplTest {
     @Test
     public void test_websocket_listener() {
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
-        clientConnection.setConnectedListener(new MqttWebsocketListener.Builder().port(1337)
+        clientConnection.setConnectedListener(new MqttWebsocketListener.Builder()
+                .port(1337)
                 .bindAddress("127.0.0.1")
                 .build());
 
@@ -181,7 +176,8 @@ public class ConnectionInformationImplTest {
     @Test
     public void test_tls_websocket_listener() {
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
-        clientConnection.setConnectedListener(new MqttTlsWebsocketListener.Builder().port(1337)
+        clientConnection.setConnectedListener(new MqttTlsWebsocketListener.Builder()
+                .port(1337)
                 .bindAddress("127.0.0.1")
                 .tls(createDefaultTls().build())
                 .build());
@@ -305,7 +301,6 @@ public class ConnectionInformationImplTest {
         // testing real values with integration test
         final Optional<TlsInformation> tlsInformation = connectionInformation.getTlsInformation();
         assertFalse(tlsInformation.isPresent());
-
     }
 
     private Tls.Builder createDefaultTls() {
@@ -323,12 +318,10 @@ public class ConnectionInformationImplTest {
     private static class TestCert extends X509Certificate {
 
         @Override
-        public void checkValidity() {
-        }
+        public void checkValidity() {}
 
         @Override
-        public void checkValidity(final @NotNull Date date) {
-        }
+        public void checkValidity(final @NotNull Date date) {}
 
         @Override
         public int getVersion() {
@@ -411,12 +404,10 @@ public class ConnectionInformationImplTest {
         }
 
         @Override
-        public void verify(final @NotNull PublicKey key) {
-        }
+        public void verify(final @NotNull PublicKey key) {}
 
         @Override
-        public void verify(final @NotNull PublicKey key, final @NotNull String sigProvider) {
-        }
+        public void verify(final @NotNull PublicKey key, final @NotNull String sigProvider) {}
 
         @Override
         public String toString() {

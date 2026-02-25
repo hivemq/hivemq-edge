@@ -15,10 +15,11 @@
  */
 package com.hivemq.edge.adapters.databases;
 
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
@@ -26,23 +27,14 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
-import com.hivemq.adapter.sdk.api.polling.PollingInput;
-import com.hivemq.adapter.sdk.api.polling.PollingOutput;
-import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
-import com.hivemq.edge.adapters.databases.config.DatabaseType;
 import com.hivemq.edge.adapters.databases.config.DatabasesAdapterConfig;
 import com.hivemq.edge.adapters.databases.config.DatabasesAdapterTag;
 import com.hivemq.edge.adapters.databases.config.DatabasesAdapterTagDefinition;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -51,9 +43,9 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
-
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdapter {
 
@@ -81,7 +73,8 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
 
         log.debug("Building connection string");
 
-        this.databaseConnection = new DatabaseConnection(adapterConfig.getType(),
+        this.databaseConnection = new DatabaseConnection(
+                adapterConfig.getType(),
                 adapterConfig.getServer(),
                 adapterConfig.getPort(),
                 adapterConfig.getDatabase(),
@@ -122,30 +115,36 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
 
             log.debug("Loading MS SQL Driver");
             try {
-                Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver", true, getClass().getClassLoader());
+                Class.forName(
+                        "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+                        true,
+                        getClass().getClassLoader());
             } catch (final ClassNotFoundException e) {
                 output.failStart(e, null);
                 return;
             }
-        } finally {
-            Thread.currentThread().setContextClassLoader(originalClassLoader);
-        }
 
-        databaseConnection.connect();
+            // CRITICAL FIX: Keep context classloader set during connection creation
+            // HikariCP needs the correct classloader context to find registered drivers
+            log.debug("Creating database connection");
+            databaseConnection.connect();
 
-        try {
             log.debug("Starting connection to the database instance");
             if (databaseConnection.getConnection().isValid(TIMEOUT)) {
                 output.startedSuccessfully();
                 protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
             } else {
-                output.failStart(new Throwable("Error connecting database, please check the configuration"),
+                output.failStart(
+                        new Throwable("Error connecting database, please check the configuration"),
                         "Error connecting database, please check the configuration");
                 protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
             }
         } catch (final Exception e) {
             output.failStart(e, null);
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+        } finally {
+            // Restore original classloader only AFTER connection is established
+            Thread.currentThread().setContextClassLoader(originalClassLoader);
         }
     }
 
@@ -156,7 +155,6 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
         databaseConnection.close();
         protocolAdapterStopOutput.stoppedSuccessfully();
     }
-
 
     @Override
     public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
@@ -220,7 +218,8 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
             final int index,
             final @NotNull ResultSet result,
             final @NotNull ResultSetMetaData resultSetMD,
-            final @NotNull ObjectNode node) throws SQLException {
+            final @NotNull ObjectNode node)
+            throws SQLException {
         final String columnName = resultSetMD.getColumnName(index);
         final int columnType = resultSetMD.getColumnType(index);
         switch (columnType) {
@@ -241,5 +240,4 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
     public int getMaxPollingErrorsBeforeRemoval() {
         return adapterConfig.getMaxPollingErrorsBeforeRemoval();
     }
-
 }

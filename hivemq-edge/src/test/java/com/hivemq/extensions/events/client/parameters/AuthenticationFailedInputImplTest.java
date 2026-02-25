@@ -15,6 +15,9 @@
  */
 package com.hivemq.extensions.events.client.parameters;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.extension.sdk.api.packets.general.DisconnectedReasonCode;
@@ -23,14 +26,8 @@ import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Florian Limpöck
@@ -44,7 +41,8 @@ public class AuthenticationFailedInputImplTest {
         final ClientConnection clientConnection = new ClientConnection(channel, null);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
-        final AuthenticationFailedInputImpl input = new AuthenticationFailedInputImpl(channel, "client", null, null, null);
+        final AuthenticationFailedInputImpl input =
+                new AuthenticationFailedInputImpl(channel, "client", null, null, null);
         assertEquals(input, input.get());
         assertEquals("client", input.getClientInformation().getClientId());
         assertEquals(Optional.empty(), input.getReasonCode());
@@ -59,9 +57,12 @@ public class AuthenticationFailedInputImplTest {
         final ClientConnection clientConnection = new ClientConnection(channel, null);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
         clientConnection.setProtocolVersion(ProtocolVersion.MQTTv5);
-        final AuthenticationFailedInputImpl input =
-                new AuthenticationFailedInputImpl(channel, "client", DisconnectedReasonCode.BAD_AUTHENTICATION_METHOD,
-                        "reason", UserPropertiesImpl.of(ImmutableList.of(new MqttUserProperty("key", "value"))));
+        final AuthenticationFailedInputImpl input = new AuthenticationFailedInputImpl(
+                channel,
+                "client",
+                DisconnectedReasonCode.BAD_AUTHENTICATION_METHOD,
+                "reason",
+                UserPropertiesImpl.of(ImmutableList.of(new MqttUserProperty("key", "value"))));
 
         assertEquals(input, input.get());
         assertEquals("client", input.getClientInformation().getClientId());

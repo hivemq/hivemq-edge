@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.mtconnect;
 
-
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
@@ -24,16 +23,15 @@ import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterConfig;
 import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTag;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.EnumSet;
+import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.EnumSet;
-import java.util.List;
 
 public class MtConnectProtocolAdapterInformation implements ProtocolAdapterInformation {
 
@@ -44,8 +42,7 @@ public class MtConnectProtocolAdapterInformation implements ProtocolAdapterInfor
     private static final @NotNull Logger LOG = LoggerFactory.getLogger(MtConnectProtocolAdapterInformation.class);
     private static final int CURRENT_CONFIG_VERSION = 1;
 
-    protected MtConnectProtocolAdapterInformation() {
-    }
+    protected MtConnectProtocolAdapterInformation() {}
 
     @Override
     public @NotNull String getProtocolName() {
@@ -104,9 +101,8 @@ public class MtConnectProtocolAdapterInformation implements ProtocolAdapterInfor
 
     @Override
     public @Nullable String getUiSchema() {
-        try (final InputStream inputStream = this.getClass()
-                .getClassLoader()
-                .getResourceAsStream("mtconnect-adapter-ui-schema.json")) {
+        try (final InputStream inputStream =
+                this.getClass().getClassLoader().getResourceAsStream("mtconnect-adapter-ui-schema.json")) {
             if (inputStream == null) {
                 LOG.warn(
                         "The UISchema for the MTConnect Protocol Adapter could not be loaded from resources: Not found.");
@@ -138,5 +134,4 @@ public class MtConnectProtocolAdapterInformation implements ProtocolAdapterInfor
     public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
         return MtConnectAdapterConfig.class;
     }
-
 }

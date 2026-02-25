@@ -16,13 +16,13 @@
 package com.hivemq.mqtt.message.disconnect;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extensions.packets.disconnect.DisconnectPacketImpl;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttMessageWithUserProperties;
 import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Dominik Obermaier
@@ -38,7 +38,7 @@ public class DISCONNECT extends MqttMessageWithUserProperties.MqttMessageWithRea
     private final @Nullable String serverReference;
     private final long sessionExpiryInterval;
 
-    //MQTT 3
+    // MQTT 3
     public DISCONNECT() {
         super(Mqtt5DisconnectReasonCode.NORMAL_DISCONNECTION, null, Mqtt5UserProperties.NO_USER_PROPERTIES);
         sessionExpiryInterval = SESSION_EXPIRY_NOT_SET;

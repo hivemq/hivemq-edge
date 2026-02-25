@@ -15,11 +15,10 @@
  */
 package com.hivemq.util;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl.SharedSubscription;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A Utility class for dealing with topics
@@ -54,7 +53,7 @@ public class Topics {
      * @return true if it is a shared subscription, else false.
      */
     public static boolean isSharedSubscriptionTopic(final @NotNull String topic) {
-        //optimizing
+        // optimizing
         if (!topic.startsWith("$share/")) {
             return false;
         }
@@ -110,8 +109,8 @@ public class Topics {
         if (topic.contains("\u0000")) {
             return false;
         }
-        //We're using charAt because otherwise the String backing char[]
-        //needs to be copied. JMH Benchmarks showed that this is more performant
+        // We're using charAt because otherwise the String backing char[]
+        // needs to be copied. JMH Benchmarks showed that this is more performant
 
         char lastChar = topic.charAt(0);
         char currentChar;
@@ -135,14 +134,14 @@ public class Topics {
                 isSharedSubscription = true;
             }
 
-            //Check the shared name
+            // Check the shared name
             if (isSharedSubscription && sharedSubscriptionDelimiterCharCount == 1) {
                 if (currentChar == '+' || currentChar == '#') {
-                    //Shared name contains wildcard chars
+                    // Shared name contains wildcard chars
                     return false;
                 }
                 if (lastChar == SHARED_SUBSCRIPTION_DELIMITER && currentChar == SHARED_SUBSCRIPTION_DELIMITER) {
-                    //Check if the shared name is empty
+                    // Check if the shared name is empty
                     return false;
                 }
             }
@@ -157,19 +156,21 @@ public class Topics {
                 return true;
             }
 
-            //Check if something follows after the # sign
+            // Check if something follows after the # sign
             if (lastChar == '#' || (currentChar == '#' && i == length - 1)) {
                 return false;
             }
 
-            //Let's check if the + sign is in the middle of a string
+            // Let's check if the + sign is in the middle of a string
             if (currentChar == '+' && lastChar != '/') {
 
-                if (sharedSubscriptionDelimiterCharCount != 2 || !isSharedSubscription || lastChar != SHARED_SUBSCRIPTION_DELIMITER) {
+                if (sharedSubscriptionDelimiterCharCount != 2
+                        || !isSharedSubscription
+                        || lastChar != SHARED_SUBSCRIPTION_DELIMITER) {
                     return false;
                 }
             }
-            //Let's check if the + sign is followed by a
+            // Let's check if the + sign is followed by a
             if (lastChar == '+' && currentChar != '/') {
                 return false;
             }
@@ -197,10 +198,8 @@ public class Topics {
      * @return true if it contains a wildcard character, else false.
      */
     public static boolean containsWildcard(final String topic) {
-        return (topic.indexOf(MULTI_LEVEL_WILDCARD) != -1) ||
-                (topic.indexOf(SINGLE_LEVEL_WILDCARD) != -1);
+        return (topic.indexOf(MULTI_LEVEL_WILDCARD) != -1) || (topic.indexOf(SINGLE_LEVEL_WILDCARD) != -1);
     }
-
 
     /**
      * Check a topic string if it is a shared subscription.

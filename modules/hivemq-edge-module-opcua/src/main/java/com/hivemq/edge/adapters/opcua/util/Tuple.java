@@ -17,9 +17,9 @@ package com.hivemq.edge.adapters.opcua.util;
 
 import org.jetbrains.annotations.NotNull;
 
-public record Tuple<U,V>(@NotNull U a, @NotNull V b) {
+public record Tuple<U, V>(@NotNull U a, @NotNull V b) {
 
-    public static <U,V> Tuple<U,V> tuple(final @NotNull U a, final @NotNull V b) {
+    public static <U, V> Tuple<U, V> tuple(final @NotNull U a, final @NotNull V b) {
         return new Tuple<>(a, b);
     }
 }

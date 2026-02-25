@@ -15,12 +15,11 @@
  */
 package com.hivemq.extensions.services.cluster;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.services.cluster.ClusterDiscoveryCallback;
 import com.hivemq.extension.sdk.api.services.cluster.ClusterService;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Silvio Giebl
@@ -29,8 +28,7 @@ import jakarta.inject.Singleton;
 public class ClusterServiceNoopImpl implements ClusterService {
 
     @Inject
-    public ClusterServiceNoopImpl() {
-    }
+    public ClusterServiceNoopImpl() {}
 
     @Override
     public void addDiscoveryCallback(final @NotNull ClusterDiscoveryCallback clusterDiscoveryCallback) {

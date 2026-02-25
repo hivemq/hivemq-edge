@@ -17,16 +17,15 @@ package com.hivemq.mqtt.handler.publish;
 
 import com.codahale.metrics.Counter;
 import com.hivemq.configuration.service.InternalConfigurations;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.mqtt.message.publish.PublishWithFuture;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-
 import java.util.LinkedList;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Daniel Krüger
@@ -116,5 +115,4 @@ public class PublishFlushHandler extends ChannelInboundHandlerAdapter implements
             ctx.flush();
         }
     }
-
 }

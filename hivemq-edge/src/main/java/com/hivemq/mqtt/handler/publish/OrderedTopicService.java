@@ -20,16 +20,12 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PublishWithFuture;
 import com.hivemq.mqtt.message.publish.PubrelWithFuture;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayDeque;
@@ -38,6 +34,9 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Dominik Obermaier
@@ -50,7 +49,7 @@ public class OrderedTopicService {
     private static final @NotNull ClosedChannelException CLOSED_CHANNEL_EXCEPTION = new ClosedChannelException();
 
     static {
-        //remove the stacktrace from the static exception
+        // remove the stacktrace from the static exception
         CLOSED_CHANNEL_EXCEPTION.setStackTrace(new StackTraceElement[0]);
     }
 
@@ -63,8 +62,7 @@ public class OrderedTopicService {
     private final @NotNull Set<Integer> unacknowledgedMessages = ConcurrentHashMap.newKeySet();
 
     @Inject
-    public OrderedTopicService() {
-    }
+    public OrderedTopicService() {}
 
     public void messageFlowComplete(final @NotNull ChannelHandlerContext ctx, final int packetId) {
         final SettableFuture<PublishStatus> publishStatusFuture = messageIdToFutureMap.get(packetId);
@@ -83,10 +81,11 @@ public class OrderedTopicService {
             return;
         }
 
-        final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
-        final int maxInflightWindow = (clientConnection == null) ?
-                InternalConfigurations.MAX_INFLIGHT_WINDOW_SIZE_MESSAGES :
-                clientConnection.getMaxInflightWindow(InternalConfigurations.MAX_INFLIGHT_WINDOW_SIZE_MESSAGES);
+        final ClientConnection clientConnection =
+                ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final int maxInflightWindow = (clientConnection == null)
+                ? InternalConfigurations.MAX_INFLIGHT_WINDOW_SIZE_MESSAGES
+                : clientConnection.getMaxInflightWindow(InternalConfigurations.MAX_INFLIGHT_WINDOW_SIZE_MESSAGES);
 
         do {
             final QueuedMessage poll = queue.poll();
@@ -117,7 +116,8 @@ public class OrderedTopicService {
             future = publishWithFuture.getFuture();
         }
 
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         if (clientConnection == null) {
             return false;
         }
@@ -130,7 +130,8 @@ public class OrderedTopicService {
         final PUBLISH publish = (PUBLISH) msg;
         final int qosNumber = publish.getQoS().getQosNumber();
         if (log.isTraceEnabled()) {
-            log.trace("Client {}: Sending PUBLISH QoS {} Message with packet id {}",
+            log.trace(
+                    "Client {}: Sending PUBLISH QoS {} Message with packet id {}",
                     clientId,
                     publish.getQoS().getQosNumber(),
                     publish.getPacketIdentifier());
@@ -147,15 +148,14 @@ public class OrderedTopicService {
             messageIdToFutureMap.put(publish.getPacketIdentifier(), future);
         }
 
-        //do not store in OrderedTopicService if channelInactive has been called already
+        // do not store in OrderedTopicService if channelInactive has been called already
         if (closedAlready.get()) {
             promise.setFailure(CLOSED_CHANNEL_EXCEPTION);
             return true;
         }
 
-
-        if (unacknowledgedMessages.size() >=
-                clientConnection.getMaxInflightWindow(InternalConfigurations.MAX_INFLIGHT_WINDOW_SIZE_MESSAGES)) {
+        if (unacknowledgedMessages.size()
+                >= clientConnection.getMaxInflightWindow(InternalConfigurations.MAX_INFLIGHT_WINDOW_SIZE_MESSAGES)) {
             queueMessage(promise, publish, clientId);
             return true;
         } else {
@@ -212,6 +212,7 @@ public class OrderedTopicService {
 
         @NotNull
         private final PUBLISH publish;
+
         @NotNull
         private final ChannelPromise promise;
 

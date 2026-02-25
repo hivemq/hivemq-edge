@@ -19,11 +19,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author Dominik Obermaier
@@ -64,6 +62,4 @@ public class HiveMQExceptionHandlerBootstrap {
             log.error("Uncaught Error:", e);
         }
     }
-
-
 }

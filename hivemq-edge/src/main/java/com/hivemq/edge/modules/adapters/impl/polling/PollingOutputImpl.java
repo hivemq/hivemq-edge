@@ -21,10 +21,9 @@ import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.exceptions.StackLessProtocolAdapterException;
+import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.concurrent.CompletableFuture;
 
 public class PollingOutputImpl implements PollingOutput, BatchPollingOutput {
 
@@ -40,7 +39,6 @@ public class PollingOutputImpl implements PollingOutput, BatchPollingOutput {
     public PollingOutputImpl(final @NotNull ProtocolAdapterDataSample dataSample) {
         this.dataSample = dataSample;
     }
-
 
     @Override
     public void addDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {

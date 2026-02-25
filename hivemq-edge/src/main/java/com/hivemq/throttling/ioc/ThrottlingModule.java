@@ -15,20 +15,19 @@
  */
 package com.hivemq.throttling.ioc;
 
-import org.jetbrains.annotations.NotNull;
 import dagger.Module;
 import dagger.Provides;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
-
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 @Module
 public abstract class ThrottlingModule {
 
     @Provides
     @Singleton
-    static @NotNull GlobalTrafficShapingHandler globalTrafficShapingHandler(GlobalTrafficShapingProvider globalTrafficShapingProvider) {
+    static @NotNull GlobalTrafficShapingHandler globalTrafficShapingHandler(
+            GlobalTrafficShapingProvider globalTrafficShapingProvider) {
         return globalTrafficShapingProvider.get();
     }
-
 }

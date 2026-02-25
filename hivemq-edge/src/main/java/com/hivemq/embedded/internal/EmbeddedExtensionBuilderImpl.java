@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.embedded.internal;
+
+import static com.hivemq.extensions.HiveMQExtensionEntity.DEFAULT_PRIORITY;
+import static com.hivemq.extensions.HiveMQExtensionEntity.DEFAULT_START_PRIORITY;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.embedded.EmbeddedExtension;
@@ -22,9 +24,6 @@ import com.hivemq.embedded.EmbeddedExtensionBuilder;
 import com.hivemq.extension.sdk.api.ExtensionMain;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import static com.hivemq.extensions.HiveMQExtensionEntity.DEFAULT_PRIORITY;
-import static com.hivemq.extensions.HiveMQExtensionEntity.DEFAULT_START_PRIORITY;
 
 public class EmbeddedExtensionBuilderImpl implements EmbeddedExtensionBuilder {
 
@@ -71,7 +70,6 @@ public class EmbeddedExtensionBuilderImpl implements EmbeddedExtensionBuilder {
         this.startPriority = startPriority;
         return this;
     }
-
 
     @Override
     public @NotNull EmbeddedExtensionBuilder withExtensionMain(final @NotNull ExtensionMain extensionMain) {

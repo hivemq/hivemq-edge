@@ -15,8 +15,8 @@
  */
 package com.hivemq.persistence.local.xodus.bucket;
 
-import org.jetbrains.annotations.NotNull;
 import net.openhft.hashing.LongHashFunction;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Dominik Obermaier
@@ -28,5 +28,4 @@ public class BucketUtils {
     public static int getBucket(final @NotNull String id, final int bucketSize) {
         return Math.abs((int) (XX.hashChars(id) % bucketSize));
     }
-
 }

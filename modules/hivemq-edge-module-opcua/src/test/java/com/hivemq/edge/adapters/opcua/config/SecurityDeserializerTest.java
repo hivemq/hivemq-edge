@@ -15,15 +15,14 @@
  */
 package com.hivemq.edge.adapters.opcua.config;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.edge.adapters.opcua.Constants;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Test;
-
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 
 class SecurityDeserializerTest {
 
@@ -51,9 +50,9 @@ class SecurityDeserializerTest {
         map.put("security", null);
         final String json = mapper.writeValueAsString(map);
         final Map<String, Object> result = mapper.readValue(json, Map.class);
-        final Security security = result.get("security") == null ?
-                new Security(null) :
-                mapper.convertValue(result.get("security"), Security.class);
+        final Security security = result.get("security") == null
+                ? new Security(null)
+                : mapper.convertValue(result.get("security"), Security.class);
         assertThat(security).isNotNull();
         assertThat(security.policy()).isEqualTo(Constants.DEFAULT_SECURITY_POLICY);
     }

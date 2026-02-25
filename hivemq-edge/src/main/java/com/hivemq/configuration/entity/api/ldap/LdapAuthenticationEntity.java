@@ -21,12 +21,11 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementRef;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * XML entity for LDAP authentication configuration.
@@ -80,6 +79,9 @@ public class LdapAuthenticationEntity {
     @XmlElement(name = "rdns")
     private @Nullable String rdns = null;
 
+    @XmlElement(name = "base-dn")
+    private @Nullable String baseDn = null;
+
     @XmlElement(name = "required-object-class")
     private @Nullable String requiredObjectClass = null;
 
@@ -91,6 +93,10 @@ public class LdapAuthenticationEntity {
 
     @XmlElement(name = "simple-bind", required = true)
     private @NotNull LdapSimpleBindEntity simpleBindEntity = new LdapSimpleBindEntity();
+
+    @XmlElementWrapper(name = "user-roles", required = false)
+    @XmlElement(name = "user-role")
+    private @Nullable List<UserRoleEntity> userRoles = null;
 
     public @NotNull String getTlsMode() {
         return tlsMode;
@@ -120,6 +126,10 @@ public class LdapAuthenticationEntity {
         return rdns;
     }
 
+    public @Nullable String getBaseDn() {
+        return baseDn;
+    }
+
     public @Nullable String getRequiredObjectClass() {
         return requiredObjectClass;
     }
@@ -140,27 +150,34 @@ public class LdapAuthenticationEntity {
         return servers;
     }
 
+    public @Nullable List<UserRoleEntity> getUserRoles() {
+        return userRoles;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         final LdapAuthenticationEntity that = (LdapAuthenticationEntity) o;
-        return getConnectTimeoutMillis() == that.getConnectTimeoutMillis() &&
-                getResponseTimeoutMillis() == that.getResponseTimeoutMillis() &&
-                getMaxConnections() == that.getMaxConnections() &&
-                directoryDescent == that.directoryDescent &&
-                getSearchTimeoutSeconds() == that.getSearchTimeoutSeconds() &&
-                Objects.equals(getServers(), that.getServers()) &&
-                Objects.equals(getTlsMode(), that.getTlsMode()) &&
-                Objects.equals(getTrustStore(), that.getTrustStore()) &&
-                Objects.equals(getUidAttribute(), that.getUidAttribute()) &&
-                Objects.equals(getRdns(), that.getRdns()) &&
-                Objects.equals(getRequiredObjectClass(), that.getRequiredObjectClass()) &&
-                Objects.equals(getSimpleBindEntity(), that.getSimpleBindEntity());
+        return getConnectTimeoutMillis() == that.getConnectTimeoutMillis()
+                && getResponseTimeoutMillis() == that.getResponseTimeoutMillis()
+                && getMaxConnections() == that.getMaxConnections()
+                && directoryDescent == that.directoryDescent
+                && getSearchTimeoutSeconds() == that.getSearchTimeoutSeconds()
+                && Objects.equals(getServers(), that.getServers())
+                && Objects.equals(getTlsMode(), that.getTlsMode())
+                && Objects.equals(getTrustStore(), that.getTrustStore())
+                && Objects.equals(getUidAttribute(), that.getUidAttribute())
+                && Objects.equals(getRdns(), that.getRdns())
+                && Objects.equals(getBaseDn(), that.getBaseDn())
+                && Objects.equals(getRequiredObjectClass(), that.getRequiredObjectClass())
+                && Objects.equals(getSimpleBindEntity(), that.getSimpleBindEntity())
+                && Objects.equals(getUserRoles(), that.getUserRoles());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getServers(),
+        return Objects.hash(
+                getServers(),
                 getTlsMode(),
                 getTrustStore(),
                 getConnectTimeoutMillis(),
@@ -168,9 +185,11 @@ public class LdapAuthenticationEntity {
                 getMaxConnections(),
                 getUidAttribute(),
                 getRdns(),
+                getBaseDn(),
                 getRequiredObjectClass(),
                 directoryDescent,
                 getSearchTimeoutSeconds(),
-                getSimpleBindEntity());
+                getSimpleBindEntity(),
+                getUserRoles());
     }
 }

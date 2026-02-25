@@ -16,20 +16,19 @@
 package com.hivemq.mqttsn.handler.register;
 
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqttsn.IMqttsnTopicRegistry;
 import com.hivemq.mqttsn.MqttsnConnectionHelper;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slj.mqtt.sn.MqttsnConstants;
 import org.slj.mqtt.sn.spi.IMqttsnMessage;
 import org.slj.mqtt.sn.wire.version1_2.payload.MqttsnRegister;
-
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 
 /**
  * Handle the REGISTER flow from MQTT-SN Clients. For each inbound REGISTER call, check
@@ -51,14 +50,16 @@ public class RegisterHandler extends SimpleChannelInboundHandler<MqttsnRegister>
     }
 
     @Override
-    protected void channelRead0(final @NotNull ChannelHandlerContext ctx, final @NotNull MqttsnRegister msg) throws Exception {
+    protected void channelRead0(final @NotNull ChannelHandlerContext ctx, final @NotNull MqttsnRegister msg)
+            throws Exception {
 
-        final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final String clientId = clientConnection.getClientId();
         String topicName = msg.getTopicName();
         int alias = mqttsnTopicRegistry.register(clientId, topicName);
-        IMqttsnMessage out = MqttsnConnectionHelper.getMessageFactoryForConnection(clientConnection).
-                createRegack(0x00, alias, MqttsnConstants.RETURN_CODE_ACCEPTED);
+        IMqttsnMessage out = MqttsnConnectionHelper.getMessageFactoryForConnection(clientConnection)
+                .createRegack(0x00, alias, MqttsnConstants.RETURN_CODE_ACCEPTED);
         out.setId(msg.getId());
         ctx.writeAndFlush(out);
     }

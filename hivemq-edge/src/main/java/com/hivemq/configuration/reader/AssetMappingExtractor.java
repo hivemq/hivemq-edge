@@ -21,9 +21,6 @@ import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.combining.DataCombinerEntity;
 import com.hivemq.configuration.entity.combining.DataCombiningDestinationEntity;
 import com.hivemq.configuration.entity.combining.DataCombiningEntity;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -33,6 +30,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class AssetMappingExtractor
         implements ReloadableExtractor<List<@NotNull DataCombinerEntity>, List<@NotNull DataCombiner>> {
@@ -60,14 +59,16 @@ public class AssetMappingExtractor
 
     public synchronized boolean updateDataCombiner(final @NotNull DataCombiner dataCombiner) {
         final var updated = new AtomicBoolean(false);
-        final var newConfigs = config.stream().map(oldInstance -> {
-            if (oldInstance.getId().equals(dataCombiner.id())) {
-                updated.set(true);
-                return dataCombiner.toPersistence();
-            } else {
-                return oldInstance;
-            }
-        }).toList();
+        final var newConfigs = config.stream()
+                .map(oldInstance -> {
+                    if (oldInstance.getId().equals(dataCombiner.id())) {
+                        updated.set(true);
+                        return dataCombiner.toPersistence();
+                    } else {
+                        return oldInstance;
+                    }
+                })
+                .toList();
         if (updated.get()) {
             replaceConfigsAndTriggerWrite(newConfigs);
             return true;
@@ -94,17 +95,20 @@ public class AssetMappingExtractor
     }
 
     public synchronized boolean addDataCombiner(final @NotNull DataCombiner dataCombiner) {
-        return getCombinerById(dataCombiner.id()).map(found -> {
-            log.warn("Tried adding a data combiner with the same id {}", dataCombiner.id());
-            return false;
-        }).orElseGet(() -> {
-            final var newConfigs = new ImmutableList.Builder<DataCombinerEntity>().addAll(config)
-                    .add(dataCombiner.toPersistence())
-                    .build();
+        return getCombinerById(dataCombiner.id())
+                .map(found -> {
+                    log.warn("Tried adding a data combiner with the same id {}", dataCombiner.id());
+                    return false;
+                })
+                .orElseGet(() -> {
+                    final var newConfigs = new ImmutableList.Builder<DataCombinerEntity>()
+                            .addAll(config)
+                            .add(dataCombiner.toPersistence())
+                            .build();
 
-            replaceConfigsAndTriggerWrite(newConfigs);
-            return true;
-        });
+                    replaceConfigsAndTriggerWrite(newConfigs);
+                    return true;
+                });
     }
 
     public @NotNull Optional<DataCombiner> getCombinerById(final @NotNull UUID id) {
@@ -120,13 +124,15 @@ public class AssetMappingExtractor
 
     public synchronized boolean deleteDataCombiner(final @NotNull UUID dataCombinerId) {
         final var removed = new AtomicBoolean(false);
-        final var newConfigs = config.stream().filter(combiner -> {
-            if (combiner.getId().equals(dataCombinerId)) {
-                removed.set(true);
-                return false;
-            }
-            return true;
-        }).toList();
+        final var newConfigs = config.stream()
+                .filter(combiner -> {
+                    if (combiner.getId().equals(dataCombinerId)) {
+                        removed.set(true);
+                        return false;
+                    }
+                    return true;
+                })
+                .toList();
         replaceConfigsAndTriggerWrite(newConfigs);
         return removed.get();
     }
@@ -158,8 +164,7 @@ public class AssetMappingExtractor
 
     public @NotNull Set<String> getAssetIdSet() {
         return config.stream()
-                .flatMap(dataCombinerEntity -> dataCombinerEntity.getDataCombiningEntities()
-                        .stream()
+                .flatMap(dataCombinerEntity -> dataCombinerEntity.getDataCombiningEntities().stream()
                         .map(DataCombiningEntity::getDestination)
                         .map(DataCombiningDestinationEntity::getAssetId))
                 .collect(Collectors.toSet());
@@ -167,9 +172,8 @@ public class AssetMappingExtractor
 
     public @NotNull Set<String> getMappingIdSet() {
         return config.stream()
-                .flatMap(dataCombinerEntity -> dataCombinerEntity.getDataCombiningEntities()
-                        .stream()
-                        .map(DataCombiningEntity::getId))
+                .flatMap(dataCombinerEntity ->
+                        dataCombinerEntity.getDataCombiningEntities().stream().map(DataCombiningEntity::getId))
                 .map(UUID::toString)
                 .collect(Collectors.toSet());
     }

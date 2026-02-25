@@ -15,8 +15,6 @@
  */
 package com.hivemq.extensions.services.auth;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.auth.Authenticator;
 import com.hivemq.extension.sdk.api.auth.EnhancedAuthenticator;
 import com.hivemq.extension.sdk.api.auth.SimpleAuthenticator;
@@ -24,10 +22,11 @@ import com.hivemq.extension.sdk.api.auth.parameter.AuthenticatorProviderInput;
 import com.hivemq.extension.sdk.api.services.auth.provider.AuthenticatorProvider;
 import com.hivemq.extension.sdk.api.services.auth.provider.EnhancedAuthenticatorProvider;
 import com.hivemq.util.Exceptions;
+import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Objects;
 
 /**
  * @author Georg Held
@@ -35,26 +34,32 @@ import java.util.Objects;
 public class WrappedAuthenticatorProvider {
 
     private static final Logger log = LoggerFactory.getLogger(WrappedAuthenticatorProvider.class);
-    private static final String WRONG_CLASS_LOG_STATEMENT = "An extension provided an Authenticator instance of {} that was " +
-            "neither an implementation of SimpleAuthenticator " +
-            "nor EnhancedAuthenticator. The authenticator will be ignored.";
-    private static final String UNCAUGHT_EXCEPTION_LOG_STATEMENT = "Uncaught exception was thrown in " +
-            "AuthenticatorProvider from extension. Extensions are responsible on their own to handle exceptions.";
+    private static final String WRONG_CLASS_LOG_STATEMENT =
+            "An extension provided an Authenticator instance of {} that was "
+                    + "neither an implementation of SimpleAuthenticator "
+                    + "nor EnhancedAuthenticator. The authenticator will be ignored.";
+    private static final String UNCAUGHT_EXCEPTION_LOG_STATEMENT = "Uncaught exception was thrown in "
+            + "AuthenticatorProvider from extension. Extensions are responsible on their own to handle exceptions.";
 
     @Nullable
     private final AuthenticatorProvider simpleAuthenticatorProvider;
+
     @Nullable
     private final EnhancedAuthenticatorProvider enhancedAuthenticatorProvider;
+
     @NotNull
     private final ClassLoader classLoader;
 
-    public WrappedAuthenticatorProvider(final @NotNull AuthenticatorProvider simpleAuthenticatorProvider, final @NotNull ClassLoader classLoader) {
+    public WrappedAuthenticatorProvider(
+            final @NotNull AuthenticatorProvider simpleAuthenticatorProvider, final @NotNull ClassLoader classLoader) {
         this.simpleAuthenticatorProvider = simpleAuthenticatorProvider;
         this.classLoader = classLoader;
         this.enhancedAuthenticatorProvider = null;
     }
 
-    public WrappedAuthenticatorProvider(final @NotNull EnhancedAuthenticatorProvider enhancedAuthenticatorProvider, final @NotNull ClassLoader classLoader) {
+    public WrappedAuthenticatorProvider(
+            final @NotNull EnhancedAuthenticatorProvider enhancedAuthenticatorProvider,
+            final @NotNull ClassLoader classLoader) {
         this.enhancedAuthenticatorProvider = enhancedAuthenticatorProvider;
         this.classLoader = classLoader;
         this.simpleAuthenticatorProvider = null;
@@ -67,13 +72,14 @@ public class WrappedAuthenticatorProvider {
     @Nullable
     public SimpleAuthenticator getAuthenticator(final @NotNull AuthenticatorProviderInput authenticatorProviderInput) {
 
-        if(enhancedAuthenticatorProvider != null){
+        if (enhancedAuthenticatorProvider != null) {
             return null;
         }
 
         try {
 
-            final Authenticator authenticator = Objects.requireNonNull(simpleAuthenticatorProvider).getAuthenticator(authenticatorProviderInput);
+            final Authenticator authenticator =
+                    Objects.requireNonNull(simpleAuthenticatorProvider).getAuthenticator(authenticatorProviderInput);
 
             if (authenticator == null) {
                 return null;
@@ -92,14 +98,16 @@ public class WrappedAuthenticatorProvider {
     }
 
     @Nullable
-    public EnhancedAuthenticator getEnhancedAuthenticator(final @NotNull AuthenticatorProviderInput authenticatorProviderInput) {
+    public EnhancedAuthenticator getEnhancedAuthenticator(
+            final @NotNull AuthenticatorProviderInput authenticatorProviderInput) {
 
-        if(enhancedAuthenticatorProvider == null){
+        if (enhancedAuthenticatorProvider == null) {
             return null;
         }
 
         try {
-            return Objects.requireNonNull(enhancedAuthenticatorProvider).getEnhancedAuthenticator(authenticatorProviderInput);
+            return Objects.requireNonNull(enhancedAuthenticatorProvider)
+                    .getEnhancedAuthenticator(authenticatorProviderInput);
         } catch (final Throwable throwable) {
             Exceptions.rethrowError(UNCAUGHT_EXCEPTION_LOG_STATEMENT, throwable);
             return null;

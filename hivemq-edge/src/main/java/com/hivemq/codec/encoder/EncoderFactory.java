@@ -36,8 +36,6 @@ import com.hivemq.codec.encoder.mqtt5.Mqtt5PubrelEncoder;
 import com.hivemq.codec.encoder.mqtt5.Mqtt5SubackEncoder;
 import com.hivemq.codec.encoder.mqtt5.Mqtt5UnsubackEncoder;
 import com.hivemq.configuration.service.SecurityConfigurationService;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.Message;
 import com.hivemq.mqtt.message.PINGRESP;
@@ -54,11 +52,12 @@ import com.hivemq.mqtt.message.pubrel.PUBREL;
 import com.hivemq.mqtt.message.suback.SUBACK;
 import com.hivemq.mqtt.message.unsuback.UNSUBACK;
 import io.netty.buffer.ByteBuf;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This factory is used to create encoders and encode messages.

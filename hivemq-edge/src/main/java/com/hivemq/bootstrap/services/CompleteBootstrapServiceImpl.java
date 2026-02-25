@@ -154,5 +154,4 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     public @NotNull EdgeCoreFactoryService edgeCoreFactoryService() {
         return delegate.edgeCoreFactoryService();
     }
-
 }

@@ -23,12 +23,12 @@ import java.io.IOException;
 public class CorsFilter implements ContainerResponseFilter {
 
     @Override
-    public void filter(
-            ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws IOException {
+    public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext)
+            throws IOException {
         responseContext.getHeaders().add("Access-Control-Allow-Origin", "*");
         responseContext.getHeaders().add("Access-Control-Allow-Credentials", "true");
         responseContext.getHeaders().add("Access-Control-Allow-Headers", "origin, content-type, accept, authorization");
-        //-- Add non-standard headers to the expose list
+        // -- Add non-standard headers to the expose list
         responseContext.getHeaders().add("Access-Control-Expose-Headers", "X-Bearer-Token-Reissue");
         responseContext.getHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD");
     }

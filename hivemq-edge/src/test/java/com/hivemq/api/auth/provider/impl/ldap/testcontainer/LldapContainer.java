@@ -16,6 +16,18 @@
 package com.hivemq.api.auth.provider.impl.ldap.testcontainer;
 
 import com.hivemq.api.auth.provider.impl.ldap.LdapConnectionProperties;
+import java.io.File;
+import java.io.FileWriter;
+import java.math.BigInteger;
+import java.nio.file.Files;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.SecureRandom;
+import java.security.Security;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
@@ -30,19 +42,6 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.math.BigInteger;
-import java.nio.file.Files;
-import java.security.KeyPairGenerator;
-import java.security.KeyStore;
-import java.security.SecureRandom;
-import java.security.Security;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Date;
 
 /**
  * Testcontainer for LLDAP (Light LDAP) server.
@@ -128,8 +127,17 @@ public class LldapContainer extends GenericContainer<LldapContainer> {
      * </ul>
      */
     public LldapContainer() {
-        this(DEFAULT_IMAGE_NAME, DEFAULT_LDAP_PORT, DEFAULT_LDAPS_PORT, DEFAULT_HTTP_PORT, DEFAULT_BASE_DN,
-             DEFAULT_ADMIN_USERNAME, DEFAULT_ADMIN_PASSWORD, null, null, null);
+        this(
+                DEFAULT_IMAGE_NAME,
+                DEFAULT_LDAP_PORT,
+                DEFAULT_LDAPS_PORT,
+                DEFAULT_HTTP_PORT,
+                DEFAULT_BASE_DN,
+                DEFAULT_ADMIN_USERNAME,
+                DEFAULT_ADMIN_PASSWORD,
+                null,
+                null,
+                null);
     }
 
     private LldapContainer(
@@ -177,8 +185,7 @@ public class LldapContainer extends GenericContainer<LldapContainer> {
             withCopyFileToContainer(MountableFile.forHostPath(keyFile.toPath()), "/data/key.pem");
         }
 
-        waitingFor(Wait.forLogMessage(".*Starting LLDAP.*", 1)
-                .withStartupTimeout(Duration.ofSeconds(60)));
+        waitingFor(Wait.forLogMessage(".*Starting LLDAP.*", 1).withStartupTimeout(Duration.ofSeconds(60)));
     }
 
     @Override
@@ -289,8 +296,20 @@ public class LldapContainer extends GenericContainer<LldapContainer> {
      *
      * @return the admin DN
      */
+    public @NotNull String getUserRdns(String username) {
+        return "uid=" + username + ",ou=people";
+    }
+
+    public @NotNull String getAdminRdns() {
+        return getUserRdns(getAdminUsername());
+    }
+
+    public @NotNull String getUserDn(String username) {
+        return getUserRdns(username) + "," + getBaseDn();
+    }
+
     public @NotNull String getAdminDn() {
-        return "uid=" + adminUsername + ",ou=people," + baseDn;
+        return getUserDn(getAdminUsername());
     }
 
     /**
@@ -311,8 +330,7 @@ public class LldapContainer extends GenericContainer<LldapContainer> {
         private File keyFile;
         private File trustStoreFile;
 
-        private Builder() {
-        }
+        private Builder() {}
 
         /**
          * Sets the Docker image name.
@@ -437,14 +455,30 @@ public class LldapContainer extends GenericContainer<LldapContainer> {
          * @return a new LldapContainer instance
          */
         public @NotNull LldapContainer build() {
-            return new LldapContainer(dockerImageName, ldapPort, ldapsPort, httpPort, baseDn,
-                                     adminUsername, adminPassword, certFile, keyFile, trustStoreFile);
+            return new LldapContainer(
+                    dockerImageName,
+                    ldapPort,
+                    ldapsPort,
+                    httpPort,
+                    baseDn,
+                    adminUsername,
+                    adminPassword,
+                    certFile,
+                    keyFile,
+                    trustStoreFile);
         }
     }
 
+    public record CertFiles(
+            @com.hivemq.extension.sdk.api.annotations.NotNull
+            File certFile,
 
+            @com.hivemq.extension.sdk.api.annotations.NotNull
+            File keyFile,
 
-    public record CertFiles(@com.hivemq.extension.sdk.api.annotations.NotNull File certFile, @com.hivemq.extension.sdk.api.annotations.NotNull File keyFile, @com.hivemq.extension.sdk.api.annotations.NotNull File trustStoreFile) {};
+            @com.hivemq.extension.sdk.api.annotations.NotNull
+            File trustStoreFile) {}
+    ;
     /**
      * Generates a self-signed certificate for TLS testing using BouncyCastle.
      * <p>
@@ -471,7 +505,8 @@ public class LldapContainer extends GenericContainer<LldapContainer> {
 
         final var subject = new X500Name("CN=localhost");
         final var serial = BigInteger.valueOf(System.currentTimeMillis());
-        final var publicKeyInfo = SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded());
+        final var publicKeyInfo =
+                SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded());
 
         final var certBuilder = new X509v3CertificateBuilder(
                 subject, // issuer
@@ -479,8 +514,7 @@ public class LldapContainer extends GenericContainer<LldapContainer> {
                 notBefore,
                 notAfter,
                 subject, // subject (same as issuer for self-signed)
-                publicKeyInfo
-        );
+                publicKeyInfo);
 
         // Sign the certificate
         final var signer = new JcaContentSignerBuilder("SHA256WithRSAEncryption")
@@ -488,9 +522,7 @@ public class LldapContainer extends GenericContainer<LldapContainer> {
                 .build(keyPair.getPrivate());
 
         final var certHolder = certBuilder.build(signer);
-        final var cert = new JcaX509CertificateConverter()
-                .setProvider("BC")
-                .getCertificate(certHolder);
+        final var cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHolder);
 
         // Write certificate to PEM file
         final var certFile = Files.createTempFile("ldap-cert", ".pem").toFile();
@@ -501,7 +533,8 @@ public class LldapContainer extends GenericContainer<LldapContainer> {
         // Write private key to PEM file
         final var keyFile = Files.createTempFile("ldap-key", ".pem").toFile();
         try (final var pemWriter = new PemWriter(new FileWriter(keyFile))) {
-            pemWriter.writeObject(new PemObject("PRIVATE KEY", keyPair.getPrivate().getEncoded()));
+            pemWriter.writeObject(
+                    new PemObject("PRIVATE KEY", keyPair.getPrivate().getEncoded()));
         }
 
         // Create a TrustStore and add our self-signed certificate to it
@@ -511,7 +544,8 @@ public class LldapContainer extends GenericContainer<LldapContainer> {
 
         // Save the TrustStore to a file
         // The SSLContext will be created dynamically from this truststore by LdapConnectionProperties
-        final var trustStoreFile = Files.createTempFile("ldap-truststore", ".jks").toFile();
+        final var trustStoreFile =
+                Files.createTempFile("ldap-truststore", ".jks").toFile();
         try (final var outputStream = new java.io.FileOutputStream(trustStoreFile)) {
             trustStore.store(outputStream, KEYSTORE_PASSWORD.toCharArray());
         }

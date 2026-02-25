@@ -16,11 +16,10 @@
 package com.hivemq.extensions.interceptor.protocoladapter.parameter;
 
 import com.google.common.collect.ImmutableMap;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.interceptor.protocoladapter.parameter.ProtocolAdapterDynamicContext;
-
 import java.util.Optional;
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
 
 public class ProtocolAdapterDynamicContextImpl implements ProtocolAdapterDynamicContext {
 

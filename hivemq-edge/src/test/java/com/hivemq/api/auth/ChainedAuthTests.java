@@ -27,9 +27,9 @@ import com.hivemq.api.auth.jwt.JwtAuthenticationProvider;
 import com.hivemq.api.auth.provider.IUsernameRolesProvider;
 import com.hivemq.api.config.ApiJwtConfiguration;
 import com.hivemq.api.resources.impl.AuthenticationResourceImpl;
+import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.edge.api.model.ApiBearerToken;
 import com.hivemq.edge.api.model.UsernamePasswordCredentials;
-import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;
@@ -38,26 +38,19 @@ import com.hivemq.http.core.HttpUrlConnectionClient;
 import com.hivemq.http.core.HttpUtils;
 import com.hivemq.http.error.ProblemDetails;
 import jakarta.ws.rs.core.MediaType;
-import org.glassfish.jersey.server.ResourceConfig;
-import org.jetbrains.annotations.Nullable;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.glassfish.jersey.server.ResourceConfig;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Simon L Johnson

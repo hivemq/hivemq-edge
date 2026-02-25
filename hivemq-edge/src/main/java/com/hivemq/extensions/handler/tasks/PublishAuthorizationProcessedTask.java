@@ -16,8 +16,6 @@
 package com.hivemq.extensions.handler.tasks;
 
 import com.google.common.util.concurrent.FutureCallback;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.publish.AckReasonCode;
 import com.hivemq.extensions.auth.parameter.PublishAuthorizerOutputImpl;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
@@ -26,6 +24,8 @@ import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.reason.Mqtt5DisconnectReasonCode;
 import com.hivemq.util.Exceptions;
 import io.netty.channel.ChannelHandlerContext;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Christoph Schäbel
@@ -52,7 +52,7 @@ public class PublishAuthorizationProcessedTask implements FutureCallback<Publish
     @Override
     public void onSuccess(final @Nullable PublishAuthorizerOutputImpl output) {
         if (output == null) {
-            //this does not happen
+            // this does not happen
             return;
         }
 
@@ -64,12 +64,13 @@ public class PublishAuthorizationProcessedTask implements FutureCallback<Publish
                 disconnectClient(output);
                 return;
             case FAIL:
-                reasonCode = output.getAckReasonCode() != null ? output.getAckReasonCode() : AckReasonCode.NOT_AUTHORIZED;
+                reasonCode =
+                        output.getAckReasonCode() != null ? output.getAckReasonCode() : AckReasonCode.NOT_AUTHORIZED;
                 reasonString = output.getReasonString() != null ? output.getReasonString() : getReasonString(publish);
                 break;
             case UNDECIDED:
                 if (!output.isAuthorizerPresent()) {
-                    //providers never returned an authorizer, same as continue
+                    // providers never returned an authorizer, same as continue
                     break;
                 }
                 reasonCode = AckReasonCode.NOT_AUTHORIZED;
@@ -81,15 +82,22 @@ public class PublishAuthorizationProcessedTask implements FutureCallback<Publish
             case CONTINUE:
                 break;
             default:
-                //no state left
+                // no state left
                 throw new IllegalStateException("Unknown type");
         }
 
-        //call method in IncomingPublishService with additional info
+        // call method in IncomingPublishService with additional info
         final AckReasonCode finalReasonCode = reasonCode;
         final String finalReasonString = reasonString;
         ctx.executor().execute(() -> {
-            incomingPublishService.processPublish(ctx, publish, new PublishAuthorizerResult(finalReasonCode, finalReasonString, output.isAuthorizerPresent(), output.getDisconnectReasonCode()));
+            incomingPublishService.processPublish(
+                    ctx,
+                    publish,
+                    new PublishAuthorizerResult(
+                            finalReasonCode,
+                            finalReasonString,
+                            output.isAuthorizerPresent(),
+                            output.getDisconnectReasonCode()));
         });
     }
 
@@ -100,14 +108,19 @@ public class PublishAuthorizationProcessedTask implements FutureCallback<Publish
     }
 
     private void disconnectClient(final @Nullable PublishAuthorizerOutputImpl output) {
-        final String logMessage = "A client (IP: {}) sent a PUBLISH to an unauthorized topic '" + publish.getTopic() + "'. Disconnecting client from extension.";
-        final String eventLogMessage = "Sent a PUBLISH to an unauthorized topic '" + publish.getTopic() + "', extension requested disconnect";
+        final String logMessage = "A client (IP: {}) sent a PUBLISH to an unauthorized topic '" + publish.getTopic()
+                + "'. Disconnecting client from extension.";
+        final String eventLogMessage =
+                "Sent a PUBLISH to an unauthorized topic '" + publish.getTopic() + "', extension requested disconnect";
 
         ctx.channel().eventLoop().execute(() -> {
-            mqttServerDisconnector.disconnect(ctx.channel(),
+            mqttServerDisconnector.disconnect(
+                    ctx.channel(),
                     logMessage,
                     eventLogMessage,
-                    output != null ? Mqtt5DisconnectReasonCode.from(output.getDisconnectReasonCode()) : Mqtt5DisconnectReasonCode.NOT_AUTHORIZED,
+                    output != null
+                            ? Mqtt5DisconnectReasonCode.from(output.getDisconnectReasonCode())
+                            : Mqtt5DisconnectReasonCode.NOT_AUTHORIZED,
                     output != null ? output.getReasonString() : null);
         });
     }

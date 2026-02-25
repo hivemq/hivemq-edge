@@ -15,6 +15,8 @@
  */
 package com.hivemq.api.resources.impl;
 
+import static java.util.Objects.requireNonNullElse;
+
 import com.google.common.collect.ImmutableList;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.config.ApiListener;
@@ -25,11 +27,8 @@ import com.hivemq.edge.api.GatewayEndpointApi;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
-import org.jetbrains.annotations.NotNull;
-
 import java.io.OutputStreamWriter;
-
-import static java.util.Objects.requireNonNullElse;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -39,32 +38,28 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayEndpointA
     private final @NotNull ConfigurationService configurationService;
 
     @Inject
-    public GatewayResourceImpl(
-            final @NotNull ConfigurationService configurationService) {
+    public GatewayResourceImpl(final @NotNull ConfigurationService configurationService) {
         this.configurationService = configurationService;
     }
 
     @Override
     public @NotNull Response getXmlConfiguration() {
-        return Response.ok((StreamingOutput) output -> configurationService.writeConfiguration(new OutputStreamWriter(
-                output))).build();
+        return Response.ok((StreamingOutput)
+                        output -> configurationService.writeConfiguration(new OutputStreamWriter(output)))
+                .build();
     }
 
     @Override
     public @NotNull Response getListeners() {
 
-        //-- Netty configured objects
+        // -- Netty configured objects
         final ImmutableList.Builder<Listener> builder = new ImmutableList.Builder<>();
-        configurationService.listenerConfiguration()
-                .getListeners()
-                .stream()
+        configurationService.listenerConfiguration().getListeners().stream()
                 .map(this::convertListener)
                 .forEachOrdered(builder::add);
 
-        //-- Api objects
-        configurationService.apiConfiguration()
-                .getListeners()
-                .stream()
+        // -- Api objects
+        configurationService.apiConfiguration().getListeners().stream()
                 .map(this::convertApiListener)
                 .forEachOrdered(builder::add);
 
@@ -72,7 +67,8 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayEndpointA
     }
 
     private Listener convertListener(final com.hivemq.configuration.service.entity.Listener listener) {
-        return new Listener(listener.getName(),
+        return new Listener(
+                listener.getName(),
                 listener.getBindAddress(),
                 listener.getPort(),
                 listener.getReadableName(),
@@ -82,10 +78,12 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayEndpointA
     }
 
     private Listener convertApiListener(final ApiListener listener) {
-        final String protocol = requireNonNullElse(getProtocolForPort(listener.getPort()), "unknown").toLowerCase();
+        final String protocol = requireNonNullElse(getProtocolForPort(listener.getPort()), "unknown")
+                .toLowerCase();
         final String name = protocol + "-listener-" + listener.getPort();
         final String description = "Api " + protocol + " Listener";
-        return new Listener(name,
+        return new Listener(
+                name,
                 listener.getBindAddress(),
                 listener.getPort(),
                 description,
@@ -94,10 +92,9 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayEndpointA
                 requireNonNullElse(getProtocolForPort(listener.getPort()), "mqtt"));
     }
 
-
     private String getProtocolForPort(final int port) {
-        //-- Uses IANA ports to map, otherwise its unknown
-        //-- TODO Add element to config for protocol
+        // -- Uses IANA ports to map, otherwise its unknown
+        // -- TODO Add element to config for protocol
         switch (port) {
             case 8080:
             case 80:
@@ -118,8 +115,8 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayEndpointA
     }
 
     private Listener.TRANSPORT getTransportForPort(final int port) {
-        //-- Uses IANA ports to map, otherwise its unknown
-        //-- TODO Add element to config for protocol
+        // -- Uses IANA ports to map, otherwise its unknown
+        // -- TODO Add element to config for protocol
         switch (port) {
             case 8080:
             case 80:

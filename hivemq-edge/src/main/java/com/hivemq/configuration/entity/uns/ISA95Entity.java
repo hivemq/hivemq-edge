@@ -16,13 +16,12 @@
 package com.hivemq.configuration.entity.uns;
 
 import com.hivemq.configuration.entity.DisabledEntity;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.Objects;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
@@ -31,18 +30,23 @@ import java.util.Objects;
 @XmlAccessorType(XmlAccessType.NONE)
 public class ISA95Entity extends DisabledEntity {
 
-    //enterprise/site/area/production-line/work-cell
+    // enterprise/site/area/production-line/work-cell
 
     @XmlElement(name = "prefix-all-topics")
     private boolean prefixAllTopics = false;
+
     @XmlElement(name = "enterprise")
     private @Nullable String enterprise;
+
     @XmlElement(name = "site")
     private @Nullable String site;
+
     @XmlElement(name = "area")
     private @Nullable String area;
+
     @XmlElement(name = "production-line")
     private @Nullable String productionLine;
+
     @XmlElement(name = "work-cell")
     private @Nullable String workCell;
 
@@ -65,6 +69,7 @@ public class ISA95Entity extends DisabledEntity {
     public String getWorkCell() {
         return workCell;
     }
+
     public boolean isPrefixAllTopics() {
         return prefixAllTopics;
     }
@@ -98,21 +103,17 @@ public class ISA95Entity extends DisabledEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final ISA95Entity that = (ISA95Entity) o;
-        return isPrefixAllTopics() == that.isPrefixAllTopics() &&
-                Objects.equals(getEnterprise(), that.getEnterprise()) &&
-                Objects.equals(getSite(), that.getSite()) &&
-                Objects.equals(getArea(), that.getArea()) &&
-                Objects.equals(getProductionLine(), that.getProductionLine()) &&
-                Objects.equals(getWorkCell(), that.getWorkCell());
+        return isPrefixAllTopics() == that.isPrefixAllTopics()
+                && Objects.equals(getEnterprise(), that.getEnterprise())
+                && Objects.equals(getSite(), that.getSite())
+                && Objects.equals(getArea(), that.getArea())
+                && Objects.equals(getProductionLine(), that.getProductionLine())
+                && Objects.equals(getWorkCell(), that.getWorkCell());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(isPrefixAllTopics(),
-                getEnterprise(),
-                getSite(),
-                getArea(),
-                getProductionLine(),
-                getWorkCell());
+        return Objects.hash(
+                isPrefixAllTopics(), getEnterprise(), getSite(), getArea(), getProductionLine(), getWorkCell());
     }
 }

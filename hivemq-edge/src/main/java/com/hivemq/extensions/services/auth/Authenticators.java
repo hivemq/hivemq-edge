@@ -15,12 +15,11 @@
  */
 package com.hivemq.extensions.services.auth;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.ThreadSafe;
 import com.hivemq.extension.sdk.api.services.auth.provider.AuthenticatorProvider;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
-
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Internal interface for holding the {@link AuthenticatorProvider}s from the extension system.
@@ -30,7 +29,8 @@ import java.util.Map;
 @ThreadSafe
 public interface Authenticators {
 
-    @NotNull Map<@NotNull String, @NotNull WrappedAuthenticatorProvider> getAuthenticatorProviderMap();
+    @NotNull
+    Map<@NotNull String, @NotNull WrappedAuthenticatorProvider> getAuthenticatorProviderMap();
 
     /**
      * Register a {@link WrappedAuthenticatorProvider}. Will replace an other WrappedAuthenticatorProvider with the same

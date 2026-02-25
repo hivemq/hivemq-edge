@@ -15,14 +15,13 @@
  */
 package com.hivemq.edge.adapters.opcua.security;
 
+import java.security.cert.X509CRL;
+import java.security.cert.X509Certificate;
+import java.util.List;
 import org.eclipse.milo.opcua.stack.core.security.TrustListManager;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.jetbrains.annotations.NotNull;
-
-import java.security.cert.X509CRL;
-import java.security.cert.X509Certificate;
-import java.util.List;
 
 public class CertificateTrustListManager implements TrustListManager {
 
@@ -41,7 +40,7 @@ public class CertificateTrustListManager implements TrustListManager {
 
     @Override
     public void setIssuerCrls(final @NotNull List<X509CRL> issuerCrls) {
-        //no-op
+        // no-op
     }
 
     @Override
@@ -51,39 +50,39 @@ public class CertificateTrustListManager implements TrustListManager {
 
     @Override
     public void setTrustedCrls(final @NotNull List<X509CRL> trustedCrls) {
-        //no-op
+        // no-op
     }
 
     @Override
     public @NotNull List<X509Certificate> getIssuerCertificates() {
-        //allowed for chain building, but not "trusted"
+        // allowed for chain building, but not "trusted"
         return List.of();
     }
 
     @Override
     public void setIssuerCertificates(final @NotNull List<X509Certificate> issuerCertificates) {
-        //no-op
+        // no-op
     }
 
     @Override
     public @NotNull List<X509Certificate> getTrustedCertificates() {
-        //"trusted" certs
+        // "trusted" certs
         return List.copyOf(trustedCerts);
     }
 
     @Override
     public void setTrustedCertificates(final @NotNull List<X509Certificate> trustedCertificates) {
-        //no-op
+        // no-op
     }
 
     @Override
     public void addIssuerCertificate(final @NotNull X509Certificate certificate) {
-        //no-op
+        // no-op
     }
 
     @Override
     public void addTrustedCertificate(final @NotNull X509Certificate certificate) {
-        //no-op
+        // no-op
     }
 
     @Override

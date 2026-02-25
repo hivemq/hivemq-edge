@@ -15,7 +15,12 @@
  */
 package com.hivemq.api.auth;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.api.AuthTestUtils;
 import com.hivemq.api.TestApiResource;
@@ -46,19 +51,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Simon L Johnson
@@ -193,5 +185,4 @@ public class BearerTokenAuthTests {
         final ApiPrincipal user = objectMapper.readValue(response.getResponseBody(), ApiPrincipal.class);
         assertEquals("testuser", user.getName(), "Username should match that supplied at point of auth");
     }
-
 }

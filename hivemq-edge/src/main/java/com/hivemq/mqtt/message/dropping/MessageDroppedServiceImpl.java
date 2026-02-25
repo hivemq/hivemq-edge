@@ -15,12 +15,11 @@
  */
 package com.hivemq.mqtt.message.dropping;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.logging.EventLog;
 import com.hivemq.metrics.MetricsHolder;
-
 import java.text.NumberFormat;
 import java.util.Locale;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Georg Held
@@ -52,17 +51,24 @@ public class MessageDroppedServiceImpl implements MessageDroppedService {
     @Override
     public void queueFullShared(final @NotNull String sharedSubscription, final @NotNull String topic, final int qos) {
         metricsHolder.getDroppedMessageCounter().inc();
-        eventLog.sharedSubscriptionMessageDropped(sharedSubscription, topic, qos, "The shared subscription message queue is full");
+        eventLog.sharedSubscriptionMessageDropped(
+                sharedSubscription, topic, qos, "The shared subscription message queue is full");
     }
 
     /**
      * Update the metrics if a qos 0 message was dropped because the queue for the client was not yet empty
      */
     @Override
-    public void qos0MemoryExceeded(final @NotNull String clientId, final @NotNull String topic, final int qos, final long currentMemory, final long maxMemory) {
+    public void qos0MemoryExceeded(
+            final @NotNull String clientId,
+            final @NotNull String topic,
+            final int qos,
+            final long currentMemory,
+            final long maxMemory) {
         metricsHolder.getDroppedMessageCounter().inc();
 
-        final String reason = "The QoS 0 memory limit exceeded, size: " + FORMAT.format(currentMemory) + " bytes, max: " + FORMAT.format(maxMemory) + " bytes";
+        final String reason = "The QoS 0 memory limit exceeded, size: " + FORMAT.format(currentMemory) + " bytes, max: "
+                + FORMAT.format(maxMemory) + " bytes";
 
         eventLog.messageDropped(clientId, topic, qos, reason);
     }
@@ -89,7 +95,8 @@ public class MessageDroppedServiceImpl implements MessageDroppedService {
      * @inheritDoc
      */
     @Override
-    public void withReason(final @NotNull String clientId, final @NotNull String topic, final @NotNull String reason, final int qos) {
+    public void withReason(
+            final @NotNull String clientId, final @NotNull String topic, final @NotNull String reason, final int qos) {
         metricsHolder.getDroppedMessageCounter().inc();
         eventLog.messageDropped(clientId, topic, qos, reason);
     }
@@ -110,28 +117,44 @@ public class MessageDroppedServiceImpl implements MessageDroppedService {
     }
 
     @Override
-    public void qos0MemoryExceededShared(final @NotNull String group, final @NotNull String topic, final int qos, final long currentMemory, final long maxMemory) {
+    public void qos0MemoryExceededShared(
+            final @NotNull String group,
+            final @NotNull String topic,
+            final int qos,
+            final long currentMemory,
+            final long maxMemory) {
         metricsHolder.getDroppedMessageCounter().inc();
 
-        final String reason = "The QoS 0 memory limit exceeded, size: " + FORMAT.format(currentMemory) + " bytes, max: " + FORMAT.format(maxMemory) + " bytes";
+        final String reason = "The QoS 0 memory limit exceeded, size: " + FORMAT.format(currentMemory) + " bytes, max: "
+                + FORMAT.format(maxMemory) + " bytes";
 
         eventLog.sharedSubscriptionMessageDropped(group, topic, qos, reason);
     }
 
     @Override
-    public void publishMaxPacketSizeExceeded(final @NotNull String clientId, final @NotNull String topic, final int qos, final long maximumPacketSize, final long packetSize) {
+    public void publishMaxPacketSizeExceeded(
+            final @NotNull String clientId,
+            final @NotNull String topic,
+            final int qos,
+            final long maximumPacketSize,
+            final long packetSize) {
         metricsHolder.getDroppedMessageCounter().inc();
 
-        final String reason = "Maximum packet size exceeded, size: " + FORMAT.format(packetSize) + " bytes, max: " + FORMAT.format(maximumPacketSize) + " bytes";
+        final String reason = "Maximum packet size exceeded, size: " + FORMAT.format(packetSize) + " bytes, max: "
+                + FORMAT.format(maximumPacketSize) + " bytes";
 
         eventLog.messageDropped(clientId, topic, qos, reason);
     }
 
     @Override
-    public void messageMaxPacketSizeExceeded(final @NotNull String clientId, final @NotNull String messageType, final long maximumPacketSize, final long packetSize) {
-        final String reason = "Maximum packet size exceeded, size: " + FORMAT.format(packetSize) + " bytes, max: " + FORMAT.format(maximumPacketSize) + " bytes";
+    public void messageMaxPacketSizeExceeded(
+            final @NotNull String clientId,
+            final @NotNull String messageType,
+            final long maximumPacketSize,
+            final long packetSize) {
+        final String reason = "Maximum packet size exceeded, size: " + FORMAT.format(packetSize) + " bytes, max: "
+                + FORMAT.format(maximumPacketSize) + " bytes";
 
         eventLog.mqttMessageDropped(clientId, messageType, reason);
     }
-
 }

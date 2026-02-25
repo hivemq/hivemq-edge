@@ -16,14 +16,13 @@
 package com.hivemq.persistence.clientsession;
 
 import com.google.common.collect.ImmutableSet;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.annotations.ThreadSafe;
 import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.topic.SubscriberWithQoS;
 import com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl.SharedSubscription;
-
 import java.util.concurrent.ExecutionException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Dominik Obermaier
@@ -91,6 +90,6 @@ public interface SharedSubscriptionService {
      * @param topic from which the prefix will be removed
      * @return the topic without the leading '$share/' or the original topic if it does't start with '$share/'
      */
-    @NotNull String removePrefix(final @NotNull String topic);
-
+    @NotNull
+    String removePrefix(final @NotNull String topic);
 }

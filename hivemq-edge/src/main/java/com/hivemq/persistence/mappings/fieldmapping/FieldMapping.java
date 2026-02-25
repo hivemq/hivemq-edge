@@ -15,11 +15,9 @@
  */
 package com.hivemq.persistence.mappings.fieldmapping;
 
-import com.hivemq.api.model.mappings.fieldmapping.FieldMappingModel;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 
 public class FieldMapping {
 
@@ -37,7 +35,8 @@ public class FieldMapping {
     }
 
     public static @NotNull FieldMapping fromModel(final @NotNull com.hivemq.edge.api.model.FieldMapping model) {
-        return new FieldMapping(model.getInstructions().stream().map(Instruction::from).collect(Collectors.toList()));
+        return new FieldMapping(
+                model.getInstructions().stream().map(Instruction::from).collect(Collectors.toList()));
     }
 
     public @NotNull com.hivemq.edge.api.model.FieldMapping toModel() {

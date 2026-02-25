@@ -15,27 +15,25 @@
  */
 package com.hivemq.api;
 
+import static com.hivemq.api.auth.ApiRoles.ADMIN;
+import static com.hivemq.api.auth.ApiRoles.USER;
+
 import com.hivemq.api.auth.provider.IUsernameRolesProvider;
 import com.hivemq.api.auth.provider.impl.simple.SimpleUsernameRolesProviderImpl;
 import com.hivemq.http.core.UsernamePasswordRoles;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
-
-import static com.hivemq.api.auth.ApiRoles.ADMIN;
-import static com.hivemq.api.auth.ApiRoles.USER;
 
 /**
  * @author Simon L Johnson
  */
 public class AuthTestUtils {
 
-    public static IUsernameRolesProvider createTestUsernamePasswordProvider(){
+    public static IUsernameRolesProvider createTestUsernamePasswordProvider() {
 
-        return new SimpleUsernameRolesProviderImpl().
-                add(new UsernamePasswordRoles("testadmin", "test".getBytes(StandardCharsets.UTF_8), Set.of(ADMIN))).
-                add(new UsernamePasswordRoles("testuser", "test".getBytes(StandardCharsets.UTF_8), Set.of(USER))).
-                add(new UsernamePasswordRoles("testnorole", "test".getBytes(StandardCharsets.UTF_8), Set.of()));
-
+        return new SimpleUsernameRolesProviderImpl()
+                .add(new UsernamePasswordRoles("testadmin", "test".getBytes(StandardCharsets.UTF_8), Set.of(ADMIN)))
+                .add(new UsernamePasswordRoles("testuser", "test".getBytes(StandardCharsets.UTF_8), Set.of(USER)))
+                .add(new UsernamePasswordRoles("testnorole", "test".getBytes(StandardCharsets.UTF_8), Set.of()));
     }
 }

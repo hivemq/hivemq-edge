@@ -15,11 +15,11 @@
  */
 package com.hivemq.persistence.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.Collection;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * @author Georg Held

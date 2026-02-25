@@ -16,11 +16,10 @@
 package com.hivemq.configuration.service;
 
 import com.hivemq.configuration.entity.mqttsn.BroadcastAddress;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqttsn.MqttsnTopicAlias;
-
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A Configuration service which allows to get information about the current MQTTSN configuration

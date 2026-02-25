@@ -16,8 +16,6 @@
 package com.hivemq.codec.transcoder;
 
 import com.hivemq.codec.transcoder.netty.NettyPipelineTranscodingContext;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.mqtt.message.Message;
 import com.hivemq.mqtt.message.MessageType;
 import com.hivemq.mqtt.message.PINGRESP;
@@ -34,17 +32,18 @@ import com.hivemq.mqttsn.MqttsnClientConnection;
 import com.hivemq.mqttsn.MqttsnConnectionHelper;
 import com.hivemq.mqttsn.MqttsnProtocolException;
 import com.hivemq.mqttsn.MqttsnTopicAlias;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slj.mqtt.sn.MqttsnConstants;
-import org.slj.mqtt.sn.spi.IMqttsnMessage;
-import org.slj.mqtt.sn.spi.IMqttsnMessageFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slj.mqtt.sn.MqttsnConstants;
+import org.slj.mqtt.sn.spi.IMqttsnMessage;
+import org.slj.mqtt.sn.spi.IMqttsnMessageFactory;
 
 /**
  * Will convert messages from MQTTv5 messages to MQTT-SN messages created by the factory supplied.
@@ -52,20 +51,17 @@ import java.util.Optional;
  * @author Simon L Johnson
  */
 @Singleton
-public class Mqtt5ToMqttsnTranscoder
-        implements ITranscoder<Message, List<IMqttsnMessage>> {
+public class Mqtt5ToMqttsnTranscoder implements ITranscoder<Message, List<IMqttsnMessage>> {
 
-    private static final Logger log =
-            LoggerFactory.getLogger(Mqtt5ToMqttsnTranscoder.class);
+    private static final Logger log = LoggerFactory.getLogger(Mqtt5ToMqttsnTranscoder.class);
 
     @Inject
-    public Mqtt5ToMqttsnTranscoder() {
-
-    }
+    public Mqtt5ToMqttsnTranscoder() {}
 
     @Override
     @Nullable
-    public TranscodingResult<Message, List<IMqttsnMessage>> transcode(@NotNull ITranscodingContext context, @NotNull Message messageIn) {
+    public TranscodingResult<Message, List<IMqttsnMessage>> transcode(
+            @NotNull ITranscodingContext context, @NotNull Message messageIn) {
 
         NettyPipelineTranscodingContext pipelineContext = (NettyPipelineTranscodingContext) context;
         MqttsnClientConnection connection = pipelineContext.getClientConnection();
@@ -74,12 +70,16 @@ public class Mqtt5ToMqttsnTranscoder
         try {
             List list = new ArrayList();
             MessageType type = messageIn.getType();
-            switch (type){
+            switch (type) {
                 case CONNACK:
                     CONNACK connack = (CONNACK) messageIn;
-                    IMqttsnMessage out = factory.createConnack(connack.getReasonCode().isError() ? MqttsnConstants.RETURN_CODE_SERVER_UNAVAILABLE :
-                                    MqttsnConstants.RETURN_CODE_ACCEPTED,
-                            connack.isSessionPresent(), null, connack.getSessionExpiryInterval());
+                    IMqttsnMessage out = factory.createConnack(
+                            connack.getReasonCode().isError()
+                                    ? MqttsnConstants.RETURN_CODE_SERVER_UNAVAILABLE
+                                    : MqttsnConstants.RETURN_CODE_ACCEPTED,
+                            connack.isSessionPresent(),
+                            null,
+                            connack.getSessionExpiryInterval());
                     list.add(out);
                     break;
                 case UNSUBACK:
@@ -90,23 +90,28 @@ public class Mqtt5ToMqttsnTranscoder
                     break;
                 case PUBLISH:
                     PUBLISH publish = (PUBLISH) messageIn;
-                    Optional<MqttsnTopicAlias> aliasOptional =
-                            pipelineContext.getTopicRegistry().readTopicAlias(connection.getClientId(), publish.getTopic());
+                    Optional<MqttsnTopicAlias> aliasOptional = pipelineContext
+                            .getTopicRegistry()
+                            .readTopicAlias(connection.getClientId(), publish.getTopic());
                     MqttsnTopicAlias topicAlias = null;
 
-                    if(!aliasOptional.isPresent()){
+                    if (!aliasOptional.isPresent()) {
                         log.info("alias not found for outbound PUBLISH, adding registration procedure");
-                        int topicAliasVal = pipelineContext.getTopicRegistry().register(connection.getClientId(), publish.getTopic());
+                        int topicAliasVal = pipelineContext
+                                .getTopicRegistry()
+                                .register(connection.getClientId(), publish.getTopic());
                         out = factory.createRegister(topicAliasVal, publish.getTopic());
                         list.add(out);
                     } else {
                         topicAlias = aliasOptional.get();
                     }
 
-                    //-- we will always have a means to deliver by this point
-                    if(topicAlias == null){
-                        topicAlias =
-                                pipelineContext.getTopicRegistry().readTopicAlias(connection.getClientId(), publish.getTopic()).get();
+                    // -- we will always have a means to deliver by this point
+                    if (topicAlias == null) {
+                        topicAlias = pipelineContext
+                                .getTopicRegistry()
+                                .readTopicAlias(connection.getClientId(), publish.getTopic())
+                                .get();
                     }
 
                     out = factory.createPublish(
@@ -116,7 +121,7 @@ public class Mqtt5ToMqttsnTranscoder
                             mapTopicType(topicAlias.getType()),
                             topicAlias.getAlias(),
                             publish.getPayload());
-                    if(publish.getQoS().getQosNumber() > 0){
+                    if (publish.getQoS().getQosNumber() > 0) {
                         out.setId(publish.getPacketIdentifier());
                     }
                     list.add(out);
@@ -124,8 +129,11 @@ public class Mqtt5ToMqttsnTranscoder
                 case PUBACK:
                     PUBACK puback = (PUBACK) messageIn;
                     Integer topicId = connection.getOriginatingTopicAliasForMessageId(puback.getPacketIdentifier());
-                    out = factory.createPuback(topicId == null ? 0 : topicId, puback.getReasonCode().isError() ?
-                            MqttsnConstants.RETURN_CODE_INVALID_TOPIC_ID  : MqttsnConstants.RETURN_CODE_ACCEPTED);
+                    out = factory.createPuback(
+                            topicId == null ? 0 : topicId,
+                            puback.getReasonCode().isError()
+                                    ? MqttsnConstants.RETURN_CODE_INVALID_TOPIC_ID
+                                    : MqttsnConstants.RETURN_CODE_ACCEPTED);
                     out.setId(puback.getPacketIdentifier());
                     list.add(out);
                     break;
@@ -157,15 +165,14 @@ public class Mqtt5ToMqttsnTranscoder
                     out = factory.createDisconnect();
                     list.add(out);
                     break;
-
             }
 
-            if(!list.isEmpty()){
+            if (!list.isEmpty()) {
                 log.trace("ttv5 -> sn message conversion {} -> {} sn messages", messageIn, list.size());
                 result.setOutput(Optional.of(list));
             }
 
-        } catch(MqttsnProtocolException e){
+        } catch (MqttsnProtocolException e) {
             log.error("error transcoding message", e);
             result.setError(e);
         }
@@ -175,7 +182,8 @@ public class Mqtt5ToMqttsnTranscoder
 
     @Override
     public boolean canHandle(ITranscodingContext context, Class<? extends Message> messageType) {
-        return TranscodingUtils.instanceOf(messageType,
+        return TranscodingUtils.instanceOf(
+                messageType,
                 CONNACK.class,
                 DISCONNECT.class,
                 PUBLISH.class,
@@ -188,14 +196,17 @@ public class Mqtt5ToMqttsnTranscoder
                 PINGRESP.class);
     }
 
-    private static MqttsnConstants.TOPIC_TYPE mapTopicType(MqttsnTopicAlias.TYPE type){
-        switch(type){
-            case FULL: return MqttsnConstants.TOPIC_TYPE.FULL;
-            case SHORT: return MqttsnConstants.TOPIC_TYPE.SHORT;
-            case NORMAL: return MqttsnConstants.TOPIC_TYPE.NORMAL;
-            case PREDEFINED: return MqttsnConstants.TOPIC_TYPE.PREDEFINED;
+    private static MqttsnConstants.TOPIC_TYPE mapTopicType(MqttsnTopicAlias.TYPE type) {
+        switch (type) {
+            case FULL:
+                return MqttsnConstants.TOPIC_TYPE.FULL;
+            case SHORT:
+                return MqttsnConstants.TOPIC_TYPE.SHORT;
+            case NORMAL:
+                return MqttsnConstants.TOPIC_TYPE.NORMAL;
+            case PREDEFINED:
+                return MqttsnConstants.TOPIC_TYPE.PREDEFINED;
         }
         throw new IllegalArgumentException("unknown alias type");
     }
-
 }

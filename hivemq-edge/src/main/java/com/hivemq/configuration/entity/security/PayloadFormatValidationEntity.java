@@ -16,7 +16,6 @@
 package com.hivemq.configuration.entity.security;
 
 import com.hivemq.configuration.entity.DisabledEntity;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlRootElement;
@@ -24,5 +23,4 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 @XmlRootElement(name = "payload-format-validation")
 @XmlAccessorType(XmlAccessType.NONE)
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
-public class PayloadFormatValidationEntity extends DisabledEntity {
-}
+public class PayloadFormatValidationEntity extends DisabledEntity {}

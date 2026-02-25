@@ -15,6 +15,10 @@
  */
 package com.hivemq.api;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;
@@ -22,20 +26,6 @@ import com.hivemq.http.core.HttpResponse;
 import com.hivemq.http.core.HttpUrlConnectionClient;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import util.TestKeyStoreGenerator;
-
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLParameters;
-import javax.net.ssl.TrustManagerFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -44,10 +34,19 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.TrustManagerFactory;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import util.TestKeyStoreGenerator;
 
 /**
  * @author Simon L Johnson
@@ -64,6 +63,7 @@ public class JaxrsSSLTests {
     protected @NotNull JaxrsHttpServer server;
     protected @NotNull TestKeyStoreGenerator testKeyStoreGenerator;
     protected @NotNull SSLContext context;
+
     @BeforeEach
     public void setUp() throws Exception {
         testKeyStoreGenerator = new TestKeyStoreGenerator();
@@ -77,16 +77,17 @@ public class JaxrsSSLTests {
             @Override
             public void configure(final @NotNull HttpsParameters params) {
                 SSLParameters parameters = getSSLContext().getDefaultSSLParameters();
-                parameters.setProtocols(new String[]{"TLSv1.2"});
+                parameters.setProtocols(new String[] {"TLSv1.2"});
                 params.setSSLParameters(parameters);
             }
         });
-        //-- ensure we supplied our own test mapper as this can effect output
+        // -- ensure we supplied our own test mapper as this can effect output
         ObjectMapper mapper = new ObjectMapper();
         config.setObjectMapper(mapper);
         server = new JaxrsHttpServer(mock(), List.of(config), null);
         server.startServer();
     }
+
     @AfterEach
     public void tearDown() {
         server.stopServer();
@@ -99,7 +100,8 @@ public class JaxrsSSLTests {
                 KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         keyManagerFactory.init(keyStore, password.toCharArray());
         final SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(getKeyManagers(keyManagerFactory),
+        sslContext.init(
+                getKeyManagers(keyManagerFactory),
                 defaultTrustManager(keyStore).getTrustManagers(),
                 new SecureRandom());
         return sslContext;
@@ -139,20 +141,16 @@ public class JaxrsSSLTests {
         HttpsURLConnection.setDefaultSSLSocketFactory(context.getSocketFactory());
         HttpsURLConnection.setDefaultHostnameVerifier((string, ssls) -> true);
 
-        HttpResponse response = HttpUrlConnectionClient.get(null,
-                getTestServerAddress(HTTPS, TEST_HTTP_PORT, "test/get"),
-                CONNECT_TIMEOUT,
-                READ_TIMEOUT);
-        assertEquals(200,response.getStatusCode(),"Resource should exist");
+        HttpResponse response = HttpUrlConnectionClient.get(
+                null, getTestServerAddress(HTTPS, TEST_HTTP_PORT, "test/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
+        assertEquals(200, response.getStatusCode(), "Resource should exist");
     }
 
     @Test
     public void testGetResourceOnWrongProtocol() {
         assertThrows(SocketException.class, () -> {
-            HttpUrlConnectionClient.get(null,
-                    getTestServerAddress("http", TEST_HTTP_PORT, "test/get"),
-                    CONNECT_TIMEOUT,
-                    READ_TIMEOUT);
+            HttpUrlConnectionClient.get(
+                    null, getTestServerAddress("http", TEST_HTTP_PORT, "test/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
         });
     }
 }

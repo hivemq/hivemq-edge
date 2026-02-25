@@ -15,17 +15,17 @@
  */
 package com.hivemq.websocket;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-
 public class WebSocketTextFrameHandlerTest {
 
     private EmbeddedChannel channel;
+
     @BeforeEach
     public void setUp() throws Exception {
         final WebSocketTextFrameHandler webSocketTextFrameHandler = new WebSocketTextFrameHandler();

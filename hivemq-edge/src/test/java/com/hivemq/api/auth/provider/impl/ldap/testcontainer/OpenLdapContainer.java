@@ -15,15 +15,14 @@
  */
 package com.hivemq.api.auth.provider.impl.ldap.testcontainer;
 
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
-
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Testcontainer for OpenLDAP server using osixia/openldap Docker image.
@@ -115,9 +114,21 @@ public class OpenLdapContainer extends GenericContainer<OpenLdapContainer> {
      * </ul>
      */
     public OpenLdapContainer() {
-        this(DEFAULT_IMAGE_NAME, DEFAULT_LDAP_PORT, DEFAULT_DOMAIN, DEFAULT_ORGANISATION,
-             DEFAULT_ADMIN_PASSWORD, DEFAULT_CONFIG_PASSWORD, false, DEFAULT_BACKEND, false,
-             false, false, true, DEFAULT_SSL_HELPER_PREFIX, new ArrayList<>());
+        this(
+                DEFAULT_IMAGE_NAME,
+                DEFAULT_LDAP_PORT,
+                DEFAULT_DOMAIN,
+                DEFAULT_ORGANISATION,
+                DEFAULT_ADMIN_PASSWORD,
+                DEFAULT_CONFIG_PASSWORD,
+                false,
+                DEFAULT_BACKEND,
+                false,
+                false,
+                false,
+                true,
+                DEFAULT_SSL_HELPER_PREFIX,
+                new ArrayList<>());
     }
 
     private OpenLdapContainer(
@@ -141,8 +152,17 @@ public class OpenLdapContainer extends GenericContainer<OpenLdapContainer> {
         this.baseDn = domainToBaseDn(domain);
         this.adminPassword = adminPassword;
 
-        configure(organisation, configPassword, readonlyUser, backend, rfc2307bisSchema,
-                  tls, replication, removeConfigAfterSetup, sslHelperPrefix, ldifFiles);
+        configure(
+                organisation,
+                configPassword,
+                readonlyUser,
+                backend,
+                rfc2307bisSchema,
+                tls,
+                replication,
+                removeConfigAfterSetup,
+                sslHelperPrefix,
+                ldifFiles);
     }
 
     private void configure(
@@ -160,7 +180,7 @@ public class OpenLdapContainer extends GenericContainer<OpenLdapContainer> {
         // Expose LDAP port (and LDAPS port if TLS is enabled)
         if (tls) {
             withExposedPorts(ldapPort, DEFAULT_LDAPS_PORT);
-            withEnv("LDAP_TLS_VERIFY_CLIENT", "never");  // Don't require client certificates
+            withEnv("LDAP_TLS_VERIFY_CLIENT", "never"); // Don't require client certificates
         } else {
             withExposedPorts(ldapPort);
         }
@@ -182,15 +202,13 @@ public class OpenLdapContainer extends GenericContainer<OpenLdapContainer> {
         for (int i = 0; i < ldifFiles.size(); i++) {
             final String ldifFile = ldifFiles.get(i);
             final String targetPath = String.format(
-                    "/container/service/slapd/assets/config/bootstrap/ldif/custom/%02d-custom.ldif",
-                    i + 1);
+                    "/container/service/slapd/assets/config/bootstrap/ldif/custom/%02d-custom.ldif", i + 1);
             withCopyFileToContainer(MountableFile.forClasspathResource(ldifFile), targetPath);
         }
 
         // Wait for slapd to start
         // Note: The container waits for "slapd starting" but TLS configuration might take additional time
-        waitingFor(Wait.forLogMessage(".*slapd starting.*", 1)
-                .withStartupTimeout(Duration.ofSeconds(tls ? 90 : 60)));
+        waitingFor(Wait.forLogMessage(".*slapd starting.*", 1).withStartupTimeout(Duration.ofSeconds(tls ? 90 : 60)));
     }
 
     /**
@@ -270,8 +288,16 @@ public class OpenLdapContainer extends GenericContainer<OpenLdapContainer> {
      *
      * @return the admin DN
      */
+    public @NotNull String getAdminUsername() {
+        return "admin";
+    }
+
+    public @NotNull String getAdminRdns() {
+        return "cn=" + getAdminUsername();
+    }
+
     public @NotNull String getAdminDn() {
-        return "cn=admin," + baseDn;
+        return getAdminRdns() + "," + getBaseDn();
     }
 
     /**
@@ -296,8 +322,7 @@ public class OpenLdapContainer extends GenericContainer<OpenLdapContainer> {
         private String sslHelperPrefix = DEFAULT_SSL_HELPER_PREFIX;
         private final List<String> ldifFiles = new ArrayList<>();
 
-        private Builder() {
-        }
+        private Builder() {}
 
         /**
          * Sets the Docker image name.
@@ -513,10 +538,21 @@ public class OpenLdapContainer extends GenericContainer<OpenLdapContainer> {
          * @return a new OpenLdapContainer instance
          */
         public @NotNull OpenLdapContainer build() {
-            return new OpenLdapContainer(dockerImageName, ldapPort, domain, organisation,
-                                        adminPassword, configPassword, readonlyUser, backend,
-                                        rfc2307bisSchema, tls, replication, removeConfigAfterSetup,
-                                        sslHelperPrefix, ldifFiles);
+            return new OpenLdapContainer(
+                    dockerImageName,
+                    ldapPort,
+                    domain,
+                    organisation,
+                    adminPassword,
+                    configPassword,
+                    readonlyUser,
+                    backend,
+                    rfc2307bisSchema,
+                    tls,
+                    replication,
+                    removeConfigAfterSetup,
+                    sslHelperPrefix,
+                    ldifFiles);
         }
     }
 }

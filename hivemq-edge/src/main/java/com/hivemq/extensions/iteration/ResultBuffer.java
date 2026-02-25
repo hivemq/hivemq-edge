@@ -15,11 +15,10 @@
  */
 package com.hivemq.extensions.iteration;
 
+import com.hivemq.extension.sdk.api.annotations.ThreadSafe;
+import java.util.Collection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.extension.sdk.api.annotations.ThreadSafe;
-
-import java.util.Collection;
 
 /**
  * @author Christoph Schäbel
@@ -63,6 +62,5 @@ public class ResultBuffer<V> {
     public interface NextChunkCallback<V> {
 
         void fetchNextChunk(@Nullable ChunkCursor cursor, @NotNull ResultBuffer<V> resultBuffer);
-
     }
 }

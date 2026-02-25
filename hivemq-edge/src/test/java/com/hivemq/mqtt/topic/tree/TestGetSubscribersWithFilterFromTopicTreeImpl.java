@@ -15,9 +15,11 @@
  */
 package com.hivemq.mqtt.topic.tree;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableSet;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5RetainHandling;
@@ -25,17 +27,12 @@ import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
 import com.hivemq.mqtt.topic.SubscriberWithQoS;
 import com.hivemq.mqtt.topic.SubscriptionFlag;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Predicate;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.hasItems;
-import static org.junit.jupiter.api.Assertions.*;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("NullabilityAnnotations")
 public class TestGetSubscribersWithFilterFromTopicTreeImpl {
@@ -44,6 +41,7 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
 
     private static final byte sharedFlag = SubscriptionFlag.getDefaultFlags(true, false, false);
     private static final byte nonSharedFlag = SubscriptionFlag.getDefaultFlags(false, false, false);
+
     @BeforeEach
     public void setUp() {
         topicTree = new LocalTopicTree(new MetricsHolder(new MetricRegistry()));
@@ -67,7 +65,6 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
         assertTrue(any.isEmpty());
     }
 
-
     @Test
     public void test_empty_no_subscriber_for_topic_filter() {
         topicTree.addTopic("subscriber", new Topic("topic", QoS.AT_MOST_ONCE), (byte) 0, null);
@@ -75,7 +72,6 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
         final Set<String> subscribers = topicTree.getSubscribersWithFilter("anothertopic", getMatchAllFilter());
         assertTrue(subscribers.isEmpty());
     }
-
 
     @Test
     public void test_get_single_subscriber_for_topic_filter() {
@@ -90,7 +86,8 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
     public void test_get_single_subscriber_for_long_topic_filter() {
         topicTree.addTopic("subscriber", new Topic("topic/1/2/3/4/5/6/7/8/9/0", QoS.AT_MOST_ONCE), (byte) 0, null);
 
-        final Set<String> subscribers = topicTree.getSubscribersWithFilter("topic/1/2/3/4/5/6/7/8/9/0", getMatchAllFilter());
+        final Set<String> subscribers =
+                topicTree.getSubscribersWithFilter("topic/1/2/3/4/5/6/7/8/9/0", getMatchAllFilter());
         assertEquals(1, subscribers.size());
         assertThat(subscribers).contains("subscriber");
     }
@@ -99,7 +96,8 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
     public void test_get_single_subscriber_for_long_topic_filter_wildcard() {
         topicTree.addTopic("subscriber", new Topic("topic/1/2/3/4/5/6/7/8/9/0/#", QoS.AT_MOST_ONCE), (byte) 0, null);
 
-        final Set<String> subscribers = topicTree.getSubscribersWithFilter("topic/1/2/3/4/5/6/7/8/9/0/#", getMatchAllFilter());
+        final Set<String> subscribers =
+                topicTree.getSubscribersWithFilter("topic/1/2/3/4/5/6/7/8/9/0/#", getMatchAllFilter());
         assertEquals(1, subscribers.size());
         assertThat(subscribers).contains("subscriber");
     }
@@ -108,7 +106,8 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
     public void test_get_single_subscriber_for_long_topic_filter_plus_wildcard() {
         topicTree.addTopic("subscriber", new Topic("topic/1/2/3/4/+/6/7/8/9/0/#", QoS.AT_MOST_ONCE), (byte) 0, null);
 
-        final Set<String> subscribers = topicTree.getSubscribersWithFilter("topic/1/2/3/4/+/6/7/8/9/0/#", getMatchAllFilter());
+        final Set<String> subscribers =
+                topicTree.getSubscribersWithFilter("topic/1/2/3/4/+/6/7/8/9/0/#", getMatchAllFilter());
         assertEquals(1, subscribers.size());
         assertThat(subscribers).contains("subscriber");
     }
@@ -318,7 +317,6 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
         assertEquals("subscriber1", subscribers.iterator().next());
     }
 
-
     @Test
     public void get_shared_subscriber() {
 
@@ -386,23 +384,39 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
         assertEquals(3, topicSubscribers.getSharedSubscriptions().size());
     }
 
-
     @Test
     public void get_subscriber_shared_overlapping() {
 
-        topicTree.addTopic("client1", new Topic("topic/a", QoS.AT_MOST_ONCE, false, false, Mqtt5RetainHandling.SEND, 1), nonSharedFlag, null);
-        topicTree.addTopic("client1", new Topic("topic/+", QoS.AT_LEAST_ONCE, false, false, Mqtt5RetainHandling.SEND, 2), sharedFlag, "group");
+        topicTree.addTopic(
+                "client1",
+                new Topic("topic/a", QoS.AT_MOST_ONCE, false, false, Mqtt5RetainHandling.SEND, 1),
+                nonSharedFlag,
+                null);
+        topicTree.addTopic(
+                "client1",
+                new Topic("topic/+", QoS.AT_LEAST_ONCE, false, false, Mqtt5RetainHandling.SEND, 2),
+                sharedFlag,
+                "group");
 
         final SubscriberWithIdentifiers subscribers = topicTree.findSubscriber("client1", "topic/a");
         assertNotNull(subscribers);
         assertEquals(1, subscribers.getSubscriptionIdentifier().length());
-        assertTrue(subscribers.getSubscriptionIdentifier().contains(1));//shared subscription is hidden by the non-shared
+        assertTrue(
+                subscribers.getSubscriptionIdentifier().contains(1)); // shared subscription is hidden by the non-shared
     }
 
     @Test
     public void get_subscriber_non_shared_overlapping() {
-        topicTree.addTopic("client1", new Topic("topic/a", QoS.AT_MOST_ONCE, false, false, Mqtt5RetainHandling.SEND, 1), nonSharedFlag, null);
-        topicTree.addTopic("client1", new Topic("topic/+", QoS.AT_LEAST_ONCE, false, false, Mqtt5RetainHandling.SEND, 2), nonSharedFlag, null);
+        topicTree.addTopic(
+                "client1",
+                new Topic("topic/a", QoS.AT_MOST_ONCE, false, false, Mqtt5RetainHandling.SEND, 1),
+                nonSharedFlag,
+                null);
+        topicTree.addTopic(
+                "client1",
+                new Topic("topic/+", QoS.AT_LEAST_ONCE, false, false, Mqtt5RetainHandling.SEND, 2),
+                nonSharedFlag,
+                null);
 
         final SubscriberWithIdentifiers subscribers = topicTree.findSubscriber("client1", "topic/a");
 
@@ -414,15 +428,22 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
     @Test
     public void get_subscriber_shared_and_non_shared_overlapping() {
 
-        topicTree.addTopic("client1", new Topic("topic/a", QoS.AT_MOST_ONCE, false, false, Mqtt5RetainHandling.SEND, 1), nonSharedFlag, null);
-        topicTree.addTopic("client1", new Topic("topic/+", QoS.AT_LEAST_ONCE, false, false, Mqtt5RetainHandling.SEND, 2), sharedFlag, "group");
+        topicTree.addTopic(
+                "client1",
+                new Topic("topic/a", QoS.AT_MOST_ONCE, false, false, Mqtt5RetainHandling.SEND, 1),
+                nonSharedFlag,
+                null);
+        topicTree.addTopic(
+                "client1",
+                new Topic("topic/+", QoS.AT_LEAST_ONCE, false, false, Mqtt5RetainHandling.SEND, 2),
+                sharedFlag,
+                "group");
 
         final SubscriberWithIdentifiers subscribers = topicTree.findSubscriber("client1", "topic/a");
 
         assertEquals(1, subscribers.getSubscriptionIdentifier().length());
         assertEquals(1, subscribers.getSubscriptionIdentifier().get(0));
     }
-
 
     @Test
     public void test_normal_and_shared_subscription() {
@@ -472,7 +493,6 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
         new Random().nextInt();
     }
 
-
     @Test
     public void test_add_shared_wildcard() {
         topicTree.addTopic("client", new Topic("#", QoS.AT_LEAST_ONCE), sharedFlag, "name1");
@@ -483,7 +503,6 @@ public class TestGetSubscribersWithFilterFromTopicTreeImpl {
 
         new Random().nextInt();
     }
-
 
     @NotNull
     public Predicate<SubscriberWithQoS> getMatchAllFilter() {

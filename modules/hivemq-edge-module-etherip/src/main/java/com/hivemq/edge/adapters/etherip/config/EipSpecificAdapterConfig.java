@@ -19,10 +19,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
 
 public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
 
@@ -32,30 +31,32 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
     @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
-    @ModuleConfigField(title = "Identifier",
-                       description = "Unique identifier for this protocol adapter",
-                       format = ModuleConfigField.FieldType.IDENTIFIER,
-                       required = true,
-                       stringPattern = ID_REGEX,
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
+    @ModuleConfigField(
+            title = "Identifier",
+            description = "Unique identifier for this protocol adapter",
+            format = ModuleConfigField.FieldType.IDENTIFIER,
+            required = true,
+            stringPattern = ID_REGEX,
+            stringMinLength = 1,
+            stringMaxLength = 1024)
     private @Nullable String id;
 
     @JsonProperty(value = "host", required = true)
-    @ModuleConfigField(title = "Host",
-                       description = "IP Address or hostname of the device you wish to connect to",
-                       required = true,
-                       format = ModuleConfigField.FieldType.HOSTNAME)
+    @ModuleConfigField(
+            title = "Host",
+            description = "IP Address or hostname of the device you wish to connect to",
+            required = true,
+            format = ModuleConfigField.FieldType.HOSTNAME)
     private final @NotNull String host;
 
-
     @JsonProperty(value = "port", required = true)
-    @ModuleConfigField(title = "Port",
-                       description = "The port number on the device you wish to connect to",
-                       required = true,
-                       numberMin = PORT_MIN,
-                       numberMax = PORT_MAX,
-                       defaultValue = "44818")
+    @ModuleConfigField(
+            title = "Port",
+            description = "The port number on the device you wish to connect to",
+            required = true,
+            numberMin = PORT_MIN,
+            numberMax = PORT_MAX,
+            defaultValue = "44818")
     private final int port;
 
     @JsonProperty("backplane")
@@ -67,9 +68,10 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
     private final int slot;
 
     @JsonProperty(value = "eipToMqtt", required = true)
-    @ModuleConfigField(title = "Ethernet IP To MQTT Config",
-                       description = "The configuration for a data stream from Ethernet IP to MQTT",
-                       required = true)
+    @ModuleConfigField(
+            title = "Ethernet IP To MQTT Config",
+            description = "The configuration for a data stream from Ethernet IP to MQTT",
+            required = true)
     private final @Nullable EipToMqttConfig eipToMqttConfig;
 
     @JsonCreator
@@ -89,7 +91,6 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
             this.eipToMqttConfig = eipToMqttConfig;
         }
     }
-
 
     public @NotNull String getHost() {
         return host;
@@ -114,12 +115,12 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
     @Override
     public boolean equals(final Object o) {
         if (!(o instanceof EipSpecificAdapterConfig that)) return false;
-        return getPort() == that.getPort() &&
-                getBackplane() == that.getBackplane() &&
-                getSlot() == that.getSlot() &&
-                Objects.equals(id, that.id) &&
-                Objects.equals(getHost(), that.getHost()) &&
-                Objects.equals(getEipToMqttConfig(), that.getEipToMqttConfig());
+        return getPort() == that.getPort()
+                && getBackplane() == that.getBackplane()
+                && getSlot() == that.getSlot()
+                && Objects.equals(id, that.id)
+                && Objects.equals(getHost(), that.getHost())
+                && Objects.equals(getEipToMqttConfig(), that.getEipToMqttConfig());
     }
 
     @Override

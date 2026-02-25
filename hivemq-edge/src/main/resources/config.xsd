@@ -1148,7 +1148,21 @@
                         </xs:element>
                         <xs:element name="rdns" type="nonEmptyString">
                             <xs:annotation>
-                                <xs:documentation>BaseDN fo searches and tempalted requests.</xs:documentation>
+                                <xs:documentation>
+                                    Relative Distinguished Names for user searches.
+                                    Legacy mode (no base-dn): treated as absolute DN.
+                                    New mode (base-dn specified): relative to base-dn.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="base-dn" type="nonEmptyString" minOccurs="0">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Optional base Distinguished Name. When specified, both rdns and service account
+                                    rdns are relative to this base DN. This allows service accounts in different OUs
+                                    than users (e.g., service account in ou=system, users in ou=people).
+                                    If not specified, legacy mode is used where rdns is absolute.
+                                </xs:documentation>
                             </xs:annotation>
                         </xs:element>
                         <xs:element name="required-object-class" type="nonEmptyString" minOccurs="0">
@@ -1160,6 +1174,31 @@
                             <xs:annotation>
                                 <xs:documentation>Enable directory descent instead of using direct binding.</xs:documentation>
                             </xs:annotation>
+                        </xs:element>
+                        <xs:element name="user-roles" minOccurs="0" maxOccurs="1">
+                            <xs:annotation>
+                                <xs:documentation>Optional list of user roles with LDAP queries. Minimum 1, maximum 3 entries.</xs:documentation>
+                            </xs:annotation>
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="user-role" minOccurs="1" maxOccurs="3">
+                                        <xs:complexType>
+                                            <xs:all>
+                                                <xs:element name="role" type="nonEmptyString">
+                                                    <xs:annotation>
+                                                        <xs:documentation>The role name to assign.</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:element>
+                                                <xs:element name="query" type="nonEmptyString">
+                                                    <xs:annotation>
+                                                        <xs:documentation>The LDAP query for this role.</xs:documentation>
+                                                    </xs:annotation>
+                                                </xs:element>
+                                            </xs:all>
+                                        </xs:complexType>
+                                    </xs:element>
+                                </xs:sequence>
+                            </xs:complexType>
                         </xs:element>
                     </xs:all>
                 </xs:complexType>

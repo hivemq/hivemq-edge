@@ -15,9 +15,9 @@
  */
 package com.hivemq.mqtt.message.reason;
 
+import com.hivemq.extension.sdk.api.packets.unsuback.UnsubackReasonCode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.hivemq.extension.sdk.api.packets.unsuback.UnsubackReasonCode;
 
 /**
  * MQTT Reason Codes that can be used in UNSUBACK packets according to the MQTT 5 specification.
@@ -25,7 +25,6 @@ import com.hivemq.extension.sdk.api.packets.unsuback.UnsubackReasonCode;
  * @author Silvio Giebl
  */
 public enum Mqtt5UnsubAckReasonCode implements Mqtt5ReasonCode {
-
     SUCCESS(MqttCommonReasonCode.SUCCESS),
     NO_SUBSCRIPTIONS_EXISTED(0x11),
     UNSPECIFIED_ERROR(MqttCommonReasonCode.UNSPECIFIED_ERROR),

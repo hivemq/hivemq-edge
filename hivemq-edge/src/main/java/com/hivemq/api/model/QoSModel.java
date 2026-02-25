@@ -16,11 +16,10 @@
 package com.hivemq.api.model;
 
 import com.hivemq.extension.sdk.api.packets.general.Qos;
-import com.hivemq.mqtt.message.QoS;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
 
-@Schema(name = "QoS", enumAsRef=true)
+@Schema(name = "QoS", enumAsRef = true)
 public enum QoSModel {
 
     /**
@@ -52,8 +51,8 @@ public enum QoSModel {
         return qosNumber;
     }
 
-    public static @NotNull QoSModel fromNumber(final int qos){
-        switch(qos){
+    public static @NotNull QoSModel fromNumber(final int qos) {
+        switch (qos) {
             case 0:
                 return QoSModel.AT_MOST_ONCE;
             case 1:
@@ -61,7 +60,7 @@ public enum QoSModel {
             case 2:
                 return QoSModel.EXACTLY_ONCE;
             default:
-                throw new IllegalArgumentException("Can not parse '" + qos +"' to QoSModel.");
+                throw new IllegalArgumentException("Can not parse '" + qos + "' to QoSModel.");
         }
     }
 }

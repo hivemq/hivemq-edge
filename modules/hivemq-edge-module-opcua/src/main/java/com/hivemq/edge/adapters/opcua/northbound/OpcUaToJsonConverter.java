@@ -15,6 +15,8 @@
  */
 package com.hivemq.edge.adapters.opcua.northbound;
 
+import static com.hivemq.edge.adapters.opcua.Constants.EMPTY_BYTES;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -22,6 +24,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.UUID;
 import org.eclipse.milo.opcua.sdk.core.types.DynamicStructType;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
@@ -47,26 +55,17 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.UUID;
-
-import static com.hivemq.edge.adapters.opcua.Constants.EMPTY_BYTES;
-
-//see also https://reference.opcfoundation.org/Core/Part6/v105/docs/5.4
+// see also https://reference.opcfoundation.org/Core/Part6/v105/docs/5.4
 public class OpcUaToJsonConverter {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaToJsonConverter.class);
 
-    private static final @NotNull Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
+    private static final @NotNull Gson GSON =
+            new GsonBuilder().disableHtmlEscaping().create();
     private static final @NotNull Base64.Encoder BASE_64 = Base64.getEncoder();
 
     public static @NotNull ByteBuffer convertPayload(
-            final @NotNull EncodingContext serializationContext,
-            final @NotNull DataValue dataValue) {
+            final @NotNull EncodingContext serializationContext, final @NotNull DataValue dataValue) {
         final Object value = dataValue.getValue().getValue();
         if (value == null) {
             return ByteBuffer.wrap(EMPTY_BYTES);
@@ -77,18 +76,26 @@ public class OpcUaToJsonConverter {
                 jsonObject.add("statusCode", convertStatusCode(v.getStatusCode()));
             }
             if (v.getSourceTime() != null) {
-                jsonObject.add("sourceTimestamp",
-                        new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(v.getSourceTime().getJavaInstant())));
+                jsonObject.add(
+                        "sourceTimestamp",
+                        new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(
+                                v.getSourceTime().getJavaInstant())));
             }
             if (v.getSourcePicoseconds() != null) {
-                jsonObject.add("sourcePicoseconds", new JsonPrimitive(v.getSourcePicoseconds().intValue()));
+                jsonObject.add(
+                        "sourcePicoseconds",
+                        new JsonPrimitive(v.getSourcePicoseconds().intValue()));
             }
             if (v.getServerTime() != null) {
-                jsonObject.add("serverTimestamp",
-                        new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(v.getServerTime().getJavaInstant())));
+                jsonObject.add(
+                        "serverTimestamp",
+                        new JsonPrimitive(DateTimeFormatter.ISO_INSTANT.format(
+                                v.getServerTime().getJavaInstant())));
             }
             if (v.getServerPicoseconds() != null) {
-                jsonObject.add("serverPicoseconds", new JsonPrimitive(v.getServerPicoseconds().intValue()));
+                jsonObject.add(
+                        "serverPicoseconds",
+                        new JsonPrimitive(v.getServerPicoseconds().intValue()));
             }
         }
         jsonObject.add("value", convertValue(value, serializationContext));
@@ -96,9 +103,8 @@ public class OpcUaToJsonConverter {
     }
 
     private static JsonElement convertValue(
-            final @Nullable Object value,
-            final @NotNull EncodingContext serializationContext) {
-        if(value == null) {
+            final @Nullable Object value, final @NotNull EncodingContext serializationContext) {
+        if (value == null) {
             return JsonNull.INSTANCE;
         } else if (value instanceof final DataValue dv) {
             return convertValue(dv.getValue(), serializationContext);
@@ -188,7 +194,8 @@ public class OpcUaToJsonConverter {
             return ret;
         }
 
-        log.warn("No explicit converter for OPC UA type {} falling back to best effort json",
+        log.warn(
+                "No explicit converter for OPC UA type {} falling back to best effort json",
                 value.getClass().getSimpleName());
         return GSON.toJsonTree(value);
     }
@@ -208,10 +215,12 @@ public class OpcUaToJsonConverter {
                 nodeIdObj.add("idType", new JsonPrimitive(IdType.Guid.getValue()));
                 nodeIdObj.add("id", new JsonPrimitive(nodeId.getIdentifier().toString()));
                 break;
-            case Opaque: //ByteString
+            case Opaque: // ByteString
                 nodeIdObj.add("idType", new JsonPrimitive(IdType.Opaque.getValue()));
-                nodeIdObj.add("id",
-                        new JsonPrimitive(BASE_64.encodeToString(((ByteString) nodeId.getIdentifier()).bytesOrEmpty())));
+                nodeIdObj.add(
+                        "id",
+                        new JsonPrimitive(
+                                BASE_64.encodeToString(((ByteString) nodeId.getIdentifier()).bytesOrEmpty())));
                 break;
         }
 

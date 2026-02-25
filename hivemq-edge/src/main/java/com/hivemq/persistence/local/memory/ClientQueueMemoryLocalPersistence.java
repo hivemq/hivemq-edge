@@ -15,6 +15,10 @@
  */
 package com.hivemq.persistence.local.memory;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hivemq.configuration.service.InternalConfigurations.QOS_0_MEMORY_HARD_LIMIT_DIVISOR;
+import static com.hivemq.util.ThreadPreConditions.SINGLE_WRITER_THREAD_PREFIX;
+
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.annotations.VisibleForTesting;
@@ -25,8 +29,6 @@ import com.hivemq.annotations.ExecuteInSingleWriter;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.configuration.service.MqttConfigurationService.QueuedMessagesStrategy;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.metrics.HiveMQMetrics;
 import com.hivemq.mqtt.message.MessageWithID;
 import com.hivemq.mqtt.message.QoS;
@@ -38,9 +40,6 @@ import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.util.MemoryEstimator;
 import com.hivemq.util.Strings;
 import com.hivemq.util.ThreadPreConditions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.HashMap;
@@ -49,10 +48,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hivemq.configuration.service.InternalConfigurations.QOS_0_MEMORY_HARD_LIMIT_DIVISOR;
-import static com.hivemq.util.ThreadPreConditions.SINGLE_WRITER_THREAD_PREFIX;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Florian Limpöck
@@ -115,9 +114,8 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         qos0MessagesMemory = new AtomicLong();
         totalMemorySize = new AtomicLong();
 
-        metricRegistry.register(HiveMQMetrics.QUEUED_MESSAGES_MEMORY_PERSISTENCE_TOTAL_SIZE.name(),
-                (Gauge<Long>) totalMemorySize::get);
-
+        metricRegistry.register(
+                HiveMQMetrics.QUEUED_MESSAGES_MEMORY_PERSISTENCE_TOTAL_SIZE.name(), (Gauge<Long>) totalMemorySize::get);
     }
 
     private long getQos0MemoryLimit() {
@@ -127,7 +125,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         final int hardLimitDivisor = QOS_0_MEMORY_HARD_LIMIT_DIVISOR.get();
 
         if (hardLimitDivisor < 1) {
-            //fallback to default if config failed
+            // fallback to default if config failed
             maxHardLimit = maxHeap / 4;
         } else {
             maxHardLimit = maxHeap / hardLimitDivisor;
@@ -193,7 +191,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
                     } else {
                         final boolean discarded = discardOldest(queueId, shared, messages, false);
                         if (!discarded) {
-                            //discard this message if no old could be discarded
+                            // discard this message if no old could be discarded
                             logAndDecrementPayloadReference(publish, shared, queueId);
                             continue;
                         }
@@ -205,7 +203,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
                     } else {
                         final boolean discarded = discardOldest(queueId, shared, messages, true);
                         if (!discarded) {
-                            //discard this message if no old could be discarded
+                            // discard this message if no old could be discarded
                             logAndDecrementPayloadReference(publish, shared, queueId);
                             continue;
                         }
@@ -232,28 +230,19 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         final long currentQos0MessagesMemory = qos0MessagesMemory.get();
         if (currentQos0MessagesMemory >= qos0MemoryLimit) {
             if (shared) {
-                messageDroppedService.qos0MemoryExceededShared(queueId,
-                        publishWithRetained.getTopic(),
-                        0,
-                        currentQos0MessagesMemory,
-                        qos0MemoryLimit);
+                messageDroppedService.qos0MemoryExceededShared(
+                        queueId, publishWithRetained.getTopic(), 0, currentQos0MessagesMemory, qos0MemoryLimit);
             } else {
-                messageDroppedService.qos0MemoryExceeded(queueId,
-                        publishWithRetained.getTopic(),
-                        0,
-                        currentQos0MessagesMemory,
-                        qos0MemoryLimit);
+                messageDroppedService.qos0MemoryExceeded(
+                        queueId, publishWithRetained.getTopic(), 0, currentQos0MessagesMemory, qos0MemoryLimit);
             }
             return;
         }
 
         if (!shared) {
             if (messages.qos0Memory >= qos0ClientMemoryLimit) {
-                messageDroppedService.qos0MemoryExceeded(queueId,
-                        publishWithRetained.getTopic(),
-                        0,
-                        messages.qos0Memory,
-                        qos0ClientMemoryLimit);
+                messageDroppedService.qos0MemoryExceeded(
+                        queueId, publishWithRetained.getTopic(), 0, messages.qos0Memory, qos0ClientMemoryLimit);
                 return;
             }
         }
@@ -305,7 +294,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
             }
             final PublishWithRetained publishWithRetained = (PublishWithRetained) messageWithID;
             if (publishWithRetained.getPacketIdentifier() != NO_PACKET_ID) {
-                //already inflight
+                // already inflight
                 continue;
             }
 
@@ -320,7 +309,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
                     messages.retainedQos1Or2Messages--;
                 }
                 increaseMessagesMemory(-publishWithRetained.getEstimatedSize());
-                //do not return here, because we could have a QoS 0 message left
+                // do not return here, because we could have a QoS 0 message left
             } else {
 
                 final int packetId = packetIds.get(packetIdIndex);
@@ -375,7 +364,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
             }
             final PublishWithRetained publishWithRetained = (PublishWithRetained) messageWithID;
             if (publishWithRetained.getPacketIdentifier() != NO_PACKET_ID) {
-                //already inflight
+                // already inflight
                 continue;
             }
 
@@ -608,7 +597,6 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         return null;
     }
 
-
     /**
      * {@inheritDoc}
      */
@@ -831,9 +819,11 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
             final @NotNull PUBLISH publish, final boolean shared, final @NotNull String queueId) {
 
         if (shared) {
-            messageDroppedService.queueFullShared(queueId, publish.getTopic(), publish.getQoS().getQosNumber());
+            messageDroppedService.queueFullShared(
+                    queueId, publish.getTopic(), publish.getQoS().getQosNumber());
         } else {
-            messageDroppedService.queueFull(queueId, publish.getTopic(), publish.getQoS().getQosNumber());
+            messageDroppedService.queueFull(
+                    queueId, publish.getTopic(), publish.getQoS().getQosNumber());
         }
     }
 
@@ -903,7 +893,6 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
             return true;
         }
         return false;
-
     }
 
     private void logAndDecrementPayloadReference(
@@ -978,7 +967,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         }
 
         int getEstimatedSize() {
-            return getEstimatedSizeInMemory()  // publish
+            return getEstimatedSizeInMemory() // publish
                     + MemoryEstimator.OBJECT_SHELL_SIZE // the object itself
                     + MemoryEstimator.BOOLEAN_SIZE; // retain flag
         }
@@ -989,7 +978,8 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         private final boolean retained;
 
         private PubrelWithRetained(final @NotNull PUBREL pubrel, final boolean retained) {
-            super(pubrel.getPacketIdentifier(),
+            super(
+                    pubrel.getPacketIdentifier(),
                     pubrel.getReasonCode(),
                     pubrel.getReasonString(),
                     pubrel.getUserProperties(),
@@ -999,7 +989,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         }
 
         private int getEstimatedSize() {
-            return getEstimatedSizeInMemory()  // publish
+            return getEstimatedSizeInMemory() // publish
                     + MemoryEstimator.OBJECT_SHELL_SIZE // the object itself
                     + MemoryEstimator.BOOLEAN_SIZE; // retain flag
         }

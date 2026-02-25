@@ -16,8 +16,6 @@
 package com.hivemq.extensions.handler.tasks;
 
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.auth.Authorizer;
 import com.hivemq.extension.sdk.api.auth.PublishAuthorizer;
 import com.hivemq.extension.sdk.api.auth.parameter.AuthorizerProviderInput;
@@ -28,10 +26,11 @@ import com.hivemq.extensions.client.ClientAuthorizers;
 import com.hivemq.extensions.executor.task.PluginInOutTask;
 import com.hivemq.util.Exceptions;
 import io.netty.channel.ChannelHandlerContext;
+import java.util.Map;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 /**
  * @author Christoph Schäbel
@@ -46,11 +45,12 @@ public class PublishAuthorizerTask implements PluginInOutTask<PublishAuthorizerI
     private final @NotNull ClientAuthorizers clientAuthorizers;
     private final @NotNull ChannelHandlerContext channelHandlerContext;
 
-    public PublishAuthorizerTask(final @NotNull AuthorizerProvider authorizerProvider,
-                                 final @NotNull String pluginId,
-                                 final @NotNull AuthorizerProviderInput input,
-                                 final @NotNull ClientAuthorizers clientAuthorizers,
-                                 final @NotNull ChannelHandlerContext channelHandlerContext) {
+    public PublishAuthorizerTask(
+            final @NotNull AuthorizerProvider authorizerProvider,
+            final @NotNull String pluginId,
+            final @NotNull AuthorizerProviderInput input,
+            final @NotNull ClientAuthorizers clientAuthorizers,
+            final @NotNull ChannelHandlerContext channelHandlerContext) {
         this.authorizerProvider = authorizerProvider;
         this.pluginId = pluginId;
         this.authorizerProviderInput = input;
@@ -59,7 +59,8 @@ public class PublishAuthorizerTask implements PluginInOutTask<PublishAuthorizerI
     }
 
     @Override
-    public @NotNull PublishAuthorizerOutputImpl apply(final @NotNull PublishAuthorizerInputImpl input, final @NotNull PublishAuthorizerOutputImpl output) {
+    public @NotNull PublishAuthorizerOutputImpl apply(
+            final @NotNull PublishAuthorizerInputImpl input, final @NotNull PublishAuthorizerOutputImpl output) {
 
         if (output.isCompleted()) {
             return output;
@@ -71,15 +72,21 @@ public class PublishAuthorizerTask implements PluginInOutTask<PublishAuthorizerI
         }
 
         output.authorizerPresent();
-        if (channelHandlerContext.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().isIncomingPublishesSkipRest()) {
-            //client already disconnected by authorizer, no more processing of any messages allowed.
+        if (channelHandlerContext
+                .channel()
+                .attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                .get()
+                .isIncomingPublishesSkipRest()) {
+            // client already disconnected by authorizer, no more processing of any messages allowed.
             output.forceFailedAuthorization();
         } else {
             try {
                 authorizer.authorizePublish(input, output);
             } catch (final Throwable e) {
-                log.warn("Uncaught exception was thrown from extension with id \"{}\" at subscription authorization. Extensions are responsible on their own to handle exceptions.",
-                        pluginId, e);
+                log.warn(
+                        "Uncaught exception was thrown from extension with id \"{}\" at subscription authorization. Extensions are responsible on their own to handle exceptions.",
+                        pluginId,
+                        e);
                 Exceptions.rethrowError(e);
             }
         }
@@ -90,10 +97,15 @@ public class PublishAuthorizerTask implements PluginInOutTask<PublishAuthorizerI
     private @Nullable PublishAuthorizer updateAndGetAuthorizer() {
 
         PublishAuthorizer authorizer = null;
-        for (final Map.Entry<String, PublishAuthorizer> authorizerEntry : clientAuthorizers.getPublishAuthorizersMap().entrySet()) {
+        for (final Map.Entry<String, PublishAuthorizer> authorizerEntry :
+                clientAuthorizers.getPublishAuthorizersMap().entrySet()) {
             final String pluginId = authorizerEntry.getKey();
             final PublishAuthorizer publishAuthorizer = authorizerEntry.getValue();
-            if (publishAuthorizer.getClass().getClassLoader().equals(authorizerProvider.getClass().getClassLoader()) && pluginId.equals(this.pluginId)) {
+            if (publishAuthorizer
+                            .getClass()
+                            .getClassLoader()
+                            .equals(authorizerProvider.getClass().getClassLoader())
+                    && pluginId.equals(this.pluginId)) {
                 authorizer = publishAuthorizer;
             }
         }
@@ -105,14 +117,16 @@ public class PublishAuthorizerTask implements PluginInOutTask<PublishAuthorizerI
                     clientAuthorizers.put(pluginId, authorizer);
                 }
             } catch (final Throwable t) {
-                log.warn("Uncaught exception was thrown from extension with id \"{}\" in authorizer provider. " +
-                        "Extensions are responsible on their own to handle exceptions.", pluginId, t);
+                log.warn(
+                        "Uncaught exception was thrown from extension with id \"{}\" in authorizer provider. "
+                                + "Extensions are responsible on their own to handle exceptions.",
+                        pluginId,
+                        t);
                 Exceptions.rethrowError(t);
             }
         }
         return authorizer;
     }
-
 
     @Override
     public @NotNull ClassLoader getPluginClassLoader() {

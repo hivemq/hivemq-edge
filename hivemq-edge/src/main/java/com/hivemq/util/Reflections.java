@@ -15,17 +15,15 @@
  */
 package com.hivemq.util;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 
 public final class Reflections {
 
-    private Reflections() {
-    }
+    private Reflections() {}
 
     /**
      * This method is a convenient way to ask for a specific annotation on the interface

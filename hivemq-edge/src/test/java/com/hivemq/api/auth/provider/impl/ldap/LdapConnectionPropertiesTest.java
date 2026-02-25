@@ -15,13 +15,13 @@
  */
 package com.hivemq.api.auth.provider.impl.ldap;
 
-import com.unboundid.ldap.sdk.SearchScope;
-import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.Test;
-
 import static com.hivemq.api.auth.ApiRoles.ADMIN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import com.unboundid.ldap.sdk.SearchScope;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for {@link LdapConnectionProperties}.
@@ -42,38 +42,42 @@ class LdapConnectionPropertiesTest {
     @Test
     void testValidationRejectsInvalidPort() {
         assertThatThrownBy(() -> new LdapConnectionProperties(
-                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{0}),
-                TlsMode.NONE,
-                null,
-                0,
-                0,
-                1,
-                "uid",
-                "ou=people,dc=example,dc=com",
-                null,
-                SearchScope.BASE,
-                5,
-                ADMIN,
-                false,
-                DEFAULT_SIMPLE_BIND))
+                        new LdapConnectionProperties.LdapServers(new String[] {"localhost"}, new int[] {0}),
+                        TlsMode.NONE,
+                        null,
+                        0,
+                        0,
+                        1,
+                        "uid",
+                        "ou=people,dc=example,dc=com",
+                        null,
+                        null,
+                        SearchScope.BASE,
+                        5,
+                        ADMIN,
+                        false,
+                        DEFAULT_SIMPLE_BIND,
+                        null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Port must be between 1 and 65535");
 
         assertThatThrownBy(() -> new LdapConnectionProperties(
-                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{65536}),
-                TlsMode.NONE,
-                null,
-                0,
-                0,
-                1,
-                "uid",
-                "ou=people,dc=example,dc=com",
-                null,
-                SearchScope.BASE,
-                5,
-                ADMIN,
-                false,
-                DEFAULT_SIMPLE_BIND))
+                        new LdapConnectionProperties.LdapServers(new String[] {"localhost"}, new int[] {65536}),
+                        TlsMode.NONE,
+                        null,
+                        0,
+                        0,
+                        1,
+                        "uid",
+                        "ou=people,dc=example,dc=com",
+                        null,
+                        null,
+                        SearchScope.BASE,
+                        5,
+                        ADMIN,
+                        false,
+                        DEFAULT_SIMPLE_BIND,
+                        null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Port must be between 1 and 65535");
     }
@@ -81,38 +85,42 @@ class LdapConnectionPropertiesTest {
     @Test
     void testValidationRejectsNegativeTimeouts() {
         assertThatThrownBy(() -> new LdapConnectionProperties(
-                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{389}),
-                TlsMode.NONE,
-                null,
-                -1,
-                0,
-                1,
-                "uid",
-                "ou=people,dc=example,dc=com",
-                null,
-                SearchScope.BASE,
-                5,
-                ADMIN,
-                false,
-                DEFAULT_SIMPLE_BIND))
+                        new LdapConnectionProperties.LdapServers(new String[] {"localhost"}, new int[] {389}),
+                        TlsMode.NONE,
+                        null,
+                        -1,
+                        0,
+                        1,
+                        "uid",
+                        "ou=people,dc=example,dc=com",
+                        null,
+                        null,
+                        SearchScope.BASE,
+                        5,
+                        ADMIN,
+                        false,
+                        DEFAULT_SIMPLE_BIND,
+                        null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Connect timeout cannot be negative");
 
         assertThatThrownBy(() -> new LdapConnectionProperties(
-                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{389}),
-                TlsMode.NONE,
-                null,
-                0,
-                -1,
-                1,
-                "uid",
-                "ou=people,dc=example,dc=com",
-                null,
-                SearchScope.BASE,
-                5,
-                ADMIN,
-                false,
-                DEFAULT_SIMPLE_BIND))
+                        new LdapConnectionProperties.LdapServers(new String[] {"localhost"}, new int[] {389}),
+                        TlsMode.NONE,
+                        null,
+                        0,
+                        -1,
+                        1,
+                        "uid",
+                        "ou=people,dc=example,dc=com",
+                        null,
+                        null,
+                        SearchScope.BASE,
+                        5,
+                        ADMIN,
+                        false,
+                        DEFAULT_SIMPLE_BIND,
+                        null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Response timeout cannot be negative");
     }
@@ -121,7 +129,7 @@ class LdapConnectionPropertiesTest {
     void testTlsModesAllowNullTruststore() {
         // LDAPS allows null truststore (will use system CAs)
         final LdapConnectionProperties ldapsProps = new LdapConnectionProperties(
-                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{636}),
+                new LdapConnectionProperties.LdapServers(new String[] {"localhost"}, new int[] {636}),
                 TlsMode.LDAPS,
                 null, // no custom truststore - will use system CAs
                 0,
@@ -130,16 +138,18 @@ class LdapConnectionPropertiesTest {
                 "uid",
                 "ou=people,dc=example,dc=com",
                 null,
+                null,
                 SearchScope.BASE,
                 5,
                 ADMIN,
                 false,
-                DEFAULT_SIMPLE_BIND);
+                DEFAULT_SIMPLE_BIND,
+                null);
         assertThat(ldapsProps.trustStore()).isNull();
 
         // START_TLS allows null truststore (will use system CAs)
         final LdapConnectionProperties startTlsProps = new LdapConnectionProperties(
-                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{389}),
+                new LdapConnectionProperties.LdapServers(new String[] {"localhost"}, new int[] {389}),
                 TlsMode.START_TLS,
                 null, // no custom truststore - will use system CAs
                 0,
@@ -148,16 +158,18 @@ class LdapConnectionPropertiesTest {
                 "uid",
                 "ou=people,dc=example,dc=com",
                 null,
+                null,
                 SearchScope.BASE,
                 5,
                 ADMIN,
                 false,
-                DEFAULT_SIMPLE_BIND);
+                DEFAULT_SIMPLE_BIND,
+                null);
         assertThat(startTlsProps.trustStore()).isNull();
 
         // NONE doesn't need truststore
         final LdapConnectionProperties noneProps = new LdapConnectionProperties(
-                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{389}),
+                new LdapConnectionProperties.LdapServers(new String[] {"localhost"}, new int[] {389}),
                 TlsMode.NONE,
                 null,
                 0,
@@ -166,18 +178,20 @@ class LdapConnectionPropertiesTest {
                 "uid",
                 "ou=people,dc=example,dc=com",
                 null,
+                null,
                 SearchScope.BASE,
                 5,
                 ADMIN,
                 false,
-                DEFAULT_SIMPLE_BIND);
+                DEFAULT_SIMPLE_BIND,
+                null);
         assertThat(noneProps.trustStore()).isNull();
     }
 
     @Test
     void testConvenienceConstructorUsesDefaultTimeouts() {
         final LdapConnectionProperties props = new LdapConnectionProperties(
-                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{636}),
+                new LdapConnectionProperties.LdapServers(new String[] {"localhost"}, new int[] {636}),
                 TlsMode.LDAPS,
                 new LdapConnectionProperties.TrustStore("/path/to/truststore", "password", "JKS"),
                 0,
@@ -186,11 +200,13 @@ class LdapConnectionPropertiesTest {
                 "uid",
                 "ou=people,dc=example,dc=com",
                 null,
+                null,
                 SearchScope.BASE,
                 5,
                 ADMIN,
                 false,
-                DEFAULT_SIMPLE_BIND);
+                DEFAULT_SIMPLE_BIND,
+                null);
 
         assertThat(props.connectTimeoutMillis()).isEqualTo(0);
         assertThat(props.responseTimeoutMillis()).isEqualTo(0);
@@ -199,7 +215,7 @@ class LdapConnectionPropertiesTest {
     @Test
     void testCreateSSLContextThrowsForNoneTlsMode() {
         final LdapConnectionProperties props = new LdapConnectionProperties(
-                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{389}),
+                new LdapConnectionProperties.LdapServers(new String[] {"localhost"}, new int[] {389}),
                 TlsMode.NONE,
                 null,
                 0,
@@ -208,11 +224,13 @@ class LdapConnectionPropertiesTest {
                 "uid",
                 "ou=people,dc=example,dc=com",
                 null,
+                null,
                 SearchScope.BASE,
                 5,
                 ADMIN,
                 false,
-                DEFAULT_SIMPLE_BIND);
+                DEFAULT_SIMPLE_BIND,
+                null);
 
         assertThatThrownBy(props::createSSLContext)
                 .isInstanceOf(IllegalStateException.class)
@@ -223,7 +241,7 @@ class LdapConnectionPropertiesTest {
     void testCreateSSLContextWithSystemCAs() throws Exception {
         // LDAPS with null truststore should use system CAs
         final LdapConnectionProperties ldapsProps = new LdapConnectionProperties(
-                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{636}),
+                new LdapConnectionProperties.LdapServers(new String[] {"localhost"}, new int[] {636}),
                 TlsMode.LDAPS,
                 null, // Use system default CAs
                 0,
@@ -232,11 +250,13 @@ class LdapConnectionPropertiesTest {
                 "uid",
                 "ou=people,dc=example,dc=com",
                 null,
+                null,
                 SearchScope.BASE,
                 5,
                 ADMIN,
                 false,
-                DEFAULT_SIMPLE_BIND);
+                DEFAULT_SIMPLE_BIND,
+                null);
 
         final javax.net.ssl.SSLContext sslContext = ldapsProps.createSSLContext();
         assertThat(sslContext)
@@ -245,7 +265,7 @@ class LdapConnectionPropertiesTest {
 
         // START_TLS with null truststore should use system CAs
         final LdapConnectionProperties startTlsProps = new LdapConnectionProperties(
-                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{389}),
+                new LdapConnectionProperties.LdapServers(new String[] {"localhost"}, new int[] {389}),
                 TlsMode.START_TLS,
                 null, // Use system default CAs
                 0,
@@ -254,11 +274,13 @@ class LdapConnectionPropertiesTest {
                 "uid",
                 "ou=people,dc=example,dc=com",
                 null,
+                null,
                 SearchScope.BASE,
                 5,
                 ADMIN,
                 false,
-                DEFAULT_SIMPLE_BIND);
+                DEFAULT_SIMPLE_BIND,
+                null);
 
         final javax.net.ssl.SSLContext startTlsSslContext = startTlsProps.createSSLContext();
         assertThat(startTlsSslContext)
@@ -270,7 +292,7 @@ class LdapConnectionPropertiesTest {
     void testCreateSSLContextWithCustomTruststore() {
         // Verify that custom truststore path is stored correctly
         final LdapConnectionProperties props = new LdapConnectionProperties(
-                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{636}),
+                new LdapConnectionProperties.LdapServers(new String[] {"localhost"}, new int[] {636}),
                 TlsMode.LDAPS,
                 new LdapConnectionProperties.TrustStore("/path/to/custom/truststore.jks", "password", "JKS"),
                 0,
@@ -279,11 +301,13 @@ class LdapConnectionPropertiesTest {
                 "uid",
                 "ou=people,dc=example,dc=com",
                 null,
+                null,
                 SearchScope.BASE,
                 5,
                 ADMIN,
                 false,
-                DEFAULT_SIMPLE_BIND);
+                DEFAULT_SIMPLE_BIND,
+                null);
 
         assertThat(props.trustStore().trustStorePath())
                 .as("Custom truststore path should be stored")
@@ -303,7 +327,7 @@ class LdapConnectionPropertiesTest {
     @Test
     void testCreateUserDnResolver() {
         final LdapConnectionProperties props = new LdapConnectionProperties(
-                new LdapConnectionProperties.LdapServers(new String[]{"localhost"}, new int[]{389}),
+                new LdapConnectionProperties.LdapServers(new String[] {"localhost"}, new int[] {389}),
                 TlsMode.NONE,
                 null,
                 0,
@@ -312,37 +336,36 @@ class LdapConnectionPropertiesTest {
                 "uid",
                 "ou=people,dc=example,dc=com",
                 null,
+                null,
                 SearchScope.BASE,
                 5,
                 ADMIN,
                 false,
-                DEFAULT_SIMPLE_BIND);
+                DEFAULT_SIMPLE_BIND,
+                null);
 
         final var resolver = props.createUserDnResolver(null); // null pool for Direct Reference mode
         assertThat(resolver).isNotNull();
-        assertThat(resolver.resolveDn("jdoe"))
-                .isEqualTo("uid=jdoe,ou=people,dc=example,dc=com");
+        assertThat(resolver.resolveDn("jdoe")).isEqualTo("uid=jdoe,ou=people,dc=example,dc=com");
     }
 
     @Test
     void testLdapServersDefensiveCopying() {
         // Create arrays
-        final String[] hosts1 = new String[]{"localhost", "backup.example.com"};
-        final int[] ports1 = new int[]{389, 636};
+        final String[] hosts1 = new String[] {"localhost", "backup.example.com"};
+        final int[] ports1 = new int[] {389, 636};
 
         // Create first LdapServers instance
-        final LdapConnectionProperties.LdapServers servers1 =
-                new LdapConnectionProperties.LdapServers(hosts1, ports1);
+        final LdapConnectionProperties.LdapServers servers1 = new LdapConnectionProperties.LdapServers(hosts1, ports1);
 
         // Modify the original arrays (this should NOT affect servers1 due to defensive copying)
         hosts1[0] = "modified-host";
         ports1[0] = 999;
 
         // Create second LdapServers instance with the original values
-        final String[] hosts2 = new String[]{"localhost", "backup.example.com"};
-        final int[] ports2 = new int[]{389, 636};
-        final LdapConnectionProperties.LdapServers servers2 =
-                new LdapConnectionProperties.LdapServers(hosts2, ports2);
+        final String[] hosts2 = new String[] {"localhost", "backup.example.com"};
+        final int[] ports2 = new int[] {389, 636};
+        final LdapConnectionProperties.LdapServers servers2 = new LdapConnectionProperties.LdapServers(hosts2, ports2);
 
         // If defensive copying works, servers1 should still equal servers2
         // because servers1 has copies of the original values, not references

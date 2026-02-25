@@ -17,15 +17,14 @@ package com.hivemq.extensions.packets.suback;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.suback.SubackPacket;
 import com.hivemq.extension.sdk.api.packets.subscribe.SubackReasonCode;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.suback.SUBACK;
-
 import java.util.Objects;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Robin Atherton
@@ -89,10 +88,10 @@ public class SubackPacketImpl implements SubackPacket {
             return false;
         }
         final SubackPacketImpl that = (SubackPacketImpl) o;
-        return reasonCodes.equals(that.reasonCodes) &&
-                Objects.equals(reasonString, that.reasonString) &&
-                (packetIdentifier == that.packetIdentifier) &&
-                userProperties.equals(that.userProperties);
+        return reasonCodes.equals(that.reasonCodes)
+                && Objects.equals(reasonString, that.reasonString)
+                && (packetIdentifier == that.packetIdentifier)
+                && userProperties.equals(that.userProperties);
     }
 
     @Override

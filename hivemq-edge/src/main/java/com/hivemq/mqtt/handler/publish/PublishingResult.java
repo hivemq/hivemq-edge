@@ -43,7 +43,8 @@ public class PublishingResult {
         this.ackReasonCode = ackReasonCode;
     }
 
-    public static @NotNull PublishingResult failed(final @Nullable String reasonString, final @NotNull AckReasonCode ackReasonCode) {
+    public static @NotNull PublishingResult failed(
+            final @Nullable String reasonString, final @NotNull AckReasonCode ackReasonCode) {
         return new PublishingResult(PublishReturnCode.FAILED, reasonString, ackReasonCode);
     }
 
@@ -61,12 +62,11 @@ public class PublishingResult {
 
     @Override
     public @NotNull String toString() {
-        return "PublishingResult{" +
-                "publishReturnCode=" +
-                publishReturnCode +
-                ", reasonString='" +
-                reasonString +
-                '\'' +
-                '}';
+        return "PublishingResult{" + "publishReturnCode="
+                + publishReturnCode
+                + ", reasonString='"
+                + reasonString
+                + '\''
+                + '}';
     }
 }

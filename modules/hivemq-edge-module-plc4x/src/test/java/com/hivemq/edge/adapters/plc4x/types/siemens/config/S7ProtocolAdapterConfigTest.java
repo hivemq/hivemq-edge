@@ -15,6 +15,15 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.siemens.config;
 
+import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
+import static com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig.ControllerType.S7_1500;
+import static com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig.ControllerType.S7_400;
+import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
@@ -30,9 +39,6 @@ import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.protocols.ProtocolAdapterConfig;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
 import com.hivemq.protocols.ProtocolAdapterFactoryManager;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Test;
-
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -40,16 +46,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
-import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
-import static com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig.ControllerType.S7_1500;
-import static com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig.ControllerType.S7_400;
-import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 
 class S7ProtocolAdapterConfigTest {
 
@@ -59,8 +57,7 @@ class S7ProtocolAdapterConfigTest {
     public void convertConfigObject_fullConfig_valid() throws Exception {
         final URL resource = getClass().getResource("/s7-adapter-full-config.xml");
         final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
-        assertThat(protocolAdapterConfig.missingTags())
-                .isEmpty();
+        assertThat(protocolAdapterConfig.missingTags()).isEmpty();
 
         final S7SpecificAdapterConfig config = (S7SpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
 
@@ -74,32 +71,34 @@ class S7ProtocolAdapterConfigTest {
         assertThat(config.getRemoteSlot2()).isEqualTo(4);
         assertThat(config.getRemoteTsap()).isEqualTo(5);
         assertThat(config.getPlc4xToMqttConfig().getPollingIntervalMillis()).isEqualTo(10);
-        assertThat(config.getPlc4xToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(9);
+        assertThat(config.getPlc4xToMqttConfig().getMaxPollingErrorsBeforeRemoval())
+                .isEqualTo(9);
         assertThat(config.getPlc4xToMqttConfig().getPublishChangedDataOnly()).isFalse();
-        assertThat(protocolAdapterConfig.getNorthboundMappings()).satisfiesExactly(mapping -> {
-            assertThat(mapping.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(mapping.getMqttQos()).isEqualTo(1);
-            assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
-            assertThat(mapping.getIncludeTimestamp()).isTrue();
-            assertThat(mapping.getIncludeTagNames()).isTrue();
-            assertThat(mapping.getTagName()).isEqualTo("tag-name");
-
-        }, mapping -> {
-            assertThat(mapping.getMqttTopic()).isEqualTo("my/topic/2");
-            assertThat(mapping.getMqttQos()).isEqualTo(1);
-            assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
-            assertThat(mapping.getIncludeTimestamp()).isTrue();
-            assertThat(mapping.getIncludeTagNames()).isTrue();
-            assertThat(mapping.getTagName()).isEqualTo("tag-name");
-        });
+        assertThat(protocolAdapterConfig.getNorthboundMappings())
+                .satisfiesExactly(
+                        mapping -> {
+                            assertThat(mapping.getMqttTopic()).isEqualTo("my/topic");
+                            assertThat(mapping.getMqttQos()).isEqualTo(1);
+                            assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
+                            assertThat(mapping.getIncludeTimestamp()).isTrue();
+                            assertThat(mapping.getIncludeTagNames()).isTrue();
+                            assertThat(mapping.getTagName()).isEqualTo("tag-name");
+                        },
+                        mapping -> {
+                            assertThat(mapping.getMqttTopic()).isEqualTo("my/topic/2");
+                            assertThat(mapping.getMqttQos()).isEqualTo(1);
+                            assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
+                            assertThat(mapping.getIncludeTimestamp()).isTrue();
+                            assertThat(mapping.getIncludeTagNames()).isTrue();
+                            assertThat(mapping.getTagName()).isEqualTo("tag-name");
+                        });
     }
 
     @Test
     public void convertConfigObject_defaults_valid() throws Exception {
         final URL resource = getClass().getResource("/s7-adapter-minimal-config.xml");
         final ProtocolAdapterConfig protocolAdapterConfig = getProtocolAdapterConfig(resource);
-        assertThat(protocolAdapterConfig.missingTags())
-                .isEmpty();
+        assertThat(protocolAdapterConfig.missingTags()).isEmpty();
 
         final S7SpecificAdapterConfig config = (S7SpecificAdapterConfig) protocolAdapterConfig.getAdapterConfig();
 
@@ -113,7 +112,8 @@ class S7ProtocolAdapterConfigTest {
         assertThat(config.getRemoteSlot2()).isEqualTo(0);
         assertThat(config.getRemoteTsap()).isEqualTo(0);
         assertThat(config.getPlc4xToMqttConfig().getPollingIntervalMillis()).isEqualTo(1000);
-        assertThat(config.getPlc4xToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
+        assertThat(config.getPlc4xToMqttConfig().getMaxPollingErrorsBeforeRemoval())
+                .isEqualTo(10);
         assertThat(config.getPlc4xToMqttConfig().getPublishChangedDataOnly()).isTrue();
         assertThat(protocolAdapterConfig.getNorthboundMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/topic");
@@ -124,8 +124,9 @@ class S7ProtocolAdapterConfigTest {
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
         });
 
-        assertThat(protocolAdapterConfig.getTags().stream().map(t -> (Plc4xTag)t))
-                .containsExactly(new Plc4xTag("tag-name", "description", new Plc4xTagDefinition("123", Plc4xDataType.DATA_TYPE.BOOL)));
+        assertThat(protocolAdapterConfig.getTags().stream().map(t -> (Plc4xTag) t))
+                .containsExactly(new Plc4xTag(
+                        "tag-name", "description", new Plc4xTagDefinition("123", Plc4xDataType.DATA_TYPE.BOOL)));
     }
 
     @Test
@@ -138,24 +139,11 @@ class S7ProtocolAdapterConfigTest {
     public void unconvertConfigObject_full_valid() {
 
         final S7SpecificAdapterConfig adapterConfig = new S7SpecificAdapterConfig(
-                14,
-                "my.host.com",
-                S7_1500,
-                1,
-                2,
-                3,
-                4,
-                5,
-                false,
-                new S7ToMqttConfig(
-                        12,
-                        13,
-                        true));
+                14, "my.host.com", S7_1500, 1, 2, 3, 4, 5, false, new S7ToMqttConfig(12, 13, true));
 
         final ProtocolAdapterFactoryInput mockInput = mock(ProtocolAdapterFactoryInput.class);
         when(mockInput.isWritingEnabled()).thenReturn(false);
-        final S7ProtocolAdapterFactory adapterFactory =
-                new S7ProtocolAdapterFactory(mockInput);
+        final S7ProtocolAdapterFactory adapterFactory = new S7ProtocolAdapterFactory(mockInput);
         final Map<String, Object> config = adapterFactory.unconvertConfigObject(mapper, adapterConfig);
 
         assertThat(config.get("port")).isEqualTo(14);
@@ -171,15 +159,17 @@ class S7ProtocolAdapterConfigTest {
         assertThat(s7ToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(13);
         assertThat(s7ToMqtt.get("publishChangedDataOnly")).isEqualTo(true);
 
-        assertThat((List<Map<String, Object>>) s7ToMqtt.get("s7ToMqttMappings")).isNull(); //mappings are supposed to be ignored when rendered to XML
+        assertThat((List<Map<String, Object>>) s7ToMqtt.get("s7ToMqttMappings"))
+                .isNull(); // mappings are supposed to be ignored when rendered to XML
     }
 
-    private @NotNull ProtocolAdapterConfig getProtocolAdapterConfig(final @NotNull URL resource) throws
-            URISyntaxException {
+    private @NotNull ProtocolAdapterConfig getProtocolAdapterConfig(final @NotNull URL resource)
+            throws URISyntaxException {
         final File path = Path.of(resource.toURI()).toFile();
 
         final HiveMQConfigEntity configEntity = loadConfig(path);
-        final ProtocolAdapterEntity adapterEntity = configEntity.getProtocolAdapterConfig().get(0);
+        final ProtocolAdapterEntity adapterEntity =
+                configEntity.getProtocolAdapterConfig().get(0);
 
         final ProtocolAdapterConfigConverter converter = createConverter();
 
@@ -198,7 +188,8 @@ class S7ProtocolAdapterConfigTest {
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {
-        final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(mock(SystemInformation.class), new ConfigurationFile(configFile), List.of());
+        final ConfigFileReaderWriter readerWriter =
+                new ConfigFileReaderWriter(mock(SystemInformation.class), new ConfigurationFile(configFile), List.of());
         return readerWriter.applyConfig();
     }
 }

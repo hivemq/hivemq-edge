@@ -17,10 +17,9 @@ package com.hivemq.http.core;
 
 import java.io.IOException;
 
-public class MimeTypeNotFoundException extends IOException{
+public class MimeTypeNotFoundException extends IOException {
 
-    public MimeTypeNotFoundException() {
-    }
+    public MimeTypeNotFoundException() {}
 
     public MimeTypeNotFoundException(String message) {
         super(message);

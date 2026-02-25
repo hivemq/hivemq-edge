@@ -16,7 +16,6 @@
 package com.hivemq.configuration.entity.security;
 
 import com.hivemq.configuration.entity.EnabledEntity;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlRootElement;
@@ -28,5 +27,4 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 @XmlRootElement(name = "allow-request-problem-information")
 @XmlAccessorType(XmlAccessType.NONE)
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
-public class RequestProblemInformationEntityConfig extends EnabledEntity {
-}
+public class RequestProblemInformationEntityConfig extends EnabledEntity {}

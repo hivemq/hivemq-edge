@@ -16,17 +16,14 @@
 package com.hivemq.configuration.entity.combining;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
-
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class DataCombinerEntity {
     @JsonProperty(value = "id", required = true)
@@ -44,16 +41,19 @@ public class DataCombinerEntity {
     @JsonProperty(value = "entityReferences", required = true)
     @XmlElementWrapper(name = "entity-references", required = true)
     @XmlElement(name = "entity-reference")
-    private @NotNull List<EntityReferenceEntity> entityReferenceEntities = new ArrayList<>();;
+    private @NotNull List<EntityReferenceEntity> entityReferenceEntities = new ArrayList<>();
+
+    ;
 
     @JsonProperty(value = "dataCombinings", required = true)
     @XmlElementWrapper(name = "data-combinings", required = true)
     @XmlElement(name = "data-combining")
-    private @NotNull List<DataCombiningEntity> dataCombiningEntities = new ArrayList<>();;
+    private @NotNull List<DataCombiningEntity> dataCombiningEntities = new ArrayList<>();
+
+    ;
 
     // no-arg for jaxb
-    public DataCombinerEntity() {
-    }
+    public DataCombinerEntity() {}
 
     public DataCombinerEntity(
             final @NotNull UUID id,
@@ -69,25 +69,24 @@ public class DataCombinerEntity {
     }
 
     public void validate(final @NotNull List<ValidationEvent> validationErrors) {
-        //TODO
+        // TODO
     }
 
     @Override
     public @NotNull String toString() {
-        return "DataCombinerEntity{" +
-                "dataCombiningEntities=" +
-                dataCombiningEntities +
-                ", id=" +
-                id +
-                ", name='" +
-                name +
-                '\'' +
-                ", description='" +
-                description +
-                '\'' +
-                ", entityReferenceEntities=" +
-                entityReferenceEntities +
-                '}';
+        return "DataCombinerEntity{" + "dataCombiningEntities="
+                + dataCombiningEntities
+                + ", id="
+                + id
+                + ", name='"
+                + name
+                + '\''
+                + ", description='"
+                + description
+                + '\''
+                + ", entityReferenceEntities="
+                + entityReferenceEntities
+                + '}';
     }
 
     @Override
@@ -96,11 +95,11 @@ public class DataCombinerEntity {
         if (o == null || getClass() != o.getClass()) return false;
 
         final DataCombinerEntity that = (DataCombinerEntity) o;
-        return id.equals(that.id) &&
-                name.equals(that.name) &&
-                description.equals(that.description) &&
-                entityReferenceEntities.equals(that.entityReferenceEntities) &&
-                dataCombiningEntities.equals(that.dataCombiningEntities);
+        return id.equals(that.id)
+                && name.equals(that.name)
+                && description.equals(that.description)
+                && entityReferenceEntities.equals(that.entityReferenceEntities)
+                && dataCombiningEntities.equals(that.dataCombiningEntities);
     }
 
     @Override

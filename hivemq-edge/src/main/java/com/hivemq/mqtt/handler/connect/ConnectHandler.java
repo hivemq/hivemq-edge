@@ -15,6 +15,17 @@
  */
 package com.hivemq.mqtt.handler.connect;
 
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.AUTH_IN_PROGRESS_MESSAGE_HANDLER;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MESSAGE_EXPIRY_HANDLER;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MQTT_5_FLOW_CONTROL_HANDLER;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MQTT_KEEPALIVE_IDLE_HANDLER;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MQTT_MESSAGE_BARRIER;
+import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MQTT_PUBLISH_FLOW_HANDLER;
+import static com.hivemq.configuration.service.InternalConfigurations.AUTH_DENY_UNAUTHENTICATED_CONNECTIONS;
+import static com.hivemq.configuration.service.InternalConfigurations.MQTT_CONNECTION_AUTH_CLEAR_PASSWORD;
+import static com.hivemq.mqtt.message.connack.CONNACK.KEEP_ALIVE_NOT_SET;
+import static com.hivemq.mqtt.message.connack.Mqtt5CONNACK.DEFAULT_MAXIMUM_PACKET_SIZE_NO_LIMIT;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -24,8 +35,6 @@ import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.bootstrap.ClientState;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.auth.ModifiableDefaultPermissions;
 import com.hivemq.extension.sdk.api.packets.disconnect.DisconnectReasonCode;
 import com.hivemq.extension.sdk.api.packets.publish.AckReasonCode;
@@ -67,9 +76,6 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.SimpleChannelInboundHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
@@ -77,17 +83,10 @@ import java.nio.ByteBuffer;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.AUTH_IN_PROGRESS_MESSAGE_HANDLER;
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MESSAGE_EXPIRY_HANDLER;
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MQTT_5_FLOW_CONTROL_HANDLER;
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MQTT_KEEPALIVE_IDLE_HANDLER;
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MQTT_MESSAGE_BARRIER;
-import static com.hivemq.bootstrap.netty.ChannelHandlerNames.MQTT_PUBLISH_FLOW_HANDLER;
-import static com.hivemq.configuration.service.InternalConfigurations.AUTH_DENY_UNAUTHENTICATED_CONNECTIONS;
-import static com.hivemq.configuration.service.InternalConfigurations.MQTT_CONNECTION_AUTH_CLEAR_PASSWORD;
-import static com.hivemq.mqtt.message.connack.CONNACK.KEEP_ALIVE_NOT_SET;
-import static com.hivemq.mqtt.message.connack.Mqtt5CONNACK.DEFAULT_MAXIMUM_PACKET_SIZE_NO_LIMIT;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The handler which is responsible for CONNECT messages
@@ -153,10 +152,11 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
         this.keepAliveDisconnectService = keepAliveDisconnectService;
     }
 
-    @Inject //method injection, this gets called once after instantiation
+    @Inject // method injection, this gets called once after instantiation
     public void postConstruct() {
         maxClientIdLength = configurationService.restrictionsConfiguration().maxClientIdLength();
-        configuredSessionExpiryInterval = configurationService.mqttConfiguration().maxSessionExpiryInterval();
+        configuredSessionExpiryInterval =
+                configurationService.mqttConfiguration().maxSessionExpiryInterval();
         if (configurationService.mqttConfiguration().topicAliasEnabled()) {
             topicAliasMaximum = configurationService.mqttConfiguration().topicAliasMaxPerClient();
         } else {
@@ -184,10 +184,11 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
             return;
         }
 
-        final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         clientConnection.setDisconnectFuture(SettableFuture.create());
         clientConnection.setClientReceiveMaximum(connect.getReceiveMaximum());
-        //Set max packet size to send to channel
+        // Set max packet size to send to channel
         if (connect.getMaximumPacketSize() <= DEFAULT_MAXIMUM_PACKET_SIZE_NO_LIMIT) {
             clientConnection.setMaxPacketSizeSend(connect.getMaximumPacketSize());
         }
@@ -200,10 +201,7 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
         clientConnection.proposeClientState(ClientState.AUTHENTICATING);
         clientConnection.setAuthConnect(connect);
         pluginAuthenticatorService.authenticateConnect(
-                ctx,
-                clientConnection,
-                connect,
-                new ModifiableClientSettingsImpl(connect.getReceiveMaximum(), null));
+                ctx, clientConnection, connect, new ModifiableClientSettingsImpl(connect.getReceiveMaximum(), null));
     }
 
     public void connectSuccessfulUndecided(
@@ -244,12 +242,12 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
 
     private void clearPasswordIfWanted(final @NotNull ClientConnection clientConnection) {
         final Optional<Boolean> clearPasswordAfterAuthOptional = clientConnection.isClearPasswordAfterAuth();
-        if(clearPasswordAfterAuthOptional.isPresent()) {
-            if(clearPasswordAfterAuthOptional.get()) {
+        if (clearPasswordAfterAuthOptional.isPresent()) {
+            if (clearPasswordAfterAuthOptional.get()) {
                 clientConnection.clearPassword();
             }
         } else {
-            if(MQTT_CONNECTION_AUTH_CLEAR_PASSWORD) {
+            if (MQTT_CONNECTION_AUTH_CLEAR_PASSWORD) {
                 clientConnection.clearPassword();
             }
         }
@@ -279,19 +277,19 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
 
         ctx.channel()
                 .pipeline()
-                .addBefore(MESSAGE_EXPIRY_HANDLER, MQTT_PUBLISH_FLOW_HANDLER,
-                        publishFlowHandlerProvider.get());
+                .addBefore(MESSAGE_EXPIRY_HANDLER, MQTT_PUBLISH_FLOW_HANDLER, publishFlowHandlerProvider.get());
 
-        if (connect.getProtocolVersion() == ProtocolVersion.MQTTv5) { //Version 2.0 ChangePoint will need this for MQTT-SN
+        if (connect.getProtocolVersion()
+                == ProtocolVersion.MQTTv5) { // Version 2.0 ChangePoint will need this for MQTT-SN
             ctx.channel()
                     .pipeline()
-                    .addBefore(MQTT_MESSAGE_BARRIER, MQTT_5_FLOW_CONTROL_HANDLER,
-                            flowControlHandlerProvider.get());
+                    .addBefore(MQTT_MESSAGE_BARRIER, MQTT_5_FLOW_CONTROL_HANDLER, flowControlHandlerProvider.get());
         }
     }
 
     @Override
-    public void userEventTriggered(final @NotNull ChannelHandlerContext ctx, final @NotNull Object evt) throws Exception {
+    public void userEventTriggered(final @NotNull ChannelHandlerContext ctx, final @NotNull Object evt)
+            throws Exception {
         if (evt instanceof AuthorizeWillResultEvent) {
             final AuthorizeWillResultEvent resultEvent = (AuthorizeWillResultEvent) evt;
             afterPublishAuthorizer(ctx, resultEvent.getConnect(), resultEvent.getResult());
@@ -308,12 +306,16 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
             final @Nullable MqttWillPublish willPublish,
             final @Nullable Long queueSizeMaximum) {
 
-        return clientSessionPersistence.clientConnected(clientId, cleanStart, sessionExpiryInterval, willPublish, queueSizeMaximum);
+        return clientSessionPersistence.clientConnected(
+                clientId, cleanStart, sessionExpiryInterval, willPublish, queueSizeMaximum);
     }
 
     private boolean checkClientId(final @NotNull ChannelHandlerContext ctx, final @NotNull CONNECT msg) {
 
-        final Boolean assigned = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().isClientIdAssigned();
+        final Boolean assigned = ctx.channel()
+                .attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                .get()
+                .isClientIdAssigned();
 
         if (assigned != null && assigned) {
             return true;
@@ -321,9 +323,8 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
 
         if (msg.getClientIdentifier().length() > maxClientIdLength) {
 
-            final String logMessage =
-                    "A client (IP: {}) connected with a client identifier longer than " + maxClientIdLength +
-                            " characters. This is not allowed.";
+            final String logMessage = "A client (IP: {}) connected with a client identifier longer than "
+                    + maxClientIdLength + " characters. This is not allowed.";
             final String eventlogMessage = "Sent CONNECT with Client identifier too long";
             mqttConnacker.connackError(
                     ctx.channel(),
@@ -346,11 +347,11 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
                         Mqtt5ConnAckReasonCode.TOPIC_NAME_INVALID,
                         ReasonStrings.CONNACK_NOT_AUTHORIZED_WILL_WILDCARD);
                 return false;
-
             }
 
             final int willQos = msg.getWillPublish().getQos().getQosNumber();
-            final int maxQos = configurationService.mqttConfiguration().maximumQos().getQosNumber();
+            final int maxQos =
+                    configurationService.mqttConfiguration().maximumQos().getQosNumber();
             if (willQos > maxQos) {
                 mqttConnacker.connackError(
                         ctx.channel(),
@@ -361,9 +362,11 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
                 return false;
             }
 
-            final int maxTopicLength = configurationService.restrictionsConfiguration().maxTopicLength();
+            final int maxTopicLength =
+                    configurationService.restrictionsConfiguration().maxTopicLength();
             if (msg.getWillPublish().getTopic().length() > maxTopicLength) {
-                mqttConnacker.connackError(ctx.channel(),
+                mqttConnacker.connackError(
+                        ctx.channel(),
                         "A client (IP: {}) sent a CONNECT with a Will Topic exceeding the max length. This is not allowed.",
                         "Sent CONNECT with Will topic that exceeds maximum topic length",
                         Mqtt5ConnAckReasonCode.TOPIC_NAME_INVALID,
@@ -375,8 +378,9 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
     }
 
     private boolean checkWillRetained(final @NotNull ChannelHandlerContext ctx, final @NotNull CONNECT msg) {
-        if (msg.getWillPublish() != null && msg.getWillPublish().isRetain() &&
-                !configurationService.mqttConfiguration().retainedMessagesEnabled()) {
+        if (msg.getWillPublish() != null
+                && msg.getWillPublish().isRetain()
+                && !configurationService.mqttConfiguration().retainedMessagesEnabled()) {
             mqttConnacker.connackError(
                     ctx.channel(),
                     "A client (IP: {}) sent a CONNECT with Will Retain set to 1 although retain is not available.",
@@ -394,7 +398,7 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
             final @NotNull CONNECT msg,
             final @Nullable ModifiableClientSettingsImpl clientSettings) {
 
-        clientConnection.setPreventLwt(true); //do not send will until it is authorized
+        clientConnection.setPreventLwt(true); // do not send will until it is authorized
 
         if (clientSettings != null && clientSettings.isModified()) {
             applyClientSettings(clientSettings, msg, clientConnection.getChannel());
@@ -414,12 +418,14 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
         }
     }
 
-    private void applyClientSettings(final @NotNull ModifiableClientSettingsImpl clientSettings,
-                                     final @NotNull CONNECT msg,
-                                     final @NotNull Channel channel) {
+    private void applyClientSettings(
+            final @NotNull ModifiableClientSettingsImpl clientSettings,
+            final @NotNull CONNECT msg,
+            final @NotNull Channel channel) {
         msg.setReceiveMaximum(clientSettings.getClientReceiveMaximum());
 
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         clientConnection.setClientReceiveMaximum(clientSettings.getClientReceiveMaximum());
         clientConnection.setQueueSizeMaximum(clientSettings.getQueueSizeMaximum());
     }
@@ -434,16 +440,25 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
         disconnectClientWithSameClientId(clientConnection, ctx, msg);
     }
 
-    private void afterPublishAuthorizer(final @NotNull ChannelHandlerContext ctx, final @NotNull CONNECT msg, final @NotNull PublishAuthorizerResult authorizerResult) {
+    private void afterPublishAuthorizer(
+            final @NotNull ChannelHandlerContext ctx,
+            final @NotNull CONNECT msg,
+            final @NotNull PublishAuthorizerResult authorizerResult) {
 
-        final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
 
         if (authorizerResult.isAuthorizerPresent() && authorizerResult.getAckReasonCode() != null) {
-            //decision has been made in PublishAuthorizer
+            // decision has been made in PublishAuthorizer
             if (authorizerResult.getAckReasonCode() == AckReasonCode.SUCCESS) {
                 continueAfterWillAuthorization(ctx, clientConnection, msg);
             } else {
-                connackWillNotAuthorized(ctx, msg, authorizerResult.getDisconnectReasonCode(), authorizerResult.getAckReasonCode(), authorizerResult.getReasonString());
+                connackWillNotAuthorized(
+                        ctx,
+                        msg,
+                        authorizerResult.getDisconnectReasonCode(),
+                        authorizerResult.getAckReasonCode(),
+                        authorizerResult.getReasonString());
             }
             return;
         }
@@ -451,19 +466,25 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
         final ModifiableDefaultPermissions permissions = clientConnection.getAuthPermissions();
         final ModifiableDefaultPermissionsImpl defaultPermissions = (ModifiableDefaultPermissionsImpl) permissions;
 
-        //if authorizers are present and no permissions are available and the default behaviour has not been changed
-        //then we deny the publish
+        // if authorizers are present and no permissions are available and the default behaviour has not been changed
+        // then we deny the publish
         if (authorizerResult.isAuthorizerPresent()
-                && (defaultPermissions == null || (defaultPermissions.asList().size() < 1
-                && !defaultPermissions.isDefaultAuthorizationBehaviourOverridden()))) {
+                && (defaultPermissions == null
+                        || (defaultPermissions.asList().size() < 1
+                                && !defaultPermissions.isDefaultAuthorizationBehaviourOverridden()))) {
 
             connackWillNotAuthorized(ctx, msg, authorizerResult.getDisconnectReasonCode(), null, null);
             return;
         }
 
         if (!DefaultPermissionsEvaluator.checkWillPublish(permissions, msg.getWillPublish())) {
-            //will is not authorized, disconnect client
-            connackWillNotAuthorized(ctx, msg, authorizerResult.getDisconnectReasonCode(), authorizerResult.getAckReasonCode(), authorizerResult.getReasonString());
+            // will is not authorized, disconnect client
+            connackWillNotAuthorized(
+                    ctx,
+                    msg,
+                    authorizerResult.getDisconnectReasonCode(),
+                    authorizerResult.getAckReasonCode(),
+                    authorizerResult.getReasonString());
             return;
         }
 
@@ -472,10 +493,13 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
 
     private boolean isWillNotAuthorized(final @NotNull ChannelHandlerContext ctx, final @NotNull CONNECT msg) {
         if (msg.getWillPublish() != null) {
-            final ModifiableDefaultPermissions permissions = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getAuthPermissions();
+            final ModifiableDefaultPermissions permissions = ctx.channel()
+                    .attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                    .get()
+                    .getAuthPermissions();
             if (!DefaultPermissionsEvaluator.checkWillPublish(permissions, msg.getWillPublish())) {
 
-                //will is not authorized, disconnect client
+                // will is not authorized, disconnect client
                 connackWillNotAuthorized(ctx, msg, null, null, null);
 
                 return true;
@@ -484,29 +508,39 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
         return false;
     }
 
-    private void connackWillNotAuthorized(final @NotNull ChannelHandlerContext ctx, final @NotNull CONNECT msg,
-                                          final @Nullable DisconnectReasonCode disconnectReasonCode,
-                                          final @Nullable AckReasonCode ackReasonCode, final @Nullable String reasonString) {
+    private void connackWillNotAuthorized(
+            final @NotNull ChannelHandlerContext ctx,
+            final @NotNull CONNECT msg,
+            final @Nullable DisconnectReasonCode disconnectReasonCode,
+            final @Nullable AckReasonCode ackReasonCode,
+            final @Nullable String reasonString) {
 
-        Mqtt5ConnAckReasonCode connAckReasonCode = disconnectReasonCode != null ?
-                Mqtt5ConnAckReasonCode.fromDisconnectReasonCode(disconnectReasonCode) : null;
+        Mqtt5ConnAckReasonCode connAckReasonCode = disconnectReasonCode != null
+                ? Mqtt5ConnAckReasonCode.fromDisconnectReasonCode(disconnectReasonCode)
+                : null;
 
         if (connAckReasonCode == null) {
-            connAckReasonCode = ackReasonCode != null ?
-                    Mqtt5ConnAckReasonCode.fromAckReasonCode(ackReasonCode) : Mqtt5ConnAckReasonCode.NOT_AUTHORIZED;
+            connAckReasonCode = ackReasonCode != null
+                    ? Mqtt5ConnAckReasonCode.fromAckReasonCode(ackReasonCode)
+                    : Mqtt5ConnAckReasonCode.NOT_AUTHORIZED;
         }
 
-        final String usedReasonString = reasonString != null ? reasonString : "Will Publish is not authorized for topic '"
-                + msg.getWillPublish().getTopic() + "' with QoS '" + msg.getWillPublish().getQos()
-                + "' and retain '" + msg.getWillPublish().isRetain() + "'";
+        final String usedReasonString = reasonString != null
+                ? reasonString
+                : "Will Publish is not authorized for topic '"
+                        + msg.getWillPublish().getTopic() + "' with QoS '"
+                        + msg.getWillPublish().getQos()
+                        + "' and retain '" + msg.getWillPublish().isRetain() + "'";
 
         mqttConnacker.connackError(
                 ctx.channel(),
                 "A client (IP: {}) sent a CONNECT message with an not authorized Will Publish to topic '"
-                        + msg.getWillPublish().getTopic() + "' with QoS '" + msg.getWillPublish().getQos().getQosNumber()
+                        + msg.getWillPublish().getTopic() + "' with QoS '"
+                        + msg.getWillPublish().getQos().getQosNumber()
                         + "' and retain '" + msg.getWillPublish().isRetain() + "'.",
-                "Sent a CONNECT message with an not authorized Will Publish to topic '" +
-                        msg.getWillPublish().getTopic() + "' with QoS '" + msg.getWillPublish().getQos().getQosNumber()
+                "Sent a CONNECT message with an not authorized Will Publish to topic '"
+                        + msg.getWillPublish().getTopic()
+                        + "' with QoS '" + msg.getWillPublish().getQos().getQosNumber()
                         + "' and retain '" + msg.getWillPublish().isRetain() + "'",
                 connAckReasonCode,
                 usedReasonString,
@@ -517,10 +551,13 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
     @VisibleForTesting
     void afterTakeover(final @NotNull ChannelHandlerContext ctx, final @NotNull CONNECT msg) {
 
-        final Long queueSizeMaximum = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getQueueSizeMaximum();
-        final long sessionExpiryInterval =
-                msg.getSessionExpiryInterval() > configuredSessionExpiryInterval ?
-                        configuredSessionExpiryInterval : msg.getSessionExpiryInterval();
+        final Long queueSizeMaximum = ctx.channel()
+                .attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
+                .get()
+                .getQueueSizeMaximum();
+        final long sessionExpiryInterval = msg.getSessionExpiryInterval() > configuredSessionExpiryInterval
+                ? configuredSessionExpiryInterval
+                : msg.getSessionExpiryInterval();
 
         final boolean existent;
         if (msg.isCleanStart()) {
@@ -528,40 +565,47 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
         } else {
             existent = clientSessionPersistence.isExistent(msg.getClientIdentifier());
         }
-        final ListenableFuture<Void> future = updatePersistenceData(msg.isCleanStart(),
-                msg.getClientIdentifier(), sessionExpiryInterval, msg.getWillPublish(),
+        final ListenableFuture<Void> future = updatePersistenceData(
+                msg.isCleanStart(),
+                msg.getClientIdentifier(),
+                sessionExpiryInterval,
+                msg.getWillPublish(),
                 queueSizeMaximum);
 
         Futures.addCallback(future, new UpdatePersistenceCallback(ctx, this, msg, existent), ctx.executor());
     }
 
-    private void afterPersistSession(final @NotNull ChannelHandlerContext ctx, final @NotNull CONNECT msg, final boolean sessionPresent) {
+    private void afterPersistSession(
+            final @NotNull ChannelHandlerContext ctx, final @NotNull CONNECT msg, final boolean sessionPresent) {
 
-        // In case the clients session expired while it was disconnected, the cache will be invalidated before the client connects.
+        // In case the clients session expired while it was disconnected, the cache will be invalidated before the
+        // client connects.
         // This is sufficient since messages for shared subscriptions are not queued for specific clients.
         sharedSubscriptionService.invalidateSharedSubscriptionCache(msg.getClientIdentifier());
 
         addKeepAliveHandler(ctx, msg);
         sendConnackSuccess(ctx, msg, sessionPresent);
 
-        //We're removing ourselves
+        // We're removing ourselves
         try {
             ctx.pipeline().remove(this);
         } catch (final NoSuchElementException e) {
-            //noop since handler has already been removed
+            // noop since handler has already been removed
         }
     }
 
-    private void sendConnackSuccess(final @NotNull ChannelHandlerContext ctx, final @NotNull CONNECT msg, final boolean sessionPresent) {
+    private void sendConnackSuccess(
+            final @NotNull ChannelHandlerContext ctx, final @NotNull CONNECT msg, final boolean sessionPresent) {
 
-        final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
 
         final ChannelFuture connackSent;
 
         // We retain the WILL message in memory during the initialization progress, e.g. for plugin initialization.
         clientConnection.setWillPublish(msg.getWillPublish());
 
-        if (msg.getProtocolVersion() == ProtocolVersion.MQTTv5) { //Version 2.0 ChangePoint: will need this for MQTT-SN
+        if (msg.getProtocolVersion() == ProtocolVersion.MQTTv5) { // Version 2.0 ChangePoint: will need this for MQTT-SN
             final CONNACK connack = buildMqtt5Connack(ctx.channel(), msg, sessionPresent);
             connackSent = mqttConnacker.connackSuccess(ctx, connack);
         } else {
@@ -573,38 +617,45 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
             }
         }
 
-        //send out queued messages (from inflight and client-session queue) for client after connack is sent
+        // send out queued messages (from inflight and client-session queue) for client after connack is sent
         connackSent.addListener(new PollInflightMessageListener(publishPollService, clientConnection.getClientId()));
     }
 
-    private @NotNull CONNACK buildMqtt5Connack(final @NotNull Channel channel, final @NotNull CONNECT msg, final boolean sessionPresent) {
+    private @NotNull CONNACK buildMqtt5Connack(
+            final @NotNull Channel channel, final @NotNull CONNECT msg, final boolean sessionPresent) {
         final CONNACK.Mqtt5Builder builder = new CONNACK.Mqtt5Builder()
                 .withSessionPresent(sessionPresent)
                 .withReasonCode(Mqtt5ConnAckReasonCode.SUCCESS)
                 .withReceiveMaximum(configurationService.mqttConfiguration().serverReceiveMaximum())
-                .withSubscriptionIdentifierAvailable(configurationService.mqttConfiguration().subscriptionIdentifierEnabled())
+                .withSubscriptionIdentifierAvailable(
+                        configurationService.mqttConfiguration().subscriptionIdentifierEnabled())
                 .withMaximumPacketSize(configurationService.mqttConfiguration().maxPacketSize())
-                .withWildcardSubscriptionAvailable(configurationService.mqttConfiguration().wildcardSubscriptionsEnabled())
-                .withSharedSubscriptionAvailable(configurationService.mqttConfiguration().sharedSubscriptionsEnabled())
+                .withWildcardSubscriptionAvailable(
+                        configurationService.mqttConfiguration().wildcardSubscriptionsEnabled())
+                .withSharedSubscriptionAvailable(
+                        configurationService.mqttConfiguration().sharedSubscriptionsEnabled())
                 .withMaximumQoS(configurationService.mqttConfiguration().maximumQos())
                 .withRetainAvailable(configurationService.mqttConfiguration().retainedMessagesEnabled());
 
         final boolean overridden = msg.getSessionExpiryInterval() > configuredSessionExpiryInterval;
-        final long sessionExpiryInterval = overridden ? configuredSessionExpiryInterval : msg.getSessionExpiryInterval();
+        final long sessionExpiryInterval =
+                overridden ? configuredSessionExpiryInterval : msg.getSessionExpiryInterval();
 
         if (overridden) {
             builder.withSessionExpiryInterval(sessionExpiryInterval);
         }
 
-        final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+        final ClientConnection clientConnection =
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
 
-        //when client identifier assigned, send it in CONNACK
+        // when client identifier assigned, send it in CONNACK
         final boolean clientIdAssigned = clientConnection.isClientIdAssigned();
         if (clientIdAssigned) {
             builder.withAssignedClientIdentifier(msg.getClientIdentifier());
         }
 
-        //send server keep alive max when connect keep alive is zero and zero is not allowed or keep alive > server keep alive maximum
+        // send server keep alive max when connect keep alive is zero and zero is not allowed or keep alive > server
+        // keep alive maximum
         if ((msg.getKeepAlive() == 0 && !allowZeroKeepAlive) || (msg.getKeepAlive() > serverKeepAliveMaximum)) {
             builder.withServerKeepAlive(serverKeepAliveMaximum);
             clientConnection.setConnectKeepAlive(serverKeepAliveMaximum);
@@ -613,17 +664,17 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
             clientConnection.setConnectKeepAlive(msg.getKeepAlive());
         }
 
-        //init Topic Alias Mapping if maximum is greater than zero and aliases are available
+        // init Topic Alias Mapping if maximum is greater than zero and aliases are available
         if (topicAliasMaximum > 0 && topicAliasLimiter.aliasesAvailable()) {
             clientConnection.setTopicAliasMapping(new String[topicAliasMaximum]);
             builder.withTopicAliasMaximum(topicAliasMaximum);
             topicAliasLimiter.initUsage(topicAliasMaximum);
         }
 
-        //Set session expiry interval to channel for DISCONNECT
+        // Set session expiry interval to channel for DISCONNECT
         clientConnection.setClientSessionExpiryInterval(sessionExpiryInterval);
 
-        //set userproperties from auth to connack
+        // set userproperties from auth to connack
         final Mqtt5UserProperties userPropertiesFromAuth = clientConnection.getAuthUserProperties();
         if (userPropertiesFromAuth != null) {
             clientConnection.setAuthUserProperties(null);
@@ -652,8 +703,10 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
             final @NotNull CONNECT msg) {
 
         if (clientConnection.getClientState().disconnected()) {
-            log.debug("Disconnecting client with same client identifier '{}' failed. " +
-                    "Cause: Disconnected before takeover.", clientConnection.getClientId());
+            log.debug(
+                    "Disconnecting client with same client identifier '{}' failed. "
+                            + "Cause: Disconnected before takeover.",
+                    clientConnection.getClientId());
             return;
         }
 
@@ -664,10 +717,12 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
             return;
         }
 
-        // It is ok that multiple clients can queue a task here as we guard the client with the check disconnectingOrDisconnected().
+        // It is ok that multiple clients can queue a task here as we guard the client with the check
+        // disconnectingOrDisconnected().
         persistedClientConnection.getChannel().eventLoop().execute(() -> {
             if (!persistedClientConnection.getClientState().disconnectingOrDisconnected()) {
-                mqttServerDisconnector.disconnect(persistedClientConnection.getChannel(),
+                mqttServerDisconnector.disconnect(
+                        persistedClientConnection.getChannel(),
                         "Disconnecting already connected client with id {} and ip {} because another client connects with that id",
                         ReasonStrings.DISCONNECT_SESSION_TAKEN_OVER,
                         Mqtt5DisconnectReasonCode.SESSION_TAKEN_OVER,
@@ -675,28 +730,37 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
             }
         });
 
-        Futures.addCallback(persistedClientConnection.getDisconnectFuture(), new FutureCallback<>() {
-            @Override
-            public void onSuccess(final Void result) {
-                disconnectClientWithSameClientId(clientConnection, ctx, msg);
-            }
+        Futures.addCallback(
+                persistedClientConnection.getDisconnectFuture(),
+                new FutureCallback<>() {
+                    @Override
+                    public void onSuccess(final Void result) {
+                        disconnectClientWithSameClientId(clientConnection, ctx, msg);
+                    }
 
-            @Override
-            public void onFailure(final @NotNull Throwable t) {
-                log.warn("Exception on disconnecting client with same client identifier '{}'. Cause: {}",
-                        clientConnection.getClientId(),
-                        t.getMessage());
-            }
-        }, clientConnection.getChannel().eventLoop());
+                    @Override
+                    public void onFailure(final @NotNull Throwable t) {
+                        log.warn(
+                                "Exception on disconnecting client with same client identifier '{}'. Cause: {}",
+                                clientConnection.getClientId(),
+                                t.getMessage());
+                    }
+                },
+                clientConnection.getChannel().eventLoop());
     }
 
     private void addKeepAliveHandler(final @NotNull ChannelHandlerContext ctx, final @NotNull CONNECT msg) {
 
-        final int keepAlive; //Version 2.0 ChangePoint: will need this for MQTT-SN
-        if (ProtocolVersion.MQTTv5.equals(msg.getProtocolVersion()) &&
-                ((msg.getKeepAlive() == 0 && !allowZeroKeepAlive) || (msg.getKeepAlive() > serverKeepAliveMaximum))) {
+        final int keepAlive; // Version 2.0 ChangePoint: will need this for MQTT-SN
+        if (ProtocolVersion.MQTTv5.equals(msg.getProtocolVersion())
+                && ((msg.getKeepAlive() == 0 && !allowZeroKeepAlive)
+                        || (msg.getKeepAlive() > serverKeepAliveMaximum))) {
             if (log.isTraceEnabled()) {
-                log.trace("Client {} used keepAlive {} which is invalid, using server maximum of {}", msg.getClientIdentifier(), msg.getKeepAlive(), serverKeepAliveMaximum);
+                log.trace(
+                        "Client {} used keepAlive {} which is invalid, using server maximum of {}",
+                        msg.getClientIdentifier(),
+                        msg.getKeepAlive(),
+                        serverKeepAliveMaximum);
             }
             keepAlive = serverKeepAliveMaximum;
         } else {
@@ -708,10 +772,18 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
             // The MQTT spec defines a 1.5 grace period
             final Double keepAliveValue = keepAlive * getGracePeriod();
             if (log.isTraceEnabled()) {
-                log.trace("Client {} specified a keepAlive value of {}s. Using keepAlive of {}s. The maximum timeout before disconnecting is {}s",
-                        msg.getClientIdentifier(), msg.getKeepAlive(), keepAlive, keepAliveValue);
+                log.trace(
+                        "Client {} specified a keepAlive value of {}s. Using keepAlive of {}s. The maximum timeout before disconnecting is {}s",
+                        msg.getClientIdentifier(),
+                        msg.getKeepAlive(),
+                        keepAlive,
+                        keepAliveValue);
             }
-            ctx.pipeline().addFirst(MQTT_KEEPALIVE_IDLE_HANDLER, new KeepAliveDisconnectHandler(keepAliveValue.intValue(), TimeUnit.SECONDS, keepAliveDisconnectService));
+            ctx.pipeline()
+                    .addFirst(
+                            MQTT_KEEPALIVE_IDLE_HANDLER,
+                            new KeepAliveDisconnectHandler(
+                                    keepAliveValue.intValue(), TimeUnit.SECONDS, keepAliveDisconnectService));
         } else {
             if (log.isTraceEnabled()) {
                 log.trace("Client {} specified keepAlive of 0. Disabling PING mechanism", msg.getClientIdentifier());
@@ -749,7 +821,8 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
 
         @Override
         public void onFailure(final @NotNull Throwable throwable) {
-            Exceptions.rethrowError("Unable to handle client connection for id " + connect.getClientIdentifier() + ".", throwable);
+            Exceptions.rethrowError(
+                    "Unable to handle client connection for id " + connect.getClientIdentifier() + ".", throwable);
             ctx.channel().disconnect();
         }
     }

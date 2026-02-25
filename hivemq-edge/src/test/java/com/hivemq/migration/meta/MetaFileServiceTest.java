@@ -15,22 +15,19 @@
  */
 package com.hivemq.migration.meta;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.PersistenceMode;
 import com.hivemq.util.LocalPersistenceFileUtil;
+import java.io.File;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
-// MANUAL: import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import java.io.File;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Christoph Schäbel
@@ -45,6 +42,7 @@ public class MetaFileServiceTest {
     private SystemInformation systemInformation;
 
     private File dataFolder;
+
     @BeforeEach
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);

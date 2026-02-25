@@ -43,9 +43,8 @@ import com.hivemq.configuration.service.impl.RestrictionsConfigurationServiceImp
 import com.hivemq.configuration.service.impl.SecurityConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.UsageTrackingConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationServiceImpl;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
@@ -54,19 +53,18 @@ public class ConfigurationBootstrap {
 
     public static @NotNull ConfigurationService bootstrapConfig(final @NotNull SystemInformation systemInformation) {
 
-        final ConfigurationServiceImpl configurationService =
-                new ConfigurationServiceImpl(
-                        new ListenerConfigurationServiceImpl(),
-                        new MqttConfigurationServiceImpl(),
-                        new RestrictionsConfigurationServiceImpl(),
-                        new SecurityConfigurationServiceImpl(),
-                        new PersistenceConfigurationServiceImpl(),
-                        new MqttsnConfigurationServiceImpl(),
-                        new ApiConfigurationServiceImpl(),
-                        new GatewayConfigurationServiceImpl(),
-                        new UsageTrackingConfigurationServiceImpl(),
-                        new ModuleConfigurationServiceImpl(),
-                        new InternalConfigurationServiceImpl());
+        final ConfigurationServiceImpl configurationService = new ConfigurationServiceImpl(
+                new ListenerConfigurationServiceImpl(),
+                new MqttConfigurationServiceImpl(),
+                new RestrictionsConfigurationServiceImpl(),
+                new SecurityConfigurationServiceImpl(),
+                new PersistenceConfigurationServiceImpl(),
+                new MqttsnConfigurationServiceImpl(),
+                new ApiConfigurationServiceImpl(),
+                new GatewayConfigurationServiceImpl(),
+                new UsageTrackingConfigurationServiceImpl(),
+                new ModuleConfigurationServiceImpl(),
+                new InternalConfigurationServiceImpl());
 
         final ConfigurationFile configurationFile = ConfigurationFileProvider.get(systemInformation);
 
@@ -94,5 +92,4 @@ public class ConfigurationBootstrap {
         configurationService.setConfigFileReaderWriter(configFileReader);
         return configurationService;
     }
-
 }

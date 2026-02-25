@@ -15,13 +15,12 @@
  */
 package com.hivemq.configuration.entity.listener.tls;
 
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Georg Held
@@ -69,9 +68,9 @@ public class KeystoreEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final KeystoreEntity that = (KeystoreEntity) o;
-        return Objects.equals(getPath(), that.getPath()) &&
-                Objects.equals(getPassword(), that.getPassword()) &&
-                Objects.equals(getPrivateKeyPassword(), that.getPrivateKeyPassword());
+        return Objects.equals(getPath(), that.getPath())
+                && Objects.equals(getPassword(), that.getPassword())
+                && Objects.equals(getPrivateKeyPassword(), that.getPrivateKeyPassword());
     }
 
     @Override

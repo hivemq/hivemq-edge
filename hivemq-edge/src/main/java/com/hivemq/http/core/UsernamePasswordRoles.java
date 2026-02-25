@@ -15,10 +15,9 @@
  */
 package com.hivemq.http.core;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
 
 public class UsernamePasswordRoles {
 
@@ -31,11 +30,10 @@ public class UsernamePasswordRoles {
     private String realm;
     private Set<String> roles = Set.of();
 
-    public UsernamePasswordRoles() {
-    }
+    public UsernamePasswordRoles() {}
 
-
-    public UsernamePasswordRoles(final @NotNull String userName, final byte @NotNull [] password, final @NotNull Set<String> roles) {
+    public UsernamePasswordRoles(
+            final @NotNull String userName, final byte @NotNull [] password, final @NotNull Set<String> roles) {
         this();
         this.userName = userName;
         this.password = password;

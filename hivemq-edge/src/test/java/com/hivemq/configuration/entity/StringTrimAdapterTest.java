@@ -15,11 +15,11 @@
  */
 package com.hivemq.configuration.entity;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Lukas Brandl
@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 public class StringTrimAdapterTest {
 
     StringTrimAdapter stringTrimAdapter;
+
     @BeforeEach
     public void setUp() {
         stringTrimAdapter = new StringTrimAdapter();

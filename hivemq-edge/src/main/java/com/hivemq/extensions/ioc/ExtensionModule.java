@@ -15,7 +15,6 @@
  */
 package com.hivemq.extensions.ioc;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 import com.hivemq.extension.sdk.api.events.EventRegistry;
 import com.hivemq.extension.sdk.api.services.admin.AdminService;
@@ -87,10 +86,10 @@ import com.hivemq.extensions.services.subscription.SubscriptionStoreImpl;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
-
 import jakarta.inject.Singleton;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
+import org.jetbrains.annotations.NotNull;
 
 @Module
 public abstract class ExtensionModule {
@@ -99,7 +98,8 @@ public abstract class ExtensionModule {
     abstract @NotNull ExtensionBootstrap extensionBootstrap(@NotNull ExtensionBootstrapImpl extensionBootstrap);
 
     @Binds
-    abstract @NotNull ExtensionStaticInitializer extensionStaticInitializer(@NotNull ExtensionStaticInitializerImpl extensionStaticInitializer);
+    abstract @NotNull ExtensionStaticInitializer extensionStaticInitializer(
+            @NotNull ExtensionStaticInitializerImpl extensionStaticInitializer);
 
     @Binds
     abstract @NotNull HiveMQExtensionFactory extensionFactory(@NotNull HiveMQExtensionFactoryImpl extensionFactory);
@@ -108,10 +108,12 @@ public abstract class ExtensionModule {
     abstract @NotNull ExtensionLoader extensionLoader(@NotNull ExtensionLoaderImpl extensionLoader);
 
     @Binds
-    abstract @NotNull ExtensionServicesDependencies extensionServicesDependencies(@NotNull ExtensionServicesDependenciesImpl extensionServicesDependencies);
+    abstract @NotNull ExtensionServicesDependencies extensionServicesDependencies(
+            @NotNull ExtensionServicesDependenciesImpl extensionServicesDependencies);
 
     @Binds
-    abstract @NotNull ExtensionLifecycleHandler extensionLifecycleHandler(@NotNull ExtensionLifecycleHandlerImpl extensionLifecycleHandler);
+    abstract @NotNull ExtensionLifecycleHandler extensionLifecycleHandler(
+            @NotNull ExtensionLifecycleHandlerImpl extensionLifecycleHandler);
 
     @Binds
     abstract @NotNull Authenticators authenticators(@NotNull AuthenticatorsImpl authenticators);
@@ -125,12 +127,14 @@ public abstract class ExtensionModule {
     @Provides
     @PluginStartStop
     @Singleton
-    static @NotNull ExecutorService pluginStartStopExecutorService(ExtensionStartStopExecutorProvider extensionStartStopExecutorProvider) {
+    static @NotNull ExecutorService pluginStartStopExecutorService(
+            ExtensionStartStopExecutorProvider extensionStartStopExecutorProvider) {
         return extensionStartStopExecutorProvider.get();
     }
 
     @Binds
-    abstract @NotNull PluginTaskExecutorService pluginTaskExecutorService(@NotNull PluginTaskExecutorServiceImpl pluginTaskExecutorService);
+    abstract @NotNull PluginTaskExecutorService pluginTaskExecutorService(
+            @NotNull PluginTaskExecutorServiceImpl pluginTaskExecutorService);
 
     @Binds
     abstract @NotNull PluginOutPutAsyncer pluginOutPutAsyncer(@NotNull PluginOutputAsyncerImpl pluginOutputAsyncer);
@@ -158,19 +162,23 @@ public abstract class ExtensionModule {
     abstract @NotNull ClientService clientService(@NotNull ClientServiceImpl clientService);
 
     @Binds
-    abstract @NotNull RetainedPublishBuilder retainedPublishBuilder(@NotNull RetainedPublishBuilderImpl retainedPublishBuilder);
+    abstract @NotNull RetainedPublishBuilder retainedPublishBuilder(
+            @NotNull RetainedPublishBuilderImpl retainedPublishBuilder);
 
     @Binds
     abstract @NotNull SubscriptionStore subscriptionStore(@NotNull SubscriptionStoreImpl subscriptionStore);
 
     @Binds
-    abstract @NotNull TopicSubscriptionBuilder topicSubscriptionBuilder(@NotNull TopicSubscriptionBuilderImpl topicSubscriptionBuilder);
+    abstract @NotNull TopicSubscriptionBuilder topicSubscriptionBuilder(
+            @NotNull TopicSubscriptionBuilderImpl topicSubscriptionBuilder);
 
     @Binds
-    abstract @NotNull TopicPermissionBuilder topicPermissionBuilder(@NotNull TopicPermissionBuilderImpl topicPermissionBuilder);
+    abstract @NotNull TopicPermissionBuilder topicPermissionBuilder(
+            @NotNull TopicPermissionBuilderImpl topicPermissionBuilder);
 
     @Binds
-    abstract @NotNull ExtensionBuilderDependencies extensionBuilderDependencies(@NotNull ExtensionBuilderDependenciesImpl extensionBuilderDependencies);
+    abstract @NotNull ExtensionBuilderDependencies extensionBuilderDependencies(
+            @NotNull ExtensionBuilderDependenciesImpl extensionBuilderDependencies);
 
     @Binds
     public abstract @NotNull PublishService publishService(@NotNull PublishServiceImpl publishService);
@@ -185,19 +193,23 @@ public abstract class ExtensionModule {
     abstract @NotNull EventRegistry eventRegistry(@NotNull EventRegistryImpl eventRegistry);
 
     @Binds
-    abstract @NotNull LifecycleEventListeners lifecycleEventListeners(@NotNull LifecycleEventListenersImpl lifecycleEventListeners);
+    abstract @NotNull LifecycleEventListeners lifecycleEventListeners(
+            @NotNull LifecycleEventListenersImpl lifecycleEventListeners);
 
     @Binds
     abstract @NotNull ClusterService clusterService(@NotNull ClusterServiceNoopImpl clusterServiceNoop);
 
     @Binds
-    abstract @NotNull PluginAuthorizerService pluginAuthorizerService(@NotNull PluginAuthorizerServiceImpl pluginAuthorizerService);
+    abstract @NotNull PluginAuthorizerService pluginAuthorizerService(
+            @NotNull PluginAuthorizerServiceImpl pluginAuthorizerService);
 
     @Binds
-    abstract @NotNull PluginAuthenticatorService pluginAuthenticatorService(@NotNull PluginAuthenticatorServiceImpl pluginAuthenticatorService);
+    abstract @NotNull PluginAuthenticatorService pluginAuthenticatorService(
+            @NotNull PluginAuthenticatorServiceImpl pluginAuthenticatorService);
 
     @Binds
-    abstract @NotNull GlobalInterceptorRegistry globalInterceptorRegistry(@NotNull GlobalInterceptorRegistryImpl globalInterceptorRegistry);
+    abstract @NotNull GlobalInterceptorRegistry globalInterceptorRegistry(
+            @NotNull GlobalInterceptorRegistryImpl globalInterceptorRegistry);
 
     @Binds
     abstract @NotNull Interceptors interceptors(@NotNull InterceptorsImpl interceptors);
@@ -206,7 +218,6 @@ public abstract class ExtensionModule {
     abstract @NotNull AdminService adminService(@NotNull AdminServiceImpl adminService);
 
     @Binds
-    abstract @NotNull EdgeInterceptorRegistry edgeInterceptorRegistry(@NotNull EdgeInterceptorRegistryImpl edgeInterceptorRegistry);
-
-
+    abstract @NotNull EdgeInterceptorRegistry edgeInterceptorRegistry(
+            @NotNull EdgeInterceptorRegistryImpl edgeInterceptorRegistry);
 }

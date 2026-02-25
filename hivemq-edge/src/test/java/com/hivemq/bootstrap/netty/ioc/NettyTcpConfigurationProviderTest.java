@@ -15,6 +15,10 @@
  */
 package com.hivemq.bootstrap.netty.ioc;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.hivemq.bootstrap.netty.NettyTcpConfiguration;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -22,19 +26,17 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 public class NettyTcpConfigurationProviderTest {
 
     private NettyTcpConfiguration nettyConfiguration;
+
     @BeforeEach
     public void setUp() throws Exception {
 
         final NettyTcpConfigurationProvider provider = new NettyTcpConfigurationProvider();
         nettyConfiguration = provider.get();
     }
+
     @AfterEach
     public void tearDown() throws Exception {
         nettyConfiguration.getChildEventLoopGroup().shutdownGracefully();
@@ -44,10 +46,8 @@ public class NettyTcpConfigurationProviderTest {
     @Test
     public void test_nio_is_used() {
 
-        assertThat(nettyConfiguration.getChildEventLoopGroup())
-                .isInstanceOf(NioEventLoopGroup.class);
-        assertThat(nettyConfiguration.getParentEventLoopGroup())
-                .isInstanceOf(NioEventLoopGroup.class);
+        assertThat(nettyConfiguration.getChildEventLoopGroup()).isInstanceOf(NioEventLoopGroup.class);
+        assertThat(nettyConfiguration.getParentEventLoopGroup()).isInstanceOf(NioEventLoopGroup.class);
 
         assertEquals(NioServerSocketChannel.class, nettyConfiguration.getServerSocketChannelClass());
     }
@@ -55,10 +55,16 @@ public class NettyTcpConfigurationProviderTest {
     @Test
     public void test_thread_names_for_nio_are_set() throws Exception {
 
-        final String childThreadName = nettyConfiguration.getChildEventLoopGroup().submit(() -> Thread.currentThread().getName()).get();
+        final String childThreadName = nettyConfiguration
+                .getChildEventLoopGroup()
+                .submit(() -> Thread.currentThread().getName())
+                .get();
         assertTrue(childThreadName.startsWith("hivemq-eventloop-child-"));
 
-        final String parentThreadName = nettyConfiguration.getParentEventLoopGroup().submit(() -> Thread.currentThread().getName()).get();
+        final String parentThreadName = nettyConfiguration
+                .getParentEventLoopGroup()
+                .submit(() -> Thread.currentThread().getName())
+                .get();
         assertTrue(parentThreadName.startsWith("hivemq-eventloop-parent-"));
     }
 }

@@ -21,7 +21,6 @@ import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
 import com.hivemq.configuration.service.PersistenceMode;
 import com.hivemq.exceptions.UnrecoverableException;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
@@ -30,11 +29,10 @@ import com.hivemq.persistence.ioc.annotation.Persistence;
 import com.hivemq.persistence.payload.PublishPayloadNoopPersistenceImpl;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.util.LocalPersistenceFileUtil;
+import jakarta.inject.Inject;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import jakarta.inject.Inject;
-
 
 public class PublishPayloadPersistenceProvider {
 
@@ -87,8 +85,8 @@ public class PublishPayloadPersistenceProvider {
             throw new UnrecoverableException();
         }
 
-
-        return persistenceFactory.buildPublishPayloadPersistence(localPersistenceFileUtil,
+        return persistenceFactory.buildPublishPayloadPersistence(
+                localPersistenceFileUtil,
                 metricsHolder,
                 messageDroppedService,
                 payloadPersistenceExecutor,

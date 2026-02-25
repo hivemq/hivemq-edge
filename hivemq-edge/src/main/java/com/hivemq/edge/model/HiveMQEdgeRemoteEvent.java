@@ -17,12 +17,11 @@ package com.hivemq.edge.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.hivemq.edge.utils.HiveMQEdgeEnvironmentUtils;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Events to help track usage patterns to help define UX & platform usability
@@ -36,6 +35,7 @@ public class HiveMQEdgeRemoteEvent {
     public final @NotNull String installationToken;
     public final @NotNull String sessionToken;
     public @Nullable String edgeVersion;
+
     public HiveMQEdgeRemoteEvent(final @NotNull EVENT_TYPE eventType) {
         this.eventType = eventType;
         this.userData = new HashMap<>();
@@ -78,17 +78,16 @@ public class HiveMQEdgeRemoteEvent {
 
     @Override
     public @NotNull String toString() {
-        return "HiveMQEdgeEvent{" +
-                "userData=" +
-                userData +
-                ", created=" +
-                created +
-                ", eventType=" +
-                eventType +
-                ", installationToken='" +
-                installationToken +
-                '\'' +
-                '}';
+        return "HiveMQEdgeEvent{" + "userData="
+                + userData
+                + ", created="
+                + created
+                + ", eventType="
+                + eventType
+                + ", installationToken='"
+                + installationToken
+                + '\''
+                + '}';
     }
 
     public enum EVENT_TYPE {

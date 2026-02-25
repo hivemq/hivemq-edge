@@ -17,13 +17,11 @@ package com.hivemq.extensions.client;
 
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.common.annotations.GuardedBy;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.Authorizer;
 import com.hivemq.extension.sdk.api.auth.PublishAuthorizer;
 import com.hivemq.extension.sdk.api.auth.SubscriptionAuthorizer;
 import com.hivemq.extensions.ExtensionPriorityComparator;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +29,7 @@ import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
@@ -42,6 +41,7 @@ public class ClientAuthorizersImpl implements ClientAuthorizers {
 
     @GuardedBy("authorizerLock")
     private final @NotNull Map<String, SubscriptionAuthorizer> subscriptionAuthorizerMap;
+
     private final @NotNull Map<String, PublishAuthorizer> publishAuthorizerMap;
 
     public ClientAuthorizersImpl(final @NotNull ExtensionPriorityComparator extensionPriorityComparator) {
@@ -116,5 +116,4 @@ public class ClientAuthorizersImpl implements ClientAuthorizers {
             lock.unlock();
         }
     }
-
 }

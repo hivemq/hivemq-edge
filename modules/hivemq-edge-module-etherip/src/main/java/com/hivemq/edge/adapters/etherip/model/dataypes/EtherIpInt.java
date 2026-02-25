@@ -16,7 +16,6 @@
 package com.hivemq.edge.adapters.etherip.model.dataypes;
 
 import com.hivemq.edge.adapters.etherip.model.EtherIpValue;
-
 import java.util.Objects;
 
 public class EtherIpInt implements EtherIpValue {

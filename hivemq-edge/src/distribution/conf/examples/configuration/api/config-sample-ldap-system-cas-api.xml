@@ -40,11 +40,20 @@
 
                 <!-- No <tls> section needed - system CA certificates will be used -->
 
-                <!-- User DN Template for Active Directory -->
-                <user-dn-template>cn={username},cn=Users,{baseDn}</user-dn-template>
+                <!-- User identifier attribute (cn for Active Directory) -->
+                <uid-attribute>cn</uid-attribute>
+
+                <!-- Relative DNs for Active Directory Users -->
+                <rdns>cn=Users</rdns>
 
                 <!-- Base DN -->
                 <base-dn>dc=company,dc=local</base-dn>
+
+                <!-- Service account for Active Directory -->
+                <simple-bind>
+                    <rdns>cn=ldap-service,cn=Users</rdns>
+                    <user-password>service-password</user-password>
+                </simple-bind>
             </ldap-authentication>
         </ldap>
     </admin-api>

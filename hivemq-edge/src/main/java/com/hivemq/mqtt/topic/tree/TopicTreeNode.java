@@ -15,12 +15,11 @@
  */
 package com.hivemq.mqtt.topic.tree;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 class TopicTreeNode {
 
@@ -34,18 +33,21 @@ class TopicTreeNode {
      * The class is intended to be used only as a part of {@link LocalTopicTree}.
      */
     final @NotNull MatchingNodeSubscriptions wildcardSubscriptions;
+
     final @NotNull MatchingNodeSubscriptions exactSubscriptions;
 
     /**
      * The child nodes of this node. The children get initialized lazily for memory saving purposes. If a threshold is
      * exceeded this is null and the childrenMap contains all the children.
      */
-    @Nullable TopicTreeNode @Nullable [] children;
+    @Nullable
+    TopicTreeNode @Nullable [] children;
 
     /**
      * An optional map for quick access to children (only exists if a threshold is exceeded)
      */
-    @Nullable Map<String, TopicTreeNode> childrenMap;
+    @Nullable
+    Map<String, TopicTreeNode> childrenMap;
 
     TopicTreeNode(final @NotNull String topicPart) {
         this.topicPart = topicPart;
@@ -54,17 +56,16 @@ class TopicTreeNode {
     }
 
     public @NotNull TopicTreeNode addChildNodeIfAbsent(
-            final @NotNull String childNodeTopicPart,
-            final int indexMapCreationThreshold) {
+            final @NotNull String childNodeTopicPart, final int indexMapCreationThreshold) {
 
         if (children != null) {
 
-            //Check if we need to create an index for large nodes
+            // Check if we need to create an index for large nodes
             if (children.length > indexMapCreationThreshold && childrenMap == null) {
                 childrenMap = new HashMap<>(children.length + 1);
 
                 TopicTreeNode existingNode = null;
-                //Add all entries to the map
+                // Add all entries to the map
                 for (final TopicTreeNode child : children) {
                     if (child != null) {
                         childrenMap.put(child.getTopicPart(), child);
@@ -82,7 +83,7 @@ class TopicTreeNode {
                 return childNode;
             } else {
 
-                //check if the node already exists
+                // check if the node already exists
                 for (final TopicTreeNode child : children) {
                     if (child != null) {
                         if (child.getTopicPart().equals(childNodeTopicPart)) {
@@ -108,7 +109,7 @@ class TopicTreeNode {
         }
 
         final TopicTreeNode childNode = new TopicTreeNode(childNodeTopicPart);
-        children = new TopicTreeNode[]{childNode};
+        children = new TopicTreeNode[] {childNode};
         return childNode;
     }
 
@@ -122,9 +123,9 @@ class TopicTreeNode {
      */
     public boolean isNodeEmpty() {
 
-        final boolean noChildrenPresent = (children == null && childrenMap == null) ||
-                children != null && isEmptyArray(children) ||
-                childrenMap != null && childrenMap.isEmpty();
+        final boolean noChildrenPresent = (children == null && childrenMap == null)
+                || children != null && isEmptyArray(children)
+                || childrenMap != null && childrenMap.isEmpty();
 
         return noChildrenPresent && exactSubscriptions.isEmpty() && wildcardSubscriptions.isEmpty();
     }

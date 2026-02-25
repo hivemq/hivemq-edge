@@ -15,16 +15,14 @@
  */
 package com.hivemq.edge.modules.adapters.metrics;
 
+import static com.hivemq.protocols.ProtocolAdapterMetrics.PROTOCOL_ADAPTER_PREFIX;
+
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.HashSet;
 import java.util.Set;
-
-import static com.hivemq.protocols.ProtocolAdapterMetrics.PROTOCOL_ADAPTER_PREFIX;
-
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Ensures the adapters use consistent namespaces for the metrics so they can be derived
@@ -72,7 +70,6 @@ public class ProtocolAdapterMetricsServiceImpl implements InternalProtocolAdapte
         this.connectionFailedCounter =
                 metricRegistry.counter(createAdapterMetricsNamespace("connection." + FAILED_COUNT));
     }
-
 
     /**
      * Use to indicate a read from the adapter has been successfully PUBLISHed

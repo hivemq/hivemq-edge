@@ -16,9 +16,8 @@
 package com.hivemq.api.config;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -71,11 +70,11 @@ public class ApiJwtConfiguration {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ApiJwtConfiguration that = (ApiJwtConfiguration) o;
-        return keySize == that.keySize &&
-                expiryTimeMinutes == that.expiryTimeMinutes &&
-                tokenEarlyEpochThresholdMinutes == that.tokenEarlyEpochThresholdMinutes &&
-                issuer.equals(that.issuer) &&
-                audience.equals(that.audience);
+        return keySize == that.keySize
+                && expiryTimeMinutes == that.expiryTimeMinutes
+                && tokenEarlyEpochThresholdMinutes == that.tokenEarlyEpochThresholdMinutes
+                && issuer.equals(that.issuer)
+                && audience.equals(that.audience);
     }
 
     @Override
@@ -105,7 +104,8 @@ public class ApiJwtConfiguration {
             return this;
         }
 
-        public @NotNull ApiJwtConfiguration.Builder withTokenEarlyEpochThresholdMinutes(int tokenEarlyEpochThresholdMinutes) {
+        public @NotNull ApiJwtConfiguration.Builder withTokenEarlyEpochThresholdMinutes(
+                int tokenEarlyEpochThresholdMinutes) {
             this.tokenEarlyEpochThresholdMinutes = tokenEarlyEpochThresholdMinutes;
             return this;
         }
@@ -116,11 +116,8 @@ public class ApiJwtConfiguration {
         }
 
         public @NotNull ApiJwtConfiguration build() {
-            return new ApiJwtConfiguration(keySize,
-                    issuer,
-                    audience,
-                    expiryTimeMinutes,
-                    tokenEarlyEpochThresholdMinutes);
+            return new ApiJwtConfiguration(
+                    keySize, issuer, audience, expiryTimeMinutes, tokenEarlyEpochThresholdMinutes);
         }
     }
 }

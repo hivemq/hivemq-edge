@@ -37,8 +37,7 @@ public class Constants {
     public static final String METRIC_SESSION_ACTIVE_COUNT = "session.active.count";
 
     public static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
-    public static final @NotNull byte[] EMPTY_BYTES = new byte[]{};
-
+    public static final @NotNull byte[] EMPTY_BYTES = new byte[] {};
 
     // data types
     public static final @NotNull String OBJECT_DATA_TYPE = "object";
@@ -57,8 +56,6 @@ public class Constants {
     public static final @NotNull String ARRAY_MIN_TIMES = "minItems";
     public static final @NotNull String MINIMUM_KEY_WORD = "minimum";
     public static final @NotNull String MAXIMUM_KEY_WORD = "maximum";
-
-
 
     public static final @NotNull SecPolicy DEFAULT_SECURITY_POLICY = SecPolicy.NONE;
 }

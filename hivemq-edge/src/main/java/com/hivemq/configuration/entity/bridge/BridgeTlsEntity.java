@@ -17,13 +17,12 @@ package com.hivemq.configuration.entity.bridge;
 
 import com.hivemq.configuration.entity.listener.tls.KeystoreEntity;
 import com.hivemq.configuration.entity.listener.tls.TruststoreEntity;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.xml.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 @XmlRootElement(name = "tls")
@@ -114,18 +113,19 @@ public class BridgeTlsEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final BridgeTlsEntity that = (BridgeTlsEntity) o;
-        return isEnabled() == that.isEnabled() &&
-                getHandshakeTimeout() == that.getHandshakeTimeout() &&
-                isVerifyHostname() == that.isVerifyHostname() &&
-                Objects.equals(getKeyStore(), that.getKeyStore()) &&
-                Objects.equals(getTrustStore(), that.getTrustStore()) &&
-                Objects.equals(getProtocols(), that.getProtocols()) &&
-                Objects.equals(getCipherSuites(), that.getCipherSuites());
+        return isEnabled() == that.isEnabled()
+                && getHandshakeTimeout() == that.getHandshakeTimeout()
+                && isVerifyHostname() == that.isVerifyHostname()
+                && Objects.equals(getKeyStore(), that.getKeyStore())
+                && Objects.equals(getTrustStore(), that.getTrustStore())
+                && Objects.equals(getProtocols(), that.getProtocols())
+                && Objects.equals(getCipherSuites(), that.getCipherSuites());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(isEnabled(),
+        return Objects.hash(
+                isEnabled(),
                 getKeyStore(),
                 getTrustStore(),
                 getProtocols(),

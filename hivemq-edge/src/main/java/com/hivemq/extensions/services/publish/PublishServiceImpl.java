@@ -15,6 +15,10 @@
  */
 package com.hivemq.extensions.services.publish;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hivemq.mqtt.message.publish.PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET;
+
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -46,14 +50,9 @@ import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.util.Bytes;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.concurrent.CompletableFuture;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hivemq.mqtt.message.publish.PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET;
 
 /**
  * @author Lukas Brandl
@@ -81,12 +80,13 @@ public class PublishServiceImpl implements PublishService {
     private final DataGovernanceService dataGovernanceService;
 
     @Inject
-    public PublishServiceImpl(final @NotNull PluginServiceRateLimitService rateLimitService,
-                              final @NotNull GlobalManagedExtensionExecutorService globalManagedExtensionExecutorService,
-                              final @NotNull PublishDistributor publishDistributor,
-                              final @NotNull HivemqId hiveMQId,
-                              final @NotNull LocalTopicTree topicTree,
-                              final @NotNull DataGovernanceService dataGovernanceService) {
+    public PublishServiceImpl(
+            final @NotNull PluginServiceRateLimitService rateLimitService,
+            final @NotNull GlobalManagedExtensionExecutorService globalManagedExtensionExecutorService,
+            final @NotNull PublishDistributor publishDistributor,
+            final @NotNull HivemqId hiveMQId,
+            final @NotNull LocalTopicTree topicTree,
+            final @NotNull DataGovernanceService dataGovernanceService) {
         this.rateLimitService = rateLimitService;
         this.globalManagedExtensionExecutorService = globalManagedExtensionExecutorService;
         this.publishDistributor = publishDistributor;
@@ -114,13 +114,15 @@ public class PublishServiceImpl implements PublishService {
                 .build();
         final DataGovernanceContext governanceContext = new DataGovernanceContextImpl(data);
         governanceContext.setExecutorService(globalManagedExtensionExecutorService);
-        final ListenableFuture<PublishingResult> publishFuture = dataGovernanceService.applyAndPublish(governanceContext);
+        final ListenableFuture<PublishingResult> publishFuture =
+                dataGovernanceService.applyAndPublish(governanceContext);
         return ListenableFutureConverter.toVoidCompletable(publishFuture, globalManagedExtensionExecutorService);
     }
 
     @Override
     @NotNull
-    public CompletableFuture<PublishToClientResult> publishToClient(final @NotNull Publish publish, final @NotNull String clientId) {
+    public CompletableFuture<PublishToClientResult> publishToClient(
+            final @NotNull Publish publish, final @NotNull String clientId) {
         checkNotNull(publish, "Publish must never be null");
         checkNotNull(clientId, "Client ID must never be null");
         checkArgument(!clientId.isEmpty(), "Client ID must not be empty");
@@ -140,20 +142,27 @@ public class PublishServiceImpl implements PublishService {
             return ListenableFutureConverter.toCompletable(sendPublishFuture, globalManagedExtensionExecutorService);
         }
 
-        final ListenableFuture<PublishStatus> publishSendFuture = publishDistributor.sendMessageToSubscriber(internalPublish, clientId, subscriber.getQos(), false,
-                subscriber.isRetainAsPublished(), subscriber.getSubscriptionIdentifier());
-        Futures.addCallback(publishSendFuture, new FutureCallback<>() {
-            @Override
-            public void onSuccess(final @Nullable PublishStatus result) {
-                sendPublishFuture.set(PublishToClientResult.SUCCESSFUL);
-            }
+        final ListenableFuture<PublishStatus> publishSendFuture = publishDistributor.sendMessageToSubscriber(
+                internalPublish,
+                clientId,
+                subscriber.getQos(),
+                false,
+                subscriber.isRetainAsPublished(),
+                subscriber.getSubscriptionIdentifier());
+        Futures.addCallback(
+                publishSendFuture,
+                new FutureCallback<>() {
+                    @Override
+                    public void onSuccess(final @Nullable PublishStatus result) {
+                        sendPublishFuture.set(PublishToClientResult.SUCCESSFUL);
+                    }
 
-            @Override
-            public void onFailure(final @NotNull Throwable t) {
-                sendPublishFuture.setException(t);
-            }
-        }, MoreExecutors.directExecutor());
-
+                    @Override
+                    public void onFailure(final @NotNull Throwable t) {
+                        sendPublishFuture.setException(t);
+                    }
+                },
+                MoreExecutors.directExecutor());
 
         return ListenableFutureConverter.toCompletable(sendPublishFuture, globalManagedExtensionExecutorService);
     }
@@ -164,8 +173,11 @@ public class PublishServiceImpl implements PublishService {
 
         final byte[] correlationData = Bytes.getBytesFromReadOnlyBuffer(publish.getCorrelationData());
 
-        final Mqtt5PayloadFormatIndicator payloadFormatIndicator = publish.getPayloadFormatIndicator().isPresent() ?
-                Mqtt5PayloadFormatIndicator.from(publish.getPayloadFormatIndicator().get()) : null;
+        final Mqtt5PayloadFormatIndicator payloadFormatIndicator =
+                publish.getPayloadFormatIndicator().isPresent()
+                        ? Mqtt5PayloadFormatIndicator.from(
+                                publish.getPayloadFormatIndicator().get())
+                        : null;
 
         return new PUBLISHFactory.Mqtt5Builder()
                 .withHivemqId(hiveMQId.get())
@@ -180,7 +192,8 @@ public class PublishServiceImpl implements PublishService {
                 .withPayload(payload)
                 .withContentType(publish.getContentType().orElse(null))
                 .withPayloadFormatIndicator(payloadFormatIndicator)
-                .withUserProperties(Mqtt5UserProperties.of(publish.getUserProperties().asInternalList()))
+                .withUserProperties(
+                        Mqtt5UserProperties.of(publish.getUserProperties().asInternalList()))
                 .build();
     }
 }

@@ -16,16 +16,15 @@
 package com.hivemq.bootstrap;
 
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.concurrent.Future;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class NettyShutdownHook implements HiveMQShutdownHook {
 
@@ -70,7 +69,7 @@ public class NettyShutdownHook implements HiveMQShutdownHook {
     public void run() {
         log.debug("Shutting down listeners and clients");
         try {
-            //we need to block the shutdown of the clients before we shut down their executors.
+            // we need to block the shutdown of the clients before we shut down their executors.
             connectionPersistence.shutDown().get(connectionPersistenceShutdownTimeout, TimeUnit.MILLISECONDS);
         } catch (final InterruptedException | ExecutionException e) {
             log.warn("Client shutdown failed exceptionally: {}", e.getMessage());
@@ -87,10 +86,14 @@ public class NettyShutdownHook implements HiveMQShutdownHook {
         }
 
         log.debug("Shutting down worker and boss threads");
-        final Future<?> workerFinished = workerGroup.shutdownGracefully(100, eventLoopsShutdownTimeout, TimeUnit.MILLISECONDS); //TimeUnit effects both parameters!
-        final Future<?> bossFinished = bossGroup.shutdownGracefully(100, eventLoopsShutdownTimeout, TimeUnit.MILLISECONDS);
-        final Future<?> udpWorkerFinished = udpWorkerGroup.shutdownGracefully(100, eventLoopsShutdownTimeout, TimeUnit.MILLISECONDS);
-        final Future<?> udpBossFinished = udpBossGroup.shutdownGracefully(100, eventLoopsShutdownTimeout, TimeUnit.MILLISECONDS);
+        final Future<?> workerFinished = workerGroup.shutdownGracefully(
+                100, eventLoopsShutdownTimeout, TimeUnit.MILLISECONDS); // TimeUnit effects both parameters!
+        final Future<?> bossFinished =
+                bossGroup.shutdownGracefully(100, eventLoopsShutdownTimeout, TimeUnit.MILLISECONDS);
+        final Future<?> udpWorkerFinished =
+                udpWorkerGroup.shutdownGracefully(100, eventLoopsShutdownTimeout, TimeUnit.MILLISECONDS);
+        final Future<?> udpBossFinished =
+                udpBossGroup.shutdownGracefully(100, eventLoopsShutdownTimeout, TimeUnit.MILLISECONDS);
 
         log.trace("Waiting for Worker threads to finish");
         workerFinished.syncUninterruptibly();

@@ -15,39 +15,29 @@
  */
 package com.hivemq.api.model.mappings.northbound;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.hivemq.api.model.JavaScriptConstants;
 import com.hivemq.api.model.QoSModel;
 import com.hivemq.persistence.mappings.NorthboundMapping;
-import org.junit.jupiter.api.Test;
-
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 class NorthboundMappingModelTest {
 
-
     @Test
     void test_constructor_whenInputExpiryIsMaxLong_thenStoredExpiryIsMaxSafeJSValue() {
-        assertEquals(JavaScriptConstants.JS_MAX_SAFE_INTEGER,
-                new NorthboundMappingModel("tag",
-                        "topic",
-                        false,
-                        false,
-                        List.of(),
-                        QoSModel.EXACTLY_ONCE,
-                        Long.MAX_VALUE).getMessageExpiryInterval());
+        assertEquals(
+                JavaScriptConstants.JS_MAX_SAFE_INTEGER,
+                new NorthboundMappingModel(
+                                "tag", "topic", false, false, List.of(), QoSModel.EXACTLY_ONCE, Long.MAX_VALUE)
+                        .getMessageExpiryInterval());
     }
 
     @Test
     void test_to_whenMessageExpiryMaxSafeValue_thenParsedValueIsMaxLong() {
-        final NorthboundMappingModel northboundMappingModel = new NorthboundMappingModel("tag",
-                "topic",
-                false,
-                false,
-                List.of(),
-                QoSModel.EXACTLY_ONCE,
-                Long.MAX_VALUE);
+        final NorthboundMappingModel northboundMappingModel = new NorthboundMappingModel(
+                "tag", "topic", false, false, List.of(), QoSModel.EXACTLY_ONCE, Long.MAX_VALUE);
 
         assertEquals(JavaScriptConstants.JS_MAX_SAFE_INTEGER, northboundMappingModel.getMessageExpiryInterval());
 

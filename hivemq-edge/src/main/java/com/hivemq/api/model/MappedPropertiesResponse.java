@@ -16,10 +16,9 @@
 package com.hivemq.api.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.jetbrains.annotations.NotNull;
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 public abstract class MappedPropertiesResponse<T> {
 

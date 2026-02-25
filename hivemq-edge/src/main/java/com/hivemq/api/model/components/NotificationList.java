@@ -18,9 +18,8 @@ package com.hivemq.api.model.components;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.api.model.ItemsResponse;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -28,8 +27,7 @@ import java.util.List;
 public class NotificationList extends ItemsResponse<Notification> {
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public NotificationList(
-            @JsonProperty("items") final @NotNull List<@NotNull Notification> notifications) {
+    public NotificationList(@JsonProperty("items") final @NotNull List<@NotNull Notification> notifications) {
         super(notifications);
     }
 }

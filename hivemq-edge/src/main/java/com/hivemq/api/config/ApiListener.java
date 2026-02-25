@@ -21,5 +21,6 @@ public interface ApiListener {
 
     int getPort();
 
-    @NotNull String getBindAddress();
+    @NotNull
+    String getBindAddress();
 }

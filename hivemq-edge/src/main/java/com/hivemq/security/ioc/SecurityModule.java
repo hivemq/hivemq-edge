@@ -15,18 +15,18 @@
  */
 package com.hivemq.security.ioc;
 
-import org.jetbrains.annotations.NotNull;
 import dagger.Module;
 import dagger.Provides;
-
 import java.util.concurrent.ScheduledExecutorService;
+import org.jetbrains.annotations.NotNull;
 
 @Module
 public abstract class SecurityModule {
 
     @Provides
     @Security
-    static @NotNull ScheduledExecutorService scheduledExecutorService(SecurityExecutorProvider securityExecutorProvider) {
+    static @NotNull ScheduledExecutorService scheduledExecutorService(
+            SecurityExecutorProvider securityExecutorProvider) {
         return securityExecutorProvider.get();
     }
 }

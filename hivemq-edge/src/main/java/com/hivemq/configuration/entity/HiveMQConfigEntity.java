@@ -30,13 +30,12 @@ import jakarta.xml.bind.annotation.XmlElementRef;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Dominik Obermaier
@@ -48,56 +47,73 @@ import java.util.Objects;
 public class HiveMQConfigEntity {
 
     public static final int CURRENT_CONFIG_VERSION = 1;
+
     @XmlElementRef(required = false)
     private final @NotNull InternalConfigEntity internal = new InternalConfigEntity();
+
     @XmlElement(name = "config-version", defaultValue = "" + CURRENT_CONFIG_VERSION)
     private int version = CURRENT_CONFIG_VERSION;
+
     @XmlElementWrapper(name = "mqtt-listeners", required = true)
     @XmlElementRef(required = false)
     private @NotNull List<ListenerEntity> mqttListeners = new ArrayList<>();
+
     @XmlElementWrapper(name = "mqtt-sn-listeners", required = true)
     @XmlElementRef(required = false)
     private @NotNull List<ListenerEntity> mqttsnListeners = new ArrayList<>();
+
     @XmlElementRef(required = false)
     private @NotNull MqttConfigEntity mqtt = new MqttConfigEntity();
+
     @XmlElementRef(required = false)
     private @NotNull MqttSnConfigEntity mqttsn = new MqttSnConfigEntity();
+
     @XmlElementRef(required = false)
     private @NotNull RestrictionsEntity restrictions = new RestrictionsEntity();
+
     @XmlElementRef(required = false)
     private @NotNull SecurityConfigEntity security = new SecurityConfigEntity();
+
     @XmlElementRef(required = false)
     private @NotNull PersistenceEntity persistence = new PersistenceEntity();
+
     @XmlElementWrapper(name = "mqtt-bridges", required = true)
     @XmlElementRef(required = false)
     private @NotNull List<MqttBridgeEntity> mqttBridges = new ArrayList<>();
+
     @XmlElementRef(required = false)
     private @NotNull AdminApiEntity api = new AdminApiEntity();
+
     @XmlElementRef(required = false)
     private @NotNull UnsConfigEntity uns = new UnsConfigEntity();
+
     @XmlElementRef(required = false)
     private @NotNull DynamicConfigEntity gateway = new DynamicConfigEntity();
+
     @XmlElementRef(required = false)
     private @NotNull UsageTrackingConfigEntity usageTracking = new UsageTrackingConfigEntity();
+
     @XmlElementWrapper(name = "protocol-adapters")
     @XmlElement(name = "protocol-adapter")
     private @NotNull List<ProtocolAdapterEntity> protocolAdapterConfig = new ArrayList<>();
+
     @XmlElementWrapper(name = "data-combiners")
     @XmlElement(name = "data-combiner")
     private @NotNull List<DataCombinerEntity> dataCombinerEntities = new ArrayList<>();
+
     @XmlElementWrapper(name = "asset-mappers")
     @XmlElement(name = "asset-mapper")
     private @NotNull List<DataCombinerEntity> assetMapperEntities = new ArrayList<>();
+
     @XmlElementRef(name = "pulse", required = false)
     private @NotNull PulseEntity pulseEntity = new PulseEntity();
+
     @XmlElement(name = "modules")
     @XmlJavaTypeAdapter(ArbitraryValuesMapAdapter.class)
     private @NotNull Map<String, Object> moduleConfigs = new HashMap<>();
 
     // no-arg constructor as JaxB does need one
-    public HiveMQConfigEntity() {
-
-    }
+    public HiveMQConfigEntity() {}
 
     public HiveMQConfigEntity(
             final @NotNull Integer version,
@@ -223,29 +239,30 @@ public class HiveMQConfigEntity {
             return false;
         }
         final HiveMQConfigEntity that = (HiveMQConfigEntity) o;
-        return getVersion() == that.getVersion() &&
-                Objects.equals(mqttListeners, that.mqttListeners) &&
-                Objects.equals(mqttsnListeners, that.mqttsnListeners) &&
-                Objects.equals(mqtt, that.mqtt) &&
-                Objects.equals(mqttsn, that.mqttsn) &&
-                Objects.equals(restrictions, that.restrictions) &&
-                Objects.equals(security, that.security) &&
-                Objects.equals(persistence, that.persistence) &&
-                Objects.equals(mqttBridges, that.mqttBridges) &&
-                Objects.equals(api, that.api) &&
-                Objects.equals(getUns(), that.getUns()) &&
-                Objects.equals(gateway, that.gateway) &&
-                Objects.equals(getUsageTracking(), that.getUsageTracking()) &&
-                Objects.equals(getProtocolAdapterConfig(), that.getProtocolAdapterConfig()) &&
-                Objects.equals(getDataCombinerEntities(), that.getDataCombinerEntities()) &&
-                Objects.equals(getPulseEntity(), that.getPulseEntity()) &&
-                Objects.equals(getModuleConfigs(), that.getModuleConfigs()) &&
-                Objects.equals(getInternal(), that.getInternal());
+        return getVersion() == that.getVersion()
+                && Objects.equals(mqttListeners, that.mqttListeners)
+                && Objects.equals(mqttsnListeners, that.mqttsnListeners)
+                && Objects.equals(mqtt, that.mqtt)
+                && Objects.equals(mqttsn, that.mqttsn)
+                && Objects.equals(restrictions, that.restrictions)
+                && Objects.equals(security, that.security)
+                && Objects.equals(persistence, that.persistence)
+                && Objects.equals(mqttBridges, that.mqttBridges)
+                && Objects.equals(api, that.api)
+                && Objects.equals(getUns(), that.getUns())
+                && Objects.equals(gateway, that.gateway)
+                && Objects.equals(getUsageTracking(), that.getUsageTracking())
+                && Objects.equals(getProtocolAdapterConfig(), that.getProtocolAdapterConfig())
+                && Objects.equals(getDataCombinerEntities(), that.getDataCombinerEntities())
+                && Objects.equals(getPulseEntity(), that.getPulseEntity())
+                && Objects.equals(getModuleConfigs(), that.getModuleConfigs())
+                && Objects.equals(getInternal(), that.getInternal());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getVersion(),
+        return Objects.hash(
+                getVersion(),
                 mqttListeners,
                 mqttsnListeners,
                 mqtt,

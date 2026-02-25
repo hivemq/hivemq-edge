@@ -15,15 +15,14 @@
  */
 package com.hivemq.bridge.config;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.bouncycastle.crypto.digests.MD5Digest;
-import org.bouncycastle.util.encoders.Base64;
-
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import org.bouncycastle.crypto.digests.MD5Digest;
+import org.bouncycastle.util.encoders.Base64;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class LocalSubscription {
     private final @NotNull List<String> filters;
@@ -131,7 +130,7 @@ public class LocalSubscription {
 
         if (!filters.isEmpty()) {
             // input list is immutable, need mutable list
-            final ArrayList<String> strings= new ArrayList<>(filters);
+            final ArrayList<String> strings = new ArrayList<>(filters);
             strings.sort(String::compareTo);
             final byte[] filtersAsBytes = String.join("", strings).getBytes(StandardCharsets.UTF_8);
             md5Overall.update(filtersAsBytes, 0, filtersAsBytes.length);
@@ -149,25 +148,24 @@ public class LocalSubscription {
 
     @Override
     public String toString() {
-        return "LocalSubscription{" +
-                "filters=" +
-                filters +
-                ", destination='" +
-                destination +
-                '\'' +
-                ", excludes=" +
-                excludes +
-                ", customUserProperties=" +
-                customUserProperties +
-                ", preserveRetain=" +
-                preserveRetain +
-                ", maxQoS=" +
-                maxQoS +
-                ", uniqueId='" +
-                uniqueId +
-                '\'' +
-                ", queueLimit=" +
-                queueLimit +
-                '}';
+        return "LocalSubscription{" + "filters="
+                + filters
+                + ", destination='"
+                + destination
+                + '\''
+                + ", excludes="
+                + excludes
+                + ", customUserProperties="
+                + customUserProperties
+                + ", preserveRetain="
+                + preserveRetain
+                + ", maxQoS="
+                + maxQoS
+                + ", uniqueId='"
+                + uniqueId
+                + '\''
+                + ", queueLimit="
+                + queueLimit
+                + '}';
     }
 }

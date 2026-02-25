@@ -23,8 +23,7 @@ public class TopicFilterAddResult {
     private final @NotNull TopicFilterPutStatus putStatus;
     private final @Nullable String errorMessage;
 
-    public TopicFilterAddResult(
-            final @NotNull TopicFilterPutStatus putStatus, final @Nullable String errorMessage) {
+    public TopicFilterAddResult(final @NotNull TopicFilterPutStatus putStatus, final @Nullable String errorMessage) {
         this.putStatus = putStatus;
         this.errorMessage = errorMessage;
     }
@@ -55,6 +54,4 @@ public class TopicFilterAddResult {
         TOPIC_NAME_ALREADY_USED(),
         TOPIC_FILTER_ALREADY_PRESENT()
     }
-
-
 }

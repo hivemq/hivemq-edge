@@ -16,16 +16,14 @@
 package com.hivemq.configuration.reader;
 
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
-import com.hivemq.configuration.entity.InternalConfigEntity;
 import com.hivemq.configuration.service.ModuleConfigurationService;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
-public class ModuleConfigurator implements Configurator<Map<String, Object>>{
+public class ModuleConfigurator implements Configurator<Map<String, Object>> {
 
     private final @NotNull ModuleConfigurationService configurationService;
 
@@ -38,7 +36,7 @@ public class ModuleConfigurator implements Configurator<Map<String, Object>>{
 
     @Override
     public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
-        if(initialized && hasChanged(this.configEntity, config.getModuleConfigs())) {
+        if (initialized && hasChanged(this.configEntity, config.getModuleConfigs())) {
             return true;
         }
         return false;
@@ -48,12 +46,13 @@ public class ModuleConfigurator implements Configurator<Map<String, Object>>{
     public ConfigResult applyConfig(final @NotNull HiveMQConfigEntity config) {
         this.configEntity = config.getModuleConfigs();
         this.initialized = true;
-        //Follow the pattern of other configurations, and hand off a clone of the map to the config layer
+        // Follow the pattern of other configurations, and hand off a clone of the map to the config layer
         final Map<String, Object> configMap = new HashMap<>();
         for (final String key : configEntity.keySet()) {
             Object value = configEntity.get(key);
             if (value instanceof List) {
-                //if its a <structural element> ie. a list, create a shallow copy to additions and removals are distinct
+                // if its a <structural element> ie. a list, create a shallow copy to additions and removals are
+                // distinct
                 value = new ArrayList((List) value);
             } else if (value instanceof Map) {
                 value = new HashMap<>((Map) value);
@@ -63,5 +62,4 @@ public class ModuleConfigurator implements Configurator<Map<String, Object>>{
         configurationService.setAllConfigs(configMap);
         return ConfigResult.SUCCESS;
     }
-
 }

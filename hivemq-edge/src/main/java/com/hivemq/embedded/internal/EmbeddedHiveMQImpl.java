@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.embedded.internal;
 
 import com.codahale.metrics.MetricRegistry;
@@ -27,12 +26,7 @@ import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.embedded.EmbeddedExtension;
 import com.hivemq.embedded.EmbeddedHiveMQ;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.util.ThreadFactoryUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,6 +36,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Function;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Georg Held
@@ -52,8 +50,10 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
 
     private final @NotNull SystemInformationImpl systemInformation;
     private final @NotNull MetricRegistry metricRegistry;
+
     @VisibleForTesting
     final @NotNull ExecutorService stateChangeExecutor;
+
     private final @Nullable EmbeddedExtension embeddedExtension;
     private @Nullable ConfigurationService configurationService;
     private @Nullable HiveMQEdgeMain hiveMQServer;
@@ -71,9 +71,8 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
             final @Nullable File conf,
             final @Nullable File data,
             final @Nullable File extensions,
-            final @Nullable File license
+            final @Nullable File license) {
 
-    ) {
         this(conf, data, extensions, license, null);
     }
 
@@ -150,7 +149,8 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
                 failFutureLists(failedException, localStartFutures, localStopFutures);
             } else {
                 log.error("Encountered a FAILED EmbeddedHiveMQ state without a reason present.");
-                failFutureLists(new IllegalStateException("FAILED EmbeddedHiveMQ state without a reason present"),
+                failFutureLists(
+                        new IllegalStateException("FAILED EmbeddedHiveMQ state without a reason present"),
                         localStartFutures,
                         localStopFutures);
             }
@@ -169,9 +169,8 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
 
                     final ModuleLoader moduleLoader = moduleLoaderFactory.apply(systemInformation);
                     moduleLoader.loadModules();
-                    hiveMQServer = new HiveMQEdgeMain(systemInformation,
-                            metricRegistry,
-                            configurationService, moduleLoader);
+                    hiveMQServer =
+                            new HiveMQEdgeMain(systemInformation, metricRegistry, configurationService, moduleLoader);
                     hiveMQServer.bootstrap();
                     hiveMQServer.start(embeddedExtension);
 
@@ -196,7 +195,8 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
         }
     }
 
-    @NotNull ConfigurationService bootstrapConfig() {
+    @NotNull
+    ConfigurationService bootstrapConfig() {
         if (configurationService == null) {
             configurationService = ConfigurationBootstrap.bootstrapConfig(systemInformation);
         }
@@ -290,7 +290,8 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
     }
 
     @VisibleForTesting
-    @Nullable Injector getInjector() {
+    @Nullable
+    Injector getInjector() {
         return hiveMQServer != null ? hiveMQServer.getInjector() : null;
     }
 

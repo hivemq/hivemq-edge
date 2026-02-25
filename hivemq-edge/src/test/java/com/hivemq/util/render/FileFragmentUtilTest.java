@@ -15,12 +15,11 @@
  */
 package com.hivemq.util.render;
 
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
 
 public class FileFragmentUtilTest {
 
@@ -30,7 +29,8 @@ public class FileFragmentUtilTest {
 
         Files.writeString(fragment, "THE FRAGMENT");
         final String fragmented = "<hallo>${FRAGMENT:" + fragment.toFile() + "}</hallo>";
-        final FileFragmentUtil.FragmentResult resolved = FileFragmentUtil.replaceFragmentPlaceHolders(fragmented, false);
+        final FileFragmentUtil.FragmentResult resolved =
+                FileFragmentUtil.replaceFragmentPlaceHolders(fragmented, false);
 
         assertThat(resolved.getRenderResult()).isEqualTo("<hallo>THE FRAGMENT</hallo>");
         assertThat(resolved.getFragmentToModificationTime()).containsKey(fragment);
@@ -40,7 +40,9 @@ public class FileFragmentUtilTest {
     public void testRender_zipped() throws Exception {
         final Path fragment = Files.createTempFile("fragment", ".xml");
 
-        Files.writeString(fragment, "UEsDBAoAAAAAAHZc8VpKQ28aDQAAAA0AAAAHABwAdHN0LnR4dFVUCQAD8MN4aPHDeGh1eAsAAQT2AQAABBQAAABUSEUgRlJBR01FTlQKUEsBAh4DCgAAAAAAdlzxWkpDbxoNAAAADQAAAAcAGAAAAAAAAQAAAKSBAAAAAHRzdC50eHRVVAUAA/DDeGh1eAsAAQT2AQAABBQAAABQSwUGAAAAAAEAAQBNAAAATgAAAAAA");
+        Files.writeString(
+                fragment,
+                "UEsDBAoAAAAAAHZc8VpKQ28aDQAAAA0AAAAHABwAdHN0LnR4dFVUCQAD8MN4aPHDeGh1eAsAAQT2AQAABBQAAABUSEUgRlJBR01FTlQKUEsBAh4DCgAAAAAAdlzxWkpDbxoNAAAADQAAAAcAGAAAAAAAAQAAAKSBAAAAAHRzdC50eHRVVAUAA/DDeGh1eAsAAQT2AQAABBQAAABQSwUGAAAAAAEAAQBNAAAATgAAAAAA");
         final String fragmented = "<hallo>${FRAGMENT:" + fragment.toFile() + "}</hallo>";
         final FileFragmentUtil.FragmentResult resolved = FileFragmentUtil.replaceFragmentPlaceHolders(fragmented, true);
 

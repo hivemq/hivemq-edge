@@ -13,19 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.mqtt.handler.connect;
-
-import com.hivemq.bootstrap.ClientConnection;
-import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.netty.handler.timeout.IdleStateEvent.FIRST_READER_IDLE_STATE_EVENT;
 import static io.netty.handler.timeout.IdleStateEvent.FIRST_WRITER_IDLE_STATE_EVENT;
@@ -33,6 +21,16 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+
+import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.embedded.EmbeddedChannel;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Florian Limpöck
@@ -44,6 +42,7 @@ public class NoTlsHandshakeIdleHandlerTest {
     private NoTlsHandshakeIdleHandler handler;
     private EmbeddedChannel channel;
     private AtomicBoolean userEventTriggered;
+
     @BeforeEach
     public void setUp() throws Exception {
         mqttServerDisconnector = mock(MqttServerDisconnector.class);

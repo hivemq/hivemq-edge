@@ -21,22 +21,21 @@ import com.hivemq.protocols.InternalProtocolAdapterWritingService;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 @Module
 public abstract class AdapterModule {
 
     @Provides
     @Singleton
-    static @NotNull InternalProtocolAdapterWritingService adapterWritingService(final WritingServiceProvider writingServiceProvider) {
+    static @NotNull InternalProtocolAdapterWritingService adapterWritingService(
+            final WritingServiceProvider writingServiceProvider) {
         return writingServiceProvider.get();
     }
 
     @Singleton
     @Binds
-    abstract @NotNull ProtocolAdapterMetricsService  protocolAdapterMetricsService(final @NotNull ProtocolAdapterMetricsService persistenceBootstrapService);
-
-
+    abstract @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService(
+            final @NotNull ProtocolAdapterMetricsService persistenceBootstrapService);
 }

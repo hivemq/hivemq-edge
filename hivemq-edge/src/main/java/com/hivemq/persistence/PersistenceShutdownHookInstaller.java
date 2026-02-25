@@ -16,10 +16,9 @@
 package com.hivemq.persistence;
 
 import com.hivemq.common.shutdown.ShutdownHooks;
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Lukas Brandl
@@ -38,9 +37,8 @@ public class PersistenceShutdownHookInstaller {
         this.persistenceShutdownHook = persistenceShutdownHook;
     }
 
-    @Inject //method injection, this gets called once after instantiation
+    @Inject // method injection, this gets called once after instantiation
     public void postConstruct() {
         shutdownHooks.add(persistenceShutdownHook);
     }
-
 }

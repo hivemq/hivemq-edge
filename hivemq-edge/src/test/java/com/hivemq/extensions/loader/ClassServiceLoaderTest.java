@@ -13,11 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions.loader;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
+import java.io.File;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
@@ -26,32 +32,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import util.OnTheFlyCompilationUtil;
 
-import java.io.File;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.charset.StandardCharsets;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 public class ClassServiceLoaderTest {
 
-    public static @NotNull String theInterface = "" +
-            " public interface TheInterface {" +
-            "   int doSomething();" +
-            " }";
+    public static @NotNull String theInterface =
+            "" + " public interface TheInterface {" + "   int doSomething();" + " }";
 
-    public static @NotNull String theImpl = "" +
-            " public class TheImpl implements TheInterface {" +
-            "        public int doSomething() {" +
-            "            return 1;}" +
-            " }";
+    public static @NotNull String theImpl = "" + " public class TheImpl implements TheInterface {"
+            + "        public int doSomething() {"
+            + "            return 1;}"
+            + " }";
 
-    public static @NotNull String theImpl2 = "" +
-            " public class TheImpl2 implements TheInterface {" +
-            "        public int doSomething() {" +
-            "            return 2;}" +
-            " }";
+    public static @NotNull String theImpl2 = "" + " public class TheImpl2 implements TheInterface {"
+            + "        public int doSomething() {"
+            + "            return 2;}"
+            + " }";
 
     @TempDir
     public File temporaryFolder;
@@ -77,42 +71,48 @@ public class ClassServiceLoaderTest {
         final Class<?> interfaceClass = Class.forName("TheInterface", false, compile);
         final Class<?> implClass = Class.forName("TheImpl", false, compile);
 
-        final JavaArchive javaArchive = ShrinkWrap.create(JavaArchive.class).addAsServiceProviderAndClasses(interfaceClass, implClass);
+        final JavaArchive javaArchive =
+                ShrinkWrap.create(JavaArchive.class).addAsServiceProviderAndClasses(interfaceClass, implClass);
 
         final File jarFile = new File(temporaryFolder, "newFile.jar");
         jarFile.createNewFile();
         javaArchive.as(ZipExporter.class).exportTo(jarFile, true);
 
         // this classloader contains the classes from the JAR file
-        final URLClassLoader cl = new URLClassLoader(new URL[]{jarFile.toURI().toURL()});
+        final URLClassLoader cl = new URLClassLoader(new URL[] {jarFile.toURI().toURL()});
 
         final ClassServiceLoader classServiceLoader = new ClassServiceLoader();
-        final Iterable<? extends Class<?>> loadedClasses = classServiceLoader.load(Class.forName("TheInterface", true, cl), cl);
+        final Iterable<? extends Class<?>> loadedClasses =
+                classServiceLoader.load(Class.forName("TheInterface", true, cl), cl);
 
         assertEquals(1, Iterables.size(loadedClasses));
         // although they have the same canonical name, they are not equal because they come from different classloaders
-        assertEquals(implClass.getCanonicalName(), loadedClasses.iterator().next().getCanonicalName());
+        assertEquals(
+                implClass.getCanonicalName(), loadedClasses.iterator().next().getCanonicalName());
     }
 
     @Test
     public void test_load_classes_from_jar_file_with_service_loader_empty_services_file() throws Exception {
         // compile classes on the fly
-        final ClassLoader compile = OnTheFlyCompilationUtil.compile(new OnTheFlyCompilationUtil.StringJavaFileObject("TheInterface", theInterface));
+        final ClassLoader compile = OnTheFlyCompilationUtil.compile(
+                new OnTheFlyCompilationUtil.StringJavaFileObject("TheInterface", theInterface));
 
         // creating the JAR file with the compiled classes + service loader
         final Class<?> interfaceClass = Class.forName("TheInterface", false, compile);
 
-        final JavaArchive javaArchive = ShrinkWrap.create(JavaArchive.class).addAsServiceProviderAndClasses(interfaceClass);
+        final JavaArchive javaArchive =
+                ShrinkWrap.create(JavaArchive.class).addAsServiceProviderAndClasses(interfaceClass);
 
         final File jarFile = new File(temporaryFolder, "newFile.jar");
         jarFile.createNewFile();
         javaArchive.as(ZipExporter.class).exportTo(jarFile, true);
 
         // this classloader contains the classes from the JAR file
-        final URLClassLoader cl = new URLClassLoader(new URL[]{jarFile.toURI().toURL()});
+        final URLClassLoader cl = new URLClassLoader(new URL[] {jarFile.toURI().toURL()});
 
         final ClassServiceLoader classServiceLoader = new ClassServiceLoader();
-        final Iterable<? extends Class<?>> loadedClasses = classServiceLoader.load(Class.forName("TheInterface", true, cl), cl);
+        final Iterable<? extends Class<?>> loadedClasses =
+                classServiceLoader.load(Class.forName("TheInterface", true, cl), cl);
 
         assertEquals(0, Iterables.size(loadedClasses));
     }
@@ -130,18 +130,19 @@ public class ClassServiceLoaderTest {
         final Class<?> implClass = Class.forName("TheImpl", false, compile);
         final Class<?> impl2Class = Class.forName("TheImpl2", false, compile);
 
-        final JavaArchive javaArchive = ShrinkWrap.create(JavaArchive.class).
-                addAsServiceProviderAndClasses(interfaceClass, implClass, impl2Class);
+        final JavaArchive javaArchive = ShrinkWrap.create(JavaArchive.class)
+                .addAsServiceProviderAndClasses(interfaceClass, implClass, impl2Class);
 
         final File jarFile = new File(temporaryFolder, "newFile.jar");
         jarFile.createNewFile();
         javaArchive.as(ZipExporter.class).exportTo(jarFile, true);
 
         // this classloader contains the classes from the JAR file
-        final URLClassLoader cl = new URLClassLoader(new URL[]{jarFile.toURI().toURL()});
+        final URLClassLoader cl = new URLClassLoader(new URL[] {jarFile.toURI().toURL()});
 
         final ClassServiceLoader classServiceLoader = new ClassServiceLoader();
-        final Iterable<? extends Class<?>> loadedClasses = classServiceLoader.load(Class.forName("TheInterface", true, cl), cl);
+        final Iterable<? extends Class<?>> loadedClasses =
+                classServiceLoader.load(Class.forName("TheInterface", true, cl), cl);
 
         assertEquals(2, Iterables.size(loadedClasses));
     }
@@ -159,28 +160,30 @@ public class ClassServiceLoaderTest {
         final Class<?> implClass = Class.forName("TheImpl", false, compile);
         final Class<?> impl2Class = Class.forName("TheImpl2", false, compile);
 
-        final String fileContents = "#" + implClass.getCanonicalName() + "\n" +
-                impl2Class.getCanonicalName() + " # Comment";
+        final String fileContents =
+                "#" + implClass.getCanonicalName() + "\n" + impl2Class.getCanonicalName() + " # Comment";
         final File servicesDescriptionFile = new File(temporaryFolder, "servicesDescriptionFile");
         servicesDescriptionFile.createNewFile();
         Files.asCharSink(servicesDescriptionFile, StandardCharsets.UTF_8).write(fileContents);
 
-        final JavaArchive javaArchive = ShrinkWrap.create(JavaArchive.class).
-                addAsResource(servicesDescriptionFile, "META-INF/services/" + interfaceClass.getCanonicalName()).
-                addClasses(interfaceClass, implClass, impl2Class);
+        final JavaArchive javaArchive = ShrinkWrap.create(JavaArchive.class)
+                .addAsResource(servicesDescriptionFile, "META-INF/services/" + interfaceClass.getCanonicalName())
+                .addClasses(interfaceClass, implClass, impl2Class);
 
         final File jarFile = new File(temporaryFolder, "newFile.jar");
         jarFile.createNewFile();
         javaArchive.as(ZipExporter.class).exportTo(jarFile, true);
 
         // this classloader contains the classes from the JAR file
-        final URLClassLoader cl = new URLClassLoader(new URL[]{jarFile.toURI().toURL()});
+        final URLClassLoader cl = new URLClassLoader(new URL[] {jarFile.toURI().toURL()});
 
         final ClassServiceLoader classServiceLoader = new ClassServiceLoader();
-        final Iterable<? extends Class<?>> loadedClasses = classServiceLoader.load(Class.forName("TheInterface", true, cl), cl);
+        final Iterable<? extends Class<?>> loadedClasses =
+                classServiceLoader.load(Class.forName("TheInterface", true, cl), cl);
 
         assertEquals(1, Iterables.size(loadedClasses));
-        assertEquals(impl2Class.getCanonicalName(), loadedClasses.iterator().next().getCanonicalName());
+        assertEquals(
+                impl2Class.getCanonicalName(), loadedClasses.iterator().next().getCanonicalName());
     }
 
     @Test
@@ -195,7 +198,6 @@ public class ClassServiceLoaderTest {
     @SuppressWarnings("ConstantConditions")
     public void test_classloader_null() throws Exception {
         final ClassServiceLoader loader = new ClassServiceLoader();
-        assertThatThrownBy(() -> loader.load(Object.class, null))
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> loader.load(Object.class, null)).isInstanceOf(NullPointerException.class);
     }
 }

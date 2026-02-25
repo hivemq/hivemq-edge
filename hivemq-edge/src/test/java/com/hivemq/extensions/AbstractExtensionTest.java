@@ -13,29 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hivemq.extensions;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
 import com.hivemq.extension.sdk.api.parameter.ExtensionInformation;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStartInput;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStartOutput;
-import org.mockito.Mockito;
-
 import java.io.File;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.mockito.Mockito;
 
 /**
  * @author Georg Held
  */
-abstract public class AbstractExtensionTest {
+public abstract class AbstractExtensionTest {
 
     protected @NotNull ExtensionStartOutput getTestExtensionStartOutput() {
-        return reason -> {
-        };
+        return reason -> {};
     }
 
     protected @NotNull ExtensionStartInput getTestExtensionStartInput() {

@@ -15,13 +15,12 @@
  */
 package com.hivemq.configuration.entity.uns;
 
-import org.jetbrains.annotations.NotNull;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElementRef;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
@@ -34,7 +33,9 @@ public class UnsConfigEntity {
     @XmlElementRef(required = false)
     private @NotNull ISA95Entity isa95 = new ISA95Entity();
 
-    public @NotNull ISA95Entity getIsa95() { return isa95; }
+    public @NotNull ISA95Entity getIsa95() {
+        return isa95;
+    }
 
     @Override
     public boolean equals(final Object o) {

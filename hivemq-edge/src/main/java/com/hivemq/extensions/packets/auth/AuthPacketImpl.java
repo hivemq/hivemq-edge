@@ -16,17 +16,16 @@
 package com.hivemq.extensions.packets.auth;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.auth.AuthPacket;
 import com.hivemq.extension.sdk.api.packets.auth.AuthReasonCode;
 import com.hivemq.extensions.packets.general.UserPropertiesImpl;
 import com.hivemq.mqtt.message.auth.AUTH;
-
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Daniel Krüger
@@ -110,11 +109,11 @@ public class AuthPacketImpl implements AuthPacket {
             return false;
         }
         final AuthPacketImpl that = (AuthPacketImpl) o;
-        return (reasonCode == that.reasonCode) &&
-                method.equals(that.method) &&
-                Arrays.equals(data, that.data) &&
-                Objects.equals(reasonString, that.reasonString) &&
-                userProperties.equals(that.userProperties);
+        return (reasonCode == that.reasonCode)
+                && method.equals(that.method)
+                && Arrays.equals(data, that.data)
+                && Objects.equals(reasonString, that.reasonString)
+                && userProperties.equals(that.userProperties);
     }
 
     @Override

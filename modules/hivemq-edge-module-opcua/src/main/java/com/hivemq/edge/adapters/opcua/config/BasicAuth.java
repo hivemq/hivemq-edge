@@ -20,14 +20,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import org.jetbrains.annotations.Nullable;
 
-public record BasicAuth(@JsonProperty("username") @ModuleConfigField(title = "Username",
-                                                                     description = "Username for basic authentication") @Nullable String username,
-                        @JsonProperty("password") @ModuleConfigField(title = "Password",
-                                                                     description = "Password for basic authentication") @Nullable String password) {
+public record BasicAuth(
+        @JsonProperty("username")
+        @ModuleConfigField(title = "Username", description = "Username for basic authentication")
+        @Nullable
+        String username,
+
+        @JsonProperty("password")
+        @ModuleConfigField(title = "Password", description = "Password for basic authentication")
+        @Nullable
+        String password) {
 
     @JsonCreator
-    public BasicAuth {
-    }
+    public BasicAuth {}
 
     @Override
     public @Nullable String username() {

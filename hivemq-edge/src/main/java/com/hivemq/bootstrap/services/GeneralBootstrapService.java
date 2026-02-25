@@ -20,20 +20,25 @@ import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.persistence.connection.ConnectionPersistence;
 import org.jetbrains.annotations.NotNull;
 
 public interface GeneralBootstrapService {
 
-    @NotNull MetricRegistry metricRegistry();
+    @NotNull
+    MetricRegistry metricRegistry();
 
-    @NotNull SystemInformation systemInformation();
+    @NotNull
+    SystemInformation systemInformation();
 
-    @NotNull ShutdownHooks shutdownHooks();
+    @NotNull
+    ShutdownHooks shutdownHooks();
 
-    @NotNull ConfigurationService configurationService();
+    @NotNull
+    ConfigurationService configurationService();
 
-    @NotNull HivemqId getHivemqId();
+    @NotNull
+    HivemqId getHivemqId();
 
-    @NotNull EdgeCoreFactoryService edgeCoreFactoryService();
+    @NotNull
+    EdgeCoreFactoryService edgeCoreFactoryService();
 }

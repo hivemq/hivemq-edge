@@ -17,10 +17,10 @@ package com.hivemq.codec.encoder.mqtt3;
 
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.encoder.MqttEncoder;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.mqtt.message.connack.Mqtt3CONNACK;
 import com.hivemq.mqtt.message.connack.Mqtt3ConnAckReturnCode;
 import io.netty.buffer.ByteBuf;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Dominik Obermaier
@@ -40,7 +40,7 @@ public class Mqtt3ConnackEncoder implements MqttEncoder<Mqtt3CONNACK> {
             final @NotNull ByteBuf out) {
 
         out.writeByte(CONNACK_FIXED_HEADER);
-        //The remaining length is always static for CONNACKs
+        // The remaining length is always static for CONNACKs
         out.writeByte(CONNACK_REMAINING_LENGTH);
 
         final Mqtt3ConnAckReturnCode returnCode = msg.getReturnCode();

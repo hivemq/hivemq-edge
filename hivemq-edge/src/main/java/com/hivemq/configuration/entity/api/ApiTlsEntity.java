@@ -16,9 +16,6 @@
 package com.hivemq.configuration.entity.api;
 
 import com.hivemq.configuration.entity.listener.tls.KeystoreEntity;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -28,6 +25,8 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
@@ -65,9 +64,9 @@ public class ApiTlsEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final ApiTlsEntity that = (ApiTlsEntity) o;
-        return Objects.equals(getKeystoreEntity(), that.getKeystoreEntity()) &&
-                Objects.equals(getProtocols(), that.getProtocols()) &&
-                Objects.equals(getCipherSuites(), that.getCipherSuites());
+        return Objects.equals(getKeystoreEntity(), that.getKeystoreEntity())
+                && Objects.equals(getProtocols(), that.getProtocols())
+                && Objects.equals(getCipherSuites(), that.getCipherSuites());
     }
 
     @Override

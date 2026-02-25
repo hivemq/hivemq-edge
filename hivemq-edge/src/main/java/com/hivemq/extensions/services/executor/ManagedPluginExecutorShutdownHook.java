@@ -16,11 +16,10 @@
 package com.hivemq.extensions.services.executor;
 
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
+import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Florian Limpöck
@@ -46,7 +45,7 @@ public class ManagedPluginExecutorShutdownHook implements HiveMQShutdownHook {
 
     @Override
     public @NotNull Priority priority() {
-        //must be lower than extension shut down hook which is VERY_LOW
+        // must be lower than extension shut down hook which is VERY_LOW
         return Priority.DOES_NOT_MATTER;
     }
 

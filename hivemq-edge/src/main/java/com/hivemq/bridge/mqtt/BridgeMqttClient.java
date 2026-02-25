@@ -15,6 +15,11 @@
  */
 package com.hivemq.bridge.mqtt;
 
+import static com.hivemq.edge.HiveMQEdgeConstants.CLIENT_AGENT_PROPERTY;
+import static com.hivemq.edge.HiveMQEdgeConstants.CLIENT_AGENT_PROPERTY_VALUE;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNullElse;
+
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -54,13 +59,6 @@ import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.security.ssl.SslUtil;
 import com.hivemq.util.StoreTypeUtil;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.TrustManagerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -71,20 +69,21 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static com.hivemq.edge.HiveMQEdgeConstants.CLIENT_AGENT_PROPERTY;
-import static com.hivemq.edge.HiveMQEdgeConstants.CLIENT_AGENT_PROPERTY_VALUE;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Objects.requireNonNullElse;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManagerFactory;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BridgeMqttClient {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(BridgeMqttClient.class);
 
-    private static final long RECONNECT_MIN_DELAY_MS = 1_000;       // 1 second
-    private static final long RECONNECT_MAX_DELAY_MS = 120_000;     // 2 minutes
-    private static final double RECONNECT_JITTER_FACTOR = 0.25;     // 25% max jitter
-    private static final int RECONNECT_MAX_BACKOFF_EXPONENT = 10;   // 2^10 = 1024 seconds max
+    private static final long RECONNECT_MIN_DELAY_MS = 1_000; // 1 second
+    private static final long RECONNECT_MAX_DELAY_MS = 120_000; // 2 minutes
+    private static final double RECONNECT_JITTER_FACTOR = 0.25; // 25% max jitter
+    private static final int RECONNECT_MAX_BACKOFF_EXPONENT = 10; // 2^10 = 1024 seconds max
 
     private final @NotNull MqttBridge bridge;
     private final @NotNull BridgeInterceptorHandler bridgeInterceptorHandler;
@@ -129,8 +128,7 @@ public class BridgeMqttClient {
     }
 
     public static @NotNull String createForwarderId(
-            final @NotNull String bridgeId,
-            final @NotNull LocalSubscription sub) {
+            final @NotNull String bridgeId, final @NotNull LocalSubscription sub) {
         return bridgeId + '-' + sub.calculateUniqueId();
     }
 
@@ -141,98 +139,157 @@ public class BridgeMqttClient {
             final SettableFuture<Void> startFuture = SettableFuture.create();
             startFutureRef.set(startFuture);
             final long connectStartTime = log.isDebugEnabled() ? System.nanoTime() : 0;
-            mqtt5Client.connectWith()
+            mqtt5Client
+                    .connectWith()
                     .cleanStart(bridge.isCleanStart())
                     .keepAlive(bridge.getKeepAlive())
                     .userProperties(Mqtt5UserProperties.builder()
-                            .add(CLIENT_AGENT_PROPERTY,
+                            .add(
+                                    CLIENT_AGENT_PROPERTY,
                                     String.format(CLIENT_AGENT_PROPERTY_VALUE, systemInformation.getHiveMQVersion()))
                             .build())
                     .sessionExpiryInterval(bridge.getSessionExpiry())
                     .send()
                     .handleAsync((mqtt5ConnAck, throwable) -> {
-                        if (stopped.get()) {
+                        try {
+                            if (stopped.get()) {
+                                if (log.isDebugEnabled()) {
+                                    log.debug("Bridge '{}' stopped during connection attempt", bridge.getId());
+                                }
+                                final var future = startFutureRef.getAndSet(null);
+                                if (future != null) {
+                                    future.cancel(true);
+                                }
+                                // Only reset to IDLE if stop() hasn't already transitioned to STOPPING.
+                                // If stop() already owns the lifecycle, let it manage the state.
+                                operationState.compareAndSet(OperationState.STARTING, OperationState.IDLE);
+                                return null;
+                            }
+                            if (throwable != null) {
+                                log.error(
+                                        "Failed to connect bridge '{}' to {}:{}: {}",
+                                        bridge.getId(),
+                                        bridge.getHost(),
+                                        bridge.getPort(),
+                                        throwable.getMessage());
+                                log.debug("Connection exception details", throwable);
+                                final var future = startFutureRef.getAndSet(null);
+                                if (future != null) {
+                                    future.setException(throwable);
+                                }
+                                operationState.compareAndSet(OperationState.STARTING, OperationState.IDLE);
+                                return null;
+                            }
+                            if (mqtt5ConnAck.getReasonCode().isError()) {
+                                final String reasonString = mqtt5ConnAck
+                                        .getReasonString()
+                                        .map(Objects::toString)
+                                        .orElse("");
+                                log.error(
+                                        "Failed to connect bridge '{}', CONNACK returned reason code {}, reason string: '{}'",
+                                        bridge.getId(),
+                                        mqtt5ConnAck.getReasonCode(),
+                                        reasonString);
+                                final var future = startFutureRef.getAndSet(null);
+                                if (future != null) {
+                                    future.setException(new RuntimeException(
+                                            "CONNACK error for bridge '" + bridge.getId() + "' connecting to "
+                                                    + bridge.getHost() + ":" + bridge.getPort()
+                                                    + " - reason code: " + mqtt5ConnAck.getReasonCode()
+                                                    + ", reason string: '" + reasonString + "'"));
+                                }
+                                operationState.compareAndSet(OperationState.STARTING, OperationState.IDLE);
+                                return null;
+                            }
+
                             if (log.isDebugEnabled()) {
-                                log.debug("Bridge '{}' stopped during connection attempt", bridge.getId());
+                                final long connectMicros = (System.nanoTime() - connectStartTime) / 1000;
+                                log.debug(
+                                        "Bridge '{}' MQTT connection established in {} μs",
+                                        bridge.getId(),
+                                        connectMicros);
                             }
-                            return null;
-                        }
-                        if (throwable != null) {
-                            log.error("Failed to connect bridge '{}' to {}:{}: {}",
-                                    bridge.getId(), bridge.getHost(), bridge.getPort(), throwable.getMessage());
-                            log.debug("Connection exception details", throwable);
-                            return null;
-                        }
-                        if (mqtt5ConnAck.getReasonCode().isError()) {
-                            log.error(
-                                    "Failed to connect bridge '{}', CONNACK returned reason code {}, reason string: '{}'",
-                                    bridge.getId(),
-                                    mqtt5ConnAck.getReasonCode(),
-                                    mqtt5ConnAck.getReasonString().map(Objects::toString).orElse(""));
-                            return null;
-                        }
 
-                        if (log.isDebugEnabled()) {
-                            final long connectMicros = (System.nanoTime() - connectStartTime) / 1000;
-                            log.debug("Bridge '{}' MQTT connection established in {} μs", bridge.getId(), connectMicros);
-                        }
+                            // Note: drainQueue() and onReconnect() are handled by addConnectedListener
+                            // which correctly distinguishes between initial connections and reconnections.
 
-                        // Note: drainQueue() and onReconnect() are handled by addConnectedListener
-                        // which correctly distinguishes between initial connections and reconnections.
-
-                        final ImmutableList.Builder<@NotNull CompletableFuture<Mqtt5SubAck>> subFutures =
-                                new ImmutableList.Builder<>();
-                        final int remoteSubCount = bridge.getRemoteSubscriptions().size();
-                        if (remoteSubCount > 0 && log.isDebugEnabled()) {
-                            log.debug("Setting up {} remote subscription(s) for bridge '{}'", remoteSubCount, bridge.getId());
-                        }
-
-                        for (final RemoteSubscription sub : bridge.getRemoteSubscriptions()) {
-                            if (log.isTraceEnabled()) {
-                                log.trace("Subscribing to remote topics {} for bridge '{}'", sub.getFilters(), bridge.getId());
+                            final ImmutableList.Builder<@NotNull CompletableFuture<Mqtt5SubAck>> subFutures =
+                                    new ImmutableList.Builder<>();
+                            final int remoteSubCount =
+                                    bridge.getRemoteSubscriptions().size();
+                            if (remoteSubCount > 0 && log.isDebugEnabled()) {
+                                log.debug(
+                                        "Setting up {} remote subscription(s) for bridge '{}'",
+                                        remoteSubCount,
+                                        bridge.getId());
                             }
-                            subFutures.add(mqtt5Client.subscribeWith()
-                                    .addSubscriptions(sub.getFilters()
-                                            .stream()
-                                            .map(filter -> Mqtt5Subscription.builder()
-                                                    .topicFilter(MqttTopicFilter.of(filter))
-                                                    .qos(requireNonNullElse(MqttQos.fromCode(sub.getMaxQoS()),
-                                                            MqttQos.AT_MOST_ONCE))
-                                                    .retainAsPublished(sub.isPreserveRetain())
-                                                    .retainHandling(Mqtt5RetainHandling.DO_NOT_SEND)
-                                                    .build())
-                                            .toList())
-                                    .callback(new RemotePublishConsumer(sub,
-                                            bridgeInterceptorHandler,
-                                            bridge,
-                                            executorService,
-                                            hivemqId,
-                                            perBridgeMetrics))
-                                    .send());
-                        }
-                        CompletableFuture.allOf(subFutures.build().toArray(new CompletableFuture[0]))
-                                .handle((result, exception) -> {
-                                    if (log.isInfoEnabled()) {
-                                        if (exception == null) {
-                                            log.info("Bridge '{}' started successfully", bridge.getId());
-                                        } else {
-                                            log.error("Bridge '{}' started with an internal error {}",
-                                                    bridge.getId(),
-                                                    exception.getMessage(),
-                                                    exception);
+
+                            for (final RemoteSubscription sub : bridge.getRemoteSubscriptions()) {
+                                if (log.isTraceEnabled()) {
+                                    log.trace(
+                                            "Subscribing to remote topics {} for bridge '{}'",
+                                            sub.getFilters(),
+                                            bridge.getId());
+                                }
+                                subFutures.add(mqtt5Client
+                                        .subscribeWith()
+                                        .addSubscriptions(sub.getFilters().stream()
+                                                .map(filter -> Mqtt5Subscription.builder()
+                                                        .topicFilter(MqttTopicFilter.of(filter))
+                                                        .qos(requireNonNullElse(
+                                                                MqttQos.fromCode(sub.getMaxQoS()),
+                                                                MqttQos.AT_MOST_ONCE))
+                                                        .retainAsPublished(sub.isPreserveRetain())
+                                                        .retainHandling(Mqtt5RetainHandling.DO_NOT_SEND)
+                                                        .build())
+                                                .toList())
+                                        .callback(new RemotePublishConsumer(
+                                                sub,
+                                                bridgeInterceptorHandler,
+                                                bridge,
+                                                executorService,
+                                                hivemqId,
+                                                perBridgeMetrics))
+                                        .send());
+                            }
+                            CompletableFuture.allOf(subFutures.build().toArray(new CompletableFuture[0]))
+                                    .handle((result, exception) -> {
+                                        if (log.isInfoEnabled()) {
+                                            if (exception == null) {
+                                                log.info("Bridge '{}' started successfully", bridge.getId());
+                                            } else {
+                                                log.error(
+                                                        "Bridge '{}' started with an internal error {}",
+                                                        bridge.getId(),
+                                                        exception.getMessage(),
+                                                        exception);
+                                            }
                                         }
-                                    }
-                                    startFutureRef.getAndSet(null).set(null);
-                                    operationState.set(OperationState.IDLE);
-                                    return null;
-                                });
-                        return null;
+                                        final var future = startFutureRef.getAndSet(null);
+                                        if (future != null) {
+                                            future.set(null);
+                                        }
+                                        operationState.compareAndSet(OperationState.STARTING, OperationState.IDLE);
+                                        return null;
+                                    });
+                            return null;
+                        } catch (final Exception e) {
+                            log.error("Unexpected error in bridge '{}' connect handler", bridge.getId(), e);
+                            final var future = startFutureRef.getAndSet(null);
+                            if (future != null) {
+                                future.setException(e);
+                            }
+                            operationState.compareAndSet(OperationState.STARTING, OperationState.IDLE);
+                            return null;
+                        }
                     });
             return startFuture;
         }
         if (log.isDebugEnabled()) {
-            log.debug("Bridge '{}' start requested but operation state is {}, returning ongoing operation",
-                    bridge.getId(), operationState.get());
+            log.debug(
+                    "Bridge '{}' start requested but operation state is {}, returning ongoing operation",
+                    bridge.getId(),
+                    operationState.get());
         }
         return getOngoingOperation(operationState.get(), OperationState.STARTING);
     }
@@ -250,8 +307,8 @@ public class BridgeMqttClient {
             }
         }
         startFutureRef.set(null);
-        if (operationState.compareAndSet(OperationState.IDLE, OperationState.STOPPING) ||
-                operationState.compareAndSet(OperationState.STARTING, OperationState.STOPPING)) {
+        if (operationState.compareAndSet(OperationState.IDLE, OperationState.STOPPING)
+                || operationState.compareAndSet(OperationState.STARTING, OperationState.STOPPING)) {
             log.info("Stopping bridge '{}'", bridge.getId());
             final SettableFuture<Void> stopFuture = SettableFuture.create();
             stopFutureRef.set(stopFuture);
@@ -261,11 +318,20 @@ public class BridgeMqttClient {
                     final long stopMicros = (System.nanoTime() - stopStartTime) / 1000;
                     log.debug("Bridge '{}' disconnected in {} μs", bridge.getId(), stopMicros);
                     if (exception != null) {
-                        log.debug("Bridge '{}' disconnected with an internal error {}", bridge.getId(), exception.getMessage(), exception);
+                        log.debug(
+                                "Bridge '{}' disconnected with an internal error {}",
+                                bridge.getId(),
+                                exception.getMessage(),
+                                exception);
                     }
                 }
-                stopFutureRef.getAndSet(null).set(null);
-                operationState.set(OperationState.IDLE);
+                final var future = stopFutureRef.getAndSet(null);
+                if (future != null) {
+                    future.set(null);
+                }
+                // Only reset to IDLE if we're still in STOPPING state.
+                // Prevents overwriting a concurrent start()'s STARTING state.
+                operationState.compareAndSet(OperationState.STOPPING, OperationState.IDLE);
                 perBridgeMetrics.clearAll(metricRegistry);
                 if (log.isInfoEnabled()) {
                     log.info("Bridge '{}' stopped successfully", bridge.getId());
@@ -275,8 +341,10 @@ public class BridgeMqttClient {
             return stopFuture;
         }
         if (log.isDebugEnabled()) {
-            log.debug("Bridge '{}' stop requested but operation state is {}, returning ongoing operation",
-                    bridge.getId(), operationState.get());
+            log.debug(
+                    "Bridge '{}' stop requested but operation state is {}, returning ongoing operation",
+                    bridge.getId(),
+                    operationState.get());
         }
         return getOngoingOperation(operationState.get(), OperationState.STOPPING);
     }
@@ -295,7 +363,8 @@ public class BridgeMqttClient {
             if (log.isTraceEnabled()) {
                 log.trace("Creating forwarder for local topics {} on bridge '{}'", sub.getFilters(), bridge.getId());
             }
-            builder.add(new RemoteMqttForwarder(createForwarderId(bridge.getId(), sub),
+            builder.add(new RemoteMqttForwarder(
+                    createForwarderId(bridge.getId(), sub),
                     bridge,
                     sub,
                     this,
@@ -330,15 +399,14 @@ public class BridgeMqttClient {
     }
 
     private @NotNull ListenableFuture<Void> getOngoingOperation(
-            final @NotNull OperationState current,
-            final @NotNull OperationState target) {
+            final @NotNull OperationState current, final @NotNull OperationState target) {
         return switch (current) {
             case STARTING -> {
                 if (target == OperationState.STARTING) {
                     final var existing = startFutureRef.get();
                     if (existing != null) {
                         log.info(
-                                "Start operation already in progress for adapter with id '{}', returning existing future",
+                                "Start operation already in progress for bridge with id '{}', returning existing future",
                                 bridge.getId());
                         yield existing;
                     }
@@ -351,13 +419,15 @@ public class BridgeMqttClient {
                 if (target == OperationState.STOPPING) {
                     final var existing = stopFutureRef.get();
                     if (existing != null) {
-                        log.info("Stop operation already in progress for adapter with id '{}', returning existing future",
+                        log.info(
+                                "Stop operation already in progress for adapter with id '{}', returning existing future",
                                 bridge.getId());
                         yield existing;
                     }
                     // If no existing future, return completed future instead of null
                     if (log.isDebugEnabled()) {
-                        log.debug("Stop operation for bridge '{}' already completed, returning completed future",
+                        log.debug(
+                                "Stop operation for bridge '{}' already completed, returning completed future",
                                 bridge.getId());
                     }
                 }
@@ -388,11 +458,12 @@ public class BridgeMqttClient {
                     .applyWebSocketConfig();
         }
 
-        //-- Bind connection listeners to maintain status
+        // -- Bind connection listeners to maintain status
         builder.addConnectedListener(context -> {
             // Check if this is a dangling client that reconnected after being stopped
             if (stopped.get()) {
-                log.warn("Bridge '{}' connected but is marked as stopped - disconnecting immediately to prevent dangling client",
+                log.warn(
+                        "Bridge '{}' connected but is marked as stopped - disconnecting immediately to prevent dangling client",
                         bridge.getId());
                 mqtt5Client.disconnect();
                 return;
@@ -409,8 +480,10 @@ public class BridgeMqttClient {
             if (forwarderCount > 0) {
                 if (isReconnection) {
                     if (log.isDebugEnabled()) {
-                        log.debug("Draining queues for {} forwarder(s) after reconnection on bridge '{}'",
-                                forwarderCount, bridge.getId());
+                        log.debug(
+                                "Draining queues for {} forwarder(s) after reconnection on bridge '{}'",
+                                forwarderCount,
+                                bridge.getId());
                     }
                     forwarders.forEach(MqttForwarder::drainQueue);
                     // Trigger checkBuffers() to poll from persistence queue for messages that need retrying
@@ -419,34 +492,45 @@ public class BridgeMqttClient {
                     // Initial connection: send any messages that were buffered while waiting for remote
                     // but do NOT reset persistence inflight markers (to avoid duplicate delivery on restart)
                     if (log.isDebugEnabled()) {
-                        log.debug("Flushing buffered messages for {} forwarder(s) on initial connection to bridge '{}'",
-                                forwarderCount, bridge.getId());
+                        log.debug(
+                                "Flushing buffered messages for {} forwarder(s) on initial connection to bridge '{}'",
+                                forwarderCount,
+                                bridge.getId());
                     }
                     forwarders.forEach(MqttForwarder::flushBufferedMessages);
                 }
             }
-            eventBuilder(Event.SEVERITY.INFO).withMessage("Bridge '" + bridge.getId() + "' connected").fire();
+            eventBuilder(Event.SEVERITY.INFO)
+                    .withMessage("Bridge '" + bridge.getId() + "' connected")
+                    .fire();
         });
 
-        //-- Fire a system event for the various logging layers
+        // -- Fire a system event for the various logging layers
         builder.addDisconnectedListener(context -> {
             final Throwable cause = context.getCause();
             String message = cause.getMessage();
             if (cause instanceof final Mqtt5DisconnectException disconnectException) {
                 message += " Code: " + disconnectException.getMqttMessage().getReasonCode();
-                final Optional<MqttUtf8String> reasonString = disconnectException.getMqttMessage().getReasonString();
+                final Optional<MqttUtf8String> reasonString =
+                        disconnectException.getMqttMessage().getReasonString();
                 if (reasonString.isPresent()) {
                     message += " Reason: " + reasonString.get();
                 }
             }
-            log.warn("Bridge '{}' disconnected from {}:{}: {}", bridge.getId(), bridge.getHost(), bridge.getPort(), message);
+            log.warn(
+                    "Bridge '{}' disconnected from {}:{}: {}",
+                    bridge.getId(),
+                    bridge.getHost(),
+                    bridge.getPort(),
+                    message);
             log.debug("Disconnection cause details", cause);
             connected.set(false);
-            eventBuilder(EventImpl.SEVERITY.ERROR).withMessage("Bridge '" + bridge.getId() + "' disconnected")
+            eventBuilder(EventImpl.SEVERITY.ERROR)
+                    .withMessage("Bridge '" + bridge.getId() + "' disconnected")
                     .withPayload(Payload.ContentType.PLAIN_TEXT, ExceptionUtils.getStackTrace(cause))
                     .fire();
 
-            //auto-reconnect
+            // auto-reconnect
             if (stopped.get()) {
                 if (log.isDebugEnabled()) {
                     log.debug("Bridge '{}' is stopped, canceling any pending reconnections", bridge.getId());
@@ -455,9 +539,10 @@ public class BridgeMqttClient {
                 if (startFuture != null && !startFuture.isCancelled()) {
                     try {
                         startFuture.cancel(true);
-                    }  catch (final Exception e) {
+                    } catch (final Exception e) {
                         if (log.isDebugEnabled()) {
-                            log.debug("While canceling bridge '{}' start, there is an error {}",
+                            log.debug(
+                                    "While canceling bridge '{}' start, there is an error {}",
                                     bridge.getId(),
                                     e.getMessage());
                         }
@@ -480,12 +565,18 @@ public class BridgeMqttClient {
                 final long delayMs = Math.min(calculatedDelay, RECONNECT_MAX_DELAY_MS);
                 // Full jitter is often better for reducing load spikes
                 // This gives random delay between 0 and delayMs * JITTER_FACTOR
-                final long jitterMs =
-                        (long) (delayMs * RECONNECT_JITTER_FACTOR * ThreadLocalRandom.current().nextDouble());
+                final long jitterMs = (long) (delayMs
+                        * RECONNECT_JITTER_FACTOR
+                        * ThreadLocalRandom.current().nextDouble());
                 final long totalDelayMs = delayMs + jitterMs;
                 if (log.isInfoEnabled()) {
-                    log.info("Bridge '{}' will attempt reconnection #{} in {} ms (delay: {} ms, jitter: {} ms)",
-                            bridge.getId(), attempts + 1, totalDelayMs, delayMs, jitterMs);
+                    log.info(
+                            "Bridge '{}' will attempt reconnection #{} in {} ms (delay: {} ms, jitter: {} ms)",
+                            bridge.getId(),
+                            attempts + 1,
+                            totalDelayMs,
+                            delayMs,
+                            jitterMs);
                 }
                 reconnector.reconnect(true).delay(totalDelayMs, TimeUnit.MILLISECONDS);
             } else {
@@ -505,18 +596,18 @@ public class BridgeMqttClient {
                 sslConfigBuilder.protocols(bridgeTls.getProtocols());
             }
             if (bridgeTls.getKeystorePath() != null) {
-                final KeyManagerFactory keyManagerFactory =
-                        SslUtil.createKeyManagerFactory(requireNonNullElse(bridgeTls.getKeystoreType(),
-                                        StoreTypeUtil.deductType(bridgeTls.getKeystorePath())),
-                                bridgeTls.getKeystorePath(),
-                                bridgeTls.getKeystorePassword(),
-                                bridgeTls.getPrivateKeyPassword());
+                final KeyManagerFactory keyManagerFactory = SslUtil.createKeyManagerFactory(
+                        requireNonNullElse(
+                                bridgeTls.getKeystoreType(), StoreTypeUtil.deductType(bridgeTls.getKeystorePath())),
+                        bridgeTls.getKeystorePath(),
+                        bridgeTls.getKeystorePassword(),
+                        bridgeTls.getPrivateKeyPassword());
                 sslConfigBuilder.keyManagerFactory(keyManagerFactory);
             }
             if (bridgeTls.getTruststorePath() != null) {
-                final TrustManagerFactory trustManagerFactory = SslUtil.createTrustManagerFactory(requireNonNullElse(
-                                bridgeTls.getTruststoreType(),
-                                StoreTypeUtil.deductType(bridgeTls.getTruststorePath())),
+                final TrustManagerFactory trustManagerFactory = SslUtil.createTrustManagerFactory(
+                        requireNonNullElse(
+                                bridgeTls.getTruststoreType(), StoreTypeUtil.deductType(bridgeTls.getTruststorePath())),
                         bridgeTls.getTruststorePath(),
                         bridgeTls.getTruststorePassword());
                 sslConfigBuilder.trustManagerFactory(trustManagerFactory);

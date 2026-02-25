@@ -17,9 +17,9 @@ package com.hivemq.api.model.components;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Bean to transport module details across the API
@@ -29,7 +29,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public class Listener {
 
     public enum TRANSPORT {
-        TCP, UDP, DCCP, SCTP, RSVP, QUIC
+        TCP,
+        UDP,
+        DCCP,
+        SCTP,
+        RSVP,
+        QUIC
     }
 
     @JsonProperty("hostName")

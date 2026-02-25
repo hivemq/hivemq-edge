@@ -15,29 +15,27 @@
  */
 package com.hivemq.util;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-
 public class StringsTest {
 
     private ByteBuf buffer;
+
     @BeforeEach
     public void setUp() throws Exception {
 
         buffer = Unpooled.buffer();
-
     }
 
     @Test
@@ -152,6 +150,7 @@ public class StringsTest {
 
     @Test
     public void test_to_human_readable_TB() {
-        assertEquals("1.11 TB", Strings.toHumanReadableFormat(1024L * 1024L * 1024L * 1024L + 110 * 1024L * 1024L * 1024L));
+        assertEquals(
+                "1.11 TB", Strings.toHumanReadableFormat(1024L * 1024L * 1024L * 1024L + 110 * 1024L * 1024L * 1024L));
     }
 }

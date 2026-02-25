@@ -16,12 +16,10 @@
 package com.hivemq.extensions.events.client.parameters;
 
 import com.google.common.collect.ImmutableMap;
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.events.client.ClientLifecycleEventListener;
 import com.hivemq.extensions.ExtensionPriorityComparator;
 import com.hivemq.extensions.HiveMQExtensions;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +27,7 @@ import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Wrapper class for all ClientLifecycleEventListeners added by extensions.
@@ -72,7 +71,6 @@ public class ClientEventListeners {
         } finally {
             lock.unlock();
         }
-
     }
 
     public @NotNull Map<String, ClientLifecycleEventListener> getPluginEventListenersMap() {

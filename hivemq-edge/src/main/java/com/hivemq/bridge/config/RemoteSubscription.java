@@ -15,11 +15,10 @@
  */
 package com.hivemq.bridge.config;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.List;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class RemoteSubscription {
 
@@ -70,22 +69,20 @@ public class RemoteSubscription {
         return maxQoS;
     }
 
-
     @Override
     public String toString() {
-        return "RemoteSubscription{" +
-                "filters=" +
-                filters +
-                ", destination='" +
-                destination +
-                '\'' +
-                ", customUserProperties=" +
-                customUserProperties +
-                ", preserveRetain=" +
-                preserveRetain +
-                ", maxQoS=" +
-                maxQoS +
-                '}';
+        return "RemoteSubscription{" + "filters="
+                + filters
+                + ", destination='"
+                + destination
+                + '\''
+                + ", customUserProperties="
+                + customUserProperties
+                + ", preserveRetain="
+                + preserveRetain
+                + ", maxQoS="
+                + maxQoS
+                + '}';
     }
 
     @Override

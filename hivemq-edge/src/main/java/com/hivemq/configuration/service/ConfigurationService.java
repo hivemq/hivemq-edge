@@ -23,10 +23,9 @@ import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.configuration.reader.PulseExtractor;
 import com.hivemq.configuration.reader.UnsExtractor;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
-import org.jetbrains.annotations.NotNull;
-
 import java.io.Writer;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * The Configuration Service interface which allows to change HiveMQ configuration programmatically.
@@ -34,7 +33,6 @@ import java.util.Optional;
  * @author Dominik Obermaier
  * @since 3.0
  */
-
 public interface ConfigurationService {
 
     /**
@@ -42,66 +40,81 @@ public interface ConfigurationService {
      *
      * @return the listener configuration service
      */
-    @NotNull ListenerConfigurationService listenerConfiguration();
+    @NotNull
+    ListenerConfigurationService listenerConfiguration();
 
     /**
      * Returns the configuration service for MQTT configuration
      *
      * @return the mqtt configuration service
      */
-    @NotNull MqttConfigurationService mqttConfiguration();
+    @NotNull
+    MqttConfigurationService mqttConfiguration();
 
     /**
      * Returns the throttling configuration service for global throttling
      *
      * @return the global throttling service
      */
-    @NotNull RestrictionsConfigurationService restrictionsConfiguration();
+    @NotNull
+    RestrictionsConfigurationService restrictionsConfiguration();
 
     /**
      * Returns the configuration service for MQTTSN configuration
      *
      * @return the mqttsn configuration service
      */
-    @NotNull MqttsnConfigurationService mqttsnConfiguration();
+    @NotNull
+    MqttsnConfigurationService mqttsnConfiguration();
 
     /**
      * Returns the configuration service for Api configuration
      *
      * @return the api configuration service
      */
-    @NotNull ApiConfigurationService apiConfiguration();
+    @NotNull
+    ApiConfigurationService apiConfiguration();
 
-    @NotNull SecurityConfigurationService securityConfiguration();
+    @NotNull
+    SecurityConfigurationService securityConfiguration();
 
-    @NotNull PersistenceConfigurationService persistenceConfigurationService();
+    @NotNull
+    PersistenceConfigurationService persistenceConfigurationService();
 
-    @NotNull DynamicConfigurationService gatewayConfiguration();
+    @NotNull
+    DynamicConfigurationService gatewayConfiguration();
 
-    @NotNull UsageTrackingConfigurationService usageTrackingConfiguration();
+    @NotNull
+    UsageTrackingConfigurationService usageTrackingConfiguration();
 
-    @NotNull ModuleConfigurationService commercialModuleConfigurationService();
+    @NotNull
+    ModuleConfigurationService commercialModuleConfigurationService();
 
-    @NotNull InternalConfigurationService internalConfigurationService();
+    @NotNull
+    InternalConfigurationService internalConfigurationService();
 
-    @NotNull BridgeExtractor bridgeExtractor();
+    @NotNull
+    BridgeExtractor bridgeExtractor();
 
-    @NotNull ProtocolAdapterExtractor protocolAdapterExtractor();
+    @NotNull
+    ProtocolAdapterExtractor protocolAdapterExtractor();
 
-    @NotNull DataCombiningExtractor dataCombiningExtractor();
+    @NotNull
+    DataCombiningExtractor dataCombiningExtractor();
 
-    @NotNull AssetMappingExtractor assetMappingExtractor();
+    @NotNull
+    AssetMappingExtractor assetMappingExtractor();
 
-    @NotNull PulseExtractor pulseExtractor();
+    @NotNull
+    PulseExtractor pulseExtractor();
 
-    @NotNull UnsExtractor unsExtractor();
+    @NotNull
+    UnsExtractor unsExtractor();
 
     void setConfigFileReaderWriter(@NotNull ConfigFileReaderWriter configFileReaderWriter);
 
     void writeConfiguration(final @NotNull Writer writer);
 
-    @NotNull Optional<Long> getLastUpdateTime();
-
+    @NotNull
+    Optional<Long> getLastUpdateTime();
 }
-
-

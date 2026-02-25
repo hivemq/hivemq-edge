@@ -15,6 +15,10 @@
  */
 package com.hivemq.api.auth;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.api.AuthTestUtils;
 import com.hivemq.api.TestApiResource;
@@ -28,6 +32,11 @@ import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;
 import com.hivemq.http.core.HttpResponse;
 import com.hivemq.http.core.HttpUrlConnectionClient;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterAll;
@@ -36,18 +45,9 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 /**
  * @author martin Schoenert
+ *
  * This is basically a copy of the BasicAuthenticationTests,
  * but this time we do NOT enforce the user roles, so the tests that expect role enforcement now return success!
  * these tests have a message "Resource should be allowed (because auth is not enforced)" or similar
@@ -70,7 +70,7 @@ public class EnforceApiAuthTest {
         //-- ensure we supplied our own test mapper as this can effect output
         config.setObjectMapper(new ObjectMapper());
 
-        final Set<IAuthenticationHandler > authenticationHandlers = new HashSet<>();
+        final Set<IAuthenticationHandler> authenticationHandlers = new HashSet<>();
         authenticationHandlers.add(new BasicAuthenticationHandler(AuthTestUtils.createTestUsernamePasswordProvider()));
         final var apiConfigurationService = mock(ApiConfigurationService.class);
         when(apiConfigurationService.isEnforceApiAuth()).thenReturn(false);
@@ -196,5 +196,4 @@ public class EnforceApiAuthTest {
         final var response = get("test/permitall/get/adminonly", "testadmin", "test");
         assertEquals(200, response.getStatusCode(), "Resource should be allowed");
     }
-
 }

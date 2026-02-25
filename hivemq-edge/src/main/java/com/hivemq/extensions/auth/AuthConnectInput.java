@@ -16,8 +16,6 @@
 package com.hivemq.extensions.auth;
 
 import com.hivemq.bootstrap.ClientConnection;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.auth.parameter.EnhancedAuthConnectInput;
 import com.hivemq.extension.sdk.api.auth.parameter.SimpleAuthInput;
 import com.hivemq.extension.sdk.api.packets.connect.ConnectPacket;
@@ -25,9 +23,10 @@ import com.hivemq.extensions.packets.connect.ConnectPacketImpl;
 import com.hivemq.extensions.parameter.ClientBasedInputImpl;
 import com.hivemq.mqtt.message.connect.CONNECT;
 import io.netty.channel.Channel;
-
 import java.util.Objects;
 import java.util.function.Supplier;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Georg Held
@@ -44,7 +43,8 @@ public class AuthConnectInput extends ClientBasedInputImpl
     public AuthConnectInput(final @NotNull CONNECT connect, final @NotNull Channel channel) {
         super(connect.getClientIdentifier(), channel);
         this.connect = connect;
-        this.connectTimestamp = Objects.requireNonNullElse(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getConnectReceivedTimestamp(),
+        this.connectTimestamp = Objects.requireNonNullElse(
+                channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getConnectReceivedTimestamp(),
                 System.currentTimeMillis());
     }
 

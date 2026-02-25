@@ -33,22 +33,26 @@ public interface Listener {
     /**
      * @return the bind address of a listener
      */
-    @NotNull String getBindAddress();
+    @NotNull
+    String getBindAddress();
 
     /**
      * @return the human-readable, name of the listener
      */
-    @NotNull String getReadableName();
+    @NotNull
+    String getReadableName();
 
     /**
      * @return the name of the listener
      * @since 4.1
      */
-    @NotNull String getName();
+    @NotNull
+    String getName();
 
     /**
      * @return the hostname where the listener can be reached from clients
      * @since 4.1
      */
-    @Nullable String getExternalHostname();
+    @Nullable
+    String getExternalHostname();
 }

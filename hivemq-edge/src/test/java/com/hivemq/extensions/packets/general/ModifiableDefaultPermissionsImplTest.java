@@ -15,6 +15,10 @@
  */
 package com.hivemq.extensions.packets.general;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.google.common.collect.Lists;
 import com.hivemq.extension.sdk.api.auth.parameter.TopicPermission;
 import com.hivemq.extension.sdk.api.packets.auth.DefaultAuthorizationBehaviour;
@@ -23,13 +27,8 @@ import com.hivemq.extension.sdk.api.services.exception.DoNotImplementException;
 import com.hivemq.extensions.services.builder.TopicPermissionBuilderImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import util.TestConfigurationBootstrap;
 import util.TestTopicPermissionsUtil;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Christoph Schäbel
@@ -37,8 +36,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @SuppressWarnings("NullabilityAnnotations")
 public class ModifiableDefaultPermissionsImplTest {
 
-
     private ModifiableDefaultPermissions modifiableDefaultPermissions;
+
     @BeforeEach
     public void before() {
         modifiableDefaultPermissions = new ModifiableDefaultPermissionsImpl();
@@ -46,53 +45,60 @@ public class ModifiableDefaultPermissionsImplTest {
 
     @Test
     public void test_add_null() {
-    
+
         assertThrows(NullPointerException.class, () -> modifiableDefaultPermissions.add(null));
     }
 
     @Test
     public void test_addAll_null() {
-    
+
         assertThrows(NullPointerException.class, () -> modifiableDefaultPermissions.addAll(null));
     }
 
     @Test
     public void test_addAll_element_in_list_null() {
-    
-        assertThrows(NullPointerException.class, () -> modifiableDefaultPermissions.addAll(Lists.newArrayList(TestTopicPermissionsUtil.getTopicPermission(), null)));
+
+        assertThrows(
+                NullPointerException.class,
+                () -> modifiableDefaultPermissions.addAll(
+                        Lists.newArrayList(TestTopicPermissionsUtil.getTopicPermission(), null)));
     }
 
     @Test
     public void test_remove_null() {
-    
+
         assertThrows(NullPointerException.class, () -> modifiableDefaultPermissions.remove(null));
     }
 
     @Test
     public void test_setDefaultBehaviour_null() {
-    
+
         assertThrows(NullPointerException.class, () -> modifiableDefaultPermissions.setDefaultBehaviour(null));
     }
 
     @Test
     public void test_remove_illegal_class() {
-    
-        assertThrows(DoNotImplementException.class, () -> modifiableDefaultPermissions.remove(new TestTopicPermissionsUtil.TestTopicPermission()));
+
+        assertThrows(
+                DoNotImplementException.class,
+                () -> modifiableDefaultPermissions.remove(new TestTopicPermissionsUtil.TestTopicPermission()));
     }
 
     @Test
     public void test_add_illegal_class() {
-    
-        assertThrows(DoNotImplementException.class, () -> modifiableDefaultPermissions.add(new TestTopicPermissionsUtil.TestTopicPermission()));
+
+        assertThrows(
+                DoNotImplementException.class,
+                () -> modifiableDefaultPermissions.add(new TestTopicPermissionsUtil.TestTopicPermission()));
     }
 
     @Test
     public void test_addAll_illegal_class() {
-        assertThatThrownBy(() -> modifiableDefaultPermissions.addAll(Lists.newArrayList(new TestTopicPermissionsUtil.TestTopicPermission(),
-                new TestTopicPermissionsUtil.TestTopicPermission())))
+        assertThatThrownBy(() -> modifiableDefaultPermissions.addAll(Lists.newArrayList(
+                        new TestTopicPermissionsUtil.TestTopicPermission(),
+                        new TestTopicPermissionsUtil.TestTopicPermission())))
                 .isInstanceOf(DoNotImplementException.class);
     }
-
 
     @Test
     public void test_add_default_changes_to_deny() {
@@ -133,8 +139,14 @@ public class ModifiableDefaultPermissionsImplTest {
     @Test
     public void test_add_remove_asList() {
 
-        final TopicPermission a = new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService()).topicFilter("a").build();
-        final TopicPermission b = new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService()).topicFilter("b").build();
+        final TopicPermission a = new TopicPermissionBuilderImpl(
+                        new TestConfigurationBootstrap().getConfigurationService())
+                .topicFilter("a")
+                .build();
+        final TopicPermission b = new TopicPermissionBuilderImpl(
+                        new TestConfigurationBootstrap().getConfigurationService())
+                .topicFilter("b")
+                .build();
 
         modifiableDefaultPermissions.add(a);
 
@@ -155,8 +167,14 @@ public class ModifiableDefaultPermissionsImplTest {
     @Test
     public void test_addAll() {
 
-        final TopicPermission a = new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService()).topicFilter("a").build();
-        final TopicPermission b = new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService()).topicFilter("b").build();
+        final TopicPermission a = new TopicPermissionBuilderImpl(
+                        new TestConfigurationBootstrap().getConfigurationService())
+                .topicFilter("a")
+                .build();
+        final TopicPermission b = new TopicPermissionBuilderImpl(
+                        new TestConfigurationBootstrap().getConfigurationService())
+                .topicFilter("b")
+                .build();
 
         modifiableDefaultPermissions.addAll(Lists.newArrayList(a, b));
 
@@ -169,8 +187,14 @@ public class ModifiableDefaultPermissionsImplTest {
     @Test
     public void test_clear() {
 
-        final TopicPermission a = new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService()).topicFilter("a").build();
-        final TopicPermission b = new TopicPermissionBuilderImpl(new TestConfigurationBootstrap().getConfigurationService()).topicFilter("b").build();
+        final TopicPermission a = new TopicPermissionBuilderImpl(
+                        new TestConfigurationBootstrap().getConfigurationService())
+                .topicFilter("a")
+                .build();
+        final TopicPermission b = new TopicPermissionBuilderImpl(
+                        new TestConfigurationBootstrap().getConfigurationService())
+                .topicFilter("b")
+                .build();
 
         modifiableDefaultPermissions.addAll(Lists.newArrayList(a, b));
 

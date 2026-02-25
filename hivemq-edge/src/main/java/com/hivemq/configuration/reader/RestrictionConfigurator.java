@@ -15,19 +15,16 @@
  */
 package com.hivemq.configuration.reader;
 
+import static com.hivemq.configuration.service.RestrictionsConfigurationService.*;
+
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.RestrictionsEntity;
-import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
-import static com.hivemq.configuration.service.RestrictionsConfigurationService.*;
-
-public class RestrictionConfigurator implements Configurator<RestrictionsEntity>{
+public class RestrictionConfigurator implements Configurator<RestrictionsEntity> {
 
     private static final Logger log = LoggerFactory.getLogger(RestrictionConfigurator.class);
 
@@ -42,7 +39,7 @@ public class RestrictionConfigurator implements Configurator<RestrictionsEntity>
 
     @Override
     public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
-        if(initialized && hasChanged(this.configEntity, config.getRestrictionsConfig())) {
+        if (initialized && hasChanged(this.configEntity, config.getRestrictionsConfig())) {
             return true;
         }
         return false;
@@ -54,9 +51,12 @@ public class RestrictionConfigurator implements Configurator<RestrictionsEntity>
         this.initialized = true;
 
         restrictionsConfigurationService.setMaxConnections(validateMaxConnections(configEntity.getMaxConnections()));
-        restrictionsConfigurationService.setMaxClientIdLength(validateMaxClientIdLength(configEntity.getMaxClientIdLength()));
-        restrictionsConfigurationService.setNoConnectIdleTimeout(validateNoConnectIdleTimeout(configEntity.getNoConnectIdleTimeout()));
-        restrictionsConfigurationService.setIncomingLimit(validateIncomingLimit(configEntity.getIncomingBandwidthThrottling()));
+        restrictionsConfigurationService.setMaxClientIdLength(
+                validateMaxClientIdLength(configEntity.getMaxClientIdLength()));
+        restrictionsConfigurationService.setNoConnectIdleTimeout(
+                validateNoConnectIdleTimeout(configEntity.getNoConnectIdleTimeout()));
+        restrictionsConfigurationService.setIncomingLimit(
+                validateIncomingLimit(configEntity.getIncomingBandwidthThrottling()));
         restrictionsConfigurationService.setMaxTopicLength(validateMaxTopicLength(configEntity.getMaxTopicLength()));
         return ConfigResult.SUCCESS;
     }
@@ -92,7 +92,10 @@ public class RestrictionConfigurator implements Configurator<RestrictionsEntity>
         if (maxTopicLength < MAX_TOPIC_LENGTH_MINIMUM || maxTopicLength > MAX_TOPIC_LENGTH_MAXIMUM) {
             log.warn(
                     "The configured max-topic-length ({}) must be in the range {} - {}. The default value ({}) is used instead.",
-                    maxTopicLength, MAX_TOPIC_LENGTH_MINIMUM, MAX_TOPIC_LENGTH_MAXIMUM, MAX_TOPIC_LENGTH_DEFAULT);
+                    maxTopicLength,
+                    MAX_TOPIC_LENGTH_MINIMUM,
+                    MAX_TOPIC_LENGTH_MAXIMUM,
+                    MAX_TOPIC_LENGTH_DEFAULT);
             return MAX_TOPIC_LENGTH_DEFAULT;
         }
         return maxTopicLength;
@@ -120,7 +123,4 @@ public class RestrictionConfigurator implements Configurator<RestrictionsEntity>
         }
         return incomingLimit;
     }
-
-
-
 }

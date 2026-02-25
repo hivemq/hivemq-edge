@@ -20,26 +20,27 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import org.jetbrains.annotations.NotNull;
 
-public record OpcUaToMqttConfig (@JsonProperty("serverQueueSize")
-                                 @ModuleConfigField(title = "OPC UA server queue size",
-                                                    description = "OPC UA queue size for this subscription on the server",
-                                                    numberMin = 1,
-                                                    defaultValue = "1")
-                                 int serverQueueSize,
-                                 @JsonProperty("publishingInterval")
-                                 @ModuleConfigField(title = "OPC UA publishing interval [ms]",
-                                                    description = "OPC UA publishing interval in milliseconds for this subscription on the server",
-                                                    numberMin = 1,
-                                                    defaultValue = "1000")
-                                 int publishingInterval
-                                 ) {
+public record OpcUaToMqttConfig(
+        @JsonProperty("serverQueueSize")
+        @ModuleConfigField(
+                title = "OPC UA server queue size",
+                description = "OPC UA queue size for this subscription on the server",
+                numberMin = 1,
+                defaultValue = "1")
+        int serverQueueSize,
+
+        @JsonProperty("publishingInterval")
+        @ModuleConfigField(
+                title = "OPC UA publishing interval [ms]",
+                description = "OPC UA publishing interval in milliseconds for this subscription on the server",
+                numberMin = 1,
+                defaultValue = "1000")
+        int publishingInterval) {
 
     @JsonCreator
-    public OpcUaToMqttConfig{
-    }
+    public OpcUaToMqttConfig {}
 
     public static @NotNull OpcUaToMqttConfig defaultOpcUaToMqttConfig() {
         return new OpcUaToMqttConfig(1, 1000);
     }
-
 }

@@ -16,17 +16,16 @@
 package com.hivemq.extensions.auth.parameter;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.hivemq.extension.sdk.api.auth.parameter.PublishAuthorizerOutput;
 import com.hivemq.extension.sdk.api.packets.disconnect.DisconnectReasonCode;
 import com.hivemq.extension.sdk.api.packets.publish.AckReasonCode;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
 import com.hivemq.extensions.executor.task.AbstractAsyncOutput;
 import com.hivemq.extensions.executor.task.PluginTaskOutput;
-
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Christoph Schäbel
@@ -43,9 +42,12 @@ public class PublishAuthorizerOutputImpl extends AbstractAsyncOutput<PublishAuth
     private final @NotNull AtomicBoolean completed = new AtomicBoolean(false);
     private final @NotNull AtomicBoolean authorizerPresent = new AtomicBoolean(false);
 
-
     public enum AuthorizationState {
-        SUCCESS, CONTINUE, FAIL, DISCONNECT, UNDECIDED
+        SUCCESS,
+        CONTINUE,
+        FAIL,
+        DISCONNECT,
+        UNDECIDED
     }
 
     public PublishAuthorizerOutputImpl(final @NotNull PluginOutPutAsyncer asyncer) {
@@ -75,8 +77,7 @@ public class PublishAuthorizerOutputImpl extends AbstractAsyncOutput<PublishAuth
     public void failAuthorization(final @NotNull AckReasonCode reasonCode) {
         checkCompleted("failAuthorization");
         Preconditions.checkNotNull(reasonCode, "reason code must never be null");
-        if (reasonCode == AckReasonCode.SUCCESS ||
-                reasonCode == AckReasonCode.NO_MATCHING_SUBSCRIBERS) {
+        if (reasonCode == AckReasonCode.SUCCESS || reasonCode == AckReasonCode.NO_MATCHING_SUBSCRIBERS) {
             throw new IllegalArgumentException("Fail must use an Ack Error code");
         }
 
@@ -89,8 +90,7 @@ public class PublishAuthorizerOutputImpl extends AbstractAsyncOutput<PublishAuth
         checkCompleted("failAuthorization");
         Preconditions.checkNotNull(reasonCode, "reason code must never be null");
         Preconditions.checkNotNull(reasonString, "reason string must never be null");
-        if (reasonCode == AckReasonCode.SUCCESS ||
-                reasonCode == AckReasonCode.NO_MATCHING_SUBSCRIBERS) {
+        if (reasonCode == AckReasonCode.SUCCESS || reasonCode == AckReasonCode.NO_MATCHING_SUBSCRIBERS) {
             throw new IllegalArgumentException("Fail must use an Ack Error code");
         }
 
@@ -127,8 +127,9 @@ public class PublishAuthorizerOutputImpl extends AbstractAsyncOutput<PublishAuth
     @Override
     public void nextExtensionOrDefault() {
         if (completed.get()) {
-            throw new UnsupportedOperationException("nextExtensionOrDefault must not be called if authorizeSuccessfully, " +
-                    "failAuthorization, disconnectClient or nextExtensionOrDefault has already been called");
+            throw new UnsupportedOperationException(
+                    "nextExtensionOrDefault must not be called if authorizeSuccessfully, "
+                            + "failAuthorization, disconnectClient or nextExtensionOrDefault has already been called");
         }
         authorizationState = AuthorizationState.CONTINUE;
     }
@@ -147,8 +148,8 @@ public class PublishAuthorizerOutputImpl extends AbstractAsyncOutput<PublishAuth
 
     private void checkCompleted(final @NotNull String method) {
         if (!completed.compareAndSet(false, true)) {
-            throw new UnsupportedOperationException(method + " must not be called if authorizeSuccessfully, " +
-                    "failAuthorization, disconnectClient or nextExtensionOrDefault has already been called");
+            throw new UnsupportedOperationException(method + " must not be called if authorizeSuccessfully, "
+                    + "failAuthorization, disconnectClient or nextExtensionOrDefault has already been called");
         }
     }
 

@@ -31,12 +31,14 @@ public interface RestrictionsConfigurationService {
      * UNLIMITED
      */
     int UNLIMITED_CONNECTIONS = -1;
+
     int UNLIMITED_BANDWIDTH = 0;
 
     /**
      * DEFAULT VALUES
      */
     long MAX_CONNECTIONS_DEFAULT = UNLIMITED_CONNECTIONS;
+
     int MAX_CLIENT_ID_LENGTH_DEFAULT = 65535;
     long NO_CONNECT_IDLE_TIMEOUT_DEFAULT = 10000;
     long INCOMING_BANDWIDTH_THROTTLING_DEFAULT = UNLIMITED_BANDWIDTH;
@@ -46,13 +48,13 @@ public interface RestrictionsConfigurationService {
      * BOUNDARY VALUES
      */
     long MAX_CONNECTIONS_MINIMUM = 0;
+
     int MAX_CLIENT_ID_LENGTH_MINIMUM = 1;
     int MAX_CLIENT_ID_LENGTH_MAXIMUM = UnsignedDataTypes.UNSIGNED_SHORT_MAX_VALUE;
     long NO_CONNECT_IDLE_TIMEOUT_MINIMUM = 1;
     long INCOMING_BANDWIDTH_THROTTLING_MINIMUM = 0;
     int MAX_TOPIC_LENGTH_MINIMUM = 1;
     int MAX_TOPIC_LENGTH_MAXIMUM = UnsignedDataTypes.UNSIGNED_SHORT_MAX_VALUE;
-
 
     /**
      * Returns the maximum allowed connections.
@@ -93,5 +95,4 @@ public interface RestrictionsConfigurationService {
     void setIncomingLimit(long incomingLimit);
 
     void setMaxTopicLength(int maxTopicLength);
-
 }

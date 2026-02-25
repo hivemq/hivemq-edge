@@ -23,9 +23,9 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.edge.modules.adapters.data.TagManager;
+import dagger.internal.Preconditions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import dagger.internal.Preconditions;
 
 public class ModuleServicesPerModuleImpl implements ModuleServices {
 
@@ -74,8 +74,7 @@ public class ModuleServicesPerModuleImpl implements ModuleServices {
         private final @NotNull ProtocolAdapterPublishService delegate;
         private @Nullable ProtocolAdapter adapter;
 
-        public ProtocolAdapterPublishServicePerAdapter(
-                final @NotNull ProtocolAdapterPublishService delegate) {
+        public ProtocolAdapterPublishServicePerAdapter(final @NotNull ProtocolAdapterPublishService delegate) {
             this.delegate = delegate;
         }
 
@@ -92,4 +91,3 @@ public class ModuleServicesPerModuleImpl implements ModuleServices {
         }
     }
 }
-

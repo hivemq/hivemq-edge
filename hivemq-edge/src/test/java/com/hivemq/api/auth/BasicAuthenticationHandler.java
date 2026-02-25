@@ -24,11 +24,10 @@ import com.hivemq.http.core.UsernamePasswordRoles;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
-import org.jetbrains.annotations.NotNull;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson

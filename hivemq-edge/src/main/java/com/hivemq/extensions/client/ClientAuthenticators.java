@@ -15,15 +15,14 @@
  */
 package com.hivemq.extensions.client;
 
-import org.jetbrains.annotations.NotNull;
 import com.hivemq.extension.sdk.api.auth.EnhancedAuthenticator;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
-
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Florian Limpöck
-*/
+ */
 public interface ClientAuthenticators {
 
     /**
@@ -44,6 +43,6 @@ public interface ClientAuthenticators {
     /**
      * @return a map containing all extensions with their registered enhanced authenticators.
      */
-    @NotNull Map<String, EnhancedAuthenticator> getAuthenticatorMap();
-
+    @NotNull
+    Map<String, EnhancedAuthenticator> getAuthenticatorMap();
 }

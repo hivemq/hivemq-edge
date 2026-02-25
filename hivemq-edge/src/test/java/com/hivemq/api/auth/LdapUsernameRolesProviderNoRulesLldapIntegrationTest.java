@@ -15,6 +15,9 @@
  */
 package com.hivemq.api.auth;
 
+import static com.hivemq.api.auth.ApiRoles.ADMIN;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.hivemq.api.auth.provider.IUsernameRolesProvider;
 import com.hivemq.api.auth.provider.impl.ldap.LdapConnectionProperties;
 import com.hivemq.api.auth.provider.impl.ldap.LdapUsernameRolesProvider;
@@ -23,17 +26,13 @@ import com.hivemq.api.auth.provider.impl.ldap.testcontainer.LdapTestConnection;
 import com.hivemq.api.auth.provider.impl.ldap.testcontainer.LldapContainer;
 import com.hivemq.logging.SecurityLog;
 import com.unboundid.ldap.sdk.SearchScope;
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Optional;
-
-import static com.hivemq.api.auth.ApiRoles.ADMIN;
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Integration test for {@link LdapUsernameRolesProvider} using LLDAP testcontainer.
@@ -42,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Uses plain LDAP (no TLS) for simplicity in testing.
  */
 @Testcontainers
-class LdapUsernameRolesProviderIntegrationTest {
+class LdapUsernameRolesProviderNoRulesLldapIntegrationTest {
 
     @Container
     private static final LldapContainer LLDAP_CONTAINER = new LldapContainer();
@@ -57,43 +56,37 @@ class LdapUsernameRolesProviderIntegrationTest {
 
         // Create LdapSimpleBind for LLDAP admin authentication
         // LLDAP admin DN: uid=admin
-        final var ldapSimpleBind =
-                new LdapConnectionProperties.LdapSimpleBind(
-                        "uid=" + LLDAP_CONTAINER.getAdminUsername(),
-                        LLDAP_CONTAINER.getAdminPassword());
+        final var ldapSimpleBind = new LdapConnectionProperties.LdapSimpleBind(
+                LLDAP_CONTAINER.getAdminRdns(), LLDAP_CONTAINER.getAdminPassword());
 
         // Create connection properties for plain LDAP (no TLS for simplicity)
         // 5 second connect timeout
         // 10 second response timeout
-        final var ldapConnectionProperties =
-                new LdapConnectionProperties(
-                        new LdapConnectionProperties.LdapServers(new String[]{host}, new int[]{port}),
-                        TlsMode.NONE,
-                        null,
-                        5000,  // 5 second connect timeout
-                        10000, // 10 second response timeout
-                        1,
-                        "uid",       // uidAttribute
-                        getBaseDn(), // rdns
-                        null,
-                        SearchScope.SUB,
-                        5,
-                        ADMIN,  // assignedRole
-                        false,
-                        ldapSimpleBind);
+        final var ldapConnectionProperties = new LdapConnectionProperties(
+                new LdapConnectionProperties.LdapServers(new String[] {host}, new int[] {port}),
+                TlsMode.NONE,
+                null,
+                5000, // 5 second connect timeout
+                10000, // 10 second response timeout
+                1,
+                "uid", // uidAttribute
+                LLDAP_CONTAINER.getBaseDn(), // rdns
+                null,
+                null,
+                SearchScope.SUB,
+                5,
+                ADMIN, // assignedRole
+                false,
+                ldapSimpleBind,
+                null);
 
         // Create test user in LLDAP
-        new LdapTestConnection(ldapConnectionProperties).createTestUser(
-                LLDAP_CONTAINER.getAdminDn(),
-                LLDAP_CONTAINER.getAdminPassword(),
-                LLDAP_CONTAINER.getBaseDn());
+        new LdapTestConnection(ldapConnectionProperties)
+                .createTestUser(
+                        LLDAP_CONTAINER.getAdminDn(), LLDAP_CONTAINER.getAdminPassword(), LLDAP_CONTAINER.getBaseDn());
 
         // Create the LdapUsernameRolesProvider
         provider = new LdapUsernameRolesProvider(ldapConnectionProperties, new SecurityLog());
-    }
-
-    public static String getBaseDn() {
-        return "ou=people," + LLDAP_CONTAINER.getBaseDn();
     }
 
     @AfterAll
@@ -112,8 +105,8 @@ class LdapUsernameRolesProviderIntegrationTest {
     @Test
     void testSuccessfulAuthentication() {
         // Act
-        final Optional<IUsernameRolesProvider.UsernameRoles> result =
-                provider.findByUsernameAndPassword(LdapTestConnection.TEST_USERNAME, LdapTestConnection.TEST_PASSWORD.getBytes(StandardCharsets.UTF_8));
+        final Optional<IUsernameRolesProvider.UsernameRoles> result = provider.findByUsernameAndPassword(
+                LdapTestConnection.TEST_USERNAME, LdapTestConnection.TEST_PASSWORD.getBytes(StandardCharsets.UTF_8));
 
         // Assert
         assertThat(result)
@@ -143,13 +136,11 @@ class LdapUsernameRolesProviderIntegrationTest {
         final String wrongPassword = "wrongpassword";
 
         // Act
-        final Optional<IUsernameRolesProvider.UsernameRoles> result =
-                provider.findByUsernameAndPassword(LdapTestConnection.TEST_USERNAME, wrongPassword.getBytes(StandardCharsets.UTF_8));
+        final Optional<IUsernameRolesProvider.UsernameRoles> result = provider.findByUsernameAndPassword(
+                LdapTestConnection.TEST_USERNAME, wrongPassword.getBytes(StandardCharsets.UTF_8));
 
         // Assert
-        assertThat(result)
-                .as("Authentication should fail with wrong password")
-                .isEmpty();
+        assertThat(result).as("Authentication should fail with wrong password").isEmpty();
     }
 
     /**
@@ -183,8 +174,8 @@ class LdapUsernameRolesProviderIntegrationTest {
     @Test
     void testUsernameRolesToPrincipalConversion() {
         // Arrange & Act
-        final Optional<IUsernameRolesProvider.UsernameRoles> result =
-                provider.findByUsernameAndPassword(LdapTestConnection.TEST_USERNAME, LdapTestConnection.TEST_PASSWORD.getBytes(StandardCharsets.UTF_8));
+        final Optional<IUsernameRolesProvider.UsernameRoles> result = provider.findByUsernameAndPassword(
+                LdapTestConnection.TEST_USERNAME, LdapTestConnection.TEST_PASSWORD.getBytes(StandardCharsets.UTF_8));
 
         assertThat(result).isPresent();
 
@@ -213,13 +204,11 @@ class LdapUsernameRolesProviderIntegrationTest {
         final String emptyPassword = "";
 
         // Act
-        final Optional<IUsernameRolesProvider.UsernameRoles> result =
-                provider.findByUsernameAndPassword(LdapTestConnection.TEST_USERNAME, emptyPassword.getBytes(StandardCharsets.UTF_8));
+        final Optional<IUsernameRolesProvider.UsernameRoles> result = provider.findByUsernameAndPassword(
+                LdapTestConnection.TEST_USERNAME, emptyPassword.getBytes(StandardCharsets.UTF_8));
 
         // Assert
-        assertThat(result)
-                .as("Authentication should fail with empty password")
-                .isEmpty();
+        assertThat(result).as("Authentication should fail with empty password").isEmpty();
     }
 
     /**
@@ -233,12 +222,10 @@ class LdapUsernameRolesProviderIntegrationTest {
         final String emptyUsername = "";
 
         // Act
-        final Optional<IUsernameRolesProvider.UsernameRoles> result =
-                provider.findByUsernameAndPassword(emptyUsername, LdapTestConnection.TEST_PASSWORD.getBytes(StandardCharsets.UTF_8));
+        final Optional<IUsernameRolesProvider.UsernameRoles> result = provider.findByUsernameAndPassword(
+                emptyUsername, LdapTestConnection.TEST_PASSWORD.getBytes(StandardCharsets.UTF_8));
 
         // Assert
-        assertThat(result)
-                .as("Authentication should fail with empty username")
-                .isEmpty();
+        assertThat(result).as("Authentication should fail with empty username").isEmpty();
     }
 }
