@@ -38,10 +38,8 @@ public class BasicAuthenticationHandler extends AbstractHeaderAuthenticationHand
     static final String METHOD = "Basic";
     private final IUsernameRolesProvider provider;
 
-
     public static String getBasicAuthenticationHeaderValue(
-            final @NotNull String username,
-            final @NotNull String password) {
+            final @NotNull String username, final @NotNull String password) {
         final var usernamePasswordDecodedString = username + SEP + password;
         return METHOD + " " + Base64.getEncoder().encodeToString(usernamePasswordDecodedString.getBytes());
     }
@@ -52,21 +50,23 @@ public class BasicAuthenticationHandler extends AbstractHeaderAuthenticationHand
 
     @Override
     protected AuthenticationResult authenticateInternal(
-            final @NotNull ContainerRequestContext requestContext,
-            final @NotNull String authValue) {
-        return parseValue(authValue).flatMap(usernamePasswordRoles -> provider.findByUsernameAndPassword(
-                usernamePasswordRoles.getUserName(),
-                usernamePasswordRoles.getPassword())).map(usernameRoles -> {
-            final var result = AuthenticationResult.allowed(this);
-            result.setPrincipal(usernameRoles.toPrincipal());
-            return result;
-        }).orElseGet(() -> AuthenticationResult.denied(this));
+            final @NotNull ContainerRequestContext requestContext, final @NotNull String authValue) {
+        return parseValue(authValue)
+                .flatMap(usernamePasswordRoles -> provider.findByUsernameAndPassword(
+                        usernamePasswordRoles.getUserName(), usernamePasswordRoles.getPassword()))
+                .map(usernameRoles -> {
+                    final var result = AuthenticationResult.allowed(this);
+                    result.setPrincipal(usernameRoles.toPrincipal());
+                    return result;
+                })
+                .orElseGet(() -> AuthenticationResult.denied(this));
     }
 
     @Override
     public void decorateResponse(final AuthenticationResult result, final Response.ResponseBuilder builder) {
         if (!result.isSuccess()) {
-            builder.header(HttpConstants.BASIC_AUTH_CHALLENGE_HEADER,
+            builder.header(
+                    HttpConstants.BASIC_AUTH_CHALLENGE_HEADER,
                     String.format(HttpConstants.BASIC_AUTH_REALM, SecurityContext.BASIC_AUTH));
         }
     }

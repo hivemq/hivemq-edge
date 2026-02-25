@@ -15,6 +15,12 @@
  */
 package com.hivemq.api.auth;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.api.AuthTestUtils;
@@ -45,7 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.glassfish.jersey.server.ResourceConfig;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -71,7 +77,7 @@ public class ChainedAuthTests {
     public static void setUp() throws Exception {
         final JaxrsHttpServerConfiguration config = new JaxrsHttpServerConfiguration();
         config.setPort(TEST_HTTP_PORT);
-        //-- ensure we supplied our own test mapper as this can effect output
+        // -- ensure we supplied our own test mapper as this can effect output
         config.setObjectMapper(objectMapper);
 
         final var configuration = new ApiJwtConfiguration(2048, "Test-Issuer", "Test-Audience", 10, 2);
@@ -84,9 +90,8 @@ public class ChainedAuthTests {
         when(apiConfigurationService.isEnforceApiAuth()).thenReturn(true);
         final var apiAuthenticationFeature =
                 new ApiAuthenticationFeature(authenticationHandlers, apiConfigurationService);
-        final var authenticationResource = new AuthenticationResourceImpl(usernamePasswordProvider,
-                jwtAuthenticationProvider,
-                jwtAuthenticationProvider);
+        final var authenticationResource = new AuthenticationResourceImpl(
+                usernamePasswordProvider, jwtAuthenticationProvider, jwtAuthenticationProvider);
 
         final var resourceConfig = new ResourceConfig();
         resourceConfig.register(apiAuthenticationFeature);
@@ -106,14 +111,15 @@ public class ChainedAuthTests {
 
     protected static HttpResponse get(
             final @com.hivemq.extension.sdk.api.annotations.NotNull String path,
-            final @Nullable Map<String, String> headers) throws IOException {
+            final @Nullable Map<String, String> headers)
+            throws IOException {
         final var serverAddress = String.format("%s://%s:%s/%s", HTTP, "localhost", TEST_HTTP_PORT, path);
         return HttpUrlConnectionClient.get(headers, serverAddress, CONNECT_TIMEOUT, READ_TIMEOUT);
     }
 
     protected static HttpResponse post(
-            final @com.hivemq.extension.sdk.api.annotations.NotNull String path,
-            final ByteArrayInputStream body) throws IOException {
+            final @com.hivemq.extension.sdk.api.annotations.NotNull String path, final ByteArrayInputStream body)
+            throws IOException {
         final var headers = HttpUrlConnectionClient.JSON_HEADERS;
         final var serverAddress = String.format("%s://%s:%s/%s", HTTP, "localhost", TEST_HTTP_PORT, path);
         return HttpUrlConnectionClient.post(headers, serverAddress, body, CONNECT_TIMEOUT, READ_TIMEOUT);
@@ -121,8 +127,10 @@ public class ChainedAuthTests {
 
     protected ByteArrayInputStream bodyCredentials(
             final @com.hivemq.extension.sdk.api.annotations.NotNull String username,
-            final @com.hivemq.extension.sdk.api.annotations.NotNull String password) throws JsonProcessingException {
-        final var credentials = new UsernamePasswordCredentials().userName(username).password(password);
+            final @com.hivemq.extension.sdk.api.annotations.NotNull String password)
+            throws JsonProcessingException {
+        final var credentials =
+                new UsernamePasswordCredentials().userName(username).password(password);
         return new ByteArrayInputStream(objectMapper.writeValueAsBytes(credentials));
     }
 
@@ -145,13 +153,16 @@ public class ChainedAuthTests {
         response = post("api/v1/auth/authenticate", bodyCredentials("testuser", "invalidpassword"));
 
         assertEquals(401, response.getStatusCode(), "Resource should be denied");
-        assertEquals(HttpConstants.APPLICATION_PROBLEM_JSON_CHARSET_UTF_8,
+        assertEquals(
+                HttpConstants.APPLICATION_PROBLEM_JSON_CHARSET_UTF_8,
                 response.getContentType(),
                 "API authenticate response should be json");
-        assertThat(objectMapper.readValue(response.getResponseBody(), ProblemDetails.class)
-                .getErrors()
-                .getFirst()
-                .getDetail()).as("Response should indicate correct failure message")
+        assertThat(objectMapper
+                        .readValue(response.getResponseBody(), ProblemDetails.class)
+                        .getErrors()
+                        .getFirst()
+                        .getDetail())
+                .as("Response should indicate correct failure message")
                 .isEqualTo("Invalid username and/or password");
     }
 
@@ -168,13 +179,14 @@ public class ChainedAuthTests {
         assertNotNull(token.getToken(), "Response should contain a bearer token");
         final var bodyToken = new ByteArrayInputStream(objectMapper.writeValueAsBytes(token));
 
-        //-- now validate the token against the UNSECURE API which returns whether its valid
+        // -- now validate the token against the UNSECURE API which returns whether its valid
         response = post("api/v1/auth/validate-token", bodyToken);
 
         assertEquals(200, response.getStatusCode(), "Resource should be accepted");
 
-        //-- finally use it as a bearer token header against a secure endpoint
-        final Map<String, String> headers = Map.of(HttpConstants.AUTH_HEADER,
+        // -- finally use it as a bearer token header against a secure endpoint
+        final Map<String, String> headers = Map.of(
+                HttpConstants.AUTH_HEADER,
                 HttpUtils.getBearerTokenAuthenticationHeaderValue(token.getToken()),
                 "Content-Type",
                 "application/json",
@@ -191,7 +203,8 @@ public class ChainedAuthTests {
     @Test
     public void testGetSecuredResourceWithBasicAuthHeader() throws IOException {
         HttpResponse response;
-        final Map<String, String> headers = Map.of(HttpConstants.AUTH_HEADER,
+        final Map<String, String> headers = Map.of(
+                HttpConstants.AUTH_HEADER,
                 BasicAuthenticationHandler.getBasicAuthenticationHeaderValue("testadmin", "test"));
 
         response = get("test/get/auth/admin", headers);
@@ -200,5 +213,4 @@ public class ChainedAuthTests {
         final ApiPrincipal user = objectMapper.readValue(response.getResponseBody(), ApiPrincipal.class);
         assertEquals("testadmin", user.getName(), "Username should match that supplied at point of auth");
     }
-
 }

@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.api.AuthTestUtils;
 import com.hivemq.api.TestApiResource;
@@ -44,6 +45,12 @@ import com.hivemq.http.core.HttpUrlConnectionClient;
 import com.hivemq.http.core.HttpUtils;
 import com.hivemq.http.error.ProblemDetails;
 import jakarta.ws.rs.core.MediaType;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterAll;
@@ -72,7 +79,7 @@ public class BearerTokenAuthTests {
 
         final JaxrsHttpServerConfiguration config = new JaxrsHttpServerConfiguration();
         config.setPort(TEST_HTTP_PORT);
-        //-- ensure we supplied our own test mapper as this can effect output
+        // -- ensure we supplied our own test mapper as this can effect output
         config.setObjectMapper(objectMapper);
 
         final var configuration = new ApiJwtConfiguration(2048, "Test-Issuer", "Test-Audience", 10, 2);
@@ -86,9 +93,8 @@ public class BearerTokenAuthTests {
         when(apiConfigurationService.isEnforceApiAuth()).thenReturn(true);
         final var apiAuthenticationFeature =
                 new ApiAuthenticationFeature(authenticationHandlers, apiConfigurationService);
-        final var authenticationResource = new AuthenticationResourceImpl(usernamePasswordProvider,
-                jwtAuthenticationProvider,
-                jwtAuthenticationProvider);
+        final var authenticationResource = new AuthenticationResourceImpl(
+                usernamePasswordProvider, jwtAuthenticationProvider, jwtAuthenticationProvider);
 
         final var resourceConfig = new ResourceConfig();
         resourceConfig.register(apiAuthenticationFeature);
@@ -120,7 +126,8 @@ public class BearerTokenAuthTests {
 
     protected ByteArrayInputStream bodyCredentials(final @NotNull String username, final @NotNull String password)
             throws JsonProcessingException {
-        final var credentials = new UsernamePasswordCredentials().userName(username).password(password);
+        final var credentials =
+                new UsernamePasswordCredentials().userName(username).password(password);
         return new ByteArrayInputStream(objectMapper.writeValueAsBytes(credentials));
     }
 
@@ -143,13 +150,16 @@ public class BearerTokenAuthTests {
         response = post("api/v1/auth/authenticate", bodyCredentials("testuser", "invalidpassword"));
 
         assertEquals(401, response.getStatusCode(), "Resource should be denied");
-        assertEquals(HttpConstants.APPLICATION_PROBLEM_JSON_CHARSET_UTF_8,
+        assertEquals(
+                HttpConstants.APPLICATION_PROBLEM_JSON_CHARSET_UTF_8,
                 response.getContentType(),
                 "API authenticate response should be json");
-        assertThat(objectMapper.readValue(response.getResponseBody(), ProblemDetails.class)
-                .getErrors()
-                .getFirst()
-                .getDetail()).as("Response should indicate correct failure message")
+        assertThat(objectMapper
+                        .readValue(response.getResponseBody(), ProblemDetails.class)
+                        .getErrors()
+                        .getFirst()
+                        .getDetail())
+                .as("Response should indicate correct failure message")
                 .isEqualTo("Invalid username and/or password");
     }
 
@@ -166,13 +176,14 @@ public class BearerTokenAuthTests {
         assertNotNull(token.getToken(), "Response should contain a bearer token");
         final var bodyToken = new ByteArrayInputStream(objectMapper.writeValueAsBytes(token));
 
-        //-- now validate the token against the UNSECURE API which returns whether its valid
+        // -- now validate the token against the UNSECURE API which returns whether its valid
         response = post("api/v1/auth/validate-token", bodyToken);
 
         assertEquals(200, response.getStatusCode(), "Resource should be accepted");
 
-        //-- finally use it as a bearer token header against a secure endpoint
-        final Map<String, String> headers = Map.of(HttpConstants.AUTH_HEADER,
+        // -- finally use it as a bearer token header against a secure endpoint
+        final Map<String, String> headers = Map.of(
+                HttpConstants.AUTH_HEADER,
                 HttpUtils.getBearerTokenAuthenticationHeaderValue(token.getToken()),
                 "Content-Type",
                 "application/json",

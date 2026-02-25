@@ -30,6 +30,7 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;
+import com.hivemq.http.core.HttpResponse;
 import com.hivemq.http.core.HttpUrlConnectionClient;
 import java.io.IOException;
 import java.util.HashSet;
@@ -37,10 +38,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +63,7 @@ public class BasicAuthenticationTests {
     public static void setUp() throws Exception {
         final var config = new JaxrsHttpServerConfiguration();
         config.setPort(TEST_HTTP_PORT);
-        //-- ensure we supplied our own test mapper as this can effect output
+        // -- ensure we supplied our own test mapper as this can effect output
         config.setObjectMapper(new ObjectMapper());
 
         final Set<IAuthenticationHandler> authenticationHandlers = new HashSet<>();
@@ -88,12 +89,12 @@ public class BasicAuthenticationTests {
     }
 
     protected static HttpResponse get(
-            final @NotNull String path,
-            final @Nullable String username,
-            final @Nullable String password) throws IOException {
+            final @NotNull String path, final @Nullable String username, final @Nullable String password)
+            throws IOException {
         final Map<String, String> headers;
         if (username != null && password != null) {
-            headers = Map.of(HttpConstants.AUTH_HEADER,
+            headers = Map.of(
+                    HttpConstants.AUTH_HEADER,
                     BasicAuthenticationHandler.getBasicAuthenticationHeaderValue(username, password));
         } else {
             headers = null;
