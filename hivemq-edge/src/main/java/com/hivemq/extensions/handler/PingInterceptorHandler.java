@@ -289,6 +289,7 @@ public class PingInterceptorHandler {
             this.promise = promise;
         }
 
+        @Override
         public void pluginPost(final @NotNull PingRespOutboundOutputImpl pluginOutput) {
             finishInterceptor();
         }

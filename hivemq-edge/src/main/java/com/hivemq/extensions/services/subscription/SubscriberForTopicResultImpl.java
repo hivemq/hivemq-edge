@@ -34,6 +34,7 @@ public class SubscriberForTopicResultImpl implements SubscriberForTopicResult {
      * @return the subscribers MQTT client identifier
      */
     @NotNull
+    @Override
     public String getClientId() {
         return clientId;
     }

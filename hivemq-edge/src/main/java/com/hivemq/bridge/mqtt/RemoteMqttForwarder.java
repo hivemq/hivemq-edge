@@ -103,6 +103,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
         }
     }
 
+    @Override
     public synchronized void start() {
         running.set(true);
         if (log.isDebugEnabled()) {

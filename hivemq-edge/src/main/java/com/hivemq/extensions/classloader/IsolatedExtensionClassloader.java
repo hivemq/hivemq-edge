@@ -193,11 +193,13 @@ public class IsolatedExtensionClassloader extends URLClassLoader {
         return new Enumeration<>() {
             final Iterator<URL> iterator = urls.iterator();
 
+            @Override
             public boolean hasMoreElements() {
                 return iterator.hasNext();
             }
 
             @NotNull
+            @Override
             public URL nextElement() {
                 return iterator.next();
             }

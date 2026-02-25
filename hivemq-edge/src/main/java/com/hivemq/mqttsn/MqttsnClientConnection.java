@@ -63,6 +63,7 @@ public class MqttsnClientConnection extends ClientConnection {
         this.mqttsnProtocolVersion = mqttsnProtocolVersion;
     }
 
+    @Override
     public void proposeClientState(final @NotNull ClientState clientState) {
         super.proposeClientState(clientState);
         // only make the change if the super state changed

@@ -51,6 +51,7 @@ public abstract class AbstractDataGovernanceEntity implements DataGovernanceEnti
         return name;
     }
 
+    @Override
     public boolean isEnabled() {
         return enabled;
     }

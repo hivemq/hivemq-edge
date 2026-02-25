@@ -74,6 +74,7 @@ public class ReAuthOutput extends AuthOutput<EnhancedAuthOutput> implements Enha
         this.reasonCode = disconnectReasonCode;
     }
 
+    @Override
     public @NotNull Async<EnhancedAuthOutput> async(
             final @NotNull Duration timeout,
             final @NotNull TimeoutFallback fallback,
@@ -85,6 +86,7 @@ public class ReAuthOutput extends AuthOutput<EnhancedAuthOutput> implements Enha
         return async;
     }
 
+    @Override
     public @NotNull Async<EnhancedAuthOutput> async(
             final @NotNull Duration timeout,
             final @NotNull TimeoutFallback fallback,

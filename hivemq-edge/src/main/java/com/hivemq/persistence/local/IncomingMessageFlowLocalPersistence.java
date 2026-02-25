@@ -25,5 +25,6 @@ public interface IncomingMessageFlowLocalPersistence extends IncomingMessageFlow
     /**
      * {@inheritDoc}
      */
+    @Override
     void closeDB();
 }

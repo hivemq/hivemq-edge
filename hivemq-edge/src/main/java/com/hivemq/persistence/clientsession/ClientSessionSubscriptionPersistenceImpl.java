@@ -401,6 +401,7 @@ public class ClientSessionSubscriptionPersistenceImpl extends AbstractPersistenc
     }
 
     @NotNull
+    @Override
     public ListenableFuture<MultipleChunkResult<Map<String, ImmutableSet<Topic>>>> getAllLocalSubscribersChunk(
             final @NotNull ChunkCursor cursor) {
         return chunker.getAllLocalChunk(

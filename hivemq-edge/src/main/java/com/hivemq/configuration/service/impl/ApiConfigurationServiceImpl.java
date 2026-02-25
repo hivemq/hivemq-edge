@@ -45,6 +45,7 @@ public class ApiConfigurationServiceImpl implements ApiConfigurationService {
         return listeners;
     }
 
+    @Override
     public void setListeners(final @NotNull List<ApiListener> listeners) {
         this.listeners = listeners;
     }
@@ -54,6 +55,7 @@ public class ApiConfigurationServiceImpl implements ApiConfigurationService {
         return enabled;
     }
 
+    @Override
     public void setEnabled(final boolean enabled) {
         this.enabled = enabled;
     }
@@ -63,6 +65,7 @@ public class ApiConfigurationServiceImpl implements ApiConfigurationService {
         return resourcePaths;
     }
 
+    @Override
     public void setResourcePaths(final @NotNull List<ApiStaticResourcePath> resourcePaths) {
         this.resourcePaths = resourcePaths;
     }
@@ -72,6 +75,7 @@ public class ApiConfigurationServiceImpl implements ApiConfigurationService {
         return apiJwtConfiguration;
     }
 
+    @Override
     public void setApiJwtConfiguration(final @NotNull ApiJwtConfiguration apiJwtConfiguration) {
         this.apiJwtConfiguration = apiJwtConfiguration;
     }
@@ -81,6 +85,7 @@ public class ApiConfigurationServiceImpl implements ApiConfigurationService {
         return userList;
     }
 
+    @Override
     public void setUserList(final @NotNull List<UsernamePasswordRoles> userList) {
         this.userList = userList;
     }

@@ -56,6 +56,7 @@ public class Mqtt3PublishEncoder extends AbstractVariableHeaderLengthEncoder<Mqt
         out.writeBytes(msg.getPayload());
     }
 
+    @Override
     protected int remainingLength(final @NotNull Mqtt3PUBLISH msg) {
         int length = 0;
         length += Utf8Utils.encodedLength(msg.getTopic());

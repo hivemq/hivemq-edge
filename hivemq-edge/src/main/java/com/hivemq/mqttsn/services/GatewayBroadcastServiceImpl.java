@@ -73,6 +73,7 @@ public class GatewayBroadcastServiceImpl implements IGatewayBroadcastService {
         });
     }
 
+    @Override
     public void startBroadcast(final @NotNull Channel channel) {
         Preconditions.checkNotNull(channel);
         Preconditions.checkState(mqttsnConfigurationService.isDiscoveryEnabled(), "Discovery is not enabled");
@@ -89,6 +90,7 @@ public class GatewayBroadcastServiceImpl implements IGatewayBroadcastService {
         }
     }
 
+    @Override
     public void stopBroadcast() {
         synchronized (mutex) {
             try {

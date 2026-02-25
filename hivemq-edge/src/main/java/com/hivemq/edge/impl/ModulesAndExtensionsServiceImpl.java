@@ -46,6 +46,7 @@ public class ModulesAndExtensionsServiceImpl implements ModulesAndExtensionsServ
         this.hiveMQEdgeRemoteConfigurationService = hiveMQEdgeRemoteConfigurationService;
     }
 
+    @Override
     public @NotNull List<Extension> getExtensions() {
 
         // -- Add discovered extensions
@@ -61,6 +62,7 @@ public class ModulesAndExtensionsServiceImpl implements ModulesAndExtensionsServ
         return new ArrayList<>(extensions);
     }
 
+    @Override
     public @NotNull List<Module> getModules() {
         List<Module> availableModules =
                 hiveMQEdgeRemoteConfigurationService.getConfiguration().getModules();

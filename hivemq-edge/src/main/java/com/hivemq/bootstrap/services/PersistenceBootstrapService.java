@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 public interface PersistenceBootstrapService extends GeneralBootstrapService {
 
     @NotNull
+    @Override
     ConfigurationService configurationService();
 
     @NotNull

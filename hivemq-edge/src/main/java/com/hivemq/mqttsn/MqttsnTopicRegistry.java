@@ -48,6 +48,7 @@ public class MqttsnTopicRegistry implements IMqttsnTopicRegistry {
         this.configurationService = configurationService;
     }
 
+    @Override
     public String readTopicName(
             @NotNull String clientId, int topicIdType, byte[] topicData, boolean readNormalAsFullTopic)
             throws MqttsnProtocolException {
@@ -116,6 +117,7 @@ public class MqttsnTopicRegistry implements IMqttsnTopicRegistry {
         return topicName;
     }
 
+    @Override
     public Optional<MqttsnTopicAlias> readTopicAlias(@NotNull String clientId, @NotNull String topicName) {
 
         Preconditions.checkNotNull(clientId);
@@ -142,6 +144,7 @@ public class MqttsnTopicRegistry implements IMqttsnTopicRegistry {
         return Optional.empty();
     }
 
+    @Override
     public int register(@NotNull String clientId, @NotNull String topicName) throws MqttsnProtocolException {
 
         Preconditions.checkNotNull(clientId);

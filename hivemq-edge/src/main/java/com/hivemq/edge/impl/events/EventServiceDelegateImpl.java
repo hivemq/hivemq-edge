@@ -49,6 +49,7 @@ public class EventServiceDelegateImpl implements EventService {
         eventStore.storeEvent(event);
     }
 
+    @Override
     public @NotNull EventBuilder createAdapterEvent(final @NotNull String adapterId, final @NotNull String protocolId) {
         return new EventBuilderImpl(this::fireEvent)
                 .withTimestamp(System.currentTimeMillis())
