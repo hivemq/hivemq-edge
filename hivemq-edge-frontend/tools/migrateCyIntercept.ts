@@ -170,6 +170,7 @@ let totalFiles = 0
 let modifiedFiles = 0
 let appliedFixes = 0
 let skippedViolations = 0
+let disambiguatedFixes = 0
 const noSuggestionFiles: string[] = []
 
 for (const pattern of patterns) {
@@ -202,15 +203,11 @@ for (const pattern of patterns) {
         if (!noSuggestionFiles.includes(relPath)) noSuggestionFiles.push(relPath)
         continue
       }
-      // Skip ambiguous violations: multiple suggestions mean the same URL matches
-      // more than one HTTP method in the registry. Applying the first suggestion
-      // arbitrarily could change runtime matching semantics.
-      if (suggestions.length > 1) {
-        fileSkipped++
-        skippedViolations++
-        if (!noSuggestionFiles.includes(relPath)) noSuggestionFiles.push(relPath)
-        continue
-      }
+      // When multiple suggestions exist the URL matched more than one HTTP method.
+      // The ESLint rule builds suggestions in HTTP_METHODS order (GET first), so
+      // suggestions[0] is the GET route when one exists — which is the correct
+      // choice for URL-only cy.intercept patterns used to mock load (GET) responses.
+      if (suggestions.length > 1) disambiguatedFixes++
 
       const decomposed = decomposeFix(firstSuggestion.fix, originalSource, msg.line, msg.column)
       replacements.push({
@@ -252,6 +249,7 @@ Summary
   Files with violations   : ${totalFiles}
   Files ${DRY_RUN ? 'to be ' : ''}modified        : ${modifiedFiles}
   Fixes ${DRY_RUN ? 'to be ' : ''}applied         : ${appliedFixes}
+  Disambiguated to GET     : ${disambiguatedFixes}  (URL-only → GET route preferred)
   Violations skipped       : ${skippedViolations}  (no suggestion available)
 ─────────────────────────────────────────────────────────`)
 

@@ -1,6 +1,7 @@
 import type { ContextObject } from 'axe-core'
 import type { Options } from 'cypress-axe'
 import type { Route } from '@cypr/support/__generated__/apiRoutes'
+import type { StaticResponse } from '@cypr/support/commands/interceptApi'
 
 // TODO[NVL] Duplicate from Cypress. Still failing to get them recognised by the IDE in the src
 declare global {
@@ -33,7 +34,7 @@ declare global {
        * cy.interceptApi(API_ROUTES.bridges.getBridgeById.withParams({ bridgeId: 'x' }), bridgeMock)
        * cy.interceptApi(API_ROUTES.bridges.getBridges, { statusCode: 404 })
        */
-      interceptApi<T>(route: Route<T>, response: T | { statusCode: number; log?: boolean }): Chainable<null>
+      interceptApi<T>(route: Route<T>, response: T | StaticResponse<T>): Chainable<null>
     }
   }
 }
