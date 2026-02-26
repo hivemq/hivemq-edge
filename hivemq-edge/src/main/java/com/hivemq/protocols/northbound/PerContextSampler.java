@@ -85,7 +85,7 @@ public class PerContextSampler extends AbstractSubscriptionSampler {
                     } else {
                         return CompletableFuture.completedFuture(null);
                     }
-                }))
+                })
                 .whenComplete((aVoid, throwable) -> {
                     if (throwable != null) {
                         if (pollingOutput.getErrorMessage() == null) {

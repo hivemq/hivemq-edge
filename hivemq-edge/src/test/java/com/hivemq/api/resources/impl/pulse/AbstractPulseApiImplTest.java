@@ -142,7 +142,6 @@ public abstract class AbstractPulseApiImplTest {
                 assetMappingExtractor,
                 pulseExtractor,
                 protocolAdapterExtractor,
-                assetProviderRegistry,
                 statusProviderRegistry);
     }
 }
