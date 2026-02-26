@@ -33,6 +33,7 @@ import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.services.PrePublishProcessorService;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -151,7 +152,7 @@ public class VanillaDataCombiningTransformationServiceTest {
                   "TAG:TAG1": {
                     "value": 100
                   }
-                }""".getBytes());
+                }""".getBytes(StandardCharsets.UTF_8));
         when(dataCombining.instructions())
                 .thenReturn(List.of(new Instruction(
                         "$.value",
@@ -159,7 +160,8 @@ public class VanillaDataCombiningTransformationServiceTest {
                         new DataIdentifierReference("TAG1", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+        assertThat(new String(publishCaptor.getValue().getPayload(), StandardCharsets.UTF_8))
+                .isEqualTo("""
                 {"dest":{"tag1":100}}""");
     }
 
@@ -173,7 +175,7 @@ public class VanillaDataCombiningTransformationServiceTest {
                   "TAG:TAG2": {
                     "value": 200
                   }
-                }""".getBytes());
+                }""".getBytes(StandardCharsets.UTF_8));
         when(dataCombining.instructions())
                 .thenReturn(List.of(
                         new Instruction(
@@ -186,7 +188,8 @@ public class VanillaDataCombiningTransformationServiceTest {
                                 new DataIdentifierReference("TAG2", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+        assertThat(new String(publishCaptor.getValue().getPayload(), StandardCharsets.UTF_8))
+                .isEqualTo("""
                 {"dest":{"tag1":100,"tag2":200}}""");
     }
 
@@ -200,7 +203,7 @@ public class VanillaDataCombiningTransformationServiceTest {
                   "PULSE_ASSET:${assetId}": {
                     "value": 42
                   }
-                }""", Map.of("assetId", assetId)).getBytes());
+                }""", Map.of("assetId", assetId)).getBytes(StandardCharsets.UTF_8));
         when(dataCombining.instructions())
                 .thenReturn(List.of(new Instruction(
                         "$.value",
@@ -208,7 +211,8 @@ public class VanillaDataCombiningTransformationServiceTest {
                         new DataIdentifierReference(assetId, DataIdentifierReference.Type.PULSE_ASSET))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+        assertThat(new String(publishCaptor.getValue().getPayload(), StandardCharsets.UTF_8))
+                .isEqualTo("""
                 {"dest":{"asset":42}}""");
     }
 
@@ -263,7 +267,8 @@ public class VanillaDataCombiningTransformationServiceTest {
                                 new DataIdentifierReference("ASSET2", DataIdentifierReference.Type.PULSE_ASSET))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+        assertThat(new String(publishCaptor.getValue().getPayload(), StandardCharsets.UTF_8))
+                .isEqualTo("""
                 {"dest":{"a":1,"b":2,"tag1":100,"tag2":200,"asset1":300,"asset2":400}}""");
     }
 
@@ -304,7 +309,7 @@ public class VanillaDataCombiningTransformationServiceTest {
                   "TAG:TAG2": {
                     "value": 200
                   }
-                }""".getBytes());
+                }""".getBytes(StandardCharsets.UTF_8));
         when(dataCombining.instructions())
                 .thenReturn(List.of(
                         new Instruction(
@@ -317,7 +322,8 @@ public class VanillaDataCombiningTransformationServiceTest {
                                 new DataIdentifierReference("TAG2", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+        assertThat(new String(publishCaptor.getValue().getPayload(), StandardCharsets.UTF_8))
+                .isEqualTo("""
                 {"dest":{"tag":200}}""");
     }
 
@@ -387,7 +393,7 @@ public class VanillaDataCombiningTransformationServiceTest {
                       "humidity": 60
                     }
                   }
-                }""".getBytes());
+                }""".getBytes(StandardCharsets.UTF_8));
         when(dataCombining.instructions())
                 .thenReturn(List.of(
                         new Instruction(
@@ -400,7 +406,8 @@ public class VanillaDataCombiningTransformationServiceTest {
                                 new DataIdentifierReference("sensor1", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+        assertThat(new String(publishCaptor.getValue().getPayload(), StandardCharsets.UTF_8))
+                .isEqualTo("""
                 {"dest":{"temp":25.5,"hum":60}}""");
     }
 
@@ -412,13 +419,14 @@ public class VanillaDataCombiningTransformationServiceTest {
                     "temp": 25,
                     "unit": "C"
                   }
-                }""".getBytes());
+                }""".getBytes(StandardCharsets.UTF_8));
         when(dataCombining.instructions())
                 .thenReturn(List.of(new Instruction(
                         "$", "dest.sensor", new DataIdentifierReference("sensor1", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+        assertThat(new String(publishCaptor.getValue().getPayload(), StandardCharsets.UTF_8))
+                .isEqualTo("""
                 {"dest":{"sensor":{"temp":25,"unit":"C"}}}""");
     }
 
@@ -430,7 +438,7 @@ public class VanillaDataCombiningTransformationServiceTest {
                   "TAG:my/tag/with\\" special'chars": {
                     "value": 123
                   }
-                }""".getBytes());
+                }""".getBytes(StandardCharsets.UTF_8));
         when(dataCombining.instructions())
                 .thenReturn(List.of(new Instruction(
                         "$.value",
@@ -438,7 +446,8 @@ public class VanillaDataCombiningTransformationServiceTest {
                         new DataIdentifierReference("my/tag.with\" special'chars", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+        assertThat(new String(publishCaptor.getValue().getPayload(), StandardCharsets.UTF_8))
+                .isEqualTo("""
                 {"dest":{"out":123}}""");
     }
 
@@ -452,7 +461,7 @@ public class VanillaDataCombiningTransformationServiceTest {
                       "memory": 4096
                     }
                   }
-                }""".getBytes());
+                }""".getBytes(StandardCharsets.UTF_8));
         when(dataCombining.instructions())
                 .thenReturn(List.of(
                         new Instruction(
@@ -465,7 +474,8 @@ public class VanillaDataCombiningTransformationServiceTest {
                                 new DataIdentifierReference("asset-123", DataIdentifierReference.Type.PULSE_ASSET))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+        assertThat(new String(publishCaptor.getValue().getPayload(), StandardCharsets.UTF_8))
+                .isEqualTo("""
                 {"dest":{"cpu_usage":80,"mem_mb":4096}}""");
     }
 
@@ -476,7 +486,7 @@ public class VanillaDataCombiningTransformationServiceTest {
                   "TAG:existingTag": {
                     "value": 100
                   }
-                }""".getBytes());
+                }""".getBytes(StandardCharsets.UTF_8));
         when(dataCombining.instructions())
                 .thenReturn(List.of(
                         new Instruction(
@@ -490,7 +500,8 @@ public class VanillaDataCombiningTransformationServiceTest {
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
         // Only existingTag data is in output; missingTag instruction is skipped
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+        assertThat(new String(publishCaptor.getValue().getPayload(), StandardCharsets.UTF_8))
+                .isEqualTo("""
                 {"dest":{"existing":100}}""");
     }
 
@@ -502,7 +513,7 @@ public class VanillaDataCombiningTransformationServiceTest {
                   "adapter1/TAG:temperature": {
                     "value": 25.5
                   }
-                }""".getBytes());
+                }""".getBytes(StandardCharsets.UTF_8));
         when(dataCombining.instructions())
                 .thenReturn(List.of(new Instruction(
                         "$.value",
@@ -510,7 +521,8 @@ public class VanillaDataCombiningTransformationServiceTest {
                         new DataIdentifierReference("temperature", DataIdentifierReference.Type.TAG, "adapter1"))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+        assertThat(new String(publishCaptor.getValue().getPayload(), StandardCharsets.UTF_8))
+                .isEqualTo("""
                 {"dest":{"temp":25.5}}""");
     }
 
@@ -525,7 +537,7 @@ public class VanillaDataCombiningTransformationServiceTest {
                   "adapter2/TAG:temperature": {
                     "value": 30
                   }
-                }""".getBytes());
+                }""".getBytes(StandardCharsets.UTF_8));
         when(dataCombining.instructions())
                 .thenReturn(List.of(
                         new Instruction(
@@ -540,7 +552,8 @@ public class VanillaDataCombiningTransformationServiceTest {
                                         "temperature", DataIdentifierReference.Type.TAG, "adapter2"))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+        assertThat(new String(publishCaptor.getValue().getPayload(), StandardCharsets.UTF_8))
+                .isEqualTo("""
                 {"dest":{"temp1":20,"temp2":30}}""");
     }
 
@@ -555,7 +568,7 @@ public class VanillaDataCombiningTransformationServiceTest {
                   "TAG:unscoped": {
                     "value": 200
                   }
-                }""".getBytes());
+                }""".getBytes(StandardCharsets.UTF_8));
         when(dataCombining.instructions())
                 .thenReturn(List.of(
                         new Instruction(
@@ -568,7 +581,8 @@ public class VanillaDataCombiningTransformationServiceTest {
                                 new DataIdentifierReference("unscoped", DataIdentifierReference.Type.TAG))));
         assertThat(service.applyMappings(publish, dataCombining).isDone()).isFalse();
         verify(prePublishProcessorService, times(1)).publish(publishCaptor.capture(), any(), any());
-        assertThat(new String(publishCaptor.getValue().getPayload())).isEqualTo("""
+        assertThat(new String(publishCaptor.getValue().getPayload(), StandardCharsets.UTF_8))
+                .isEqualTo("""
                 {"dest":{"scoped":100,"unscoped":200}}""");
     }
 }
