@@ -117,7 +117,7 @@ public class DataCombiningScopeMigrator {
         final List<DataCombiner> migratedCombiners = new ArrayList<>();
         for (final DataCombiner combiner : getAllCombiners.get()) {
             final DataCombiner migratedCombiner = migrateCombiner(combiner, tagToAdapters);
-            if (migratedCombiner != combiner) {
+            if (!migratedCombiner.equals(combiner)) {
                 migratedCombiners.add(migratedCombiner);
             }
         }
@@ -140,7 +140,7 @@ public class DataCombiningScopeMigrator {
         for (final DataCombining dataCombining : combiner.dataCombinings()) {
             final DataCombining migratedDataCombining = migrateDataCombining(combiner, dataCombining, tagToAdapters);
             migratedDataCombinings.add(migratedDataCombining);
-            if (migratedDataCombining != dataCombining) {
+            if (!migratedDataCombining.equals(dataCombining)) {
                 anyChanges = true;
             }
         }
@@ -170,7 +170,7 @@ public class DataCombiningScopeMigrator {
         for (final Instruction instruction : dataCombining.instructions()) {
             final Instruction migratedInstruction = migrateInstruction(combiner, instruction, tagToAdapters);
             migratedInstructions.add(migratedInstruction);
-            if (migratedInstruction != instruction) {
+            if (!migratedInstruction.equals(instruction)) {
                 anyChanges = true;
             }
         }
