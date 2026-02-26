@@ -43,7 +43,7 @@ describe('FilterTopics', () => {
 
     cy.get('[role="group"] #workspace-filter-topics-trigger').type('test{enter}')
     cy.getByTestId('workspace-filter-topics-values').should('have.length', 1)
-    cy.getByTestId('workspace-filter-topics-values').eq(0).should('contain.text', 'test/tag1')
+    cy.getByTestId('workspace-filter-topics-values').eq(0).should('contain.text', formatTopicString('test/tag1'))
 
     cy.get('@onChange').should('have.been.calledWith', [
       {
@@ -55,8 +55,8 @@ describe('FilterTopics', () => {
 
     cy.get('[role="group"] #workspace-filter-topics-trigger').type('topic{enter}')
     cy.getByTestId('workspace-filter-topics-values').should('have.length', 2)
-    cy.getByTestId('workspace-filter-topics-values').eq(0).should('contain.text', 'test/tag1')
-    cy.getByTestId('workspace-filter-topics-values').eq(1).should('contain.text', 'my/topic')
+    cy.getByTestId('workspace-filter-topics-values').eq(0).should('contain.text', formatTopicString('test/tag1'))
+    cy.getByTestId('workspace-filter-topics-values').eq(1).should('contain.text', formatTopicString('my/topic'))
     cy.get('@onChange').should('have.been.calledWith', [
       {
         label: 'test/tag1',
@@ -73,6 +73,24 @@ describe('FilterTopics', () => {
     cy.getByAriaLabel('Clear selected options').click()
     cy.getByTestId('workspace-filter-topics-values').should('have.length', 0)
     cy.get('@onChange').should('have.been.calledWith', [])
+  })
+
+  describe('chip widget type consistency', () => {
+    it('should render a TAG chip as PLCTag (tag icon)', () => {
+      cy.mountWithProviders(<FilterTopics onChange={cy.stub()} />)
+
+      cy.get('[role="group"] #workspace-filter-topics-trigger').type('test{enter}')
+      cy.getByTestId('workspace-filter-topics-values').should('have.length', 1)
+      cy.getByTestId('workspace-filter-topics-values').eq(0).find('svg').should('have.attr', 'aria-label', 'Tag')
+    })
+
+    it('should render a TOPIC chip as Topic (topic icon)', () => {
+      cy.mountWithProviders(<FilterTopics onChange={cy.stub()} />)
+
+      cy.get('[role="group"] #workspace-filter-topics-trigger').type('topic{enter}')
+      cy.getByTestId('workspace-filter-topics-values').should('have.length', 1)
+      cy.getByTestId('workspace-filter-topics-values').eq(0).find('svg').should('have.attr', 'aria-label', 'Topic')
+    })
   })
 
   it('should be accessible', () => {

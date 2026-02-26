@@ -7,6 +7,7 @@ import { DataIdentifierReference } from '@/api/__generated__'
 import { useGetCombinedDataSchemas } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import ErrorMessage from '@/components/ErrorMessage'
 import { PLCTag, TopicFilter } from '@/components/MQTT/EntityTag'
+import { formatOwnershipString } from '@/components/MQTT/topic-utils'
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser'
 import type { CombinerContext } from '@/modules/Mappings/types'
 import { getFilteredDataReferences, getSchemasFromReferences } from '@/modules/Mappings/utils/combining.utils'
@@ -42,7 +43,7 @@ export const CombinedSchemaLoader: FC<CombinedSchemaLoaderProps> = ({ formData, 
             <Box key={dataReference.id}>
               <Heading as="h3" size="sm">
                 {dataReference.type === DataIdentifierReference.type.TAG && (
-                  <PLCTag tagTitle={dataReference?.id} mr={3} />
+                  <PLCTag tagTitle={formatOwnershipString(dataReference)} mr={3} />
                 )}
                 {dataReference.type === DataIdentifierReference.type.TOPIC_FILTER && (
                   <TopicFilter tagTitle={dataReference?.id} mr={3} />
