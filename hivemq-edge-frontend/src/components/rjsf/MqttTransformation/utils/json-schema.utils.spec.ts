@@ -499,6 +499,6 @@ describe('getSchemaFromPropertyList', () => {
     expect(personProp.required).not.toContain('age')
     expect(Array.isArray(personProp.required)).toBe(true)
     // The nested property itself must not have required as a boolean
-    expect((personProp.properties?.['name'] as RJSFSchema)).not.toHaveProperty('required')
+    expect(personProp.properties?.['name'] as RJSFSchema).not.toHaveProperty('required')
   })
 })
