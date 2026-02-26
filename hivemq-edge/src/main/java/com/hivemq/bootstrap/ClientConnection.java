@@ -34,9 +34,6 @@ import com.hivemq.mqtt.message.pool.FreePacketIdRanges;
 import com.hivemq.security.auth.SslClientCertificate;
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -48,6 +45,8 @@ import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ClientConnection {
 
@@ -61,7 +60,7 @@ public class ClientConnection {
     private final @NotNull PublishFlushHandler publishFlushHandler;
     private final @NotNull FreePacketIdRanges messageIDPool;
     private final @NotNull AtomicReference<ClientState> clientState;
-    private final @NotNull HashMap<String, Object> additionalInformation;
+    private final @NotNull Map<String, Object> additionalInformation;
     private @Nullable ProtocolVersion protocolVersion;
     private @Nullable String clientId;
     private @Nullable ModifiableDefaultPermissions authPermissions;
@@ -105,7 +104,6 @@ public class ClientConnection {
     private @Nullable ClientAuthorizers extensionClientAuthorizers;
     private @Nullable ClientInformation extensionClientInformation;
     private @Nullable ConnectionInformation extensionConnectionInformation;
-    private @NotNull Map<String, Object> additionalInformation;
 
     public ClientConnection(final @NotNull Channel channel, final @NotNull PublishFlushHandler publishFlushHandler) {
         this.channel = channel;
@@ -132,17 +130,10 @@ public class ClientConnection {
         return clientState.get();
     }
 
-    public void proposeClientState(final @NotNull ClientState clientState) {
-        if (!this.clientState.disconnected()) {
-            this.clientState = clientState;
+    public void proposeClientState(final @NotNull ClientState newState) {
+        if (!clientState.get().disconnected()) {
+            clientState.set(newState);
         }
-    }
-
-    // ONLY VISIBLE FOR TESTING !!!
-    // DO NOT USE IN PROD !!!
-    @VisibleForTesting
-    public void setClientStateUnsafe(final @NotNull ClientState clientState) {
-        this.clientState = clientState;
     }
 
     public @Nullable ProtocolVersion getProtocolVersion() {
@@ -581,7 +572,7 @@ public class ClientConnection {
         if (socketAddress.isPresent()) {
             final SocketAddress sockAddress = socketAddress.get();
             // If this is not an InetAddress, we're treating this as if there's no address
-            if (sockAddress instanceof InetSocketAddress inetSocketAddress) {
+            if (sockAddress instanceof final InetSocketAddress inetSocketAddress) {
                 return Optional.ofNullable(inetSocketAddress.getAddress());
             }
         }
