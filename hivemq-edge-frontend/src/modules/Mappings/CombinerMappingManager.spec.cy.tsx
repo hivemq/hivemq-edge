@@ -10,7 +10,8 @@ import { MOCK_DEVICE_TAGS, mockAdapter, mockProtocolAdapter_OPCUA } from '@/api/
 import { MOCK_TOPIC_FILTER } from '@/api/hooks/useTopicFilters/__handlers__'
 import { mockEmptyCombiner } from '@/api/hooks/useCombiners/__handlers__'
 
-import { NodeTypes } from '@/modules/Workspace/types'
+import { EntityType } from '@/api/__generated__'
+import { IdStubs, NodeTypes } from '@/modules/Workspace/types'
 import CombinerMappingManager from './CombinerMappingManager'
 
 const INITIAL_ENTRY = '/workspace'
@@ -173,6 +174,7 @@ describe('CombinerMappingManager', () => {
     cy.intercept('/api/v1/management/protocol-adapters/adapters/my-other-adapter/tags', {
       items: MOCK_DEVICE_TAGS('my-other-adapter', MockAdapterType.OPC_UA),
     })
+    cy.intercept('/api/v1/management/protocol-adapters/writing-schema/**', { body: {} })
     cy.intercept('/api/v1/management/topic-filters', {
       items: [
         MOCK_TOPIC_FILTER,
@@ -183,7 +185,7 @@ describe('CombinerMappingManager', () => {
       ],
     })
     cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter_OPCUA] })
-    cy.intercept('api/v1/management/protocol-adapters/adapters', {
+    cy.intercept('/api/v1/management/protocol-adapters/adapters', {
       items: [
         {
           ...mockAdapter,
@@ -197,7 +199,7 @@ describe('CombinerMappingManager', () => {
         },
       ],
     })
-    cy.intercept('PUT', 'api/v1/management/combiners/**', { updated: 'the combiner' }).as('update')
+    cy.intercept('PUT', '/api/v1/management/combiners/**', { updated: 'the combiner' }).as('update')
 
     cy.mountWithProviders(<CombinerMappingManager />, {
       routerProps: { initialEntries: [INITIAL_ENTRY] },
@@ -205,7 +207,15 @@ describe('CombinerMappingManager', () => {
         {
           id: 'idCombiner',
           type: NodeTypes.COMBINER_NODE,
-          data: mockEmptyCombiner,
+          data: {
+            ...mockEmptyCombiner,
+            sources: {
+              items: [
+                { type: EntityType.ADAPTER, id: 'my-adapter' },
+                { id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER },
+              ],
+            },
+          },
           ...MOCK_DEFAULT_NODE,
           position: { x: 0, y: 0 },
         },
