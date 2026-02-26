@@ -205,12 +205,10 @@ public class MQTTMessageDecoder extends ByteToMessageDecoder {
         // connack with PACKET_TOO_LARGE for Mqtt5
         if (messageType == MessageType.CONNECT) {
             // Theoretically, remaining length could be too short to read the protocol version.
-            // But in this case we can never reach a "packet too large" as the minimum configurable max packet size is
-            // 15
-            // while the broker needs only 7 bytes to read the version. Therefore, broker ignores this case and
-            // continues reading until
-            // it has at least 7 bytes of the variable CONNECT header to determine the protocol version,
-            // see
+            // But in this case we can never reach a "packet too large" as the minimum configurable
+            // max packet size is 15 while the broker needs only 7 bytes to read the version.
+            // Therefore, broker ignores this case and continues reading until it has at least 7 bytes
+            // of the variable CONNECT header to determine the protocol version, see
             // https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901035:~:text=identify%20MQTT%20traffic.-,3.1.2.2%20Protocol%20Version,-Figure%203%E2%80%913
             if (buf.readableBytes() < MIN_CONNECT_VAR_HEADER_LENGTH) {
                 buf.resetReaderIndex();

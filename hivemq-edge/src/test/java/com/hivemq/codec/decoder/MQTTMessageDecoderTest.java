@@ -284,18 +284,19 @@ public class MQTTMessageDecoderTest {
             //   type, reserved
             0b0001_0000,
             // remaining length
-            17,
+            19,
             // variable header
             //   protocol name
             0,
             6,
             'M',
             'Q',
-            'T',
-            'T',
+            'I',
+            's',
+            'd',
+            'p',
             //   protocol version
-            3,
-            1,
+            4,
             //   connect flags
             (byte) 0b0000_0000,
             //   keep alive
