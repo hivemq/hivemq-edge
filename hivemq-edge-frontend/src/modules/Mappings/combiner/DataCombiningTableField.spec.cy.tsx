@@ -175,6 +175,83 @@ describe('DataCombiningTableField', () => {
     })
   })
 
+  describe('sources column ownership display', () => {
+    it('should show ownership string for tag found in sources.primary', () => {
+      // mockCombinerMapping: primary = { id: 'my/tag/t1', scope: 'my-adapter' }
+      cy.mountWithProviders(
+        <CustomFormTesting
+          schema={mockDataCombiningTableSchema}
+          uiSchema={mockDataCombiningTableUISchema}
+          formData={{ items: [mockCombinerMapping] }}
+        />
+      )
+
+      cy.get('tbody tr td')
+        .eq(1)
+        .within(() => {
+          cy.getByTestId('topic-wrapper').eq(0).should('contain.text', 'my-adapter ::')
+        })
+    })
+
+    it('should show ownership string for tag found in instructions sourceRef', () => {
+      const mockWithInstructions: DataCombining = {
+        id: 'test-instructions',
+        sources: {
+          primary: { id: 'temperature', type: DataIdentifierReference.type.TAG, scope: 'opcua-adapter' },
+          tags: ['temperature', 'pressure'],
+          topicFilters: [],
+        },
+        destination: { topic: 'north/data' },
+        instructions: [
+          {
+            sourceRef: { id: 'temperature', type: DataIdentifierReference.type.TAG, scope: 'opcua-adapter' },
+            source: 'temperature',
+            destination: 'temp',
+          },
+          {
+            sourceRef: { id: 'pressure', type: DataIdentifierReference.type.TAG, scope: 'modbus-adapter' },
+            source: 'pressure',
+            destination: 'pres',
+          },
+        ],
+      }
+
+      cy.mountWithProviders(
+        <CustomFormTesting
+          schema={mockDataCombiningTableSchema}
+          uiSchema={mockDataCombiningTableUISchema}
+          formData={{ items: [mockWithInstructions] }}
+        />
+      )
+
+      cy.get('tbody tr td')
+        .eq(1)
+        .within(() => {
+          cy.getByTestId('topic-wrapper').should('have.length', 2)
+          cy.getByTestId('topic-wrapper').eq(0).should('contain.text', 'opcua-adapter')
+          cy.getByTestId('topic-wrapper').eq(1).should('contain.text', 'modbus-adapter')
+        })
+    })
+
+    it('should show plain tag name when scope cannot be reconstructed', () => {
+      // mockPrimary has no scope on its primary reference
+      cy.mountWithProviders(
+        <CustomFormTesting
+          schema={mockDataCombiningTableSchema}
+          uiSchema={mockDataCombiningTableUISchema}
+          formData={{ items: [mockPrimary] }}
+        />
+      )
+
+      cy.get('tbody tr td')
+        .eq(1)
+        .within(() => {
+          cy.getByTestId('topic-wrapper').eq(0).should('have.text', formatTopicString('my/tag/t1'))
+          cy.getByTestId('topic-wrapper').eq(0).should('not.contain.text', '::')
+        })
+    })
+  })
+
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(

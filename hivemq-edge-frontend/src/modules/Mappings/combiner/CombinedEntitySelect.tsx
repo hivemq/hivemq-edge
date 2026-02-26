@@ -11,6 +11,7 @@ import type { DomainTag, TopicFilter } from '@/api/__generated__'
 import { DataIdentifierReference } from '@/api/__generated__'
 import { PLCTag, Topic, TopicFilter as TopicFilterComponent } from '@/components/MQTT/EntityTag'
 import { SelectEntityType } from '@/components/MQTT/types'
+import { formatOwnershipString } from '@/components/MQTT/topic-utils'
 import type { CombinerContext } from '@/modules/Mappings/types'
 
 interface EntityReferenceSelectProps extends Omit<BoxProps, 'onChange'> {
@@ -84,7 +85,7 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
         return acc
       }, []) || []
 
-    return combinedOptions.reduce<EntityOption[]>((acc, current) => {
+    const deduped = combinedOptions.reduce<EntityOption[]>((acc, current) => {
       // Check for duplicates by value, type, AND adapterId (scope)
       // This allows tags with same name from different adapters
       const isAlreadyIn = acc.find(
@@ -95,6 +96,14 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
       }
       return acc
     }, [])
+
+    // Sort by tag name first, then by adapterId — keeps same-named tags from different
+    // adapters adjacent in the list and preserves natural alphabetical browsing
+    return deduped.sort((a, b) => {
+      const tagCmp = a.value.localeCompare(b.value)
+      if (tagCmp !== 0) return tagCmp
+      return (a.adapterId ?? '').localeCompare(b.adapterId ?? '')
+    })
   }, [formContext?.entityQueries, isLoading])
 
   const values = useMemo(() => {
@@ -102,9 +111,9 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
     if (formContext?.selectedSources) {
       const tagValue = formContext.selectedSources.tags.map<EntityOption>((ref) => ({
         value: ref.id,
-        label: ref.id,
+        label: formatOwnershipString(ref),
         type: ref.type,
-        adapterId: ref.scope || undefined, // Include scope for display
+        adapterId: ref.scope || undefined,
       }))
 
       const topicFilterValue = formContext.selectedSources.topicFilters.map<EntityOption>((ref) => ({
@@ -146,6 +155,13 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
           if (newValue) onChange(newValue)
         }}
         isClearable
+        filterOption={(option, inputValue) => {
+          const lower = inputValue.toLowerCase()
+          return (
+            option.label.toLowerCase().includes(lower) ||
+            (option.data.adapterId?.toLowerCase().includes(lower) ?? false)
+          )
+        }}
         placeholder={t('combiner.schema.mapping.combinedSelector.placeholder')}
         components={{
           MultiValueContainer: ({ children, ...props }) => (
@@ -160,14 +176,15 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
               <chakraComponents.Option {...props}>
                 <VStack gap={0} alignItems="stretch" w="100%">
                   <HStack>
-                    <Box flex={1}>
-                      <Text flex={1}>{props.data.label}</Text>
-                    </Box>
-                    <Box>
-                      <Text fontSize="sm" fontWeight="bold">
-                        {t('combiner.schema.mapping.combinedSelector.type', { context: props.data.type })}
+                    <Text flex={1}>{props.data.label}</Text>
+                    {props.data.adapterId && (
+                      <Text fontSize="sm" color="gray.500">
+                        {props.data.adapterId}
                       </Text>
-                    </Box>
+                    )}
+                    <Text fontSize="sm" fontWeight="bold">
+                      {t('combiner.schema.mapping.combinedSelector.type', { context: props.data.type })}
+                    </Text>
                   </HStack>
                   <Text fontSize="sm" noOfLines={3} ml={4} lineHeight="normal" textAlign="justify">
                     {props.data.description}

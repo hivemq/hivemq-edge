@@ -8,10 +8,18 @@ import { useGetCombinedEntities } from '@/api/hooks/useDomainModel/useGetCombine
 import { mockCombiner } from '@/api/hooks/useCombiners/__handlers__'
 import { MOCK_DEVICE_TAGS } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import type { DomainTag, DomainTagList } from '@/api/__generated__'
-import { EntityType } from '@/api/__generated__'
+import { DataIdentifierReference, EntityType } from '@/api/__generated__'
 import type { CombinerContext } from '@/modules/Mappings/types'
 
 import CombinedEntitySelect from './CombinedEntitySelect'
+
+const mockTagQuery = (tags: DomainTag[]): UseQueryResult<DomainTagList, Error> =>
+  ({
+    data: { items: tags },
+    isLoading: false,
+    isSuccess: true,
+    isError: false,
+  }) as UseQueryResult<DomainTagList, Error>
 
 interface EntityReferenceSelectProps {
   tags?: Array<string>
@@ -84,20 +92,13 @@ describe('CombinedEntitySelect', () => {
     cy.get('#combiner-entity-select').type('m')
     cy.get('#react-select-entity-listbox').find('[role="option"]').as('options')
     cy.get('@options').should('have.length', 4)
-    cy.get('@options').eq(0).should('contain.text', 'my-adapter/power/off').should('contain.text', 'Tag')
+    cy.get('@options')
+      .filter(':contains("my-adapter/power/off")')
+      .should('have.length', 1)
+      .should('contain.text', 'Tag')
   })
 
   it('should handle duplicate tag names from different adapters', () => {
-    // Helper to create mock query with tags
-    const mockTagQuery = (tags: DomainTag[]): Partial<UseQueryResult<DomainTagList, Error>> => {
-      return {
-        data: { items: tags },
-        isLoading: false,
-        isSuccess: true,
-        isError: false,
-      }
-    }
-
     // Two adapters with tags having the same name - use deprecated tags prop for now
     const contextWithDuplicates: CombinerContext = {
       entityQueries: [
@@ -155,6 +156,155 @@ describe('CombinedEntitySelect', () => {
     cy.get('@onChange').its('firstCall.args.0.0').should('deep.include', {
       value: 'temperature',
       adapterId: 'modbus-adapter',
+    })
+  })
+
+  describe('chip ownership display', () => {
+    it('should show ownership string in chip when scope is set', () => {
+      const context: CombinerContext = {
+        selectedSources: {
+          tags: [{ id: 'temperature', type: DataIdentifierReference.type.TAG, scope: 'opcua-adapter' }],
+          topicFilters: [],
+        },
+      }
+
+      cy.mountWithProviders(
+        <Box>
+          <FormControl>
+            <FormLabel htmlFor="chip-test">Sources</FormLabel>
+            <CombinedEntitySelect id="chip-test" formContext={context} onChange={cy.stub()} />
+          </FormControl>
+        </Box>
+      )
+
+      cy.getByTestId('topic-wrapper').should('have.length', 1)
+      cy.getByTestId('topic-wrapper').should('contain.text', 'opcua-adapter :: temperature')
+    })
+
+    it('should show plain tag name in chip when scope is null', () => {
+      const context: CombinerContext = {
+        selectedSources: {
+          tags: [{ id: 'temperature', type: DataIdentifierReference.type.TAG, scope: null }],
+          topicFilters: [],
+        },
+      }
+
+      cy.mountWithProviders(
+        <Box>
+          <FormControl>
+            <FormLabel htmlFor="chip-test-no-scope">Sources</FormLabel>
+            <CombinedEntitySelect id="chip-test-no-scope" formContext={context} onChange={cy.stub()} />
+          </FormControl>
+        </Box>
+      )
+
+      cy.getByTestId('topic-wrapper').should('have.length', 1)
+      cy.getByTestId('topic-wrapper').should('contain.text', 'temperature')
+      cy.getByTestId('topic-wrapper').should('not.contain.text', '::')
+    })
+
+    it('should show distinct chips when two adapters share the same tag name', () => {
+      const context: CombinerContext = {
+        selectedSources: {
+          tags: [
+            { id: 'temperature', type: DataIdentifierReference.type.TAG, scope: 'opcua-adapter' },
+            { id: 'temperature', type: DataIdentifierReference.type.TAG, scope: 'modbus-adapter' },
+          ],
+          topicFilters: [],
+        },
+      }
+
+      cy.mountWithProviders(
+        <Box>
+          <FormControl>
+            <FormLabel htmlFor="chip-test-two-adapters">Sources</FormLabel>
+            <CombinedEntitySelect id="chip-test-two-adapters" formContext={context} onChange={cy.stub()} />
+          </FormControl>
+        </Box>
+      )
+
+      cy.getByTestId('topic-wrapper').should('have.length', 2)
+      cy.getByTestId('topic-wrapper').eq(0).should('contain.text', 'opcua-adapter :: temperature')
+      cy.getByTestId('topic-wrapper').eq(1).should('contain.text', 'modbus-adapter :: temperature')
+    })
+  })
+
+  describe('option list ownership display', () => {
+    const contextWithDuplicates: CombinerContext = {
+      entityQueries: [
+        {
+          entity: { id: 'modbus-adapter', type: EntityType.ADAPTER },
+          query: mockTagQuery([
+            { name: 'temperature', description: 'Modbus temperature sensor' } as DomainTag,
+            { name: 'pressure', description: 'Modbus pressure sensor' } as DomainTag,
+          ]),
+        },
+        {
+          entity: { id: 'opcua-adapter', type: EntityType.ADAPTER },
+          query: mockTagQuery([
+            { name: 'temperature', description: 'OPC-UA temperature sensor' } as DomainTag,
+            { name: 'humidity', description: 'OPC-UA humidity sensor' } as DomainTag,
+          ]),
+        },
+      ],
+    }
+
+    it('should show adapterId as secondary text in each option row', () => {
+      cy.mountWithProviders(
+        <Box>
+          <FormControl>
+            <FormLabel htmlFor="option-ownership-test">Sources</FormLabel>
+            <CombinedEntitySelect id="option-ownership-test" formContext={contextWithDuplicates} onChange={cy.stub()} />
+          </FormControl>
+        </Box>
+      )
+
+      cy.get('#combiner-entity-select').click()
+      cy.get('#react-select-entity-listbox').find('[role="option"]').as('options')
+
+      cy.get('@options').filter(':contains("modbus-adapter")').should('have.length', 2)
+      cy.get('@options').filter(':contains("opcua-adapter")').should('have.length', 2)
+    })
+
+    it('should sort options by tag name so same-named tags from different adapters are adjacent', () => {
+      cy.mountWithProviders(
+        <Box>
+          <FormControl>
+            <FormLabel htmlFor="option-sort-test">Sources</FormLabel>
+            <CombinedEntitySelect id="option-sort-test" formContext={contextWithDuplicates} onChange={cy.stub()} />
+          </FormControl>
+        </Box>
+      )
+
+      cy.get('#combiner-entity-select').click()
+      cy.get('#react-select-entity-listbox').find('[role="option"]').as('options')
+
+      // Alphabetical by tag name: humidity, pressure, temperature × 2
+      cy.get('@options').should('have.length', 4)
+      cy.get('@options').eq(0).should('contain.text', 'humidity')
+      cy.get('@options').eq(1).should('contain.text', 'pressure')
+      // both temperature entries are adjacent (eq 2 and eq 3)
+      cy.get('@options').eq(2).should('contain.text', 'temperature')
+      cy.get('@options').eq(3).should('contain.text', 'temperature')
+    })
+
+    it('should filter options by adapter name when typed in search', () => {
+      cy.mountWithProviders(
+        <Box>
+          <FormControl>
+            <FormLabel htmlFor="option-filter-test">Sources</FormLabel>
+            <CombinedEntitySelect id="option-filter-test" formContext={contextWithDuplicates} onChange={cy.stub()} />
+          </FormControl>
+        </Box>
+      )
+
+      cy.get('#option-filter-test').type('opcua')
+      cy.get('#react-select-entity-listbox').find('[role="option"]').as('options')
+
+      cy.get('@options').should('have.length', 2)
+      cy.get('@options').each(($el) => {
+        cy.wrap($el).should('contain.text', 'opcua-adapter')
+      })
     })
   })
 
