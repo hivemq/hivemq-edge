@@ -13,12 +13,23 @@ import { EntityType, DataIdentifierReference } from '@/api/__generated__'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable'
 import IconButton from '@/components/Chakra/IconButton'
 import { PLCTag, Topic, TopicFilter } from '@/components/MQTT/EntityTag'
+import { formatOwnershipString } from '@/components/MQTT/topic-utils'
 
 import { PrimaryWrapper } from '@/modules/Mappings/combiner/components/PrimaryWrapper.tsx'
 import DataCombiningEditorDrawer from '@/modules/Mappings/combiner/DataCombiningEditorDrawer.tsx'
 import type { CombinerContext } from '@/modules/Mappings/types.ts'
 import ManagedAssetSelect from '@/modules/Pulse/components/assets/ManagedAssetSelect.tsx'
 import AssetNameCell from '@/modules/Pulse/components/assets/AssetNameCell.tsx'
+
+const getScopeForTag = (tagId: string, row: DataCombining): string | null => {
+  if (row.sources.primary?.id === tagId && row.sources.primary.type === DataIdentifierReference.type.TAG) {
+    return row.sources.primary.scope ?? null
+  }
+  const inst = row.instructions?.find(
+    (i) => i.sourceRef?.id === tagId && i.sourceRef?.type === DataIdentifierReference.type.TAG
+  )
+  return inst?.sourceRef?.scope ?? null
+}
 
 export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema, CombinerContext>> = (props) => {
   const { t } = useTranslation()
@@ -117,7 +128,13 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
             <HStack flexWrap="wrap">
               {info.row.original.sources?.tags?.map((tag) => (
                 <PrimaryWrapper key={tag} isPrimary={Boolean(isPrimary(DataIdentifierReference.type.TAG, tag))}>
-                  <PLCTag tagTitle={tag} />
+                  <PLCTag
+                    tagTitle={formatOwnershipString({
+                      id: tag,
+                      type: DataIdentifierReference.type.TAG,
+                      scope: getScopeForTag(tag, info.row.original),
+                    })}
+                  />
                 </PrimaryWrapper>
               ))}
               {info.row.original.sources?.topicFilters?.map((tag) => (
