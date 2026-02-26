@@ -147,6 +147,7 @@ public class ConfigurationModule {
      * Eager singleton that triggers configuration migrations at startup.
      * The migration service runs when the injector initializes eager singletons.
      */
+    @SuppressWarnings("UnusedVariable")
     @Provides
     @IntoSet
     static @NotNull Boolean eagerConfigMigration(final @NotNull ConfigMigrationService configMigrationService) {

@@ -18,7 +18,6 @@ package com.hivemq.edge.modules.adapters.data;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.configuration.entity.adapter.AdapterTag;
-import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.protocols.northbound.TagConsumer;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -56,8 +55,9 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
             final @NotNull String adapterId, final @NotNull String tagName, final @NotNull List<DataPoint> dataPoints) {
         final AdapterTag adapterTag = new AdapterTag(adapterId, tagName);
         lastValueForTag.put(adapterTag, dataPoints);
+        final var readlock = readWriteLock.readLock();
+        readlock.lock();
         try {
-            readWriteLock.readLock().lock();
             final var tagConsumers = consumers.get(adapterTag);
             if (tagConsumers != null) {
                 tagConsumers.forEach(consumer -> {
@@ -76,8 +76,9 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
     public void addConsumer(final @NotNull TagConsumer consumer) {
         final AdapterTag adapterTag =
                 new AdapterTag(Objects.requireNonNullElse(consumer.getScope(), ""), consumer.getTagName());
+        final var writeLock = readWriteLock.writeLock();
+        writeLock.lock();
         try {
-            readWriteLock.writeLock().lock();
             consumers.compute(adapterTag, (tag, current) -> {
                 if (current != null) {
                     current.add(consumer);
@@ -102,8 +103,9 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
     public void removeConsumer(final @NotNull TagConsumer consumer) {
         final AdapterTag adapterTag =
                 new AdapterTag(Objects.requireNonNullElse(consumer.getScope(), ""), consumer.getTagName());
+        final var writeLock = readWriteLock.writeLock();
+        writeLock.lock();
         try {
-            readWriteLock.writeLock().lock();
             consumers.computeIfPresent(adapterTag, (tag, current) -> {
                 current.remove(consumer);
                 return current;

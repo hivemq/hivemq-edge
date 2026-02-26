@@ -162,7 +162,7 @@ public class DataCombiningRuntime {
                 combining.destination(), rootNode.toString().getBytes(StandardCharsets.UTF_8), dataCombining);
     }
 
-    public abstract class InternalConsumer {
+    public abstract static class InternalConsumer {
         protected final @NotNull DataIdentifierReference dataIdentifierReference;
         protected final boolean primary;
         protected final boolean storeDataPoints;
