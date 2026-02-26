@@ -68,16 +68,22 @@ public class DataCombiningRuntime {
     private final @NotNull ClientQueuePersistence clientQueuePersistence;
     private final @NotNull SingleWriterService singleWriterService;
 
-    /// add some description for these two (why are there two?)
-    private final @NotNull DataCombiningPublishService dataCombiningPublishService;
-    private final @NotNull DataCombiningTransformationService dataCombiningTransformationService;
-    private final @NotNull ObjectMapper mapper;
+    /// `publishService` builds the MQTT PUBLISH message (QoS, topic, properties) and hands it off to
+    /// `transformationService` which creates the payload from the `inputValuesAsDictObject` (JSON) and publishes it
+    /// There exist two implementations of the transformation service:
+    /// VanillaDataCombiningTransformationService, Open-source/no DataHub, applies field mappings using JSONPath
+    /// DataCombiningTransformationServiceImpl, Commercial DataHub module, compiles and runs a JavaScript transformation
+    private final @NotNull DataCombiningPublishService publishingService;
+    private final @NotNull DataCombiningTransformationService transformationService;
 
     /// subscriptions remembers all the subscriptions for tags and topic filters, so we can unsubscribe them again
     private final @NotNull List<InternalSubscription> subscriptions;
 
-    /// `values` is the hash map where we store values, it must be a concurrent map since values may arrive concurrent
+    /// `values` is the hash map where we store values, it must be a concurrent map since values may arrive concurrently
     private final @NotNull ConcurrentHashMap<String, Value> values;
+
+    /// `mapper` does all the necessary JSON magic for us
+    private final @NotNull ObjectMapper mapper;
 
     public DataCombiningRuntime(
             final @NotNull DataCombining dataCombining,
@@ -85,26 +91,26 @@ public class DataCombiningRuntime {
             final @NotNull TagManager tagManager,
             final @NotNull ClientQueuePersistence clientQueuePersistence,
             final @NotNull SingleWriterService singleWriterService,
-            final @NotNull DataCombiningPublishService dataCombiningPublishService,
-            final @NotNull DataCombiningTransformationService dataCombiningTransformationService) {
+            final @NotNull DataCombiningPublishService publishingService,
+            final @NotNull DataCombiningTransformationService transformationService) {
         this.dataCombining = dataCombining;
         this.localTopicTree = localTopicTree;
         this.tagManager = tagManager;
         this.clientQueuePersistence = clientQueuePersistence;
         this.singleWriterService = singleWriterService;
-        this.dataCombiningPublishService = dataCombiningPublishService;
-        this.dataCombiningTransformationService = dataCombiningTransformationService;
+        this.publishingService = publishingService;
+        this.transformationService = transformationService;
 
-        this.mapper = new ObjectMapper();
         this.subscriptions = new ArrayList<>();
         this.values = new ConcurrentHashMap<>();
+        this.mapper = new ObjectMapper();
     }
 
     /// `starts()` collects all the inputs and subscribes to them all
     public void start() {
         log.debug("Starting data combining {}", dataCombining.id());
 
-        dataCombiningTransformationService.addScriptForDataCombining(dataCombining);
+        transformationService.addScriptForDataCombining(dataCombining);
 
         DataIdentifierReference trigger = dataCombining.sources().primaryReference();
 
@@ -137,7 +143,7 @@ public class DataCombiningRuntime {
         subscriptions.forEach(InternalSubscription::unSubscribe);
         subscriptions.clear();
 
-        dataCombiningTransformationService.removeScriptForDataCombining(dataCombining);
+        transformationService.removeScriptForDataCombining(dataCombining);
     }
 
     /// `assembleAndPublish` is what it really is all about, assembling values and publishing a new, combined message
@@ -149,7 +155,7 @@ public class DataCombiningRuntime {
         valuesSnapshot.forEach((propertyName, propertyValue) -> inputValuesAsDictObject.set(propertyName,
                 propertyValue.getTagValue4Combiner()));
 
-        dataCombiningPublishService.publish(dataCombining.destination(),
+        publishingService.publish(dataCombining.destination(),
                 inputValuesAsDictObject.toString().getBytes(StandardCharsets.UTF_8),
                 dataCombining);
     }
@@ -220,7 +226,7 @@ public class DataCombiningRuntime {
         }
     }
 
-    /// `internalSubscription` returns an, initially inactive, subscription for the input (tag or topic filter),
+    /// `internalSubscription` returns an initially inactive subscription for the input (tag or topic filter),
     /// by creating either an `InternalSubscriptionTag` or an `InternalSubscriptionTopicFilter`
     public InternalSubscription internalSubscription(
             final @NotNull DataIdentifierReference ref,
