@@ -124,21 +124,30 @@ export const getSchemaFromPropertyList = (properties: FlatJSONSchema7[]): RJSFSc
 
   properties.forEach((property) => {
     if (property.path.length === 0) {
-      const { path, key, arrayType, origin, ...rest } = property
+      const { path, key, arrayType, origin, required, ...rest } = property
       ;(root.properties as RJSFSchema)[property.key] = {
         type: property.type,
         ...rest,
         ...(property.type === 'object' && { properties: {} }),
         ...(property.type === 'array' && { items: { type: arrayType } }),
       }
+      if (required) {
+        if (!root.required) root.required = []
+        ;(root.required as string[]).push(key)
+      }
     } else {
       const newRoot = root.properties as RJSFSchema
-      const { path, key, arrayType, origin, ...rest } = property
+      const { path, key, arrayType, origin, required, ...rest } = property
 
       newRoot[property.path[0]].properties[property.key] = {
         type: property.type,
         ...rest,
         ...(property.type === 'array' && { items: { type: arrayType } }),
+      }
+      if (required) {
+        const parentProp = newRoot[property.path[0]]
+        if (!parentProp.required) parentProp.required = []
+        ;(parentProp.required as string[]).push(key)
       }
     }
   })
