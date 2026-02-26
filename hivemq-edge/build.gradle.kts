@@ -325,7 +325,7 @@ tasks.test {
 // ******************** OpenAPI ********************
 val buildDirectory = layout.buildDirectory.get()
 tasks.register<GenerateTask>("genJaxRs") {
-    inputSpec.set("$projectDir/../ext/hivemq-edge-openapi-${project.version}.yaml")
+    inputSpec.set("$projectDir/../ext/hivemq-edge-openapi.yaml")
     outputDir.set("$buildDirectory/generated/openapi")
     templateDir.set("$projectDir/../hivemq-edge-openapi/openapi/templates/Java")
     generatorName.set("jaxrs-spec")
