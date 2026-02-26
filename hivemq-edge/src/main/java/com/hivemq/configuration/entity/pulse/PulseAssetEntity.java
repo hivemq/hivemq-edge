@@ -90,6 +90,7 @@ public class PulseAssetEntity implements EntityValidatable {
         return new Builder();
     }
 
+    @SuppressWarnings("NonOverridingEquals")
     public boolean equals(final @NotNull Asset remoteAsset) {
         if (!Objects.equals(id.toString(), remoteAsset.id())) {
             return false;

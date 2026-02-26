@@ -47,6 +47,7 @@ import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 import com.hivemq.protocols.northbound.TagConsumer;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -76,7 +77,7 @@ class DataCombiningRuntimeTest {
         dataCombiningTransformationService = mock(DataCombiningTransformationService.class);
     }
 
-    private DataCombiningRuntime createRuntime(final DataCombining combining) {
+    private DataCombiningRuntime createRuntime(final @NonNull DataCombining combining) {
         return new DataCombiningRuntime(
                 combining,
                 localTopicTree,
@@ -499,7 +500,7 @@ class DataCombiningRuntimeTest {
 
         final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(dataCombiningPublishService).publish(eq(destination), payloadCaptor.capture(), eq(combining));
-        assertThat(new String(payloadCaptor.getValue())).isEqualTo("{}");
+        assertThat(new String(payloadCaptor.getValue(), StandardCharsets.UTF_8)).isEqualTo("{}");
     }
 
     /*
@@ -534,7 +535,7 @@ class DataCombiningRuntimeTest {
 
         final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(dataCombiningPublishService).publish(eq(destination), payloadCaptor.capture(), eq(combining));
-        final String payload = new String(payloadCaptor.getValue());
+        final String payload = new String(payloadCaptor.getValue(), StandardCharsets.UTF_8);
         // The payload should be the empty.
         assertThat(payload).isEqualTo("{}");
     }
@@ -623,7 +624,7 @@ class DataCombiningRuntimeTest {
      * on every other call (first call per consumer) and empty on the rest.
      * removeShared() is stubbed to avoid NPEs during message acknowledgment.
      */
-    private void setupSynchronousPolling(final PUBLISH publishToDeliver) {
+    private void setupSynchronousPolling(final @NonNull PUBLISH publishToDeliver) {
         final ProducerQueues producerQueues = mock(ProducerQueues.class);
         when(singleWriterService.getQueuedMessagesQueue()).thenReturn(producerQueues);
         when(producerQueues.submit(anyString(), any(SingleWriterService.Task.class)))
@@ -649,7 +650,7 @@ class DataCombiningRuntimeTest {
 
     private PUBLISH createMockPublish() {
         final PUBLISH publish = mock(PUBLISH.class);
-        when(publish.getPayload()).thenReturn("{\"v\":1}".getBytes());
+        when(publish.getPayload()).thenReturn("{\"v\":1}".getBytes(StandardCharsets.UTF_8));
         when(publish.getUniqueId()).thenReturn("unique-" + UUID.randomUUID());
         when(publish.getQoS()).thenReturn(QoS.AT_LEAST_ONCE);
         return publish;
@@ -815,7 +816,7 @@ class DataCombiningRuntimeTest {
 
         final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(dataCombiningPublishService).publish(eq(destination), payloadCaptor.capture(), eq(combining));
-        final String payload = new String(payloadCaptor.getValue());
+        final String payload = new String(payloadCaptor.getValue(), StandardCharsets.UTF_8);
         assertThat(payload).contains("adapter1/TAG:tag1");
         assertThat(payload).contains("\"temperature\":25");
     }
@@ -846,7 +847,7 @@ class DataCombiningRuntimeTest {
 
         final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(dataCombiningPublishService).publish(eq(destination), payloadCaptor.capture(), eq(combining));
-        final String payload = new String(payloadCaptor.getValue());
+        final String payload = new String(payloadCaptor.getValue(), StandardCharsets.UTF_8);
         assertThat(payload).isEqualTo("{}");
     }
 
@@ -875,7 +876,7 @@ class DataCombiningRuntimeTest {
 
         final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(dataCombiningPublishService).publish(eq(destination), payloadCaptor.capture(), eq(combining));
-        final String payload = new String(payloadCaptor.getValue());
+        final String payload = new String(payloadCaptor.getValue(), StandardCharsets.UTF_8);
         // Payload should contain the topic filter data from the mock publish {"v":1}
         assertThat(payload).contains("\"v\":1");
     }
@@ -904,7 +905,7 @@ class DataCombiningRuntimeTest {
 
         final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(dataCombiningPublishService).publish(eq(destination), payloadCaptor.capture(), eq(combining));
-        final String payload = new String(payloadCaptor.getValue());
+        final String payload = new String(payloadCaptor.getValue(), StandardCharsets.UTF_8);
         assertThat(payload).isEqualTo("{}");
     }
 
@@ -944,7 +945,7 @@ class DataCombiningRuntimeTest {
 
         final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(dataCombiningPublishService).publish(eq(destination), payloadCaptor.capture(), eq(combining));
-        final String payload = new String(payloadCaptor.getValue());
+        final String payload = new String(payloadCaptor.getValue(), StandardCharsets.UTF_8);
         // Payload contains non-primary tag2 data but NOT primary tag1 data
         assertThat(payload).contains("adapter2/TAG:tag2");
         assertThat(payload).contains("\"humidity\":60");

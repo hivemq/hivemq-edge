@@ -43,7 +43,6 @@ import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.clientsession.ClientSession;
 import com.hivemq.persistence.clientsession.ClientSessionPersistence;
-import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -61,7 +60,6 @@ import util.TestSingleWriterFactory;
  */
 public class PublishDistributorImplTest {
 
-    private final @NotNull PublishPayloadPersistence payloadPersistence = mock();
     private final @NotNull ClientQueuePersistence clientQueuePersistence = mock();
     private final @NotNull ClientSessionPersistence clientSessionPersistence = mock();
     private final @NotNull ConfigurationService configurationService = mock();

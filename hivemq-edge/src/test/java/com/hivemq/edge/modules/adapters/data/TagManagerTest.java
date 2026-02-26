@@ -78,7 +78,7 @@ public class TagManagerTest {
 
     @Test
     public void test_differentScopes_isolateConsumers() throws Exception {
-        var tagManager = new TagManager(new MetricsHolder(new NoopMetricRegistry()));
+        var tagManager = new TagManager();
         var adapter1Latch = new CountDownLatch(1);
         var adapter2Latch = new CountDownLatch(1);
         tagManager.addConsumer(new SucceedingConsumer("adapter-1", "temp", adapter1Latch));
@@ -93,7 +93,7 @@ public class TagManagerTest {
 
     @Test
     public void test_feedDoesNotTriggerConsumerForDifferentScope() throws Exception {
-        var tagManager = new TagManager(new MetricsHolder(new NoopMetricRegistry()));
+        var tagManager = new TagManager();
         var latch = new CountDownLatch(1);
         tagManager.addConsumer(new SucceedingConsumer("adapter-2", "temp", latch));
 
@@ -105,7 +105,7 @@ public class TagManagerTest {
 
     @Test
     public void test_cachedValueReplayedOnAddConsumer() throws Exception {
-        var tagManager = new TagManager(new MetricsHolder(new NoopMetricRegistry()));
+        var tagManager = new TagManager();
         // Feed first, then add consumer — cached value should be replayed
         tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 42)));
 
@@ -117,7 +117,7 @@ public class TagManagerTest {
 
     @Test
     public void test_cachedValueNotReplayedForDifferentScope() throws Exception {
-        var tagManager = new TagManager(new MetricsHolder(new NoopMetricRegistry()));
+        var tagManager = new TagManager();
         tagManager.feed("adapter-1", "tag1", List.of(new DataPointImpl("tag1", 42)));
 
         var latch = new CountDownLatch(1);
@@ -129,7 +129,7 @@ public class TagManagerTest {
 
     @Test
     public void test_removeConsumer_stopsDelivery() throws Exception {
-        var tagManager = new TagManager(new MetricsHolder(new NoopMetricRegistry()));
+        var tagManager = new TagManager();
         var latch = new CountDownLatch(2);
         var consumer = new SucceedingConsumer(ADAPTER_1, "tag1", latch);
         tagManager.addConsumer(consumer);
