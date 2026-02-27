@@ -146,6 +146,7 @@ public class KeystoreUtil {
         }
     }
 
+    @SuppressWarnings("ArrayRecordComponent")
     public record KeyPairWithChain(
             @NotNull PrivateKey privateKey,
             @NotNull X509Certificate publicKey,
