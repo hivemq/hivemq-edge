@@ -1430,8 +1430,7 @@
         "unique": "This identifier is already in use for another bridge"
       },
       "tag": {
-        "uniqueDevice": "This tag name is already used on this device",
-        "uniqueEdge": "This tag name is already used on another devices"
+        "uniqueDevice": "This tag name is already used on this device"
       }
     }
   },
