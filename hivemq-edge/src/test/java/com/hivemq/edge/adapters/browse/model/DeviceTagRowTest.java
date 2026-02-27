@@ -15,12 +15,13 @@
  */
 package com.hivemq.edge.adapters.browse.model;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.hivemq.adapter.sdk.api.discovery.BrowsedNode;
+import org.junit.jupiter.api.Test;
+
 import java.util.List;
 import java.util.Map;
-import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class DeviceTagRowTest {
 
@@ -102,8 +103,7 @@ class DeviceTagRowTest {
 
     @Test
     void fromBrowsedNode_copiesInformationalFields() {
-        final BrowsedNode node = new BrowsedNode(
-                "/Objects/Data/Bool",
+        final BrowsedNode node = new BrowsedNode("/Objects/Data/Bool",
                 "urn:test:ns",
                 2,
                 "ns=2;i=50",
@@ -132,9 +132,17 @@ class DeviceTagRowTest {
 
     @Test
     void fromBrowsedNode_editableFieldsAreNull() {
-        final BrowsedNode node = new BrowsedNode(
-                "/path", "urn:ns", 0, "ns=0;i=1", "Int32", "READ", null,
-                "default-tag", null, "default/topic", "default/write/topic");
+        final BrowsedNode node = new BrowsedNode("/path",
+                "urn:ns",
+                0,
+                "ns=0;i=1",
+                "Int32",
+                "READ",
+                null,
+                "default-tag",
+                null,
+                "default/topic",
+                "default/write/topic");
 
         final DeviceTagRow row = DeviceTagRow.fromBrowsedNode(node);
 
@@ -170,62 +178,46 @@ class DeviceTagRowTest {
 
     @Test
     void hasNorthboundMapping_trueWhenTagAndTopicPresent() {
-        final DeviceTagRow row = DeviceTagRow.builder()
-                .tagName("my-tag")
-                .northboundTopic("topic/a")
-                .build();
+        final DeviceTagRow row = DeviceTagRow.builder().tagName("my-tag").northboundTopic("topic/a").build();
         assertThat(row.hasNorthboundMapping()).isTrue();
     }
 
     @Test
     void hasNorthboundMapping_falseWhenNoTag() {
-        final DeviceTagRow row = DeviceTagRow.builder()
-                .northboundTopic("topic/a")
-                .build();
+        final DeviceTagRow row = DeviceTagRow.builder().northboundTopic("topic/a").build();
         assertThat(row.hasNorthboundMapping()).isFalse();
     }
 
     @Test
     void hasNorthboundMapping_falseWhenNoTopic() {
-        final DeviceTagRow row = DeviceTagRow.builder()
-                .tagName("my-tag")
-                .build();
+        final DeviceTagRow row = DeviceTagRow.builder().tagName("my-tag").build();
         assertThat(row.hasNorthboundMapping()).isFalse();
     }
 
     @Test
     void hasSouthboundMapping_trueWhenTagAndTopicPresent() {
-        final DeviceTagRow row = DeviceTagRow.builder()
-                .tagName("my-tag")
-                .southboundTopic("topic/write")
-                .build();
+        final DeviceTagRow row = DeviceTagRow.builder().tagName("my-tag").southboundTopic("topic/write").build();
         assertThat(row.hasSouthboundMapping()).isTrue();
     }
 
     @Test
     void hasSouthboundMapping_falseWhenNoTag() {
-        final DeviceTagRow row = DeviceTagRow.builder()
-                .southboundTopic("topic/write")
-                .build();
+        final DeviceTagRow row = DeviceTagRow.builder().southboundTopic("topic/write").build();
         assertThat(row.hasSouthboundMapping()).isFalse();
     }
 
     @Test
     void equals_sameFields() {
-        final DeviceTagRow row1 = DeviceTagRow.builder()
-                .nodeId("ns=2;i=1").tagName("t1").build();
-        final DeviceTagRow row2 = DeviceTagRow.builder()
-                .nodeId("ns=2;i=1").tagName("t1").build();
+        final DeviceTagRow row1 = DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("t1").build();
+        final DeviceTagRow row2 = DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("t1").build();
         assertThat(row1).isEqualTo(row2);
         assertThat(row1.hashCode()).isEqualTo(row2.hashCode());
     }
 
     @Test
     void equals_differentFields() {
-        final DeviceTagRow row1 = DeviceTagRow.builder()
-                .nodeId("ns=2;i=1").tagName("t1").build();
-        final DeviceTagRow row2 = DeviceTagRow.builder()
-                .nodeId("ns=2;i=2").tagName("t2").build();
+        final DeviceTagRow row1 = DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("t1").build();
+        final DeviceTagRow row2 = DeviceTagRow.builder().nodeId("ns=2;i=2").tagName("t2").build();
         assertThat(row1).isNotEqualTo(row2);
     }
 

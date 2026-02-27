@@ -15,11 +15,10 @@
  */
 package com.hivemq.edge.adapters.browse.file;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import com.hivemq.edge.adapters.browse.model.DeviceTagRow;
 import com.hivemq.edge.adapters.browse.model.FieldMappingInstruction;
+import org.junit.jupiter.api.Test;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -29,7 +28,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class DeviceTagJsonSerializerTest {
 
@@ -52,8 +53,7 @@ class DeviceTagJsonSerializerTest {
                 .northboundTopicDefault("adapter/data/int32")
                 .southboundTopic("adapter/write/data/int32")
                 .southboundTopicDefault("adapter/write/data/int32")
-                .southboundFieldMapping(List.of(
-                        new FieldMappingInstruction("value", "value"),
+                .southboundFieldMapping(List.of(new FieldMappingInstruction("value", "value"),
                         new FieldMappingInstruction("status", "quality")))
                 .maxQos(1)
                 .messageExpiryInterval(3600L)
@@ -67,7 +67,7 @@ class DeviceTagJsonSerializerTest {
         final List<DeviceTagRow> result = serializer.deserialize(json);
 
         assertThat(result).hasSize(1);
-        final DeviceTagRow deserialized = result.get(0);
+        final DeviceTagRow deserialized = result.getFirst();
         assertThat(deserialized.getNodePath()).isEqualTo(row.getNodePath());
         assertThat(deserialized.getNamespaceUri()).isEqualTo(row.getNamespaceUri());
         assertThat(deserialized.getNamespaceIndex()).isEqualTo(row.getNamespaceIndex());
@@ -91,17 +91,15 @@ class DeviceTagJsonSerializerTest {
 
     @Test
     void roundTrip_minimalRow() throws IOException {
-        final DeviceTagRow row = DeviceTagRow.builder()
-                .nodeId("ns=0;i=1")
-                .build();
+        final DeviceTagRow row = DeviceTagRow.builder().nodeId("ns=0;i=1").build();
 
         final byte[] json = serializer.serialize(List.of(row));
         final List<DeviceTagRow> result = serializer.deserialize(json);
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getNodeId()).isEqualTo("ns=0;i=1");
-        assertThat(result.get(0).getTagName()).isNull();
-        assertThat(result.get(0).getNorthboundTopic()).isNull();
+        assertThat(result.getFirst().getNodeId()).isEqualTo("ns=0;i=1");
+        assertThat(result.getFirst().getTagName()).isNull();
+        assertThat(result.getFirst().getNorthboundTopic()).isNull();
     }
 
     @Test
@@ -114,11 +112,8 @@ class DeviceTagJsonSerializerTest {
     @Test
     void roundTrip_nullSections_handledCorrectly() throws IOException {
         // Row with only node info, no tag/northbound/southbound
-        final DeviceTagRow row = DeviceTagRow.builder()
-                .nodePath("/Objects/Data")
-                .nodeId("ns=0;i=85")
-                .dataType("Int32")
-                .build();
+        final DeviceTagRow row =
+                DeviceTagRow.builder().nodePath("/Objects/Data").nodeId("ns=0;i=85").dataType("Int32").build();
 
         final byte[] json = serializer.serialize(List.of(row));
         final String jsonStr = new String(json, StandardCharsets.UTF_8);
@@ -129,8 +124,8 @@ class DeviceTagJsonSerializerTest {
 
         final List<DeviceTagRow> result = serializer.deserialize(json);
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getNorthboundTopic()).isNull();
-        assertThat(result.get(0).getSouthboundTopic()).isNull();
+        assertThat(result.getFirst().getNorthboundTopic()).isNull();
+        assertThat(result.getFirst().getSouthboundTopic()).isNull();
     }
 
     @Test
@@ -149,9 +144,9 @@ class DeviceTagJsonSerializerTest {
         final List<DeviceTagRow> result = serializer.deserialize(json);
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getTagName()).isEqualTo("*");
-        assertThat(result.get(0).getNorthboundTopic()).isEqualTo("*");
-        assertThat(result.get(0).getSouthboundTopic()).isEqualTo("*");
+        assertThat(result.getFirst().getTagName()).isEqualTo("*");
+        assertThat(result.getFirst().getNorthboundTopic()).isEqualTo("*");
+        assertThat(result.getFirst().getSouthboundTopic()).isEqualTo("*");
     }
 
     @Test
@@ -161,7 +156,7 @@ class DeviceTagJsonSerializerTest {
                 """;
         final List<DeviceTagRow> result = serializer.deserialize(json.getBytes(StandardCharsets.UTF_8));
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getNodeId()).isEqualTo("ns=0;i=1");
+        assertThat(result.getFirst().getNodeId()).isEqualTo("ns=0;i=1");
     }
 
     @Test
@@ -184,8 +179,8 @@ class DeviceTagJsonSerializerTest {
 
     @Test
     void deserialize_malformedJson() {
-        assertThatThrownBy(() -> serializer.deserialize("not json".getBytes(StandardCharsets.UTF_8)))
-                .isInstanceOf(IOException.class);
+        assertThatThrownBy(() -> serializer.deserialize("not json".getBytes(StandardCharsets.UTF_8))).isInstanceOf(
+                IOException.class);
     }
 
     @Test
@@ -194,8 +189,7 @@ class DeviceTagJsonSerializerTest {
                 .nodeId("ns=0;i=1")
                 .tagName("tag")
                 .southboundTopic("topic")
-                .southboundFieldMapping(List.of(
-                        new FieldMappingInstruction("src", "dst")))
+                .southboundFieldMapping(List.of(new FieldMappingInstruction("src", "dst")))
                 .build();
 
         final byte[] json = serializer.serialize(List.of(row));
