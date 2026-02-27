@@ -30,6 +30,7 @@ import com.hivemq.combining.model.EntityType;
 import com.hivemq.combining.runtime.DataCombiningPublishService;
 import com.hivemq.combining.runtime.DataCombiningRuntimeFactory;
 import com.hivemq.common.shutdown.ShutdownHooks;
+import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.entity.pulse.PulseAssetEntity;
 import com.hivemq.configuration.entity.pulse.PulseAssetMappingEntity;
 import com.hivemq.configuration.entity.pulse.PulseAssetMappingStatus;
@@ -125,7 +126,8 @@ public class AssetMapperManagerTest {
                 singleWriterService,
                 dataCombiningPublishService,
                 tagManager,
-                dataCombiningTransformationService);
+                dataCombiningTransformationService,
+                new HivemqId());
         assetMapperManager = new AssetMapperManager(eventService,
                 new NoopMetricRegistry(),
                 dataCombiningRuntimeFactory,

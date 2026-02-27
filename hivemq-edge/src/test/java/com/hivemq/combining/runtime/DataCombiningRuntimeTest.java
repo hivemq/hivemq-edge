@@ -36,6 +36,7 @@ import com.hivemq.combining.model.DataCombining;
 import com.hivemq.combining.model.DataCombiningDestination;
 import com.hivemq.combining.model.DataCombiningSources;
 import com.hivemq.combining.model.DataIdentifierReference;
+import com.hivemq.configuration.HivemqId;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.mqtt.message.QoS;
@@ -47,9 +48,11 @@ import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 import com.hivemq.protocols.northbound.TagConsumer;
+
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -77,14 +80,14 @@ class DataCombiningRuntimeTest {
     }
 
     private DataCombiningRuntime createRuntime(final DataCombining combining) {
-        return new DataCombiningRuntime(
-                combining,
+        return new DataCombiningRuntime(combining,
                 localTopicTree,
                 tagManager,
                 clientQueuePersistence,
                 singleWriterService,
                 dataCombiningPublishService,
-                dataCombiningTransformationService);
+                dataCombiningTransformationService,
+                new HivemqId());
     }
 
     /*
@@ -98,8 +101,7 @@ class DataCombiningRuntimeTest {
     void start_whenNoInstructions_andPrimaryIsTag_thenSubscribesPrimaryTag() {
         final DataIdentifierReference primary =
                 new DataIdentifierReference("tag1", DataIdentifierReference.Type.TAG, "adapter1");
-        final DataCombining combining = new DataCombining(
-                UUID.randomUUID(),
+        final DataCombining combining = new DataCombining(UUID.randomUUID(),
                 new DataCombiningSources(primary, List.of("tag1"), List.of()),
                 new DataCombiningDestination(null, "dest/topic", "{}"),
                 List.of());
@@ -115,7 +117,9 @@ class DataCombiningRuntimeTest {
 
         // The only consumer is the primary — accepting data should trigger a publish
         captor.getValue().accept(List.of(new DataPointImpl("tag1", "{\"v\":1}")));
-        verify(dataCombiningPublishService).publish(any(), any(), eq(combining));
+        // mS:
+        // verify(dataCombiningPublishService).publish(any(), any(), eq(combining));
+        verify(dataCombiningTransformationService).applyMappings(any(), eq(combining));
     }
 
     /*
@@ -128,8 +132,7 @@ class DataCombiningRuntimeTest {
     void start_whenNoInstructions_andPrimaryIsTopicFilter_thenSubscribesPrimaryTopicFilter() {
         final DataIdentifierReference primary =
                 new DataIdentifierReference("sensor/temp", DataIdentifierReference.Type.TOPIC_FILTER);
-        final DataCombining combining = new DataCombining(
-                UUID.randomUUID(),
+        final DataCombining combining = new DataCombining(UUID.randomUUID(),
                 new DataCombiningSources(primary, List.of(), List.of("sensor/temp")),
                 new DataCombiningDestination(null, "dest/topic", "{}"),
                 List.of());
@@ -156,8 +159,7 @@ class DataCombiningRuntimeTest {
         final DataIdentifierReference instructionRef =
                 new DataIdentifierReference("tag2", DataIdentifierReference.Type.TAG, "adapter2");
         final Instruction instruction = new Instruction("$.value", "output", instructionRef);
-        final DataCombining combining = new DataCombining(
-                UUID.randomUUID(),
+        final DataCombining combining = new DataCombining(UUID.randomUUID(),
                 new DataCombiningSources(primary, List.of("tag1", "tag2"), List.of()),
                 new DataCombiningDestination(null, "dest/topic", "{}"),
                 List.of(instruction));
@@ -178,13 +180,17 @@ class DataCombiningRuntimeTest {
         // mS: was {v:1}, which can't really work, because the instruction above references value
         // consumers.get(0).accept(List.of(new DataPointImpl("tag2", "{\"v\":1}")));
         consumers.get(0).accept(List.of(new DataPointImpl("tag2", "{\"value\":1}")));
-        verify(dataCombiningPublishService, never()).publish(any(), any(), any());
+        // mS:
+        // verify(dataCombiningPublishService, never()).publish(any(), any(), any());
+        verify(dataCombiningTransformationService, never()).applyMappings(any(), any());
 
         // Primary consumer (last) should trigger a publish
         // mS: was {v:2}, which can't really work, because the instruction above references value
         // consumers.get(1).accept(List.of(new DataPointImpl("tag1", "{\"v\":2}")));
         consumers.get(1).accept(List.of(new DataPointImpl("tag1", "{\"value\":2}")));
-        verify(dataCombiningPublishService).publish(any(), any(), eq(combining));
+        // mS:
+        // verify(dataCombiningPublishService).publish(any(), any(), eq(combining));
+        verify(dataCombiningTransformationService).applyMappings(any(), eq(combining));
     }
 
     /*
@@ -201,8 +207,7 @@ class DataCombiningRuntimeTest {
         final DataIdentifierReference instructionRef =
                 new DataIdentifierReference("tag1", DataIdentifierReference.Type.TAG, "adapter1");
         final Instruction instruction = new Instruction("$.value", "output", instructionRef);
-        final DataCombining combining = new DataCombining(
-                UUID.randomUUID(),
+        final DataCombining combining = new DataCombining(UUID.randomUUID(),
                 new DataCombiningSources(primary, List.of("tag1"), List.of()),
                 new DataCombiningDestination(null, "dest/topic", "{}"),
                 List.of(instruction));
@@ -228,8 +233,7 @@ class DataCombiningRuntimeTest {
         final DataIdentifierReference instructionRef =
                 new DataIdentifierReference("sensor/#", DataIdentifierReference.Type.TOPIC_FILTER);
         final Instruction instruction = new Instruction("$.value", "output", instructionRef);
-        final DataCombining combining = new DataCombining(
-                UUID.randomUUID(),
+        final DataCombining combining = new DataCombining(UUID.randomUUID(),
                 new DataCombiningSources(primary, List.of("tag1"), List.of("sensor/#")),
                 new DataCombiningDestination(null, "dest/topic", "{}"),
                 List.of(instruction));
@@ -253,8 +257,7 @@ class DataCombiningRuntimeTest {
         final DataIdentifierReference primary =
                 new DataIdentifierReference("tag1", DataIdentifierReference.Type.TAG, "adapter1");
         final Instruction instruction = new Instruction("$.value", "output", null);
-        final DataCombining combining = new DataCombining(
-                UUID.randomUUID(),
+        final DataCombining combining = new DataCombining(UUID.randomUUID(),
                 new DataCombiningSources(primary, List.of("tag1"), List.of()),
                 new DataCombiningDestination(null, "dest/topic", "{}"),
                 List.of(instruction));
@@ -281,8 +284,7 @@ class DataCombiningRuntimeTest {
                 new DataIdentifierReference("tag2", DataIdentifierReference.Type.TAG, "adapter2");
         final Instruction instruction1 = new Instruction("$.value1", "output1", instructionRef);
         final Instruction instruction2 = new Instruction("$.value2", "output2", instructionRef);
-        final DataCombining combining = new DataCombining(
-                UUID.randomUUID(),
+        final DataCombining combining = new DataCombining(UUID.randomUUID(),
                 new DataCombiningSources(primary, List.of("tag1", "tag2"), List.of()),
                 new DataCombiningDestination(null, "dest/topic", "{}"),
                 List.of(instruction1, instruction2));
@@ -302,11 +304,14 @@ class DataCombiningRuntimeTest {
 
         // Non-primary consumer should NOT trigger publish
         consumers.get(0).accept(List.of(new DataPointImpl("tag2", "{\"v\":1}")));
-        verify(dataCombiningPublishService, never()).publish(any(), any(), any());
+        // verify(dataCombiningPublishService, never()).publish(any(), any(), any());
+        verify(dataCombiningTransformationService, never()).applyMappings(any(), any());
 
         // Primary consumer (last) should trigger publish
         consumers.get(1).accept(List.of(new DataPointImpl("tag1", "{\"v\":2}")));
-        verify(dataCombiningPublishService).publish(any(), any(), eq(combining));
+        // mS:
+        // verify(dataCombiningPublishService).publish(any(), any(), eq(combining));
+        verify(dataCombiningTransformationService).applyMappings(any(), eq(combining));
     }
 
     /*
@@ -330,8 +335,7 @@ class DataCombiningRuntimeTest {
         final Instruction i1 = new Instruction("$.v1", "o1", tagRef1);
         final Instruction i2 = new Instruction("$.v2", "o2", tagRef2);
         final Instruction i3 = new Instruction("$.v3", "o3", topicRef);
-        final DataCombining combining = new DataCombining(
-                UUID.randomUUID(),
+        final DataCombining combining = new DataCombining(UUID.randomUUID(),
                 new DataCombiningSources(primary, List.of("tag1", "tag2"), List.of("sensor/temp", "other/#")),
                 new DataCombiningDestination(null, "dest/topic", "{}"),
                 List.of(i1, i2, i3));
@@ -349,7 +353,9 @@ class DataCombiningRuntimeTest {
         for (final TagConsumer consumer : captor.getAllValues()) {
             consumer.accept(List.of(new DataPointImpl(consumer.getTagName(), "{\"v\":1}")));
         }
-        verify(dataCombiningPublishService, never()).publish(any(), any(), any());
+        // mS:
+        // verify(dataCombiningPublishService, never()).publish(any(), any(), any());
+        verify(dataCombiningTransformationService, never()).applyMappings(any(), any());
     }
 
     /*
@@ -361,8 +367,7 @@ class DataCombiningRuntimeTest {
     void stop_whenStartedWithTags_thenConsumersRemoved() {
         final DataIdentifierReference primary =
                 new DataIdentifierReference("tag1", DataIdentifierReference.Type.TAG, "adapter1");
-        final DataCombining combining = new DataCombining(
-                UUID.randomUUID(),
+        final DataCombining combining = new DataCombining(UUID.randomUUID(),
                 new DataCombiningSources(primary, List.of("tag1"), List.of()),
                 new DataCombiningDestination(null, "dest/topic", "{}"),
                 List.of());
@@ -389,8 +394,7 @@ class DataCombiningRuntimeTest {
     void stop_whenStartedWithTopicFilters_thenSubscriptionsRemoved() {
         final DataIdentifierReference primary =
                 new DataIdentifierReference("sensor/temp", DataIdentifierReference.Type.TOPIC_FILTER);
-        final DataCombining combining = new DataCombining(
-                UUID.randomUUID(),
+        final DataCombining combining = new DataCombining(UUID.randomUUID(),
                 new DataCombiningSources(primary, List.of(), List.of("sensor/temp")),
                 new DataCombiningDestination(null, "dest/topic", "{}"),
                 List.of());
@@ -416,8 +420,7 @@ class DataCombiningRuntimeTest {
         final DataIdentifierReference topicRef =
                 new DataIdentifierReference("sensor/#", DataIdentifierReference.Type.TOPIC_FILTER);
         final Instruction instruction = new Instruction("$.value", "output", topicRef);
-        final DataCombining combining = new DataCombining(
-                UUID.randomUUID(),
+        final DataCombining combining = new DataCombining(UUID.randomUUID(),
                 new DataCombiningSources(primary, List.of("tag1"), List.of("sensor/#")),
                 new DataCombiningDestination(null, "dest/topic", "{}"),
                 List.of(instruction));
@@ -441,8 +444,7 @@ class DataCombiningRuntimeTest {
     void stop_whenNotStarted_thenNoErrors() {
         final DataIdentifierReference primary =
                 new DataIdentifierReference("tag1", DataIdentifierReference.Type.TAG, "adapter1");
-        final DataCombining combining = new DataCombining(
-                UUID.randomUUID(),
+        final DataCombining combining = new DataCombining(UUID.randomUUID(),
                 new DataCombiningSources(primary, List.of("tag1"), List.of()),
                 new DataCombiningDestination(null, "dest/topic", "{}"),
                 List.of());
@@ -465,8 +467,7 @@ class DataCombiningRuntimeTest {
     void stop_calledTwice_thenSecondStopIsNoop() {
         final DataIdentifierReference primary =
                 new DataIdentifierReference("tag1", DataIdentifierReference.Type.TAG, "adapter1");
-        final DataCombining combining = new DataCombining(
-                UUID.randomUUID(),
+        final DataCombining combining = new DataCombining(UUID.randomUUID(),
                 new DataCombiningSources(primary, List.of("tag1"), List.of()),
                 new DataCombiningDestination(null, "dest/topic", "{}"),
                 List.of());
@@ -492,8 +493,7 @@ class DataCombiningRuntimeTest {
         final DataIdentifierReference primary =
                 new DataIdentifierReference("tag1", DataIdentifierReference.Type.TAG, "adapter1");
         final DataCombiningDestination destination = new DataCombiningDestination(null, "dest/topic", "{}");
-        final DataCombining combining = new DataCombining(
-                UUID.randomUUID(),
+        final DataCombining combining = new DataCombining(UUID.randomUUID(),
                 new DataCombiningSources(primary, List.of("tag1"), List.of()),
                 destination,
                 List.of());
@@ -503,9 +503,13 @@ class DataCombiningRuntimeTest {
         // runtime.triggerPublish(combining);
         runtime.assembleAndPublish();
 
-        final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
-        verify(dataCombiningPublishService).publish(eq(destination), payloadCaptor.capture(), eq(combining));
-        assertThat(new String(payloadCaptor.getValue())).isEqualTo("{}");
+        // mS:
+        // final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
+        // verify(dataCombiningPublishService).publish(eq(destination), payloadCaptor.capture(), eq(combining));
+        // assertThat(new String(payloadCaptor.getValue())).isEqualTo("{}");
+        final ArgumentCaptor<PUBLISH> payloadCaptor = ArgumentCaptor.forClass(PUBLISH.class);
+        verify(dataCombiningTransformationService).applyMappings(payloadCaptor.capture(), eq(combining));
+        assertThat(new String(payloadCaptor.getValue().getPayload())).isEqualTo("{}");
     }
 
     /*
@@ -520,8 +524,7 @@ class DataCombiningRuntimeTest {
         final DataIdentifierReference primary =
                 new DataIdentifierReference("tag1", DataIdentifierReference.Type.TAG, "adapter1");
         final DataCombiningDestination destination = new DataCombiningDestination(null, "dest/topic", "{}");
-        final DataCombining combining = new DataCombining(
-                UUID.randomUUID(),
+        final DataCombining combining = new DataCombining(UUID.randomUUID(),
                 new DataCombiningSources(primary, List.of("tag1"), List.of()),
                 destination,
                 List.of());
@@ -538,11 +541,15 @@ class DataCombiningRuntimeTest {
         final DataPoint dataPoint = new DataPointImpl("tag1", "{\"temperature\":25}");
         consumer.accept(List.of(dataPoint));
 
-        final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
-        verify(dataCombiningPublishService).publish(eq(destination), payloadCaptor.capture(), eq(combining));
-        final String payload = new String(payloadCaptor.getValue());
+        // mS:
+        // final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
+        // verify(dataCombiningPublishService).publish(eq(destination), payloadCaptor.capture(), eq(combining));
+        // final String payload = new String(payloadCaptor.getValue());
+        final ArgumentCaptor<PUBLISH> payloadCaptor = ArgumentCaptor.forClass(PUBLISH.class);
+        verify(dataCombiningTransformationService).applyMappings(payloadCaptor.capture(), eq(combining));
+        final String payload = new String(payloadCaptor.getValue().getPayload());
         // The key should be the fully qualified name: adapter1/TAG:tag1
-        // mS - how should the payload contain anything? the destination has no instructions and an empty schema
+        // mS: how should the payload contain anything? the destination has no instructions and an empty schema
         // assertThat(payload).contains("adapter1/TAG:tag1");
         assertThat(payload).isEqualTo("{}");
     }
@@ -557,8 +564,7 @@ class DataCombiningRuntimeTest {
     void internalTagConsumer_whenGetTagName_thenReturnsCorrectName() {
         final DataIdentifierReference primary =
                 new DataIdentifierReference("tag1", DataIdentifierReference.Type.TAG, "adapter1");
-        final DataCombining combining = new DataCombining(
-                UUID.randomUUID(),
+        final DataCombining combining = new DataCombining(UUID.randomUUID(),
                 new DataCombiningSources(primary, List.of("tag1"), List.of()),
                 new DataCombiningDestination(null, "dest/topic", "{}"),
                 List.of());
@@ -584,8 +590,7 @@ class DataCombiningRuntimeTest {
         final DataIdentifierReference primary =
                 new DataIdentifierReference("sensor/temp", DataIdentifierReference.Type.TOPIC_FILTER);
         final UUID combiningId = UUID.randomUUID();
-        final DataCombining combining = new DataCombining(
-                combiningId,
+        final DataCombining combining = new DataCombining(combiningId,
                 new DataCombiningSources(primary, List.of(), List.of("sensor/temp")),
                 new DataCombiningDestination(null, "dest/topic", "{}"),
                 List.of());
@@ -594,7 +599,8 @@ class DataCombiningRuntimeTest {
         // mS: my syntax for subscriptions is different
         // final DataCombiningRuntime.InternalSubscription subscription =
         //         runtime.subscribeTopicFilter(combining, "sensor/temp", false);
-        var sub = runtime.internalSubscription(new DataIdentifierReference("sensor/temp", DataIdentifierReference.Type.TOPIC_FILTER), false, true);
+        var sub = runtime.internalSubscription(new DataIdentifierReference("sensor/temp",
+                DataIdentifierReference.Type.TOPIC_FILTER), false, true);
         sub.subscribe();
 
         // mS: and you can't really look into them
@@ -616,8 +622,7 @@ class DataCombiningRuntimeTest {
         final DataIdentifierReference primary =
                 new DataIdentifierReference("sensor/temp", DataIdentifierReference.Type.TOPIC_FILTER);
         final UUID combiningId = UUID.randomUUID();
-        final DataCombining combining = new DataCombining(
-                combiningId,
+        final DataCombining combining = new DataCombining(combiningId,
                 new DataCombiningSources(primary, List.of(), List.of("sensor/temp")),
                 new DataCombiningDestination(null, "dest/topic", "{}"),
                 List.of());
@@ -626,7 +631,8 @@ class DataCombiningRuntimeTest {
         // mS: my syntax for subscriptions is different
         // final DataCombiningRuntime.InternalSubscription subscription =
         //         runtime.subscribeTopicFilter(combining, "sensor/temp", false);
-        runtime.internalSubscription(new DataIdentifierReference("sensor/temp", DataIdentifierReference.Type.TOPIC_FILTER), false, true);
+        runtime.internalSubscription(new DataIdentifierReference("sensor/temp",
+                DataIdentifierReference.Type.TOPIC_FILTER), false, true);
 
         // mS: and you can't really look into them
         // assertThat(subscription.getQueueId()).isEqualTo(combiningId + "/sensor/temp");
@@ -643,23 +649,21 @@ class DataCombiningRuntimeTest {
     private void setupSynchronousPolling(final PUBLISH publishToDeliver) {
         final ProducerQueues producerQueues = mock(ProducerQueues.class);
         when(singleWriterService.getQueuedMessagesQueue()).thenReturn(producerQueues);
-        when(producerQueues.submit(anyString(), any(SingleWriterService.Task.class)))
-                .thenAnswer(invocation -> {
-                    final SingleWriterService.Task<?> task = invocation.getArgument(1);
-                    task.doTask(0);
-                    return Futures.immediateFuture(null);
-                });
+        when(producerQueues.submit(anyString(), any(SingleWriterService.Task.class))).thenAnswer(invocation -> {
+            final SingleWriterService.Task<?> task = invocation.getArgument(1);
+            task.doTask(0);
+            return Futures.immediateFuture(null);
+        });
 
         // Each queue consumer calls readShared twice: once getting the PUBLISH, once getting empty.
         // Use alternating pattern: odd calls return PUBLISH, even calls return empty.
         final AtomicInteger readCount = new AtomicInteger(0);
-        when(clientQueuePersistence.readShared(anyString(), anyInt(), anyLong()))
-                .thenAnswer(invocation -> {
-                    if (readCount.getAndIncrement() % 2 == 0) {
-                        return Futures.immediateFuture(ImmutableList.of(publishToDeliver));
-                    }
-                    return Futures.immediateFuture(ImmutableList.of());
-                });
+        when(clientQueuePersistence.readShared(anyString(), anyInt(), anyLong())).thenAnswer(invocation -> {
+            if (readCount.getAndIncrement() % 2 == 0) {
+                return Futures.immediateFuture(ImmutableList.of(publishToDeliver));
+            }
+            return Futures.immediateFuture(ImmutableList.of());
+        });
 
         when(clientQueuePersistence.removeShared(anyString(), anyString())).thenReturn(Futures.immediateFuture(null));
     }
@@ -685,8 +689,7 @@ class DataCombiningRuntimeTest {
 
         final DataIdentifierReference primary =
                 new DataIdentifierReference("sensor/temp", DataIdentifierReference.Type.TOPIC_FILTER);
-        final DataCombining combining = new DataCombining(
-                UUID.randomUUID(),
+        final DataCombining combining = new DataCombining(UUID.randomUUID(),
                 new DataCombiningSources(primary, List.of(), List.of("sensor/temp")),
                 new DataCombiningDestination(null, "dest/topic", "{}"),
                 List.of());
@@ -695,7 +698,9 @@ class DataCombiningRuntimeTest {
         runtime.start();
 
         // The primary queue consumer polled, received the PUBLISH, and triggered publish
-        verify(dataCombiningPublishService).publish(any(), any(), eq(combining));
+        // mS:
+        // verify(dataCombiningPublishService).publish(any(), any(), eq(combining));
+        verify(dataCombiningTransformationService).applyMappings(any(), eq(combining));
     }
 
     /*
@@ -714,8 +719,7 @@ class DataCombiningRuntimeTest {
         final DataIdentifierReference tagRef =
                 new DataIdentifierReference("tag1", DataIdentifierReference.Type.TAG, "adapter1");
         final Instruction instruction = new Instruction("$.value", "output", tagRef);
-        final DataCombining combining = new DataCombining(
-                UUID.randomUUID(),
+        final DataCombining combining = new DataCombining(UUID.randomUUID(),
                 new DataCombiningSources(primary, List.of("tag1"), List.of("sensor/temp")),
                 new DataCombiningDestination(null, "dest/topic", "{}"),
                 List.of(instruction));
@@ -724,7 +728,9 @@ class DataCombiningRuntimeTest {
         runtime.start();
 
         // The primary TOPIC_FILTER triggered publish via polling during start()
-        verify(dataCombiningPublishService).publish(any(), any(), eq(combining));
+        // mS:
+        // verify(dataCombiningPublishService).publish(any(), any(), eq(combining));
+        verify(dataCombiningTransformationService).applyMappings(any(), eq(combining));
 
         // The TAG consumer is non-primary — accepting data should NOT trigger another publish
         final ArgumentCaptor<TagConsumer> tagCaptor = ArgumentCaptor.forClass(TagConsumer.class);
@@ -732,7 +738,9 @@ class DataCombiningRuntimeTest {
         tagCaptor.getValue().accept(List.of(new DataPointImpl("tag1", "{\"v\":2}")));
 
         // Still only 1 publish call (from the primary TOPIC_FILTER during start)
-        verify(dataCombiningPublishService, times(1)).publish(any(), any(), any());
+        // mS:
+        // verify(dataCombiningPublishService, times(1)).publish(any(), any(), any());
+        verify(dataCombiningTransformationService, times(1)).applyMappings(any(), eq(combining));
     }
 
     /*
@@ -752,8 +760,7 @@ class DataCombiningRuntimeTest {
         final DataIdentifierReference instructionRef =
                 new DataIdentifierReference("other/#", DataIdentifierReference.Type.TOPIC_FILTER);
         final Instruction instruction = new Instruction("$.value", "output", instructionRef);
-        final DataCombining combining = new DataCombining(
-                UUID.randomUUID(),
+        final DataCombining combining = new DataCombining(UUID.randomUUID(),
                 new DataCombiningSources(primary, List.of(), List.of("sensor/temp", "other/#")),
                 new DataCombiningDestination(null, "dest/topic", "{}"),
                 List.of(instruction));
@@ -767,7 +774,9 @@ class DataCombiningRuntimeTest {
         // Both queue consumers polled and received a message, but only the primary triggered publish.
         // The non-primary (other/#) stored the message without triggering.
         // The primary (sensor/temp) stored the message AND called triggerPublish().
-        verify(dataCombiningPublishService, times(1)).publish(any(), any(), eq(combining));
+        // mS:
+        // verify(dataCombiningPublishService, times(1)).publish(any(), any(), eq(combining));
+        verify(dataCombiningTransformationService, times(1)).applyMappings(any(), eq(combining));
     }
 
     /*
@@ -786,8 +795,7 @@ class DataCombiningRuntimeTest {
         final DataIdentifierReference instructionRef =
                 new DataIdentifierReference("sensor/temp", DataIdentifierReference.Type.TOPIC_FILTER);
         final Instruction instruction = new Instruction("$.value", "output", instructionRef);
-        final DataCombining combining = new DataCombining(
-                UUID.randomUUID(),
+        final DataCombining combining = new DataCombining(UUID.randomUUID(),
                 new DataCombiningSources(primary, List.of(), List.of("sensor/temp")),
                 new DataCombiningDestination(null, "dest/topic", "{}"),
                 List.of(instruction));
@@ -799,6 +807,9 @@ class DataCombiningRuntimeTest {
         verify(localTopicTree, times(1)).addTopic(anyString(), any(Topic.class), anyByte(), anyString());
 
         // The single subscription is primary and triggered publish
-        verify(dataCombiningPublishService, times(1)).publish(any(), any(), eq(combining));
+        // mS:
+        // verify(dataCombiningPublishService, times(1)).publish(any(), any(), eq(combining));
+        verify(dataCombiningTransformationService, times(1)).applyMappings(any(), eq(combining));
+
     }
 }

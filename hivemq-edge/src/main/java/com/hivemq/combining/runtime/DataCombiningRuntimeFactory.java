@@ -17,6 +17,7 @@ package com.hivemq.combining.runtime;
 
 import com.hivemq.combining.mapping.DataCombiningTransformationService;
 import com.hivemq.combining.model.DataCombining;
+import com.hivemq.configuration.HivemqId;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
@@ -35,6 +36,7 @@ public class DataCombiningRuntimeFactory {
     private final @NotNull DataCombiningPublishService dataCombiningPublishService;
     private final @NotNull TagManager tagManager;
     private final @NotNull DataCombiningTransformationService dataCombiningTransformationService;
+    private final @NotNull HivemqId hiveMQId;
 
     @Inject
     public DataCombiningRuntimeFactory(
@@ -43,7 +45,8 @@ public class DataCombiningRuntimeFactory {
             final @NotNull SingleWriterService singleWriterService,
             final @NotNull DataCombiningPublishService dataCombiningPublishService,
             final @NotNull TagManager tagManager,
-            final @NotNull DataCombiningTransformationService dataCombiningTransformationService) {
+            final @NotNull DataCombiningTransformationService dataCombiningTransformationService,
+            final @NotNull HivemqId hiveMQId) {
 
         this.localTopicTree = localTopicTree;
         this.clientQueuePersistence = clientQueuePersistence;
@@ -51,6 +54,7 @@ public class DataCombiningRuntimeFactory {
         this.dataCombiningPublishService = dataCombiningPublishService;
         this.tagManager = tagManager;
         this.dataCombiningTransformationService = dataCombiningTransformationService;
+        this.hiveMQId = hiveMQId;
     }
 
     public @NotNull DataCombiningRuntime build(
@@ -61,7 +65,8 @@ public class DataCombiningRuntimeFactory {
                 clientQueuePersistence,
                 singleWriterService,
                 dataCombiningPublishService,
-                dataCombiningTransformationService);
+                dataCombiningTransformationService,
+                hiveMQId);
     }
 
 }

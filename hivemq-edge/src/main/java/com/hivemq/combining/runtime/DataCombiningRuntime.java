@@ -22,9 +22,12 @@ import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.combining.mapping.DataCombiningTransformationService;
 import com.hivemq.combining.model.DataCombining;
 import com.hivemq.combining.model.DataIdentifierReference;
+import com.hivemq.configuration.HivemqId;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.mqtt.message.QoS;
+import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.publish.PUBLISH;
+import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.topic.SubscriptionFlag;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
@@ -46,13 +49,14 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hivemq.combining.runtime.SourceSanitizer.sanitize;
+import static com.hivemq.mqtt.message.publish.PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET;
 
 /// `DataCombiningRuntime` manages a **combiner mapping** (aka "datacombing"),
 /// that assembles inputs, which can be tags or topic-filters, into a destination message.
 /// `start()` subscribes to all the inputs (tags and topic-filters), including the trigger (aka primary).
 /// When values arrive (via `accept()` or `process()`), they are stored in the concurrent hashmap `values`.
 /// When the trigger arrives, the `assembleAndPublish()` method is called which assembles all inputs into an object
-/// and calls the `dataCombiningPublishingService` to turn that into a message and publish that to the target topic.
+/// and calls the `dataCombiningTransformationService` to turn that into a message and publish that to the target topic.
 public class DataCombiningRuntime {
 
     private static final Logger log = LoggerFactory.getLogger(DataCombiningRuntime.class);
@@ -68,13 +72,24 @@ public class DataCombiningRuntime {
     private final @NotNull ClientQueuePersistence clientQueuePersistence;
     private final @NotNull SingleWriterService singleWriterService;
 
-    /// `publishService` builds the MQTT PUBLISH message (QoS, topic, properties) and hands it off to
-    /// `transformationService` which creates the payload from the `inputValuesAsDictObject` (JSON) and publishes it
+    /// `publishService` is a very thin wrapper that builds a MQTT PUBLISH message (QoS, topic, properties)
+    /// with the dictionary object constructed in `assembleAndPublish` as the payload
+    /// and hands that complete messages off to the `transformationService`
+    /// which constructs yet another MQTT PUBLISH destination message, applying all the instructions
+    /// why `transformationService` requires a message instead of accepting the JSON payload directly escapes me
+    /// in this implementation I am now bypassing `publishingService` and call `transformationService` directly
+    /// private final @NotNull DataCombiningPublishService publishingService;
+
+    /// `transformationService` does the real magic applying all the instructions and creating the proper destination
     /// There exist two implementations of the transformation service:
     /// VanillaDataCombiningTransformationService, Open-source/no DataHub, applies field mappings using JSONPath
     /// DataCombiningTransformationServiceImpl, Commercial DataHub module, compiles and runs a JavaScript transformation
-    private final @NotNull DataCombiningPublishService publishingService;
+    /// The `CombiningModule` decides which transformation service to use based on the license information
+    /// and then injects it into `DataCombingingPublishService` and `DataCombingRuntimeFactory`
     private final @NotNull DataCombiningTransformationService transformationService;
+
+    private final @NotNull HivemqId hiveMQId;
+
 
     /// subscriptions remembers all the subscriptions for tags and topic filters, so we can unsubscribe them again
     private final @NotNull List<InternalSubscription> subscriptions;
@@ -92,14 +107,16 @@ public class DataCombiningRuntime {
             final @NotNull ClientQueuePersistence clientQueuePersistence,
             final @NotNull SingleWriterService singleWriterService,
             final @NotNull DataCombiningPublishService publishingService,
-            final @NotNull DataCombiningTransformationService transformationService) {
+            final @NotNull DataCombiningTransformationService transformationService,
+            final @NotNull HivemqId hiveMQId) {
         this.dataCombining = dataCombining;
         this.localTopicTree = localTopicTree;
         this.tagManager = tagManager;
         this.clientQueuePersistence = clientQueuePersistence;
         this.singleWriterService = singleWriterService;
-        this.publishingService = publishingService;
+        /// this.publishingService = publishingService;
         this.transformationService = transformationService;
+        this.hiveMQId = hiveMQId;
 
         this.subscriptions = new ArrayList<>();
         this.values = new ConcurrentHashMap<>();
@@ -147,6 +164,12 @@ public class DataCombiningRuntime {
     }
 
     /// `assembleAndPublish` is what it really is all about, assembling values and publishing a new, combined message
+    /// There is an awful lot of copying and JSON marshaling and un-marshaling going on:
+    /// 1. it makes a copy of all the values to get a snapshot
+    /// 2. it reads the values (getTagValue4Combiner), combining the DataPoint value into a JSON object
+    /// 3. it stuffs all the values into a JSON dictionary object
+    /// 4. publishing service creates a full MQTT5 message with that JSON dictionary object as payload
+    /// 5. transformation then goes over that message and creates the proper destination message
     public void assembleAndPublish() {
         log.debug("Triggering data combining {}", dataCombining.id());
         final ObjectNode inputValuesAsDictObject = mapper.createObjectNode();
@@ -155,9 +178,27 @@ public class DataCombiningRuntime {
         valuesSnapshot.forEach((propertyName, propertyValue) -> inputValuesAsDictObject.set(propertyName,
                 propertyValue.getTagValue4Combiner()));
 
-        publishingService.publish(dataCombining.destination(),
-                inputValuesAsDictObject.toString().getBytes(StandardCharsets.UTF_8),
-                dataCombining);
+        /// The detour via `publishingService` is really totally pointless
+        /// the code below 100% equivalent, except it removes the second call to withPayload in the fluent interface
+        /// publishingService.publish(dataCombining.destination(),
+        ///         inputValuesAsDictObject.toString().getBytes(StandardCharsets.UTF_8),
+        ///         dataCombining);
+
+        PUBLISH inputValuesAsMQTTMessage = new PUBLISHFactory.Mqtt5Builder().withHivemqId(hiveMQId.get())
+                .withQoS(QoS.AT_LEAST_ONCE)
+                .withOnwardQos(QoS.AT_LEAST_ONCE)
+                .withRetain(false) // this message is not retained
+                .withTopic(dataCombining.destination().topic())
+                .withMessageExpiryInterval(MESSAGE_EXPIRY_INTERVAL_NOT_SET)
+                .withResponseTopic(null)
+                .withCorrelationData(null)
+                .withPayload(inputValuesAsDictObject.toString().getBytes(StandardCharsets.UTF_8))
+                .withContentType(null)
+                .withPayloadFormatIndicator(null)
+                .withUserProperties(Mqtt5UserProperties.of())
+                .build();
+
+        transformationService.applyMappings(inputValuesAsMQTTMessage, dataCombining);
     }
 
     /// `Value` represents values to be used in the combining (`assempleAndPublish`) as JsonNodes.
