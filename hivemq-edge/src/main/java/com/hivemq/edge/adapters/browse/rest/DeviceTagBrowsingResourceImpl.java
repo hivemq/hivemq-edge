@@ -20,6 +20,7 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.discovery.BrowseException;
 import com.hivemq.adapter.sdk.api.discovery.BrowsedNode;
 import com.hivemq.adapter.sdk.api.discovery.BulkTagBrowser;
+import com.hivemq.api.AbstractApi;
 import com.hivemq.edge.adapters.browse.file.DeviceTagCsvSerializer;
 import com.hivemq.edge.adapters.browse.file.DeviceTagJsonSerializer;
 import com.hivemq.edge.adapters.browse.file.DeviceTagYamlSerializer;
@@ -29,24 +30,15 @@ import com.hivemq.edge.adapters.browse.model.DeviceTagRow;
 import com.hivemq.edge.adapters.browse.model.ImportMode;
 import com.hivemq.edge.adapters.browse.model.ImportResult;
 import com.hivemq.edge.adapters.browse.validate.ValidationError;
+import com.hivemq.edge.api.DeviceTagBrowsingApi;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.HeaderParam;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -54,18 +46,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * JAX-RS resource providing bulk device tag browsing and import endpoints.
- * These are hand-crafted (not OpenAPI-generated) endpoints under the existing adapter API path.
- */
 @Singleton
-@Path("/api/v1/management/protocol-adapters/adapters/{adapterId}/device-tags")
-public class DeviceTagBrowsingResource {
-
-    private static final @NotNull Logger log = LoggerFactory.getLogger(DeviceTagBrowsingResource.class);
-
-    private static final String MEDIA_TYPE_CSV = "text/csv";
-    private static final String MEDIA_TYPE_YAML = "application/yaml";
+public class DeviceTagBrowsingResourceImpl extends AbstractApi implements DeviceTagBrowsingApi {
 
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
     private final @NotNull DeviceTagCsvSerializer csvSerializer;
@@ -75,7 +57,7 @@ public class DeviceTagBrowsingResource {
     private final @NotNull ObjectMapper objectMapper;
 
     @Inject
-    public DeviceTagBrowsingResource(
+    public DeviceTagBrowsingResourceImpl(
             final @NotNull ProtocolAdapterManager protocolAdapterManager,
             final @NotNull DeviceTagCsvSerializer csvSerializer,
             final @NotNull DeviceTagJsonSerializer jsonSerializer,
@@ -90,9 +72,9 @@ public class DeviceTagBrowsingResource {
         this.objectMapper = objectMapper;
     }
 
-    private static @NotNull String resolveFormat(final String accept, final @NotNull String defaultFormat) {
+    private static @NotNull String resolveFormat(final @Nullable String accept) {
         if (accept == null || accept.isEmpty() || accept.contains("*/*")) {
-            return defaultFormat;
+            return DeviceTagBrowsingApi.MEDIA_TYPE_CSV;
         }
         if (accept.contains("json")) {
             return MediaType.APPLICATION_JSON;
@@ -103,26 +85,15 @@ public class DeviceTagBrowsingResource {
         if (accept.contains("csv") || accept.contains("text")) {
             return MEDIA_TYPE_CSV;
         }
-        return defaultFormat;
+        return DeviceTagBrowsingApi.MEDIA_TYPE_CSV;
     }
 
-    /**
-     * Browse the device address space and return discovered nodes as a file.
-     *
-     * @param adapterId  the adapter ID
-     * @param rootNodeId optional root node ID (default: ObjectsFolder i=85)
-     * @param maxDepth   optional max depth (default: 0 = unlimited)
-     * @param accept     Accept header for content negotiation
-     * @return 200 with file body, 404/409/504 on error
-     */
-    @POST
-    @Path("/browse")
-    @Produces({MEDIA_TYPE_CSV, MediaType.APPLICATION_JSON, MEDIA_TYPE_YAML})
+    @Override
     public @NotNull Response browse(
-            @PathParam("adapterId") final @NotNull String adapterId,
-            @QueryParam("rootNodeId") final String rootNodeId,
-            @QueryParam("maxDepth") @DefaultValue("0") final int maxDepth,
-            @HeaderParam(HttpHeaders.ACCEPT) final String accept) {
+            final @NotNull String adapterId,
+            final @Nullable String rootNodeId,
+            final int maxDepth,
+            final @NotNull String accept) {
 
         // Lookup adapter
         final Optional<ProtocolAdapterWrapper> wrapperOpt =
@@ -132,7 +103,7 @@ public class DeviceTagBrowsingResource {
         }
 
         final ProtocolAdapter adapter = wrapperOpt.get().getAdapter();
-        if (!(adapter instanceof BulkTagBrowser browser)) {
+        if (!(adapter instanceof final BulkTagBrowser browser)) {
             return errorResponse(Response.Status.CONFLICT,
                     "Adapter '" + adapterId + "' does not support bulk tag browsing");
         }
@@ -142,7 +113,7 @@ public class DeviceTagBrowsingResource {
         try {
             nodes = browser.browse(rootNodeId, maxDepth);
         } catch (final BrowseException e) {
-            log.error("Browse failed for adapter '{}'", adapterId, e);
+            logger.error("Browse failed for adapter '{}'", adapterId, e);
             if (e.getMessage() != null && e.getMessage().contains("timed out")) {
                 return errorResponse(Response.Status.GATEWAY_TIMEOUT, e.getMessage());
             }
@@ -153,7 +124,7 @@ public class DeviceTagBrowsingResource {
         final List<DeviceTagRow> rows = nodes.stream().map(DeviceTagRow::fromBrowsedNode).toList();
 
         // Determine output format
-        final String format = resolveFormat(accept, MEDIA_TYPE_CSV);
+        final String format = resolveFormat(accept);
         final String extension;
         final String mediaType;
         final byte[] data;
@@ -177,7 +148,7 @@ public class DeviceTagBrowsingResource {
                 }
             }
         } catch (final IOException e) {
-            log.error("Failed to serialize browse results for adapter '{}'", adapterId, e);
+            logger.error("Failed to serialize browse results for adapter '{}'", adapterId, e);
             return errorResponse(Response.Status.INTERNAL_SERVER_ERROR, "Serialization failed: " + e.getMessage());
         }
 
@@ -189,26 +160,13 @@ public class DeviceTagBrowsingResource {
 
     // --- Helpers ---
 
-    /**
-     * Import device tags and mappings from a file.
-     *
-     * @param adapterId     the adapter ID
-     * @param mode          import conflict-resolution mode (default: MERGE_SAFE)
-     * @param validateNodes whether to validate node existence (default: false)
-     * @param contentType   Content-Type header
-     * @param body          the file content
-     * @return 200 with ImportResult, 400 with errors, 404/409/415 on error
-     */
-    @POST
-    @Path("/import")
-    @Consumes({MEDIA_TYPE_CSV, MediaType.APPLICATION_JSON, MEDIA_TYPE_YAML})
-    @Produces(MediaType.APPLICATION_JSON)
+    @Override
     public @NotNull Response importTags(
-            @PathParam("adapterId") final @NotNull String adapterId,
-            @QueryParam("mode") @DefaultValue("MERGE_SAFE") final String mode,
-            @QueryParam("validateNodes") @DefaultValue("false") final boolean validateNodes,
-            @HeaderParam(HttpHeaders.CONTENT_TYPE) final String contentType,
-            final byte[] body) {
+            final @NotNull String adapterId,
+            final @NotNull String mode,
+            final boolean validateNodes,
+            final @Nullable String contentType,
+            final byte @NotNull [] body) {
 
         // Lookup adapter
         final Optional<ProtocolAdapterWrapper> wrapperOpt =
@@ -246,7 +204,7 @@ public class DeviceTagBrowsingResource {
                         .build();
             }
         } catch (final Exception e) {
-            log.warn("Failed to parse import file for adapter '{}'", adapterId, e);
+            logger.warn("Failed to parse import file for adapter '{}'", adapterId, e);
             return errorResponse(Response.Status.BAD_REQUEST, "Failed to parse file: " + e.getMessage());
         }
 
@@ -257,7 +215,7 @@ public class DeviceTagBrowsingResource {
         } catch (final DeviceTagImporterException e) {
             return validationErrorResponse(e.getErrors());
         } catch (final Exception e) {
-            log.error("Import failed for adapter '{}'", adapterId, e);
+            logger.error("Import failed for adapter '{}'", adapterId, e);
             return errorResponse(Response.Status.INTERNAL_SERVER_ERROR, "Import failed: " + e.getMessage());
         }
     }
@@ -289,8 +247,7 @@ public class DeviceTagBrowsingResource {
 
     private @NotNull String errorBody(final @NotNull String title, final @NotNull String detail) {
         try {
-            final Map<String, String> body = Map.of("title", title, "detail", detail);
-            return objectMapper.writeValueAsString(body);
+            return objectMapper.writeValueAsString(Map.of("title", title, "detail", detail));
         } catch (final Exception e) {
             return "{\"title\":\"" + title + "\",\"detail\":\"" + detail + "\"}";
         }
