@@ -38,9 +38,6 @@ import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnectorImpl;
 import com.hivemq.util.ClientIds;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * @author Christoph Schäbel
- */
 public class TestMqttDecoder {
 
     public static MQTTMessageDecoder create() {
