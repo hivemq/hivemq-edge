@@ -20,7 +20,6 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.HeaderParam;
@@ -57,7 +56,6 @@ public interface DeviceTagBrowsingApi {
     @POST
     @Path("/browse")
     @Produces({MEDIA_TYPE_CSV, MediaType.APPLICATION_JSON, MEDIA_TYPE_YAML})
-    @RolesAllowed({"admin"})
     @ApiOperation(
             value = "Browse device tags",
             notes = "Browse the device address space and return discovered nodes as a downloadable file.",
@@ -87,7 +85,6 @@ public interface DeviceTagBrowsingApi {
     @Path("/import")
     @Consumes({MEDIA_TYPE_CSV, MediaType.APPLICATION_JSON, MEDIA_TYPE_YAML})
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"admin"})
     @ApiOperation(
             value = "Import device tags",
             notes = "Import device tags and mappings from a file.",
