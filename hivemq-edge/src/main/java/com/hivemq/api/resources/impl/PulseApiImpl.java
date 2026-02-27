@@ -536,8 +536,9 @@ public class PulseApiImpl implements PulseApi {
             if (optionalStatusProvider.isEmpty()) {
                 LOGGER.error(
                         "Could not find status provider for pulse activation token. This is likely due to a missing pulse-module in the modules folder of the edge installation.");
-                return ErrorResponseUtil.errorResponse(new InternalServerError(
-                        "Could not find status provider for pulse activation token. This is likely due to a missing pulse-module in the modules folder of the edge installation."));
+                return ErrorResponseUtil.errorResponse(
+                        new InternalServerError(
+                                "Could not find status provider for pulse activation token. This is likely due to a missing pulse-module in the modules folder of the edge installation."));
             }
             final StatusProvider statusProvider = optionalStatusProvider.get();
             final boolean tokenValid = statusProvider.activatePulse(token);
