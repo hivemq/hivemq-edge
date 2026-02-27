@@ -8,7 +8,6 @@ import ErrorMessage from '@/components/ErrorMessage.tsx'
 import type { ManagerContextType } from '@/modules/Mappings/types.ts'
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm.tsx'
 import { customUniqueTagValidation } from '@/modules/Device/utils/validation.utils.ts'
-import { useListDomainTags } from '@/api/hooks/useDomainModel/useListDomainTags.ts'
 
 interface DeviceTagFormProps {
   context: ManagerContextType<DomainTagList>
@@ -17,12 +16,6 @@ interface DeviceTagFormProps {
 
 const DeviceTagForm: FC<DeviceTagFormProps> = ({ context, onSubmit }) => {
   const { t } = useTranslation()
-  const { data } = useListDomainTags()
-
-  const allNames = (data?.items || []).map((e) => e.name)
-  const initialNames = [...(context.formData?.items || [])].map((e) => e.name)
-  // initial names have already been checked
-  const cleanNames = allNames.filter((e) => !initialNames.includes(e))
 
   const onFormSubmit = useCallback(
     (data: IChangeEvent<DomainTagList>) => {
@@ -41,7 +34,7 @@ const DeviceTagForm: FC<DeviceTagFormProps> = ({ context, onSubmit }) => {
       formData={context.formData}
       onSubmit={onFormSubmit}
       // @ts-ignore Need to fix that TS error
-      customValidate={customUniqueTagValidation(cleanNames)}
+      customValidate={customUniqueTagValidation()}
     />
   )
 }

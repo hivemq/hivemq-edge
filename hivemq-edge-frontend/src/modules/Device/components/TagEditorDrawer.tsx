@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { RJSFSchema, UiSchema } from '@rjsf/utils'
+import type { CustomValidator, RJSFSchema, UiSchema } from '@rjsf/utils'
 import {
   Button,
   ButtonGroup,
@@ -26,6 +26,7 @@ interface TagEditorDrawerProps<T> {
   formData: T
   onClose: () => void
   onSubmit: (newItem: T | undefined) => void
+  customValidate?: CustomValidator<T>
 }
 
 const TagEditorDrawer: FC<TagEditorDrawerProps<DomainTag>> = (props) => {
@@ -47,6 +48,7 @@ const TagEditorDrawer: FC<TagEditorDrawerProps<DomainTag>> = (props) => {
                 uiSchema={props.uiSchema}
                 formData={props.formData}
                 formContext={props.formContext}
+                customValidate={props.customValidate}
                 onSubmit={(e) => {
                   props.onSubmit(e.formData)
                 }}
