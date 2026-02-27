@@ -4,10 +4,12 @@ import type { RJSFSchema } from '@rjsf/utils'
 import { MockAdapterType } from '@/__test-utils__/adapters/types'
 import { MOCK_DEVICE_TAG_JSON_SCHEMA_OPCUA, MOCK_DEVICE_TAGS } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { tagListUISchema } from '@/api/schemas/domain-tags.ui-schema'
+import { customUniqueTagInAdapterValidation } from '@/modules/Device/utils/validation.utils'
 
 import TagEditorDrawer from './TagEditorDrawer'
 
-const mockTag = MOCK_DEVICE_TAGS('test-id', MockAdapterType.OPC_UA)[0]
+const mockTags = MOCK_DEVICE_TAGS('test-id', MockAdapterType.OPC_UA)
+const mockTag = mockTags[0]
 
 describe('TagEditorDrawer', () => {
   beforeEach(() => {
@@ -50,6 +52,50 @@ describe('TagEditorDrawer', () => {
         cy.get('button').eq(1).click()
         cy.get('@onSubmit').should('have.been.called')
       })
+    })
+  })
+
+  it('should show an error when the tag name already exists in the adapter', () => {
+    const onSubmit = cy.stub().as('onSubmit')
+    const otherTagNames = [mockTags[1].name]
+
+    cy.mountWithProviders(
+      <TagEditorDrawer
+        schema={MOCK_DEVICE_TAG_JSON_SCHEMA_OPCUA.configSchema as RJSFSchema}
+        uiSchema={tagListUISchema.items.items}
+        onSubmit={onSubmit}
+        onClose={cy.stub()}
+        formData={mockTag}
+        customValidate={customUniqueTagInAdapterValidation(otherTagNames)}
+      />
+    )
+
+    cy.get('[role="dialog"][aria-label="Edit the tag"]').within(() => {
+      cy.get('[role="group"]:has(> label#root_name-label) input')
+        .clear()
+        .type(mockTags[1].name)
+
+      cy.get('[role="alert"]').should('contain.text', 'This tag name is already used on this device')
+
+      cy.get('footer button').eq(1).click()
+      cy.get('@onSubmit').should('not.have.been.called')
+    })
+  })
+
+  it('should not show an error when the tag name is unique within the adapter', () => {
+    cy.mountWithProviders(
+      <TagEditorDrawer
+        schema={MOCK_DEVICE_TAG_JSON_SCHEMA_OPCUA.configSchema as RJSFSchema}
+        uiSchema={tagListUISchema.items.items}
+        onSubmit={cy.stub()}
+        onClose={cy.stub()}
+        formData={mockTag}
+        customValidate={customUniqueTagInAdapterValidation([mockTags[1].name])}
+      />
+    )
+
+    cy.get('[role="dialog"][aria-label="Edit the tag"]').within(() => {
+      cy.get('[role="alert"]').should('not.exist')
     })
   })
 
