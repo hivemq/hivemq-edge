@@ -49,6 +49,7 @@ public class MqttToHttpMapping implements WritingContext {
             required = true)
     private final @NotNull String mqttTopicFilter;
 
+    @SuppressWarnings("UnusedVariable") // field used by Jackson via @JsonProperty
     @JsonProperty("mqttMaxQos")
     @ModuleConfigField(
             title = "MQTT Maximum QoS",
