@@ -15,11 +15,10 @@
  */
 package com.hivemq.edge.adapters.browse.file;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import com.hivemq.edge.adapters.browse.model.DeviceTagRow;
 import com.hivemq.edge.adapters.browse.model.FieldMappingInstruction;
+import org.junit.jupiter.api.Test;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -29,7 +28,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class DeviceTagYamlSerializerTest {
 
@@ -65,7 +66,7 @@ class DeviceTagYamlSerializerTest {
         final List<DeviceTagRow> result = serializer.deserialize(yaml);
 
         assertThat(result).hasSize(1);
-        final DeviceTagRow d = result.get(0);
+        final DeviceTagRow d = result.getFirst();
         assertThat(d.getNodePath()).isEqualTo("/Objects/Data/Double");
         assertThat(d.getNodeId()).isEqualTo("ns=2;i=200");
         assertThat(d.getDataType()).isEqualTo("Double");
@@ -82,16 +83,14 @@ class DeviceTagYamlSerializerTest {
 
     @Test
     void roundTrip_minimalRow() throws IOException {
-        final DeviceTagRow row = DeviceTagRow.builder()
-                .nodeId("ns=0;i=1")
-                .build();
+        final DeviceTagRow row = DeviceTagRow.builder().nodeId("ns=0;i=1").build();
 
         final byte[] yaml = serializer.serialize(List.of(row));
         final List<DeviceTagRow> result = serializer.deserialize(yaml);
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getNodeId()).isEqualTo("ns=0;i=1");
-        assertThat(result.get(0).getTagName()).isNull();
+        assertThat(result.getFirst().getNodeId()).isEqualTo("ns=0;i=1");
+        assertThat(result.getFirst().getTagName()).isNull();
     }
 
     @Test
@@ -103,32 +102,26 @@ class DeviceTagYamlSerializerTest {
 
     @Test
     void roundTrip_wildcardPreservation() throws IOException {
-        final DeviceTagRow row = DeviceTagRow.builder()
-                .nodeId("ns=0;i=1")
-                .tagName("*")
-                .tagNameDefault("auto-tag")
-                .build();
+        final DeviceTagRow row =
+                DeviceTagRow.builder().nodeId("ns=0;i=1").tagName("*").tagNameDefault("auto-tag").build();
 
         final byte[] yaml = serializer.serialize(List.of(row));
         final List<DeviceTagRow> result = serializer.deserialize(yaml);
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getTagName()).isEqualTo("*");
-        assertThat(result.get(0).getTagNameDefault()).isEqualTo("auto-tag");
+        assertThat(result.getFirst().getTagName()).isEqualTo("*");
+        assertThat(result.getFirst().getTagNameDefault()).isEqualTo("auto-tag");
     }
 
     @Test
     void deserialize_malformedYaml() {
         final byte[] malformed = "not: valid: yaml: [".getBytes(StandardCharsets.UTF_8);
-        assertThatThrownBy(() -> serializer.deserialize(malformed))
-                .isInstanceOf(IOException.class);
+        assertThatThrownBy(() -> serializer.deserialize(malformed)).isInstanceOf(IOException.class);
     }
 
     @Test
     void serialize_noDocumentStartMarker() throws IOException {
-        final DeviceTagRow row = DeviceTagRow.builder()
-                .nodeId("ns=0;i=1")
-                .build();
+        final DeviceTagRow row = DeviceTagRow.builder().nodeId("ns=0;i=1").build();
 
         final byte[] yaml = serializer.serialize(List.of(row));
         final String yamlStr = new String(yaml, StandardCharsets.UTF_8);
@@ -221,6 +214,6 @@ class DeviceTagYamlSerializerTest {
 
         assertThat(fromJson).hasSize(1);
         assertThat(fromYaml).hasSize(1);
-        assertThat(fromJson.get(0)).isEqualTo(fromYaml.get(0));
+        assertThat(fromJson.getFirst()).isEqualTo(fromYaml.getFirst());
     }
 }

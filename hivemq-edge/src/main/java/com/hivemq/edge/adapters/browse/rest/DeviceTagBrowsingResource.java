@@ -24,6 +24,7 @@ import com.hivemq.edge.adapters.browse.file.DeviceTagCsvSerializer;
 import com.hivemq.edge.adapters.browse.file.DeviceTagJsonSerializer;
 import com.hivemq.edge.adapters.browse.file.DeviceTagYamlSerializer;
 import com.hivemq.edge.adapters.browse.importer.DeviceTagImporter;
+import com.hivemq.edge.adapters.browse.importer.DeviceTagImporterException;
 import com.hivemq.edge.adapters.browse.model.DeviceTagRow;
 import com.hivemq.edge.adapters.browse.model.ImportMode;
 import com.hivemq.edge.adapters.browse.model.ImportResult;
@@ -43,14 +44,15 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * JAX-RS resource providing bulk device tag browsing and import endpoints.
@@ -86,6 +88,22 @@ public class DeviceTagBrowsingResource {
         this.yamlSerializer = yamlSerializer;
         this.importer = importer;
         this.objectMapper = objectMapper;
+    }
+
+    private static @NotNull String resolveFormat(final String accept, final @NotNull String defaultFormat) {
+        if (accept == null || accept.isEmpty() || accept.contains("*/*")) {
+            return defaultFormat;
+        }
+        if (accept.contains("json")) {
+            return MediaType.APPLICATION_JSON;
+        }
+        if (accept.contains("yaml")) {
+            return MEDIA_TYPE_YAML;
+        }
+        if (accept.contains("csv") || accept.contains("text")) {
+            return MEDIA_TYPE_CSV;
+        }
+        return defaultFormat;
     }
 
     /**
@@ -132,9 +150,7 @@ public class DeviceTagBrowsingResource {
         }
 
         // Map to DeviceTagRow
-        final List<DeviceTagRow> rows = nodes.stream()
-                .map(DeviceTagRow::fromBrowsedNode)
-                .toList();
+        final List<DeviceTagRow> rows = nodes.stream().map(DeviceTagRow::fromBrowsedNode).toList();
 
         // Determine output format
         final String format = resolveFormat(accept, MEDIA_TYPE_CSV);
@@ -171,6 +187,8 @@ public class DeviceTagBrowsingResource {
                 .build();
     }
 
+    // --- Helpers ---
+
     /**
      * Import device tags and mappings from a file.
      *
@@ -205,7 +223,9 @@ public class DeviceTagBrowsingResource {
             importMode = ImportMode.valueOf(mode);
         } catch (final IllegalArgumentException e) {
             return errorResponse(Response.Status.BAD_REQUEST,
-                    "Invalid import mode '" + mode + "'. Valid values: CREATE, DELETE, OVERWRITE, MERGE_SAFE, MERGE_OVERWRITE");
+                    "Invalid import mode '" +
+                            mode +
+                            "'. Valid values: CREATE, DELETE, OVERWRITE, MERGE_SAFE, MERGE_OVERWRITE");
         }
 
         // Deserialize body based on Content-Type
@@ -234,24 +254,12 @@ public class DeviceTagBrowsingResource {
         try {
             final ImportResult result = importer.doImport(rows, importMode, adapterId);
             return Response.ok(objectMapper.writeValueAsString(result), MediaType.APPLICATION_JSON).build();
-        } catch (final DeviceTagImporter.ImportException e) {
+        } catch (final DeviceTagImporterException e) {
             return validationErrorResponse(e.getErrors());
         } catch (final Exception e) {
             log.error("Import failed for adapter '{}'", adapterId, e);
             return errorResponse(Response.Status.INTERNAL_SERVER_ERROR, "Import failed: " + e.getMessage());
         }
-    }
-
-    // --- Helpers ---
-
-    private static @NotNull String resolveFormat(final String accept, final @NotNull String defaultFormat) {
-        if (accept == null || accept.isEmpty() || accept.contains("*/*")) {
-            return defaultFormat;
-        }
-        if (accept.contains("json")) return MediaType.APPLICATION_JSON;
-        if (accept.contains("yaml")) return MEDIA_TYPE_YAML;
-        if (accept.contains("csv") || accept.contains("text")) return MEDIA_TYPE_CSV;
-        return defaultFormat;
     }
 
     private @NotNull Response errorResponse(final @NotNull Response.Status status, final @NotNull String detail) {
