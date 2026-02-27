@@ -12,6 +12,7 @@ import { PLCTag } from '@/components/MQTT/EntityTag'
 import type { DeviceTagListContext } from '../types'
 import TagEditorDrawer from './TagEditorDrawer'
 import TagSchemaDrawer from './TagSchemaDrawer'
+import { customUniqueTagInAdapterValidation } from '@/modules/Device/utils/validation.utils'
 
 export const TagTableField: FC<FieldProps<DomainTag[], RJSFSchema, DeviceTagListContext>> = (props) => {
   const { t } = useTranslation()
@@ -173,6 +174,9 @@ export const TagTableField: FC<FieldProps<DomainTag[], RJSFSchema, DeviceTagList
           schema={props.schema.items as RJSFSchema}
           uiSchema={props.uiSchema?.items}
           formData={props.formData?.[selectedItem]}
+          customValidate={customUniqueTagInAdapterValidation(
+            (props.formData || []).filter((_, i) => i !== selectedItem).map((t) => t.name)
+          )}
         />
       )}
     </>
