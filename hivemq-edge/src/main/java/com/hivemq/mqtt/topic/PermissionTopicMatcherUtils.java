@@ -61,14 +61,16 @@ public final class PermissionTopicMatcherUtils {
 
             if (!sub.equals(t)) {
                 switch (sub) {
-                    case "#":
+                    case "#" -> {
                         return true;
-                    case "+":
+                    }
+                    case "+" -> {
                         // Matches Topic Level wildcard, so we can just ignore
-                        break;
-                    default:
+                    }
+                    default -> {
                         // Does not match a wildcard and is not equal to the topic token
                         return false;
+                    }
                 }
             }
         }
@@ -77,6 +79,6 @@ public final class PermissionTopicMatcherUtils {
         // everything is alright.
         return splitPermissionTopic.length == splitActualTopic.length
                 || (splitPermissionTopic.length - splitActualTopic.length == 1
-                        && ("#".equals(splitPermissionTopic[splitPermissionTopic.length - 1])));
+                        && "#".equals(splitPermissionTopic[splitPermissionTopic.length - 1]));
     }
 }

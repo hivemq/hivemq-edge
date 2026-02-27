@@ -77,7 +77,7 @@ public class ClassServiceLoader {
             final URL url = urls.nextElement();
             try (final InputStream is = url.openStream();
                     final InputStreamReader isr = new InputStreamReader(is, UTF_8);
-                    final BufferedReader r = new BufferedReader((isr))) {
+                    final BufferedReader r = new BufferedReader(isr)) {
                 // read until the stream is empty
                 while (true) {
                     String line = r.readLine();

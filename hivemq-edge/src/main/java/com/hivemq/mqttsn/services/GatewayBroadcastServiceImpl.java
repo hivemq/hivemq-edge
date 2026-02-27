@@ -20,7 +20,6 @@ import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.MqttsnConfigurationService;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.net.InetAddress;
@@ -73,6 +72,7 @@ public class GatewayBroadcastServiceImpl implements IGatewayBroadcastService {
         });
     }
 
+    @Override
     public void startBroadcast(final @NotNull Channel channel) {
         Preconditions.checkNotNull(channel);
         Preconditions.checkState(mqttsnConfigurationService.isDiscoveryEnabled(), "Discovery is not enabled");
@@ -89,6 +89,7 @@ public class GatewayBroadcastServiceImpl implements IGatewayBroadcastService {
         }
     }
 
+    @Override
     public void stopBroadcast() {
         synchronized (mutex) {
             try {
@@ -123,7 +124,8 @@ public class GatewayBroadcastServiceImpl implements IGatewayBroadcastService {
                                 .getDiscoveryBroadcastAddresses()
                                 .size());
 
-                ChannelFuture future = channel.writeAndFlush(MqttsnCodecs.MQTTSN_CODEC_VERSION_1_2
+                @SuppressWarnings("FutureReturnValueIgnored")
+                var ignored = channel.writeAndFlush(MqttsnCodecs.MQTTSN_CODEC_VERSION_1_2
                         .createMessageFactory()
                         .createAdvertise(
                                 mqttsnConfigurationService.getGatewayId(),

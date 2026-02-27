@@ -129,7 +129,7 @@ public class RetainedMessagesSender {
     private static class SendRetainedMessageCallback implements FutureCallback<List<RetainedMessage>> {
 
         private final @NotNull Topic[] subscribedTopics;
-        private final @NotNull HivemqId hivemqId;
+        private final @NotNull HivemqId hiveMQId;
         private final @NotNull PublishPayloadPersistence payloadPersistence;
         private final @NotNull String clientId;
         private final @NotNull SettableFuture<Void> resultFuture;
@@ -139,7 +139,7 @@ public class RetainedMessagesSender {
 
         SendRetainedMessageCallback(
                 final @NotNull Topic[] subscribedTopics,
-                final @NotNull HivemqId hivemqId,
+                final @NotNull HivemqId hiveMQId,
                 final @NotNull PublishPayloadPersistence payloadPersistence,
                 final @NotNull String clientId,
                 final @NotNull SettableFuture<Void> resultFuture,
@@ -148,7 +148,7 @@ public class RetainedMessagesSender {
                 final @NotNull MqttConfigurationService mqttConfigurationService) {
 
             this.subscribedTopics = subscribedTopics;
-            this.hivemqId = hivemqId;
+            this.hiveMQId = hiveMQId;
             this.payloadPersistence = payloadPersistence;
             this.clientId = clientId;
             this.resultFuture = resultFuture;
@@ -184,7 +184,7 @@ public class RetainedMessagesSender {
 
                 final PUBLISHFactory.Mqtt5Builder publishBuilder = new PUBLISHFactory.Mqtt5Builder()
                         .withTimestamp(System.currentTimeMillis())
-                        .withHivemqId(hivemqId.get())
+                        .withHivemqId(hiveMQId.get())
                         .withPayload(retainedMessage.getMessage())
                         .withPublishId(retainedMessage.getPublishId())
                         .withPersistence(payloadPersistence)

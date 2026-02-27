@@ -83,9 +83,9 @@ public class BatchedException extends Exception {
     }
 
     @Override
-    public String toString() {
+    public String getMessage() {
         final StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(super.toString());
+        stringBuilder.append(super.getMessage());
         for (final Throwable throwable : throwables) {
             stringBuilder.append(", ").append(throwable);
         }

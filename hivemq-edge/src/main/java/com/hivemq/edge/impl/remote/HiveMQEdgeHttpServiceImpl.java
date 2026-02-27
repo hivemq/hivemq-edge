@@ -29,6 +29,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
@@ -75,6 +76,7 @@ public class HiveMQEdgeHttpServiceImpl {
     private volatile @Nullable HiveMQEdgeRemoteServices remoteServices;
     private volatile @Nullable Thread usageClientThread;
 
+    @SuppressWarnings("ThreadPriorityCheck")
     public HiveMQEdgeHttpServiceImpl(
             final @NotNull String hiveMqEdgeVersion,
             final @NotNull ObjectMapper mapper,
@@ -184,6 +186,7 @@ public class HiveMQEdgeHttpServiceImpl {
         }
     }
 
+    @SuppressWarnings("ThreadPriorityCheck")
     private void startUsageThreadIfNeeded() {
         if (activateUsage && usageClientThread == null) {
             synchronized (monitor) {
@@ -347,7 +350,7 @@ public class HiveMQEdgeHttpServiceImpl {
             throws HiveMQEdgeRemoteConnectivityException {
         try {
             final String jsonBody = mapper.writeValueAsString(jsonPostObject);
-            try (final InputStream is = new ByteArrayInputStream(jsonBody.getBytes())) {
+            try (final InputStream is = new ByteArrayInputStream(jsonBody.getBytes(StandardCharsets.UTF_8))) {
                 final long start = System.currentTimeMillis();
                 final HttpResponse response = HttpUrlConnectionClient.post(
                         POST_CONTENT_TYPE_HEADER, url, is, connectTimeoutMillis, readTimeoutMillis);

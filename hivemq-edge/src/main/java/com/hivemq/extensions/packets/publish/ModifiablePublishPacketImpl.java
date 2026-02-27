@@ -116,10 +116,9 @@ public class ModifiablePublishPacketImpl implements ModifiablePublishPacket {
         checkArgument(
                 topic.length()
                         <= configurationService.restrictionsConfiguration().maxTopicLength(),
-                "Topic filter length must not exceed '"
-                        + configurationService.restrictionsConfiguration().maxTopicLength()
-                        + "' characters, but has '" + topic.length()
-                        + "' characters");
+                "Topic filter length must not exceed '%s' characters, but has '%s' characters",
+                configurationService.restrictionsConfiguration().maxTopicLength(),
+                topic.length());
 
         if (!Topics.isValidTopicToPublish(topic)) {
             throw new IllegalArgumentException("The topic (" + topic + ") is invalid for PUBLISH messages");

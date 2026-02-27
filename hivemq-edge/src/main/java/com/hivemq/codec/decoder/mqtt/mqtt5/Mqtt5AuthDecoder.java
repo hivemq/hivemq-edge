@@ -120,35 +120,36 @@ public class Mqtt5AuthDecoder extends AbstractMqttDecoder<AUTH> {
             final int propertyIdentifier = buf.readByte();
 
             switch (propertyIdentifier) {
-                case AUTHENTICATION_METHOD:
+                case AUTHENTICATION_METHOD -> {
                     authenticationMethod =
                             decodeAuthenticationMethod(clientConnection, buf, authenticationMethod, MessageType.AUTH);
                     if (authenticationMethod == null) {
                         return null;
                     }
-                    break;
-                case AUTHENTICATION_DATA:
+                }
+                case AUTHENTICATION_DATA -> {
                     authenticationData = readAuthenticationData(clientConnection, buf, authenticationData);
                     if (authenticationData == null) {
                         return null;
                     }
-                    break;
-                case REASON_STRING:
+                }
+                case REASON_STRING -> {
                     reasonString = decodeReasonString(clientConnection, buf, reasonString, MessageType.AUTH);
                     if (reasonString == null) {
                         return null;
                     }
-                    break;
-                case USER_PROPERTY:
+                }
+                case USER_PROPERTY -> {
                     userPropertiesBuilder =
                             readUserProperty(clientConnection, buf, userPropertiesBuilder, MessageType.AUTH);
                     if (userPropertiesBuilder == null) {
                         return null;
                     }
-                    break;
-                default:
+                }
+                default -> {
                     disconnectByInvalidPropertyIdentifier(clientConnection, propertyIdentifier, MessageType.AUTH);
                     return null;
+                }
             }
         }
 

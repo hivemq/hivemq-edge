@@ -173,7 +173,7 @@ public class Files {
      */
     public static int countLines(File file) throws IOException {
         int lines = 0;
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+        try (BufferedReader reader = java.nio.file.Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
             while (reader.readLine() != null) lines++;
         }
         return lines;
@@ -202,7 +202,7 @@ public class Files {
      */
     public static byte[] consumeLinesFromStart(File file, int count) throws IOException {
         ByteArrayOutputStream baos = null;
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+        try (BufferedReader reader = java.nio.file.Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
             File tmp = File.createTempFile(
                     getFileNameExcludingExtension(file.getName()), PERIOD + getFileExtension(file.getName()));
             try (BufferedOutputStream fos = new BufferedOutputStream(new FileOutputStream(tmp))) {

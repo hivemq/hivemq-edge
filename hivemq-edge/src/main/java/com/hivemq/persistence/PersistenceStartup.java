@@ -73,10 +73,12 @@ public class PersistenceStartup implements HiveMQShutdownHook {
         log.trace("Initialized persistences in {}ms", System.currentTimeMillis() - start);
     }
 
+    @Override
     public @NotNull String name() {
         return "PersistenceStartupShutdownHook";
     }
 
+    @Override
     public void run() {
 
         log.trace("Shutting down persistence startup executors");

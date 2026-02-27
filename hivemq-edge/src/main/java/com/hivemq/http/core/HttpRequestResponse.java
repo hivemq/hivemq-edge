@@ -38,18 +38,22 @@ public abstract class HttpRequestResponse implements IHttpRequestResponse {
         this.contextPath = contextPath;
     }
 
+    @Override
     public HttpConstants.METHOD getMethod() {
         return method;
     }
 
+    @Override
     public String getContextPath() {
         return contextPath;
     }
 
+    @Override
     public String getContextRelativePath() {
         return HttpUtils.getContextRelativePath(contextPath, httpRequestUri.getPath());
     }
 
+    @Override
     public URI getHttpRequestUri() {
         return httpRequestUri;
     }
@@ -63,11 +67,13 @@ public abstract class HttpRequestResponse implements IHttpRequestResponse {
         return responseSize;
     }
 
+    @Override
     public void setResponseContentType(String mimeType, Charset charset) {
         addResponseHeader(
                 HttpConstants.CONTENT_TYPE_HEADER, HttpUtils.getContentTypeHeaderValue(mimeType, charset.toString()));
     }
 
+    @Override
     public final void sendResponseHeaders(int httpCode, int responseSize) throws IOException {
         this.responseCode = httpCode;
         this.responseSize = responseSize;

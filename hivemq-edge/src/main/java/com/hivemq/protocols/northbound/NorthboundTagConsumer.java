@@ -88,6 +88,7 @@ public class NorthboundTagConsumer implements TagConsumer {
         };
     }
 
+    @Override
     public void accept(final @NotNull List<DataPoint> dataPoints) {
         Preconditions.checkNotNull(dataPoints);
         Preconditions.checkNotNull(pollingContext);

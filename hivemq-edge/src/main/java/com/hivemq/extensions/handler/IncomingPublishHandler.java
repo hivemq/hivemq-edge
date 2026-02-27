@@ -246,40 +246,36 @@ public class IncomingPublishHandler {
                 } else {
 
                     switch (publish.getQoS()) {
-                        case AT_MOST_ONCE:
+                        case AT_MOST_ONCE -> {
                             // no ack for qos 0
-                            break;
-                        case AT_LEAST_ONCE:
-                            ctx.writeAndFlush(new PUBACK(publish.getPacketIdentifier()));
-                            break;
-                        case EXACTLY_ONCE:
-                            ctx.writeAndFlush(new PUBREC(publish.getPacketIdentifier()));
-                            break;
+                        }
+                        case AT_LEAST_ONCE -> ctx.writeAndFlush(new PUBACK(publish.getPacketIdentifier()));
+                        case EXACTLY_ONCE -> ctx.writeAndFlush(new PUBREC(publish.getPacketIdentifier()));
                     }
                 }
 
                 // MQTT 5 + MQTT-SN
             } else {
                 switch (publish.getQoS()) {
-                    case AT_MOST_ONCE:
+                    case AT_MOST_ONCE -> {
                         // no ack for qos 0
-                        break;
-                    case AT_LEAST_ONCE:
+                    }
+                    case AT_LEAST_ONCE -> {
                         final Mqtt5PubAckReasonCode ackReasonCode = Mqtt5PubAckReasonCode.from(output.getReasonCode());
                         ctx.writeAndFlush(new PUBACK(
                                 publish.getPacketIdentifier(),
                                 ackReasonCode,
                                 output.getReasonString(),
                                 Mqtt5UserProperties.NO_USER_PROPERTIES));
-                        break;
-                    case EXACTLY_ONCE:
+                    }
+                    case EXACTLY_ONCE -> {
                         final Mqtt5PubRecReasonCode recReasonCode = Mqtt5PubRecReasonCode.from(output.getReasonCode());
                         ctx.writeAndFlush(new PUBREC(
                                 publish.getPacketIdentifier(),
                                 recReasonCode,
                                 output.getReasonString(),
                                 Mqtt5UserProperties.NO_USER_PROPERTIES));
-                        break;
+                    }
                 }
             }
 

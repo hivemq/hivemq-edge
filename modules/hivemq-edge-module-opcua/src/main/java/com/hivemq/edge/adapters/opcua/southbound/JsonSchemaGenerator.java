@@ -288,6 +288,7 @@ public class JsonSchemaGenerator {
         return rootNode;
     }
 
+    @SuppressWarnings("ArrayRecordComponent")
     public record FieldInformation(
             String name,
             String namespaceUri,

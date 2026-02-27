@@ -124,7 +124,8 @@ public class ModifiableInboundDisconnectPacketImpl implements ModifiableInboundD
                     configurationService.mqttConfiguration().maxSessionExpiryInterval();
             checkArgument(
                     interval < configuredMaximum,
-                    "Session expiry interval must not be greater than the configured maximum of " + configuredMaximum);
+                    "Session expiry interval must not be greater than the configured maximum of %s",
+                    configuredMaximum);
             if (interval > 0) {
                 checkState(
                         originalSessionExpiryInterval != 0,

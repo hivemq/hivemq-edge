@@ -68,14 +68,11 @@ public class ExtensionLifecycleHandlerImpl implements ExtensionLifecycleHandler 
 
     private @NotNull CompletableFuture<Boolean> handlePluginEvent(
             final @NotNull HiveMQExtensionEvent hiveMQExtensionEvent) {
-        switch (hiveMQExtensionEvent.getChange()) {
-            case ENABLE:
-                return startPlugin(hiveMQExtensionEvent);
-            case DISABLE:
-                return stopPlugin(hiveMQExtensionEvent.getExtensionId(), hiveMQExtensionEvent.isEmbedded());
-            default:
-                return CompletableFuture.completedFuture(false);
-        }
+        return switch (hiveMQExtensionEvent.getChange()) {
+            case ENABLE -> startPlugin(hiveMQExtensionEvent);
+            case DISABLE -> stopPlugin(hiveMQExtensionEvent.getExtensionId(), hiveMQExtensionEvent.isEmbedded());
+            default -> CompletableFuture.completedFuture(false);
+        };
     }
 
     private @NotNull CompletableFuture<Boolean> startPlugin(final @NotNull HiveMQExtensionEvent pluginEvent) {

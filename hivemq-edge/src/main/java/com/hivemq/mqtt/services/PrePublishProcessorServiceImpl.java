@@ -46,6 +46,7 @@ public class PrePublishProcessorServiceImpl implements PrePublishProcessorServic
         this.messageDroppedService = messageDroppedService;
     }
 
+    @Override
     public @NotNull ListenableFuture<PublishingResult> publish(
             final @NotNull PUBLISH publish,
             final @NotNull ExecutorService executorService,

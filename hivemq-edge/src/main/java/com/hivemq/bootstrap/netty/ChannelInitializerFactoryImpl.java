@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.hivemq.bootstrap.netty.initializer.*;
 import com.hivemq.configuration.service.entity.*;
-import com.hivemq.logging.EventLog;
 import com.hivemq.security.ssl.NonSslHandler;
 import com.hivemq.security.ssl.SslFactory;
 import jakarta.inject.Inject;
@@ -40,22 +39,18 @@ public class ChannelInitializerFactoryImpl implements ChannelInitializerFactory 
     @NotNull
     private final Provider<NonSslHandler> nonSslHandlerProvider;
 
-    @NotNull
-    private final EventLog eventLog;
-
     @Inject
     public ChannelInitializerFactoryImpl(
             final @NotNull ChannelDependencies channelDependencies,
             final @NotNull SslFactory sslFactory,
-            final @NotNull Provider<NonSslHandler> nonSslHandlerProvider,
-            final @NotNull EventLog eventLog) {
+            final @NotNull Provider<NonSslHandler> nonSslHandlerProvider) {
         this.channelDependencies = channelDependencies;
         this.sslFactory = sslFactory;
         this.nonSslHandlerProvider = nonSslHandlerProvider;
-        this.eventLog = eventLog;
     }
 
     @NotNull
+    @Override
     public AbstractChannelInitializer getChannelInitializer(final @NotNull Listener listener) {
 
         checkNotNull(listener, "Listener must not be null");

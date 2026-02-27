@@ -30,7 +30,11 @@ import com.hivemq.util.Checkpoints;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -58,10 +62,10 @@ public class HiveMQExtensions {
     private final @NotNull HashMap<ClassLoader, HiveMQExtension> classloaderToExtension = new HashMap<>();
 
     @GuardedBy("beforeExtensionStopCallbacksLock")
-    private final @NotNull List<Consumer<HiveMQExtension>> beforeExtensionStopCallbacks = new LinkedList<>();
+    private final @NotNull List<Consumer<HiveMQExtension>> beforeExtensionStopCallbacks = new ArrayList<>();
 
     @GuardedBy("afterExtensionStopCallbacksLock")
-    private final @NotNull List<Consumer<HiveMQExtension>> afterExtensionStopCallbacks = new LinkedList<>();
+    private final @NotNull List<Consumer<HiveMQExtension>> afterExtensionStopCallbacks = new ArrayList<>();
 
     private final @NotNull ReadWriteLock extensionsLock = new ReentrantReadWriteLock();
     private final @NotNull ReadWriteLock classloaderLock = new ReentrantReadWriteLock();

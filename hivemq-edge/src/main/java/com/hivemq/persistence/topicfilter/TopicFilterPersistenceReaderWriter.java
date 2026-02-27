@@ -40,7 +40,6 @@ import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-;
 
 @Singleton
 public class TopicFilterPersistenceReaderWriter {
@@ -75,7 +74,7 @@ public class TopicFilterPersistenceReaderWriter {
         try {
             final TopicFilterPersistenceEntity persistenceEntity = convertToEntity(topicFilters);
             JaxbUtils.marshal(persistenceEntity, persistenceFile, marshaller -> {
-                marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+                marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
                 marshaller.setProperty(Marshaller.JAXB_SCHEMA_LOCATION, TopicFilterPersistenceEntity.SCHEMA_LOCATION);
                 marshaller.setProperty(
                         Marshaller.JAXB_NO_NAMESPACE_SCHEMA_LOCATION,

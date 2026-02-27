@@ -268,6 +268,7 @@ public class CustomConfigSchemaGenerator {
         }
     }
 
+    @SuppressWarnings("EmptyCatch")
     private static Object getNativeObject(final @NotNull String format) {
         if (format != null) {
             if ("true".equalsIgnoreCase(format.trim()) || "false".equalsIgnoreCase(format.trim())) {
@@ -275,11 +276,11 @@ public class CustomConfigSchemaGenerator {
             }
             try {
                 return Long.parseLong(format);
-            } catch (NumberFormatException e) {
+            } catch (NumberFormatException ignored) {
             }
             try {
                 return Double.parseDouble(format);
-            } catch (NumberFormatException e) {
+            } catch (NumberFormatException ignored) {
             }
         }
         return format;

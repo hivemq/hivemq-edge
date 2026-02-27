@@ -218,8 +218,8 @@ public class ConnectAuthOutput extends AuthOutput<EnhancedAuthOutput> implements
         final Mqtt5ConnAckReasonCode connackReasonCode = Mqtt5ConnAckReasonCode.from(disconnectedReasonCode);
         Preconditions.checkArgument(
                 connackReasonCode != null,
-                "The disconnected reason code " + disconnectedReasonCode.name()
-                        + " is not a CONNACK reason code and therefore must not be used during connect authentication.");
+                "The disconnected reason code %s is not a CONNACK reason code and therefore must not be used during connect authentication.",
+                disconnectedReasonCode.name());
         return connackReasonCode;
     }
 }

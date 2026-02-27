@@ -103,6 +103,7 @@ public class SharedSubscriptionServiceImpl implements SharedSubscriptionService 
      * @return a SharedSubscription or null if $share keyword not present
      */
     @Nullable
+    @Override
     public SharedSubscription checkForSharedSubscription(final @NotNull String topic) {
 
         final Matcher matcher = getSharedSubscriptionMatcher(topic);
@@ -118,6 +119,7 @@ public class SharedSubscriptionServiceImpl implements SharedSubscriptionService 
     }
 
     @NotNull
+    @Override
     public Subscription createSubscription(final @NotNull Topic topic) {
 
         final SharedSubscription sharedSubscription = checkForSharedSubscription(topic.getTopic());
@@ -147,6 +149,7 @@ public class SharedSubscriptionServiceImpl implements SharedSubscriptionService 
      * @return a set of subscribers
      */
     @NotNull
+    @Override
     public ImmutableSet<SubscriberWithQoS> getSharedSubscriber(final @NotNull String sharedSubscription) {
         // calling this method before post construct will return an empty set
         if (sharedSubscriberCache == null) {
@@ -169,6 +172,7 @@ public class SharedSubscriptionServiceImpl implements SharedSubscriptionService 
      * @return a set of subscriptions
      */
     @NotNull
+    @Override
     public ImmutableSet<Topic> getSharedSubscriptions(final @NotNull String client) throws ExecutionException {
         // calling this method before post construct will return an empty set
         if (sharedSubscriptionCache == null) {
@@ -192,12 +196,14 @@ public class SharedSubscriptionServiceImpl implements SharedSubscriptionService 
         return new SharedSubscription(topicFilter, group);
     }
 
+    @Override
     public void invalidateSharedSubscriberCache(final @NotNull String sharedSubscription) {
         if (sharedSubscriberCache != null) {
             sharedSubscriberCache.invalidate(sharedSubscription);
         }
     }
 
+    @Override
     public void invalidateSharedSubscriptionCache(final @NotNull String clientId) {
         if (sharedSubscriptionCache != null) {
             sharedSubscriptionCache.invalidate(clientId);
@@ -212,6 +218,7 @@ public class SharedSubscriptionServiceImpl implements SharedSubscriptionService 
      * @return the topic without the leading '$share/' or the original topic if it does't start with '$share/'
      */
     @NotNull
+    @Override
     public String removePrefix(final @NotNull String topic) {
         if (topic.startsWith(SHARED_SUBSCRIPTION_PREFIX)) {
             return topic.substring(SHARED_SUBSCRIPTION_PREFIX.length());

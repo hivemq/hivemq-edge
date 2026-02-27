@@ -46,11 +46,13 @@ public class PluginBuilderUtil {
             final long messageExpiryInterval, final long maxMessageExpiryInterval) {
         checkArgument(
                 messageExpiryInterval <= maxMessageExpiryInterval,
-                "Message expiry interval " + messageExpiryInterval + " not allowed. Maximum = "
-                        + maxMessageExpiryInterval);
+                "Message expiry interval %s not allowed. Maximum = %s",
+                messageExpiryInterval,
+                maxMessageExpiryInterval);
         checkArgument(
                 messageExpiryInterval > 0,
-                "Message expiry interval must be bigger than 0 was " + messageExpiryInterval + ".");
+                "Message expiry interval must be bigger than 0 was %s.",
+                messageExpiryInterval);
     }
 
     public static void checkResponseTopic(final @Nullable String responseTopic, final boolean validateUTF8) {
@@ -159,8 +161,9 @@ public class PluginBuilderUtil {
         checkNotNull(topic, "Topic must not be null");
         checkArgument(
                 topic.length() <= maxTopicLength,
-                "Topic length must not exceed '" + maxTopicLength + "' characters, but has '" + topic.length()
-                        + "' characters");
+                "Topic length must not exceed '%s' characters, but has '%s' characters",
+                maxTopicLength,
+                topic.length());
 
         if (!Topics.isValidTopicToPublish(topic)) {
             throw new IllegalArgumentException("The topic (" + topic + ") is invalid for retained PUBLISH messages");

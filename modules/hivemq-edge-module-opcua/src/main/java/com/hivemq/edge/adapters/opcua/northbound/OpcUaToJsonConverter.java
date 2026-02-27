@@ -203,25 +203,25 @@ public class OpcUaToJsonConverter {
     private static @NotNull JsonObject convertNodeId(final @NotNull NodeId nodeId) {
         final JsonObject nodeIdObj = new JsonObject();
         switch (nodeId.getType()) {
-            case Numeric:
+            case Numeric -> {
                 nodeIdObj.add("idType", new JsonPrimitive(IdType.Numeric.getValue()));
                 nodeIdObj.add("id", new JsonPrimitive((Number) nodeId.getIdentifier()));
-                break;
-            case String:
+            }
+            case String -> {
                 nodeIdObj.add("idType", new JsonPrimitive(IdType.String.getValue()));
                 nodeIdObj.add("id", new JsonPrimitive(nodeId.getIdentifier().toString()));
-                break;
-            case Guid:
+            }
+            case Guid -> {
                 nodeIdObj.add("idType", new JsonPrimitive(IdType.Guid.getValue()));
                 nodeIdObj.add("id", new JsonPrimitive(nodeId.getIdentifier().toString()));
-                break;
-            case Opaque: // ByteString
+            }
+            case Opaque -> { // ByteString
                 nodeIdObj.add("idType", new JsonPrimitive(IdType.Opaque.getValue()));
                 nodeIdObj.add(
                         "id",
                         new JsonPrimitive(
                                 BASE_64.encodeToString(((ByteString) nodeId.getIdentifier()).bytesOrEmpty())));
-                break;
+            }
         }
 
         final int namespaceIndex = nodeId.getNamespaceIndex().intValue();

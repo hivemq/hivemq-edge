@@ -52,7 +52,7 @@ public class Html {
     }
 
     public static String heading(String title, int size) {
-        return String.format("<h" + size + ">%s</h" + size + ">", title);
+        return String.format("<h%s>%s</h%s>", size, title, size);
     }
 
     public static String subheading(String title) {
@@ -137,8 +137,7 @@ public class Html {
     }
 
     public static String img(String src, String width, String height) {
-        String mask = "<img src=\"%s\" width=\"%s\" height=\"%s\"/>";
-        return String.format(mask, src, width, height);
+        return String.format("<img src=\"%s\" width=\"%s\" height=\"%s\"/>", src, width, height);
     }
 
     public static String anchor(String link, String label, boolean targetBlank) {

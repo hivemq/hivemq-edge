@@ -34,8 +34,8 @@ public class ClientIds {
     private final HashFunction hashFunction = Hashing.murmur3_128();
 
     @Inject
-    public ClientIds(final HivemqId hiveMQId) {
-        this.hivemqId = hiveMQId.get();
+    public ClientIds(final HivemqId hivemqId) {
+        this.hivemqId = hivemqId.get();
     }
 
     public String generateNext() {

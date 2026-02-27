@@ -136,19 +136,16 @@ public class ScheduledCleanUpService {
     }
 
     public ListenableFuture<Void> cleanUp(final int bucketIndex, final int persistenceIndex) {
-        switch (persistenceIndex) {
-            case CLIENT_SESSION_PERSISTENCE_INDEX:
-                return clientSessionPersistence.cleanUp(bucketIndex);
-            case SUBSCRIPTION_PERSISTENCE_INDEX:
-                return subscriptionPersistence.cleanUp(bucketIndex);
-            case RETAINED_MESSAGES_PERSISTENCE_INDEX:
-                return retainedMessagePersistence.cleanUp(bucketIndex);
-            case CLIENT_QUEUE_PERSISTENCE_INDEX:
-                return clientQueuePersistence.cleanUp(bucketIndex);
-            default:
+        return switch (persistenceIndex) {
+            case CLIENT_SESSION_PERSISTENCE_INDEX -> clientSessionPersistence.cleanUp(bucketIndex);
+            case SUBSCRIPTION_PERSISTENCE_INDEX -> subscriptionPersistence.cleanUp(bucketIndex);
+            case RETAINED_MESSAGES_PERSISTENCE_INDEX -> retainedMessagePersistence.cleanUp(bucketIndex);
+            case CLIENT_QUEUE_PERSISTENCE_INDEX -> clientQueuePersistence.cleanUp(bucketIndex);
+            default -> {
                 log.error("Unknown persistence index " + persistenceIndex);
-                return Futures.immediateFuture(null);
-        }
+                yield Futures.immediateFuture(null);
+            }
+        };
     }
 
     @VisibleForTesting

@@ -132,6 +132,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
      * @return the backoff delay in milliseconds
      * @throws NumberFormatException when the format is incorrect
      */
+    @SuppressWarnings("StringSplitter")
     public static long calculateBackoffDelayMs(final @NotNull String retryIntervalMs, final int attemptCount) {
         final String[] delayStrings = retryIntervalMs.split(",");
         final long[] backoffDelays = new long[delayStrings.length];
@@ -186,19 +187,17 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             return;
         }
 
-        final OpcUaClientConnection conn;
-        if (opcUaClientConnection.compareAndSet(
-                null,
-                conn = new OpcUaClientConnection(
-                        adapterId,
-                        tagList,
-                        protocolAdapterState,
-                        input.moduleServices().protocolAdapterTagStreamingService(),
-                        dataPointFactory,
-                        input.moduleServices().eventService(),
-                        protocolAdapterMetricsService,
-                        config,
-                        opcUaServiceFaultListener))) {
+        final OpcUaClientConnection conn = new OpcUaClientConnection(
+                adapterId,
+                tagList,
+                protocolAdapterState,
+                input.moduleServices().protocolAdapterTagStreamingService(),
+                dataPointFactory,
+                input.moduleServices().eventService(),
+                protocolAdapterMetricsService,
+                config,
+                opcUaServiceFaultListener);
+        if (opcUaClientConnection.compareAndSet(null, conn)) {
 
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
             // Attempt initial connection asynchronously

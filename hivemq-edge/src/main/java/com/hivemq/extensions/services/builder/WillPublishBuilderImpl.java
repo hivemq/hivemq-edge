@@ -219,8 +219,9 @@ public class WillPublishBuilderImpl implements WillPublishBuilder {
         checkNotNull(topic, "Topic must not be null");
         checkArgument(
                 topic.length() <= restrictionsConfig.maxTopicLength(),
-                "Topic filter length must not exceed '" + restrictionsConfig.maxTopicLength()
-                        + "' characters, but has '" + topic.length() + "' characters");
+                "Topic filter length must not exceed '%s' characters, but has '%s' characters",
+                restrictionsConfig.maxTopicLength(),
+                topic.length());
 
         if (!Topics.isValidTopicToPublish(topic)) {
             throw new IllegalArgumentException("The topic (" + topic + ") is invalid for PUBLISH messages");

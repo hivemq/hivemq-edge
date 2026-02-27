@@ -63,7 +63,7 @@ public class PublishTopicTree {
         */
         boolean directMatch = false;
 
-        public void add(final @NotNull ArrayList<String> subTopics) {
+        public void add(final @NotNull List<String> subTopics) {
             final String currentSubTopic = subTopics.get(0);
             if (child != null && !currentSubTopic.equals(childSubTopic)) {
                 childNodes = new HashMap<>(1);
@@ -101,7 +101,7 @@ public class PublishTopicTree {
             directMatch = true;
         }
 
-        public boolean remove(final @NotNull ArrayList<String> subTopics) {
+        public boolean remove(final @NotNull List<String> subTopics) {
             if (subTopics.isEmpty()) {
                 if (!directMatch) {
                     return false;
@@ -120,7 +120,7 @@ public class PublishTopicTree {
                     final ArrayList<String> nextSubTopics = new ArrayList<>(subTopics);
                     nextSubTopics.remove(0);
                     final boolean removed = child.remove(nextSubTopics);
-                    if (removed && (!child.directMatch)) {
+                    if (removed && !child.directMatch) {
                         child = null;
                         return true;
                     }
@@ -154,7 +154,7 @@ public class PublishTopicTree {
 
         @NotNull
         public Set<String> get(
-                final @NotNull ArrayList<String> subTopics, final @Nullable String currentTopic, final boolean getAll) {
+                final @NotNull List<String> subTopics, final @Nullable String currentTopic, final boolean getAll) {
             if (childNodes == null && child == null) {
                 if (currentTopic == null) {
                     return ImmutableSet.of();

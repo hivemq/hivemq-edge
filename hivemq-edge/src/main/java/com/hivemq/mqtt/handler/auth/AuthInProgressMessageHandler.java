@@ -36,11 +36,6 @@ import org.jetbrains.annotations.NotNull;
 @Singleton
 public class AuthInProgressMessageHandler extends ChannelInboundHandlerAdapter {
 
-    @NotNull
-    private static final String DISCONNECT_LOG_MESSAGE = "The client with id %s and IP {} sent a message other than "
-            + "AUTH or DISCONNECT during enhanced authentication. "
-            + "This is not allowed. Disconnecting client.";
-
     private final @NotNull MqttConnacker connacker;
 
     @VisibleForTesting
@@ -63,7 +58,11 @@ public class AuthInProgressMessageHandler extends ChannelInboundHandlerAdapter {
                 ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         connacker.connackError(
                 ctx.channel(),
-                String.format(DISCONNECT_LOG_MESSAGE, clientConnection.getClientId()),
+                String.format(
+                        "The client with id %s and IP {} sent a message other than "
+                                + "AUTH or DISCONNECT during enhanced authentication. "
+                                + "This is not allowed. Disconnecting client.",
+                        clientConnection.getClientId()),
                 "Sent message other than AUTH or DISCONNECT during enhanced authentication",
                 Mqtt5ConnAckReasonCode.PROTOCOL_ERROR,
                 reasonString,

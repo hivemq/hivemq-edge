@@ -434,7 +434,7 @@ describe('getSchemaFromPropertyList', () => {
     })
   })
 
-  it('should filter out internal properties like path, key, arrayType, origin', async () => {
+  it('should filter out internal properties like path, key, arrayType, origin, required', async () => {
     const properties: FlatJSONSchema7[] = [
       {
         key: 'testProp',
@@ -443,6 +443,7 @@ describe('getSchemaFromPropertyList', () => {
         title: 'Test Property',
         arrayType: 'object',
         origin: 'some-origin',
+        required: true,
       },
     ]
 
@@ -454,5 +455,50 @@ describe('getSchemaFromPropertyList', () => {
     expect(testProp).not.toHaveProperty('key')
     expect(testProp).not.toHaveProperty('arrayType')
     expect(testProp).not.toHaveProperty('origin')
+    // required must not be a boolean on the property definition (AJV8 requires it to be an array)
+    expect(testProp).not.toHaveProperty('required')
+  })
+
+  it('should promote required:true on root-level properties to the root required array', async () => {
+    const properties: FlatJSONSchema7[] = [
+      { key: 'name', path: [], type: 'string', required: true },
+      { key: 'description', path: [], type: 'string', required: true },
+      { key: 'age', path: [], type: 'integer' },
+    ]
+
+    const result = getSchemaFromPropertyList(properties)
+
+    expect(result.required).toEqual(expect.arrayContaining(['name', 'description']))
+    expect(result.required).not.toContain('age')
+    // Ensure required is a string array, not boolean
+    expect(Array.isArray(result.required)).toBe(true)
+  })
+
+  it('should not set root required array when no properties are required', async () => {
+    const properties: FlatJSONSchema7[] = [
+      { key: 'name', path: [], type: 'string' },
+      { key: 'age', path: [], type: 'integer' },
+    ]
+
+    const result = getSchemaFromPropertyList(properties)
+
+    expect(result.required).toBeUndefined()
+  })
+
+  it('should promote required:true on nested properties to the parent required array', async () => {
+    const properties: FlatJSONSchema7[] = [
+      { key: 'person', path: [], type: 'object' },
+      { key: 'name', path: ['person'], type: 'string', required: true },
+      { key: 'age', path: ['person'], type: 'integer' },
+    ]
+
+    const result = getSchemaFromPropertyList(properties)
+    const personProp = result.properties?.['person'] as RJSFSchema
+
+    expect(personProp.required).toEqual(expect.arrayContaining(['name']))
+    expect(personProp.required).not.toContain('age')
+    expect(Array.isArray(personProp.required)).toBe(true)
+    // The nested property itself must not have required as a boolean
+    expect(personProp.properties?.['name'] as RJSFSchema).not.toHaveProperty('required')
   })
 })

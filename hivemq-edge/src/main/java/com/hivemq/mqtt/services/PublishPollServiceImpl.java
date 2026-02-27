@@ -44,7 +44,6 @@ import com.hivemq.mqtt.message.publish.PubrelWithFuture;
 import com.hivemq.mqtt.message.pubrel.PUBREL;
 import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.topic.SubscriberWithQoS;
-import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.clientsession.SharedSubscriptionService;
 import com.hivemq.persistence.connection.ConnectionPersistence;
@@ -76,7 +75,6 @@ public class PublishPollServiceImpl implements PublishPollService {
     private final @NotNull PublishPayloadPersistence payloadPersistence;
     private final @NotNull MessageDroppedService messageDroppedService;
     private final @NotNull Lazy<SharedSubscriptionService> sharedSubscriptionService;
-    private final @NotNull SingleWriterService singleWriterService;
 
     @Inject
     public PublishPollServiceImpl(
@@ -84,14 +82,12 @@ public class PublishPollServiceImpl implements PublishPollService {
             final @NotNull ConnectionPersistence connectionPersistence,
             final @NotNull PublishPayloadPersistence payloadPersistence,
             final @NotNull MessageDroppedService messageDroppedService,
-            final @NotNull Lazy<SharedSubscriptionService> sharedSubscriptionService,
-            final @NotNull SingleWriterService singleWriterService) {
+            final @NotNull Lazy<SharedSubscriptionService> sharedSubscriptionService) {
         this.clientQueuePersistence = clientQueuePersistence;
         this.connectionPersistence = connectionPersistence;
         this.payloadPersistence = payloadPersistence;
         this.messageDroppedService = messageDroppedService;
         this.sharedSubscriptionService = sharedSubscriptionService;
-        this.singleWriterService = singleWriterService;
     }
 
     @Override

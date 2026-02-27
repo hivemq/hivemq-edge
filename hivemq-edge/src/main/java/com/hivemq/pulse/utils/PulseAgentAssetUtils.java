@@ -35,11 +35,8 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class PulseAgentAssetUtils {
-    private static final @NotNull Logger LOGGER = LoggerFactory.getLogger(PulseAgentAssetUtils.class);
 
     private PulseAgentAssetUtils() {}
 

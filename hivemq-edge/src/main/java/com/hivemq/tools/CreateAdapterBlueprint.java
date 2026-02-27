@@ -17,12 +17,9 @@ package com.hivemq.tools;
 
 import com.google.common.base.Preconditions;
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -30,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.zip.ZipEntry;
@@ -140,7 +138,7 @@ public class CreateAdapterBlueprint {
 
         File edgeHome = detectEdgeHomeDir();
 
-        try (final var input = new Scanner(System.in)) {
+        try (final var input = new Scanner(System.in, StandardCharsets.UTF_8)) {
             final var output = System.out;
             if (edgeHome == null) {
                 edgeHome =
@@ -169,9 +167,9 @@ public class CreateAdapterBlueprint {
             System.exit(1);
         }
 
-        final var adapterModuleName = adapterName.toLowerCase();
+        final var adapterModuleName = adapterName.toLowerCase(Locale.ROOT);
         final Map<String, String> map = new HashMap<>();
-        map.put("nameUC", upperCaseFirst(adapterName.toLowerCase()));
+        map.put("nameUC", upperCaseFirst(adapterName.toLowerCase(Locale.ROOT)));
         map.put("nameLC", adapterModuleName);
         final var zipFile = new File(templateFile);
         final var outputDirectory = new File(moduleDirectory);
@@ -278,8 +276,8 @@ public class CreateAdapterBlueprint {
             throw new FileNotFoundException("file not found " + textFile.getAbsolutePath());
         }
         final var tmpFile = new File(textFile.getParentFile(), textFile.getName() + ".tmp");
-        try (final var reader = new BufferedReader(new FileReader(textFile))) {
-            try (final var writer = new FileWriter(tmpFile)) {
+        try (final var reader = java.nio.file.Files.newBufferedReader(textFile.toPath(), StandardCharsets.UTF_8)) {
+            try (final var writer = java.nio.file.Files.newBufferedWriter(tmpFile.toPath(), StandardCharsets.UTF_8)) {
                 int line = 0;
                 String textLine = reader.readLine();
                 while (textLine != null) {

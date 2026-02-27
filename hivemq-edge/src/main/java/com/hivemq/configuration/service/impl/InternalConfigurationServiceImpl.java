@@ -63,7 +63,8 @@ public class InternalConfigurationServiceImpl implements InternalConfigurationSe
             final String defaultValue = InternalConfigurations.DEFAULT_VALUES.get(key);
             Preconditions.checkState(
                     defaultValue != null,
-                    "Illegal format for internal configuration " + key + " and no default value available");
+                    "Illegal format for internal configuration %s and no default value available",
+                    key);
             log.debug("Illegal format for internal configuration {} using default value {}", key, defaultValue);
             set(key, defaultValue);
             return Double.parseDouble(defaultValue);
@@ -79,10 +80,9 @@ public class InternalConfigurationServiceImpl implements InternalConfigurationSe
             final String defaultValue = InternalConfigurations.DEFAULT_VALUES.get(key);
             Preconditions.checkState(
                     defaultValue != null,
-                    "Illegal format for internal configuration '" + key
-                            + "' with set value '"
-                            + get(key)
-                            + "' and no default value available");
+                    "Illegal format for internal configuration '%s' with set value '%s' and no default value available",
+                    key,
+                    get(key));
             log.debug("Illegal format for internal configuration {} using default value {}", key, defaultValue);
             set(key, defaultValue);
             return Integer.parseInt(defaultValue);
@@ -98,7 +98,8 @@ public class InternalConfigurationServiceImpl implements InternalConfigurationSe
             final String defaultValue = InternalConfigurations.DEFAULT_VALUES.get(key);
             Preconditions.checkState(
                     defaultValue != null,
-                    "Illegal format for internal configuration " + key + " and no default value available");
+                    "Illegal format for internal configuration %s and no default value available",
+                    key);
             log.debug("Illegal format for internal configuration {} using default value {}", key, defaultValue);
             set(key, defaultValue);
             return Long.parseLong(defaultValue);

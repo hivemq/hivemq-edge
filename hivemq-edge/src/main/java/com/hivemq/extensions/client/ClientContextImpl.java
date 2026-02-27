@@ -529,19 +529,6 @@ public class ClientContextImpl {
         return builder.build();
     }
 
-    private <T extends Interceptor> @NotNull ImmutableList<T> removeInterceptorsOfExtension(
-            final @NotNull ImmutableList<T> interceptors, final @NotNull ClassLoader extensionClassloader) {
-
-        final ImmutableList.Builder<T> builder = ImmutableList.builder();
-        for (int i = 0; i < interceptors.size(); i++) {
-            final T interceptor = interceptors.get(i);
-            if (!interceptor.getClass().getClassLoader().equals(extensionClassloader)) {
-                builder.add(interceptor);
-            }
-        }
-        return builder.build();
-    }
-
     private int getExtensionPriority(final @NotNull Object object) {
         final HiveMQExtension extension =
                 hiveMQExtensions.getExtensionForClassloader(object.getClass().getClassLoader());

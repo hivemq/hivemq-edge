@@ -49,34 +49,41 @@ class EmbeddedExtensionImpl implements EmbeddedExtension {
     }
 
     @NotNull
+    @Override
     public String getId() {
         return id;
     }
 
     @NotNull
+    @Override
     public String getName() {
         return name;
     }
 
     @NotNull
+    @Override
     public String getVersion() {
         return version;
     }
 
     @Nullable
+    @Override
     public String getAuthor() {
         return author;
     }
 
+    @Override
     public int getPriority() {
         return priority;
     }
 
+    @Override
     public int getStartPriority() {
         return startPriority;
     }
 
     @NotNull
+    @Override
     public ExtensionMain getExtensionMain() {
         return extensionMain;
     }

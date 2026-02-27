@@ -74,6 +74,7 @@ public class ReAuthOutput extends AuthOutput<EnhancedAuthOutput> implements Enha
         this.reasonCode = disconnectReasonCode;
     }
 
+    @Override
     public @NotNull Async<EnhancedAuthOutput> async(
             final @NotNull Duration timeout,
             final @NotNull TimeoutFallback fallback,
@@ -85,6 +86,7 @@ public class ReAuthOutput extends AuthOutput<EnhancedAuthOutput> implements Enha
         return async;
     }
 
+    @Override
     public @NotNull Async<EnhancedAuthOutput> async(
             final @NotNull Duration timeout,
             final @NotNull TimeoutFallback fallback,
@@ -129,14 +131,15 @@ public class ReAuthOutput extends AuthOutput<EnhancedAuthOutput> implements Enha
         final Mqtt5DisconnectReasonCode disconnectReasonCode = Mqtt5DisconnectReasonCode.from(disconnectedReasonCode);
         Preconditions.checkArgument(
                 disconnectReasonCode != null,
-                "The disconnected reason code " + disconnectedReasonCode.name()
-                        + " is not a DISCONNECT reason code and therefore must not be used during re-authentication.");
+                "The disconnected reason code %s is not a DISCONNECT reason code and therefore must not be used during re-authentication.",
+                disconnectedReasonCode.name());
         Preconditions.checkArgument(
                 disconnectReasonCode != Mqtt5DisconnectReasonCode.NORMAL_DISCONNECTION,
                 "DISCONNECT reason code must not be NORMAL_DISCONNECTION for failed authentication");
         Preconditions.checkArgument(
                 disconnectReasonCode.canBeSentByServer(),
-                "The DISCONNECT reason code " + disconnectedReasonCode.name() + " cannot be sent by the server.");
+                "The DISCONNECT reason code %s cannot be sent by the server.",
+                disconnectedReasonCode.name());
         return disconnectReasonCode;
     }
 }

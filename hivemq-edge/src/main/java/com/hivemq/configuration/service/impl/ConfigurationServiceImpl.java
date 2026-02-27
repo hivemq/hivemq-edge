@@ -45,8 +45,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The implementation of the {@link ConfigurationService}
@@ -55,8 +53,6 @@ import org.slf4j.LoggerFactory;
  * @author Christoph Schäbel
  */
 public class ConfigurationServiceImpl implements ConfigurationService {
-
-    private static final @NotNull Logger log = LoggerFactory.getLogger(ConfigurationServiceImpl.class);
 
     private final @NotNull ListenerConfigurationService listenerConfigurationService;
     private final @NotNull MqttConfigurationService mqttConfigurationService;
@@ -142,6 +138,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         return usageTrackingConfigurationService;
     }
 
+    @Override
     public @NotNull ModuleConfigurationService commercialModuleConfigurationService() {
         return proxy(ModuleConfigurationService.class, moduleConfigurationService);
     }
@@ -151,6 +148,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         return internalConfigurationService;
     }
 
+    @Override
     public @NotNull UnsExtractor unsExtractor() {
         return configFileReaderWriter.getUnsExtractor();
     }
@@ -229,6 +227,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         }
     }
 
+    @Override
     public @NotNull Optional<Long> getLastUpdateTime() {
         final long l = configFileReaderWriter.getLastWrite();
         return l == 0 ? Optional.empty() : Optional.of(l);

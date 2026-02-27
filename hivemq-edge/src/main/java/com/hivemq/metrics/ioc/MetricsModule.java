@@ -72,6 +72,7 @@ public class MetricsModule {
 
     @Provides
     @IntoSet
+    @SuppressWarnings("UnusedVariable")
     Boolean eagerSingletons(
             final @NotNull MetricsHolder metricsHolder,
             final @NotNull SessionsGauge sessionsGauge,

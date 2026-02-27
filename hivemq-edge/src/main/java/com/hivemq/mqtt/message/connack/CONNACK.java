@@ -436,6 +436,7 @@ public class CONNACK extends MqttMessageWithReasonCode<Mqtt5ConnAckReasonCode> i
     }
 
     @NotNull
+    @Override
     public Mqtt3ConnAckReturnCode getReturnCode() {
         return Mqtt3ConnAckReturnCode.fromReasonCode(getReasonCode());
     }
@@ -460,6 +461,7 @@ public class CONNACK extends MqttMessageWithReasonCode<Mqtt5ConnAckReasonCode> i
         return isSharedSubscriptionAvailable;
     }
 
+    @Override
     public boolean isSessionPresent() {
         return sessionPresent;
     }

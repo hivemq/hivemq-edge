@@ -66,10 +66,9 @@ public class ModifiableSubscriptionImpl implements ModifiableSubscription {
         Preconditions.checkArgument(
                 topicFilter.length()
                         <= configurationService.restrictionsConfiguration().maxTopicLength(),
-                "Topic filter length must not exceed '"
-                        + configurationService.restrictionsConfiguration().maxTopicLength()
-                        + "' characters, but has '" + topicFilter.length()
-                        + "' characters");
+                "Topic filter length must not exceed '%s' characters, but has '%s' characters",
+                configurationService.restrictionsConfiguration().maxTopicLength(),
+                topicFilter.length());
         Preconditions.checkArgument(
                 !(!configurationService.mqttConfiguration().wildcardSubscriptionsEnabled()
                         && Topics.containsWildcard(topicFilter)),

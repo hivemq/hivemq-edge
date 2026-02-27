@@ -44,6 +44,7 @@ public class SunHttpRequestResponse extends HttpRequestResponse {
         this.exchange = exchange;
     }
 
+    @Override
     public OutputStream getResponseBody() {
         return exchange.getResponseBody();
     }
@@ -53,12 +54,14 @@ public class SunHttpRequestResponse extends HttpRequestResponse {
         return exchange.getRequestBody();
     }
 
+    @Override
     public void addResponseHeader(final @NotNull String headerKey, final @NotNull String headerValue) {
         Preconditions.checkNotNull(headerKey);
         Preconditions.checkNotNull(headerValue);
         exchange.getResponseHeaders().add(headerKey, headerValue);
     }
 
+    @Override
     protected void sendResponseHeadersInternal(int httpCode, int size) throws IOException {
         exchange.sendResponseHeaders(httpCode, size);
     }

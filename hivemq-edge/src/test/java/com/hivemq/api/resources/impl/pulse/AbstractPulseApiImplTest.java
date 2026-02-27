@@ -34,8 +34,6 @@ import com.hivemq.edge.api.model.EntityReference;
 import com.hivemq.edge.api.model.EntityReferenceList;
 import com.hivemq.edge.api.model.EntityType;
 import com.hivemq.edge.api.model.Instruction;
-import com.hivemq.pulse.asset.AssetProviderRegistry;
-import com.hivemq.pulse.asset.ExternalAssetProvider;
 import com.hivemq.pulse.status.StatusProvider;
 import com.hivemq.pulse.status.StatusProviderRegistry;
 import java.util.ArrayList;
@@ -60,12 +58,6 @@ public abstract class AbstractPulseApiImplTest {
 
     @Mock
     protected @NotNull AssetMappingExtractor assetMappingExtractor;
-
-    @Mock
-    protected @NotNull ExternalAssetProvider assetProvider;
-
-    @Mock
-    protected @NotNull AssetProviderRegistry assetProviderRegistry;
 
     @Mock
     protected @NotNull StatusProvider statusProvider;
@@ -140,13 +132,7 @@ public abstract class AbstractPulseApiImplTest {
         when(pulseExtractor.getPulseEntity()).thenReturn(pulseEntity);
         when(pulseExtractor.getLock()).thenReturn(new Object());
         when(pulseEntity.getPulseAssetsEntity()).thenReturn(pulseAssetsEntity);
-        when(assetProviderRegistry.getAssetProviders()).thenReturn(Set.of(assetProvider));
         when(statusProviderRegistry.getStatusProviders()).thenReturn(Set.of(statusProvider));
-        pulseApi = new PulseApiImpl(
-                systemInformation,
-                assetMappingExtractor,
-                pulseExtractor,
-                assetProviderRegistry,
-                statusProviderRegistry);
+        pulseApi = new PulseApiImpl(systemInformation, assetMappingExtractor, pulseExtractor, statusProviderRegistry);
     }
 }

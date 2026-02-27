@@ -62,8 +62,9 @@ public class TopicPermissionBuilderImpl implements TopicPermissionBuilder {
         Preconditions.checkArgument(!topicFilter.isEmpty(), "Topic filter cannot be empty");
         Preconditions.checkArgument(
                 topicFilter.length() <= restrictionsConfig.maxTopicLength(),
-                "Topic filter length must not exceed '" + restrictionsConfig.maxTopicLength()
-                        + "' characters, but has '" + topicFilter.length() + "' characters");
+                "Topic filter length must not exceed '%s' characters, but has '%s' characters",
+                restrictionsConfig.maxTopicLength(),
+                topicFilter.length());
         Preconditions.checkArgument(Topics.isValidToSubscribe(topicFilter), "Topic filter is invalid");
 
         if (Topics.isSharedSubscriptionTopic(topicFilter)) {
@@ -133,8 +134,8 @@ public class TopicPermissionBuilderImpl implements TopicPermissionBuilder {
         Preconditions.checkArgument(
                 !(sharedGroup.length() > 1 && sharedGroup.contains("#")),
                 "Shared group cannot contain wildcard character '#' inside the name");
-        Preconditions.checkArgument(!(sharedGroup.contains("+")), "Shared group cannot contain wildcard character '+'");
-        Preconditions.checkArgument(!(sharedGroup.contains("/")), "Shared group cannot contain character '/'");
+        Preconditions.checkArgument(!sharedGroup.contains("+"), "Shared group cannot contain wildcard character '+'");
+        Preconditions.checkArgument(!sharedGroup.contains("/"), "Shared group cannot contain character '/'");
         Preconditions.checkArgument(
                 PluginBuilderUtil.isValidUtf8String(sharedGroup, securityConfigurationService.validateUTF8()),
                 "Shared group contains invalid UTF-8 character");

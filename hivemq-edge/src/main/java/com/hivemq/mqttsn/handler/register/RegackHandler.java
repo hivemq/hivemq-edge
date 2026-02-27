@@ -16,7 +16,6 @@
 package com.hivemq.mqttsn.handler.register;
 
 import com.hivemq.bootstrap.ClientConnection;
-import com.hivemq.mqttsn.IMqttsnTopicRegistry;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -39,12 +38,8 @@ public class RegackHandler extends SimpleChannelInboundHandler<MqttsnRegack> {
 
     private static final Logger log = LoggerFactory.getLogger(RegackHandler.class);
 
-    private final @NotNull IMqttsnTopicRegistry mqttsnTopicRegistry;
-
     @Inject
-    public RegackHandler(final @NotNull IMqttsnTopicRegistry mqttsnTopicRegistry) {
-        this.mqttsnTopicRegistry = mqttsnTopicRegistry;
-    }
+    public RegackHandler() {}
 
     @Override
     protected void channelRead0(final @NotNull ChannelHandlerContext ctx, final @NotNull MqttsnRegack msg)

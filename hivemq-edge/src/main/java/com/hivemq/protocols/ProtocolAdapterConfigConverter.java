@@ -67,6 +67,7 @@ public class ProtocolAdapterConfigConverter {
                         "No Factory was found for adapter with protocol id '" + protocolId + "'"));
     }
 
+    @SuppressWarnings("TypeParameterUnusedInFormals")
     public @NotNull <T extends Tag> T domainTagToTag(
             final @NotNull String protocolId, final @NotNull DomainTag domainTag) {
         //noinspection unchecked

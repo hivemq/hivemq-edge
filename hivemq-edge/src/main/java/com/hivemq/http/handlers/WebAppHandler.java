@@ -50,6 +50,7 @@ public class WebAppHandler extends AbstractHttpRequestResponseHandler {
         }
     }
 
+    @Override
     protected void writeDataFromResource(
             final @NotNull IHttpRequestResponse requestResponse, @NotNull String resourcePath) throws IOException {
         if (resourcePath.endsWith(HttpConstants.SLASH)) {

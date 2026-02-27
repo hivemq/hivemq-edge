@@ -41,6 +41,7 @@ public class HttpUrlConnectionClient {
     public static final Map<String, String> FORM_HEADERS =
             Map.of("Content-Type", "application/x-www-form-urlencoded", "Accept", "application/json");
 
+    @SuppressWarnings("EmptyCatch")
     public static HttpResponse head(Map<String, String> headers, String url, int readTimeout) throws IOException {
         HttpURLConnection connection = null;
         URL serverAddress = null;
@@ -57,11 +58,12 @@ public class HttpUrlConnectionClient {
         } finally {
             try {
                 connection.disconnect();
-            } catch (Throwable t) {
+            } catch (Throwable ignored) {
             }
         }
     }
 
+    @SuppressWarnings("EmptyCatch")
     public static HttpResponse get(
             Map<String, String> headers, String url, int connectTimeoutMillis, int readTimeoutMillis)
             throws IOException {
@@ -84,15 +86,16 @@ public class HttpUrlConnectionClient {
         } finally {
             try {
                 connection.disconnect();
-            } catch (Throwable t) {
+            } catch (Throwable ignored) {
             }
             try {
                 is.close();
-            } catch (Throwable t) {
+            } catch (Throwable ignored) {
             }
         }
     }
 
+    @SuppressWarnings("EmptyCatch")
     public static HttpResponse _withdata(
             String httpMethod,
             Map<String, String> headers,
@@ -119,11 +122,11 @@ public class HttpUrlConnectionClient {
         } finally {
             try {
                 connection.disconnect();
-            } catch (Throwable t) {
+            } catch (Throwable ignored) {
             }
             try {
                 is.close();
-            } catch (Throwable t) {
+            } catch (Throwable ignored) {
             }
         }
     }
@@ -159,6 +162,7 @@ public class HttpUrlConnectionClient {
         }
     }
 
+    @SuppressWarnings("EmptyCatch")
     private static HttpResponse createResponse(String url, HttpURLConnection connection, boolean readBody)
             throws IOException {
         HttpResponse response = new HttpResponse();
@@ -205,7 +209,7 @@ public class HttpUrlConnectionClient {
             } finally {
                 try {
                     is.close();
-                } catch (Exception e) {
+                } catch (Exception ignored) {
                 }
             }
         }

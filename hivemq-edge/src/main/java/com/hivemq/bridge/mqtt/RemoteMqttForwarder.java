@@ -103,6 +103,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
         }
     }
 
+    @Override
     public synchronized void start() {
         running.set(true);
         if (log.isDebugEnabled()) {
@@ -241,7 +242,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
                                 }
 
                                 switch (result.getOutcome()) {
-                                    case DROP:
+                                    case DROP -> {
                                         if (log.isDebugEnabled()) {
                                             log.debug(
                                                     "Message on topic '{}' dropped by interceptor for bridge '{}'",
@@ -249,14 +250,13 @@ public class RemoteMqttForwarder implements MqttForwarder {
                                                     bridge.getId());
                                         }
                                         finishProcessing(originalQoS, publish.getUniqueId(), queueId);
-                                        break;
-                                    case SUCCESS:
+                                    }
+                                    case SUCCESS ->
                                         sendPublishToRemote(
                                                 Objects.requireNonNull(result.getPublish()),
                                                 queueId,
                                                 publish.getQoS(),
                                                 originalUniqueId);
-                                        break;
                                 }
                             } catch (final Throwable t) {
                                 handlePublishError(publish, t);
@@ -290,8 +290,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
      * Called when a publish fails - resets the inflight marker so the message can be retried
      * instead of being removed from persistence. This prevents message loss on transient failures.
      */
-    private void finishProcessingWithRetry(
-            final @NotNull QoS originalQoS, final @NotNull String uniqueId, final @NotNull String queueId) {
+    private void finishProcessingWithRetry(final @NotNull String uniqueId, final @NotNull String queueId) {
         inflightCounter.decrementAndGet();
         // Reset inflight marker instead of removing the message, allowing retry
         final var resetInflightMarkerCallback = this.resetInflightMarkerCallback;
@@ -347,7 +346,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
                 handlePublishError(publish, throwable);
                 // On failure, reset the inflight marker so the message can be retried
                 // instead of being removed from persistence
-                finishProcessingWithRetry(originalQoS, originalUniqueId, queueId);
+                finishProcessingWithRetry(originalUniqueId, queueId);
             } else {
                 perBridgeMetrics.getPublishForwardSuccessCounter().inc();
                 if (log.isDebugEnabled()) {
@@ -388,7 +387,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
             publishResult.whenComplete((mqtt5PublishResult, throwable) -> {
                 if (throwable != null) {
                     handlePublishError(current.publish, throwable);
-                    finishProcessingWithRetry(current.originalQoS, current.uniqueId, current.queueId);
+                    finishProcessingWithRetry(current.uniqueId, current.queueId);
                 } else {
                     perBridgeMetrics.getPublishForwardSuccessCounter().inc();
                     if (log.isDebugEnabled()) {

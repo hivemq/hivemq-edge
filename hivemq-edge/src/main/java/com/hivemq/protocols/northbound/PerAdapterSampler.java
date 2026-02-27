@@ -67,7 +67,7 @@ public class PerAdapterSampler extends AbstractSubscriptionSampler {
         final CompletableFuture<PollingOutputImpl.PollingResult> outputFuture =
                 pollingOutput.getOutputFuture().orTimeout(10_000, TimeUnit.MILLISECONDS);
         return outputFuture
-                .thenCompose(((pollingResult) -> {
+                .thenCompose(pollingResult -> {
                     if (pollingResult == PollingOutputImpl.PollingResult.SUCCESS) {
                         final ProtocolAdapterDataSample dataSample = pollingOutput.getDataSample();
                         final Map<String, List<DataPoint>> dataPoints = dataSample.getDataPoints();
@@ -80,7 +80,7 @@ public class PerAdapterSampler extends AbstractSubscriptionSampler {
                     } else {
                         return CompletableFuture.completedFuture(null);
                     }
-                }))
+                })
                 .whenComplete((aVoid, throwable) -> {
                     if (throwable != null) {
                         if (pollingOutput.getErrorMessage() == null) {

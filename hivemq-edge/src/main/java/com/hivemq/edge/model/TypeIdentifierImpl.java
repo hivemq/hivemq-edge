@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
@@ -63,8 +64,9 @@ public class TypeIdentifierImpl implements TypeIdentifier {
         return toString();
     }
 
+    @Override
     public @NotNull String toString() {
-        return String.format("%s:%s", type.toString().toLowerCase(), identifier);
+        return String.format("%s:%s", type.toString().toLowerCase(Locale.ROOT), identifier);
     }
 
     @Override

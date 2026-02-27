@@ -74,7 +74,7 @@ export default tsEslint.config(
     files: ['**/*.spec.cy.tsx', '**/*.spec.cy.ts', 'cypress/e2e/**/*.{ts,tsx}', 'cypress/utils/**/*.{ts,tsx}'],
     rules: {
       'sonarjs/no-duplicate-string': 'off',
-      'local/no-bare-cy-intercept': 'warn',
+      'local/no-bare-cy-intercept': 'off',
     },
   }
 )

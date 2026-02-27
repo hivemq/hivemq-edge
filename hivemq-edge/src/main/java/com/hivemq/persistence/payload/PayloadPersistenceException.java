@@ -20,10 +20,7 @@ package com.hivemq.persistence.payload;
  */
 public class PayloadPersistenceException extends RuntimeException {
 
-    private final long payloadId;
-
     public PayloadPersistenceException(final long payloadId) {
         super("Payload with id " + payloadId + " not found");
-        this.payloadId = payloadId;
     }
 }

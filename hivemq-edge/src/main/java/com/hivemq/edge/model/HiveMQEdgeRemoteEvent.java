@@ -36,6 +36,7 @@ public class HiveMQEdgeRemoteEvent {
     public final @NotNull String sessionToken;
     public @Nullable String edgeVersion;
 
+    @SuppressWarnings("JavaUtilDate")
     public HiveMQEdgeRemoteEvent(final @NotNull EVENT_TYPE eventType) {
         this.eventType = eventType;
         this.userData = new HashMap<>();

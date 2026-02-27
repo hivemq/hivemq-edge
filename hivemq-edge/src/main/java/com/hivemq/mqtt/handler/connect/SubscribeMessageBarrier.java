@@ -24,9 +24,9 @@ import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;
 import com.hivemq.mqtt.message.unsuback.UNSUBACK;
 import com.hivemq.mqtt.message.unsubscribe.UNSUBSCRIBE;
 import io.netty.channel.*;
+import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.Queue;
 import org.jetbrains.annotations.NotNull;
 import org.slj.mqtt.sn.wire.version1_2.payload.MqttsnSuback;
@@ -41,7 +41,7 @@ import org.slj.mqtt.sn.wire.version1_2.payload.MqttsnUnsuback;
  */
 public class SubscribeMessageBarrier extends ChannelDuplexHandler {
 
-    private final @NotNull Queue<Message> messageQueue = new LinkedList<>();
+    private final @NotNull Queue<Message> messageQueue = new ArrayDeque<>();
 
     public static void addToPipeline(@NotNull ChannelHandlerContext ctx) {
         if (!ctx.pipeline().names().contains(ChannelHandlerNames.MQTT_SUBSCRIBE_MESSAGE_BARRIER)) {

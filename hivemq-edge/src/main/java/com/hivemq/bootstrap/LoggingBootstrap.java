@@ -28,8 +28,8 @@ import com.hivemq.logging.LogLevelModifierTurboFilter;
 import com.hivemq.logging.modifier.MiscLogLevelModifier;
 import com.hivemq.logging.modifier.NettyLogLevelModifier;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -46,7 +46,7 @@ public class LoggingBootstrap {
     private static final Logger log = LoggerFactory.getLogger(LoggingBootstrap.class);
 
     private static @NotNull ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
-    private static final List<Appender<ILoggingEvent>> defaultAppenders = new LinkedList<>();
+    private static final List<Appender<ILoggingEvent>> defaultAppenders = new ArrayList<>();
     private static final @NotNull LogLevelModifierTurboFilter logLevelModifierTurboFilter =
             new LogLevelModifierTurboFilter();
     private static final @NotNull LogbackChangeListener logbackChangeListener = new LogbackChangeListener();

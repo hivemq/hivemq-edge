@@ -51,7 +51,7 @@ import org.w3c.dom.NodeList;
  * </subscriptions>
  * </object>
  * <p>
- * Tested in {@see ConfigFileReaderTest}
+ * Tested in {@link ConfigFileReaderTest}
  */
 public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdapter.ElementMap, Map<String, Object>> {
 
@@ -152,7 +152,7 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
     }
 
     private static void convertElement(
-            final @NotNull HashMap<String, Object> map, final Node node, final @Nullable String parentName) {
+            final @NotNull Map<String, Object> map, final Node node, final @Nullable String parentName) {
         if (node.hasChildNodes() && node.getChildNodes().item(0).hasChildNodes()) {
             final NodeList childNodes = node.getChildNodes();
             final HashMap<String, Object> childMap = new HashMap<>();
@@ -175,7 +175,7 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
 
     @SuppressWarnings("rawtypes")
     private static void createValueOrAddtoList(
-            final @NotNull HashMap<String, Object> map,
+            final @NotNull Map<String, Object> map,
             final @NotNull Node node,
             final @NotNull Object value,
             final @Nullable String parentName) {
@@ -200,7 +200,7 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static void replaceWithList(
-            final @NotNull HashMap<String, Object> map, final @NotNull Object value, final @NotNull String key) {
+            final @NotNull Map<String, Object> map, final @NotNull Object value, final @NotNull String key) {
         // key already present => create list of values instead
         final Object prevValue = map.get(key);
         if (prevValue == null) {

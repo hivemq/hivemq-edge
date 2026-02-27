@@ -165,13 +165,19 @@ public class ConfigFileReaderWriter {
         this.sysInfo = sysInfo;
         this.configFile = configFile;
         this.configurators = configurators;
+        this.bridgeExtractor = new BridgeExtractor(this);
+        this.protocolAdapterExtractor = new ProtocolAdapterExtractor(this);
+        this.dataCombiningExtractor = new DataCombiningExtractor(this);
+        this.assetMappingExtractor = new AssetMappingExtractor(this);
+        this.pulseExtractor = new PulseExtractor(this);
+        this.unsExtractor = new UnsExtractor(this);
         this.extractors = List.of(
-                this.bridgeExtractor = new BridgeExtractor(this),
-                this.protocolAdapterExtractor = new ProtocolAdapterExtractor(this),
-                this.dataCombiningExtractor = new DataCombiningExtractor(this),
-                this.assetMappingExtractor = new AssetMappingExtractor(this),
-                this.pulseExtractor = new PulseExtractor(this),
-                this.unsExtractor = new UnsExtractor(this));
+                this.bridgeExtractor,
+                this.protocolAdapterExtractor,
+                this.dataCombiningExtractor,
+                this.assetMappingExtractor,
+                this.pulseExtractor,
+                this.unsExtractor);
         this.fragmentToModificationTime = new ConcurrentHashMap<>();
         this.configEntity = new AtomicReference<>();
         this.lastWrite = new AtomicLong();
@@ -242,7 +248,7 @@ public class ConfigFileReaderWriter {
             marshaller.setSchema(CONFIG_XSD);
             marshaller.setProperty(Marshaller.JAXB_SCHEMA_LOCATION, XSD_SCHEMA);
         }
-        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
         return marshaller;
     }
 
@@ -536,7 +542,7 @@ public class ConfigFileReaderWriter {
             int idx = 1;
             File copyFile;
             do {
-                final String copyFilename = fileNameNoExt + '_' + (idx++) + (fileExt != null ? "." + fileExt : "");
+                final String copyFilename = fileNameNoExt + '_' + idx++ + (fileExt != null ? "." + fileExt : "");
                 copyFile = new File(copyPath, copyFilename);
             } while (idx < MAX_BACK_FILES && copyFile.exists());
 

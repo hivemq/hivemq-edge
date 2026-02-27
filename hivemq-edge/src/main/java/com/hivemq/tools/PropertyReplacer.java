@@ -15,29 +15,29 @@
  */
 package com.hivemq.tools;
 
-import java.util.Enumeration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 public class PropertyReplacer {
 
-    private static void parsePropertyString(String value, Vector fragments, Vector propertyRefs)
+    private static void parsePropertyString(String value, List<String> fragments, List<String> propertyRefs)
             throws IllegalStateException {
         int prev = 0;
         int pos;
         while ((pos = value.indexOf("$", prev)) >= 0) {
             if (pos > 0) {
-                fragments.addElement(value.substring(prev, pos));
+                fragments.add(value.substring(prev, pos));
             }
             if (pos == (value.length() - 1)) {
-                fragments.addElement("$");
+                fragments.add("$");
                 prev = pos + 1;
             } else if (value.charAt(pos + 1) != '{') {
                 if (value.charAt(pos + 1) == '$') {
-                    fragments.addElement("$");
+                    fragments.add("$");
                     prev = pos + 2;
                 } else {
-                    fragments.addElement(value.substring(pos, pos + 2));
+                    fragments.add(value.substring(pos, pos + 2));
                     prev = pos + 2;
                 }
             } else {
@@ -46,30 +46,28 @@ public class PropertyReplacer {
                     throw new IllegalStateException("Syntax error in property: " + value);
                 }
                 String propertyName = value.substring(pos + 2, endName);
-                fragments.addElement(null);
-                propertyRefs.addElement(propertyName);
+                fragments.add(null);
+                propertyRefs.add(propertyName);
                 prev = endName + 1;
             }
         }
         if (prev < value.length()) {
-            fragments.addElement(value.substring(prev));
+            fragments.add(value.substring(prev));
         }
     }
 
     public static String replaceProperties(String value, Map keys) {
 
-        Vector fragments = new Vector();
-        Vector propertyRefs = new Vector();
+        List<String> fragments = new ArrayList<>();
+        List<String> propertyRefs = new ArrayList<>();
         parsePropertyString(value, fragments, propertyRefs);
 
-        StringBuffer sb = new StringBuffer();
-        Enumeration i = fragments.elements();
-        Enumeration j = propertyRefs.elements();
+        StringBuilder sb = new StringBuilder();
+        int refIndex = 0;
 
-        while (i.hasMoreElements()) {
-            String fragment = (String) i.nextElement();
+        for (String fragment : fragments) {
             if (fragment == null) {
-                String propertyName = (String) j.nextElement();
+                String propertyName = propertyRefs.get(refIndex++);
                 Object replacement = null;
                 if (keys != null) {
                     replacement = keys.get(propertyName);

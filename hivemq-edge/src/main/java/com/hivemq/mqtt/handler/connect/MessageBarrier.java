@@ -24,7 +24,11 @@ import com.hivemq.mqtt.message.connack.CONNACK;
 import com.hivemq.mqtt.message.connect.CONNECT;
 import com.hivemq.mqtt.message.reason.Mqtt5ConnAckReasonCode;
 import io.netty.channel.*;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.Queue;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +48,7 @@ public class MessageBarrier extends ChannelDuplexHandler {
     };
 
     private final @NotNull MqttServerDisconnector serverDisconnector;
-    private final @NotNull Queue<Message> messageQueue = new LinkedList<>();
+    private final @NotNull Queue<Message> messageQueue = new ArrayDeque<>();
 
     private boolean connectReceived;
     private boolean connackSent;

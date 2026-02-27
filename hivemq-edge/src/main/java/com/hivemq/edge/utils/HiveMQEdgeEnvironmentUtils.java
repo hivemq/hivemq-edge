@@ -17,6 +17,7 @@ package com.hivemq.edge.utils;
 
 import io.netty.util.internal.MacAddressUtil;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
@@ -56,11 +57,12 @@ public class HiveMQEdgeEnvironmentUtils {
         return map;
     }
 
+    @SuppressWarnings("EmptyCatch")
     public static String getDefaultMachineId() {
         try {
             return MacAddressUtil.formatAddress(MacAddressUtil.defaultMachineId())
-                    .toUpperCase();
-        } catch (Exception e) {
+                    .toUpperCase(Locale.ROOT);
+        } catch (Exception ignored) {
         }
         return "<unknown>";
     }

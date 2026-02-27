@@ -39,11 +39,9 @@ import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.mqtt.topic.SubscriberWithIdentifiers;
-import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.clientsession.ClientSession;
 import com.hivemq.persistence.clientsession.ClientSessionPersistence;
-import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.persistence.util.FutureUtils;
 import dagger.Lazy;
 import jakarta.inject.Inject;
@@ -62,16 +60,10 @@ import org.jetbrains.annotations.Nullable;
 public class PublishDistributorImpl implements PublishDistributor {
 
     @NotNull
-    private final PublishPayloadPersistence payloadPersistence;
-
-    @NotNull
     private final ClientQueuePersistence clientQueuePersistence;
 
     @NotNull
     private final Lazy<ClientSessionPersistence> clientSessionPersistence;
-
-    @NotNull
-    private final SingleWriterService singleWriterService;
 
     @NotNull
     private final MqttConfigurationService mqttConfigurationService;
@@ -81,15 +73,11 @@ public class PublishDistributorImpl implements PublishDistributor {
 
     @Inject
     public PublishDistributorImpl(
-            final @NotNull PublishPayloadPersistence payloadPersistence,
             final @NotNull ClientQueuePersistence clientQueuePersistence,
             final @NotNull Lazy<ClientSessionPersistence> clientSessionPersistence,
-            final @NotNull SingleWriterService singleWriterService,
             final @NotNull ConfigurationService configurationService) {
-        this.payloadPersistence = payloadPersistence;
         this.clientQueuePersistence = clientQueuePersistence;
         this.clientSessionPersistence = clientSessionPersistence;
-        this.singleWriterService = singleWriterService;
         this.mqttConfigurationService = configurationService.mqttConfiguration();
         this.bridgeConfiguration = configurationService.bridgeExtractor();
     }

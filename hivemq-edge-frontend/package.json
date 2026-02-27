@@ -152,7 +152,7 @@
     "axe-core": "4.10.3",
     "commander": "13.1.0",
     "copyfiles": "2.4.1",
-    "cypress": "15.8.2",
+    "cypress": "15.11.0",
     "cypress-axe": "1.7.0",
     "cypress-each": "1.14.1",
     "cypress-multi-reporters": "^2.0.5",
@@ -194,6 +194,15 @@
     "pnpm": "10"
   },
   "overrides": {
-    "js-yaml": "4.1.1"
+    "js-yaml": "4.1.1",
+    "ajv@^8": "^8.18.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "minimatch@3": "3.1.3",
+      "minimatch@8": "8.0.5",
+      "minimatch@9": "9.0.6",
+      "minimatch@10": "10.2.3"
+    }
   }
 }

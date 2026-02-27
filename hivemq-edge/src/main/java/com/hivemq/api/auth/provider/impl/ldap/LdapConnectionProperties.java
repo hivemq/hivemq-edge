@@ -35,6 +35,7 @@ import com.unboundid.util.ssl.TrustStoreTrustManager;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import javax.net.ssl.SSLContext;
 import org.jetbrains.annotations.NotNull;
@@ -125,6 +126,7 @@ public record LdapConnectionProperties(
     /**
      * This class represents the simple bind credentials for an LDAP connection.
      */
+    @SuppressWarnings("ArrayRecordComponent")
     public record LdapServers(@NotNull String[] hosts, int @NotNull [] ports) {
 
         /**
@@ -198,7 +200,7 @@ public record LdapConnectionProperties(
         // Parse TLS mode from string
         final TlsMode tlsMode;
         try {
-            tlsMode = TlsMode.valueOf(entity.getTlsMode().toUpperCase());
+            tlsMode = TlsMode.valueOf(entity.getTlsMode().toUpperCase(Locale.ROOT));
         } catch (final IllegalArgumentException e) {
             throw new IllegalArgumentException(
                     "Invalid TLS mode: " + entity.getTlsMode() + ". Must be one of: NONE, LDAPS, START_TLS", e);
