@@ -17,9 +17,7 @@ package com.hivemq.edge.adapters.browse.validate;
 
 import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.combining.model.DataCombining;
-import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
-import com.hivemq.configuration.entity.adapter.SouthboundMappingEntity;
 import com.hivemq.configuration.entity.adapter.TagEntity;
 import com.hivemq.configuration.reader.DataCombiningExtractor;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
@@ -28,6 +26,8 @@ import com.hivemq.edge.adapters.browse.model.FieldMappingInstruction;
 import com.hivemq.edge.adapters.browse.model.ImportMode;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -36,7 +36,20 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.jetbrains.annotations.NotNull;
+
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.DUPLICATE_NODE;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.DUPLICATE_TAG_NAME;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.EDGE_TAG_CONFLICT;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.INVALID_EXPIRY;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.INVALID_FIELD_MAPPING;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.INVALID_NODE_ID;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.INVALID_QOS;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.INVALID_TAG_NAME;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.INVALID_TOPIC;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.INVALID_USER_PROPERTIES;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.MAPPING_WITHOUT_TAG;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.TAG_CONFLICT;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.TAG_IN_USE_BY_COMBINER;
 
 /**
  * Validates a list of {@link DeviceTagRow} entries before import.
@@ -114,16 +127,18 @@ public class DeviceTagValidator {
     // --- File-level validations ---
 
     private void validateFileLevelDuplicates(
-            final @NotNull List<DeviceTagRow> rows, final @NotNull List<ValidationError> errors) {
+            final @NotNull List<DeviceTagRow> rows,
+            final @NotNull List<ValidationError> errors) {
         // Check duplicate node IDs
         final Set<String> seenNodeIds = new HashSet<>();
         for (int i = 0; i < rows.size(); i++) {
             final DeviceTagRow row = rows.get(i);
             if (row.getNodeId() != null && !row.getNodeId().isEmpty()) {
                 if (!seenNodeIds.add(row.getNodeId())) {
-                    errors.add(new ValidationError(
-                            i + 1, "node_id", row.getNodeId(),
-                            "DUPLICATE_NODE",
+                    errors.add(new ValidationError(i + 1,
+                            "node_id",
+                            row.getNodeId(),
+                            DUPLICATE_NODE,
                             "Duplicate node ID '" + row.getNodeId() + "' in file"));
                 }
             }
@@ -135,9 +150,10 @@ public class DeviceTagValidator {
             final DeviceTagRow row = rows.get(i);
             if (row.getTagName() != null && !row.getTagName().isEmpty()) {
                 if (!seenTagNames.add(row.getTagName())) {
-                    errors.add(new ValidationError(
-                            i + 1, "tag_name", row.getTagName(),
-                            "DUPLICATE_TAG_NAME",
+                    errors.add(new ValidationError(i + 1,
+                            "tag_name",
+                            row.getTagName(),
+                            DUPLICATE_TAG_NAME,
                             "Duplicate tag name '" + row.getTagName() + "' in file"));
                 }
             }
@@ -147,139 +163,201 @@ public class DeviceTagValidator {
     // --- Row-level validations ---
 
     private void validateTagName(
-            final @NotNull DeviceTagRow row, final int rowNum, final @NotNull List<ValidationError> errors) {
+            final @NotNull DeviceTagRow row,
+            final int rowNum,
+            final @NotNull List<ValidationError> errors) {
         final String tagName = row.getTagName();
-        if (tagName == null || tagName.isEmpty()) return;
+        if (tagName == null || tagName.isEmpty()) {
+            return;
+        }
 
         if (tagName.length() > MAX_TAG_NAME_LENGTH) {
-            errors.add(new ValidationError(rowNum, "tag_name", tagName,
-                    "INVALID_TAG_NAME",
+            errors.add(new ValidationError(rowNum,
+                    "tag_name",
+                    tagName,
+                    INVALID_TAG_NAME,
                     "Tag name exceeds maximum length of " + MAX_TAG_NAME_LENGTH + " characters"));
         } else if (!TAG_NAME_PATTERN.matcher(tagName).matches()) {
-            errors.add(new ValidationError(rowNum, "tag_name", tagName,
-                    "INVALID_TAG_NAME",
+            errors.add(new ValidationError(rowNum,
+                    "tag_name",
+                    tagName,
+                    INVALID_TAG_NAME,
                     "Tag name must match pattern [a-zA-Z0-9][a-zA-Z0-9._-]*"));
         }
     }
 
     private void validateNorthboundTopic(
-            final @NotNull DeviceTagRow row, final int rowNum, final @NotNull List<ValidationError> errors) {
+            final @NotNull DeviceTagRow row,
+            final int rowNum,
+            final @NotNull List<ValidationError> errors) {
         final String topic = row.getNorthboundTopic();
-        if (topic == null || topic.isEmpty()) return;
+        if (topic == null || topic.isEmpty()) {
+            return;
+        }
 
         // Northbound topics must not contain MQTT wildcards
         if (topic.contains("+") || topic.contains("#")) {
-            errors.add(new ValidationError(rowNum, "northbound_topic", topic,
-                    "INVALID_TOPIC",
+            errors.add(new ValidationError(rowNum,
+                    "northbound_topic",
+                    topic,
+                    INVALID_TOPIC,
                     "Northbound topic must not contain MQTT wildcards (+ or #)"));
         }
         if (topic.isEmpty() || topic.contains("\0")) {
-            errors.add(new ValidationError(rowNum, "northbound_topic", topic,
-                    "INVALID_TOPIC",
+            errors.add(new ValidationError(rowNum,
+                    "northbound_topic",
+                    topic,
+                    INVALID_TOPIC,
                     "Northbound topic contains invalid characters"));
         }
     }
 
     private void validateSouthboundTopic(
-            final @NotNull DeviceTagRow row, final int rowNum, final @NotNull List<ValidationError> errors) {
+            final @NotNull DeviceTagRow row,
+            final int rowNum,
+            final @NotNull List<ValidationError> errors) {
         final String topic = row.getSouthboundTopic();
-        if (topic == null || topic.isEmpty()) return;
+        if (topic == null || topic.isEmpty()) {
+            return;
+        }
 
         // Southbound topics are MQTT filters — wildcards are allowed but must be valid
         if (topic.contains("\0")) {
-            errors.add(new ValidationError(rowNum, "southbound_topic", topic,
-                    "INVALID_TOPIC",
+            errors.add(new ValidationError(rowNum,
+                    "southbound_topic",
+                    topic,
+                    INVALID_TOPIC,
                     "Southbound topic filter contains invalid characters"));
         }
     }
 
     private void validateQos(
-            final @NotNull DeviceTagRow row, final int rowNum, final @NotNull List<ValidationError> errors) {
+            final @NotNull DeviceTagRow row,
+            final int rowNum,
+            final @NotNull List<ValidationError> errors) {
         final Integer qos = row.getMaxQos();
-        if (qos == null) return;
+        if (qos == null) {
+            return;
+        }
 
         if (qos < 0 || qos > 2) {
-            errors.add(new ValidationError(rowNum, "max_qos", String.valueOf(qos),
-                    "INVALID_QOS",
+            errors.add(new ValidationError(rowNum,
+                    "max_qos",
+                    String.valueOf(qos),
+                    INVALID_QOS,
                     "QoS must be 0, 1, or 2"));
         }
     }
 
     private void validateBooleans(
-            final @NotNull DeviceTagRow row, final int rowNum, final @NotNull List<ValidationError> errors) {
+            final @NotNull DeviceTagRow row,
+            final int rowNum,
+            final @NotNull List<ValidationError> errors) {
         // Boolean fields are already parsed by the serializer. This validates that they were valid.
         // In strict mode, we could check original string values, but since serializers handle parsing,
         // we accept the parsed Boolean values here.
     }
 
     private void validateExpiryInterval(
-            final @NotNull DeviceTagRow row, final int rowNum, final @NotNull List<ValidationError> errors) {
+            final @NotNull DeviceTagRow row,
+            final int rowNum,
+            final @NotNull List<ValidationError> errors) {
         final Long expiry = row.getMessageExpiryInterval();
-        if (expiry == null) return;
+        if (expiry == null) {
+            return;
+        }
 
         if (expiry <= 0) {
-            errors.add(new ValidationError(rowNum, "message_expiry_interval", String.valueOf(expiry),
-                    "INVALID_EXPIRY",
+            errors.add(new ValidationError(rowNum,
+                    "message_expiry_interval",
+                    String.valueOf(expiry),
+                    INVALID_EXPIRY,
                     "Message expiry interval must be greater than 0"));
         }
     }
 
     private void validateFieldMapping(
-            final @NotNull DeviceTagRow row, final int rowNum, final @NotNull List<ValidationError> errors) {
+            final @NotNull DeviceTagRow row,
+            final int rowNum,
+            final @NotNull List<ValidationError> errors) {
         final List<FieldMappingInstruction> mappings = row.getSouthboundFieldMapping();
-        if (mappings == null) return;
+        if (mappings == null) {
+            return;
+        }
 
         for (final FieldMappingInstruction fm : mappings) {
             if (fm.source() == null || fm.source().isEmpty()) {
-                errors.add(new ValidationError(rowNum, "southbound_field_mapping", null,
-                        "INVALID_FIELD_MAPPING",
+                errors.add(new ValidationError(rowNum,
+                        "southbound_field_mapping",
+                        null,
+                        INVALID_FIELD_MAPPING,
                         "Field mapping source must not be empty"));
             }
             if (fm.destination() == null || fm.destination().isEmpty()) {
-                errors.add(new ValidationError(rowNum, "southbound_field_mapping", null,
-                        "INVALID_FIELD_MAPPING",
+                errors.add(new ValidationError(rowNum,
+                        "southbound_field_mapping",
+                        null,
+                        INVALID_FIELD_MAPPING,
                         "Field mapping destination must not be empty"));
             }
         }
     }
 
     private void validateUserProperties(
-            final @NotNull DeviceTagRow row, final int rowNum, final @NotNull List<ValidationError> errors) {
+            final @NotNull DeviceTagRow row,
+            final int rowNum,
+            final @NotNull List<ValidationError> errors) {
         final Map<String, String> props = row.getMqttUserProperties();
-        if (props == null) return;
+        if (props == null) {
+            return;
+        }
 
         for (final Map.Entry<String, String> entry : props.entrySet()) {
             if (entry.getKey() == null || entry.getKey().isEmpty()) {
-                errors.add(new ValidationError(rowNum, "mqtt_user_properties", null,
-                        "INVALID_USER_PROPERTIES",
+                errors.add(new ValidationError(rowNum,
+                        "mqtt_user_properties",
+                        null,
+                        INVALID_USER_PROPERTIES,
                         "User property key must not be empty"));
             }
         }
     }
 
     private void validateMappingRequiresTag(
-            final @NotNull DeviceTagRow row, final int rowNum, final @NotNull List<ValidationError> errors) {
+            final @NotNull DeviceTagRow row,
+            final int rowNum,
+            final @NotNull List<ValidationError> errors) {
         if (!row.hasTag()) {
             if (row.getNorthboundTopic() != null && !row.getNorthboundTopic().isEmpty()) {
-                errors.add(new ValidationError(rowNum, "northbound_topic", row.getNorthboundTopic(),
-                        "MAPPING_WITHOUT_TAG",
+                errors.add(new ValidationError(rowNum,
+                        "northbound_topic",
+                        row.getNorthboundTopic(),
+                        MAPPING_WITHOUT_TAG,
                         "Northbound mapping requires a tag name"));
             }
             if (row.getSouthboundTopic() != null && !row.getSouthboundTopic().isEmpty()) {
-                errors.add(new ValidationError(rowNum, "southbound_topic", row.getSouthboundTopic(),
-                        "MAPPING_WITHOUT_TAG",
+                errors.add(new ValidationError(rowNum,
+                        "southbound_topic",
+                        row.getSouthboundTopic(),
+                        MAPPING_WITHOUT_TAG,
                         "Southbound mapping requires a tag name"));
             }
         }
     }
 
     private void validateNodeId(
-            final @NotNull DeviceTagRow row, final int rowNum, final @NotNull List<ValidationError> errors) {
-        if (!row.hasTag()) return;
+            final @NotNull DeviceTagRow row,
+            final int rowNum,
+            final @NotNull List<ValidationError> errors) {
+        if (!row.hasTag()) {
+            return;
+        }
         final String nodeId = row.getNodeId();
         if (nodeId == null || nodeId.isEmpty()) {
-            errors.add(new ValidationError(rowNum, "node_id", null,
-                    "INVALID_NODE_ID",
+            errors.add(new ValidationError(rowNum,
+                    "node_id",
+                    null,
+                    INVALID_NODE_ID,
                     "Node ID is required when creating a tag"));
         }
     }
@@ -293,13 +371,11 @@ public class DeviceTagValidator {
             final @NotNull String adapterId,
             final @NotNull List<ValidationError> errors) {
 
-        final Set<String> fileTagNames = rows.stream()
-                .filter(DeviceTagRow::hasTag)
-                .map(DeviceTagRow::getTagName)
-                .collect(Collectors.toSet());
+        final Set<String> fileTagNames =
+                rows.stream().filter(DeviceTagRow::hasTag).map(DeviceTagRow::getTagName).collect(Collectors.toSet());
 
-        final Map<String, TagEntity> edgeTagsByName = adapter.getTags().stream()
-                .collect(Collectors.toMap(TagEntity::getName, t -> t));
+        final Map<String, TagEntity> edgeTagsByName =
+                adapter.getTags().stream().collect(Collectors.toMap(TagEntity::getName, t -> t));
 
         // Check if tags to be deleted are in use by combiners
         if (mode == ImportMode.DELETE || mode == ImportMode.OVERWRITE) {
@@ -317,8 +393,10 @@ public class DeviceTagValidator {
 
             for (final String tagToDelete : tagsToDelete) {
                 if (combinerTags.contains(tagToDelete)) {
-                    errors.add(new ValidationError(null, "tag_name", tagToDelete,
-                            "TAG_IN_USE_BY_COMBINER",
+                    errors.add(new ValidationError(null,
+                            "tag_name",
+                            tagToDelete,
+                            TAG_IN_USE_BY_COMBINER,
                             "Tag '" + tagToDelete + "' is in use by a combiner and cannot be deleted"));
                 }
             }
@@ -326,18 +404,27 @@ public class DeviceTagValidator {
 
         // Check for tag name conflicts with other adapters
         for (final DeviceTagRow row : rows) {
-            if (!row.hasTag()) continue;
+            if (!row.hasTag()) {
+                continue;
+            }
             final String tagName = row.getTagName();
 
             // Check against all other adapters' tags
             for (final ProtocolAdapterEntity otherAdapter : adapterExtractor.getAllConfigs()) {
-                if (otherAdapter.getAdapterId().equals(adapterId)) continue;
+                if (otherAdapter.getAdapterId().equals(adapterId)) {
+                    continue;
+                }
                 for (final TagEntity otherTag : otherAdapter.getTags()) {
                     if (otherTag.getName().equals(tagName)) {
-                        errors.add(new ValidationError(null, "tag_name", tagName,
-                                "EDGE_TAG_CONFLICT",
-                                "Tag name '" + tagName + "' is already used by adapter '" +
-                                        otherAdapter.getAdapterId() + "'"));
+                        errors.add(new ValidationError(null,
+                                "tag_name",
+                                tagName,
+                                EDGE_TAG_CONFLICT,
+                                "Tag name '" +
+                                        tagName +
+                                        "' is already used by adapter '" +
+                                        otherAdapter.getAdapterId() +
+                                        "'"));
                     }
                 }
             }
@@ -347,20 +434,28 @@ public class DeviceTagValidator {
         if (mode == ImportMode.CREATE) {
             for (final String fileTag : fileTagNames) {
                 if (edgeTagsByName.containsKey(fileTag)) {
-                    errors.add(new ValidationError(null, "tag_name", fileTag,
-                            "TAG_CONFLICT",
+                    errors.add(new ValidationError(null,
+                            "tag_name",
+                            fileTag,
+                            TAG_CONFLICT,
                             "Tag '" + fileTag + "' already exists in adapter. Use MERGE_SAFE or OVERWRITE mode."));
                 }
             }
         } else if (mode == ImportMode.MERGE_SAFE) {
             // MERGE_SAFE: fail if same tag exists with different properties
             for (final DeviceTagRow row : rows) {
-                if (!row.hasTag()) continue;
+                if (!row.hasTag()) {
+                    continue;
+                }
                 final TagEntity existing = edgeTagsByName.get(row.getTagName());
                 if (existing != null && !tagDefinitionsMatch(row, existing)) {
-                    errors.add(new ValidationError(null, "tag_name", row.getTagName(),
-                            "TAG_CONFLICT",
-                            "Tag '" + row.getTagName() + "' exists with different definition. Use MERGE_OVERWRITE mode."));
+                    errors.add(new ValidationError(null,
+                            "tag_name",
+                            row.getTagName(),
+                            TAG_CONFLICT,
+                            "Tag '" +
+                                    row.getTagName() +
+                                    "' exists with different definition. Use MERGE_OVERWRITE mode."));
                 }
             }
         }
