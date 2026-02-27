@@ -35,6 +35,19 @@ public record ValidationError(@JsonProperty("row") @Nullable Integer row,
 
     public enum Code {
         ADAPTER_NOT_FOUND,
+        DUPLICATE_NODE,
+        DUPLICATE_TAG_NAME,
+        EDGE_TAG_CONFLICT,
+        INVALID_EXPIRY,
+        INVALID_FIELD_MAPPING,
+        INVALID_NODE_ID,
+        INVALID_USER_PROPERTIES,
+        INVALID_QOS,
+        INVALID_TAG_NAME,
+        INVALID_TOPIC,
+        MAPPING_WITHOUT_TAG,
+        TAG_IN_USE_BY_COMBINER,
+        TAG_CONFLICT,
         UPDATE_FAILED,
         WILDCARD_NO_DEFAULT
     }
