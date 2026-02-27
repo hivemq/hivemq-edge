@@ -30,7 +30,7 @@ public abstract class Plc4XSpecificAdapterConfig<T extends Plc4xToMqttConfig> im
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
-    @SuppressWarnings("UnusedVariable") // Field is used by Jackson for JSON deserialization via reflection
+    @SuppressWarnings("UnusedVariable") // Field is populated via Jackson deserialization (WRITE_ONLY)
     @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
     @ModuleConfigField(
             title = "Identifier",
