@@ -71,9 +71,8 @@ describe('TagEditorDrawer', () => {
     )
 
     cy.get('[role="dialog"][aria-label="Edit the tag"]').within(() => {
-      cy.get('[role="group"]:has(> label#root_name-label) input')
-        .clear()
-        .type(mockTags[1].name)
+      cy.get('[role="group"]:has(> label#root_name-label) input').clear()
+      cy.get('[role="group"]:has(> label#root_name-label) input').type(mockTags[1].name)
 
       cy.get('[role="alert"]').should('contain.text', 'This tag name is already used on this device')
 
