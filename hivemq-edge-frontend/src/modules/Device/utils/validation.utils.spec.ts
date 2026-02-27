@@ -1,5 +1,8 @@
 import { describe, expect } from 'vitest'
-import { customUniqueTagValidation, customUniqueTagInAdapterValidation } from '@/modules/Device/utils/validation.utils.ts'
+import {
+  customUniqueTagValidation,
+  customUniqueTagInAdapterValidation,
+} from '@/modules/Device/utils/validation.utils.ts'
 import { createErrorHandler } from '@rjsf/utils'
 import type { DomainTag, DomainTagList } from '@/api/__generated__'
 

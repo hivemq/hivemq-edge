@@ -17,6 +17,7 @@ Tag names must be **unique within a single adapter**. Global uniqueness across a
 ### What was incorrectly implemented
 
 `customUniqueTagValidation` in `validation.utils.ts` enforces **two** checks:
+
 1. Local duplicates within the current form ✅ correct, keep
 2. Edge-wide duplicates across all adapters ❌ incorrect, must be removed
 
@@ -32,22 +33,22 @@ Tag names must be **unique within a single adapter**. Global uniqueness across a
 
 ### Remove global uniqueness enforcement
 
-| File | Change |
-|------|--------|
-| `validation.utils.ts` | Remove `allTags` param + `edgeDuplicates` block from `customUniqueTagValidation` |
-| `DeviceTagForm.tsx` | Remove `useListDomainTags` import + usage; simplify `customValidate` call |
-| `validation.utils.spec.ts` | Remove global-uniqueness test case |
-| `translation.json` | Remove `validation.identifier.tag.uniqueEdge` key |
+| File                       | Change                                                                           |
+| -------------------------- | -------------------------------------------------------------------------------- |
+| `validation.utils.ts`      | Remove `allTags` param + `edgeDuplicates` block from `customUniqueTagValidation` |
+| `DeviceTagForm.tsx`        | Remove `useListDomainTags` import + usage; simplify `customValidate` call        |
+| `validation.utils.spec.ts` | Remove global-uniqueness test case                                               |
+| `translation.json`         | Remove `validation.identifier.tag.uniqueEdge` key                                |
 
 ### Add adapter-level uniqueness in the drawer
 
-| File | Change |
-|------|--------|
-| `validation.utils.ts` | Add `customUniqueTagInAdapterValidation(existingNames: string[])` |
-| `validation.utils.spec.ts` | Add unit tests for `customUniqueTagInAdapterValidation` |
-| `TagEditorDrawer.tsx` | Add `customValidate?: CustomValidator<DomainTag>` prop, pass to `ChakraRJSForm` |
-| `TagTableField.tsx` | Compute `otherTagNames` from `props.formData` (excluding `selectedItem`), pass validator to drawer |
-| `TagEditorDrawer.spec.cy.tsx` | Add test verifying error is shown on duplicate name |
+| File                          | Change                                                                                             |
+| ----------------------------- | -------------------------------------------------------------------------------------------------- |
+| `validation.utils.ts`         | Add `customUniqueTagInAdapterValidation(existingNames: string[])`                                  |
+| `validation.utils.spec.ts`    | Add unit tests for `customUniqueTagInAdapterValidation`                                            |
+| `TagEditorDrawer.tsx`         | Add `customValidate?: CustomValidator<DomainTag>` prop, pass to `ChakraRJSForm`                    |
+| `TagTableField.tsx`           | Compute `otherTagNames` from `props.formData` (excluding `selectedItem`), pass validator to drawer |
+| `TagEditorDrawer.spec.cy.tsx` | Add test verifying error is shown on duplicate name                                                |
 
 ---
 
@@ -63,13 +64,16 @@ DeviceTagList
 ```
 
 ### Key types
+
 - `DomainTag` — `{ name: string; description?: string; definition: object }`
 - `DomainTagList` — `{ items: DomainTag[] }`
 - `DeviceTagListContext` — `{ adapterId: string; capabilities?: string[] }`
 
 ### Data source for uniqueness check
+
 `props.formData` in `TagTableField` holds the full current tag list for the adapter.
 It covers both:
+
 - Tags already saved (loaded from API via React Query into `formData`)
 - Tags added in the form but not yet submitted
 
@@ -80,11 +84,11 @@ Exclude `selectedItem` index to get `otherTagNames`.
 ## Implementation Detail
 
 ### `customUniqueTagInAdapterValidation`
+
 ```typescript
 // Validates a single DomainTag against other tag names in the same adapter
 export const customUniqueTagInAdapterValidation =
-  (existingNames: string[]) =>
-  (formData: DomainTag | undefined, errors: FormValidation<DomainTag>) => {
+  (existingNames: string[]) => (formData: DomainTag | undefined, errors: FormValidation<DomainTag>) => {
     if (!formData?.name) return errors
     if (existingNames.includes(formData.name)) {
       errors.name?.addError(i18n.t('validation.identifier.tag.uniqueDevice', { ns: 'translation' }))
@@ -94,13 +98,14 @@ export const customUniqueTagInAdapterValidation =
 ```
 
 ### `customUniqueTagValidation` (simplified — local only)
+
 Remove `allTags` parameter entirely; keep only the local-duplicate check.
 
 ---
 
 ## Translation
 
-| Key | Value | Status |
-|-----|-------|--------|
-| `validation.identifier.tag.uniqueDevice` | "This tag name is already used on this device" | ✅ Keep |
-| `validation.identifier.tag.uniqueEdge` | "This tag name is already used on another devices" | ❌ Remove |
+| Key                                      | Value                                              | Status    |
+| ---------------------------------------- | -------------------------------------------------- | --------- |
+| `validation.identifier.tag.uniqueDevice` | "This tag name is already used on this device"     | ✅ Keep   |
+| `validation.identifier.tag.uniqueEdge`   | "This tag name is already used on another devices" | ❌ Remove |
