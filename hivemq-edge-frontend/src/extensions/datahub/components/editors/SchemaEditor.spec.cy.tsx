@@ -10,6 +10,8 @@ describe('SchemaEditor', () => {
     cy.on('uncaught:exception', (err) => {
       return !(err.message.includes('importScripts') || err.message.includes('worker'))
     })
+
+    cy.intercept('/api/v1/data-hub/schemas', { statusCode: 202, log: false })
   })
 
   describe('Create Mode (schema = undefined)', () => {

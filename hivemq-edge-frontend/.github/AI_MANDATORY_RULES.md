@@ -182,26 +182,100 @@ cy.window().should((win) => {
 
 ---
 
-## ⛔ RULE 7: DOCUMENTATION IN .tasks/, NOT IN CODE
+## ⛔ RULE 7: TASK DOCUMENTATION STRUCTURE & NAMING
 
-**Wrong**:
+**ALL task documentation MUST follow this structure. NO exceptions.**
+
+### Directory Naming (MANDATORY)
+
+**Format**: `.tasks/{task-id}-{task-name}/`
+
+**Rules**:
+
+- `{task-id}` is the Linear issue identifier (e.g., `EDG-40`, `EDG-38`)
+- `{task-name}` is lowercase-with-hyphens description (e.g., `mapping-ownership-review`, `technical-documentation`)
+- Directory name should match the git branch name, but WITHOUT forward slashes (branch: `feat/EDG-40/technical-documentation` → directory: `EDG-40-technical-documentation`)
+- Use the Linear issue key as shown in Linear (e.g., `EDG-40`, not just `40`)
+
+**Examples**:
 
 ```
-src/components/validation/README.md  ❌
+✅ .tasks/EDG-40-technical-documentation/     (Linear issue EDG-40)
+✅ .tasks/EDG-38-readonly-schemas/            (Linear issue EDG-38)
+❌ .tasks/technical-docs/                     (missing task-id)
+❌ .tasks/EDG-40_technical_documentation/     (wrong separator)
+❌ .tasks/40-technical-documentation/         (missing project prefix)
+❌ src/docs/technical-documentation/          (wrong location)
 ```
 
-**Correct**:
+### Document Naming Convention (MANDATORY)
+
+**Format**: `UPPERCASE_WITH_UNDERSCORES.md`
+
+**Examples**:
 
 ```
-.tasks/38512-js-validation/API_REFERENCE.md  ✅
+✅ TASK_BRIEF.md
+✅ TASK_PLAN.md
+✅ INDEX.md
+✅ EXECUTIVE_SUMMARY.md
+✅ API_REFERENCE.md
+❌ task-brief.md        (lowercase)
+❌ TaskBrief.md         (camelCase)
+❌ task_brief.md        (lowercase)
 ```
 
-**Why**: Project pattern is to keep documentation in `.tasks/`, not scattered in code directories.
+### Standard Document Types
 
-**Action when you create README in code**:
+**TASK_BRIEF.md** (When user describes the task)
+
+- Contains the original task description from the user
+- Requirements, goals, context
+- Created at task start
+
+**TASK_PLAN.md** (When planning is needed)
+
+- Your initial planning for the task
+- Implementation approach, steps, architecture decisions
+- Only create when task requires upfront planning
+
+**INDEX.md** (When task has multiple documents)
+
+- Table of contents for the task directory
+- Links to all other documents with brief descriptions
+- Create when you have 3+ documents
+
+**Other Documents** (Task-specific)
+
+- Name them clearly: `ARCHITECTURE_REVIEW.md`, `MIGRATION_GUIDE.md`, `QUICK_REFERENCE.md`
+- Keep names descriptive and scannable
+- Use UPPERCASE with underscores
+
+### Example Task Directory Structure
+
+```
+.tasks/38943-mapping-ownership-review/
+├── INDEX.md                          # Table of contents
+├── TASK_BRIEF.md                     # Original requirements
+├── TASK_PLAN.md                      # Implementation plan
+├── ARCHITECTURE_REVIEW.md            # Analysis document
+├── QUICK_REFERENCE.md                # Summary
+└── FINAL_SUMMARY.md                  # Completion report
+```
+
+### Wrong Patterns (NEVER DO THIS)
+
+```
+❌ src/components/validation/README.md        (docs in code)
+❌ docs/technical-stack.md                    (docs outside .tasks/)
+❌ .tasks/my-task/readme.md                   (lowercase naming)
+❌ .tasks/mapping-ownership/INDEX.md          (missing task-id)
+```
+
+### Action When You Violate This Rule
 
 - User: "This breaks pattern, move it to .tasks/"
-- AI: _immediately moves it, no questions_
+- AI: _immediately moves it, no questions, no explanations_
 
 ---
 
@@ -234,6 +308,178 @@ src/components/validation/README.md  ❌
 
 ---
 
+## ⛔ RULE 9: DIAGRAMS MUST USE MERMAID WITH ACCESSIBLE COLORS
+
+**CRITICAL: All diagrams in documentation MUST be created using Mermaid, not ASCII art or other formats.**
+
+### Why Mermaid is Mandatory
+
+- Supported in GitHub, GitLab, and most markdown environments
+- Version-controllable (text-based)
+- Maintainable and editable
+- Can be rendered as SVG or PNG
+- Better accessibility than ASCII diagrams
+
+### WCAG Color Contrast Requirements
+
+**CRITICAL: Mermaid diagrams MUST follow WCAG AA contrast ratios for accessibility.**
+
+**WCAG AA Minimum Contrast Ratios:**
+
+- **Normal text:** 4.5:1 minimum
+- **Large text:** 3:1 minimum (18pt+ or 14pt+ bold)
+- **UI components:** 3:1 minimum
+
+**Recommended Mermaid Color Palette (WCAG AA Compliant):**
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {
+  'primaryColor':'#0066CC',
+  'primaryTextColor':'#FFFFFF',
+  'primaryBorderColor':'#003D7A',
+  'secondaryColor':'#28A745',
+  'secondaryTextColor':'#FFFFFF',
+  'secondaryBorderColor':'#1E7E34',
+  'tertiaryColor':'#6C757D',
+  'tertiaryTextColor':'#FFFFFF',
+  'tertiaryBorderColor':'#495057'
+}}}%%
+```
+
+**Safe Color Combinations:**
+
+- Blue background (#0066CC) + White text (#FFFFFF) = 7.5:1 ✅
+- Green background (#28A745) + White text (#FFFFFF) = 4.5:1 ✅
+- Gray background (#6C757D) + White text (#FFFFFF) = 4.6:1 ✅
+- White background (#FFFFFF) + Dark blue text (#003D7A) = 11.6:1 ✅
+
+### Examples
+
+**❌ WRONG - ASCII Art:**
+
+```
+┌─────────────────────┐
+│  Main Process       │
+└──────────┬──────────┘
+           │
+           v
+    ┌──────────────┐
+    │ Sub Process  │
+    └──────────────┘
+```
+
+**✅ CORRECT - Mermaid with Accessible Colors:**
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#0066CC', 'primaryTextColor':'#FFFFFF'}}}%%
+flowchart TD
+    A[Main Process] --> B[Sub Process]
+```
+
+### Common Mermaid Diagram Types
+
+**Flowchart:**
+
+```mermaid
+flowchart LR
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Action 1]
+    B -->|No| D[Action 2]
+```
+
+**Sequence Diagram:**
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant API
+    User->>API: Request
+    API-->>User: Response
+```
+
+**State Diagram:**
+
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Running
+    Running --> [*]
+```
+
+### Testing Color Contrast
+
+**Before committing diagrams:**
+
+1. Render the Mermaid diagram (GitHub preview or mermaid.live)
+2. Use a color contrast checker:
+   - WebAIM Contrast Checker: https://webaim.org/resources/contrastchecker/
+   - Chrome DevTools Accessibility panel
+3. Verify ALL text/background combinations meet WCAG AA (4.5:1 minimum)
+
+**If contrast fails:**
+
+- Darken background colors
+- Use white text on dark backgrounds
+- Use dark text on white backgrounds
+- Avoid mid-tone backgrounds with light text
+
+### When to Update Existing Diagrams
+
+**If you encounter ASCII diagrams in existing documentation:**
+
+- Replace with Mermaid immediately
+- Ensure WCAG AA compliance
+- Test rendering in GitHub
+
+**Action when you create non-Mermaid diagrams:**
+
+- User: "Use Mermaid with accessible colors"
+- AI: _immediately converts to Mermaid, no questions_
+
+---
+
+## ⛔ RULE 10: RUN PRETTIER ON ALL MARKDOWN FILES YOU WRITE
+
+**Trigger**: You have written or modified any `.md` file.
+
+**Mandatory Action**:
+
+```bash
+pnpm prettier --write "docs/**/*.md" ".tasks/**/*.md"
+```
+
+**Why**: The IDE does not automatically apply Prettier on save for markdown files. AI agents write markdown constantly — every doc written without Prettier creates lint failures in CI and pollutes git diffs with whitespace noise.
+
+**What Prettier fixes in markdown**:
+
+- Table column alignment
+- Heading spacing
+- Code fence consistency
+- Trailing spaces
+- List formatting
+- Line length wrapping
+
+**When to run it**:
+
+- After writing any new `.md` file
+- After making edits to an existing `.md` file
+- **Always before committing** — treat it as part of the commit sanity check
+
+**You do NOT need to run it on**:
+
+- Files in `node_modules/` (excluded by `.prettierignore`)
+- Files in `src/` (TypeScript/TSX, handled separately)
+
+**Example failure pattern**:
+
+- AI writes `OVERVIEW.md` with misaligned table separators
+- `pnpm lint:prettier` fails in CI
+- Developer has to fix AI's formatting in a separate commit
+
+**Time wasted without this rule**: 5-15 minutes per doc × every session
+
+---
+
 ## 📋 CHECKLIST: BEFORE YOU SAY "DONE"
 
 When you think you're done with a task:
@@ -243,6 +489,9 @@ When you think you're done with a task:
 - [ ] You have actual test output showing pass counts
 - [ ] Any skipped tests have clear TODO comments with root cause
 - [ ] Documentation is in `.tasks/`, not in code
+- [ ] All diagrams use Mermaid (not ASCII art)
+- [ ] Mermaid diagrams use WCAG AA compliant colors (4.5:1 contrast minimum)
+- [ ] Ran prettier on all markdown files you wrote (see RULE 10)
 - [ ] You followed all guidelines referenced by the user
 - [ ] If user repeated an instruction, you re-read and executed it correctly
 

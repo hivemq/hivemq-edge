@@ -1,0 +1,17 @@
+document:
+  sections:
+    - 'What It Is'
+    - 'How It Works'
+    - 'How It Helps'
+    - 'Looking Ahead'
+  target_word_count: 500
+  word_count_tolerance: 0.1
+
+screenshots:
+  skill: capture-screenshots
+  flag: '--for blog'
+  storage: .tasks-log/screenshots/blog/
+
+version: '1.0.0'
+last_updated: '2026-02-20'
+maintainer: 'Edge Frontend Team'

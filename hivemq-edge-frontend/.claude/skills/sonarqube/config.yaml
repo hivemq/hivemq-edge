@@ -1,0 +1,181 @@
+# SonarQube Skill Configuration
+# This file defines the settings for SonarQube analysis
+
+sonarcloud:
+  # Base URL for SonarCloud API
+  base_url: https://sonarcloud.io
+
+  # Organization key (your SonarCloud organization)
+  organization: hivemq
+
+  # Project key (your SonarCloud project identifier)
+  project_key: hivemq_hivemq-edge
+
+  # API version
+  api_version: v1
+
+  # API endpoints (relative to base_url)
+  endpoints:
+    quality_gate: /api/qualitygates/project_status
+    measures: /api/measures/component
+    issues: /api/issues/search
+    hotspots: /api/hotspots/search
+
+github:
+  # GitHub repository (owner/repo format)
+  repository: hivemq/hivemq-edge
+
+  # Workflow names to check for SonarQube analysis
+  # The skill will look for ANY of these workflow names
+  workflow_names:
+    - 'SonarQube Analysis'
+    - 'SonarCloud Scan'
+    - 'Code Quality'
+    - 'CI' # Fallback if SonarQube runs in main CI workflow
+
+  # How long to wait for GH action to complete (seconds)
+  action_timeout: 300 # 5 minutes
+
+  # Polling interval when waiting for action (seconds)
+  polling_interval: 30
+
+quality_gate:
+  # Thresholds for metric interpretation
+  # Used for status emoji and warnings in report
+  thresholds:
+    # Bugs
+    bugs: 0
+    new_bugs: 0
+
+    # Vulnerabilities
+    vulnerabilities: 0
+    new_vulnerabilities: 0
+
+    # Code smells
+    code_smells_warning: 5 # Show warning if > 5
+    code_smells_error: 10 # Show error if > 10
+    new_code_smells_warning: 3
+    new_code_smells_error: 5
+
+    # Coverage (%)
+    coverage_warning: 70 # Show warning if < 70%
+    coverage_error: 80 # Show error if < 80%
+    new_coverage_warning: 70
+    new_coverage_error: 80
+
+    # Duplications (%)
+    duplications_warning: 3 # Show warning if > 3%
+    duplications_error: 5 # Show error if > 5%
+    new_duplications_warning: 3
+    new_duplications_error: 5
+
+    # Security hotspots
+    security_hotspots_warning: 0
+    new_security_hotspots_warning: 0
+
+  # Rating interpretation (A=1, B=2, C=3, D=4, E=5)
+  # Ratings at or below this value are considered passing
+  rating_pass: 2 # A or B acceptable
+  rating_warn: 3 # C triggers warning
+  # D or E are always errors
+
+  # Severity levels that block merge
+  blocking_severities:
+    - BLOCKER
+    - CRITICAL
+
+reporting:
+  # Include detailed issues breakdown in report by default
+  detailed_by_default: false
+
+  # Max issues to show in report per severity level
+  # (Prevents report from being too long)
+  max_issues_per_severity: 10
+
+  # Show historical trends (if multiple analyses available)
+  show_trends: true
+
+  # Show file-level metrics in detailed mode
+  show_file_metrics: true
+
+  # Emoji mapping for statuses and metrics
+  emoji:
+    # Status
+    passed: '✅'
+    failed: '❌'
+    warning: '⚠️'
+    info: 'ℹ️'
+    pending: '⏳'
+    error: '🔴'
+
+    # Issue types
+    bug: '🐛'
+    vulnerability: '🔒'
+    code_smell: '💡'
+    security_hotspot: '🔐'
+
+    # Metrics
+    coverage: '📊'
+    duplications: '📋'
+    maintainability: '🔧'
+    reliability: '⚙️'
+    security: '🛡️'
+
+    # Trends
+    up: '↑'
+    down: '↓'
+    stable: '→'
+
+  # Severity emoji mapping
+  severity_emoji:
+    BLOCKER: '🔴'
+    CRITICAL: '🟠'
+    MAJOR: '🟡'
+    MINOR: '🔵'
+    INFO: 'ℹ️'
+
+  # Rating emoji mapping (A-E)
+  rating_emoji:
+    A: '🟢'
+    B: '🟢'
+    C: '🟡'
+    D: '🟠'
+    E: '🔴'
+
+  # Report template sections (can be disabled)
+  sections:
+    quality_gate: true
+    new_code_metrics: true
+    overall_metrics: true
+    ratings: true
+    issues_breakdown: false # Only if --detailed
+    recommendations: true
+    quick_actions: true
+
+# Caching
+cache:
+  # Cache API responses to reduce rate limiting
+  enabled: true
+
+  # Cache duration (seconds)
+  duration: 300 # 5 minutes
+
+  # Cache file location (relative to skill directory)
+  file: .cache/sonarqube_data.json
+
+# Logging
+logging:
+  # Log level (debug, info, warn, error)
+  level: info
+
+  # Log file (relative to skill directory)
+  file: .logs/sonarqube.log
+
+  # Log API calls (for debugging)
+  log_api_calls: false
+
+# Metadata
+version: '1.0.0'
+last_updated: '2026-02-10'
+project: 'hivemq-edge-frontend'
+maintainer: 'Claude Code Skills Team'

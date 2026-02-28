@@ -98,6 +98,31 @@ describe('PrimarySelect', () => {
     cy.get('label + div [role="listbox"]').should('not.exist')
   })
 
+  it.skip('should capture screenshot for documentation', () => {
+    const mockPrimary: DataCombining = {
+      ...mockCombinerMapping,
+      sources: {
+        ...mockCombinerMapping.sources,
+        primary: {
+          id: 'my/tag/t3',
+          type: DataIdentifierReference.type.TAG,
+        },
+      },
+    }
+
+    cy.mountWithProviders(<PrimarySelect formData={mockPrimary} onChange={cy.stub} />, { wrapper })
+
+    // Open dropdown to show options
+    cy.get('label + div').click()
+    cy.get('label + div [role="listbox"]').should('be.visible')
+
+    // Screenshot: Dropdown with tag and topic filter options
+    cy.screenshot('combiner-primary-select', {
+      overwrite: true,
+      capture: 'viewport',
+    })
+  })
+
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(<PrimarySelect formData={mockCombiner.mappings.items[0]} onChange={cy.stub} />, { wrapper })
