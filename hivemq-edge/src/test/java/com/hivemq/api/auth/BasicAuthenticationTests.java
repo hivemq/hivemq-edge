@@ -30,6 +30,7 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;
+import com.hivemq.http.core.HttpResponse;
 import com.hivemq.http.core.HttpUrlConnectionClient;
 import java.io.IOException;
 import java.util.HashSet;
@@ -37,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -54,31 +56,27 @@ public class BasicAuthenticationTests {
 
     protected static JaxrsHttpServer server;
 
-    private static ApiConfigurationService apiConfigurationService;
-
     @BeforeAll
     public static void setUp() throws Exception {
         final var config = new JaxrsHttpServerConfiguration();
         config.setPort(TEST_HTTP_PORT);
+        // -- ensure we supplied our own test mapper as this can affect output
+        config.setObjectMapper(new ObjectMapper());
 
         final Set<IAuthenticationHandler> authenticationHandlers = new HashSet<>();
         authenticationHandlers.add(new BasicAuthenticationHandler(AuthTestUtils.createTestUsernamePasswordProvider()));
-
-        apiConfigurationService = mock(ApiConfigurationService.class);
+        final var apiConfigurationService = mock(ApiConfigurationService.class);
         when(apiConfigurationService.isEnforceApiAuth()).thenReturn(true);
+        final ApiAuthenticationFeature apiAuthenticationFeature =
+                new ApiAuthenticationFeature(authenticationHandlers, apiConfigurationService);
 
-        final var conf = new ResourceConfig() {
-            {
-                register(new ApiAuthenticationFeature(authenticationHandlers, apiConfigurationService));
-            }
-        };
-        conf.register(TestApiResource.class);
-        conf.register(TestPermitAllApiResource.class);
-        conf.register(TestResourceLevelRolesApiResource.class);
-        // -- ensure we supplied our own test mapper as this can effect output
-        final var mapper = new ObjectMapper();
-        config.setObjectMapper(mapper);
-        server = new JaxrsHttpServer(mock(), List.of(config), conf);
+        final var resourceConfig = new ResourceConfig();
+        resourceConfig.register(apiAuthenticationFeature);
+        resourceConfig.register(TestApiResource.class);
+        resourceConfig.register(TestPermitAllApiResource.class);
+        resourceConfig.register(TestResourceLevelRolesApiResource.class);
+
+        server = new JaxrsHttpServer(mock(), List.of(config), resourceConfig);
         server.startServer();
     }
 
@@ -87,189 +85,108 @@ public class BasicAuthenticationTests {
         server.stopServer();
     }
 
-    protected static String getTestServerAddress(
-            final @NotNull String protocol, final int port, final @NotNull String uri) {
-        return String.format("%s://%s:%s/%s", protocol, "localhost", port, uri);
+    protected static HttpResponse get(
+            final @NotNull String path, final @Nullable String username, final @Nullable String password)
+            throws IOException {
+        final Map<String, String> headers;
+        if (username != null && password != null) {
+            headers = Map.of(
+                    HttpConstants.AUTH_HEADER,
+                    BasicAuthenticationHandler.getBasicAuthenticationHeaderValue(username, password));
+        } else {
+            headers = null;
+        }
+        final var serverAddress = String.format("%s://%s:%s/%s", HTTP, "localhost", TEST_HTTP_PORT, path);
+        return HttpUrlConnectionClient.get(headers, serverAddress, CONNECT_TIMEOUT, READ_TIMEOUT);
     }
-
-    // TODO there are a number of tests where the message is the wrong way around (says allowed when it should say
-    // denied)
 
     @Test
     public void testGetSecuredResourceWithoutCreds() throws IOException {
-        final var response = HttpUrlConnectionClient.get(
-                null, getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertEquals(401, response.getStatusCode(), "Resource should be denied");
+        final var response = get("test/get/auth/admin", null, null);
+        assertEquals(401, response.getStatusCode(), "Resource should be denied, without credentials");
     }
 
     @Test
     public void testGetSecuredResourceWithInvalidUsername() throws IOException {
-        final var headers = Map.of(
-                HttpConstants.AUTH_HEADER,
-                BasicAuthenticationHandler.getBasicAuthenticationHeaderValue("testaWRONG", "test"));
-        final var response = HttpUrlConnectionClient.get(
-                headers,
-                getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"),
-                CONNECT_TIMEOUT,
-                READ_TIMEOUT);
-        assertEquals(401, response.getStatusCode(), "Resource should be denied");
+        final var response = get("test/get/auth/admin", "testaWRONG", "test");
+        assertEquals(401, response.getStatusCode(), "Resource should be denied, invalid username");
     }
 
     @Test
     public void testGetSecuredResourceWithInvalidPassword() throws IOException {
-        final var headers = Map.of(
-                HttpConstants.AUTH_HEADER,
-                BasicAuthenticationHandler.getBasicAuthenticationHeaderValue("testadmin", "incorrect"));
-        final var response = HttpUrlConnectionClient.get(
-                headers,
-                getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"),
-                CONNECT_TIMEOUT,
-                READ_TIMEOUT);
-        assertEquals(401, response.getStatusCode(), "Resource should be denied");
+        final var response = get("test/get/auth/admin", "testadmin", "incorrect");
+        assertEquals(401, response.getStatusCode(), "Resource should be denied, invalid password");
     }
 
     @Test
     public void testGetSecuredResourceWithValidCredsInvalidRole() throws IOException {
-        final var headers = Map.of(
-                HttpConstants.AUTH_HEADER,
-                BasicAuthenticationHandler.getBasicAuthenticationHeaderValue("testuser", "test"));
-        final var response = HttpUrlConnectionClient.get(
-                headers,
-                getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"),
-                CONNECT_TIMEOUT,
-                READ_TIMEOUT);
-        assertEquals(403, response.getStatusCode(), "Resource should be denied");
+        final var response = get("test/get/auth/admin", "testuser", "test");
+        assertEquals(403, response.getStatusCode(), "Resource should be denied, invalid role");
     }
 
     @Test
     public void testGetSecuredResourceWithValidCreds() throws IOException {
-        final var headers = Map.of(
-                HttpConstants.AUTH_HEADER,
-                BasicAuthenticationHandler.getBasicAuthenticationHeaderValue("testadmin", "test"));
-        final var response = HttpUrlConnectionClient.get(
-                headers,
-                getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"),
-                CONNECT_TIMEOUT,
-                READ_TIMEOUT);
-        assertEquals(200, response.getStatusCode(), "Resource should be accepted");
+        final var response = get("test/get/auth/admin", "testadmin", "test");
+        assertEquals(200, response.getStatusCode(), "Resource should be allowed");
     }
 
     @Test
     public void testGetSecuredResourceWithValidCredsMultipleRole() throws IOException {
-        final var headers = Map.of(
-                HttpConstants.AUTH_HEADER,
-                BasicAuthenticationHandler.getBasicAuthenticationHeaderValue("testadmin", "test"));
-        final var response = HttpUrlConnectionClient.get(
-                headers,
-                getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/user"),
-                CONNECT_TIMEOUT,
-                READ_TIMEOUT);
-        assertEquals(200, response.getStatusCode(), "Resource should be accepted");
+        final var response = get("test/get/auth/user", "testadmin", "test");
+        assertEquals(200, response.getStatusCode(), "Resource should be allowed");
     }
 
     @Test
     public void testUserInNoRole() throws IOException {
-        final var headers = Map.of(
-                HttpConstants.AUTH_HEADER,
-                BasicAuthenticationHandler.getBasicAuthenticationHeaderValue("testnorole", "test"));
-        final var response = HttpUrlConnectionClient.get(
-                headers,
-                getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/user"),
-                CONNECT_TIMEOUT,
-                READ_TIMEOUT);
-        assertEquals(403, response.getStatusCode(), "Resource should be denied");
+        final var response = get("test/get/auth/user", "testnorole", "test");
+        assertEquals(403, response.getStatusCode(), "Resource should be denied, no role");
     }
 
     @Test
     public void testPermitAllAllowsAnyAuthenticated() throws IOException {
-        final var headers = Map.of(
-                HttpConstants.AUTH_HEADER,
-                BasicAuthenticationHandler.getBasicAuthenticationHeaderValue("testnorole", "test"));
-        final var response = HttpUrlConnectionClient.get(
-                headers,
-                getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/permitall/get"),
-                CONNECT_TIMEOUT,
-                READ_TIMEOUT);
-        assertEquals(200, response.getStatusCode(), "Resource should be allowed");
+        final var response = get("test/permitall/get", "testnorole", "test");
+        assertEquals(200, response.getStatusCode(), "Resource should be allowed, permit all");
     }
 
     @Test
     public void testPermitAllRejectsNonAuthenticated() throws IOException {
-        final var response = HttpUrlConnectionClient.get(
-                null, getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/permitall/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertEquals(401, response.getStatusCode(), "Resource should be allowed");
+        final var response = get("test/permitall/get", null, null);
+        assertEquals(401, response.getStatusCode(), "Resource should be denied, permit all but not authenticated");
     }
 
     @Test
     public void testResourceLevelRoleRejectsNonAuthenticated() throws IOException {
-        final var response = HttpUrlConnectionClient.get(
-                null, getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/resource/get"), CONNECT_TIMEOUT, READ_TIMEOUT);
-        assertEquals(401, response.getStatusCode(), "Resource should not be allowed");
+        final var response = get("test/resource/get", null, null);
+        assertEquals(401, response.getStatusCode(), "Resource should be denied, permit all but not authenticated");
     }
 
     @Test
     public void testResourceLevelRoleAllowsAuthenticated() throws IOException {
-        final var headers = Map.of(
-                HttpConstants.AUTH_HEADER,
-                BasicAuthenticationHandler.getBasicAuthenticationHeaderValue("testuser", "test"));
-        final var response = HttpUrlConnectionClient.get(
-                headers,
-                getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/resource/get"),
-                CONNECT_TIMEOUT,
-                READ_TIMEOUT);
+        final var response = get("test/resource/get", "testuser", "test");
         assertEquals(200, response.getStatusCode(), "Resource should be allowed");
     }
 
-    // TODO this test is misnomed: the testuser is authenticated, they just don't have the required admin role
     @Test
-    public void testMethodsLevelOverridesResourceLevelRoleAllowsNonAuthenticated() throws IOException {
-        final var headers = Map.of(
-                HttpConstants.AUTH_HEADER,
-                BasicAuthenticationHandler.getBasicAuthenticationHeaderValue("testuser", "test"));
-        final var response = HttpUrlConnectionClient.get(
-                headers,
-                getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/resource/get/onlyadmin"),
-                CONNECT_TIMEOUT,
-                READ_TIMEOUT);
-        assertEquals(403, response.getStatusCode(), "Resource should be allowed");
+    public void testMethodsLevelOverridesResourceLevelRoleNotAdminRole() throws IOException {
+        final var response = get("test/resource/get/onlyadmin", "testuser", "test");
+        assertEquals(403, response.getStatusCode(), "Resource should be denied, not admin role");
     }
 
     @Test
     public void testMethodsLevelOverridesResourceLevelRoleAllowsAuthenticated() throws IOException {
-        final var headers = Map.of(
-                HttpConstants.AUTH_HEADER,
-                BasicAuthenticationHandler.getBasicAuthenticationHeaderValue("testadmin", "test"));
-        final var response = HttpUrlConnectionClient.get(
-                headers,
-                getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/resource/get/onlyadmin"),
-                CONNECT_TIMEOUT,
-                READ_TIMEOUT);
+        final var response = get("test/resource/get/onlyadmin", "testadmin", "test");
         assertEquals(200, response.getStatusCode(), "Resource should be allowed");
     }
 
     @Test
-    public void testPermitAllOverriddenByMethodNonAuthenticated() throws IOException {
-        final var headers = Map.of(
-                HttpConstants.AUTH_HEADER,
-                BasicAuthenticationHandler.getBasicAuthenticationHeaderValue("testuser", "test"));
-        final var response = HttpUrlConnectionClient.get(
-                headers,
-                getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/permitall/get/adminonly"),
-                CONNECT_TIMEOUT,
-                READ_TIMEOUT);
-        assertEquals(403, response.getStatusCode(), "Resource should not be allowed");
+    public void testPermitAllOverriddenByMethodNotAdminRole() throws IOException {
+        final var response = get("test/permitall/get/adminonly", "testuser", "test");
+        assertEquals(403, response.getStatusCode(), "Resource should be denied, not admin role");
     }
 
     @Test
     public void testPermitAllOverriddenByMethodAuthenticated() throws IOException {
-        final var headers = Map.of(
-                HttpConstants.AUTH_HEADER,
-                BasicAuthenticationHandler.getBasicAuthenticationHeaderValue("testadmin", "test"));
-        final var response = HttpUrlConnectionClient.get(
-                headers,
-                getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/permitall/get/adminonly"),
-                CONNECT_TIMEOUT,
-                READ_TIMEOUT);
-        assertEquals(200, response.getStatusCode(), "Resource should not be allowed");
+        final var response = get("test/permitall/get/adminonly", "testadmin", "test");
+        assertEquals(200, response.getStatusCode(), "Resource should be allowed");
     }
 }
