@@ -12,7 +12,6 @@ properties:
     enum:
       - config-writeable
       - bi-directional protocol adapters
-      - control-plane-connectivity
       - data-hub
       - mqtt-persistence
       - pulse-asset-management
