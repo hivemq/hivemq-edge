@@ -43,6 +43,10 @@ gradlePlugin {
             id = "$group.$name"
             implementationClass = "$group.errorprone.ErrorProneConventionPlugin"
         }
+        create("nullaway-convention") {
+            id = "$group.$name"
+            implementationClass = "$group.nullaway.NullAwayConventionPlugin"
+        }
         create("spotless-convention") {
             id = "$group.$name"
             implementationClass = "$group.spotless.SpotlessConventionPlugin"
