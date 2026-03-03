@@ -31,8 +31,13 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
   const { formData, formContext, uiSchema, registry } = props
 
   // Per-mapping selectedSources state (not shared across mappings)
-  // This prevents showing tags from mapping1 when editing mapping2
-  const [selectedSources, setSelectedSources] = useState<SelectedSources | undefined>(undefined)
+  // This prevents showing tags from mapping1 when editing mapping2.
+  // Initialized synchronously via lazy initializer so selectedSources is never undefined
+  // on first render — this prevents the backward compat path in CombinedEntitySelect from
+  // showing unscoped tag names before the useEffect below fires.
+  const [selectedSources, setSelectedSources] = useState<SelectedSources>(() =>
+    reconstructSelectedSources(formData, formContext)
+  )
 
   // Detect if queries are currently loaded (at least one query has data)
   const queriesAreLoaded = useMemo(() => {
@@ -40,24 +45,13 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
     return formContext.entityQueries.some((eq) => eq.query.data !== undefined)
   }, [formContext?.entityQueries])
 
-  // Initialize selectedSources for this specific mapping
+  // Re-initialize selectedSources when:
+  // 1. Mapping ID changes (editing different mapping)
+  // 2. Queries become available (false→true transition) — Strategy 3 context lookup
+  //    needs query data that isn't available during the synchronous initializer above
+  // Does NOT re-run on every query update (dataUpdatedAt) to avoid cascade
   useEffect(() => {
-    if (!formData) {
-      setSelectedSources({ tags: [], topicFilters: [] })
-      return
-    }
-
-    // Reconstruct from this mapping's instructions
-    // Runs when:
-    // 1. Mapping ID changes (editing different mapping)
-    // 2. Queries become available (fixes race condition where Strategy 3 context lookup
-    //    fails because queries haven't loaded yet on initial render)
-    setSelectedSources(() => reconstructSelectedSources(formData, formContext))
-
-    // Only re-run when:
-    // - formData.id changes (different mapping) - prevents cascade during edits
-    // - queriesAreLoaded changes (false→true transition) - fixes race condition
-    // Does NOT re-run on every query update (dataUpdatedAt) to avoid cascade
+    setSelectedSources(reconstructSelectedSources(formData, formContext))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData?.id, queriesAreLoaded])
 

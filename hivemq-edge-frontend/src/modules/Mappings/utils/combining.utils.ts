@@ -266,61 +266,52 @@ export const reconstructSelectedSources = (
     return { tags: [], topicFilters: [] }
   }
 
-  // Reconstruct tags with scope
-  const tags =
-    formData.sources.tags?.map((tagId) => {
-      // Strategy 1: Check if this is the primary
-      if (
-        formData.sources.primary?.id === tagId &&
-        formData.sources.primary?.type === DataIdentifierReference.type.TAG &&
-        formData.sources.primary?.scope
-      ) {
-        return formData.sources.primary
-      }
+  // dirsInst is the set of all distinct DIRs for tags from all the instructions
+  const dirsInstMap = new Map<string, DataIdentifierReference>()
+  for (const inst of formData?.instructions || []) {
+    const ref = inst.sourceRef
+    if (ref?.type === DataIdentifierReference.type.TAG && ref.id) {
+      const key = `${ref.scope ?? ''}::${ref.id}`
+      if (!dirsInstMap.has(key)) dirsInstMap.set(key, ref)
+    }
+  }
+  const dirsInst = [...dirsInstMap.values()]
 
-      // Strategy 2: Find scope from instructions
-      const instruction = formData.instructions?.find(
-        (inst) => inst.sourceRef?.id === tagId && inst.sourceRef?.type === DataIdentifierReference.type.TAG
-      )
-      if (instruction?.sourceRef?.scope) {
-        return instruction.sourceRef
+  // dirsAdpt is the set of all distinct DIRs for tags for all the adapters
+  const dirsAdptMap = new Map<string, DataIdentifierReference>()
+  for (const { entity, query } of formContext?.entityQueries || []) {
+    const items = query.data?.items || []
+    if (items.length > 0 && (items[0] as DomainTag).name) {
+      for (const tag of items as DomainTag[]) {
+        const ref = { id: tag.name, type: DataIdentifierReference.type.TAG, scope: entity.id }
+        const key = `${ref.scope ?? ''}::${ref.id}`
+        if (!dirsAdptMap.has(key)) dirsAdptMap.set(key,ref)
       }
+    }
+  }
+  const dirsAdpt = [...dirsAdptMap.values()]
 
-      // Strategy 3: Fallback to context lookup
-      const adapterId = getAdapterIdForTag(tagId, formContext)
-      return {
-        id: tagId,
-        type: DataIdentifierReference.type.TAG,
-        scope: adapterId ?? null,
-      }
-    }) || []
+  // create the DIRs for all the tags
+  // we compare how often a tagname appears in sources.tags, the instructions, and the adapters
+  // we take the DIRs from instructions if the count matches, otherwise from the adapters
+  // that way the worst we might do is to add a DIR that wasn't there before
+  const dirsTags: DataIdentifierReference[] = []
+  for (const t of new Set(formData.sources.tags ?? [])) {
+    const tagsEqt = formData.sources.tags!.filter((tag) => tag === t)
+    const dirsInstEqt = dirsInst.filter((ref) => ref.id === t)
+    const dirsAdptEqt = dirsAdpt.filter((ref) => ref.id === t)
+    if (tagsEqt.length === dirsInstEqt.length) {
+      dirsTags.push(...dirsInstEqt)
+    } else {
+      dirsTags.push(...dirsAdptEqt)
+    }
+  }
 
-  // Reconstruct topic filters (scope always null)
-  const topicFilters =
-    formData.sources.topicFilters?.map((tfId) => {
-      // Check if this is the primary (to preserve exact reference)
-      if (
-        formData.sources.primary?.id === tfId &&
-        formData.sources.primary?.type === DataIdentifierReference.type.TOPIC_FILTER
-      ) {
-        return { ...formData.sources.primary, scope: null }
-      }
+  // create the DIRs for all the topicFilters
+  const dirsTopics: DataIdentifierReference[] = []
+  for (const t of formData.sources.topicFilters ?? []) {
+    dirsTopics.push({ id: t, type: DataIdentifierReference.type.TOPIC_FILTER, scope: null })
+  }
 
-      // Check instructions
-      const instruction = formData.instructions?.find(
-        (inst) => inst.sourceRef?.id === tfId && inst.sourceRef?.type === DataIdentifierReference.type.TOPIC_FILTER
-      )
-      if (instruction?.sourceRef) {
-        return { ...instruction.sourceRef, scope: null }
-      }
-
-      // Default topic filter
-      return {
-        id: tfId,
-        type: DataIdentifierReference.type.TOPIC_FILTER,
-        scope: null,
-      }
-    }) || []
-
-  return { tags, topicFilters }
+  return { tags : dirsTags, topicFilters : dirsTopics }
 }
