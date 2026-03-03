@@ -56,7 +56,7 @@ const SchemaMerger: FC<SchemaMergerProps> = ({ formData, formContext, onClose, o
     const tagIndexMap = new Map(
       references
         .filter((r) => r.type === DataIdentifierReference.type.TAG)
-        .map((ref, index) => [`${ref.id}::${ref.scope ?? ''}`, index])
+        .map((ref, index) => [JSON.stringify([ref.id, ref.scope ?? null]), index])
     )
     const topicFilterIndexMap = new Map(
       references
@@ -72,7 +72,7 @@ const SchemaMerger: FC<SchemaMergerProps> = ({ formData, formContext, onClose, o
       properties.forEach((property, pathIndex) => {
         property.metadata = reference
         if (reference.type === DataIdentifierReference.type.TAG) {
-          const index = tagIndexMap.get(`${reference.id}::${reference.scope ?? ''}`)
+          const index = tagIndexMap.get(JSON.stringify([reference.id, reference.scope ?? null]))
           property.origin = `${STUB_TAG_PROPERTY}${index}`
         } else if (reference.type === DataIdentifierReference.type.TOPIC_FILTER) {
           const index = topicFilterIndexMap.get(reference.id)

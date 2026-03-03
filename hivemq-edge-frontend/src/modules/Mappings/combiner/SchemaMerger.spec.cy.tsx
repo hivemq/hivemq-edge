@@ -105,7 +105,7 @@ describe('SchemaMerger', () => {
 
     it('should display one property per source, with no duplicates', () => {
       cy.mountWithProviders(
-        <SchemaMerger formData={formData} formContext={formContext} onUpload={cy.stub} onClose={cy.stub} />,
+        <SchemaMerger formData={formData} formContext={formContext} onUpload={cy.stub()} onClose={cy.stub()} />,
         { wrapper: Wrapper }
       )
 
@@ -115,7 +115,7 @@ describe('SchemaMerger', () => {
       cy.getByTestId('schema-infer-merged').within(() => {
         cy.get('[data-testid="property-name"]').should('have.length', 2)
 
-        // The two properties must have distinct display names (not both 'tg1_temperature')
+        // The two properties must have distinct display names (not both 'tg1_value')
         cy.get('[data-testid="property-name"]')
           .eq(0)
           .invoke('text')
@@ -129,7 +129,7 @@ describe('SchemaMerger', () => {
       const onUpload = cy.stub().as('onUpload')
 
       cy.mountWithProviders(
-        <SchemaMerger formData={formData} formContext={formContext} onUpload={onUpload} onClose={cy.stub} />,
+        <SchemaMerger formData={formData} formContext={formContext} onUpload={onUpload} onClose={cy.stub()} />,
         { wrapper: Wrapper }
       )
 
