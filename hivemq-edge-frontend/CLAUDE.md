@@ -160,10 +160,8 @@ may pick `Icebox` first.
 
 **Always use the state ID directly:**
 
-| State   | ID                                       |
-| ------- | ---------------------------------------- |
-| Backlog | `24b6629e-9193-4e4c-8dd7-0f3f5a720a1e`  |
-| Icebox  | `a1273fce-4b0f-45d1-ba11-2ca668859aac`  |
+- **Backlog** → `24b6629e-9193-4e4c-8dd7-0f3f5a720a1e`
+- **Icebox** → `a1273fce-4b0f-45d1-ba11-2ca668859aac`
 
 ```typescript
 // ✅ Reliable
