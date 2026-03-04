@@ -53,13 +53,13 @@ triggers the same `useMemo` chain.
 
 ## 3. All `validator.ajv.compile()` Call Sites
 
-| File | Line | Context | Has $id risk? |
-|---|---|---|---|
-| `src/modules/TopicFilters/utils/topic-filter.schema.ts` | 47 | Destination schema upload validation | **YES** — user schemas may have `$id` |
-| `src/components/rjsf/Form/ChakraRJSForm.tsx` | 103 | Batch upload post-validation (already strips `$schema`) | Low — adapter config schemas rarely have `$id` |
-| `src/extensions/datahub/utils/node.utils.ts` | 398 | DataHub node validation | Low — internal schemas |
-| `src/components/rjsf/BatchModeMappings/components/MappingsValidationStep.tsx` | 130 | Mappings validation step | Low — known internal schema |
-| `src/modules/ProtocolAdapters/utils/export.utils.ts` | 75 | Adapter export validation | Low — internal schemas |
+| File                                                                          | Line | Context                                                 | Has $id risk?                                  |
+| ----------------------------------------------------------------------------- | ---- | ------------------------------------------------------- | ---------------------------------------------- |
+| `src/modules/TopicFilters/utils/topic-filter.schema.ts`                       | 47   | Destination schema upload validation                    | **YES** — user schemas may have `$id`          |
+| `src/components/rjsf/Form/ChakraRJSForm.tsx`                                  | 103  | Batch upload post-validation (already strips `$schema`) | Low — adapter config schemas rarely have `$id` |
+| `src/extensions/datahub/utils/node.utils.ts`                                  | 398  | DataHub node validation                                 | Low — internal schemas                         |
+| `src/components/rjsf/BatchModeMappings/components/MappingsValidationStep.tsx` | 130  | Mappings validation step                                | Low — known internal schema                    |
+| `src/modules/ProtocolAdapters/utils/export.utils.ts`                          | 75   | Adapter export validation                               | Low — internal schemas                         |
 
 The **primary fix target** is line 47 in `topic-filter.schema.ts`. The other sites handle
 internal/machine-generated schemas that are unlikely to carry a user-supplied `$id`.
@@ -85,8 +85,8 @@ validator.ajv.compile(schemaForValidation)
 
 **Pros**: One-line change, zero behaviour change for callers, fully reversible.
 **Cons**: If the schema contains `$ref` pointing to its own `$id`
-  (self-referential schema), AJV cannot resolve the `$ref` at compile time.
-  Practically impossible for simple destination schemas.
+(self-referential schema), AJV cannot resolve the `$ref` at compile time.
+Practically impossible for simple destination schemas.
 
 ---
 
@@ -99,7 +99,7 @@ validator.ajv.compile(json)
 
 **Pros**: Explicit lifecycle management; handles `$ref → $id` within the same schema.
 **Cons**: More lines; mutates the global cache which could affect other in-flight
-  uses (unlikely but possible under concurrent renders).
+uses (unlikely but possible under concurrent renders).
 
 ---
 
@@ -174,12 +174,14 @@ This test currently **fails** (reproduces the bug). After the fix it will pass.
 ### `src/components/rjsf/Form/ChakraRJSForm.tsx` (optional, precautionary)
 
 Line 102–103 currently does:
+
 ```typescript
 const { $schema, ...rest } = schema
 const validate = validator.ajv.compile(rest)
 ```
 
 This already strips `$schema`. Apply the same pattern to `$id`:
+
 ```typescript
 const { $schema, $id: _$id, ...rest } = schema
 const validate = validator.ajv.compile(rest)
@@ -189,10 +191,10 @@ const validate = validator.ajv.compile(rest)
 
 ## 7. Test Coverage Plan
 
-| Test | File | Purpose |
-|---|---|---|
+| Test                                               | File                          | Purpose                                          |
+| -------------------------------------------------- | ----------------------------- | ------------------------------------------------ |
 | "should not throw when called twice with same $id" | `topic-filter.schema.spec.ts` | Reproduces bug; must fail before fix, pass after |
-| Existing suite | `topic-filter.schema.spec.ts` | Must continue to pass |
+| Existing suite                                     | `topic-filter.schema.spec.ts` | Must continue to pass                            |
 
 No Cypress component tests needed — this is a pure utility function bug.
 
