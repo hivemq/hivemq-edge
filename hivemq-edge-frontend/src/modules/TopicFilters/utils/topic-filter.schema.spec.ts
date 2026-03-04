@@ -40,7 +40,7 @@ describe('decodeDataUriJsonSchema', () => {
   })
 
   it('should return a valid json object', () => {
-    expect(decodeDataUriJsonSchema(MOCK_TOPIC_FILTER_SCHEMA_VALID)).toBeFalsy
+    expect(decodeDataUriJsonSchema(MOCK_TOPIC_FILTER_SCHEMA_VALID)).toBeTruthy()
   })
 
   it('should not throw when called twice with a schema that has $id (EDG-173)', () => {
