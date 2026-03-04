@@ -24,7 +24,7 @@ tasks.register("clean") {
 tasks.register("build") {
     group = "build"
 
-    dependsOn(gradle.includedBuilds.map { it.task(":$name") })
+    dependsOn(gradle.includedBuilds.filter { it.name != "hivemq-edge-frontend" }.map { it.task(":$name") })
 }
 
 tasks.register("license") {
@@ -118,6 +118,7 @@ dependencies {
     hivemq("com.hivemq:hivemq-edge")
     // ** module-deps ** //
     edgeModule("com.hivemq:hivemq-edge-module-etherip")
+    edgeModule("com.hivemq:hivemq-edge-module-etherip-cip-odva")
     edgeModule("com.hivemq:hivemq-edge-module-file")
     edgeModule("com.hivemq:hivemq-edge-module-http")
     edgeModule("com.hivemq:hivemq-edge-module-plc4x")
@@ -146,6 +147,7 @@ val hivemqEdgeZip by tasks.registering(Zip::class) {
 val edgeProjectsToUpdate = setOf(
     "hivemq-edge",
     "hivemq-edge-module-etherip",
+    "hivemq-edge-module-etherip-cip-odva",
     "hivemq-edge-module-file",
     "hivemq-edge-module-http",
     "hivemq-edge-module-modbus",
