@@ -238,14 +238,14 @@ export const getAdapterIdForTag = (tagId: string, formContext?: CombinerContext)
  * Strategy:
  * 1. Try to find scope from primary (if it matches)
  * 2. Try to find scope from instructions
- * 3. Fallback to context lookup
  *
  * @param formData - The combiner data
- * @param formContext - The combiner context with entityQueries
+ * @param _formContext - deprecated context. No fallback
  * @returns Selected sources with full ownership information
  */
 export const reconstructSelectedSources = (
   formData?: DataCombining,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _formContext?: CombinerContext
 ): { tags: DataIdentifierReference[]; topicFilters: DataIdentifierReference[] } => {
   if (!formData?.sources) {
