@@ -42,6 +42,18 @@ describe('decodeDataUriJsonSchema', () => {
   it('should return a valid json object', () => {
     expect(decodeDataUriJsonSchema(MOCK_TOPIC_FILTER_SCHEMA_VALID)).toBeFalsy
   })
+
+  it('should not throw when called twice with a schema that has $id (EDG-173)', () => {
+    // Schemas with $id would cause AJV to throw "schema with key or id already exists"
+    // on the second call if $id were passed to validator.ajv.compile()
+    const schemaWithId = encodeDataUriJsonSchema({
+      $id: 'urn:test:edg-173-duplicate-id',
+      type: 'object',
+      properties: { value: { type: 'number' } },
+    })
+    expect(() => decodeDataUriJsonSchema(schemaWithId)).not.toThrow()
+    expect(() => decodeDataUriJsonSchema(schemaWithId)).not.toThrow()
+  })
 })
 
 describe('encodeDataUriJsonSchema', () => {
