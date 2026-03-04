@@ -124,7 +124,9 @@ describe('DataCombiningTableField', () => {
           .eq(0)
           .should(
             'have.text',
-            formatTopicString(formatOwnershipString({ id: 'my/tag/t1', type: DataIdentifierReference.type.TAG, scope: 'my-adapter' }))
+            formatTopicString(
+              formatOwnershipString({ id: 'my/tag/t1', type: DataIdentifierReference.type.TAG, scope: 'my-adapter' })
+            )
           )
         cy.getByTestId('topic-wrapper').eq(0).find('svg').should('have.attr', 'aria-label', 'Tag')
 
@@ -132,12 +134,16 @@ describe('DataCombiningTableField', () => {
           .eq(1)
           .should(
             'have.text',
-            formatTopicString(formatOwnershipString({ id: 'my/tag/t3', type: DataIdentifierReference.type.TAG, scope: 'my-adapter' }))
+            formatTopicString(
+              formatOwnershipString({ id: 'my/tag/t3', type: DataIdentifierReference.type.TAG, scope: 'my-adapter' })
+            )
           )
         cy.getByTestId('topic-wrapper').eq(1).find('svg').should('have.attr', 'aria-label', 'Tag')
         cy.getByTestId('primary-wrapper').should(
           'have.text',
-          formatTopicString(formatOwnershipString({ id: 'my/tag/t3', type: DataIdentifierReference.type.TAG, scope: 'my-adapter' }))
+          formatTopicString(
+            formatOwnershipString({ id: 'my/tag/t3', type: DataIdentifierReference.type.TAG, scope: 'my-adapter' })
+          )
         )
         cy.getByTestId('primary-wrapper').find('svg').should('have.attr', 'aria-label', 'Primary key')
 

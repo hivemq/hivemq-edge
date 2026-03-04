@@ -51,11 +51,7 @@ const AutoMappingWrapper: FC<AutoMappingWrapperProps> = ({ formData, onChange })
 
   return (
     <Box>
-      <AutoMapping
-        formData={formData}
-        formContext={{ ...formContext, selectedSources }}
-        onChange={onChange}
-      />
+      <AutoMapping formData={formData} formContext={{ ...formContext, selectedSources }} onChange={onChange} />
       <Card mt={50} variant="filled" size="sm">
         <CardHeader>Testing Dashboard</CardHeader>
         <CardBody data-testid="test-context" as={Code}>
