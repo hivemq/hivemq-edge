@@ -275,6 +275,11 @@ export const reconstructSelectedSources = (
       if (!dirsInstMap.has(key)) dirsInstMap.set(key, ref)
     }
   }
+  const ref = formData?.sources.primary || {}
+  if (ref?.type === DataIdentifierReference.type.TAG && ref.id) {
+    const key = `${ref.scope ?? ''}::${ref.id}`
+    if (!dirsInstMap.has(key)) dirsInstMap.set(key, ref)
+  }
   const dirsInst = [...dirsInstMap.values()]
 
   // dirsAdpt is the set of all distinct DIRs for tags for all the adapters
