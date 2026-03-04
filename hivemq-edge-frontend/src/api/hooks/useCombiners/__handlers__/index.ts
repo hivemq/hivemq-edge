@@ -85,7 +85,23 @@ export const mockCombinerMapping: DataCombining = {
     topicFilters: ['my/topic/+/temp'],
   },
   destination: { topic: 'my/topic' },
-  instructions: [],
+  instructions: [
+    {
+      sourceRef: { id: 'my/tag/t1', type: DataIdentifierReference.type.TAG, scope: 'my-adapter' },
+      source: '$.value',
+      destination: '$.t1_value',
+    },
+    {
+      sourceRef: { id: 'my/tag/t3', type: DataIdentifierReference.type.TAG, scope: 'my-adapter' },
+      source: '$.value',
+      destination: '$.t3_value',
+    },
+    {
+      sourceRef: { id: 'my/topic/+/temp', type: DataIdentifierReference.type.TOPIC_FILTER, scope: null },
+      source: '$.value',
+      destination: '$.tf_value',
+    },
+  ],
 }
 
 export const MOCK_COMBINER_ASSET: Combiner = {

@@ -102,7 +102,7 @@ export const getCombinedDataEntityReference = (
   }, [])
 }
 
-export const getFilteredDataReferences = (formData?: DataCombining, formContext?: CombinerContext) => {
+export const getFilteredDataReferences = (_formData?: DataCombining, formContext?: CombinerContext) => {
   // Use selectedSources from context if available (Phase 2+)
   // This provides full ownership information without reconstruction
   if (formContext?.selectedSources) {
@@ -122,21 +122,7 @@ export const getFilteredDataReferences = (formData?: DataCombining, formContext?
     }, [])
   }
 
-  // Fallback to old behavior (Phase 1, backward compatibility)
-  const tags = formData?.sources?.tags || []
-  const topicFilters = formData?.sources?.topicFilters || []
-  const indexes = [...tags, ...topicFilters]
-
-  const allDataReferences = getDataReference(formContext)
-
-  const selectedReferences = allDataReferences?.filter((dataReference) => indexes.includes(dataReference.id)) || []
-  return selectedReferences.reduce<DataReference[]>((acc, current) => {
-    const isAlreadyIn = acc.find((item) => item.id === current.id && item.type === current.type)
-    if (!isAlreadyIn) {
-      return acc.concat([current])
-    }
-    return acc
-  }, [])
+  return []
 }
 
 export const getSchemasFromReferences = (
@@ -260,67 +246,31 @@ export const getAdapterIdForTag = (tagId: string, formContext?: CombinerContext)
  */
 export const reconstructSelectedSources = (
   formData?: DataCombining,
-  formContext?: CombinerContext
+  _formContext?: CombinerContext
 ): { tags: DataIdentifierReference[]; topicFilters: DataIdentifierReference[] } => {
   if (!formData?.sources) {
     return { tags: [], topicFilters: [] }
   }
 
-  // Reconstruct tags with scope
-  const tags =
-    formData.sources.tags?.map((tagId) => {
-      // Strategy 1: Check if this is the primary
-      if (
-        formData.sources.primary?.id === tagId &&
-        formData.sources.primary?.type === DataIdentifierReference.type.TAG &&
-        formData.sources.primary?.scope
-      ) {
-        return formData.sources.primary
-      }
+  // Derive unique source references from instructions (authoritative, fully scoped)
+  const fromInstructions = (formData.instructions ?? [])
+    .filter((inst) => inst.sourceRef != null)
+    .map((inst) => inst.sourceRef!)
 
-      // Strategy 2: Find scope from instructions
-      const instruction = formData.instructions?.find(
-        (inst) => inst.sourceRef?.id === tagId && inst.sourceRef?.type === DataIdentifierReference.type.TAG
-      )
-      if (instruction?.sourceRef?.scope) {
-        return instruction.sourceRef
-      }
+  // Also prepend scoped primary if not already represented
+  const primary = formData.sources.primary
+  const all: DataIdentifierReference[] = []
+  if (primary?.scope) all.push(primary)
+  all.push(...fromInstructions)
 
-      // Strategy 3: Fallback to context lookup
-      const adapterId = getAdapterIdForTag(tagId, formContext)
-      return {
-        id: tagId,
-        type: DataIdentifierReference.type.TAG,
-        scope: adapterId ?? null,
-      }
-    }) || []
+  // Deduplicate by id + type + scope
+  const unique = all.reduce<DataIdentifierReference[]>((acc, ref) => {
+    const exists = acc.find((r) => r.id === ref.id && r.type === ref.type && r.scope === ref.scope)
+    return exists ? acc : [...acc, ref]
+  }, [])
 
-  // Reconstruct topic filters (scope always null)
-  const topicFilters =
-    formData.sources.topicFilters?.map((tfId) => {
-      // Check if this is the primary (to preserve exact reference)
-      if (
-        formData.sources.primary?.id === tfId &&
-        formData.sources.primary?.type === DataIdentifierReference.type.TOPIC_FILTER
-      ) {
-        return { ...formData.sources.primary, scope: null }
-      }
-
-      // Check instructions
-      const instruction = formData.instructions?.find(
-        (inst) => inst.sourceRef?.id === tfId && inst.sourceRef?.type === DataIdentifierReference.type.TOPIC_FILTER
-      )
-      if (instruction?.sourceRef) {
-        return { ...instruction.sourceRef, scope: null }
-      }
-
-      // Default topic filter
-      return {
-        id: tfId,
-        type: DataIdentifierReference.type.TOPIC_FILTER,
-        scope: null,
-      }
-    }) || []
-
-  return { tags, topicFilters }
+  return {
+    tags: unique.filter((r) => r.type === DataIdentifierReference.type.TAG),
+    topicFilters: unique.filter((r) => r.type === DataIdentifierReference.type.TOPIC_FILTER),
+  }
 }

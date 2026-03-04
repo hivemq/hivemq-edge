@@ -21,15 +21,6 @@ import type { CombinerContext } from '@/modules/Mappings/types.ts'
 import ManagedAssetSelect from '@/modules/Pulse/components/assets/ManagedAssetSelect.tsx'
 import AssetNameCell from '@/modules/Pulse/components/assets/AssetNameCell.tsx'
 
-const getScopeForTag = (tagId: string, row: DataCombining): string | null => {
-  if (row.sources.primary?.id === tagId && row.sources.primary.type === DataIdentifierReference.type.TAG) {
-    return row.sources.primary.scope ?? null
-  }
-  const inst = row.instructions?.find(
-    (i) => i.sourceRef?.id === tagId && i.sourceRef?.type === DataIdentifierReference.type.TAG
-  )
-  return inst?.sourceRef?.scope ?? null
-}
 
 export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema, CombinerContext>> = (props) => {
   const { t } = useTranslation()
@@ -58,10 +49,6 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
       id: uuidv4(),
       sources: {
         primary: { id: '', type: DataIdentifierReference.type.TAG },
-        // DEPRECATED: sources.tags and sources.topicFilters will be removed in future API version
-        // Backend reconstructs from instructions, so empty arrays are acceptable
-        tags: [],
-        topicFilters: [],
       },
       destination: { topic: asset.topic, assetId: asset.id, schema: asset.schema },
       instructions: [],
@@ -75,10 +62,6 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
         id: uuidv4(),
         sources: {
           primary: { id: '', type: DataIdentifierReference.type.TAG },
-          // DEPRECATED: sources.tags and sources.topicFilters will be removed in future API version
-          // Backend reconstructs from instructions, so empty arrays are acceptable
-          tags: [],
-          topicFilters: [],
         },
         destination: { topic: '' },
         instructions: [],
@@ -114,37 +97,38 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
         accessorKey: 'sources',
         header: t('pulse.assets.listing.column.sources'),
         cell: (info) => {
-          const { sources } = info.row.original
-          const nbItems = (sources?.tags?.length || 0) + (sources?.topicFilters?.length || 0)
-          if (nbItems === 0) return <Text>{t('combiner.unset')}</Text>
+          const row = info.row.original
+          const primary = row.sources.primary
 
-          const primary = info.row.original.sources.primary
+          const uniqueRefs = (row.instructions ?? [])
+            .filter((inst) => inst.sourceRef != null)
+            .map((inst) => inst.sourceRef!)
+            .reduce<DataIdentifierReference[]>((acc, ref) => {
+              const exists = acc.find((r) => r.id === ref.id && r.type === ref.type && r.scope === ref.scope)
+              return exists ? acc : [...acc, ref]
+            }, [])
 
-          const isPrimary = (type: DataIdentifierReference.type, id: string): boolean => {
-            return primary.type === type && primary.id === id
-          }
+          if (uniqueRefs.length === 0) return <Text>{t('combiner.unset')}</Text>
+
+          const isPrimary = (ref: DataIdentifierReference): boolean =>
+            primary?.type === ref.type && primary?.id === ref.id
 
           return (
             <HStack flexWrap="wrap">
-              {info.row.original.sources?.tags?.map((tag) => (
-                <PrimaryWrapper key={tag} isPrimary={Boolean(isPrimary(DataIdentifierReference.type.TAG, tag))}>
-                  <PLCTag
-                    tagTitle={formatOwnershipString({
-                      id: tag,
-                      type: DataIdentifierReference.type.TAG,
-                      scope: getScopeForTag(tag, info.row.original),
-                    })}
-                  />
-                </PrimaryWrapper>
-              ))}
-              {info.row.original.sources?.topicFilters?.map((tag) => (
-                <PrimaryWrapper
-                  key={tag}
-                  isPrimary={Boolean(isPrimary(DataIdentifierReference.type.TOPIC_FILTER, tag))}
-                >
-                  <TopicFilter tagTitle={tag} />
-                </PrimaryWrapper>
-              ))}
+              {uniqueRefs
+                .filter((ref) => ref.type === DataIdentifierReference.type.TAG)
+                .map((ref) => (
+                  <PrimaryWrapper key={`${ref.id}@${ref.scope ?? ''}`} isPrimary={isPrimary(ref)}>
+                    <PLCTag tagTitle={formatOwnershipString(ref)} />
+                  </PrimaryWrapper>
+                ))}
+              {uniqueRefs
+                .filter((ref) => ref.type === DataIdentifierReference.type.TOPIC_FILTER)
+                .map((ref) => (
+                  <PrimaryWrapper key={ref.id} isPrimary={isPrimary(ref)}>
+                    <TopicFilter tagTitle={ref.id} />
+                  </PrimaryWrapper>
+                ))}
             </HStack>
           )
         },
