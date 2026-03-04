@@ -21,7 +21,6 @@ import type { CombinerContext } from '@/modules/Mappings/types.ts'
 import ManagedAssetSelect from '@/modules/Pulse/components/assets/ManagedAssetSelect.tsx'
 import AssetNameCell from '@/modules/Pulse/components/assets/AssetNameCell.tsx'
 
-
 export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema, CombinerContext>> = (props) => {
   const { t } = useTranslation()
   const [selectedItem, setSelectedItem] = useState<number | undefined>(undefined)

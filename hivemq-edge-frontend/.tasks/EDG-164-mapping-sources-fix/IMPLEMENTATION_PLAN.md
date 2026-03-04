@@ -27,6 +27,7 @@ Current logic iterates `formData.sources.tags` (string[]) and uses `instructions
 to look up scope — fails for same-named tags from two adapters.
 
 **New logic:**
+
 ```typescript
 export const reconstructSelectedSources = (
   formData?: DataCombining,
@@ -57,6 +58,7 @@ export const reconstructSelectedSources = (
   }
 }
 ```
+
 Note: `formContext` parameter kept in signature (callers pass it) but no longer used.
 
 #### `getFilteredDataReferences` (lines 125–139) — REMOVE Phase 1 fallback
@@ -70,6 +72,7 @@ If `selectedSources` is undefined, the function returns `[]`.
 ### 2. `src/modules/Mappings/combiner/DataCombiningEditorField.tsx`
 
 #### Lines 142–145 — REMOVE deprecated prop pass to `CombinedEntitySelect`
+
 ```tsx
 // REMOVE these two lines:
 tags={formData?.sources?.tags}
@@ -77,12 +80,14 @@ topicFilters={formData?.sources?.topicFilters}
 ```
 
 #### Lines 175–178 — REMOVE deprecated writes in `onChange`
+
 ```typescript
 // REMOVE these lines from props.onChange():
 const tags = tagsWithScope.map((t) => t.id)
 const filters = topicFiltersWithScope.map((tf) => tf.id)
 // …and remove tags: tags, topicFilters: filters from the sources spread
 ```
+
 Keep the `localContext.onSelectedSourcesChange(...)` call — that's the correct path.
 
 ---
@@ -90,6 +95,7 @@ Keep the `localContext.onSelectedSourcesChange(...)` call — that's the correct
 ### 3. `src/modules/Mappings/combiner/CombinedEntitySelect.tsx`
 
 #### Interface `EntityReferenceSelectProps` (lines 21–28) — REMOVE deprecated props
+
 ```typescript
 // REMOVE:
 /** @deprecated */
@@ -99,12 +105,14 @@ topicFilters?: Array<string>
 ```
 
 #### Function signature (line 40) — REMOVE from destructuring
+
 ```typescript
 // REMOVE tags, topicFilters from:
 const CombinedEntitySelect: FC<...> = ({ id, tags, topicFilters, formContext, onChange, ...boxProps })
 ```
 
 #### `values` useMemo (lines 128–138) — REMOVE backward-compat fallback
+
 Delete the `// Backward compatibility: fall back to deprecated props` block.
 When `formContext?.selectedSources` is undefined → return `[]`.
 Update deps array to remove `tags, topicFilters`.
@@ -116,6 +124,7 @@ Update deps array to remove `tags, topicFilters`.
 #### `getScopeForTag` (lines 24–32) — REMOVE (becomes dead code)
 
 #### New mapping creation (lines 57–69, 73–87) — REMOVE deprecated fields
+
 ```typescript
 // REMOVE from both handleAdd() and handleAddAsset():
 tags: [],
@@ -124,6 +133,7 @@ topicFilters: [],
 ```
 
 #### Sources column cell (lines 116–149) — REPLACE with instruction-based logic
+
 ```tsx
 cell: (info) => {
   const row = info.row.original
@@ -139,8 +149,7 @@ cell: (info) => {
 
   if (uniqueRefs.length === 0) return <Text>{t('combiner.unset')}</Text>
 
-  const isPrimary = (ref: DataIdentifierReference) =>
-    primary?.type === ref.type && primary?.id === ref.id
+  const isPrimary = (ref: DataIdentifierReference) => primary?.type === ref.type && primary?.id === ref.id
 
   return (
     <HStack flexWrap="wrap">
@@ -174,6 +183,7 @@ After the fix, empty instructions → only the scoped primary shows as a chip.
 The "should render properly" test at line 78–80 checks for all 3 chips → would break.
 
 **Fix:** Add instructions for all 3 sources:
+
 ```typescript
 instructions: [
   {

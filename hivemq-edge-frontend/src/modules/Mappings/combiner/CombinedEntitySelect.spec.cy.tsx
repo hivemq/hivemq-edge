@@ -83,9 +83,7 @@ describe('CombinedEntitySelect', () => {
       topicFilters: [{ id: 'topicFilter/t3', type: DataIdentifierReference.type.TOPIC_FILTER, scope: null }],
     }
 
-    cy.mountWithProviders(
-      <CombinedEntitySelectWrapper selectedSources={selectedSources} onChange={onChange} />
-    )
+    cy.mountWithProviders(<CombinedEntitySelectWrapper selectedSources={selectedSources} onChange={onChange} />)
 
     cy.get('#combiner-entity-select')
       .should('contain.text', 'opcua-1/power/off')
@@ -127,11 +125,7 @@ describe('CombinedEntitySelect', () => {
       <Box>
         <FormControl>
           <FormLabel htmlFor="duplicate-test">Select tags</FormLabel>
-          <CombinedEntitySelect
-            id="duplicate-test"
-            formContext={contextWithDuplicates}
-            onChange={onChange}
-          />
+          <CombinedEntitySelect id="duplicate-test" formContext={contextWithDuplicates} onChange={onChange} />
         </FormControl>
       </Box>
     )

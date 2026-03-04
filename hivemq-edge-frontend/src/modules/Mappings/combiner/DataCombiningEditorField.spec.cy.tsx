@@ -431,10 +431,7 @@ describe('DataCombiningEditorField', () => {
       }
 
       const formContext: CombinerContext = {
-        entityQueries: [
-          loadedTagQuery('o1', ['temperature']),
-          loadedTagQuery('o2', ['temperature']),
-        ],
+        entityQueries: [loadedTagQuery('o1', ['temperature']), loadedTagQuery('o2', ['temperature'])],
       }
 
       cy.mountWithProviders(

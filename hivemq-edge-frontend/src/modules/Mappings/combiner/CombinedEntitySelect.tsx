@@ -28,12 +28,7 @@ interface EntityOption extends OptionBase {
   description?: string
 }
 
-const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
-  id,
-  formContext,
-  onChange,
-  ...boxProps
-}) => {
+const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ id, formContext, onChange, ...boxProps }) => {
   const { t } = useTranslation()
   const isLoading = useMemo(() => {
     return formContext?.entityQueries?.some((eq) => eq?.query?.isLoading) || false
