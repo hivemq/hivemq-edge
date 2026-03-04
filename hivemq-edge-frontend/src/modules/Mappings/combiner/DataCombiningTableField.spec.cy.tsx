@@ -25,6 +25,7 @@ const mockPrimary: DataCombining = {
     primary: {
       id: 'my/tag/t3',
       type: DataIdentifierReference.type.TAG,
+      scope: 'my-adapter',
     },
   },
 }
