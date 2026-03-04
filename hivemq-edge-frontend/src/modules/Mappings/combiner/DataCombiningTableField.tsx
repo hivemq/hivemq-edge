@@ -110,7 +110,9 @@ export const DataCombiningTableField: FC<FieldProps<DataCombining[], RJSFSchema,
           if (uniqueRefs.length === 0) return <Text>{t('combiner.unset')}</Text>
 
           const isPrimary = (ref: DataIdentifierReference): boolean =>
-            primary?.type === ref.type && primary?.id === ref.id
+            primary?.type === ref.type &&
+            primary?.id === ref.id &&
+            (ref.type !== DataIdentifierReference.type.TAG || primary?.scope === ref.scope)
 
           return (
             <HStack flexWrap="wrap">
