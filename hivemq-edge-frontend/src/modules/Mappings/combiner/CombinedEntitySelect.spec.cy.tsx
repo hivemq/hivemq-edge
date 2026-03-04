@@ -9,7 +9,7 @@ import { mockCombiner } from '@/api/hooks/useCombiners/__handlers__'
 import { MOCK_DEVICE_TAGS } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import type { DomainTag, DomainTagList } from '@/api/__generated__'
 import { DataIdentifierReference, EntityType } from '@/api/__generated__'
-import type { CombinerContext } from '@/modules/Mappings/types'
+import type { CombinerContext, SelectedSources } from '@/modules/Mappings/types'
 
 import CombinedEntitySelect from './CombinedEntitySelect'
 
@@ -22,15 +22,13 @@ const mockTagQuery = (tags: DomainTag[]): UseQueryResult<DomainTagList, Error> =
   }) as UseQueryResult<DomainTagList, Error>
 
 interface EntityReferenceSelectProps {
-  tags?: Array<string>
-  topicFilters?: Array<string>
+  selectedSources?: SelectedSources
   onChange: (value: MultiValue<unknown>) => void
 }
 
 const CombinedEntitySelectWrapper: FC<PropsWithChildren<EntityReferenceSelectProps>> = ({
   children,
-  tags,
-  topicFilters,
+  selectedSources,
   onChange,
 }) => {
   const sources = useGetCombinedEntities(mockCombiner.sources.items)
@@ -49,10 +47,9 @@ const CombinedEntitySelectWrapper: FC<PropsWithChildren<EntityReferenceSelectPro
         </FormLabel>
         <CombinedEntitySelect
           id="my-id"
-          tags={tags}
-          topicFilters={topicFilters}
           onChange={onChange}
           formContext={{
+            selectedSources,
             entityQueries,
             // Backward compatibility
             queries: sources,
@@ -81,8 +78,13 @@ describe('CombinedEntitySelect', () => {
   it('should render properly', () => {
     const onChange = cy.stub().as('onChange')
 
+    const selectedSources: SelectedSources = {
+      tags: [{ id: 'opcua-1/power/off', type: DataIdentifierReference.type.TAG, scope: null }],
+      topicFilters: [{ id: 'topicFilter/t3', type: DataIdentifierReference.type.TOPIC_FILTER, scope: null }],
+    }
+
     cy.mountWithProviders(
-      <CombinedEntitySelectWrapper tags={['opcua-1/power/off']} topicFilters={['topicFilter/t3']} onChange={onChange} />
+      <CombinedEntitySelectWrapper selectedSources={selectedSources} onChange={onChange} />
     )
 
     cy.get('#combiner-entity-select')
@@ -128,7 +130,6 @@ describe('CombinedEntitySelect', () => {
           <CombinedEntitySelect
             id="duplicate-test"
             formContext={contextWithDuplicates}
-            tags={[]} // Start with empty selection
             onChange={onChange}
           />
         </FormControl>
@@ -311,7 +312,13 @@ describe('CombinedEntitySelect', () => {
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(
-      <CombinedEntitySelectWrapper tags={['opcua-1/power/off']} topicFilters={['topicFilter/t3']} onChange={cy.stub} />
+      <CombinedEntitySelectWrapper
+        selectedSources={{
+          tags: [{ id: 'opcua-1/power/off', type: DataIdentifierReference.type.TAG, scope: null }],
+          topicFilters: [{ id: 'topicFilter/t3', type: DataIdentifierReference.type.TOPIC_FILTER, scope: null }],
+        }}
+        onChange={cy.stub}
+      />
     )
 
     cy.get('#combiner-entity-select').click()
