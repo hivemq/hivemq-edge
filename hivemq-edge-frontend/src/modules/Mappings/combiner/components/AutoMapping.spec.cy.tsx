@@ -13,17 +13,19 @@ import { MOCK_TOPIC_FILTER_SCHEMA_VALID } from '@/api/hooks/useTopicFilters/__ha
 import { getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils'
 import { validateSchemaFromDataURI } from '@/modules/TopicFilters/utils/topic-filter.schema'
 
+import { reconstructSelectedSources } from '@/modules/Mappings/utils/combining.utils'
+
 import { AutoMapping } from './AutoMapping'
 
 const mockFormData: DataCombining = {
   id: '58677276-fc48-4a9a-880c-41c755f5063b',
   sources: {
     primary: { id: '', type: DataIdentifierReference.type.TAG },
-    tags: ['my-adapter/power/off'],
   },
   destination: { topic: 'my/topic', schema: MOCK_TOPIC_FILTER_SCHEMA_VALID },
   instructions: [
     {
+      sourceRef: { id: 'my-adapter/power/off', type: DataIdentifierReference.type.TAG, scope: 'my-adapter' },
       source: '$.dropped-property',
       destination: '$.lastName',
     },
@@ -37,6 +39,8 @@ interface AutoMappingWrapperProps {
 
 const AutoMappingWrapper: FC<AutoMappingWrapperProps> = ({ formData, onChange }) => {
   const sources = useGetCombinedEntities(mockCombiner.sources.items)
+  const formContext = { queries: sources, entities: mockCombiner.sources.items }
+  const selectedSources = formData ? reconstructSelectedSources(formData, undefined) : undefined
 
   const props = useMemo(() => {
     if (!formData?.destination?.schema) return []
@@ -49,7 +53,7 @@ const AutoMappingWrapper: FC<AutoMappingWrapperProps> = ({ formData, onChange })
     <Box>
       <AutoMapping
         formData={formData}
-        formContext={{ queries: sources, entities: mockCombiner.sources.items }}
+        formContext={{ ...formContext, selectedSources }}
         onChange={onChange}
       />
       <Card mt={50} variant="filled" size="sm">
