@@ -118,11 +118,11 @@ class OpcUaToJsonConverterTest extends AbstractOpcUaPayloadConverterTest {
         final var received = expectAdapterPublish();
         protocolAdapter.stop(new ProtocolAdapterStopInput() {}, new ProtocolAdapterStopOutputImpl());
 
-        assertThat(received).extractingByKey(nodeId).satisfies(dataPoints -> {
-            assertThat(dataPoints)
-                    .hasSize(1)
-                    .extracting(DataPoint::getTagName, DataPoint::getTagValue)
-                    .containsExactly(Tuple.tuple(nodeId, "{\"value\":" + jsonValue + "}"));
-        });
+        assertThat(received)
+                .extractingByKey(nodeId)
+                    .satisfies(dataPoint ->
+                        assertThat(dataPoint)
+                                .extracting(DataPoint::getTagName, DataPoint::getTagValue)
+                                .containsExactly(nodeId, "{\"value\":" + jsonValue + "}"));
     }
 }

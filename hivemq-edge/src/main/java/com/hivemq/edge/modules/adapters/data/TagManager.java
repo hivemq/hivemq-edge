@@ -16,11 +16,13 @@
 package com.hivemq.edge.modules.adapters.data;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
+import com.hivemq.protocols.northbound.SingleTagConsumer;
 import com.hivemq.configuration.entity.adapter.AdapterTag;
-import com.hivemq.protocols.northbound.TagConsumer;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -42,31 +44,36 @@ public class TagManager {
     // is it intended that we might send very old data?
     // perhaps it is good enough if we ensure that northbound mappings are created before tags as adapters are restarted
     // on config change anyway
-    private final Map<AdapterTag, List<DataPoint>> lastValueForTag = new ConcurrentHashMap<>();
+    private final Map<AdapterTag, DataPoint> lastValueForTag = new ConcurrentHashMap<>();
+
     private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
     @Inject
     public TagManager() {}
 
-    private final @NotNull ConcurrentHashMap<AdapterTag, List<TagConsumer>> consumers = new ConcurrentHashMap<>();
+    private final @NotNull ConcurrentHashMap<AdapterTag, List<SingleTagConsumer>> consumers = new ConcurrentHashMap<>();
 
-    public void feed(final @NotNull String adapterId, final @NotNull List<DataPoint> dataPoints) {
-        final Map<String, List<DataPoint>> grouped =
-                dataPoints.stream().collect(Collectors.groupingBy(DataPoint::getTagName));
+    public void feed(@NotNull final String tag, @NotNull final List<DataPoint> dataPoints) {
+        // This is still correct since every dataPoint contains the tagname it came from.
+        feed(dataPoints);
+    }
+
+    public void feed(final @NotNull List<DataPoint> dataPoints) {
 
         final var readlock = readWriteLock.readLock();
         readlock.lock();
         try {
-            for (final var entry : grouped.entrySet()) {
-                final String tagName = entry.getKey();
-                final List<DataPoint> tagDataPoints = entry.getValue();
-                final AdapterTag adapterTag = new AdapterTag(adapterId, tagName);
-                lastValueForTag.put(adapterTag, tagDataPoints);
+            dataPoints.forEach(entry -> {
+                final String tagName = entry.getTagName();
+                final DataPoint tagDataPoint = entry;
+                //TODO we need adapterId on DataPoints
+                final AdapterTag adapterTag = new AdapterTag(tagDataPoint.getAdapterId(), tagName);
+                lastValueForTag.put(adapterTag, tagDataPoint);
                 final var tagConsumers = consumers.get(adapterTag);
                 if (tagConsumers != null) {
                     tagConsumers.forEach(consumer -> {
                         try {
-                            consumer.accept(tagDataPoints);
+                            consumer.accept(tagDataPoint);
                         } catch (final Exception e) {
                             log.error(
                                     "An error was thrown while processing tag {} with consumer {}",
@@ -76,13 +83,13 @@ public class TagManager {
                         }
                     });
                 }
-            }
+            });
         } finally {
             readlock.unlock();
         }
     }
 
-    public void addConsumer(final @NotNull TagConsumer consumer) {
+    public void addConsumer(final @NotNull SingleTagConsumer consumer) {
         final AdapterTag adapterTag =
                 new AdapterTag(Objects.requireNonNullElse(consumer.getScope(), ""), consumer.getTagName());
         final var writeLock = readWriteLock.writeLock();
@@ -93,23 +100,23 @@ public class TagManager {
                     current.add(consumer);
                     return current;
                 } else {
-                    final List<TagConsumer> consumers = new ArrayList<>();
+                    final List<SingleTagConsumer> consumers = new ArrayList<>();
                     consumers.add(consumer);
                     return consumers;
                 }
             });
 
             // if there is a value present in the cache, we sent it to the consumer
-            final List<DataPoint> dataPoints = lastValueForTag.get(adapterTag);
-            if (dataPoints != null) {
-                consumer.accept(dataPoints);
+            final DataPoint dataPoint = lastValueForTag.get(adapterTag);
+            if (dataPoint != null) {
+                consumer.accept(dataPoint);
             }
         } finally {
             writeLock.unlock();
         }
     }
 
-    public void removeConsumer(final @NotNull TagConsumer consumer) {
+    public void removeConsumer(final @NotNull SingleTagConsumer consumer) {
         final AdapterTag adapterTag =
                 new AdapterTag(Objects.requireNonNullElse(consumer.getScope(), ""), consumer.getTagName());
         final var writeLock = readWriteLock.writeLock();
