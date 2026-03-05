@@ -266,57 +266,34 @@ export const reconstructSelectedSources = (
     return { tags: [], topicFilters: [] }
   }
 
-  // dirsInst is the set of all distinct DIRs for tags from all the instructions
-  const dirsInstMap = new Map<string, DataIdentifierReference>()
-  for (const inst of formData?.instructions || []) {
-    const ref = inst.sourceRef
-    if (ref?.type === DataIdentifierReference.type.TAG && ref.id) {
-      const key = `${ref.scope ?? ''}::${ref.id}`
-      if (!dirsInstMap.has(key)) dirsInstMap.set(key, ref)
-    }
-  }
-  const ref = formData?.sources.primary || {}
-  if (ref?.type === DataIdentifierReference.type.TAG && ref.id) {
-    const key = `${ref.scope ?? ''}::${ref.id}`
-    if (!dirsInstMap.has(key)) dirsInstMap.set(key, ref)
-  }
-  const dirsInst = [...dirsInstMap.values()]
+  // dirsInst is the set of all distinct DIRs for tags from all the instructions and the primary
+  const dirsInst = [...new Map<string, DataIdentifierReference>(
+        [...(formData?.instructions || []).map((inst) => inst.sourceRef), formData?.sources?.primary]
+        .filter((ref) => ref != null && ref.type === DataIdentifierReference.type.TAG && !!ref.id)
+        .map((ref) => [`${ref!.scope ?? ''}::${ref!.id ?? ''}`, ref!])
+     ).values()]
 
   // dirsAdpt is the set of all distinct DIRs for tags for all the adapters
-  const dirsAdptMap = new Map<string, DataIdentifierReference>()
-  for (const { entity, query } of formContext?.entityQueries || []) {
-    const items = query.data?.items || []
-    if (items.length > 0 && (items[0] as DomainTag).name) {
-      for (const tag of items as DomainTag[]) {
-        const ref = { id: tag.name, type: DataIdentifierReference.type.TAG, scope: entity.id }
-        const key = `${ref.scope ?? ''}::${ref.id}`
-        if (!dirsAdptMap.has(key)) dirsAdptMap.set(key,ref)
-      }
-    }
-  }
-  const dirsAdpt = [...dirsAdptMap.values()]
+  const dirsAdpt = [...new Map<string, DataIdentifierReference>(
+        (formContext?.entityQueries || [])
+        .flatMap(({ entity, query }) =>
+           ((query?.data?.items || []) as DomainTag[])
+           .map((tag) => ([`${entity?.id ?? ''}::${tag?.name ?? ''}`, { type: DataIdentifierReference.type.TAG, scope: entity?.id ?? '',  id: tag?.name ?? '' }])))
+     ).values()]
 
   // create the DIRs for all the tags
   // we compare how often a tagname appears in sources.tags, the instructions, and the adapters
   // we take the DIRs from instructions if the count matches, otherwise from the adapters
   // that way the worst we might do is to add a DIR that wasn't there before
-  const dirsTags: DataIdentifierReference[] = []
-  for (const t of new Set(formData.sources.tags ?? [])) {
+  const dirsTags = [...new Set(formData.sources.tags ?? [])].flatMap((t) => {
     const tagsEqt = formData.sources.tags!.filter((tag) => tag === t)
     const dirsInstEqt = dirsInst.filter((ref) => ref.id === t)
     const dirsAdptEqt = dirsAdpt.filter((ref) => ref.id === t)
-    if (tagsEqt.length === dirsInstEqt.length) {
-      dirsTags.push(...dirsInstEqt)
-    } else {
-      dirsTags.push(...dirsAdptEqt)
-    }
-  }
+    return tagsEqt.length <= dirsInstEqt.length ? dirsInstEqt : dirsAdptEqt })
 
   // create the DIRs for all the topicFilters
-  const dirsTopics: DataIdentifierReference[] = []
-  for (const t of formData.sources.topicFilters ?? []) {
-    dirsTopics.push({ id: t, type: DataIdentifierReference.type.TOPIC_FILTER, scope: null })
-  }
+  const dirsTopics = (formData?.sources?.topicFilters ?? [])
+     .map((topic) => ({ type: DataIdentifierReference.type.TOPIC_FILTER, scope: null, id: topic }))
 
   return { tags : dirsTags, topicFilters : dirsTopics }
 }
