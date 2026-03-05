@@ -11,12 +11,12 @@ plugins {
     java
     alias(libs.plugins.defaults)
     alias(libs.plugins.shadow)
-    alias(libs.plugins.license) // FIXME: Need to add headers to all classes
+    alias(libs.plugins.license)
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.third-party-license-generator")
     id("com.hivemq.repository-convention")
     id("com.hivemq.jacoco-convention")
-//    id("com.hivemq.errorprone-convention")
+    id("com.hivemq.errorprone-convention")
     id("com.hivemq.spotless-convention")
 }
 
@@ -24,14 +24,14 @@ group = "com.hivemq"
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
 dependencies {
-    compileOnly(libs.hivemq.edge.adapterSdk)
-    compileOnly(libs.apache.commonsIO)
-    compileOnly(libs.apache.commonsLang)
+    compileOnly(libs.hivemq.edge.adaptersdk)
+    compileOnly(libs.apache.commons.io)
+    compileOnly(libs.apache.commons.lang)
     implementation(files("libs/etherip-1.0.0.jar"))
     implementation(libs.jackson.databind)
     implementation(libs.slf4j.api)
@@ -42,11 +42,11 @@ dependencies {
 
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
-    testImplementation(libs.apache.commonsIO)
+    testImplementation(libs.apache.commons.io)
     testImplementation(platform(libs.junit.bom))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation(libs.mockito.junitJupiter)
+    testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.assertj)
 }
 
@@ -70,7 +70,7 @@ tasks.register<Test>("vpnTests") {
 tasks.register<Copy>("copyAllDependencies") {
     shouldRunAfter("assemble")
     from(configurations.runtimeClasspath)
-    into("$buildDir/deps/libs")
+    into("${layout.buildDirectory}/deps/libs")
 }
 
 tasks.named("assemble") { finalizedBy("copyAllDependencies") }

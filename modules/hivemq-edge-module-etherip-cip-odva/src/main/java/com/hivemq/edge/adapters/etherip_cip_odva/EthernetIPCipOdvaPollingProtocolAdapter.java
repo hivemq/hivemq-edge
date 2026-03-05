@@ -15,9 +15,6 @@
  */
 package com.hivemq.edge.adapters.etherip_cip_odva;
 
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
-
 import com.google.common.base.Stopwatch;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
@@ -50,17 +47,22 @@ import com.hivemq.edge.adapters.etherip_cip_odva.util.ExceptionUtils;
 import etherip.EtherNetIP;
 import etherip.EthernetIPWithODVA;
 import etherip.data.CipException;
+import org.apache.commons.lang3.Strings;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
+import java.nio.channels.ReadPendingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.VisibleForTesting;
-import org.slf4j.LoggerFactory;
+
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
 
 public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProtocolAdapter, WritingProtocolAdapter {
 
@@ -71,7 +73,7 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
             new String[] {"Connection reset by peer", "Broken pipe", "Timeout", "UnRegisterSession"};
 
     private final @NotNull EipSpecificAdapterConfig adapterConfig;
-    private final @NotNull ProtocolAdapterInformation adapterInformation;ž
+    private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     protected final @NotNull AdapterFactories adapterFactories;
     private final @NotNull String adapterId;
@@ -242,7 +244,7 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
 
                 tryPoll(client, pollingOutput, tagGroup, currentLastSamples, errors::add);
             }
-        } catch (IOException e) {
+        } catch (IOException | ReadPendingException e) {
             LOG.warn(
                     "Adapter '{}'. Communication error. Will try reconnecting! {}",
                     adapterId,
@@ -310,7 +312,7 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
 
     private void throwIfExceptionContainsReasonToDisconnect(@NotNull Throwable e) throws IOException {
         if (e instanceof IOException ioException
-                && StringUtils.containsAnyIgnoreCase(e.getMessage(), DISCONNECT_REASONS)) {
+                && Strings.CI.containsAny(e.getMessage(), DISCONNECT_REASONS)) {
             throw ioException;
         } else if (e.getCause() != null) {
             throwIfExceptionContainsReasonToDisconnect(e.getCause());
@@ -324,7 +326,7 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
             final @NotNull BatchPollingOutput pollingOutput)
             throws Exception {
 
-        CompositeValues compositeValues = CompositeValuesFactory.create(tagGroup);
+        final CompositeValues compositeValues = CompositeValuesFactory.create(tagGroup);
         final Long nowMs = clock.get();
 
         CipTagDecodingAttributeProtocol cipTagAttributeProtocol = new CipTagDecodingAttributeProtocol(
@@ -358,7 +360,7 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
                 LOG.debug(
                         "Adapter {}. Created composite tag {}='{}'",
                         adapterId,
-                        tagGroup.getComposite().toConciseString(),
+                        tagGroup.getComposite() != null ? tagGroup.getComposite().toConciseString() : "<NULL>",
                         compositeValues.getValues());
             }
             pollingOutput.addDataPoint(compositeValues.getCompositeTagName(), compositeValues.getValues());
