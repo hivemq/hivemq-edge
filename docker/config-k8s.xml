@@ -50,6 +50,14 @@
     </mqtt-sn-listeners>
     <admin-api>
         <enabled>true</enabled>
+        ${IF:HIVEMQ_PRE_LOGIN_NOTICE_ENABLED}
+        <pre-login-notice>
+            <enabled>true</enabled>
+            <message>${ENV:HIVEMQ_PRE_LOGIN_NOTICE_MESSAGE}</message>
+            <title>${ENV:HIVEMQ_PRE_LOGIN_NOTICE_TITLE}</title>
+            <consent>${ENV:HIVEMQ_PRE_LOGIN_NOTICE_CONSENT}</consent>
+        </pre-login-notice>
+        ${IF:HIVEMQ_PRE_LOGIN_NOTICE_ENABLED}
         <listeners>
             ${IF:!HIVEMQ_HTTPS_ENABLED}
             <http-listener>
