@@ -32,7 +32,7 @@ import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
-import com.hivemq.protocols.northbound.TagConsumer;
+import com.hivemq.protocols.northbound.SingleTagConsumer;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ public class DataCombiningRuntime {
     private final @NotNull DataCombiningTransformationService dataCombiningTransformationService;
     private final @NotNull ObjectMapper mapper;
     private final @NotNull List<InternalConsumer> consumers;
-    private final @NotNull ConcurrentHashMap<DataIdentifierReference, List<DataPoint>> tagResults;
+    private final @NotNull ConcurrentHashMap<DataIdentifierReference, DataPoint> tagResults;
     private final @NotNull ConcurrentHashMap<String, PUBLISH> topicFilterToPublish;
 
     public DataCombiningRuntime(
@@ -157,7 +157,7 @@ public class DataCombiningRuntime {
             }
         });
 
-        tagsToDataPoints.forEach((tagRef, dataPoints) -> dataPoints.forEach(dataPoint -> {
+        tagsToDataPoints.forEach((tagRef, dataPoint) -> {
             try {
                 rootNode.set(
                         tagRef.toFullyQualifiedName(),
@@ -166,13 +166,13 @@ public class DataCombiningRuntime {
                 log.warn("Exception during json parsing of datapoint '{}'", dataPoint.getTagValue());
                 throw new RuntimeException(e);
             }
-        }));
+        });
 
         dataCombiningPublishService.publish(
                 combining.destination(), rootNode.toString().getBytes(StandardCharsets.UTF_8), dataCombining);
     }
 
-    public abstract static class InternalConsumer {
+    public abstract class InternalConsumer implements SingleTagConsumer {
         protected final @NotNull DataIdentifierReference dataIdentifierReference;
         protected final boolean primary;
         protected final boolean storeDataPoints;
@@ -184,6 +184,31 @@ public class DataCombiningRuntime {
             this.dataIdentifierReference = dataIdentifierReference;
             this.primary = primary;
             this.storeDataPoints = storeDataPoints;
+        }
+
+        @Override
+        public @NotNull String getTagName() {
+            return dataIdentifierReference.id();
+        }
+
+        @Override
+        public @Nullable String getScope() {
+            return dataIdentifierReference.scope();
+        }
+
+        @Override
+        public void accept(final @NotNull DataPoint dataPoint) {
+            // Use DataIdentifierReference as the key to include scope
+            if (storeDataPoints) {
+                tagResults.put(dataIdentifierReference, dataPoint);
+            }
+            if (primary) {
+                try {
+                    triggerPublish(combining);
+                } catch (final Exception e) {
+                    log.warn("Unable to process data point '{}'", dataPoint, e);
+                }
+            }
         }
 
         public abstract void close();
@@ -242,37 +267,14 @@ public class DataCombiningRuntime {
         }
     }
 
-    public final class InternalTagConsumer extends InternalConsumer implements TagConsumer {
+
+    public final class InternalTagConsumer extends InternalConsumer {
+
         public InternalTagConsumer(
                 final @NotNull DataIdentifierReference dataIdentifierReference,
                 final boolean primary,
                 final boolean storeDataPoints) {
             super(dataIdentifierReference, primary, storeDataPoints);
-        }
-
-        @Override
-        public @NotNull String getTagName() {
-            return dataIdentifierReference.id();
-        }
-
-        @Override
-        public @Nullable String getScope() {
-            return dataIdentifierReference.scope();
-        }
-
-        @Override
-        public void accept(final @NotNull List<DataPoint> dataPoints) {
-            // Use DataIdentifierReference as the key to include scope
-            if (storeDataPoints) {
-                tagResults.put(dataIdentifierReference, dataPoints);
-            }
-            if (primary) {
-                try {
-                    triggerPublish(combining);
-                } catch (final Exception e) {
-                    log.warn("Unable to process data points '{}'", dataPoints, e);
-                }
-            }
         }
 
         @Override

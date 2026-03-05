@@ -46,7 +46,7 @@ import com.hivemq.persistence.ProducerQueues;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
-import com.hivemq.protocols.northbound.TagConsumer;
+import com.hivemq.protocols.northbound.SingleTagConsumer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
@@ -109,13 +109,13 @@ class DataCombiningRuntimeTest {
         runtime.start();
 
         verify(dataCombiningTransformationService).addScriptForDataCombining(combining);
-        final ArgumentCaptor<TagConsumer> captor = ArgumentCaptor.forClass(TagConsumer.class);
+        final ArgumentCaptor<SingleTagConsumer> captor = ArgumentCaptor.forClass(SingleTagConsumer.class);
         verify(tagManager).addConsumer(captor.capture());
         assertThat(captor.getValue().getTagName()).isEqualTo("tag1");
         assertThat(captor.getValue().getScope()).isEqualTo("adapter1");
 
         // The only consumer is the primary — accepting data should trigger a publish
-        captor.getValue().accept(List.of(new DataPointImpl("tag1", "{\"v\":1}")));
+        captor.getValue().accept(new DataPointImpl("tag1", "{\"v\":1}", "adapter1"));
         verify(dataCombiningPublishService).publish(any(), any(), eq(combining));
     }
 
@@ -166,9 +166,9 @@ class DataCombiningRuntimeTest {
         final DataCombiningRuntime runtime = createRuntime(combining);
         runtime.start();
 
-        final ArgumentCaptor<TagConsumer> captor = ArgumentCaptor.forClass(TagConsumer.class);
+        final ArgumentCaptor<SingleTagConsumer> captor = ArgumentCaptor.forClass(SingleTagConsumer.class);
         verify(tagManager, times(2)).addConsumer(captor.capture());
-        final List<TagConsumer> consumers = captor.getAllValues();
+        final List<SingleTagConsumer> consumers = captor.getAllValues();
         // First is the instruction tag (non-primary), second (last) is the primary
         assertThat(consumers.get(0).getTagName()).isEqualTo("tag2");
         assertThat(consumers.get(0).getScope()).isEqualTo("adapter2");
@@ -176,11 +176,11 @@ class DataCombiningRuntimeTest {
         assertThat(consumers.get(1).getScope()).isEqualTo("adapter1");
 
         // Non-primary consumer should NOT trigger a publish
-        consumers.get(0).accept(List.of(new DataPointImpl("tag2", "{\"v\":1}")));
+        consumers.get(0).accept(new DataPointImpl("tag2", "{\"v\":1}", "adapter1"));
         verify(dataCombiningPublishService, never()).publish(any(), any(), any());
 
         // Primary consumer (last) should trigger a publish
-        consumers.get(1).accept(List.of(new DataPointImpl("tag1", "{\"v\":2}")));
+        consumers.get(1).accept(new DataPointImpl("tag1", "{\"v\":2}", "adapter1"));
         verify(dataCombiningPublishService).publish(any(), any(), eq(combining));
     }
 
@@ -289,20 +289,20 @@ class DataCombiningRuntimeTest {
 
         // tag2 appears twice in instructions but .distinct() deduplicates.
         // 1 for tag2 (instruction), 1 for tag1 (primary)
-        final ArgumentCaptor<TagConsumer> captor = ArgumentCaptor.forClass(TagConsumer.class);
+        final ArgumentCaptor<SingleTagConsumer> captor = ArgumentCaptor.forClass(SingleTagConsumer.class);
         verify(tagManager, times(2)).addConsumer(captor.capture());
-        final List<TagConsumer> consumers = captor.getAllValues();
+        final List<SingleTagConsumer> consumers = captor.getAllValues();
 
         // Primary (tag1) must be the last consumer
         assertThat(consumers.get(0).getTagName()).isEqualTo("tag2");
         assertThat(consumers.get(1).getTagName()).isEqualTo("tag1");
 
         // Non-primary consumer should NOT trigger publish
-        consumers.get(0).accept(List.of(new DataPointImpl("tag2", "{\"v\":1}")));
+        consumers.get(0).accept(new DataPointImpl("tag2", "{\"v\":1}", "adapter1"));
         verify(dataCombiningPublishService, never()).publish(any(), any(), any());
 
         // Primary consumer (last) should trigger publish
-        consumers.get(1).accept(List.of(new DataPointImpl("tag1", "{\"v\":2}")));
+        consumers.get(1).accept(new DataPointImpl("tag1", "{\"v\":2}", "adapter1"));
         verify(dataCombiningPublishService).publish(any(), any(), eq(combining));
     }
 
@@ -337,14 +337,14 @@ class DataCombiningRuntimeTest {
         runtime.start();
 
         // 2 tag consumers for instructions (tag1, tag2)
-        final ArgumentCaptor<TagConsumer> captor = ArgumentCaptor.forClass(TagConsumer.class);
+        final ArgumentCaptor<SingleTagConsumer> captor = ArgumentCaptor.forClass(SingleTagConsumer.class);
         verify(tagManager, times(2)).addConsumer(captor.capture());
         // 2 topic filter subscriptions: one for instruction (other/#), one for primary (sensor/temp)
         verify(localTopicTree, times(2)).addTopic(anyString(), any(Topic.class), anyByte(), anyString());
 
         // Both tag consumers are non-primary (primary is a TOPIC_FILTER), so neither triggers publish
-        for (final TagConsumer consumer : captor.getAllValues()) {
-            consumer.accept(List.of(new DataPointImpl(consumer.getTagName(), "{\"v\":1}")));
+        for (final SingleTagConsumer consumer : captor.getAllValues()) {
+            consumer.accept(new DataPointImpl(consumer.getTagName(), "{\"v\":1}", "adapter1"));
         }
         verify(dataCombiningPublishService, never()).publish(any(), any(), any());
     }
@@ -368,9 +368,9 @@ class DataCombiningRuntimeTest {
         runtime.start();
         runtime.stop();
 
-        final ArgumentCaptor<TagConsumer> addCaptor = ArgumentCaptor.forClass(TagConsumer.class);
+        final ArgumentCaptor<SingleTagConsumer> addCaptor = ArgumentCaptor.forClass(SingleTagConsumer.class);
         verify(tagManager).addConsumer(addCaptor.capture());
-        final ArgumentCaptor<TagConsumer> removeCaptor = ArgumentCaptor.forClass(TagConsumer.class);
+        final ArgumentCaptor<SingleTagConsumer> removeCaptor = ArgumentCaptor.forClass(SingleTagConsumer.class);
         verify(tagManager).removeConsumer(removeCaptor.capture());
         assertThat(addCaptor.getValue()).isEqualTo(removeCaptor.getValue());
         verify(dataCombiningTransformationService).removeScriptForDataCombining(combining);
@@ -504,7 +504,7 @@ class DataCombiningRuntimeTest {
     }
 
     /*
-     * Verifies that tag data fed via InternalTagConsumer.accept() is included in the
+     * Verifies that tag data fed via InternalSingleTagConsumer.accept() is included in the
      * published payload. After start(), we capture the registered primary tag consumer,
      * feed it a JSON data point. Since it's the primary, accept() triggers triggerPublish()
      * automatically. The resulting payload should contain the fully qualified key
@@ -525,13 +525,13 @@ class DataCombiningRuntimeTest {
         runtime.start();
 
         // Capture the primary tag consumer and feed data to it
-        final ArgumentCaptor<TagConsumer> consumerCaptor = ArgumentCaptor.forClass(TagConsumer.class);
+        final ArgumentCaptor<SingleTagConsumer> consumerCaptor = ArgumentCaptor.forClass(SingleTagConsumer.class);
         verify(tagManager).addConsumer(consumerCaptor.capture());
-        final TagConsumer consumer = consumerCaptor.getValue();
+        final SingleTagConsumer consumer = consumerCaptor.getValue();
 
         // accept() on the primary consumer triggers triggerPublish() automatically
-        final DataPoint dataPoint = new DataPointImpl("tag1", "{\"temperature\":25}");
-        consumer.accept(List.of(dataPoint));
+        final DataPoint dataPoint = new DataPointImpl("tag1", "{\"temperature\":25}", "adapter1");
+        consumer.accept(dataPoint);
 
         final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(dataCombiningPublishService).publish(eq(destination), payloadCaptor.capture(), eq(combining));
@@ -541,13 +541,13 @@ class DataCombiningRuntimeTest {
     }
 
     /*
-     * Verifies that InternalTagConsumer exposes the correct tag name and scope
-     * through the TagConsumer interface methods getTagName() and getScope().
+     * Verifies that InternalSingleTagConsumer exposes the correct tag name and scope
+     * through the SingleTagConsumer interface methods getTagName() and getScope().
      * These are used by TagManager to route data points to the correct consumer
      * based on the adapter-scoped tag identity.
      */
     @Test
-    void internalTagConsumer_whenGetTagName_thenReturnsCorrectName() {
+    void internalSingleTagConsumer_whenGetTagName_thenReturnsCorrectName() {
         final DataIdentifierReference primary =
                 new DataIdentifierReference("tag1", DataIdentifierReference.Type.TAG, "adapter1");
         final DataCombining combining = new DataCombining(
@@ -559,7 +559,7 @@ class DataCombiningRuntimeTest {
         final DataCombiningRuntime runtime = createRuntime(combining);
         runtime.start();
 
-        final ArgumentCaptor<TagConsumer> captor = ArgumentCaptor.forClass(TagConsumer.class);
+        final ArgumentCaptor<SingleTagConsumer> captor = ArgumentCaptor.forClass(SingleTagConsumer.class);
         verify(tagManager).addConsumer(captor.capture());
         assertThat(captor.getValue().getTagName()).isEqualTo("tag1");
         assertThat(captor.getValue().getScope()).isEqualTo("adapter1");
@@ -711,9 +711,9 @@ class DataCombiningRuntimeTest {
         verify(dataCombiningPublishService).publish(any(), any(), eq(combining));
 
         // The TAG consumer is non-primary — accepting data should NOT trigger another publish
-        final ArgumentCaptor<TagConsumer> tagCaptor = ArgumentCaptor.forClass(TagConsumer.class);
+        final ArgumentCaptor<SingleTagConsumer> tagCaptor = ArgumentCaptor.forClass(SingleTagConsumer.class);
         verify(tagManager).addConsumer(tagCaptor.capture());
-        tagCaptor.getValue().accept(List.of(new DataPointImpl("tag1", "{\"v\":2}")));
+        tagCaptor.getValue().accept(new DataPointImpl("tag1", "{\"v\":2}", "adapter1"));
 
         // Still only 1 publish call (from the primary TOPIC_FILTER during start)
         verify(dataCombiningPublishService, times(1)).publish(any(), any(), any());
@@ -809,10 +809,10 @@ class DataCombiningRuntimeTest {
         final DataCombiningRuntime runtime = createRuntime(combining);
         runtime.start();
 
-        final ArgumentCaptor<TagConsumer> consumerCaptor = ArgumentCaptor.forClass(TagConsumer.class);
+        final ArgumentCaptor<SingleTagConsumer> consumerCaptor = ArgumentCaptor.forClass(SingleTagConsumer.class);
         verify(tagManager).addConsumer(consumerCaptor.capture());
 
-        consumerCaptor.getValue().accept(List.of(new DataPointImpl("tag1", "{\"temperature\":25}")));
+        consumerCaptor.getValue().accept(new DataPointImpl("tag1", "{\"temperature\":25}", "adapter1"));
 
         final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(dataCombiningPublishService).publish(eq(destination), payloadCaptor.capture(), eq(combining));
@@ -840,10 +840,10 @@ class DataCombiningRuntimeTest {
         final DataCombiningRuntime runtime = createRuntime(combining);
         runtime.start();
 
-        final ArgumentCaptor<TagConsumer> consumerCaptor = ArgumentCaptor.forClass(TagConsumer.class);
+        final ArgumentCaptor<SingleTagConsumer> consumerCaptor = ArgumentCaptor.forClass(SingleTagConsumer.class);
         verify(tagManager).addConsumer(consumerCaptor.capture());
 
-        consumerCaptor.getValue().accept(List.of(new DataPointImpl("tag1", "{\"temperature\":25}")));
+        consumerCaptor.getValue().accept(new DataPointImpl("tag1", "{\"temperature\":25}", "adapter1"));
 
         final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(dataCombiningPublishService).publish(eq(destination), payloadCaptor.capture(), eq(combining));
@@ -932,16 +932,16 @@ class DataCombiningRuntimeTest {
         final DataCombiningRuntime runtime = createRuntime(combining);
         runtime.start();
 
-        final ArgumentCaptor<TagConsumer> captor = ArgumentCaptor.forClass(TagConsumer.class);
+        final ArgumentCaptor<SingleTagConsumer> captor = ArgumentCaptor.forClass(SingleTagConsumer.class);
         verify(tagManager, times(2)).addConsumer(captor.capture());
-        final List<TagConsumer> consumers = captor.getAllValues();
+        final List<SingleTagConsumer> consumers = captor.getAllValues();
 
         // Feed data to non-primary (tag2) first — stores but does not trigger
-        consumers.get(0).accept(List.of(new DataPointImpl("tag2", "{\"humidity\":60}")));
+        consumers.get(0).accept(new DataPointImpl("tag2", "{\"humidity\":60}", "adapter1"));
         verify(dataCombiningPublishService, never()).publish(any(), any(), any());
 
         // Feed data to primary (tag1) — triggers publish but does NOT store its own data
-        consumers.get(1).accept(List.of(new DataPointImpl("tag1", "{\"temperature\":25}")));
+        consumers.get(1).accept(new DataPointImpl("tag1", "{\"temperature\":25}", "adapter1"));
 
         final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(dataCombiningPublishService).publish(eq(destination), payloadCaptor.capture(), eq(combining));
