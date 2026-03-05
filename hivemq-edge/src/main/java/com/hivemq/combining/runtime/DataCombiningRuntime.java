@@ -33,7 +33,7 @@ import com.hivemq.mqtt.topic.SubscriptionFlag;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
-import com.hivemq.protocols.northbound.TagConsumer;
+import com.hivemq.protocols.northbound.SingleTagConsumer;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ public class DataCombiningRuntime {
     private final @NotNull ObjectMapper mapper;
     private final @NotNull List<InternalTagConsumer> consumers;
     private final @NotNull List<InternalSubscription> internalSubscriptions;
-    private final @NotNull ConcurrentHashMap<String, List<DataPoint>> tagResults;
+    private final @NotNull ConcurrentHashMap<String, DataPoint> tagResults;
     private final @NotNull ConcurrentHashMap<String, PUBLISH> topicFilterToPublish;
 
     public DataCombiningRuntime(
@@ -175,7 +175,7 @@ public class DataCombiningRuntime {
             }
         });
 
-        tagsToDataPoints.forEach((tagName, dataPoints) -> dataPoints.forEach(dataPoint -> {
+        tagsToDataPoints.forEach((tagName, dataPoint) -> {
             try {
                 rootNode.set(
                         sanitize(new DataIdentifierReference(tagName, TAG)),
@@ -184,7 +184,7 @@ public class DataCombiningRuntime {
                 log.warn("Exception during json parsing of datapoint '{}'", dataPoint.getTagValue());
                 throw new RuntimeException(e);
             }
-        }));
+        });
 
         dataCombiningPublishService.publish(
                 combining.destination(), rootNode.toString().getBytes(StandardCharsets.UTF_8), dataCombining);
@@ -200,7 +200,7 @@ public class DataCombiningRuntime {
         }
     }
 
-    public final class InternalTagConsumer implements TagConsumer {
+    public final class InternalTagConsumer implements SingleTagConsumer {
         private final @NotNull String tagName;
         private final boolean isPrimary;
         private final @NotNull DataCombining dataCombining;
@@ -218,13 +218,13 @@ public class DataCombiningRuntime {
         }
 
         @Override
-        public void accept(final @NotNull List<DataPoint> dataPoints) {
-            tagResults.put(tagName, dataPoints);
+        public void accept(final @NotNull DataPoint dataPoint) {
+            tagResults.put(tagName, dataPoint);
             if (isPrimary) {
                 try {
                     triggerPublish(dataCombining);
                 } catch (final Exception e) {
-                    log.warn("Unable to process data points '{}'", dataPoints, e);
+                    log.warn("Unable to process data point '{}'", dataPoint, e);
                 }
             }
         }

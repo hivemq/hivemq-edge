@@ -15,10 +15,6 @@
  */
 package com.hivemq.edge.adapters.opcua.northbound;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
@@ -38,18 +34,23 @@ import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
-import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import util.EmbeddedOpcUaServerExtension;
+
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 abstract class AbstractOpcUaPayloadConverterTest {
 
@@ -60,7 +61,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
     private final @NotNull ProtocolAdapterInput<OpcUaSpecificAdapterConfig> protocolAdapterInput = mock();
     private final @NotNull AdapterFactories adapterFactories = mock();
     private final @NotNull EventService eventService = mock();
-    private final @NotNull Map<String, List<DataPoint>> receivedDataPoints = new ConcurrentHashMap<>();
+    private final @NotNull Map<String, DataPoint> receivedDataPoints = new ConcurrentHashMap<>();
 
     @BeforeEach
     public void before() {
@@ -73,7 +74,8 @@ abstract class AbstractOpcUaPayloadConverterTest {
                 .thenReturn(mock(ProtocolAdapterMetricsService.class));
         when(eventService.createAdapterEvent(any(), any())).thenReturn(new EventBuilderImpl(event -> {}));
         when(moduleServices.eventService()).thenReturn(eventService);
-        when(moduleServices.protocolAdapterTagStreamingService()).thenReturn(receivedDataPoints::put);
+        when(moduleServices.protocolAdapterTagStreamingService()).thenReturn(dataPoints ->
+                dataPoints.forEach(point -> receivedDataPoints.put(point.getTagName(), point)));
         final AdapterFactories adapterFactories = mock(AdapterFactoriesImpl.class);
         when(adapterFactories.dataPointFactory()).thenReturn(new DataPointFactory() {
             @Override
@@ -121,7 +123,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
         return protocolAdapter;
     }
 
-    protected @NotNull Map<String, List<DataPoint>> expectAdapterPublish() {
+    protected @NotNull Map<String, DataPoint> expectAdapterPublish() {
         Awaitility.await()
                 .pollInterval(10, TimeUnit.MILLISECONDS)
                 .timeout(Duration.ofSeconds(5))
