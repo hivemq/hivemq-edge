@@ -22,6 +22,7 @@ import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
+import dagger.internal.Preconditions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,22 +31,22 @@ public class ModuleServicesPerModuleImpl implements ModuleServices {
     private final @NotNull ProtocolAdapterPublishServicePerAdapter adapterPublishServicePerAdapter;
     private final @NotNull EventService eventService;
     private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService;
-    private final @NotNull ProtocolAdapterTagStreamingService streamingService;
+    private final @NotNull ProtocolAdapterTagStreamingService protocolAdapterTagStreamingService;
 
     public ModuleServicesPerModuleImpl(
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull EventService eventService,
             final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService,
-            final @NotNull ProtocolAdapterTagStreamingService streamingService) {
+            final @NotNull ProtocolAdapterTagStreamingService protocolAdapterTagStreamingService) {
         this.eventService = eventService;
         this.adapterPublishServicePerAdapter = new ProtocolAdapterPublishServicePerAdapter(adapterPublishService);
         this.protocolAdapterWritingService = protocolAdapterWritingService;
-        this.streamingService = streamingService;
+        this.protocolAdapterTagStreamingService = protocolAdapterTagStreamingService;
     }
 
     @Override
     public @NotNull ProtocolAdapterTagStreamingService protocolAdapterTagStreamingService() {
-        return streamingService;
+        return protocolAdapterTagStreamingService;
     }
 
     @Override

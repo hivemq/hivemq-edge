@@ -16,6 +16,8 @@
 package com.hivemq.edge.modules.adapters.data;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
+import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.protocols.northbound.SingleTagConsumer;
 import com.hivemq.configuration.entity.adapter.AdapterTag;
@@ -66,7 +68,6 @@ public class TagManager {
             dataPoints.forEach(entry -> {
                 final String tagName = entry.getTagName();
                 final DataPoint tagDataPoint = entry;
-                //TODO we need adapterId on DataPoints
                 final AdapterTag adapterTag = new AdapterTag(tagDataPoint.getAdapterId(), tagName);
                 lastValueForTag.put(adapterTag, tagDataPoint);
                 final var tagConsumers = consumers.get(adapterTag);

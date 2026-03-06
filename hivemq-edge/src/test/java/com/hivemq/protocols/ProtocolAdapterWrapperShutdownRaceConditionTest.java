@@ -100,8 +100,8 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
-                moduleServices,
-                tagManager);
+                tagManager,
+                mock());
 
         // Start the adapter first
         wrapper.startAsync(true).get(5, TimeUnit.SECONDS);
@@ -141,8 +141,8 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
                     mock(),
                     adapterState,
                     northboundConsumerFactory,
-                    moduleServices,
-                    tagManager);
+                    tagManager,
+                    mock());
 
             // Start the adapter
             wrapper.startAsync(true).get(5, TimeUnit.SECONDS);
@@ -211,8 +211,8 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
-                moduleServices,
-                tagManager);
+                tagManager,
+                mock());
 
         // Set up listener
         adapterState.setConnectionStatusListener(status -> listenerCallCount.incrementAndGet());
@@ -250,8 +250,8 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
-                moduleServices,
-                tagManager);
+                tagManager,
+                mock());
 
         // Start, stop, then start again
         wrapper.startAsync(true).get(5, TimeUnit.SECONDS);
@@ -288,8 +288,8 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
-                moduleServices,
-                tagManager);
+                tagManager,
+                mock());
 
         // Try to start (will fail)
         wrapper.startAsync(true).get(5, TimeUnit.SECONDS);
