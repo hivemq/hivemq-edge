@@ -15,18 +15,19 @@
  */
 package com.hivemq.edge.adapters.opcua.northbound;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
-import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
-import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.datapoint.DataPointWithMetadata;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterInformation;
@@ -34,32 +35,23 @@ import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
-import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterTagStreamingServiceImpl;
 import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
-import org.awaitility.Awaitility;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.RegisterExtension;
-import org.mockito.ArgumentCaptor;
-import util.EmbeddedOpcUaServerExtension;
-
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.awaitility.Awaitility;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import util.EmbeddedOpcUaServerExtension;
 
 abstract class AbstractOpcUaPayloadConverterTest {
 
@@ -86,17 +78,16 @@ abstract class AbstractOpcUaPayloadConverterTest {
 
         final var tagManager = mock(TagManager.class);
         doAnswer(invocation -> {
-            final List<DataPoint> dataPointList = invocation.getArgument(0, List.class);
-            final var dataPoint = (DataPointWithMetadata)(dataPointList.get(0));
-            receivedDataPoints.put(
-                    dataPoint.getTagName(),
-                    dataPoint);
-            return  null;
-        }).when(tagManager).feed(any());
+                    final List<DataPoint> dataPointList = invocation.getArgument(0, List.class);
+                    final var dataPoint = (DataPointWithMetadata) (dataPointList.get(0));
+                    receivedDataPoints.put(dataPoint.getTagName(), dataPoint);
+                    return null;
+                })
+                .when(tagManager)
+                .feed(any());
 
         when(moduleServices.protocolAdapterTagStreamingService())
-                .thenReturn(
-                        new ProtocolAdapterTagStreamingServiceImpl(tagManager, enrich -> {}));
+                .thenReturn(new ProtocolAdapterTagStreamingServiceImpl(tagManager, enrich -> {}));
 
         final AdapterFactories adapterFactories = mock(AdapterFactoriesImpl.class);
         when(protocolAdapterInput.adapterFactories()).thenReturn(adapterFactories);

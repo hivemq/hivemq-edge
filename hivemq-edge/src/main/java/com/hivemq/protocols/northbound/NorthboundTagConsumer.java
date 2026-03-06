@@ -103,7 +103,7 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
             final JsonPayloadCreator jsonPayloadCreatorOverride = pollingContext.getJsonPayloadCreator();
 
             final byte[] jsonToSend;
-            if(dataPoint instanceof final DataPointWithMetadata dpMeta) {
+            if (dataPoint instanceof final DataPointWithMetadata dpMeta) {
                 final var node = JsonNodeFactory.instance.objectNode();
                 node.set("value", dpMeta.getTagValue());
                 node.set("timestamp", JsonNodeFactory.instance.numberNode(dpMeta.getTimestamp()));
@@ -132,8 +132,6 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
                                 objectMapper)
                         .getFirst();
             }
-
-
 
             final ProtocolAdapterPublishBuilder publishBuilder = protocolAdapterPublishService
                     .createPublish()

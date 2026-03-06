@@ -15,10 +15,9 @@
  */
 package com.hivemq.edge.adapters.modbus;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This class is here TEMPORARY, the functionality will be moved into NorthboundMappings

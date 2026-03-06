@@ -15,6 +15,9 @@
  */
 package com.hivemq.protocols;
 
+import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatus.ADAPTER_MISSING;
+import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatus.ALREADY_EXISTS;
+
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
@@ -36,7 +39,6 @@ import com.hivemq.edge.modules.adapters.data.ProtocolAdapterTagStreamingServiceI
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesPerModuleImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
-import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterTagStreamingServiceImpl;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.persistence.domain.DomainTag;
@@ -44,11 +46,6 @@ import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.VisibleForTesting;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -65,9 +62,10 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatus.ADAPTER_MISSING;
-import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatus.ALREADY_EXISTS;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Singleton
 @SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
@@ -347,23 +345,17 @@ public class ProtocolAdapterManager {
                 final ProtocolAdapterMetricsService metricsService =
                         new ProtocolAdapterMetricsServiceImpl(configProtocolId, config.getAdapterId(), metricRegistry);
 
-                final ProtocolAdapterStateImpl state = new ProtocolAdapterStateImpl(
-                        eventService, config.getAdapterId(), configProtocolId);
+                final ProtocolAdapterStateImpl state =
+                        new ProtocolAdapterStateImpl(eventService, config.getAdapterId(), configProtocolId);
 
-                final var streamingService =
-                        new ProtocolAdapterTagStreamingServiceImpl(config.getAdapterId(), tagManager);
                 final ModuleServicesPerModuleImpl perModule = new ModuleServicesPerModuleImpl(
                         adapterPublishService,
                         eventService,
                         protocolAdapterWritingService,
-                        new ProtocolAdapterTagStreamingServiceImpl(tagManager,
-                                enrich -> {
-                                    enrich
-                                            .adapterDatapointMetadataStart()
-                                            .add("key", "value")
-                                            .adapterDatapointMetadataStop();
-                                }
-                        ));
+                        new ProtocolAdapterTagStreamingServiceImpl(tagManager, enrich -> {
+                            //TODO provide adapterId in here!!!
+                            enrich.startObjectContext().put("key", "value").endObject();
+                        }));
 
                 final ProtocolAdapter protocolAdapter = factory.createAdapter(
                         factory.getInformation(),
@@ -418,7 +410,7 @@ public class ProtocolAdapterManager {
         Preconditions.checkNotNull(wrapper);
         final String wid = wrapper.getId();
         log.info("Starting protocol-adapter '{}'.", wid);
-        return wrapper.startAsync(writingEnabled()).whenComplete((result, throwable) -> {
+        return wrapper.startAsync(writingEnabled(), wrapper.getPerModule()).whenComplete((result, throwable) -> {
             if (throwable == null) {
                 log.info("Protocol-adapter '{}' started successfully.", wid);
                 fireEvent(

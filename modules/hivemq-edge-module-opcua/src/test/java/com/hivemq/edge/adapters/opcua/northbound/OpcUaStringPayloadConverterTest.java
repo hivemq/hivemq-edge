@@ -18,7 +18,6 @@ package com.hivemq.edge.adapters.opcua.northbound;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.datapoint.DataPointWithMetadata;
@@ -26,9 +25,7 @@ import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.protocols.ProtocolAdapterStopOutputImpl;
 import java.time.Instant;
 import java.util.stream.Stream;
-
 import org.assertj.core.api.InstanceOfAssertFactories;
-import org.assertj.core.api.InstanceOfAssertFactory;
 import org.assertj.core.groups.Tuple;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;

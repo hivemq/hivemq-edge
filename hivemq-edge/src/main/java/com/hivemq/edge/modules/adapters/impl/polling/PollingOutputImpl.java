@@ -43,13 +43,10 @@ public class PollingOutputImpl implements PollingOutput, BatchPollingOutput {
     }
 
     @Override
-    public @NotNull DataPointListBuilder dataPointSender() {
+    public @NotNull DataPointListBuilder dataPointsPublisher() {
         return new DataPointListBuilderImpl(
                 toEnrich -> {
-                    toEnrich
-                        .adapterDatapointMetadataStart()
-                        .add("key", "value")
-                    .adapterDeviceMetadataStop();
+                    toEnrich.startObjectContext().put("key", "value").endObject();
                 },
                 dataPoints -> {
                     dataPoints.forEach(dataSample::addDataPoint);
