@@ -36,6 +36,7 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingInput;
@@ -46,7 +47,6 @@ import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
 import com.hivemq.edge.modules.adapters.data.TagManager;
-import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
@@ -61,7 +61,6 @@ import org.junit.jupiter.api.Test;
 class ProtocolAdapterManagerTest {
 
     private final @NotNull MetricRegistry metricRegistry = mock();
-    private final @NotNull ModuleServicesImpl moduleServices = mock();
     private final @NotNull HiveMQEdgeRemoteService remoteService = mock();
     private final @NotNull EventService eventService = mock();
     private final @NotNull VersionProvider versionProvider = mock();
@@ -72,6 +71,7 @@ class ProtocolAdapterManagerTest {
     private final @NotNull NorthboundConsumerFactory northboundConsumerFactory = mock();
     private final @NotNull TagManager tagManager = mock();
     private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor = mock();
+    private final @NotNull ProtocolAdapterPublishService protocolAdapterPublishService = mock();
 
     private final @NotNull ProtocolAdapterConfigConverter protocolAdapterConfigConverter = mock();
 
@@ -81,7 +81,6 @@ class ProtocolAdapterManagerTest {
     void setUp() {
         protocolAdapterManager = new ProtocolAdapterManager(
                 metricRegistry,
-                moduleServices,
                 remoteService,
                 eventService,
                 protocolAdapterConfigConverter,
@@ -92,7 +91,8 @@ class ProtocolAdapterManagerTest {
                 protocolAdapterFactoryManager,
                 northboundConsumerFactory,
                 tagManager,
-                protocolAdapterExtractor);
+                protocolAdapterExtractor,
+                protocolAdapterPublishService);
     }
 
     @Test
@@ -114,7 +114,8 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
-                tagManager);
+                tagManager,
+                mock());
 
         protocolAdapterManager.startAsync(adapterWrapper).get();
 
@@ -140,7 +141,8 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
-                tagManager);
+                tagManager,
+                mock());
 
         protocolAdapterManager.startAsync(adapterWrapper).get();
 
@@ -170,7 +172,8 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
-                tagManager);
+                tagManager,
+                mock());
 
         protocolAdapterManager.startAsync(adapterWrapper).get();
 
@@ -201,7 +204,8 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
-                tagManager);
+                tagManager,
+                mock());
 
         protocolAdapterManager.startAsync(adapterWrapper).get();
 
@@ -228,7 +232,8 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
-                tagManager);
+                tagManager,
+                mock());
 
         adapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
 
@@ -255,7 +260,8 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
-                tagManager);
+                tagManager,
+                mock());
 
         adapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
 

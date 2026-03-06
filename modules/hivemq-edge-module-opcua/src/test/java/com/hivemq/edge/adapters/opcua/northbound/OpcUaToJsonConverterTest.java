@@ -18,14 +18,19 @@ package com.hivemq.edge.adapters.opcua.northbound;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeCreator;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.datapoint.DataPointWithMetadata;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.protocols.ProtocolAdapterStopOutputImpl;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.stream.Stream;
+
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.assertj.core.groups.Tuple;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
@@ -118,11 +123,15 @@ class OpcUaToJsonConverterTest extends AbstractOpcUaPayloadConverterTest {
         final var received = expectAdapterPublish();
         protocolAdapter.stop(new ProtocolAdapterStopInput() {}, new ProtocolAdapterStopOutputImpl());
 
+        final var mapper = new ObjectMapper();
         assertThat(received)
                 .extractingByKey(nodeId)
                     .satisfies(dataPoint ->
                         assertThat(dataPoint)
-                                .extracting(DataPoint::getTagName, DataPoint::getTagValue)
-                                .containsExactly(nodeId, "{\"value\":" + jsonValue + "}"));
+                                .asInstanceOf(InstanceOfAssertFactories.type(DataPointWithMetadata.class))
+                                .satisfies(dp -> {
+                                    assertThat(dp.getTagName()).isEqualTo(nodeId);
+                                    assertThat(dp.getTagValue().toString()).isEqualTo("{\"value\":" + jsonValue + "}");
+                                }));
     }
 }

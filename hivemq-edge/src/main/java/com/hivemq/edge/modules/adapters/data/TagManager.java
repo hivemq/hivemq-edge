@@ -16,6 +16,8 @@
 package com.hivemq.edge.modules.adapters.data;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
+import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.protocols.northbound.SingleTagConsumer;
 import jakarta.inject.Inject;
@@ -32,7 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Singleton
-public class TagManager implements ProtocolAdapterTagStreamingService {
+public class TagManager {
 
     private static final Logger log = LoggerFactory.getLogger(TagManager.class);
 
@@ -50,13 +52,11 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
 
     private final @NotNull Map<String, List<SingleTagConsumer>> singleTagConsumers = new ConcurrentHashMap<>();
 
-    @Override
     public void feed(@NotNull final String tag, @NotNull final List<DataPoint> dataPoints) {
         // This is still correct since every dataPoint contains the tagname it came from.
         feed(dataPoints);
     }
 
-    @Override
     public void feed(@NotNull final List<DataPoint> dataPoints) {
         final var readlock = readWriteLock.readLock();
         readlock.lock();

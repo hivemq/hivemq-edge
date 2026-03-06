@@ -15,8 +15,6 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
-import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
-
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
@@ -33,13 +31,6 @@ import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaSessionActivityListener;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaSubscriptionLifecycleHandler;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.ServiceFaultListener;
 import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
@@ -51,13 +42,22 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
+
 public class OpcUaClientConnection {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaClientConnection.class);
 
     private final @NotNull OpcUaSpecificAdapterConfig config;
     private final @NotNull List<OpcuaTag> tags;
     private final @NotNull ProtocolAdapterTagStreamingService tagStreamingService;
-    private final @NotNull DataPointFactory dataPointFactory;
     private final @NotNull EventService eventService;
     private final @NotNull String adapterId;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
@@ -71,14 +71,12 @@ public class OpcUaClientConnection {
             final @NotNull List<OpcuaTag> tags,
             final @NotNull ProtocolAdapterState protocolAdapterState,
             final @NotNull ProtocolAdapterTagStreamingService tagStreamingService,
-            final @NotNull DataPointFactory dataPointFactory,
             final @NotNull EventService eventService,
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
             final @NotNull OpcUaSpecificAdapterConfig config,
             final @NotNull OpcUaServiceFaultListener serviceFaultListener) {
         this.config = config;
         this.tagStreamingService = tagStreamingService;
-        this.dataPointFactory = dataPointFactory;
         this.eventService = eventService;
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.adapterId = adapterId;
@@ -197,7 +195,6 @@ public class OpcUaClientConnection {
                 adapterId,
                 tags,
                 client,
-                dataPointFactory,
                 config);
 
         final var subscriptionOptional = subscriptionLifecycleHandler.subscribe(client);
