@@ -45,9 +45,11 @@ export const decodeDataUriJsonSchema = (dataUrl: string) => {
     const json: RJSFSchema = JSON.parse(decoded)
 
     // This will take care of some of the basic json error but not of a valid JSONSchema
-    // $id and $schema are stripped so AJV does not register this schema in its global singleton cache
-    // (compile is called only for its throw-on-invalid side effect; the return value is discarded)
-    validator.ajv.compile(cleanSchemaForValidation(json))
+    // $id and $schema are stripped to prevent AJV from caching by $id key;
+    // removeSchema() is called immediately after to prevent cache accumulation by object reference
+    const jsonSchemaWithoutId = cleanSchemaForValidation(json)
+    validator.ajv.compile(jsonSchemaWithoutId)
+    validator.ajv.removeSchema(jsonSchemaWithoutId)
 
     // TODO[NVL] We need to decide what we want to require on the schema
     const { properties } = json
