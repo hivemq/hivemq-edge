@@ -11,6 +11,7 @@ The combining editor (`DataCombiningEditorField`) renders three stacked selector
 ```
 
 `CombinedEntitySelect` is the reference implementation — it already renders:
+
 - **Options**: label + adapterId (gray right-aligned) + type badge, description below
 - **Selected chips**: `PLCTag` / `TopicFilter` / `Topic` badges via `MultiValueContainer`
 
@@ -29,17 +30,18 @@ formContext.selectedSources  (DataIdentifierReference[] with scope)  ← richer
 
 ### What's missing
 
-| Concern | Current | Target |
-|---------|---------|--------|
-| Option scope display | Not shown | adapterId in gray, right-aligned |
-| Option type badge | Not shown | TAG / TOPIC_FILTER |
-| Option description | Not shown | Below label |
-| Selected value | Plain string | PLCTag / TopicFilter badge |
-| Options data source | `formData.sources.tags` (strings) | Prefer `formContext.selectedSources` |
+| Concern              | Current                           | Target                               |
+| -------------------- | --------------------------------- | ------------------------------------ |
+| Option scope display | Not shown                         | adapterId in gray, right-aligned     |
+| Option type badge    | Not shown                         | TAG / TOPIC_FILTER                   |
+| Option description   | Not shown                         | Below label                          |
+| Selected value       | Plain string                      | PLCTag / TopicFilter badge           |
+| Options data source  | `formData.sources.tags` (strings) | Prefer `formContext.selectedSources` |
 
 ## 3. Reference Implementation (`CombinedEntitySelect`)
 
 ### Option component
+
 ```tsx
 Option: ({ children, ...props }) => (
   <chakraComponents.Option {...props}>
@@ -47,7 +49,9 @@ Option: ({ children, ...props }) => (
       <HStack>
         <Text flex={1}>{props.data.label}</Text>
         {props.data.adapterId && (
-          <Text fontSize="sm" color="gray.500">{props.data.adapterId}</Text>
+          <Text fontSize="sm" color="gray.500">
+            {props.data.adapterId}
+          </Text>
         )}
         <Text fontSize="sm" fontWeight="bold">
           {t('combiner.schema.mapping.combinedSelector.type', { context: props.data.type })}
@@ -62,6 +66,7 @@ Option: ({ children, ...props }) => (
 ```
 
 ### Multi-value chip
+
 ```tsx
 MultiValueContainer: ({ children, ...props }) => (
   <>
@@ -75,13 +80,13 @@ For the single-select `PrimarySelect`, the equivalent of `MultiValueContainer` i
 
 ## 4. Key Utilities Available
 
-| Utility | Location | Purpose |
-|---------|----------|---------|
-| `formatOwnershipString(ref)` | `topic-utils.ts` | `scope :: id` or just `id` |
-| `PLCTag` | `EntityTag.tsx` | Blue badge with PLC icon |
-| `TopicFilter` | `EntityTag.tsx` | Orange badge with filter icon |
-| `chakraComponents` | `chakra-react-select` | Base components to wrap |
-| `getAdapterIdForTag` | `combining.utils.ts` | Scope lookup from context |
+| Utility                      | Location              | Purpose                       |
+| ---------------------------- | --------------------- | ----------------------------- |
+| `formatOwnershipString(ref)` | `topic-utils.ts`      | `scope :: id` or just `id`    |
+| `PLCTag`                     | `EntityTag.tsx`       | Blue badge with PLC icon      |
+| `TopicFilter`                | `EntityTag.tsx`       | Orange badge with filter icon |
+| `chakraComponents`           | `chakra-react-select` | Base components to wrap       |
+| `getAdapterIdForTag`         | `combining.utils.ts`  | Scope lookup from context     |
 
 ## 5. Implementation Plan
 
@@ -98,7 +103,7 @@ Add `description?: string` to `PrimaryOption`. No behavioural change, prepares f
 if (formContext?.selectedSources) {
   return [
     ...formContext.selectedSources.tags.map<PrimaryOption>((ref) => ({
-      label: ref.id,           // raw name — scope shown separately in Option UI
+      label: ref.id, // raw name — scope shown separately in Option UI
       value: ref.id,
       type: DataIdentifierReference.type.TAG,
       adapterId: ref.scope || undefined,
@@ -124,7 +129,7 @@ const primaryValue = useMemo<PrimaryOption | null>(() => {
   if (!formData?.sources.primary) return null
   const primary = formData.sources.primary
   return {
-    label: formatOwnershipString(primary),   // "my-adapter :: my/tag/t1"
+    label: formatOwnershipString(primary), // "my-adapter :: my/tag/t1"
     value: primary.id,
     type: primary.type,
     adapterId: primary.scope || undefined,
@@ -141,7 +146,9 @@ Option: ({ children, ...props }) => (
       <HStack>
         <Text flex={1}>{props.data.label}</Text>
         {props.data.adapterId && (
-          <Text fontSize="sm" color="gray.500">{props.data.adapterId}</Text>
+          <Text fontSize="sm" color="gray.500">
+            {props.data.adapterId}
+          </Text>
         )}
         <Text fontSize="sm" fontWeight="bold">
           {t('combiner.schema.mapping.combinedSelector.type', { context: props.data.type })}
@@ -157,14 +164,15 @@ Note: description is omitted for now since `formData.sources.tags` is `string[]`
 ### Step 5 — Add `SingleValue` component (replaces plain string display)
 
 ```tsx
-SingleValue: ({ data }) => (
-  data.type === DataIdentifierReference.type.TAG
-    ? <PLCTag tagTitle={data.label} ml={2} />
-    : <TopicFilter tagTitle={data.label} ml={2} />
-)
+SingleValue: ({ data }) =>
+  data.type === DataIdentifierReference.type.TAG ? (
+    <PLCTag tagTitle={data.label} ml={2} />
+  ) : (
+    <TopicFilter tagTitle={data.label} ml={2} />
+  )
 ```
 
-`data.label` here is the `formatOwnershipString` result (`my-adapter :: my/tag/t1`), which `EntityTag` will then pass through `formatTopicString` (expanding `/` to ` / `). This is consistent with how `CombinedEntitySelect` renders selected chips.
+`data.label` here is the `formatOwnershipString` result (`my-adapter :: my/tag/t1`), which `EntityTag` will then pass through `formatTopicString` (expanding `/` to `/`). This is consistent with how `CombinedEntitySelect` renders selected chips.
 
 ### Step 6 — Imports cleanup
 
@@ -175,15 +183,18 @@ The i18n key `combiner.schema.mapping.combinedSelector.type` already exists (use
 ## 6. Test Updates (`PrimarySelect.spec.cy.tsx`)
 
 The existing tests pass no `formContext`, so:
+
 - `formContext.selectedSources` is undefined → fallback to string arrays + `getAdapterIdForTag`
 - `getAdapterIdForTag` returns `undefined` (no context) → `adapterId` is undefined
 - Labels remain raw strings in options (no scope shown without context)
 - **Option assertions** (`have.text 'my/tag/t1'`) remain valid for options (raw label, no adapterId in gray since it's undefined)
 
 What changes:
+
 - `should render properly` test: `cy.get('label + div').should('have.text', 'my/tag/t3')` will **fail** because the selected value is now a badge. The mock `mockPrimary` has no scope (`scope` not set in that test's mock), so `formatOwnershipString` returns `'my/tag/t3'`, which `EntityTag` formats as `'my / tag / t3'`.
 
 **Required test update:** Replace the plain text assertion with a badge assertion:
+
 ```ts
 // Before:
 cy.get('label + div').should('have.text', 'my/tag/t3')
@@ -203,8 +214,8 @@ The `onChange` stub assertions are unaffected — the callback contract (`value`
 
 ## 8. Risk Assessment
 
-| Risk | Likelihood | Mitigation |
-|------|-----------|------------|
-| Test assertion on selected value text breaks | Certain | Update `should render properly` test |
-| `formatTopicString` inside `EntityTag` formats `::` separator unexpectedly | Low | Consistent with `CombinedEntitySelect` — already accepted pattern |
-| Missing `formContext.selectedSources` fallback coverage | Low | Fallback path kept, covered by existing tests (no context) |
+| Risk                                                                       | Likelihood | Mitigation                                                        |
+| -------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------------- |
+| Test assertion on selected value text breaks                               | Certain    | Update `should render properly` test                              |
+| `formatTopicString` inside `EntityTag` formats `::` separator unexpectedly | Low        | Consistent with `CombinedEntitySelect` — already accepted pattern |
+| Missing `formContext.selectedSources` fallback coverage                    | Low        | Fallback path kept, covered by existing tests (no context)        |

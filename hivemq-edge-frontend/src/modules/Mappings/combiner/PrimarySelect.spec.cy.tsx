@@ -72,7 +72,10 @@ describe('PrimarySelect', () => {
 
     cy.get('label + div [role="listbox"]').should('not.exist')
     // Selected value is now rendered as a PLCTag badge
-    cy.get('label + div [data-testid="topic-wrapper"]').should('be.visible').should('contain.text', 'tag').should('contain.text', 't3')
+    cy.get('label + div [data-testid="topic-wrapper"]')
+      .should('be.visible')
+      .should('contain.text', 'tag')
+      .should('contain.text', 't3')
     cy.get('label + div input').should('have.attr', 'aria-label', 'The primary data key of the mapping')
 
     cy.get('label + div').click()

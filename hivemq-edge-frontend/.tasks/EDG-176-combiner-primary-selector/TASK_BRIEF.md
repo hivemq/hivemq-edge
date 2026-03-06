@@ -13,12 +13,14 @@ This task is a follow-up to EDG-35 (Visual Rendering of Tags in Data Combinings,
 `PrimarySelect` still renders options and the selected value as plain strings. Every other selector in the combining editor now uses the badge-based rendering pattern with scope/ownership info.
 
 **Current behaviour:**
+
 - Dropdown options: plain text labels (e.g. `my/tag/t1`, `my/topic/+/temp`)
 - Selected value: plain text inside the react-select control
 - No visual differentiation between TAG and TOPIC_FILTER options
 - No scope/adapter ownership shown
 
 **Target behaviour (matching `CombinedEntitySelect`):**
+
 - Dropdown options: label + adapterId in gray + type badge, description below
 - Selected value: `PLCTag` or `TopicFilter` badge with scope-formatted label (`adapter :: tag`)
 - Consistent visual language with the sources selector directly above it
@@ -31,7 +33,7 @@ This task is a follow-up to EDG-35 (Visual Rendering of Tags in Data Combinings,
 
 ## Files in Scope
 
-| File | Change |
-|------|--------|
-| `src/modules/Mappings/combiner/PrimarySelect.tsx` | Main implementation |
-| `src/modules/Mappings/combiner/PrimarySelect.spec.cy.tsx` | Test updates |
+| File                                                      | Change              |
+| --------------------------------------------------------- | ------------------- |
+| `src/modules/Mappings/combiner/PrimarySelect.tsx`         | Main implementation |
+| `src/modules/Mappings/combiner/PrimarySelect.spec.cy.tsx` | Test updates        |
