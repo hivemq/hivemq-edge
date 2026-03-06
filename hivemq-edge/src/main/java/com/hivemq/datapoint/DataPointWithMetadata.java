@@ -473,4 +473,9 @@ public class DataPointWithMetadata implements DataPoint {
             return completer.apply(node);
         }
     }
+
+    @Override
+    public String toString() {
+        return "DataPointWithMetadata{" + "jsonNode=" + jsonNode + '}';
+    }
 }
