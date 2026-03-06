@@ -34,9 +34,10 @@ describe('PrimarySelect', () => {
 
     cy.get('@options').within(() => {
       cy.get('[role="option"]').should('have.length', 3)
-      cy.get('[role="option"]').eq(0).should('have.text', 'my/tag/t1')
-      cy.get('[role="option"]').eq(1).should('have.text', 'my/tag/t3')
-      cy.get('[role="option"]').eq(2).should('have.text', 'my/topic/+/temp')
+      // Each option now shows: label + type badge ("Tag" / "Topic Filter")
+      cy.get('[role="option"]').eq(0).should('contain.text', 'my/tag/t1').should('contain.text', 'Tag')
+      cy.get('[role="option"]').eq(1).should('contain.text', 'my/tag/t3').should('contain.text', 'Tag')
+      cy.get('[role="option"]').eq(2).should('contain.text', 'my/topic/+/temp').should('contain.text', 'Topic Filter')
 
       cy.get('[role="option"]').eq(1).click()
       cy.get('@onChange').should(
@@ -70,7 +71,8 @@ describe('PrimarySelect', () => {
     cy.mountWithProviders(<PrimarySelect formData={mockPrimary} onChange={onChange} />, { wrapper })
 
     cy.get('label + div [role="listbox"]').should('not.exist')
-    cy.get('label + div').should('have.text', 'my/tag/t3')
+    // Selected value is now rendered as a PLCTag badge
+    cy.get('label + div [data-testid="topic-wrapper"]').should('be.visible').should('contain.text', 'tag').should('contain.text', 't3')
     cy.get('label + div input').should('have.attr', 'aria-label', 'The primary data key of the mapping')
 
     cy.get('label + div').click()
@@ -80,9 +82,9 @@ describe('PrimarySelect', () => {
 
     cy.get('@options').within(() => {
       cy.get('[role="option"]').should('have.length', 3)
-      cy.get('[role="option"]').eq(0).should('have.text', 'my/tag/t1')
-      cy.get('[role="option"]').eq(1).should('have.text', 'my/tag/t3').should('have.attr', 'aria-selected', 'true')
-      cy.get('[role="option"]').eq(2).should('have.text', 'my/topic/+/temp')
+      cy.get('[role="option"]').eq(0).should('contain.text', 'my/tag/t1').should('contain.text', 'Tag')
+      cy.get('[role="option"]').eq(1).should('contain.text', 'my/tag/t3').should('have.attr', 'aria-selected', 'true')
+      cy.get('[role="option"]').eq(2).should('contain.text', 'my/topic/+/temp').should('contain.text', 'Topic Filter')
 
       cy.get('[role="option"]').eq(1).click()
       cy.get('@onChange').should(
