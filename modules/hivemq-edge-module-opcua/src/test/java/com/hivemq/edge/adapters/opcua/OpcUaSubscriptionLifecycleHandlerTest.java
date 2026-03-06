@@ -58,9 +58,6 @@ class OpcUaSubscriptionLifecycleHandlerTest {
     @Mock
     private @NotNull OpcUaClient opcUaClient;
 
-    @Mock
-    private @NotNull DataPointFactory dataPointFactory;
-
     private static @NotNull OpcUaSpecificAdapterConfig createConfig(
             final @NotNull ConnectionOptions connectionOptions) {
         return new OpcUaSpecificAdapterConfig(
@@ -535,7 +532,6 @@ class OpcUaSubscriptionLifecycleHandlerTest {
                 ADAPTER_ID,
                 List.of(createTestTag()),
                 opcUaClient,
-                dataPointFactory,
                 config);
     }
 }

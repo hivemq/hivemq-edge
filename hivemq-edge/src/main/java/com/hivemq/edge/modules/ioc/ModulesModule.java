@@ -20,7 +20,6 @@ import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.impl.events.EventServiceDelegateImpl;
 import com.hivemq.edge.impl.events.InMemoryEventImpl;
-import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishServiceImpl;
 import com.hivemq.edge.modules.adapters.impl.polling.ProtocolAdapterPollingServiceImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
@@ -37,10 +36,6 @@ import org.jetbrains.annotations.NotNull;
 @SuppressWarnings("unused")
 @Module
 public abstract class ModulesModule {
-
-    @Binds
-    @Singleton
-    abstract @NotNull ModuleServices moduleServices(@NotNull ModuleServicesImpl moduleServices);
 
     @Binds
     @Singleton

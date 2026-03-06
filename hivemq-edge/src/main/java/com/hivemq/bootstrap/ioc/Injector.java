@@ -17,7 +17,6 @@ package com.hivemq.bootstrap.ioc;
 
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.HiveMQEdgeGateway;
-import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.api.ioc.ApiModule;
 import com.hivemq.api.resources.GenericAPIHolder;
 import com.hivemq.bootstrap.netty.ioc.NettyModule;
@@ -102,8 +101,6 @@ public interface Injector {
     Persistences persistences();
 
     Extensions extensions();
-
-    ModuleServices moduleServices();
 
     ModuleLoader moduleLoader();
 
