@@ -3344,6 +3344,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Adapter type not found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Tag already exists
         '500':
           content:
             application/json:
@@ -3939,6 +3945,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Adapter not found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Tag already exists
         '500':
           content:
             application/json:
@@ -4025,6 +4037,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Tag not found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Tag already exists
         '500':
           content:
             application/json:
