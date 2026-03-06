@@ -582,4 +582,9 @@ public class ProtocolAdapterManager {
                         configConverter.convertTagDefinitionToJsonNode(tag.getDefinition())))
                 .toList());
     }
+
+    @VisibleForTesting
+    public @NotNull TagManager getTagManager() {
+        return tagManager;
+    }
 }
