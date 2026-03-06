@@ -16,22 +16,17 @@
 package com.hivemq.edge.modules.adapters.data;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
-import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
-import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.protocols.northbound.SingleTagConsumer;
 import com.hivemq.configuration.entity.adapter.AdapterTag;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

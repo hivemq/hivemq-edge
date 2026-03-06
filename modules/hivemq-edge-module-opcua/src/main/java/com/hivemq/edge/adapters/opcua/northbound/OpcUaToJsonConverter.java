@@ -19,7 +19,6 @@ import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.UUID;
-
 import org.eclipse.milo.opcua.sdk.core.types.DynamicStructType;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
@@ -58,33 +57,34 @@ public class OpcUaToJsonConverter {
             final @NotNull DataPointBuilder<?> builder) {
         final Object value = dataValue.getValue().getValue();
         if (value == null) {
-            builder.setNullValue();
+            builder.valueNull();
             return;
         }
-        final var objBuilder = builder.valueStart();
+        final var objBuilder = builder.startObjectValue();
         if (value instanceof final DataValue v) {
             if (v.getStatusCode().getValue() > 0) {
-                populateStatusCode(objBuilder.objectStart("statusCode"), v.getStatusCode()).objectEnd();
+                populateStatusCode(objBuilder.startObject("statusCode"), v.getStatusCode())
+                        .endObject();
             }
             if (v.getSourceTime() != null) {
-                objBuilder.add(
+                objBuilder.put(
                         "sourceTimestamp",
                         DateTimeFormatter.ISO_INSTANT.format(v.getSourceTime().getJavaInstant()));
             }
             if (v.getSourcePicoseconds() != null) {
-                objBuilder.add("sourcePicoseconds", v.getSourcePicoseconds().intValue());
+                objBuilder.put("sourcePicoseconds", v.getSourcePicoseconds().intValue());
             }
             if (v.getServerTime() != null) {
-                objBuilder.add(
+                objBuilder.put(
                         "serverTimestamp",
                         DateTimeFormatter.ISO_INSTANT.format(v.getServerTime().getJavaInstant()));
             }
             if (v.getServerPicoseconds() != null) {
-                objBuilder.add("serverPicoseconds", v.getServerPicoseconds().intValue());
+                objBuilder.put("serverPicoseconds", v.getServerPicoseconds().intValue());
             }
         }
         addValueToObject(objBuilder, "value", value, serializationContext);
-        objBuilder.valueStop();
+        objBuilder.endObject();
     }
 
     private static void addValueToObject(
@@ -93,74 +93,74 @@ public class OpcUaToJsonConverter {
             final @Nullable Object value,
             final @NotNull EncodingContext ctx) {
         if (value == null) {
-            obj.addNull(key);
+            obj.putNull(key);
         } else if (value instanceof final DataValue dv) {
             addValueToObject(obj, key, dv.getValue(), ctx);
         } else if (value instanceof final Boolean b) {
-            obj.add(key, b);
+            obj.put(key, b);
         } else if (value instanceof final Byte b) {
-            obj.add(key, (int) b);
+            obj.put(key, (int) b);
         } else if (value instanceof final UByte ubyte) {
-            obj.add(key, ubyte.intValue());
+            obj.put(key, ubyte.intValue());
         } else if (value instanceof final Short s) {
-            obj.add(key, s);
+            obj.put(key, s);
         } else if (value instanceof final UShort ushort) {
-            obj.add(key, ushort.intValue());
+            obj.put(key, ushort.intValue());
         } else if (value instanceof final Integer i) {
-            obj.add(key, i);
+            obj.put(key, i);
         } else if (value instanceof final UInteger uint) {
-            obj.add(key, uint.longValue());
+            obj.put(key, uint.longValue());
         } else if (value instanceof final Long l) {
-            obj.add(key, l);
+            obj.put(key, l);
         } else if (value instanceof final ULong ulong) {
-            obj.add(key, ulong.toBigInteger());
+            obj.put(key, ulong.toBigInteger());
         } else if (value instanceof final Float f) {
-            obj.add(key, f);
+            obj.put(key, f);
         } else if (value instanceof final Double d) {
-            obj.add(key, d);
+            obj.put(key, d);
         } else if (value instanceof final String str) {
-            obj.add(key, str);
+            obj.put(key, str);
         } else if (value instanceof final DateTime dt) {
-            obj.add(key, DateTimeFormatter.ISO_INSTANT.format(dt.getJavaInstant()));
+            obj.put(key, DateTimeFormatter.ISO_INSTANT.format(dt.getJavaInstant()));
         } else if (value instanceof final UUID uuid) {
-            obj.add(key, uuid.toString());
+            obj.put(key, uuid.toString());
         } else if (value instanceof final ByteString bs) {
-            obj.add(key, BASE_64.encodeToString(bs.bytesOrEmpty()));
+            obj.put(key, BASE_64.encodeToString(bs.bytesOrEmpty()));
         } else if (value instanceof final XmlElement xe) {
             final String fragment = xe.getFragment();
             if (fragment != null) {
-                obj.add(key, fragment);
+                obj.put(key, fragment);
             } else {
-                obj.addNull(key);
+                obj.putNull(key);
             }
         } else if (value instanceof final NodeId nid) {
-            populateNodeId(obj.objectStart(key), nid).objectEnd();
+            populateNodeId(obj.startObject(key), nid).endObject();
         } else if (value instanceof final ExpandedNodeId enid) {
-            obj.add(key, enid.toParseableString());
+            obj.put(key, enid.toParseableString());
         } else if (value instanceof final StatusCode sc) {
-            populateStatusCode(obj.objectStart(key), sc).objectEnd();
+            populateStatusCode(obj.startObject(key), sc).endObject();
         } else if (value instanceof final QualifiedName qn) {
-            final var nested = obj.objectStart(key);
+            final var nested = obj.startObject(key);
             final String name = qn.getName();
             if (name != null) {
-                nested.add("name", name);
+                nested.put("name", name);
             }
             final int nsIdx = qn.getNamespaceIndex().intValue();
             if (nsIdx > 0) {
-                nested.add("namespaceIndex", nsIdx);
+                nested.put("namespaceIndex", nsIdx);
             }
-            nested.objectEnd();
+            nested.endObject();
         } else if (value instanceof final LocalizedText lt) {
-            final var nested = obj.objectStart(key);
+            final var nested = obj.startObject(key);
             final String locale = lt.getLocale();
             if (locale != null) {
-                nested.add("locale", locale);
+                nested.put("locale", locale);
             }
             final String text = lt.getText();
             if (text != null) {
-                nested.add("text", text);
+                nested.put("text", text);
             }
-            nested.objectEnd();
+            nested.endObject();
         } else if (value instanceof final ExtensionObject eo) {
             try {
                 final Object decodedValue = eo.decode(ctx);
@@ -174,26 +174,26 @@ public class OpcUaToJsonConverter {
             if (variantValue != null) {
                 addValueToObject(obj, key, variantValue, ctx);
             } else {
-                obj.addNull(key);
+                obj.putNull(key);
             }
         } else if (value instanceof final DiagnosticInfo info) {
-            populateDiagnosticInfo(obj.objectStart(key), info).objectEnd();
+            populateDiagnosticInfo(obj.startObject(key), info).endObject();
         } else if (value instanceof final DynamicStructType struct) {
-            final var nested = obj.objectStart(key);
+            final var nested = obj.startObject(key);
             struct.getMembers().forEach((k, v) -> addValueToObject(nested, k, v, ctx));
-            nested.objectEnd();
+            nested.endObject();
         } else if (value.getClass().isArray()) {
             final Object[] values = (Object[]) value;
-            final var arr = obj.arrayStart(key);
+            final var arr = obj.startArray(key);
             for (final Object elem : values) {
                 addValueToArray(arr, elem, ctx);
             }
-            arr.arrayEnd();
+            arr.endArray();
         } else {
             log.warn(
                     "No explicit converter for OPC UA type {} falling back to string representation",
                     value.getClass().getSimpleName());
-            obj.add(key, value.toString());
+            obj.put(key, value.toString());
         }
     }
 
@@ -243,33 +243,33 @@ public class OpcUaToJsonConverter {
                 arr.addNull();
             }
         } else if (value instanceof final NodeId nid) {
-            populateNodeId(arr.objectStart(), nid).objectEnd();
+            populateNodeId(arr.startObject(), nid).endObject();
         } else if (value instanceof final ExpandedNodeId enid) {
             arr.add(enid.toParseableString());
         } else if (value instanceof final StatusCode sc) {
-            populateStatusCode(arr.objectStart(), sc).objectEnd();
+            populateStatusCode(arr.startObject(), sc).endObject();
         } else if (value instanceof final QualifiedName qn) {
-            final var nested = arr.objectStart();
+            final var nested = arr.startObject();
             final String name = qn.getName();
             if (name != null) {
-                nested.add("name", name);
+                nested.put("name", name);
             }
             final int nsIdx = qn.getNamespaceIndex().intValue();
             if (nsIdx > 0) {
-                nested.add("namespaceIndex", nsIdx);
+                nested.put("namespaceIndex", nsIdx);
             }
-            nested.objectEnd();
+            nested.endObject();
         } else if (value instanceof final LocalizedText lt) {
-            final var nested = arr.objectStart();
+            final var nested = arr.startObject();
             final String locale = lt.getLocale();
             if (locale != null) {
-                nested.add("locale", locale);
+                nested.put("locale", locale);
             }
             final String text = lt.getText();
             if (text != null) {
-                nested.add("text", text);
+                nested.put("text", text);
             }
-            nested.objectEnd();
+            nested.endObject();
         } else if (value instanceof final ExtensionObject eo) {
             try {
                 final Object decodedValue = eo.decode(ctx);
@@ -286,11 +286,11 @@ public class OpcUaToJsonConverter {
                 arr.addNull();
             }
         } else if (value instanceof final DiagnosticInfo info) {
-            populateDiagnosticInfo(arr.objectStart(), info).objectEnd();
+            populateDiagnosticInfo(arr.startObject(), info).endObject();
         } else if (value instanceof final DynamicStructType struct) {
-            final var nested = arr.objectStart();
+            final var nested = arr.startObject();
             struct.getMembers().forEach((k, v) -> addValueToObject(nested, k, v, ctx));
-            nested.objectEnd();
+            nested.endObject();
         } else if (value.getClass().isArray()) {
             final Object[] values = (Object[]) value;
             for (final Object elem : values) {
@@ -308,46 +308,48 @@ public class OpcUaToJsonConverter {
             final @NotNull DataPointBuilder.ObjectBuilder<P> obj, final @NotNull NodeId nodeId) {
         switch (nodeId.getType()) {
             case Numeric -> {
-                obj.add("idType", IdType.Numeric.getValue());
-                obj.add("id", ((Number) nodeId.getIdentifier()).longValue());
+                obj.put("idType", IdType.Numeric.getValue());
+                obj.put("id", ((Number) nodeId.getIdentifier()).longValue());
             }
             case String -> {
-                obj.add("idType", IdType.String.getValue());
-                obj.add("id", nodeId.getIdentifier().toString());
+                obj.put("idType", IdType.String.getValue());
+                obj.put("id", nodeId.getIdentifier().toString());
             }
             case Guid -> {
-                obj.add("idType", IdType.Guid.getValue());
-                obj.add("id", nodeId.getIdentifier().toString());
+                obj.put("idType", IdType.Guid.getValue());
+                obj.put("id", nodeId.getIdentifier().toString());
             }
             case Opaque -> {
-                obj.add("idType", IdType.Opaque.getValue());
-                obj.add("id", BASE_64.encodeToString(((ByteString) nodeId.getIdentifier()).bytesOrEmpty()));
+                obj.put("idType", IdType.Opaque.getValue());
+                obj.put("id", BASE_64.encodeToString(((ByteString) nodeId.getIdentifier()).bytesOrEmpty()));
             }
         }
 
         final int namespaceIndex = nodeId.getNamespaceIndex().intValue();
         if (namespaceIndex == 1) { // 1 is always encoded as a number
-            obj.add("namespaceIndex", namespaceIndex);
+            obj.put("namespaceIndex", namespaceIndex);
         } else {
-            obj.add("namespaceIndex", nodeId.toParseableString());
+            obj.put("namespaceIndex", nodeId.toParseableString());
         }
         return obj;
     }
 
     private static <P> @NotNull DataPointBuilder.ObjectBuilder<P> populateDiagnosticInfo(
             final @NotNull DataPointBuilder.ObjectBuilder<P> obj, final @NotNull DiagnosticInfo info) {
-        obj.add("namespaceUri", info.namespaceUri());
-        obj.add("symbolicId", info.symbolicId());
-        obj.add("locale", info.locale());
-        obj.add("localizedText", info.localizedText());
+        obj.put("namespaceUri", info.namespaceUri());
+        obj.put("symbolicId", info.symbolicId());
+        obj.put("locale", info.locale());
+        obj.put("localizedText", info.localizedText());
         if (info.additionalInfo() != null) {
-            obj.add("additionalInfo", info.additionalInfo());
+            obj.put("additionalInfo", info.additionalInfo());
         }
         if (info.innerStatusCode() != null) {
-            populateStatusCode(obj.objectStart("innerStatusCode"), info.innerStatusCode()).objectEnd();
+            populateStatusCode(obj.startObject("innerStatusCode"), info.innerStatusCode())
+                    .endObject();
         }
         if (info.innerDiagnosticInfo() != null) {
-            populateDiagnosticInfo(obj.objectStart("innerDiagnosticInfo"), info.innerDiagnosticInfo()).objectEnd();
+            populateDiagnosticInfo(obj.startObject("innerDiagnosticInfo"), info.innerDiagnosticInfo())
+                    .endObject();
         }
         return obj;
     }
@@ -355,8 +357,8 @@ public class OpcUaToJsonConverter {
     private static <P> @NotNull DataPointBuilder.ObjectBuilder<P> populateStatusCode(
             final @NotNull DataPointBuilder.ObjectBuilder<P> obj, final @NotNull StatusCode value) {
         final long statusCodeNr = value.getValue();
-        obj.add("code", statusCodeNr);
-        StatusCodes.lookup(statusCodeNr).ifPresent(code -> obj.add("symbol", code[0]));
+        obj.put("code", statusCodeNr);
+        StatusCodes.lookup(statusCodeNr).ifPresent(code -> obj.put("symbol", code[0]));
         return obj;
     }
 }

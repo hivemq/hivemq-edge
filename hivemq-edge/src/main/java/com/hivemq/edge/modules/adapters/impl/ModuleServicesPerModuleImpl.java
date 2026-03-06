@@ -22,7 +22,6 @@ import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
-import dagger.internal.Preconditions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

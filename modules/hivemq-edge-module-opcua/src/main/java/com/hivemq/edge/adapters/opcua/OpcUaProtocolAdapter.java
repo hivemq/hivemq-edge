@@ -44,16 +44,6 @@ import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
 import com.hivemq.edge.adapters.opcua.southbound.JsonSchemaGenerator;
 import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverter;
 import com.hivemq.edge.adapters.opcua.southbound.OpcUaPayload;
-import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
-import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
-import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
-import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.VisibleForTesting;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -70,6 +60,15 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
+import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
@@ -752,16 +751,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
                         log.info("Executing retry attempt #{} for OPC UA adapter '{}'", attemptCount, adapterId);
 
-                    // Create new connection object for retry
-                    final OpcUaClientConnection newConn = new OpcUaClientConnection(
-                            adapterId,
-                            tagList,
-                            protocolAdapterState,
-                            this.moduleServices.protocolAdapterTagStreamingService(),
-                            this.moduleServices.eventService(),
-                            protocolAdapterMetricsService,
-                            config,
-                            opcUaServiceFaultListener);
+                        // Create new connection object for retry
+                        final OpcUaClientConnection newConn = new OpcUaClientConnection(
+                                adapterId,
+                                tagList,
+                                protocolAdapterState,
+                                this.moduleServices.protocolAdapterTagStreamingService(),
+                                this.moduleServices.eventService(),
+                                protocolAdapterMetricsService,
+                                config,
+                                opcUaServiceFaultListener);
 
                         // Set as current connection and attempt
                         protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);

@@ -15,8 +15,10 @@
  */
 package com.hivemq.edge.adapters.opcua.listeners;
 
+import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
+import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
+
 import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
-import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
@@ -25,6 +27,14 @@ import com.hivemq.edge.adapters.opcua.Constants;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.MonitoredItemServiceOperationResult;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.MonitoredItemSynchronizationException;
@@ -38,20 +48,6 @@ import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
-import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.SubscriptionListener {
 
@@ -124,7 +120,10 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         return Optional.empty();
     }
 
-    private static void extractPayload(final @NotNull OpcUaClient client, final @NotNull DataValue value, DataPointBuilder builder)
+    private static void extractPayload(
+            final @NotNull OpcUaClient client,
+            final @NotNull DataValue value,
+            final @NotNull DataPointBuilder<?> builder)
             throws UaException {
         OpcUaToJsonConverter.convertPayload(client.getDynamicEncodingContext(), value, builder);
     }
@@ -306,8 +305,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             final @NotNull List<OpcUaMonitoredItem> items,
             final @NotNull List<DataValue> values) {
         lastKeepAliveTimestamp = System.currentTimeMillis();
-        final var builder = tagStreamingService
-                .dataPointSender();
+        final var dataPointsPublisher = tagStreamingService.dataPointsPublisher();
         for (int i = 0; i < items.size(); i++) {
             final var tag = Objects.requireNonNull(
                     nodeIdToTag.get(items.get(i).getReadValueId().getNodeId()));
@@ -322,14 +320,13 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             try {
                 protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_RECEIVED_COUNT);
 
-                final var dataPointBuilder = builder.dataPoint(tn);
+                final var dataPointBuilder = dataPointsPublisher.addDataPoint(tag);
                 extractPayload(client, values.get(i), dataPointBuilder);
-                dataPointBuilder.finish();
             } catch (final Throwable e) {
                 protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_ERROR_COUNT);
                 throw new RuntimeException(e);
             }
         }
-        builder.send();
+        dataPointsPublisher.publish();
     }
 }
