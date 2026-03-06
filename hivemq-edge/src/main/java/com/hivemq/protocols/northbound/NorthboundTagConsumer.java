@@ -18,6 +18,7 @@ package com.hivemq.protocols.northbound;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
@@ -28,6 +29,7 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.datapoint.DataPointWithMetadata;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishServiceImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
@@ -100,29 +102,38 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
         try {
             final JsonPayloadCreator jsonPayloadCreatorOverride = pollingContext.getJsonPayloadCreator();
 
-            final DataPoint processedDataPoint;
-            if (dataPoint.treatTagValueAsJson()) {
-                try {
-                    final var jsonMap = objectMapper.readValue((String) dataPoint.getTagValue(), typeRef);
-                    final var value = jsonMap.get("value");
-                    if (value != null) {
-                        processedDataPoint = dataPointFactory.create(dataPoint.getTagName(), value);
-                    } else {
-                        throw new RuntimeException("No value entry in JSON message");
-                    }
-                } catch (JsonProcessingException e) {
-                    throw new RuntimeException(e);
-                }
+            final byte[] jsonToSend;
+            if(dataPoint instanceof final DataPointWithMetadata dpMeta) {
+                final var node = JsonNodeFactory.instance.objectNode();
+                node.set("value", dpMeta.getTagValue());
+                node.set("timestamp", JsonNodeFactory.instance.numberNode(dpMeta.getTimestamp()));
+                jsonToSend = node.toString().getBytes(StandardCharsets.UTF_8);
             } else {
-                processedDataPoint = dataPoint;
+                final DataPoint processedDataPoint;
+                if (dataPoint.treatTagValueAsJson()) {
+                    try {
+                        final var jsonMap = objectMapper.readValue((String) dataPoint.getTagValue(), typeRef);
+                        final var value = jsonMap.get("value");
+                        if (value != null) {
+                            processedDataPoint = dataPointFactory.create(dataPoint.getTagName(), value);
+                        } else {
+                            throw new RuntimeException("No value entry in JSON message");
+                        }
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                } else {
+                    processedDataPoint = dataPoint;
+                }
+                jsonToSend = Objects.requireNonNullElse(jsonPayloadCreatorOverride, jsonPayloadCreator)
+                        .convertToJson(
+                                List.of(dataPointFactory.create(dataPoint.getTagName(), processedDataPoint)),
+                                pollingContext,
+                                objectMapper)
+                        .getFirst();
             }
 
-            final byte[] jsonToSend = Objects.requireNonNullElse(jsonPayloadCreatorOverride, jsonPayloadCreator)
-                    .convertToJson(
-                            List.of(dataPointFactory.create(dataPoint.getTagName(), processedDataPoint)),
-                            pollingContext,
-                            objectMapper)
-                    .getFirst();
+
 
             final ProtocolAdapterPublishBuilder publishBuilder = protocolAdapterPublishService
                     .createPublish()

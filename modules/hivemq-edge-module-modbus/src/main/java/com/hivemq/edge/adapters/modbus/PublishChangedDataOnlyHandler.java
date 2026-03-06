@@ -13,21 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.etherip;
+package com.hivemq.edge.adapters.modbus;
 
-import com.hivemq.adapter.sdk.api.data.DataPoint;
-import java.util.List;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * This class is here TEMPORARY, the functionality will be moved into NorthboundMappings
  */
 public class PublishChangedDataOnlyHandler {
-    private final @NotNull Map<String, List<DataPoint>> lastSamples = new ConcurrentHashMap<>();
+    private final @NotNull Map<String, Object> lastSamples = new ConcurrentHashMap<>();
 
-    public boolean replaceIfValueIsNew(final @NotNull String tagName, final @NotNull List<DataPoint> newValue) {
+    public boolean replaceIfValueIsNew(final @NotNull String tagName, final @NotNull Object newValue) {
         final var computedValue = lastSamples.compute(tagName, (key, value) -> {
             if (value == null) {
                 return newValue;
