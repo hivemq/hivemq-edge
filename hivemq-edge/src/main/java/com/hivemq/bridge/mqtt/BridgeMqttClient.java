@@ -76,7 +76,6 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings("FutureReturnValueIgnored")
 public class BridgeMqttClient {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(BridgeMqttClient.class);
@@ -167,8 +166,8 @@ public class BridgeMqttClient {
                                 return null;
                             }
                             if (throwable != null) {
-                                log.error(
-                                        "Failed to connect bridge '{}' to {}:{}: {}",
+                                log.warn(
+                                        "Bridge failed to connect'{}' to {}:{}: {}",
                                         bridge.getId(),
                                         bridge.getHost(),
                                         bridge.getPort(),
@@ -391,7 +390,7 @@ public class BridgeMqttClient {
         return connected.get();
     }
 
-    protected @NotNull EventBuilder eventBuilder(final @NotNull Event.SEVERITY severity) {
+    protected @NotNull EventBuilder eventBuilder(final @NotNull EventImpl.SEVERITY severity) {
         final EventBuilder builder = eventService.bridgeEvent();
         builder.withTimestamp(System.currentTimeMillis());
         builder.withSource(TypeIdentifierImpl.create(TypeIdentifier.Type.BRIDGE, bridge.getId()));
