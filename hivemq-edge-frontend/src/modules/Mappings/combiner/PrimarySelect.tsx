@@ -1,7 +1,7 @@
 import { useMemo, type FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { type SingleValue, Select, chakraComponents } from 'chakra-react-select'
-import { HStack, Icon, Text, VStack } from '@chakra-ui/react'
+import { Icon } from '@chakra-ui/react'
 import { FaKey } from 'react-icons/fa'
 
 import type { DataCombining } from '@/api/__generated__'
@@ -10,6 +10,7 @@ import { PLCTag, TopicFilter as TopicFilterTag } from '@/components/MQTT/EntityT
 import { formatOwnershipString } from '@/components/MQTT/topic-utils.ts'
 import type { CombinerContext } from '@/modules/Mappings/types'
 import { getAdapterIdForTag } from '@/modules/Mappings/utils/combining.utils'
+import { CombinerOptionContent } from './CombinerOptionContent'
 
 interface PrimaryOption {
   label: string
@@ -94,19 +95,7 @@ export const PrimarySelect: FC<PrimarySelectProps> = ({ id, formData, formContex
         ),
         Option: ({ children: _children, ...props }) => (
           <chakraComponents.Option {...props}>
-            <VStack gap={0} alignItems="stretch" w="100%">
-              <HStack>
-                <Text flex={1}>{props.data.label}</Text>
-                {props.data.adapterId && (
-                  <Text fontSize="sm" color="gray.500">
-                    {props.data.adapterId}
-                  </Text>
-                )}
-                <Text fontSize="sm" fontWeight="bold">
-                  {t('combiner.schema.mapping.combinedSelector.type', { context: props.data.type })}
-                </Text>
-              </HStack>
-            </VStack>
+            <CombinerOptionContent label={props.data.label} adapterId={props.data.adapterId} type={props.data.type} />
           </chakraComponents.Option>
         ),
         SingleValue: (props) => (
