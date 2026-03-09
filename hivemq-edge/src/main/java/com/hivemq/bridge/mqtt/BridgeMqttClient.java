@@ -391,7 +391,7 @@ public class BridgeMqttClient {
         return connected.get();
     }
 
-    protected @NotNull EventBuilder eventBuilder(final @NotNull EventImpl.SEVERITY severity) {
+    protected @NotNull EventBuilder eventBuilder(final @NotNull Event.SEVERITY severity) {
         final EventBuilder builder = eventService.bridgeEvent();
         builder.withTimestamp(System.currentTimeMillis());
         builder.withSource(TypeIdentifierImpl.create(TypeIdentifier.Type.BRIDGE, bridge.getId()));
@@ -526,7 +526,7 @@ public class BridgeMqttClient {
                     message);
             log.debug("Disconnection cause details", cause);
             connected.set(false);
-            eventBuilder(EventImpl.SEVERITY.ERROR)
+            eventBuilder(Event.SEVERITY.ERROR)
                     .withMessage("Bridge '" + bridge.getId() + "' disconnected")
                     .withPayload(Payload.ContentType.PLAIN_TEXT, ExceptionUtils.getStackTrace(cause))
                     .fire();
