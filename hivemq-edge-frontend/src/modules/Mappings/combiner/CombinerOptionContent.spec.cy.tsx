@@ -7,9 +7,7 @@ describe('CombinerOptionContent', () => {
   })
 
   it('should render the label and type badge', () => {
-    cy.mountWithProviders(
-      <CombinerOptionContent label="boiler/temperature" type={DataIdentifierReference.type.TAG} />
-    )
+    cy.mountWithProviders(<CombinerOptionContent label="boiler/temperature" type={DataIdentifierReference.type.TAG} />)
 
     cy.get('p').should('contain.text', 'boiler/temperature')
     cy.get('p').should('contain.text', 'Tag')
@@ -50,9 +48,7 @@ describe('CombinerOptionContent', () => {
   })
 
   it('should not render a description element when description is absent', () => {
-    cy.mountWithProviders(
-      <CombinerOptionContent label="boiler/temperature" type={DataIdentifierReference.type.TAG} />
-    )
+    cy.mountWithProviders(<CombinerOptionContent label="boiler/temperature" type={DataIdentifierReference.type.TAG} />)
 
     cy.get('p').should('not.contain.text', 'Celsius')
     cy.get('p').should('have.length', 2) // label + type badge only

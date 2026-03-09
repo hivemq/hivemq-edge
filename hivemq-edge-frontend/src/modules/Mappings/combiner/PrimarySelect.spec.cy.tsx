@@ -135,8 +135,16 @@ describe('PrimarySelect', () => {
     cy.get('@options').within(() => {
       cy.get('[role="option"]').should('have.length', 3)
       // Options from selectedSources carry adapter scope and type badge
-      cy.get('[role="option"]').eq(0).should('contain.text', 'my/tag/t1').should('contain.text', 'my-adapter').should('contain.text', 'Tag')
-      cy.get('[role="option"]').eq(1).should('contain.text', 'my/tag/t3').should('contain.text', 'other-adapter').should('contain.text', 'Tag')
+      cy.get('[role="option"]')
+        .eq(0)
+        .should('contain.text', 'my/tag/t1')
+        .should('contain.text', 'my-adapter')
+        .should('contain.text', 'Tag')
+      cy.get('[role="option"]')
+        .eq(1)
+        .should('contain.text', 'my/tag/t3')
+        .should('contain.text', 'other-adapter')
+        .should('contain.text', 'Tag')
       cy.get('[role="option"]').eq(2).should('contain.text', 'my/topic/+/temp').should('contain.text', 'Topic Filter')
 
       // onChange carries the adapterId from selectedSources
