@@ -5,7 +5,8 @@ import type {
   RJSFSchema,
   StrictRJSFSchema,
 } from '@rjsf/utils'
-import { Text } from '@chakra-ui/react'
+import { Box } from '@chakra-ui/react'
+import ReactMarkdown from 'react-markdown'
 
 export const DescriptionFieldTemplate = <
   T = unknown,
@@ -21,11 +22,20 @@ export const DescriptionFieldTemplate = <
 
   if (typeof description === 'string') {
     return (
-      <Text>
-        <Text as="sup" fontSize="sm" id={id} mt={2} mb={4}>
+      <Box id={id} fontSize="sm" mt={2} mb={4}>
+        <ReactMarkdown
+          components={{
+            p: ({ children }) => <p style={{ marginBottom: '0.5em' }}>{children}</p>,
+            a: ({ href, children }) => (
+              <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>
+                {children}
+              </a>
+            ),
+          }}
+        >
           {description}
-        </Text>
-      </Text>
+        </ReactMarkdown>
+      </Box>
     )
   }
 

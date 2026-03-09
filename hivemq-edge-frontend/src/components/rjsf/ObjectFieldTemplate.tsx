@@ -67,6 +67,17 @@ export const ObjectFieldTemplate = <
 
   return (
     <Tabs index={tabIndex} onChange={setTabIndex}>
+      {description && (
+        <Box mb={4}>
+          <DescriptionFieldTemplate
+            id={descriptionId<T>(idSchema)}
+            description={description}
+            schema={schema}
+            uiSchema={uiSchema}
+            registry={registry}
+          />
+        </Box>
+      )}
       <TabList flexWrap="wrap">
         {tabs.map((tab) => {
           const filteredProps = properties.filter((property) => tab.properties.includes(property.name))

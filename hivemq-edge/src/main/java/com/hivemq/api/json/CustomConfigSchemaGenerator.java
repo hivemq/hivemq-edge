@@ -32,6 +32,7 @@ import com.github.victools.jsonschema.generator.SchemaVersion;
 import com.github.victools.jsonschema.module.jackson.JacksonModule;
 import com.github.victools.jsonschema.module.jackson.JacksonOption;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.annotations.ModuleConfigSchema;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import org.jetbrains.annotations.NotNull;
@@ -52,7 +53,12 @@ public class CustomConfigSchemaGenerator {
         withEnumDisplayNameProvider(configBuilder);
         SchemaGeneratorConfig config = configBuilder.build();
         SchemaGenerator generator = new SchemaGenerator(config);
-        return generator.generateSchema(clazz);
+        final JsonNode schema = generator.generateSchema(clazz);
+        final ModuleConfigSchema schemaAnnotation = (ModuleConfigSchema) clazz.getAnnotation(ModuleConfigSchema.class);
+        if (schemaAnnotation != null && !schemaAnnotation.description().isBlank() && schema instanceof ObjectNode) {
+            ((ObjectNode) schema).put("description", schemaAnnotation.description());
+        }
+        return schema;
     }
 
     /**
