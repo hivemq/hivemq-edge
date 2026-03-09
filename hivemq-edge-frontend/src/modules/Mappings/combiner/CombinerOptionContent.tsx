@@ -2,7 +2,7 @@ import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HStack, Text, VStack } from '@chakra-ui/react'
 
-import { DataIdentifierReference } from '@/api/__generated__'
+import type { DataIdentifierReference } from '@/api/__generated__'
 
 interface CombinerOptionContentProps {
   label: string
