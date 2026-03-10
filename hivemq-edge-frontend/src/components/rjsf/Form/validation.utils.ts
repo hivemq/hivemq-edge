@@ -132,6 +132,20 @@ export const customLocalizer = (errors?: null | ErrorObject[]) => {
   }
 }
 
+/**
+ * Strips `$id` and `$schema` from a schema object before passing it to `validator.ajv.compile()`.
+ *
+ * AJV registers schemas in its **global singleton** cache keyed by `$id`. Passing a schema with
+ * `$id` to `compile()` a second time (e.g. on re-render or re-opening a drawer) throws
+ * "schema with key or id already exists". Similarly, `$schema` can interfere with meta-schema
+ * handling. Neither field is needed when `compile()` is called purely for its throw-on-invalid
+ * side effect (i.e. when the return value is discarded).
+ */
+export const cleanSchemaForValidation = <T extends Record<string, unknown>>(schema: T): Omit<T, '$id' | '$schema'> => {
+  const { $id, $schema, ...rest } = schema
+  return rest as Omit<T, '$id' | '$schema'>
+}
+
 export const customFormatsValidator = customizeValidator(
   {
     customFormats: {
