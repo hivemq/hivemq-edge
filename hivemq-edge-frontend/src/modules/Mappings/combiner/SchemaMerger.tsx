@@ -51,8 +51,18 @@ const SchemaMerger: FC<SchemaMergerProps> = ({ formData, formContext, onClose, o
   const properties = useMemo(() => {
     const displayedSchemas = getSchemasFromReferences(references, schemaQueries)
 
-    const tagIndexMap = new Map(formData?.sources?.tags?.map((tag, index) => [tag, index]))
-    const topicFilterIndexMap = new Map(formData?.sources?.topicFilters?.map((filter, index) => [filter, index]))
+    // Build index maps from references (which carry scope) rather than from formData.sources.tags
+    // (plain string[]), so that same-named tags from different adapters get distinct origins.
+    const tagIndexMap = new Map(
+      references
+        .filter((r) => r.type === DataIdentifierReference.type.TAG)
+        .map((ref, index) => [JSON.stringify([ref.id, ref.scope ?? null]), index])
+    )
+    const topicFilterIndexMap = new Map(
+      references
+        .filter((r) => r.type === DataIdentifierReference.type.TOPIC_FILTER)
+        .map((ref, index) => [ref.id, index])
+    )
 
     return displayedSchemas.reduce<FlatJSONSchema7[]>((acc, reference) => {
       if (!reference.schema?.schema) return acc
@@ -62,7 +72,7 @@ const SchemaMerger: FC<SchemaMergerProps> = ({ formData, formContext, onClose, o
       properties.forEach((property, pathIndex) => {
         property.metadata = reference
         if (reference.type === DataIdentifierReference.type.TAG) {
-          const index = tagIndexMap.get(reference.id)
+          const index = tagIndexMap.get(JSON.stringify([reference.id, reference.scope ?? null]))
           property.origin = `${STUB_TAG_PROPERTY}${index}`
         } else if (reference.type === DataIdentifierReference.type.TOPIC_FILTER) {
           const index = topicFilterIndexMap.get(reference.id)
@@ -83,7 +93,7 @@ const SchemaMerger: FC<SchemaMergerProps> = ({ formData, formContext, onClose, o
       acc.push(...properties)
       return acc
     }, [])
-  }, [formData?.sources?.tags, formData?.sources?.topicFilters, references, schemaQueries])
+  }, [references, schemaQueries])
 
   if (!references.length) errorMessages.push(t('combiner.error.schemaManager.noSourceSchemaDefined'))
   else if (!properties.length) errorMessages.push(t('combiner.error.schemaManager.noValidSourceSchema'))
