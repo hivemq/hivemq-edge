@@ -6,15 +6,20 @@ import { FaKey } from 'react-icons/fa'
 
 import type { DataCombining } from '@/api/__generated__'
 import { DataIdentifierReference } from '@/api/__generated__'
+import { PLCTag, TopicFilter as TopicFilterTag } from '@/components/MQTT/EntityTag.tsx'
+import { formatOwnershipString } from '@/components/MQTT/topic-utils.ts'
 import type { CombinerContext } from '@/modules/Mappings/types'
 import { getAdapterIdForTag } from '@/modules/Mappings/utils/combining.utils'
+import { CombinerOptionContent } from './CombinerOptionContent'
 
 interface PrimaryOption {
   label: string
   value: string
   type: DataIdentifierReference.type
   adapterId?: string
+  description?: string
 }
+
 interface PrimarySelectProps {
   id?: string
   formData?: DataCombining
@@ -26,6 +31,24 @@ export const PrimarySelect: FC<PrimarySelectProps> = ({ id, formData, formContex
   const { t } = useTranslation()
 
   const primaryOptions = useMemo(() => {
+    // Prefer selectedSources from context — carries DataIdentifierReference[] with scope already resolved
+    if (formContext?.selectedSources) {
+      return [
+        ...formContext.selectedSources.tags.map<PrimaryOption>((ref) => ({
+          label: ref.id,
+          value: ref.id,
+          type: DataIdentifierReference.type.TAG,
+          adapterId: ref.scope || undefined,
+        })),
+        ...formContext.selectedSources.topicFilters.map<PrimaryOption>((ref) => ({
+          label: ref.id,
+          value: ref.id,
+          type: DataIdentifierReference.type.TOPIC_FILTER,
+        })),
+      ]
+    }
+
+    // Fallback: deprecated string arrays + context lookup
     const tags = formData?.sources?.tags || []
     const topicFilters = formData?.sources?.topicFilters || []
 
@@ -40,17 +63,18 @@ export const PrimarySelect: FC<PrimarySelectProps> = ({ id, formData, formContex
         label: entity,
         value: entity,
         type: DataIdentifierReference.type.TOPIC_FILTER,
-        adapterId: undefined,
       })),
     ]
   }, [formData, formContext])
 
   const primaryValue = useMemo<PrimaryOption | null>(() => {
     if (!formData?.sources.primary) return null
+    const primary = formData.sources.primary
     return {
-      label: formData.sources.primary.id,
-      value: formData.sources.primary.id,
-      type: formData.sources.primary.type,
+      label: formatOwnershipString(primary),
+      value: primary.id,
+      type: primary.type,
+      adapterId: primary.scope || undefined,
     }
   }, [formData?.sources.primary])
 
@@ -68,6 +92,20 @@ export const PrimarySelect: FC<PrimarySelectProps> = ({ id, formData, formContex
             <Icon as={FaKey} ml={3} />
             {children}
           </chakraComponents.Control>
+        ),
+        Option: ({ children: _children, ...props }) => (
+          <chakraComponents.Option {...props}>
+            <CombinerOptionContent label={props.data.label} adapterId={props.data.adapterId} type={props.data.type} />
+          </chakraComponents.Option>
+        ),
+        SingleValue: (props) => (
+          <chakraComponents.SingleValue {...props}>
+            {props.data.type === DataIdentifierReference.type.TAG ? (
+              <PLCTag tagTitle={props.data.label} />
+            ) : (
+              <TopicFilterTag tagTitle={props.data.label} />
+            )}
+          </chakraComponents.SingleValue>
         ),
       }}
       placeholder={t('combiner.schema.mapping.primary.placeholder')}
