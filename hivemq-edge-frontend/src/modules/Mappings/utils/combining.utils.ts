@@ -1,4 +1,7 @@
+import debug from 'debug'
 import type { UseQueryResult } from '@tanstack/react-query'
+
+const log = debug('Mappings:combining:utils')
 
 import {
   DataIdentifierReference,
@@ -260,6 +263,9 @@ export const reconstructSelectedSources = (
   // Also prepend scoped primary if not already represented
   const primary = formData.sources.primary
   const all: DataIdentifierReference[] = []
+  if (primary?.type === DataIdentifierReference.type.TAG && !primary.scope) {
+    log('TAG primary has no scope — skipped during selectedSources reconstruction %o', primary)
+  }
   if (primary?.scope) all.push(primary)
   all.push(...fromInstructions)
 
