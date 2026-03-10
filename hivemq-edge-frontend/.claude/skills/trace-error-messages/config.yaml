@@ -1,0 +1,17 @@
+stack_layers:
+  - label: OpenAPI
+    path: 'src/api/__generated__/services/'
+  - label: React Query Hook
+    path: 'src/api/hooks/'
+  - label: MSW Handlers
+    path: 'src/api/hooks/**/__handlers__/'
+  - label: Components
+    path: 'src/modules/'
+  - label: Page Objects
+    path: 'cypress/pages/'
+  - label: E2E Tests
+    path: 'cypress/e2e/'
+
+version: '1.0.0'
+last_updated: '2026-02-20'
+maintainer: 'Edge Frontend Team'
