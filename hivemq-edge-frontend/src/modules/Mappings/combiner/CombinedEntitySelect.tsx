@@ -5,7 +5,7 @@ import type { GroupBase, MultiValue, OptionBase } from 'chakra-react-select'
 import { chakraComponents } from 'chakra-react-select'
 import { Select } from 'chakra-react-select'
 import type { BoxProps } from '@chakra-ui/react'
-import { Box, HStack, Text, VStack } from '@chakra-ui/react'
+import { Box } from '@chakra-ui/react'
 
 import type { DomainTag, TopicFilter } from '@/api/__generated__'
 import { DataIdentifierReference } from '@/api/__generated__'
@@ -13,6 +13,7 @@ import { PLCTag, Topic, TopicFilter as TopicFilterComponent } from '@/components
 import { SelectEntityType } from '@/components/MQTT/types'
 import { formatOwnershipString } from '@/components/MQTT/topic-utils'
 import type { CombinerContext } from '@/modules/Mappings/types'
+import { CombinerOptionContent } from './CombinerOptionContent'
 
 interface EntityReferenceSelectProps extends Omit<BoxProps, 'onChange'> {
   id?: string
@@ -144,28 +145,16 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ id, formContext,
               {props.data.type === SelectEntityType.TOPIC_FILTER && <TopicFilterComponent tagTitle={children} mr={3} />}
             </>
           ),
-          Option: ({ children, ...props }) => {
-            return (
-              <chakraComponents.Option {...props}>
-                <VStack gap={0} alignItems="stretch" w="100%">
-                  <HStack>
-                    <Text flex={1}>{props.data.label}</Text>
-                    {props.data.adapterId && (
-                      <Text fontSize="sm" color="gray.500">
-                        {props.data.adapterId}
-                      </Text>
-                    )}
-                    <Text fontSize="sm" fontWeight="bold">
-                      {t('combiner.schema.mapping.combinedSelector.type', { context: props.data.type })}
-                    </Text>
-                  </HStack>
-                  <Text fontSize="sm" noOfLines={3} ml={4} lineHeight="normal" textAlign="justify">
-                    {props.data.description}
-                  </Text>
-                </VStack>
-              </chakraComponents.Option>
-            )
-          },
+          Option: ({ children: _children, ...props }) => (
+            <chakraComponents.Option {...props}>
+              <CombinerOptionContent
+                label={props.data.label}
+                adapterId={props.data.adapterId}
+                type={props.data.type}
+                description={props.data.description}
+              />
+            </chakraComponents.Option>
+          ),
         }}
       />
     </Box>

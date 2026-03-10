@@ -115,7 +115,10 @@ describe('DataCombiningEditorField', () => {
 
     cy.getByTestId('combining-editor-sources-primary').within(() => {
       cy.get('[role="group"] label').should('have.text', 'Primary')
-      cy.get('[role="group"] label + div').should('have.text', 'my/tag/t1')
+      // Selected primary is now rendered as a scoped PLCTag badge: "my-adapter :: my/tag/t1"
+      cy.get('[role="group"] label + div [data-testid="topic-wrapper"]').should('be.visible')
+      cy.get('[role="group"] label + div [data-testid="topic-wrapper"]').should('contain.text', 'my-adapter')
+      cy.get('[role="group"] label + div [data-testid="topic-wrapper"]').should('contain.text', 't1')
       cy.get('[role="group"] label + div + div').should('have.text', 'The text below the primary selector')
     })
   })
