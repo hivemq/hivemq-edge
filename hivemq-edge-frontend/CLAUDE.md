@@ -151,3 +151,22 @@ Tasks follow the Linear workflow. When a user mentions a task (e.g., "EDG-40"), 
 - Linear issue `EDG-38` → Directory: `.tasks/EDG-38-readonly-schemas/`
 
 **Branch Naming**: Git branches may use slashes (e.g., `feat/EDG-40/technical-documentation`), but task directories use hyphens throughout.
+
+### Linear MCP — state name pitfall
+
+The **Edge** team has two states with `type: backlog`: `Icebox` and `Backlog`. When creating or
+updating issues, passing `state: "Backlog"` by name is unreliable — the MCP resolves by type and
+may pick `Icebox` first.
+
+**Always use the state ID directly:**
+
+- **Backlog** → `24b6629e-9193-4e4c-8dd7-0f3f5a720a1e`
+- **Icebox** → `a1273fce-4b0f-45d1-ba11-2ca668859aac`
+
+```typescript
+// ✅ Reliable
+mcp__linear__save_issue({ state: "24b6629e-9193-4e4c-8dd7-0f3f5a720a1e", ... })
+
+// ❌ Ambiguous — may land in Icebox instead
+mcp__linear__save_issue({ state: "Backlog", ... })
+```
