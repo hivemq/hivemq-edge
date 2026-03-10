@@ -108,10 +108,34 @@
 
             <uid-attribute>${ENV:HIVEMQ_LDAP_UID}</uid-attribute>
             <rdns>${ENV:HIVEMQ_LDAP_RDNS}</rdns>
+            <base-dn>${ENV:HIVEMQ_LDAP_BASE_DN}</base-dn>
             <directory-descent>${ENV:HIVEMQ_LDAP_DIRECTORY_DESCENT}</directory-descent>
             ${IF:HIVEMQ_LDAP_OBJECT_CLASS_ENABLED}
             <required-object-class>${ENV:HIVEMQ_LDAP_OBJECT_CLASS}</required-object-class>
             ${IF:HIVEMQ_LDAP_OBJECT_CLASS_ENABLED}
+
+            ${IF:HIVEMQ_LDAP_USER_ROLES_ENABLED}
+            <user-roles>
+                ${IF:HIVEMQ_LDAP_USER_ROLE_ADMIN_QUERY}
+                <user-role>
+                    <role>ADMIN</role>
+                    <query>${ENV:HIVEMQ_LDAP_USER_ROLE_ADMIN_QUERY}</query>
+                </user-role>
+                ${IF:HIVEMQ_LDAP_USER_ROLE_ADMIN_QUERY}
+                ${IF:HIVEMQ_LDAP_USER_ROLE_SUPER_QUERY}
+                <user-role>
+                    <role>SUPER</role>
+                    <query>${ENV:HIVEMQ_LDAP_USER_ROLE_SUPER_QUERY}</query>
+                </user-role>
+                ${IF:HIVEMQ_LDAP_USER_ROLE_SUPER_QUERY}
+                ${IF:HIVEMQ_LDAP_USER_ROLE_USER_QUERY}
+                <user-role>
+                    <role>USER</role>
+                    <query>${ENV:HIVEMQ_LDAP_USER_ROLE_USER_QUERY}</query>
+                </user-role>
+                ${IF:HIVEMQ_LDAP_USER_ROLE_USER_QUERY}
+            </user-roles>
+            ${IF:HIVEMQ_LDAP_USER_ROLES_ENABLED}
 
             <max-connections>${ENV:HIVEMQ_LDAP_MAX_CONNECTION}</max-connections>
             <connect-timeout-millis>${ENV:HIVEMQ_LDAP_CONNECT_TIMEOUT_MS}</connect-timeout-millis>
