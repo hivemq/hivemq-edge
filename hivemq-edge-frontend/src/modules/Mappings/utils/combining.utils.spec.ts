@@ -619,19 +619,12 @@ describe('getAdapterIdForTag', () => {
 })
 
 describe('reconstructSelectedSources', () => {
-  // Helper to create mock tag query
+  // Helper to create mock tag query (kept for context-ignored tests)
   const mockTagQuery = (tags: string[]): Partial<UseQueryResult<DomainTagList, Error>> => ({
     data: {
       items: tags.map((name) => ({ name }) as DomainTag),
     },
   })
-
-  // Default primary for tests that don't specifically test primary matching
-  const mockPrimary: DataIdentifierReference = {
-    id: 'default-primary',
-    type: DataIdentifierReference.type.TAG,
-    scope: 'default-adapter',
-  }
 
   describe('edge cases - no data', () => {
     it('should return empty arrays when formData is undefined', () => {
@@ -645,22 +638,22 @@ describe('reconstructSelectedSources', () => {
       expect(result).toEqual({ tags: [], topicFilters: [] })
     })
 
-    it('should return empty arrays when sources has no tags or topicFilters', () => {
+    it('should return empty arrays when primary has no scope and there are no instructions', () => {
       const formData: Partial<DataCombining> = {
         sources: {
-          primary: mockPrimary,
+          primary: { id: 'x', type: DataIdentifierReference.type.TAG, scope: null },
         },
       }
       const result = reconstructSelectedSources(formData as DataCombining, undefined)
       expect(result).toEqual({ tags: [], topicFilters: [] })
     })
 
-    it('should return empty arrays when tags and topicFilters are empty arrays', () => {
+    it('should ignore deprecated sources.tags and sources.topicFilters — returns empty when no instructions', () => {
       const formData: Partial<DataCombining> = {
         sources: {
-          primary: mockPrimary,
-          tags: [],
-          topicFilters: [],
+          primary: { id: 'x', type: DataIdentifierReference.type.TAG, scope: null },
+          tags: ['tag1', 'tag2'],
+          topicFilters: ['filter1'],
         },
       }
       const result = reconstructSelectedSources(formData as DataCombining, undefined)
@@ -668,11 +661,10 @@ describe('reconstructSelectedSources', () => {
     })
   })
 
-  describe('tags reconstruction - Strategy 1: Primary source', () => {
-    it('should use primary source scope when tag matches primary', () => {
+  describe('primary source inclusion', () => {
+    it('should include a scoped primary TAG in tags', () => {
       const formData: Partial<DataCombining> = {
         sources: {
-          tags: ['temperature'],
           primary: {
             id: 'temperature',
             type: DataIdentifierReference.type.TAG,
@@ -680,9 +672,7 @@ describe('reconstructSelectedSources', () => {
           },
         },
       }
-
       const result = reconstructSelectedSources(formData as DataCombining, undefined)
-
       expect(result.tags).toHaveLength(1)
       expect(result.tags[0]).toEqual({
         id: 'temperature',
@@ -691,68 +681,38 @@ describe('reconstructSelectedSources', () => {
       })
     })
 
-    it('should NOT use primary when tag does not match primary id', () => {
+    it('should NOT include primary when scope is null', () => {
       const formData: Partial<DataCombining> = {
         sources: {
-          tags: ['pressure'],
-          primary: {
-            id: 'temperature',
-            type: DataIdentifierReference.type.TAG,
-            scope: 'modbus-adapter-1',
-          },
+          primary: { id: 'temperature', type: DataIdentifierReference.type.TAG, scope: null },
         },
       }
-
       const result = reconstructSelectedSources(formData as DataCombining, undefined)
-
-      expect(result.tags).toHaveLength(1)
-      expect(result.tags[0].id).toBe('pressure')
-      expect(result.tags[0].scope).toBeNull() // Fallback to null
+      expect(result.tags).toEqual([])
     })
 
-    it('should NOT use primary when type is wrong (TOPIC_FILTER instead of TAG)', () => {
+    it('should place primary of TOPIC_FILTER type in topicFilters when scoped', () => {
       const formData: Partial<DataCombining> = {
         sources: {
-          tags: ['temperature'],
           primary: {
-            id: 'temperature',
-            type: DataIdentifierReference.type.TOPIC_FILTER, // Wrong type!
-            scope: 'modbus-adapter-1',
+            id: 'a/topic/+/filter',
+            type: DataIdentifierReference.type.TOPIC_FILTER,
+            scope: 'adapter-1',
           },
         },
       }
-
       const result = reconstructSelectedSources(formData as DataCombining, undefined)
-
-      expect(result.tags).toHaveLength(1)
-      expect(result.tags[0].scope).toBeNull() // Should fallback
-    })
-
-    it('should NOT use primary when primary has no scope', () => {
-      const formData: Partial<DataCombining> = {
-        sources: {
-          tags: ['temperature'],
-          primary: {
-            id: 'temperature',
-            type: DataIdentifierReference.type.TAG,
-            scope: null,
-          },
-        },
-      }
-
-      const result = reconstructSelectedSources(formData as DataCombining, undefined)
-
-      expect(result.tags).toHaveLength(1)
-      expect(result.tags[0].scope).toBeNull()
+      expect(result.tags).toEqual([])
+      expect(result.topicFilters).toHaveLength(1)
+      expect(result.topicFilters[0].id).toBe('a/topic/+/filter')
     })
   })
 
-  describe('tags reconstruction - Strategy 2: Instructions', () => {
-    it('should find scope from instructions when tag is in sourceRef', () => {
+  describe('instruction-based source reconstruction', () => {
+    it('should return TAG sourceRefs from instructions', () => {
       const formData: Partial<DataCombining> = {
         sources: {
-          primary: mockPrimary,
-          tags: ['temperature', 'pressure'],
+          primary: { id: 'x', type: DataIdentifierReference.type.TAG, scope: null },
         },
         instructions: [
           {
@@ -775,9 +735,7 @@ describe('reconstructSelectedSources', () => {
           },
         ] as Instruction[],
       }
-
       const result = reconstructSelectedSources(formData as DataCombining, undefined)
-
       expect(result.tags).toHaveLength(2)
       expect(result.tags[0]).toEqual({
         id: 'temperature',
@@ -791,532 +749,197 @@ describe('reconstructSelectedSources', () => {
       })
     })
 
-    it('should skip instructions with wrong type (TOPIC_FILTER instead of TAG)', () => {
+    it('should return TOPIC_FILTER sourceRefs from instructions in topicFilters', () => {
       const formData: Partial<DataCombining> = {
         sources: {
-          primary: mockPrimary,
-          tags: ['temperature'],
+          primary: { id: 'x', type: DataIdentifierReference.type.TAG, scope: null },
         },
         instructions: [
           {
-            sourceRef: {
-              id: 'temperature',
-              type: DataIdentifierReference.type.TOPIC_FILTER, // Wrong type
-              scope: 'adapter1',
-            },
-            destination: 'dest1',
-            source: 'sourceField',
-          },
-        ] as Instruction[],
-      }
-
-      const result = reconstructSelectedSources(formData as DataCombining, undefined)
-
-      expect(result.tags).toHaveLength(1)
-      expect(result.tags[0].scope).toBeNull() // Should fallback
-    })
-
-    it('should skip instructions with no scope', () => {
-      const formData: Partial<DataCombining> = {
-        sources: {
-          primary: mockPrimary,
-          tags: ['temperature'],
-        },
-        instructions: [
-          {
-            sourceRef: {
-              id: 'temperature',
-              type: DataIdentifierReference.type.TAG,
-              scope: null,
-            },
-            destination: 'dest1',
-            source: 'sourceField',
-          },
-        ] as Instruction[],
-      }
-
-      const result = reconstructSelectedSources(formData as DataCombining, undefined)
-
-      expect(result.tags).toHaveLength(1)
-      expect(result.tags[0].scope).toBeNull()
-    })
-
-    it('should handle missing instructions array', () => {
-      const formData: Partial<DataCombining> = {
-        sources: {
-          primary: mockPrimary,
-          tags: ['temperature'],
-        },
-        instructions: undefined,
-      }
-
-      const result = reconstructSelectedSources(formData as DataCombining, undefined)
-
-      expect(result.tags).toHaveLength(1)
-      expect(result.tags[0].scope).toBeNull() // Fallback
-    })
-  })
-
-  describe('tags reconstruction - Strategy 3: Context lookup', () => {
-    it('should find scope via context lookup with entityQueries', () => {
-      const formData: Partial<DataCombining> = {
-        sources: {
-          primary: mockPrimary,
-          tags: ['temperature'],
-        },
-      }
-
-      const context: CombinerContext = {
-        entityQueries: [
-          {
-            entity: { id: 'modbus-adapter-1', type: EntityType.ADAPTER },
-            query: mockTagQuery(['temperature', 'pressure']) as UseQueryResult<DomainTagList | TopicFilterList, Error>,
-          },
-        ],
-      }
-
-      const result = reconstructSelectedSources(formData as DataCombining, context)
-
-      expect(result.tags).toHaveLength(1)
-      expect(result.tags[0]).toEqual({
-        id: 'temperature',
-        type: DataIdentifierReference.type.TAG,
-        scope: 'modbus-adapter-1',
-      })
-    })
-
-    it('should find scope via context lookup with legacy queries/entities', () => {
-      const formData: Partial<DataCombining> = {
-        sources: {
-          primary: mockPrimary,
-          tags: ['pressure'],
-        },
-      }
-
-      const context: CombinerContext = {
-        entities: [{ id: 'opcua-adapter-1', type: EntityType.ADAPTER }],
-        queries: [mockTagQuery(['temperature', 'pressure']) as UseQueryResult<DomainTagList | TopicFilterList, Error>],
-      }
-
-      const result = reconstructSelectedSources(formData as DataCombining, context)
-
-      expect(result.tags).toHaveLength(1)
-      expect(result.tags[0]).toEqual({
-        id: 'pressure',
-        type: DataIdentifierReference.type.TAG,
-        scope: 'opcua-adapter-1',
-      })
-    })
-
-    it('should return null scope when tag not found in context', () => {
-      const formData: Partial<DataCombining> = {
-        sources: {
-          primary: mockPrimary,
-          tags: ['nonexistent-tag'],
-        },
-      }
-
-      const context: CombinerContext = {
-        entityQueries: [
-          {
-            entity: { id: 'adapter1', type: EntityType.ADAPTER },
-            query: mockTagQuery(['temperature']) as UseQueryResult<DomainTagList | TopicFilterList, Error>,
-          },
-        ],
-      }
-
-      const result = reconstructSelectedSources(formData as DataCombining, context)
-
-      expect(result.tags).toHaveLength(1)
-      expect(result.tags[0]).toEqual({
-        id: 'nonexistent-tag',
-        type: DataIdentifierReference.type.TAG,
-        scope: null,
-      })
-    })
-
-    it('should handle empty entityQueries array', () => {
-      const formData: Partial<DataCombining> = {
-        sources: {
-          primary: mockPrimary,
-          tags: ['temperature'],
-        },
-      }
-
-      const context: CombinerContext = {
-        entityQueries: [],
-      }
-
-      const result = reconstructSelectedSources(formData as DataCombining, context)
-
-      expect(result.tags).toHaveLength(1)
-      expect(result.tags[0].scope).toBeNull()
-    })
-  })
-
-  describe('tags reconstruction - Mixed strategies', () => {
-    it('should use different strategies for different tags', () => {
-      const formData: Partial<DataCombining> = {
-        sources: {
-          tags: ['tag1', 'tag2', 'tag3'],
-          primary: {
-            id: 'tag1',
-            type: DataIdentifierReference.type.TAG,
-            scope: 'adapter-primary',
-          },
-        },
-        instructions: [
-          {
-            sourceRef: {
-              id: 'tag2',
-              type: DataIdentifierReference.type.TAG,
-              scope: 'adapter-instruction',
-            },
-            destination: 'dest1',
-            source: 'sourceField',
-          },
-        ] as Instruction[],
-      }
-
-      const context: CombinerContext = {
-        entityQueries: [
-          {
-            entity: { id: 'adapter-context', type: EntityType.ADAPTER },
-            query: mockTagQuery(['tag3']) as UseQueryResult<DomainTagList | TopicFilterList, Error>,
-          },
-        ],
-      }
-
-      const result = reconstructSelectedSources(formData as DataCombining, context)
-
-      expect(result.tags).toHaveLength(3)
-      expect(result.tags[0].scope).toBe('adapter-primary') // Strategy 1
-      expect(result.tags[1].scope).toBe('adapter-instruction') // Strategy 2
-      expect(result.tags[2].scope).toBe('adapter-context') // Strategy 3
-    })
-
-    it('should handle strategy fallback chain correctly', () => {
-      const formData: Partial<DataCombining> = {
-        sources: {
-          tags: ['temperature'],
-          primary: {
-            id: 'pressure', // Different tag
-            type: DataIdentifierReference.type.TAG,
-            scope: 'wrong-adapter',
-          },
-        },
-        instructions: [
-          {
-            sourceRef: {
-              id: 'humidity', // Different tag
-              type: DataIdentifierReference.type.TAG,
-              scope: 'wrong-adapter',
-            },
-            destination: 'dest1',
-            source: 'sourceField',
-          },
-        ] as Instruction[],
-      }
-
-      const context: CombinerContext = {
-        entityQueries: [
-          {
-            entity: { id: 'correct-adapter', type: EntityType.ADAPTER },
-            query: mockTagQuery(['temperature']) as UseQueryResult<DomainTagList | TopicFilterList, Error>,
-          },
-        ],
-      }
-
-      const result = reconstructSelectedSources(formData as DataCombining, context)
-
-      // Should skip Strategy 1 (wrong id), skip Strategy 2 (wrong id), use Strategy 3
-      expect(result.tags).toHaveLength(1)
-      expect(result.tags[0].scope).toBe('correct-adapter')
-    })
-  })
-
-  describe('topic filters reconstruction', () => {
-    it('should return empty array when no topic filters', () => {
-      const formData: Partial<DataCombining> = {
-        sources: {
-          primary: mockPrimary,
-          topicFilters: undefined,
-        },
-      }
-
-      const result = reconstructSelectedSources(formData as DataCombining, undefined)
-      expect(result.topicFilters).toEqual([])
-    })
-
-    it('should use primary when topic filter matches primary', () => {
-      const formData: Partial<DataCombining> = {
-        sources: {
-          topicFilters: ['a/topic/+/filter'],
-          primary: {
-            id: 'a/topic/+/filter',
-            type: DataIdentifierReference.type.TOPIC_FILTER,
-            scope: null,
-          },
-        },
-      }
-
-      const result = reconstructSelectedSources(formData as DataCombining, undefined)
-
-      expect(result.topicFilters).toHaveLength(1)
-      expect(result.topicFilters[0]).toEqual({
-        id: 'a/topic/+/filter',
-        type: DataIdentifierReference.type.TOPIC_FILTER,
-        scope: null,
-      })
-    })
-
-    it('should find topic filter from instructions', () => {
-      const formData: Partial<DataCombining> = {
-        sources: {
-          primary: mockPrimary,
-          topicFilters: ['filter1', 'filter2'],
-        },
-        instructions: [
-          {
-            sourceRef: {
-              id: 'filter1',
-              type: DataIdentifierReference.type.TOPIC_FILTER,
-              scope: null,
-            },
+            sourceRef: { id: 'filter1', type: DataIdentifierReference.type.TOPIC_FILTER, scope: null },
             destination: 'dest1',
             source: 'sourceField',
           },
           {
-            sourceRef: {
-              id: 'filter2',
-              type: DataIdentifierReference.type.TOPIC_FILTER,
-              scope: null,
-            },
+            sourceRef: { id: 'filter2', type: DataIdentifierReference.type.TOPIC_FILTER, scope: null },
             destination: 'dest2',
             source: 'sourceField',
           },
         ] as Instruction[],
       }
-
       const result = reconstructSelectedSources(formData as DataCombining, undefined)
-
       expect(result.topicFilters).toHaveLength(2)
       expect(result.topicFilters[0].id).toBe('filter1')
       expect(result.topicFilters[1].id).toBe('filter2')
     })
 
-    it('should default to null scope when not found in primary or instructions', () => {
+    it('should deduplicate identical sourceRefs across instructions', () => {
       const formData: Partial<DataCombining> = {
-        sources: {
-          primary: mockPrimary,
-          topicFilters: ['filter1'],
-        },
-      }
-
-      const result = reconstructSelectedSources(formData as DataCombining, undefined)
-
-      expect(result.topicFilters).toHaveLength(1)
-      expect(result.topicFilters[0]).toEqual({
-        id: 'filter1',
-        type: DataIdentifierReference.type.TOPIC_FILTER,
-        scope: null,
-      })
-    })
-
-    it('should handle multiple topic filters with different sources', () => {
-      const formData: Partial<DataCombining> = {
-        sources: {
-          topicFilters: ['filter1', 'filter2', 'filter3'],
-          primary: {
-            id: 'filter1',
-            type: DataIdentifierReference.type.TOPIC_FILTER,
-            scope: null,
-          },
-        },
+        sources: { primary: { id: 'x', type: DataIdentifierReference.type.TAG, scope: null } },
         instructions: [
           {
-            sourceRef: {
-              id: 'filter2',
-              type: DataIdentifierReference.type.TOPIC_FILTER,
-              scope: null,
-            },
+            sourceRef: { id: 'temperature', type: DataIdentifierReference.type.TAG, scope: 'adapter-1' },
             destination: 'dest1',
-            source: 'sourceField',
+            source: 'field1',
+          },
+          {
+            sourceRef: { id: 'temperature', type: DataIdentifierReference.type.TAG, scope: 'adapter-1' },
+            destination: 'dest2',
+            source: 'field2',
           },
         ] as Instruction[],
       }
-
       const result = reconstructSelectedSources(formData as DataCombining, undefined)
+      expect(result.tags).toHaveLength(1)
+      expect(result.tags[0].id).toBe('temperature')
+    })
 
-      expect(result.topicFilters).toHaveLength(3)
-      // filter1 from primary, filter2 from instruction, filter3 default
-      expect(result.topicFilters.every((tf) => tf.scope === null)).toBe(true)
+    it('should include instructions with null scope (e.g. topic filters always have null scope)', () => {
+      const formData: Partial<DataCombining> = {
+        sources: { primary: { id: 'x', type: DataIdentifierReference.type.TAG, scope: null } },
+        instructions: [
+          {
+            sourceRef: { id: 'filter/+/topic', type: DataIdentifierReference.type.TOPIC_FILTER, scope: null },
+            destination: 'dest1',
+            source: 'field',
+          },
+        ] as Instruction[],
+      }
+      const result = reconstructSelectedSources(formData as DataCombining, undefined)
+      expect(result.topicFilters).toHaveLength(1)
+      expect(result.topicFilters[0].scope).toBeNull()
+    })
+
+    it('should return empty arrays when instructions array is empty', () => {
+      const formData: Partial<DataCombining> = {
+        sources: { primary: { id: 'x', type: DataIdentifierReference.type.TAG, scope: null } },
+        instructions: [],
+      }
+      const result = reconstructSelectedSources(formData as DataCombining, undefined)
+      expect(result.tags).toEqual([])
+      expect(result.topicFilters).toEqual([])
+    })
+
+    it('should return empty arrays when instructions is undefined', () => {
+      const formData: Partial<DataCombining> = {
+        sources: { primary: { id: 'x', type: DataIdentifierReference.type.TAG, scope: null } },
+        instructions: undefined,
+      }
+      const result = reconstructSelectedSources(formData as DataCombining, undefined)
+      expect(result.tags).toEqual([])
+      expect(result.topicFilters).toEqual([])
     })
   })
 
-  describe('combined tags and topic filters', () => {
-    it('should reconstruct both tags and topic filters correctly', () => {
+  describe('primary and instructions combined', () => {
+    it('should prepend scoped primary before instruction sourceRefs', () => {
       const formData: Partial<DataCombining> = {
         sources: {
-          tags: ['temperature'],
-          topicFilters: ['mqtt/sensor/+'],
-          primary: {
-            id: 'temperature',
-            type: DataIdentifierReference.type.TAG,
-            scope: 'modbus-1',
-          },
+          primary: { id: 'modbus-temp', type: DataIdentifierReference.type.TAG, scope: 'modbus-adapter-1' },
         },
         instructions: [
           {
-            sourceRef: {
-              id: 'mqtt/sensor/+',
-              type: DataIdentifierReference.type.TOPIC_FILTER,
-              scope: null,
-            },
-            destination: 'dest1',
-            source: 'sourceField',
+            sourceRef: { id: 'opcua-pressure', type: DataIdentifierReference.type.TAG, scope: 'opcua-adapter-1' },
+            destination: 'pressure',
+            source: 'field',
           },
         ] as Instruction[],
       }
-
       const result = reconstructSelectedSources(formData as DataCombining, undefined)
+      expect(result.tags).toHaveLength(2)
+      expect(result.tags[0].id).toBe('modbus-temp') // Primary comes first
+      expect(result.tags[1].id).toBe('opcua-pressure') // Instruction second
+    })
 
+    it('should deduplicate when primary is also present in instructions', () => {
+      const formData: Partial<DataCombining> = {
+        sources: {
+          primary: { id: 'temperature', type: DataIdentifierReference.type.TAG, scope: 'modbus-adapter-1' },
+        },
+        instructions: [
+          {
+            sourceRef: { id: 'temperature', type: DataIdentifierReference.type.TAG, scope: 'modbus-adapter-1' },
+            destination: 'dest',
+            source: 'field',
+          },
+        ] as Instruction[],
+      }
+      const result = reconstructSelectedSources(formData as DataCombining, undefined)
+      expect(result.tags).toHaveLength(1)
+      expect(result.tags[0].scope).toBe('modbus-adapter-1')
+    })
+
+    it('should correctly separate tags and topic filters from mixed instructions', () => {
+      const formData: Partial<DataCombining> = {
+        sources: {
+          primary: { id: 'temperature', type: DataIdentifierReference.type.TAG, scope: 'modbus-1' },
+        },
+        instructions: [
+          {
+            sourceRef: { id: 'mqtt/sensor/+', type: DataIdentifierReference.type.TOPIC_FILTER, scope: null },
+            destination: 'dest1',
+            source: 'field',
+          },
+        ] as Instruction[],
+      }
+      const result = reconstructSelectedSources(formData as DataCombining, undefined)
       expect(result.tags).toHaveLength(1)
       expect(result.tags[0].scope).toBe('modbus-1')
       expect(result.topicFilters).toHaveLength(1)
       expect(result.topicFilters[0].scope).toBeNull()
     })
 
-    it('should handle empty tags with non-empty topic filters', () => {
+    it('should handle a realistic mapping with tags from two adapters and a topic filter', () => {
       const formData: Partial<DataCombining> = {
         sources: {
-          primary: mockPrimary,
-          tags: [],
-          topicFilters: ['filter1'],
-        },
-      }
-
-      const result = reconstructSelectedSources(formData as DataCombining, undefined)
-
-      expect(result.tags).toEqual([])
-      expect(result.topicFilters).toHaveLength(1)
-    })
-
-    it('should handle non-empty tags with empty topic filters', () => {
-      const formData: Partial<DataCombining> = {
-        sources: {
-          primary: mockPrimary,
-          tags: ['tag1'],
-          topicFilters: [],
-        },
-      }
-
-      const result = reconstructSelectedSources(formData as DataCombining, undefined)
-
-      expect(result.tags).toHaveLength(1)
-      expect(result.topicFilters).toEqual([])
-    })
-  })
-
-  describe('complex real-world scenarios', () => {
-    it('should handle mapping with multiple tags from different adapters', () => {
-      const formData: Partial<DataCombining> = {
-        sources: {
-          tags: ['modbus-temp', 'opcua-pressure', 'mqtt-humidity'],
-          primary: {
-            id: 'modbus-temp',
-            type: DataIdentifierReference.type.TAG,
-            scope: 'modbus-adapter-1',
-          },
+          primary: { id: 'modbus-temp', type: DataIdentifierReference.type.TAG, scope: 'modbus-adapter-1' },
         },
         instructions: [
           {
-            sourceRef: {
-              id: 'modbus-temp',
-              type: DataIdentifierReference.type.TAG,
-              scope: 'modbus-adapter-1',
-            },
+            sourceRef: { id: 'modbus-temp', type: DataIdentifierReference.type.TAG, scope: 'modbus-adapter-1' },
             destination: 'temperature',
-            source: 'sourceField',
+            source: 'field',
           },
           {
-            sourceRef: {
-              id: 'opcua-pressure',
-              type: DataIdentifierReference.type.TAG,
-              scope: 'opcua-adapter-1',
-            },
+            sourceRef: { id: 'opcua-pressure', type: DataIdentifierReference.type.TAG, scope: 'opcua-adapter-1' },
             destination: 'pressure',
-            source: 'sourceField',
+            source: 'field',
+          },
+          {
+            sourceRef: { id: 'mqtt/humidity', type: DataIdentifierReference.type.TOPIC_FILTER, scope: null },
+            destination: 'humidity',
+            source: 'field',
           },
         ] as Instruction[],
       }
+      const result = reconstructSelectedSources(formData as DataCombining, undefined)
+      // modbus-temp appears in both primary and instructions → deduplicated to 1
+      expect(result.tags).toHaveLength(2)
+      expect(result.tags[0].id).toBe('modbus-temp')
+      expect(result.tags[0].scope).toBe('modbus-adapter-1')
+      expect(result.tags[1].id).toBe('opcua-pressure')
+      expect(result.tags[1].scope).toBe('opcua-adapter-1')
+      expect(result.topicFilters).toHaveLength(1)
+    })
+  })
 
+  describe('context is not used (deprecated strategy)', () => {
+    it('should ignore context entityQueries — reconstruction is based only on instructions and primary', () => {
+      const formData: Partial<DataCombining> = {
+        sources: { primary: { id: 'x', type: DataIdentifierReference.type.TAG, scope: null } },
+      }
       const context: CombinerContext = {
         entityQueries: [
           {
-            entity: { id: 'mqtt-adapter-1', type: EntityType.ADAPTER },
-            query: mockTagQuery(['mqtt-humidity']) as UseQueryResult<DomainTagList | TopicFilterList, Error>,
+            entity: { id: 'modbus-adapter-1', type: EntityType.ADAPTER },
+            query: mockTagQuery(['temperature']) as UseQueryResult<DomainTagList | TopicFilterList, Error>,
           },
         ],
       }
-
       const result = reconstructSelectedSources(formData as DataCombining, context)
-
-      expect(result.tags).toHaveLength(3)
-      expect(result.tags[0].scope).toBe('modbus-adapter-1') // From primary
-      expect(result.tags[1].scope).toBe('opcua-adapter-1') // From instruction
-      expect(result.tags[2].scope).toBe('mqtt-adapter-1') // From context
-    })
-
-    it('should handle orphaned tags (no scope found anywhere)', () => {
-      const formData: Partial<DataCombining> = {
-        sources: {
-          primary: mockPrimary,
-          tags: ['orphan-tag'],
-        },
-        instructions: [],
-      }
-
-      const context: CombinerContext = {
-        entityQueries: [],
-      }
-
-      const result = reconstructSelectedSources(formData as DataCombining, context)
-
-      expect(result.tags).toHaveLength(1)
-      expect(result.tags[0]).toEqual({
-        id: 'orphan-tag',
-        type: DataIdentifierReference.type.TAG,
-        scope: null, // Should gracefully default to null
-      })
-    })
-
-    it('should handle migration scenario with both old and new context structures', () => {
-      const formData: Partial<DataCombining> = {
-        sources: {
-          primary: mockPrimary,
-          tags: ['tag1'],
-        },
-      }
-
-      // During migration, both structures might exist
-      const context: CombinerContext = {
-        entityQueries: [
-          {
-            entity: { id: 'new-adapter', type: EntityType.ADAPTER },
-            query: mockTagQuery(['tag1']) as UseQueryResult<DomainTagList | TopicFilterList, Error>,
-          },
-        ],
-        // Legacy structure also present
-        entities: [{ id: 'old-adapter', type: EntityType.ADAPTER }],
-        queries: [mockTagQuery(['tag1']) as UseQueryResult<DomainTagList | TopicFilterList, Error>],
-      }
-
-      const result = reconstructSelectedSources(formData as DataCombining, context)
-
-      expect(result.tags).toHaveLength(1)
-      // Should prefer new entityQueries structure
-      expect(result.tags[0].scope).toBe('new-adapter')
+      // Context is ignored; only instructions and scoped primary matter
+      expect(result.tags).toEqual([])
+      expect(result.topicFilters).toEqual([])
     })
   })
 })

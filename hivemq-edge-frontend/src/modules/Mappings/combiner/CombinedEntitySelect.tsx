@@ -16,14 +16,6 @@ import type { CombinerContext } from '@/modules/Mappings/types'
 
 interface EntityReferenceSelectProps extends Omit<BoxProps, 'onChange'> {
   id?: string
-  /**
-   * @deprecated Use formContext.selectedSources instead. This prop is kept for backward compatibility during migration.
-   */
-  tags?: Array<string>
-  /**
-   * @deprecated Use formContext.selectedSources instead. This prop is kept for backward compatibility during migration.
-   */
-  topicFilters?: Array<string>
   formContext?: CombinerContext
   onChange: (value: MultiValue<EntityOption>) => void
 }
@@ -36,14 +28,7 @@ interface EntityOption extends OptionBase {
   description?: string
 }
 
-const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
-  id,
-  tags,
-  topicFilters,
-  formContext,
-  onChange,
-  ...boxProps
-}) => {
+const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ id, formContext, onChange, ...boxProps }) => {
   const { t } = useTranslation()
   const isLoading = useMemo(() => {
     return formContext?.entityQueries?.some((eq) => eq?.query?.isLoading) || false
@@ -107,35 +92,23 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({
   }, [formContext?.entityQueries, isLoading])
 
   const values = useMemo(() => {
-    // Prefer selectedSources from context (Option B implementation)
-    if (formContext?.selectedSources) {
-      const tagValue = formContext.selectedSources.tags.map<EntityOption>((ref) => ({
-        value: ref.id,
-        label: formatOwnershipString(ref),
-        type: ref.type,
-        adapterId: ref.scope || undefined,
-      }))
+    if (!formContext?.selectedSources) return []
 
-      const topicFilterValue = formContext.selectedSources.topicFilters.map<EntityOption>((ref) => ({
-        value: ref.id,
-        label: ref.id,
-        type: ref.type,
-      }))
+    const tagValue = formContext.selectedSources.tags.map<EntityOption>((ref) => ({
+      value: ref.id,
+      label: formatOwnershipString(ref),
+      type: ref.type,
+      adapterId: ref.scope || undefined,
+    }))
 
-      return [...tagValue, ...topicFilterValue]
-    }
+    const topicFilterValue = formContext.selectedSources.topicFilters.map<EntityOption>((ref) => ({
+      value: ref.id,
+      label: ref.id,
+      type: ref.type,
+    }))
 
-    // Backward compatibility: fall back to deprecated props during migration
-    const tagValue =
-      tags?.map<EntityOption>((value) => ({ value: value, label: value, type: DataIdentifierReference.type.TAG })) || []
-    const topicFilter =
-      topicFilters?.map<EntityOption>((value) => ({
-        value: value,
-        label: value,
-        type: DataIdentifierReference.type.TOPIC_FILTER,
-      })) || []
-    return [...tagValue, ...topicFilter]
-  }, [formContext?.selectedSources, tags, topicFilters])
+    return [...tagValue, ...topicFilterValue]
+  }, [formContext?.selectedSources])
 
   return (
     <Box {...boxProps}>

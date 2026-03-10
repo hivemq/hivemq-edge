@@ -76,14 +76,13 @@ export const combinerHasValidAdapterTagMappings = (
       return true
     }
 
-    // Check additional tags array if present
-    // NOTE: sources.tags is string[] without scope info, so we can only check tag name
-    // This is a limitation until Stage 2 adds full DataIdentifierReference[] for tags
-    if (mapping.sources.tags) {
-      return mapping.sources.tags.some((tagName) => deviceTags.has(tagName))
-    }
-
-    return false
+    // Check instruction sourceRefs for TAG references from this adapter
+    return (mapping.instructions ?? []).some(
+      (inst) =>
+        inst.sourceRef?.type === DataIdentifierReference.type.TAG &&
+        inst.sourceRef.scope === adapterId &&
+        deviceTags.has(inst.sourceRef.id)
+    )
   })
 }
 
