@@ -51,12 +51,10 @@ const SchemaMerger: FC<SchemaMergerProps> = ({ formData, formContext, onClose, o
   const properties = useMemo(() => {
     const displayedSchemas = getSchemasFromReferences(references, schemaQueries)
 
-    // Build index maps from references (which carry scope) rather than from formData.sources.tags
-    // (plain string[]), so that same-named tags from different adapters get distinct origins.
     const tagIndexMap = new Map(
       references
         .filter((r) => r.type === DataIdentifierReference.type.TAG)
-        .map((ref, index) => [JSON.stringify([ref.id, ref.scope ?? null]), index])
+        .map((ref, index) => [`${ref.id}@${ref.scope ?? ''}`, index])
     )
     const topicFilterIndexMap = new Map(
       references
@@ -72,7 +70,7 @@ const SchemaMerger: FC<SchemaMergerProps> = ({ formData, formContext, onClose, o
       properties.forEach((property, pathIndex) => {
         property.metadata = reference
         if (reference.type === DataIdentifierReference.type.TAG) {
-          const index = tagIndexMap.get(JSON.stringify([reference.id, reference.scope ?? null]))
+          const index = tagIndexMap.get(`${reference.id}@${reference.scope ?? ''}`)
           property.origin = `${STUB_TAG_PROPERTY}${index}`
         } else if (reference.type === DataIdentifierReference.type.TOPIC_FILTER) {
           const index = topicFilterIndexMap.get(reference.id)
