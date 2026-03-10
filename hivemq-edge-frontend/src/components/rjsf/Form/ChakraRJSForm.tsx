@@ -16,7 +16,7 @@ import { DescriptionFieldTemplate } from '@/components/rjsf/Templates/Descriptio
 import { BaseInputTemplate } from '@/components/rjsf/BaseInputTemplate.tsx'
 import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
 import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate.tsx'
-import { customFormatsValidator } from '@/components/rjsf/Form/validation.utils.ts'
+import { cleanSchemaForValidation, customFormatsValidator } from '@/components/rjsf/Form/validation.utils.ts'
 import { customFocusError } from '@/components/rjsf/Form/error-focus.utils.ts'
 import { TitleFieldTemplate } from '@/components/rjsf/Templates/TitleFieldTemplate.tsx'
 import { ErrorListTemplate } from '@/components/rjsf/Templates/ErrorListTemplate.tsx'
@@ -99,8 +99,7 @@ const ChakraRJSForm: FC<CustomFormProps<any>> = ({
 
       if (schema && FLAG_POST_VALIDATE) {
         const updatedDocument = immutableJSONPatch(defaultValues, operations)
-        const { $schema, ...rest } = schema
-        const validate = validator.ajv.compile(rest)
+        const validate = validator.ajv.compile(cleanSchemaForValidation(schema))
         validate(updatedDocument)
       }
 
