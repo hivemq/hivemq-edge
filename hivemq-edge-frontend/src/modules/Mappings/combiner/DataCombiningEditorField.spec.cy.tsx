@@ -261,6 +261,12 @@ describe('DataCombiningEditorField', () => {
     // Component should render successfully with loaded queries
     cy.getByTestId('combining-editor-sources-attributes').should('exist')
     cy.getByTestId('combining-editor-destination-topic').should('exist')
+
+    // Screenshot: Full editor field showing split layout (sources left, destination right)
+    cy.screenshot('combiner-editor-field', {
+      overwrite: true,
+      capture: 'viewport',
+    })
   })
 
   it('should be accessible', () => {
