@@ -139,10 +139,6 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
         <FormControl isInvalid={hasError(sourceErrors)}>
           <FormLabel>{t('combiner.schema.mappings.sources.combinedData.title')}</FormLabel>
           <CombinedEntitySelect
-            // TODO[DEPRECATED]: Remove these props when API fields are removed
-            // Currently needed for backward compatibility during transition
-            tags={formData?.sources?.tags}
-            topicFilters={formData?.sources?.topicFilters}
             formContext={localContext}
             onChange={(values) => {
               if (!formData) return
@@ -164,17 +160,13 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
                   scope: null, // ✅ Topic filters always null
                 }))
 
-              // Update selectedSources state (Option B strategy)
+              // Update selectedSources state
               if (localContext?.onSelectedSourcesChange) {
                 localContext.onSelectedSourcesChange({
                   tags: tagsWithScope,
                   topicFilters: topicFiltersWithScope,
                 })
               }
-
-              // TEMPORARY: Also update deprecated API fields during transition
-              const tags = tagsWithScope.map((t) => t.id)
-              const filters = topicFiltersWithScope.map((tf) => tf.id)
 
               const isPrimary = values.some(
                 (entity) =>
@@ -185,8 +177,6 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
                 ...formData,
                 sources: {
                   ...formData.sources,
-                  tags: tags,
-                  topicFilters: filters,
                   // @ts-ignore TODO[30935] check for type clash on primary
                   primary: isPrimary ? formData.sources.primary : undefined,
                 },
