@@ -462,11 +462,6 @@ hivemqLicense {
     ignoredGroupPrefixes.addAll("com.hivemq", "com.github.saasquatch")
 }
 
-val javaComponent = components["java"] as AdhocComponentWithVariants
-javaComponent.withVariantsFromConfiguration(configurations.shadowRuntimeElements.get()) {
-    skip()
-}
-
 /*** artifacts ***/
 
 val frontend: Configuration by configurations.creating {

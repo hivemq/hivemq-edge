@@ -114,8 +114,3 @@ hivemqLicense {
     thirdPartyLicenseDirectory.set(layout.projectDirectory.dir("src/distribution/third-party-licenses"))
     ignoredGroupPrefixes.add("org.mariadb.jdbc")
 }
-
-val javaComponent = components["java"] as AdhocComponentWithVariants
-javaComponent.withVariantsFromConfiguration(configurations.shadowRuntimeElements.get()) {
-    skip()
-}
