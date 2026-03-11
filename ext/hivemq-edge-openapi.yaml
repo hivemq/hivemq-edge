@@ -8572,11 +8572,13 @@ components:
             tags:
               type: array
               description: The list of tags (names) used in the data combining
+              deprecated: true
               items:
                 type: string
             topicFilters:
               type: array
               description: The list of topic filters (names) used in the data combining
+              deprecated: true
               items:
                 type: string
         destination:

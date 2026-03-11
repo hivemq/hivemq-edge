@@ -16,7 +16,6 @@
 package com.hivemq.edge.modules.adapters.data;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.configuration.entity.adapter.AdapterTag;
 import com.hivemq.protocols.northbound.TagConsumer;
 import jakarta.inject.Inject;
@@ -28,12 +27,13 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Singleton
-public class TagManager implements ProtocolAdapterTagStreamingService {
+public class TagManager {
 
     private static final Logger log = LoggerFactory.getLogger(TagManager.class);
 
@@ -50,23 +50,32 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
 
     private final @NotNull ConcurrentHashMap<AdapterTag, List<TagConsumer>> consumers = new ConcurrentHashMap<>();
 
-    @Override
-    public void feed(
-            final @NotNull String adapterId, final @NotNull String tagName, final @NotNull List<DataPoint> dataPoints) {
-        final AdapterTag adapterTag = new AdapterTag(adapterId, tagName);
-        lastValueForTag.put(adapterTag, dataPoints);
+    public void feed(final @NotNull String adapterId, final @NotNull List<DataPoint> dataPoints) {
+        final Map<String, List<DataPoint>> grouped =
+                dataPoints.stream().collect(Collectors.groupingBy(DataPoint::getTagName));
+
         final var readlock = readWriteLock.readLock();
         readlock.lock();
         try {
-            final var tagConsumers = consumers.get(adapterTag);
-            if (tagConsumers != null) {
-                tagConsumers.forEach(consumer -> {
-                    try {
-                        consumer.accept(dataPoints);
-                    } catch (final Exception e) {
-                        log.error("An error was thrown while processing tag {} with consumer {}", tagName, consumer, e);
-                    }
-                });
+            for (final var entry : grouped.entrySet()) {
+                final String tagName = entry.getKey();
+                final List<DataPoint> tagDataPoints = entry.getValue();
+                final AdapterTag adapterTag = new AdapterTag(adapterId, tagName);
+                lastValueForTag.put(adapterTag, tagDataPoints);
+                final var tagConsumers = consumers.get(adapterTag);
+                if (tagConsumers != null) {
+                    tagConsumers.forEach(consumer -> {
+                        try {
+                            consumer.accept(tagDataPoints);
+                        } catch (final Exception e) {
+                            log.error(
+                                    "An error was thrown while processing tag {} with consumer {}",
+                                    tagName,
+                                    consumer,
+                                    e);
+                        }
+                    });
+                }
             }
         } finally {
             readlock.unlock();
