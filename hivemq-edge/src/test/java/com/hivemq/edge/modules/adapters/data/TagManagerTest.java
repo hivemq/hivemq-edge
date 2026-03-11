@@ -35,9 +35,9 @@ public class TagManagerTest {
         var tagManager = new TagManager();
         var countDownLatch = new CountDownLatch(3);
         tagManager.addConsumer(new SucceedingConsumer(ADAPTER_1, "tag1", countDownLatch));
-        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
-        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
-        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
+        tagManager.feed(ADAPTER_1, List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
+        tagManager.feed(ADAPTER_1, List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
+        tagManager.feed(ADAPTER_1, List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
 
         assertThat(countDownLatch.await(5, TimeUnit.SECONDS)).isTrue();
     }
@@ -51,9 +51,9 @@ public class TagManagerTest {
         tagManager.addConsumer(new SucceedingConsumer(ADAPTER_1, "tag1", countDownLatch));
         tagManager.addConsumer(new SucceedingConsumer(ADAPTER_1, "tag1", countDownLatch1));
         tagManager.addConsumer(new SucceedingConsumer(ADAPTER_1, "tag1", countDownLatch2));
-        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
-        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
-        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
+        tagManager.feed(ADAPTER_1, List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
+        tagManager.feed(ADAPTER_1, List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
+        tagManager.feed(ADAPTER_1, List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
 
         assertThat(countDownLatch.await(5, TimeUnit.SECONDS)).isTrue();
         assertThat(countDownLatch1.await(5, TimeUnit.SECONDS)).isTrue();
@@ -68,9 +68,9 @@ public class TagManagerTest {
         tagManager.addConsumer(new SucceedingConsumer(ADAPTER_1, "tag1", countDownLatch));
         tagManager.addConsumer(new FailingTagConsumer(ADAPTER_1, "tag1"));
         tagManager.addConsumer(new SucceedingConsumer(ADAPTER_1, "tag1", countDownLatch1));
-        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
-        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
-        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
+        tagManager.feed(ADAPTER_1, List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
+        tagManager.feed(ADAPTER_1, List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
+        tagManager.feed(ADAPTER_1, List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
 
         assertThat(countDownLatch.await(5, TimeUnit.SECONDS)).isTrue();
         assertThat(countDownLatch1.await(5, TimeUnit.SECONDS)).isTrue();
@@ -84,7 +84,7 @@ public class TagManagerTest {
         tagManager.addConsumer(new SucceedingConsumer("adapter-1", "temp", adapter1Latch));
         tagManager.addConsumer(new SucceedingConsumer("adapter-2", "temp", adapter2Latch));
 
-        tagManager.feed("adapter-1", "temp", List.of(new DataPointImpl("temp", 25)));
+        tagManager.feed("adapter-1", List.of(new DataPointImpl("temp", 25)));
 
         assertThat(adapter1Latch.await(5, TimeUnit.SECONDS)).isTrue();
         // adapter-2 consumer should NOT have been triggered
@@ -97,7 +97,7 @@ public class TagManagerTest {
         var latch = new CountDownLatch(1);
         tagManager.addConsumer(new SucceedingConsumer("adapter-2", "temp", latch));
 
-        tagManager.feed("adapter-1", "temp", List.of(new DataPointImpl("temp", 25)));
+        tagManager.feed("adapter-1", List.of(new DataPointImpl("temp", 25)));
 
         // consumer is for adapter-2, feed is for adapter-1 — should not trigger
         assertThat(latch.await(200, TimeUnit.MILLISECONDS)).isFalse();
@@ -107,7 +107,7 @@ public class TagManagerTest {
     public void test_cachedValueReplayedOnAddConsumer() throws Exception {
         var tagManager = new TagManager();
         // Feed first, then add consumer — cached value should be replayed
-        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 42)));
+        tagManager.feed(ADAPTER_1, List.of(new DataPointImpl("tag1", 42)));
 
         var latch = new CountDownLatch(1);
         tagManager.addConsumer(new SucceedingConsumer(ADAPTER_1, "tag1", latch));
@@ -118,7 +118,7 @@ public class TagManagerTest {
     @Test
     public void test_cachedValueNotReplayedForDifferentScope() throws Exception {
         var tagManager = new TagManager();
-        tagManager.feed("adapter-1", "tag1", List.of(new DataPointImpl("tag1", 42)));
+        tagManager.feed("adapter-1", List.of(new DataPointImpl("tag1", 42)));
 
         var latch = new CountDownLatch(1);
         tagManager.addConsumer(new SucceedingConsumer("adapter-2", "tag1", latch));
@@ -134,9 +134,9 @@ public class TagManagerTest {
         var consumer = new SucceedingConsumer(ADAPTER_1, "tag1", latch);
         tagManager.addConsumer(consumer);
 
-        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 1)));
+        tagManager.feed(ADAPTER_1, List.of(new DataPointImpl("tag1", 1)));
         tagManager.removeConsumer(consumer);
-        tagManager.feed(ADAPTER_1, "tag1", List.of(new DataPointImpl("tag1", 2)));
+        tagManager.feed(ADAPTER_1, List.of(new DataPointImpl("tag1", 2)));
 
         // Only the first feed should have triggered the consumer
         assertThat(latch.await(200, TimeUnit.MILLISECONDS)).isFalse();
