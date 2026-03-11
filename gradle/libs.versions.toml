@@ -68,14 +68,14 @@ zeroallocationhashing = "0.27ea1"
 plugin-cyclonedx = "1.10.0"
 plugin-spotless = "7.2.1"
 plugin-defaults = "0.2.0"
-plugin-errorprone = "4.4.0"
+plugin-errorprone = "5.1.0"
 plugin-forbiddenapis = "3.10"
 plugin-github-release = "2.5.2"
 plugin-javadoc-links = "0.9.0"
-plugin-license = "0.16.1"
+plugin-hivemq-license = "1.0.0"
 plugin-metadata = "0.6.0"
 plugin-openapigenerator = "7.20.0"
-plugin-shadow = "8.3.9"
+plugin-shadow = "9.3.2"
 plugin-spotbugs = "6.4.8"
 plugin-versions = "0.53.0"
 
@@ -179,7 +179,7 @@ errorprone = { id = "net.ltgt.errorprone", version.ref = "plugin-errorprone" }
 forbiddenapis = { id = "de.thetaphi.forbiddenapis", version.ref = "plugin-forbiddenapis" }
 githubrelease = { id = "com.github.breadmoirai.github-release", version.ref = "plugin-github-release" }
 javadoclinks = { id = "io.github.sgtsilvio.gradle.javadoc-links", version.ref = "plugin-javadoc-links" }
-license = { id = "com.github.hierynomus.license", version.ref = "plugin-license" }
+hivemq-license = { id = "com.hivemq.tools.license", version.ref = "plugin-hivemq-license" }
 metadata = { id = "io.github.sgtsilvio.gradle.metadata", version.ref = "plugin-metadata" }
 openapi-generator = { id = "org.openapi.generator", version.ref = "plugin-openapigenerator" }
 shadow = { id = "com.gradleup.shadow", version.ref = "plugin-shadow" }

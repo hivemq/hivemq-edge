@@ -37,12 +37,14 @@ class ErrorProneConventionPlugin : Plugin<Project> {
             }
             options.compilerArgs.addAll(listOf("-Xmaxwarns", "9999", "-Xmaxerrs", "9999"))
 
-            val reportFile = project.file("${project.layout.buildDirectory.get().asFile}/reports/errorprone/${name}.log")
+            val reportFileProvider = project.layout.buildDirectory.file("reports/errorprone/${name}.log")
             doFirst {
+                val reportFile = reportFileProvider.get().asFile
                 reportFile.parentFile.mkdirs()
                 reportFile.delete()
             }
             logging.addStandardErrorListener { msg ->
+                val reportFile = reportFileProvider.get().asFile
                 reportFile.appendText(msg.toString())
             }
         }
