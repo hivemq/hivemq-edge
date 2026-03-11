@@ -47,14 +47,13 @@ import com.hivemq.edge.adapters.etherip_cip_odva.util.ExceptionUtils;
 import etherip.EtherNetIP;
 import etherip.EthernetIPWithODVA;
 import etherip.data.CipException;
+import etherip.protocol.Encapsulation;
 import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.channels.ReadPendingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -70,7 +69,7 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
             LoggerFactory.getLogger(EthernetIPCipOdvaPollingProtocolAdapter.class);
 
     private static final String[] DISCONNECT_REASONS =
-            new String[] {"Connection reset by peer", "Broken pipe", "Timeout", "UnRegisterSession"};
+            new String[] {"Connection reset by peer", "Broken pipe", "Timeout", Encapsulation.Command.UnRegisterSession.name() };
 
     private final @NotNull EipSpecificAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
@@ -244,11 +243,13 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
 
                 tryPoll(client, pollingOutput, tagGroup, currentLastSamples, errors::add);
             }
-        } catch (IOException | ReadPendingException e) {
+
+        } catch (Exception e) {
             LOG.warn(
                     "Adapter '{}'. Communication error. Will try reconnecting! {}",
                     adapterId,
                     ExceptionUtils.extractMessageWithCause(e));
+
             tryDisconnect();
         } finally {
             if (errors.isEmpty()) {
@@ -281,7 +282,7 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
             final @NotNull TagGroup tagGroup,
             final @NotNull DataPointStore currentLastSamples,
             final @NotNull Consumer<String> errorConsumer)
-            throws IOException {
+            throws Exception {
         try {
             Stopwatch stopwatch = statsTracker.start();
             pollAndDecode(client, tagGroup, currentLastSamples, pollingOutput);
@@ -310,10 +311,13 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
         }
     }
 
-    private void throwIfExceptionContainsReasonToDisconnect(@NotNull Throwable e) throws IOException {
-        if (e instanceof IOException ioException
+    private void throwIfExceptionContainsReasonToDisconnect(@NotNull Throwable e) throws Exception {
+        // Handles ie: ReadPendingException, WritePendingException
+        if(e instanceof RuntimeException runtimeException) {
+            throw runtimeException;
+        } else if (e instanceof Exception exception
                 && Strings.CI.containsAny(e.getMessage(), DISCONNECT_REASONS)) {
-            throw ioException;
+            throw exception;
         } else if (e.getCause() != null) {
             throwIfExceptionContainsReasonToDisconnect(e.getCause());
         }

@@ -16,13 +16,14 @@
 package com.hivemq.edge.adapters.etherip_cip_odva.composite;
 
 import com.hivemq.edge.adapters.etherip_cip_odva.tag.TagGroup;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 public class CompositeValuesFactory {
     public static final NoopCompositeValues NOOP_COMPOSITE_VALUES = new NoopCompositeValues();
 
     private CompositeValuesFactory() {}
 
-    public static CompositeValues create(TagGroup tagGroup) {
+    public static @NonNull CompositeValues create(TagGroup tagGroup) {
         if (tagGroup.hasComposite()) {
             return new DefaultCompositeValues(tagGroup.getComposite().getName());
         } else {
