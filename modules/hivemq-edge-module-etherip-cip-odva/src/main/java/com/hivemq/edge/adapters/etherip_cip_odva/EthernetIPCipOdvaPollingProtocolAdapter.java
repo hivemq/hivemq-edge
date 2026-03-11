@@ -15,6 +15,9 @@
  */
 package com.hivemq.edge.adapters.etherip_cip_odva;
 
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
+
 import com.google.common.base.Stopwatch;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
@@ -48,28 +51,25 @@ import etherip.EtherNetIP;
 import etherip.EthernetIPWithODVA;
 import etherip.data.CipException;
 import etherip.protocol.Encapsulation;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
-
 public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProtocolAdapter, WritingProtocolAdapter {
 
     private static final @NotNull org.slf4j.Logger LOG =
             LoggerFactory.getLogger(EthernetIPCipOdvaPollingProtocolAdapter.class);
 
-    private static final String[] DISCONNECT_REASONS =
-            new String[] {"Connection reset by peer", "Broken pipe", "Timeout", Encapsulation.Command.UnRegisterSession.name() };
+    private static final String[] DISCONNECT_REASONS = new String[] {
+        "Connection reset by peer", "Broken pipe", "Timeout", Encapsulation.Command.UnRegisterSession.name()
+    };
 
     private final @NotNull EipSpecificAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
@@ -313,10 +313,9 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
 
     private void throwIfExceptionContainsReasonToDisconnect(@NotNull Throwable e) throws Exception {
         // Handles ie: ReadPendingException, WritePendingException
-        if(e instanceof RuntimeException runtimeException) {
+        if (e instanceof RuntimeException runtimeException) {
             throw runtimeException;
-        } else if (e instanceof Exception exception
-                && Strings.CI.containsAny(e.getMessage(), DISCONNECT_REASONS)) {
+        } else if (e instanceof Exception exception && Strings.CI.containsAny(e.getMessage(), DISCONNECT_REASONS)) {
             throw exception;
         } else if (e.getCause() != null) {
             throwIfExceptionContainsReasonToDisconnect(e.getCause());
@@ -364,7 +363,9 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
                 LOG.debug(
                         "Adapter {}. Created composite tag {}='{}'",
                         adapterId,
-                        tagGroup.getComposite() != null ? tagGroup.getComposite().toConciseString() : "<NULL>",
+                        tagGroup.getComposite() != null
+                                ? tagGroup.getComposite().toConciseString()
+                                : "<NULL>",
                         compositeValues.getValues());
             }
             pollingOutput.addDataPoint(compositeValues.getCompositeTagName(), compositeValues.getValues());
