@@ -72,6 +72,7 @@ public class ProtocolAdapterWrapper {
     private final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService;
     private final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService;
     private final @NotNull ProtocolAdapterConfig config;
+    private final @NotNull ModuleServices moduleServices;
     private final @NotNull NorthboundConsumerFactory northboundConsumerFactory;
     private final @NotNull TagManager tagManager;
     private final List<NorthboundTagConsumer> consumers = Collections.synchronizedList(new ArrayList<>());
@@ -92,6 +93,7 @@ public class ProtocolAdapterWrapper {
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterStateImpl protocolAdapterState,
             final @NotNull NorthboundConsumerFactory northboundConsumerFactory,
+            final @NotNull ModuleServices moduleServices,
             final @NotNull TagManager tagManager) {
         this.protocolAdapterWritingService = protocolAdapterWritingService;
         this.protocolAdapterPollingService = protocolAdapterPollingService;
@@ -102,20 +104,19 @@ public class ProtocolAdapterWrapper {
         this.protocolAdapterState = protocolAdapterState;
         this.config = config;
         this.northboundConsumerFactory = northboundConsumerFactory;
+        this.moduleServices = moduleServices;
         this.tagManager = tagManager;
     }
 
-    public @NotNull CompletableFuture<Void> startAsync(
-            final boolean writingEnabled, final @NotNull ModuleServices moduleServices) {
-        final var existingStartFuture =
-                getOngoingOperationIfPresent(Objects.requireNonNull(operationState.get()), OperationState.STARTING);
+    public @NotNull CompletableFuture<Void> startAsync(final boolean writingEnabled) {
+        final var existingStartFuture = getOngoingOperationIfPresent(operationState.get(), OperationState.STARTING);
         if (existingStartFuture != null) {
             return existingStartFuture;
         }
         // Try to atomically transition from IDLE to STARTING
         if (!operationState.compareAndSet(OperationState.IDLE, OperationState.STARTING)) {
             // State changed between check and set, retry
-            return startAsync(writingEnabled, moduleServices);
+            return startAsync(writingEnabled);
         }
         // Clear shutdown flag when starting adapter to allow state changes
         protocolAdapterState.clearShuttingDown();

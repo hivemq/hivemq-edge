@@ -34,6 +34,7 @@ import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
 import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterTagStreamingServiceImpl;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesPerModuleImpl;
@@ -347,11 +348,13 @@ public class ProtocolAdapterManager {
                 final ProtocolAdapterStateImpl state = new ProtocolAdapterStateImpl(
                         moduleServices.eventService(), config.getAdapterId(), configProtocolId);
 
+                final var streamingService =
+                        new ProtocolAdapterTagStreamingServiceImpl(config.getAdapterId(), tagManager);
                 final ModuleServicesPerModuleImpl perModule = new ModuleServicesPerModuleImpl(
                         moduleServices.adapterPublishService(),
                         eventService,
                         protocolAdapterWritingService,
-                        tagManager);
+                        streamingService);
 
                 final ProtocolAdapter protocolAdapter = factory.createAdapter(
                         factory.getInformation(),
@@ -378,6 +381,7 @@ public class ProtocolAdapterManager {
                         factory.getInformation(),
                         state,
                         northboundConsumerFactory,
+                        perModule,
                         tagManager);
             });
         });
@@ -405,7 +409,7 @@ public class ProtocolAdapterManager {
         Preconditions.checkNotNull(wrapper);
         final String wid = wrapper.getId();
         log.info("Starting protocol-adapter '{}'.", wid);
-        return wrapper.startAsync(writingEnabled(), moduleServices).whenComplete((result, throwable) -> {
+        return wrapper.startAsync(writingEnabled()).whenComplete((result, throwable) -> {
             if (throwable == null) {
                 log.info("Protocol-adapter '{}' started successfully.", wid);
                 fireEvent(
