@@ -49,14 +49,15 @@ import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5Client;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5ClientBuilder;
 import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperties;
+import com.hivemq.client.mqtt.mqtt5.exceptions.Mqtt5ConnAckException;
 import com.hivemq.client.mqtt.mqtt5.exceptions.Mqtt5DisconnectException;
+import com.hivemq.client.mqtt.mqtt5.message.disconnect.Mqtt5DisconnectReasonCode;
 import com.hivemq.client.mqtt.mqtt5.message.subscribe.Mqtt5RetainHandling;
 import com.hivemq.client.mqtt.mqtt5.message.subscribe.Mqtt5Subscription;
 import com.hivemq.client.mqtt.mqtt5.message.subscribe.suback.Mqtt5SubAck;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.edge.model.TypeIdentifierImpl;
-import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.security.ssl.SslUtil;
 import com.hivemq.util.StoreTypeUtil;
 import java.util.ArrayList;
@@ -167,12 +168,27 @@ public class BridgeMqttClient {
                                 return null;
                             }
                             if (throwable != null) {
-                                log.warn(
-                                        "Bridge failed to connect'{}' to {}:{}: {}",
+                                String errorDetails = throwable.getMessage();
+                                final Throwable cause = throwable.getCause();
+                                if (cause instanceof Mqtt5ConnAckException connAckEx) {
+                                    errorDetails = String.format("%s - MQTT Reason Code: %s%s",
+                                            throwable.getMessage(),
+                                            connAckEx.getMqttMessage().getReasonCode(),
+                                            connAckEx.getMqttMessage().getReasonString()
+                                                    .map(s -> ", Reason: " + s).orElse(""));
+                                } else if (cause instanceof Mqtt5DisconnectException disconnectEx) {
+                                    errorDetails = String.format("%s - MQTT Reason Code: %s%s",
+                                            throwable.getMessage(),
+                                            disconnectEx.getMqttMessage().getReasonCode(),
+                                            disconnectEx.getMqttMessage().getReasonString()
+                                                    .map(s -> ", Reason: " + s).orElse(""));
+                                }
+                                log.error(
+                                        "Bridge '{}' failed to connect to {}:{}: {}",
                                         bridge.getId(),
                                         bridge.getHost(),
                                         bridge.getPort(),
-                                        throwable.getMessage());
+                                        errorDetails);
                                 log.debug("Connection exception details", throwable);
                                 final var future = startFutureRef.getAndSet(null);
                                 if (future != null) {
@@ -399,6 +415,20 @@ public class BridgeMqttClient {
         return builder;
     }
 
+    private boolean isConfigurationError(final @NotNull Mqtt5DisconnectReasonCode reasonCode) {
+        return switch (reasonCode) {
+            case NOT_AUTHORIZED,
+                 BAD_AUTHENTICATION_METHOD,
+                 MALFORMED_PACKET,
+                 PROTOCOL_ERROR,
+                 USE_ANOTHER_SERVER,
+                 SERVER_MOVED,
+                 QUOTA_EXCEEDED,
+                 CONNECTION_RATE_EXCEEDED -> true;
+            default -> false;
+        };
+    }
+
     private @NotNull ListenableFuture<Void> getOngoingOperation(
             final @NotNull OperationState current, final @NotNull OperationState target) {
         return switch (current) {
@@ -509,21 +539,38 @@ public class BridgeMqttClient {
         // -- Fire a system event for the various logging layers
         builder.addDisconnectedListener(context -> {
             final Throwable cause = context.getCause();
+            if (cause == null) {
+                log.warn("Bridge '{}' disconnected from {}:{} (no cause provided)",
+                        bridge.getId(), bridge.getHost(), bridge.getPort());
+                return;
+            }
             String message = cause.getMessage();
+            boolean isAuthOrConfigError = false;
             if (cause instanceof final Mqtt5DisconnectException disconnectException) {
-                message += " Code: " + disconnectException.getMqttMessage().getReasonCode();
+                final var reasonCode = disconnectException.getMqttMessage().getReasonCode();
+                message += " Code: " + reasonCode;
                 final Optional<MqttUtf8String> reasonString =
                         disconnectException.getMqttMessage().getReasonString();
                 if (reasonString.isPresent()) {
                     message += " Reason: " + reasonString.get();
                 }
+                isAuthOrConfigError = isConfigurationError(reasonCode);
             }
-            log.warn(
-                    "Bridge '{}' disconnected from {}:{}: {}",
-                    bridge.getId(),
-                    bridge.getHost(),
-                    bridge.getPort(),
-                    message);
+            if (isAuthOrConfigError || !everConnected.get()) {
+                log.error(
+                        "Bridge '{}' connection failed to {}:{}: {}",
+                        bridge.getId(),
+                        bridge.getHost(),
+                        bridge.getPort(),
+                        message);
+            } else {
+                log.warn(
+                        "Bridge '{}' disconnected from {}:{}: {}",
+                        bridge.getId(),
+                        bridge.getHost(),
+                        bridge.getPort(),
+                        message);
+            }
             log.debug("Disconnection cause details", cause);
             connected.set(false);
             eventBuilder(Event.SEVERITY.ERROR)
