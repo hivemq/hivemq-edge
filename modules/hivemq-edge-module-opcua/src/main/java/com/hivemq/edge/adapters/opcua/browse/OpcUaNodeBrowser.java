@@ -80,8 +80,8 @@ public class OpcUaNodeBrowser {
      * @return list of discovered variable nodes
      * @throws BrowseException if the operation fails
      */
-    public @NotNull List<BrowsedNode> browse(
-            final @Nullable String rootNodeId, final int maxDepth) throws BrowseException {
+    public @NotNull List<BrowsedNode> browse(final @Nullable String rootNodeId, final int maxDepth)
+            throws BrowseException {
         final NodeId browseRoot;
         if (rootNodeId == null || rootNodeId.isBlank()) {
             browseRoot = NodeIds.ObjectsFolder;
@@ -127,8 +127,7 @@ public class OpcUaNodeBrowser {
                         true,
                         uint(0),
                         uint(BrowseResultMask.All.getValue())))
-                .thenCompose(browseResult ->
-                        handleBrowseResult(browseResult, currentPath, remainingDepth, variables));
+                .thenCompose(browseResult -> handleBrowseResult(browseResult, currentPath, remainingDepth, variables));
     }
 
     private @NotNull CompletableFuture<Void> handleBrowseResult(
@@ -150,16 +149,16 @@ public class OpcUaNodeBrowser {
         final NamespaceTable nsTable = client.getNamespaceTable();
 
         for (final ReferenceDescription rd : references) {
-            final String browseName = rd.getBrowseName() != null ? rd.getBrowseName().getName() : "";
+            final String browseName =
+                    rd.getBrowseName() != null ? rd.getBrowseName().getName() : "";
             final String childPath = currentPath + "/" + (browseName != null ? browseName : "");
 
             if (rd.getNodeClass() == NodeClass.Variable) {
                 // Collect variable node
                 rd.getNodeId().toNodeId(nsTable).ifPresent(nodeId -> {
                     final int nsIndex = nodeId.getNamespaceIndex().intValue();
-                    final String nsUri = nsIndex < nsTable.toArray().length
-                            ? nsTable.get(nsIndex)
-                            : String.valueOf(nsIndex);
+                    final String nsUri =
+                            nsIndex < nsTable.toArray().length ? nsTable.get(nsIndex) : String.valueOf(nsIndex);
                     variables.add(new DiscoveredVariable(
                             nodeId,
                             childPath,
@@ -171,26 +170,26 @@ public class OpcUaNodeBrowser {
 
             // Recurse into non-leaf nodes
             if (remainingDepth > 1) {
-                rd.getNodeId().toNodeId(nsTable).ifPresent(childNodeId ->
-                        childFutures.add(browseRecursive(
-                                childNodeId, childPath, remainingDepth - 1, variables)));
+                rd.getNodeId()
+                        .toNodeId(nsTable)
+                        .ifPresent(childNodeId -> childFutures.add(
+                                browseRecursive(childNodeId, childPath, remainingDepth - 1, variables)));
             }
         }
 
         // Handle continuation points
         if (!continuationPoints.isEmpty()) {
-            final var validCont = continuationPoints.stream()
-                    .filter(ct -> ct.bytes() != null)
-                    .toList();
+            final var validCont =
+                    continuationPoints.stream().filter(ct -> ct.bytes() != null).toList();
             if (!validCont.isEmpty()) {
-                childFutures.add(client.browseNextAsync(false, continuationPoints)
-                        .thenCompose(nextResult -> {
+                childFutures.add(
+                        client.browseNextAsync(false, continuationPoints).thenCompose(nextResult -> {
                             final var allFutures = new ArrayList<CompletableFuture<Void>>();
                             if (nextResult.getResults() != null) {
                                 for (final BrowseResult result : nextResult.getResults()) {
                                     if (result != null) {
-                                        allFutures.add(handleBrowseResult(
-                                                result, currentPath, remainingDepth, variables));
+                                        allFutures.add(
+                                                handleBrowseResult(result, currentPath, remainingDepth, variables));
                                     }
                                 }
                             }
@@ -202,8 +201,8 @@ public class OpcUaNodeBrowser {
         return CompletableFuture.allOf(childFutures.toArray(CompletableFuture[]::new));
     }
 
-    private @NotNull List<BrowsedNode> readAttributesAndBuild(
-            final @NotNull List<DiscoveredVariable> variables) throws BrowseException {
+    private @NotNull List<BrowsedNode> readAttributesAndBuild(final @NotNull List<DiscoveredVariable> variables)
+            throws BrowseException {
         final List<BrowsedNode> result = new ArrayList<>();
 
         // Process in batches of READ_BATCH_SIZE
@@ -220,8 +219,7 @@ public class OpcUaNodeBrowser {
             }
 
             try {
-                final DataValue[] values = client.readAsync(
-                                0.0, TimestampsToReturn.Neither, readValueIds)
+                final DataValue[] values = client.readAsync(0.0, TimestampsToReturn.Neither, readValueIds)
                         .get(TIMEOUT_SECONDS, TimeUnit.SECONDS)
                         .getResults();
 
@@ -326,17 +324,20 @@ public class OpcUaNodeBrowser {
 
     // --- Default generation ---
 
-    @NotNull String generateTagNameDefault(final @NotNull String browseName) {
+    @NotNull
+    String generateTagNameDefault(final @NotNull String browseName) {
         // {adapterId}-{sanitizedBrowseName} — lowercase, non-alphanumeric → -, collapse consecutive, strip edges
         return adapterId + "-" + sanitize(browseName);
     }
 
-    @NotNull String generateNorthboundTopicDefault(final @NotNull String path) {
+    @NotNull
+    String generateNorthboundTopicDefault(final @NotNull String path) {
         // {adapterId}/{sanitizedPath}
         return adapterId + "/" + sanitizePath(path);
     }
 
-    @NotNull String generateSouthboundTopicDefault(final @NotNull String path) {
+    @NotNull
+    String generateSouthboundTopicDefault(final @NotNull String path) {
         // {adapterId}/write/{sanitizedPath}
         return adapterId + "/write/" + sanitizePath(path);
     }

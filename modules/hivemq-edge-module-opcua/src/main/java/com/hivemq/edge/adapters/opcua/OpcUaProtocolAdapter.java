@@ -534,8 +534,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     }
 
     @Override
-    public @NotNull List<BrowsedNode> browse(
-            final @Nullable String rootNodeId, final int maxDepth) throws BrowseException {
+    public @NotNull List<BrowsedNode> browse(final @Nullable String rootNodeId, final int maxDepth)
+            throws BrowseException {
         if (stopped) {
             throw new BrowseException("Browse failed: Adapter has been stopped");
         }

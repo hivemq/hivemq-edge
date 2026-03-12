@@ -15,6 +15,10 @@
  */
 package com.hivemq.edge.adapters.browse.validate;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.adapter.TagEntity;
 import com.hivemq.configuration.reader.DataCombiningExtractor;
@@ -22,16 +26,11 @@ import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.edge.adapters.browse.model.DeviceTagRow;
 import com.hivemq.edge.adapters.browse.model.FieldMappingInstruction;
 import com.hivemq.edge.adapters.browse.model.ImportMode;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 class DeviceTagValidatorTest {
 
@@ -50,7 +49,8 @@ class DeviceTagValidatorTest {
 
     @Test
     void validate_duplicateNodeId() {
-        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("tag1").build(),
+        final List<DeviceTagRow> rows = List.of(
+                DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("tag1").build(),
                 DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("tag2").build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
@@ -63,7 +63,8 @@ class DeviceTagValidatorTest {
 
     @Test
     void validate_noDuplicateNodeId() {
-        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("tag1").build(),
+        final List<DeviceTagRow> rows = List.of(
+                DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("tag1").build(),
                 DeviceTagRow.builder().nodeId("ns=2;i=2").tagName("tag2").build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
@@ -73,7 +74,8 @@ class DeviceTagValidatorTest {
 
     @Test
     void validate_duplicateTagName() {
-        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("same-tag").build(),
+        final List<DeviceTagRow> rows = List.of(
+                DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("same-tag").build(),
                 DeviceTagRow.builder().nodeId("ns=2;i=2").tagName("same-tag").build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
@@ -88,8 +90,10 @@ class DeviceTagValidatorTest {
 
     @Test
     void validate_validTagName() {
-        final List<DeviceTagRow> rows =
-                List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("my-tag.name_1").build());
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .tagName("my-tag.name_1")
+                .build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
@@ -98,7 +102,8 @@ class DeviceTagValidatorTest {
 
     @Test
     void validate_invalidTagName_startsWithDash() {
-        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("-invalid").build());
+        final List<DeviceTagRow> rows = List.of(
+                DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("-invalid").build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
@@ -107,8 +112,10 @@ class DeviceTagValidatorTest {
 
     @Test
     void validate_invalidTagName_specialChars() {
-        final List<DeviceTagRow> rows =
-                List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("tag with spaces").build());
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .tagName("tag with spaces")
+                .build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
@@ -118,7 +125,8 @@ class DeviceTagValidatorTest {
     @Test
     void validate_tagNameTooLong() {
         final String longName = "a".repeat(257);
-        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName(longName).build());
+        final List<DeviceTagRow> rows = List.of(
+                DeviceTagRow.builder().nodeId("ns=2;i=1").tagName(longName).build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
@@ -132,10 +140,22 @@ class DeviceTagValidatorTest {
 
     @Test
     void validate_validQos() {
-        final List<DeviceTagRow> rows =
-                List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("tag1").maxQos(0).build(),
-                        DeviceTagRow.builder().nodeId("ns=2;i=2").tagName("tag2").maxQos(1).build(),
-                        DeviceTagRow.builder().nodeId("ns=2;i=3").tagName("tag3").maxQos(2).build());
+        final List<DeviceTagRow> rows = List.of(
+                DeviceTagRow.builder()
+                        .nodeId("ns=2;i=1")
+                        .tagName("tag1")
+                        .maxQos(0)
+                        .build(),
+                DeviceTagRow.builder()
+                        .nodeId("ns=2;i=2")
+                        .tagName("tag2")
+                        .maxQos(1)
+                        .build(),
+                DeviceTagRow.builder()
+                        .nodeId("ns=2;i=3")
+                        .tagName("tag3")
+                        .maxQos(2)
+                        .build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
@@ -144,8 +164,11 @@ class DeviceTagValidatorTest {
 
     @Test
     void validate_invalidQos_tooHigh() {
-        final List<DeviceTagRow> rows =
-                List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("tag1").maxQos(3).build());
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .tagName("tag1")
+                .maxQos(3)
+                .build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
@@ -154,8 +177,11 @@ class DeviceTagValidatorTest {
 
     @Test
     void validate_invalidQos_negative() {
-        final List<DeviceTagRow> rows =
-                List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("tag1").maxQos(-1).build());
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .tagName("tag1")
+                .maxQos(-1)
+                .build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
@@ -195,8 +221,11 @@ class DeviceTagValidatorTest {
 
     @Test
     void validate_northboundTopic_withHashWildcard() {
-        final List<DeviceTagRow> rows =
-                List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("tag1").northboundTopic("adapter/#").build());
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .tagName("tag1")
+                .northboundTopic("adapter/#")
+                .build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
@@ -213,15 +242,19 @@ class DeviceTagValidatorTest {
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
-        assertThat(errors).noneMatch(e -> e.code().equals("INVALID_TOPIC") && e.column().equals("southbound_topic"));
+        assertThat(errors)
+                .noneMatch(e -> e.code().equals("INVALID_TOPIC") && e.column().equals("southbound_topic"));
     }
 
     // --- Expiry validation ---
 
     @Test
     void validate_validExpiryInterval() {
-        final List<DeviceTagRow> rows =
-                List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("tag1").messageExpiryInterval(3600L).build());
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .tagName("tag1")
+                .messageExpiryInterval(3600L)
+                .build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
@@ -230,8 +263,11 @@ class DeviceTagValidatorTest {
 
     @Test
     void validate_invalidExpiryInterval_negative() {
-        final List<DeviceTagRow> rows =
-                List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("tag1").messageExpiryInterval(-1L).build());
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .tagName("tag1")
+                .messageExpiryInterval(-1L)
+                .build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
@@ -240,8 +276,11 @@ class DeviceTagValidatorTest {
 
     @Test
     void validate_invalidExpiryInterval_zero() {
-        final List<DeviceTagRow> rows =
-                List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("tag1").messageExpiryInterval(0L).build());
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .tagName("tag1")
+                .messageExpiryInterval(0L)
+                .build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
@@ -314,8 +353,10 @@ class DeviceTagValidatorTest {
 
     @Test
     void validate_northboundMappingWithoutTag() {
-        final List<DeviceTagRow> rows =
-                List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").northboundTopic("adapter/data/int32").build());
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .northboundTopic("adapter/data/int32")
+                .build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
@@ -327,8 +368,10 @@ class DeviceTagValidatorTest {
 
     @Test
     void validate_southboundMappingWithoutTag() {
-        final List<DeviceTagRow> rows =
-                List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").southboundTopic("adapter/write/int32").build());
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .southboundTopic("adapter/write/int32")
+                .build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
@@ -342,7 +385,8 @@ class DeviceTagValidatorTest {
 
     @Test
     void validate_missingNodeId_withTag() {
-        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder().tagName("tag1").build());
+        final List<DeviceTagRow> rows =
+                List.of(DeviceTagRow.builder().tagName("tag1").build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
@@ -351,7 +395,8 @@ class DeviceTagValidatorTest {
 
     @Test
     void validate_missingNodeId_withoutTag_noError() {
-        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder().nodePath("/Objects/Data").build());
+        final List<DeviceTagRow> rows =
+                List.of(DeviceTagRow.builder().nodePath("/Objects/Data").build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
@@ -382,7 +427,8 @@ class DeviceTagValidatorTest {
 
     @Test
     void validate_tagConflict_createMode() {
-        final ProtocolAdapterEntity adapter = new ProtocolAdapterEntity("adapter1",
+        final ProtocolAdapterEntity adapter = new ProtocolAdapterEntity(
+                "adapter1",
                 "opcua",
                 1,
                 Map.of(),
@@ -392,8 +438,10 @@ class DeviceTagValidatorTest {
         when(adapterExtractor.getAdapterByAdapterId("adapter1")).thenReturn(Optional.of(adapter));
         when(adapterExtractor.getAllConfigs()).thenReturn(List.of(adapter));
 
-        final List<DeviceTagRow> rows =
-                List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("existing-tag").build());
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .tagName("existing-tag")
+                .build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
@@ -402,7 +450,8 @@ class DeviceTagValidatorTest {
 
     @Test
     void validate_tagConflict_mergeSafe_differentDefinition() {
-        final ProtocolAdapterEntity adapter = new ProtocolAdapterEntity("adapter1",
+        final ProtocolAdapterEntity adapter = new ProtocolAdapterEntity(
+                "adapter1",
                 "opcua",
                 1,
                 Map.of(),
@@ -412,7 +461,8 @@ class DeviceTagValidatorTest {
         when(adapterExtractor.getAdapterByAdapterId("adapter1")).thenReturn(Optional.of(adapter));
         when(adapterExtractor.getAllConfigs()).thenReturn(List.of(adapter));
 
-        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("my-tag").build());
+        final List<DeviceTagRow> rows = List.of(
+                DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("my-tag").build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.MERGE_SAFE, "adapter1");
 
@@ -424,7 +474,8 @@ class DeviceTagValidatorTest {
 
     @Test
     void validate_tagConflict_mergeSafe_sameDefinition_noError() {
-        final ProtocolAdapterEntity adapter = new ProtocolAdapterEntity("adapter1",
+        final ProtocolAdapterEntity adapter = new ProtocolAdapterEntity(
+                "adapter1",
                 "opcua",
                 1,
                 Map.of(),
@@ -434,7 +485,8 @@ class DeviceTagValidatorTest {
         when(adapterExtractor.getAdapterByAdapterId("adapter1")).thenReturn(Optional.of(adapter));
         when(adapterExtractor.getAllConfigs()).thenReturn(List.of(adapter));
 
-        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("my-tag").build());
+        final List<DeviceTagRow> rows = List.of(
+                DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("my-tag").build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.MERGE_SAFE, "adapter1");
 
@@ -445,7 +497,8 @@ class DeviceTagValidatorTest {
     void validate_edgeTagConflict_otherAdapter() {
         final ProtocolAdapterEntity myAdapter =
                 new ProtocolAdapterEntity("adapter1", "opcua", 1, Map.of(), List.of(), List.of(), List.of());
-        final ProtocolAdapterEntity otherAdapter = new ProtocolAdapterEntity("adapter2",
+        final ProtocolAdapterEntity otherAdapter = new ProtocolAdapterEntity(
+                "adapter2",
                 "opcua",
                 1,
                 Map.of(),
@@ -456,8 +509,8 @@ class DeviceTagValidatorTest {
         when(adapterExtractor.getAdapterByAdapterId("adapter1")).thenReturn(Optional.of(myAdapter));
         when(adapterExtractor.getAllConfigs()).thenReturn(List.of(myAdapter, otherAdapter));
 
-        final List<DeviceTagRow> rows =
-                List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("shared-tag").build());
+        final List<DeviceTagRow> rows = List.of(
+                DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("shared-tag").build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
@@ -471,7 +524,8 @@ class DeviceTagValidatorTest {
 
     @Test
     void validate_rowNumbersAre1Indexed() {
-        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("valid-tag").build(),
+        final List<DeviceTagRow> rows = List.of(
+                DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("valid-tag").build(),
                 DeviceTagRow.builder().nodeId("ns=2;i=2").tagName("-invalid").build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
@@ -486,7 +540,8 @@ class DeviceTagValidatorTest {
 
     @Test
     void validate_rowsWithoutTag_skippedForRowValidation() {
-        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder().nodePath("/Objects/Data").build());
+        final List<DeviceTagRow> rows =
+                List.of(DeviceTagRow.builder().nodePath("/Objects/Data").build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 

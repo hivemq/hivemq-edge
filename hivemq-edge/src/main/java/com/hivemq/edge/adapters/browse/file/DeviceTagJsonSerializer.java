@@ -101,10 +101,14 @@ public class DeviceTagJsonSerializer {
         tag.tagDescription = row.getTagDescription();
 
         NorthboundDto northbound = null;
-        if (row.getNorthboundTopic() != null || row.getNorthboundTopicDefault() != null ||
-                row.getMaxQos() != null || row.getMessageExpiryInterval() != null ||
-                row.getIncludeTimestamp() != null || row.getIncludeTagNames() != null ||
-                row.getIncludeMetadata() != null || row.getMqttUserProperties() != null) {
+        if (row.getNorthboundTopic() != null
+                || row.getNorthboundTopicDefault() != null
+                || row.getMaxQos() != null
+                || row.getMessageExpiryInterval() != null
+                || row.getIncludeTimestamp() != null
+                || row.getIncludeTagNames() != null
+                || row.getIncludeMetadata() != null
+                || row.getMqttUserProperties() != null) {
             northbound = new NorthboundDto();
             northbound.topic = row.getNorthboundTopic();
             northbound.topicDefault = row.getNorthboundTopicDefault();
@@ -117,8 +121,9 @@ public class DeviceTagJsonSerializer {
         }
 
         SouthboundDto southbound = null;
-        if (row.getSouthboundTopic() != null || row.getSouthboundTopicDefault() != null ||
-                row.getSouthboundFieldMapping() != null) {
+        if (row.getSouthboundTopic() != null
+                || row.getSouthboundTopicDefault() != null
+                || row.getSouthboundFieldMapping() != null) {
             southbound = new SouthboundDto();
             southbound.topic = row.getSouthboundTopic();
             southbound.topicDefault = row.getSouthboundTopicDefault();
@@ -129,7 +134,8 @@ public class DeviceTagJsonSerializer {
                             fmDto.source = fm.source();
                             fmDto.destination = fm.destination();
                             return fmDto;
-                        }).toList();
+                        })
+                        .toList();
             }
         }
 
@@ -200,49 +206,95 @@ public class DeviceTagJsonSerializer {
     static class RowDto {
         @JsonProperty("node")
         NodeDto node;
+
         @JsonProperty("tag")
         TagDto tag;
+
         @JsonProperty("northbound")
-        @Nullable NorthboundDto northbound;
+        @Nullable
+        NorthboundDto northbound;
+
         @JsonProperty("southbound")
-        @Nullable SouthboundDto southbound;
+        @Nullable
+        SouthboundDto southbound;
     }
 
     static class NodeDto {
-        @JsonProperty("node_path") String nodePath;
-        @JsonProperty("namespace_uri") String namespaceUri;
-        @JsonProperty("namespace_index") int namespaceIndex;
-        @JsonProperty("node_id") String nodeId;
-        @JsonProperty("data_type") String dataType;
-        @JsonProperty("access_level") String accessLevel;
-        @JsonProperty("node_description") String nodeDescription;
+        @JsonProperty("node_path")
+        String nodePath;
+
+        @JsonProperty("namespace_uri")
+        String namespaceUri;
+
+        @JsonProperty("namespace_index")
+        int namespaceIndex;
+
+        @JsonProperty("node_id")
+        String nodeId;
+
+        @JsonProperty("data_type")
+        String dataType;
+
+        @JsonProperty("access_level")
+        String accessLevel;
+
+        @JsonProperty("node_description")
+        String nodeDescription;
     }
 
     static class TagDto {
-        @JsonProperty("tag_name") String tagName;
-        @JsonProperty("tag_name_default") String tagNameDefault;
-        @JsonProperty("tag_description") String tagDescription;
+        @JsonProperty("tag_name")
+        String tagName;
+
+        @JsonProperty("tag_name_default")
+        String tagNameDefault;
+
+        @JsonProperty("tag_description")
+        String tagDescription;
     }
 
     static class NorthboundDto {
-        @JsonProperty("topic") String topic;
-        @JsonProperty("topic_default") String topicDefault;
-        @JsonProperty("max_qos") Integer maxQos;
-        @JsonProperty("message_expiry_interval") Long messageExpiryInterval;
-        @JsonProperty("include_timestamp") Boolean includeTimestamp;
-        @JsonProperty("include_tag_names") Boolean includeTagNames;
-        @JsonProperty("include_metadata") Boolean includeMetadata;
-        @JsonProperty("mqtt_user_properties") Map<String, String> mqttUserProperties;
+        @JsonProperty("topic")
+        String topic;
+
+        @JsonProperty("topic_default")
+        String topicDefault;
+
+        @JsonProperty("max_qos")
+        Integer maxQos;
+
+        @JsonProperty("message_expiry_interval")
+        Long messageExpiryInterval;
+
+        @JsonProperty("include_timestamp")
+        Boolean includeTimestamp;
+
+        @JsonProperty("include_tag_names")
+        Boolean includeTagNames;
+
+        @JsonProperty("include_metadata")
+        Boolean includeMetadata;
+
+        @JsonProperty("mqtt_user_properties")
+        Map<String, String> mqttUserProperties;
     }
 
     static class SouthboundDto {
-        @JsonProperty("topic") String topic;
-        @JsonProperty("topic_default") String topicDefault;
-        @JsonProperty("field_mapping") List<FieldMappingDto> fieldMapping;
+        @JsonProperty("topic")
+        String topic;
+
+        @JsonProperty("topic_default")
+        String topicDefault;
+
+        @JsonProperty("field_mapping")
+        List<FieldMappingDto> fieldMapping;
     }
 
     static class FieldMappingDto {
-        @JsonProperty("source") String source;
-        @JsonProperty("destination") String destination;
+        @JsonProperty("source")
+        String source;
+
+        @JsonProperty("destination")
+        String destination;
     }
 }

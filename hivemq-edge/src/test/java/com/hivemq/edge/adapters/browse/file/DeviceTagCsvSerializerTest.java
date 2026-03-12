@@ -15,10 +15,11 @@
  */
 package com.hivemq.edge.adapters.browse.file;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.hivemq.edge.adapters.browse.model.DeviceTagRow;
 import com.hivemq.edge.adapters.browse.model.FieldMappingInstruction;
-import org.junit.jupiter.api.Test;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -28,9 +29,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.junit.jupiter.api.Test;
 
 class DeviceTagCsvSerializerTest {
 
@@ -55,7 +54,8 @@ class DeviceTagCsvSerializerTest {
                 .northboundTopicDefault("adapter/data/int32")
                 .southboundTopic("adapter/write/data/int32")
                 .southboundTopicDefault("adapter/write/data/int32")
-                .southboundFieldMapping(List.of(new FieldMappingInstruction("value", "value"),
+                .southboundFieldMapping(List.of(
+                        new FieldMappingInstruction("value", "value"),
                         new FieldMappingInstruction("status", "quality")))
                 .maxQos(1)
                 .messageExpiryInterval(3600L)
@@ -107,10 +107,22 @@ class DeviceTagCsvSerializerTest {
 
     @Test
     void roundTrip_multipleRows() throws IOException {
-        final List<DeviceTagRow> rows =
-                List.of(DeviceTagRow.builder().nodePath("/B").nodeId("ns=0;i=2").tagName("tag-b").build(),
-                        DeviceTagRow.builder().nodePath("/A").nodeId("ns=0;i=1").tagName("tag-a").build(),
-                        DeviceTagRow.builder().nodePath("/C").nodeId("ns=0;i=3").tagName("tag-c").build());
+        final List<DeviceTagRow> rows = List.of(
+                DeviceTagRow.builder()
+                        .nodePath("/B")
+                        .nodeId("ns=0;i=2")
+                        .tagName("tag-b")
+                        .build(),
+                DeviceTagRow.builder()
+                        .nodePath("/A")
+                        .nodeId("ns=0;i=1")
+                        .tagName("tag-a")
+                        .build(),
+                DeviceTagRow.builder()
+                        .nodePath("/C")
+                        .nodeId("ns=0;i=3")
+                        .tagName("tag-c")
+                        .build());
 
         final byte[] csv = serializer.serialize(rows);
         final List<DeviceTagRow> result = serializer.deserialize(csv);
@@ -140,8 +152,8 @@ class DeviceTagCsvSerializerTest {
 
     @Test
     void encodeFieldMapping_multipleMappings() {
-        final String encoded = DeviceTagCsvSerializer.encodeFieldMapping(List.of(new FieldMappingInstruction("a", "b"),
-                new FieldMappingInstruction("c", "d")));
+        final String encoded = DeviceTagCsvSerializer.encodeFieldMapping(
+                List.of(new FieldMappingInstruction("a", "b"), new FieldMappingInstruction("c", "d")));
         assertThat(encoded).isEqualTo("a->b;c->d");
     }
 
@@ -177,8 +189,9 @@ class DeviceTagCsvSerializerTest {
 
     @Test
     void decodeFieldMapping_malformed() {
-        assertThatThrownBy(() -> DeviceTagCsvSerializer.decodeFieldMapping("noarrow")).isInstanceOf(
-                IllegalArgumentException.class).hasMessageContaining("Invalid field mapping format");
+        assertThatThrownBy(() -> DeviceTagCsvSerializer.decodeFieldMapping("noarrow"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Invalid field mapping format");
     }
 
     @Test
@@ -203,8 +216,9 @@ class DeviceTagCsvSerializerTest {
 
     @Test
     void decodeUserProperties_malformed() {
-        assertThatThrownBy(() -> DeviceTagCsvSerializer.decodeUserProperties("noequals")).isInstanceOf(
-                IllegalArgumentException.class).hasMessageContaining("Invalid user property format");
+        assertThatThrownBy(() -> DeviceTagCsvSerializer.decodeUserProperties("noequals"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Invalid user property format");
     }
 
     // --- Boolean parsing ---
@@ -311,7 +325,8 @@ class DeviceTagCsvSerializerTest {
         assertThat(result).hasSize(5000);
         // Verify sorted order
         for (int i = 1; i < result.size(); i++) {
-            assertThat(result.get(i - 1).getNodePath()).isLessThanOrEqualTo(result.get(i).getNodePath());
+            assertThat(result.get(i - 1).getNodePath())
+                    .isLessThanOrEqualTo(result.get(i).getNodePath());
         }
     }
 
@@ -376,7 +391,8 @@ class DeviceTagCsvSerializerTest {
 
     @Test
     void serialize_containsHeader() throws IOException {
-        final byte[] csv = serializer.serialize(List.of(DeviceTagRow.builder().nodeId("ns=0;i=1").build()));
+        final byte[] csv = serializer.serialize(
+                List.of(DeviceTagRow.builder().nodeId("ns=0;i=1").build()));
         final String csvStr = new String(csv, StandardCharsets.UTF_8);
         assertThat(csvStr).startsWith("node_path,namespace_uri,namespace_index,node_id");
     }

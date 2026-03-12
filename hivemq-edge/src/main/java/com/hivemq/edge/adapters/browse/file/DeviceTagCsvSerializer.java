@@ -74,18 +74,31 @@ public class DeviceTagCsvSerializer {
     static final String COL_MQTT_USER_PROPERTIES = "mqtt_user_properties";
 
     private static final String[] HEADER = {
-            COL_NODE_PATH, COL_NAMESPACE_URI, COL_NAMESPACE_INDEX, COL_NODE_ID,
-            COL_DATA_TYPE, COL_ACCESS_LEVEL, COL_NODE_DESCRIPTION,
-            COL_TAG_NAME, COL_TAG_NAME_DEFAULT, COL_TAG_DESCRIPTION,
-            COL_NORTHBOUND_TOPIC, COL_NORTHBOUND_TOPIC_DEFAULT,
-            COL_SOUTHBOUND_TOPIC, COL_SOUTHBOUND_TOPIC_DEFAULT,
-            COL_SOUTHBOUND_FIELD_MAPPING,
-            COL_MAX_QOS, COL_MESSAGE_EXPIRY_INTERVAL,
-            COL_INCLUDE_TIMESTAMP, COL_INCLUDE_TAG_NAMES, COL_INCLUDE_METADATA,
-            COL_MQTT_USER_PROPERTIES
+        COL_NODE_PATH,
+        COL_NAMESPACE_URI,
+        COL_NAMESPACE_INDEX,
+        COL_NODE_ID,
+        COL_DATA_TYPE,
+        COL_ACCESS_LEVEL,
+        COL_NODE_DESCRIPTION,
+        COL_TAG_NAME,
+        COL_TAG_NAME_DEFAULT,
+        COL_TAG_DESCRIPTION,
+        COL_NORTHBOUND_TOPIC,
+        COL_NORTHBOUND_TOPIC_DEFAULT,
+        COL_SOUTHBOUND_TOPIC,
+        COL_SOUTHBOUND_TOPIC_DEFAULT,
+        COL_SOUTHBOUND_FIELD_MAPPING,
+        COL_MAX_QOS,
+        COL_MESSAGE_EXPIRY_INTERVAL,
+        COL_INCLUDE_TIMESTAMP,
+        COL_INCLUDE_TAG_NAMES,
+        COL_INCLUDE_METADATA,
+        COL_MQTT_USER_PROPERTIES
     };
 
-    private static final CSVFormat CSV_FORMAT = CSVFormat.RFC4180.builder()
+    private static final CSVFormat CSV_FORMAT = CSVFormat.RFC4180
+            .builder()
             .setHeader()
             .setSkipHeaderRecord(true)
             .setIgnoreHeaderCase(true)
@@ -94,15 +107,18 @@ public class DeviceTagCsvSerializer {
 
     public byte @NotNull [] serialize(final @NotNull List<DeviceTagRow> rows) throws IOException {
         final List<DeviceTagRow> sorted = rows.stream()
-                .sorted(Comparator.comparing(
-                        r -> r.getNodePath() != null ? r.getNodePath() : "",
-                        String::compareTo))
+                .sorted(Comparator.comparing(r -> r.getNodePath() != null ? r.getNodePath() : "", String::compareTo))
                 .toList();
 
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (final OutputStreamWriter writer = new OutputStreamWriter(baos, StandardCharsets.UTF_8);
-             final CSVPrinter printer = new CSVPrinter(writer,
-                     CSVFormat.RFC4180.builder().setHeader(HEADER).setRecordSeparator("\r\n").build())) {
+                final CSVPrinter printer = new CSVPrinter(
+                        writer,
+                        CSVFormat.RFC4180
+                                .builder()
+                                .setHeader(HEADER)
+                                .setRecordSeparator("\r\n")
+                                .build())) {
             for (final DeviceTagRow row : sorted) {
                 printer.printRecord(
                         row.getNodePath(),
@@ -133,9 +149,9 @@ public class DeviceTagCsvSerializer {
 
     public @NotNull List<DeviceTagRow> deserialize(final byte @NotNull [] csvData) throws IOException {
         final List<DeviceTagRow> rows = new ArrayList<>();
-        try (final InputStreamReader reader = new InputStreamReader(
-                new ByteArrayInputStream(csvData), StandardCharsets.UTF_8);
-             final CSVParser parser = CSV_FORMAT.parse(reader)) {
+        try (final InputStreamReader reader =
+                        new InputStreamReader(new ByteArrayInputStream(csvData), StandardCharsets.UTF_8);
+                final CSVParser parser = CSV_FORMAT.parse(reader)) {
 
             if (parser.getHeaderMap() == null || parser.getHeaderMap().isEmpty()) {
                 throw new IOException("CSV file is missing header row");
@@ -181,7 +197,9 @@ public class DeviceTagCsvSerializer {
         final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < mappings.size(); i++) {
             if (i > 0) sb.append(';');
-            sb.append(mappings.get(i).source()).append("->").append(mappings.get(i).destination());
+            sb.append(mappings.get(i).source())
+                    .append("->")
+                    .append(mappings.get(i).destination());
         }
         return sb.toString();
     }
@@ -196,7 +214,8 @@ public class DeviceTagCsvSerializer {
             if (trimmed.isEmpty()) continue;
             final int arrowIdx = trimmed.indexOf("->");
             if (arrowIdx < 0) {
-                throw new IllegalArgumentException("Invalid field mapping format: '" + trimmed + "'. Expected 'source->destination'.");
+                throw new IllegalArgumentException(
+                        "Invalid field mapping format: '" + trimmed + "'. Expected 'source->destination'.");
             }
             result.add(new FieldMappingInstruction(
                     trimmed.substring(0, arrowIdx).trim(),
@@ -229,9 +248,12 @@ public class DeviceTagCsvSerializer {
             if (trimmed.isEmpty()) continue;
             final int eqIdx = trimmed.indexOf('=');
             if (eqIdx < 0) {
-                throw new IllegalArgumentException("Invalid user property format: '" + trimmed + "'. Expected 'key=value'.");
+                throw new IllegalArgumentException(
+                        "Invalid user property format: '" + trimmed + "'. Expected 'key=value'.");
             }
-            result.put(trimmed.substring(0, eqIdx).trim(), trimmed.substring(eqIdx + 1).trim());
+            result.put(
+                    trimmed.substring(0, eqIdx).trim(),
+                    trimmed.substring(eqIdx + 1).trim());
         }
         return result.isEmpty() ? null : result;
     }
@@ -246,7 +268,8 @@ public class DeviceTagCsvSerializer {
         return (value == null || value.isEmpty()) ? null : value;
     }
 
-    private static int getIntOrDefault(final @NotNull CSVRecord record, final @NotNull String column, final int defaultValue) {
+    private static int getIntOrDefault(
+            final @NotNull CSVRecord record, final @NotNull String column, final int defaultValue) {
         final String value = getOptional(record, column);
         if (value == null) return defaultValue;
         return Integer.parseInt(value);

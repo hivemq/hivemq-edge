@@ -239,21 +239,36 @@ public final class DeviceTagRow {
     @Override
     public int hashCode() {
         return Objects.hash(
-                nodePath, namespaceUri, namespaceIndex, nodeId, dataType, accessLevel,
-                nodeDescription, tagName, tagNameDefault, tagDescription, northboundTopic,
-                northboundTopicDefault, southboundTopic, southboundTopicDefault,
-                southboundFieldMapping, maxQos, messageExpiryInterval, includeTimestamp,
-                includeTagNames, includeMetadata, mqttUserProperties);
+                nodePath,
+                namespaceUri,
+                namespaceIndex,
+                nodeId,
+                dataType,
+                accessLevel,
+                nodeDescription,
+                tagName,
+                tagNameDefault,
+                tagDescription,
+                northboundTopic,
+                northboundTopicDefault,
+                southboundTopic,
+                southboundTopicDefault,
+                southboundFieldMapping,
+                maxQos,
+                messageExpiryInterval,
+                includeTimestamp,
+                includeTagNames,
+                includeMetadata,
+                mqttUserProperties);
     }
 
     @Override
     public @NotNull String toString() {
-        return "DeviceTagRow{" +
-                "nodePath='" + nodePath + '\'' +
-                ", nodeId='" + nodeId + '\'' +
-                ", tagName='" + tagName + '\'' +
-                ", tagNameDefault='" + tagNameDefault + '\'' +
-                '}';
+        return "DeviceTagRow{" + "nodePath='"
+                + nodePath + '\'' + ", nodeId='"
+                + nodeId + '\'' + ", tagName='"
+                + tagName + '\'' + ", tagNameDefault='"
+                + tagNameDefault + '\'' + '}';
     }
 
     public static final class Builder {
@@ -351,7 +366,8 @@ public final class DeviceTagRow {
             return this;
         }
 
-        public @NotNull Builder southboundFieldMapping(final @Nullable List<FieldMappingInstruction> southboundFieldMapping) {
+        public @NotNull Builder southboundFieldMapping(
+                final @Nullable List<FieldMappingInstruction> southboundFieldMapping) {
             this.southboundFieldMapping = southboundFieldMapping;
             return this;
         }

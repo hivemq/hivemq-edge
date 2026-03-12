@@ -15,6 +15,14 @@
  */
 package com.hivemq.edge.adapters.browse.importer;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.adapter.SouthboundMappingEntity;
@@ -27,11 +35,6 @@ import com.hivemq.edge.adapters.browse.model.ImportMode;
 import com.hivemq.edge.adapters.browse.model.ImportResult;
 import com.hivemq.edge.adapters.browse.model.TagAction;
 import com.hivemq.edge.adapters.browse.validate.DeviceTagValidator;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -40,14 +43,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 class DeviceTagImporterTest {
 
@@ -73,13 +72,8 @@ class DeviceTagImporterTest {
             final List<TagEntity> tags,
             final List<NorthboundMappingEntity> nb,
             final List<SouthboundMappingEntity> sb) {
-        return new ProtocolAdapterEntity(ADAPTER_ID,
-                "opcua",
-                1,
-                Map.of(),
-                new ArrayList<>(nb),
-                new ArrayList<>(sb),
-                new ArrayList<>(tags));
+        return new ProtocolAdapterEntity(
+                ADAPTER_ID, "opcua", 1, Map.of(), new ArrayList<>(nb), new ArrayList<>(sb), new ArrayList<>(tags));
     }
 
     private void setupAdapter(final ProtocolAdapterEntity adapter) {
@@ -93,10 +87,7 @@ class DeviceTagImporterTest {
     }
 
     private DeviceTagRow tagRowWithMappings(
-            final String tagName,
-            final String nodeId,
-            final String nbTopic,
-            final String sbTopic) {
+            final String tagName, final String nodeId, final String nbTopic, final String sbTopic) {
         return DeviceTagRow.builder()
                 .tagName(tagName)
                 .nodeId(nodeId)
@@ -111,7 +102,8 @@ class DeviceTagImporterTest {
     void create_emptyEdge_fileWithTags() throws DeviceTagImporterException {
         setupAdapter(emptyAdapter());
 
-        final List<DeviceTagRow> rows = List.of(tagRowWithMappings("tag1", "ns=2;i=1", "topic/1", "write/1"),
+        final List<DeviceTagRow> rows = List.of(
+                tagRowWithMappings("tag1", "ns=2;i=1", "topic/1", "write/1"),
                 tagRowWithMappings("tag2", "ns=2;i=2", "topic/2", null));
 
         final ImportResult result = importer.doImport(rows, ImportMode.CREATE, ADAPTER_ID);
@@ -127,17 +119,14 @@ class DeviceTagImporterTest {
 
     @Test
     void create_existingTags_fails() {
-        final ProtocolAdapterEntity adapter =
-                adapterWithTags(List.of(new TagEntity("existing", null, Map.of("node", "ns=2;i=1"))),
-                        List.of(),
-                        List.of());
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(new TagEntity("existing", null, Map.of("node", "ns=2;i=1"))), List.of(), List.of());
         setupAdapter(adapter);
 
         final List<DeviceTagRow> rows = List.of(tagRow("existing", "ns=2;i=1"));
 
-        assertThatThrownBy(() -> importer.doImport(rows,
-                ImportMode.CREATE,
-                ADAPTER_ID)).isInstanceOf(DeviceTagImporterException.class);
+        assertThatThrownBy(() -> importer.doImport(rows, ImportMode.CREATE, ADAPTER_ID))
+                .isInstanceOf(DeviceTagImporterException.class);
 
         verify(adapterExtractor, never()).updateAdapter(any());
     }
@@ -146,17 +135,10 @@ class DeviceTagImporterTest {
 
     @Test
     void overwrite_edgeOnly_deleted_fileOnly_created() throws DeviceTagImporterException {
-        final ProtocolAdapterEntity adapter =
-                adapterWithTags(List.of(new TagEntity("edge-only", null, Map.of("node", "ns=2;i=99"))),
-                        List.of(new NorthboundMappingEntity("edge-only",
-                                "old/topic",
-                                1,
-                                null,
-                                false,
-                                true,
-                                List.of(),
-                                null)),
-                        List.of());
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(new TagEntity("edge-only", null, Map.of("node", "ns=2;i=99"))),
+                List.of(new NorthboundMappingEntity("edge-only", "old/topic", 1, null, false, true, List.of(), null)),
+                List.of());
         setupAdapter(adapter);
 
         final List<DeviceTagRow> rows = List.of(tagRowWithMappings("file-only", "ns=2;i=1", "new/topic", null));
@@ -171,14 +153,15 @@ class DeviceTagImporterTest {
 
     @Test
     void overwrite_inBoth_different_updated() throws DeviceTagImporterException {
-        final ProtocolAdapterEntity adapter =
-                adapterWithTags(List.of(new TagEntity("shared", "old desc", Map.of("node", "ns=2;i=1"))),
-                        List.of(),
-                        List.of());
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(new TagEntity("shared", "old desc", Map.of("node", "ns=2;i=1"))), List.of(), List.of());
         setupAdapter(adapter);
 
-        final List<DeviceTagRow> rows =
-                List.of(DeviceTagRow.builder().tagName("shared").nodeId("ns=2;i=1").tagDescription("new desc").build());
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .tagName("shared")
+                .nodeId("ns=2;i=1")
+                .tagDescription("new desc")
+                .build());
 
         final ImportResult result = importer.doImport(rows, ImportMode.OVERWRITE, ADAPTER_ID);
 
@@ -208,10 +191,8 @@ class DeviceTagImporterTest {
 
     @Test
     void mergeSafe_edgeOnly_kept() throws DeviceTagImporterException {
-        final ProtocolAdapterEntity adapter =
-                adapterWithTags(List.of(new TagEntity("edge-only", null, Map.of("node", "ns=2;i=99"))),
-                        List.of(),
-                        List.of());
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(new TagEntity("edge-only", null, Map.of("node", "ns=2;i=99"))), List.of(), List.of());
         setupAdapter(adapter);
 
         final List<DeviceTagRow> rows = List.of(tagRow("file-only", "ns=2;i=1"));
@@ -229,16 +210,14 @@ class DeviceTagImporterTest {
 
     @Test
     void mergeSafe_conflict_differentDefinition_fails() {
-        final ProtocolAdapterEntity adapter =
-                adapterWithTags(List.of(new TagEntity("shared", null, Map.of("node", "ns=2;i=99"))),
-                        List.of(),
-                        List.of());
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(new TagEntity("shared", null, Map.of("node", "ns=2;i=99"))), List.of(), List.of());
         setupAdapter(adapter);
 
         final List<DeviceTagRow> rows = List.of(tagRow("shared", "ns=2;i=1"));
 
-        assertThatThrownBy(() -> importer.doImport(rows, ImportMode.MERGE_SAFE, ADAPTER_ID)).isInstanceOf(
-                DeviceTagImporterException.class);
+        assertThatThrownBy(() -> importer.doImport(rows, ImportMode.MERGE_SAFE, ADAPTER_ID))
+                .isInstanceOf(DeviceTagImporterException.class);
 
         verify(adapterExtractor, never()).updateAdapter(any());
     }
@@ -247,13 +226,21 @@ class DeviceTagImporterTest {
 
     @Test
     void mergeOverwrite_edgeOnly_kept_different_overwritten() throws DeviceTagImporterException {
-        final ProtocolAdapterEntity adapter =
-                adapterWithTags(List.of(new TagEntity("edge-only", null, Map.of("node", "ns=2;i=99")),
-                        new TagEntity("shared", "old", Map.of("node", "ns=2;i=50"))), List.of(), List.of());
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(
+                        new TagEntity("edge-only", null, Map.of("node", "ns=2;i=99")),
+                        new TagEntity("shared", "old", Map.of("node", "ns=2;i=50"))),
+                List.of(),
+                List.of());
         setupAdapter(adapter);
 
-        final List<DeviceTagRow> rows = List.of(tagRow("file-only", "ns=2;i=1"),
-                DeviceTagRow.builder().tagName("shared").nodeId("ns=2;i=50").tagDescription("new").build());
+        final List<DeviceTagRow> rows = List.of(
+                tagRow("file-only", "ns=2;i=1"),
+                DeviceTagRow.builder()
+                        .tagName("shared")
+                        .nodeId("ns=2;i=50")
+                        .tagDescription("new")
+                        .build());
 
         final ImportResult result = importer.doImport(rows, ImportMode.MERGE_OVERWRITE, ADAPTER_ID);
 
@@ -270,9 +257,12 @@ class DeviceTagImporterTest {
 
     @Test
     void delete_edgeOnly_deleted() throws DeviceTagImporterException {
-        final ProtocolAdapterEntity adapter =
-                adapterWithTags(List.of(new TagEntity("to-delete", null, Map.of("node", "ns=2;i=99")),
-                        new TagEntity("keep", null, Map.of("node", "ns=2;i=1"))), List.of(), List.of());
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(
+                        new TagEntity("to-delete", null, Map.of("node", "ns=2;i=99")),
+                        new TagEntity("keep", null, Map.of("node", "ns=2;i=1"))),
+                List.of(),
+                List.of());
         setupAdapter(adapter);
 
         // File contains only 'keep' — 'to-delete' should be deleted
@@ -293,8 +283,11 @@ class DeviceTagImporterTest {
     void wildcardResolution_tagName() throws DeviceTagImporterException {
         setupAdapter(emptyAdapter());
 
-        final List<DeviceTagRow> rows =
-                List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("*").tagNameDefault("auto-tag").build());
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .tagName("*")
+                .tagNameDefault("auto-tag")
+                .build());
 
         final ImportResult result = importer.doImport(rows, ImportMode.CREATE, ADAPTER_ID);
 
@@ -322,14 +315,16 @@ class DeviceTagImporterTest {
     void wildcardResolution_noDefault_producesError() {
         setupAdapter(emptyAdapter());
 
-        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("*").build());
+        final List<DeviceTagRow> rows =
+                List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("*").build());
 
-        assertThatThrownBy(() -> importer.doImport(rows,
-                ImportMode.CREATE,
-                ADAPTER_ID)).isInstanceOf(DeviceTagImporterException.class).satisfies(ex -> {
-            final var importEx = (DeviceTagImporterException) ex;
-            assertThat(importEx.getErrors()).anySatisfy(e -> assertThat(e.code()).isEqualTo("WILDCARD_NO_DEFAULT"));
-        });
+        assertThatThrownBy(() -> importer.doImport(rows, ImportMode.CREATE, ADAPTER_ID))
+                .isInstanceOf(DeviceTagImporterException.class)
+                .satisfies(ex -> {
+                    final var importEx = (DeviceTagImporterException) ex;
+                    assertThat(importEx.getErrors())
+                            .anySatisfy(e -> assertThat(e.code()).isEqualTo("WILDCARD_NO_DEFAULT"));
+                });
     }
 
     // --- No mutations on validation failure ---
@@ -338,11 +333,11 @@ class DeviceTagImporterTest {
     void validationFailure_noMutations() {
         setupAdapter(emptyAdapter());
 
-        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder().tagName("-invalid").maxQos(5).build());
+        final List<DeviceTagRow> rows =
+                List.of(DeviceTagRow.builder().tagName("-invalid").maxQos(5).build());
 
-        assertThatThrownBy(() -> importer.doImport(rows,
-                ImportMode.CREATE,
-                ADAPTER_ID)).isInstanceOf(DeviceTagImporterException.class);
+        assertThatThrownBy(() -> importer.doImport(rows, ImportMode.CREATE, ADAPTER_ID))
+                .isInstanceOf(DeviceTagImporterException.class);
 
         verify(adapterExtractor, never()).updateAdapter(any());
     }
@@ -353,15 +348,19 @@ class DeviceTagImporterTest {
     void entityConstruction_northbound_defaults() throws DeviceTagImporterException {
         setupAdapter(emptyAdapter());
 
-        final List<DeviceTagRow> rows =
-                List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("tag1").northboundTopic("topic/1").build());
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .tagName("tag1")
+                .northboundTopic("topic/1")
+                .build());
 
         importer.doImport(rows, ImportMode.CREATE, ADAPTER_ID);
 
         final ArgumentCaptor<ProtocolAdapterEntity> captor = ArgumentCaptor.forClass(ProtocolAdapterEntity.class);
         verify(adapterExtractor).updateAdapter(captor.capture());
 
-        final NorthboundMappingEntity nb = captor.getValue().getNorthboundMappings().getFirst();
+        final NorthboundMappingEntity nb =
+                captor.getValue().getNorthboundMappings().getFirst();
         assertThat(nb.getTagName()).isEqualTo("tag1");
         assertThat(nb.getTopic()).isEqualTo("topic/1");
         assertThat(nb.getMaxQoS()).isEqualTo(1); // default
@@ -373,21 +372,27 @@ class DeviceTagImporterTest {
     void entityConstruction_southbound_defaultFieldMapping() throws DeviceTagImporterException {
         setupAdapter(emptyAdapter());
 
-        final List<DeviceTagRow> rows =
-                List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("tag1").southboundTopic("write/1").build());
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .tagName("tag1")
+                .southboundTopic("write/1")
+                .build());
 
         importer.doImport(rows, ImportMode.CREATE, ADAPTER_ID);
 
         final ArgumentCaptor<ProtocolAdapterEntity> captor = ArgumentCaptor.forClass(ProtocolAdapterEntity.class);
         verify(adapterExtractor).updateAdapter(captor.capture());
 
-        final SouthboundMappingEntity sb = captor.getValue().getSouthboundMappings().getFirst();
+        final SouthboundMappingEntity sb =
+                captor.getValue().getSouthboundMappings().getFirst();
         assertThat(sb.getTagName()).isEqualTo("tag1");
         assertThat(sb.getTopicFilter()).isEqualTo("write/1");
         Assertions.assertNotNull(sb.getFieldMapping());
         assertThat(sb.getFieldMapping().getInstructions()).hasSize(1);
-        assertThat(sb.getFieldMapping().getInstructions().getFirst().getSourceFieldName()).isEqualTo("value");
-        assertThat(sb.getFieldMapping().getInstructions().getFirst().getDestinationFieldName()).isEqualTo("value");
+        assertThat(sb.getFieldMapping().getInstructions().getFirst().getSourceFieldName())
+                .isEqualTo("value");
+        assertThat(sb.getFieldMapping().getInstructions().getFirst().getDestinationFieldName())
+                .isEqualTo("value");
     }
 
     @Test
@@ -398,8 +403,8 @@ class DeviceTagImporterTest {
                 .nodeId("ns=2;i=1")
                 .tagName("tag1")
                 .southboundTopic("write/1")
-                .southboundFieldMapping(List.of(new FieldMappingInstruction("src1", "dst1"),
-                        new FieldMappingInstruction("src2", "dst2")))
+                .southboundFieldMapping(List.of(
+                        new FieldMappingInstruction("src1", "dst1"), new FieldMappingInstruction("src2", "dst2")))
                 .build());
 
         importer.doImport(rows, ImportMode.CREATE, ADAPTER_ID);
@@ -407,7 +412,8 @@ class DeviceTagImporterTest {
         final ArgumentCaptor<ProtocolAdapterEntity> captor = ArgumentCaptor.forClass(ProtocolAdapterEntity.class);
         verify(adapterExtractor).updateAdapter(captor.capture());
 
-        final SouthboundMappingEntity sb = captor.getValue().getSouthboundMappings().getFirst();
+        final SouthboundMappingEntity sb =
+                captor.getValue().getSouthboundMappings().getFirst();
         Assertions.assertNotNull(sb.getFieldMapping());
         assertThat(sb.getFieldMapping().getInstructions()).hasSize(2);
     }
@@ -494,27 +500,22 @@ class DeviceTagImporterTest {
 
     @Test
     void importResult_countsMatchActions() throws DeviceTagImporterException {
-        final ProtocolAdapterEntity adapter =
-                adapterWithTags(List.of(new TagEntity("delete-me", null, Map.of("node", "ns=2;i=99"))),
-                        List.of(new NorthboundMappingEntity("delete-me",
-                                "old/topic",
-                                1,
-                                null,
-                                false,
-                                true,
-                                List.of(),
-                                null)),
-                        List.of());
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(new TagEntity("delete-me", null, Map.of("node", "ns=2;i=99"))),
+                List.of(new NorthboundMappingEntity("delete-me", "old/topic", 1, null, false, true, List.of(), null)),
+                List.of());
         setupAdapter(adapter);
 
         final List<DeviceTagRow> rows = List.of(tagRowWithMappings("new-tag", "ns=2;i=1", "new/topic", "write/1"));
 
         final ImportResult result = importer.doImport(rows, ImportMode.OVERWRITE, ADAPTER_ID);
 
-        final long createdActions =
-                result.tagActions().stream().filter(a -> a.action() == TagAction.Action.CREATED).count();
-        final long deletedActions =
-                result.tagActions().stream().filter(a -> a.action() == TagAction.Action.DELETED).count();
+        final long createdActions = result.tagActions().stream()
+                .filter(a -> a.action() == TagAction.Action.CREATED)
+                .count();
+        final long deletedActions = result.tagActions().stream()
+                .filter(a -> a.action() == TagAction.Action.DELETED)
+                .count();
 
         assertThat(createdActions).isEqualTo(result.tagsCreated());
         assertThat(deletedActions).isEqualTo(result.tagsDeleted());
@@ -529,11 +530,12 @@ class DeviceTagImporterTest {
 
         final List<DeviceTagRow> rows = List.of(tagRow("tag1", "ns=2;i=1"));
 
-        assertThatThrownBy(() -> importer.doImport(rows,
-                ImportMode.CREATE,
-                ADAPTER_ID)).isInstanceOf(DeviceTagImporterException.class).satisfies(ex -> {
-            final var importEx = (DeviceTagImporterException) ex;
-            assertThat(importEx.getErrors()).anySatisfy(e -> assertThat(e.code()).isEqualTo("UPDATE_FAILED"));
-        });
+        assertThatThrownBy(() -> importer.doImport(rows, ImportMode.CREATE, ADAPTER_ID))
+                .isInstanceOf(DeviceTagImporterException.class)
+                .satisfies(ex -> {
+                    final var importEx = (DeviceTagImporterException) ex;
+                    assertThat(importEx.getErrors())
+                            .anySatisfy(e -> assertThat(e.code()).isEqualTo("UPDATE_FAILED"));
+                });
     }
 }
