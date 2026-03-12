@@ -185,6 +185,10 @@ public class DeviceTagJsonSerializer {
         @Nullable
         List<RowDto> rows;
 
+        FileDto() {
+            // required by jackson
+        }
+
         FileDto(final @Nullable List<RowDto> rows) {
             this.rows = rows;
         }
