@@ -25,13 +25,18 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.sdk.core.typetree.DataType;
+import org.eclipse.milo.opcua.sdk.core.typetree.DataTypeTree;
+import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.NamespaceTable;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
-import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
+import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
@@ -40,6 +45,7 @@ import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseDirection;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseResultMask;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.NodeClass;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
+import org.eclipse.milo.opcua.stack.core.types.structured.AccessLevelType;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseResult;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
@@ -50,16 +56,17 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Browses an OPC-UA address space and collects variable nodes with their attributes.
  * Builds {@link BrowsedNode} records with informational fields and generated defaults.
+ *
+ * <p>The browse is two-phase: (1) async recursive traversal collects variable node references,
+ * bounded by a concurrency semaphore to avoid overwhelming the server; (2) batch attribute reads
+ * (DataType, AccessLevel, Description) resolve each variable's metadata. Data type names are
+ * resolved via Milo's {@link DataTypeTree}, which handles both built-in and server-defined types.
  */
 public class OpcUaNodeBrowser {
 
     private static final long TIMEOUT_SECONDS = 120;
     private static final int READ_BATCH_SIZE = 100;
-
-    // OPC-UA attribute IDs
-    private static final int ATTRIBUTE_DATA_TYPE = 14;
-    private static final int ATTRIBUTE_ACCESS_LEVEL = 17;
-    private static final int ATTRIBUTE_DESCRIPTION = 21;
+    private static final int MAX_CONCURRENT_BROWSES = 32;
 
     private final @NotNull OpcUaClient client;
     private final @NotNull String adapterId;
@@ -91,9 +98,11 @@ public class OpcUaNodeBrowser {
         }
 
         try {
-            // Phase 1: Browse and collect variable node references with their paths
-            final List<DiscoveredVariable> variables = new ArrayList<>();
-            browseRecursive(browseRoot, "", maxDepth == 0 ? Integer.MAX_VALUE : maxDepth, variables)
+            // Phase 1: Browse and collect variable node references with their paths.
+            // CopyOnWriteArrayList is safe for concurrent adds from async browse callbacks.
+            final List<DiscoveredVariable> variables = new CopyOnWriteArrayList<>();
+            final Semaphore concurrency = new Semaphore(MAX_CONCURRENT_BROWSES);
+            browseRecursive(browseRoot, "", maxDepth == 0 ? Integer.MAX_VALUE : maxDepth, variables, concurrency)
                     .get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
             if (variables.isEmpty()) {
@@ -116,31 +125,32 @@ public class OpcUaNodeBrowser {
             final @NotNull NodeId browseRoot,
             final @NotNull String currentPath,
             final int remainingDepth,
-            final @NotNull List<DiscoveredVariable> variables) {
-        return client.browseAsync(new BrowseDescription(
+            final @NotNull List<DiscoveredVariable> variables,
+            final @NotNull Semaphore concurrency) {
+        return CompletableFuture.runAsync(concurrency::acquireUninterruptibly)
+                .thenCompose(ignored -> client.browseAsync(new BrowseDescription(
                         browseRoot,
                         BrowseDirection.Forward,
                         NodeIds.HierarchicalReferences,
                         true,
                         uint(0),
-                        uint(BrowseResultMask.All.getValue())))
-                .thenCompose(browseResult -> handleBrowseResult(browseResult, currentPath, remainingDepth, variables));
+                        uint(BrowseResultMask.All.getValue()))))
+                .whenComplete((result, error) -> concurrency.release())
+                .thenCompose(browseResult ->
+                        handleBrowseResult(browseResult, currentPath, remainingDepth, variables, concurrency));
     }
 
     private @NotNull CompletableFuture<Void> handleBrowseResult(
             final @NotNull BrowseResult browseResult,
             final @NotNull String currentPath,
             final int remainingDepth,
-            final @NotNull List<DiscoveredVariable> variables) {
+            final @NotNull List<DiscoveredVariable> variables,
+            final @NotNull Semaphore concurrency) {
         final var childFutures = new ArrayList<CompletableFuture<Void>>();
         final var references = new ArrayList<ReferenceDescription>();
-        final var continuationPoints = new ArrayList<ByteString>();
 
         if (browseResult.getReferences() != null) {
             Collections.addAll(references, browseResult.getReferences());
-        }
-        if (browseResult.getContinuationPoint() != null) {
-            continuationPoints.add(browseResult.getContinuationPoint());
         }
 
         final NamespaceTable nsTable = client.getNamespaceTable();
@@ -150,49 +160,41 @@ public class OpcUaNodeBrowser {
                     rd.getBrowseName() != null ? rd.getBrowseName().getName() : "";
             final String childPath = currentPath + "/" + (browseName != null ? browseName : "");
 
+            final Optional<NodeId> resolvedNodeId = rd.getNodeId().toNodeId(nsTable);
+            if (resolvedNodeId.isEmpty()) {
+                continue;
+            }
+            final NodeId nodeId = resolvedNodeId.get();
+
             if (rd.getNodeClass() == NodeClass.Variable) {
-                // Collect variable node
-                rd.getNodeId().toNodeId(nsTable).ifPresent(nodeId -> {
-                    final int nsIndex = nodeId.getNamespaceIndex().intValue();
-                    final String nsUri =
-                            nsIndex < nsTable.toArray().length ? nsTable.get(nsIndex) : String.valueOf(nsIndex);
-                    variables.add(new DiscoveredVariable(
-                            nodeId,
-                            childPath,
-                            nsUri != null ? nsUri : "",
-                            nsIndex,
-                            browseName != null ? browseName : ""));
-                });
+                final int nsIndex = nodeId.getNamespaceIndex().intValue();
+                final String nsUri =
+                        nsIndex < nsTable.toArray().length ? nsTable.get(nsIndex) : String.valueOf(nsIndex);
+                variables.add(new DiscoveredVariable(
+                        nodeId, childPath, nsUri != null ? nsUri : "", nsIndex, browseName != null ? browseName : ""));
             }
 
-            // Recurse into non-leaf nodes
             if (remainingDepth > 1) {
-                rd.getNodeId()
-                        .toNodeId(nsTable)
-                        .ifPresent(childNodeId -> childFutures.add(
-                                browseRecursive(childNodeId, childPath, remainingDepth - 1, variables)));
+                childFutures.add(browseRecursive(nodeId, childPath, remainingDepth - 1, variables, concurrency));
             }
         }
 
         // Handle continuation points
-        if (!continuationPoints.isEmpty()) {
-            final var validCont =
-                    continuationPoints.stream().filter(ct -> ct.bytes() != null).toList();
-            if (!validCont.isEmpty()) {
-                childFutures.add(
-                        client.browseNextAsync(false, continuationPoints).thenCompose(nextResult -> {
-                            final var allFutures = new ArrayList<CompletableFuture<Void>>();
-                            if (nextResult.getResults() != null) {
-                                for (final BrowseResult result : nextResult.getResults()) {
-                                    if (result != null) {
-                                        allFutures.add(
-                                                handleBrowseResult(result, currentPath, remainingDepth, variables));
-                                    }
+        if (browseResult.getContinuationPoint() != null
+                && browseResult.getContinuationPoint().bytes() != null) {
+            childFutures.add(client.browseNextAsync(false, List.of(browseResult.getContinuationPoint()))
+                    .thenCompose(nextResult -> {
+                        final var continuationFutures = new ArrayList<CompletableFuture<Void>>();
+                        if (nextResult.getResults() != null) {
+                            for (final BrowseResult result : nextResult.getResults()) {
+                                if (result != null) {
+                                    continuationFutures.add(handleBrowseResult(
+                                            result, currentPath, remainingDepth, variables, concurrency));
                                 }
                             }
-                            return CompletableFuture.allOf(allFutures.toArray(CompletableFuture[]::new));
-                        }));
-            }
+                        }
+                        return CompletableFuture.allOf(continuationFutures.toArray(CompletableFuture[]::new));
+                    }));
         }
 
         return CompletableFuture.allOf(childFutures.toArray(CompletableFuture[]::new));
@@ -200,35 +202,31 @@ public class OpcUaNodeBrowser {
 
     private @NotNull List<BrowsedNode> readAttributesAndBuild(final @NotNull List<DiscoveredVariable> variables)
             throws BrowseException {
+        final DataTypeTree dataTypeTree = getDataTypeTree();
         final List<BrowsedNode> result = new ArrayList<>();
 
-        // Process in batches of READ_BATCH_SIZE
         for (int offset = 0; offset < variables.size(); offset += READ_BATCH_SIZE) {
             final int end = Math.min(offset + READ_BATCH_SIZE, variables.size());
             final List<DiscoveredVariable> batch = variables.subList(offset, end);
 
-            // Build read requests: 3 attributes per node (DataType, AccessLevel, Description)
+            // 3 attributes per node: DataType, AccessLevel, Description
             final List<ReadValueId> readValueIds = new ArrayList<>();
             for (final DiscoveredVariable var : batch) {
-                readValueIds.add(new ReadValueId(var.nodeId, uint(ATTRIBUTE_DATA_TYPE), null, null));
-                readValueIds.add(new ReadValueId(var.nodeId, uint(ATTRIBUTE_ACCESS_LEVEL), null, null));
-                readValueIds.add(new ReadValueId(var.nodeId, uint(ATTRIBUTE_DESCRIPTION), null, null));
+                readValueIds.add(new ReadValueId(var.nodeId, AttributeId.DataType.uid(), null, null));
+                readValueIds.add(new ReadValueId(var.nodeId, AttributeId.AccessLevel.uid(), null, null));
+                readValueIds.add(new ReadValueId(var.nodeId, AttributeId.Description.uid(), null, null));
             }
 
             try {
                 final DataValue[] values = client.readAsync(0.0, TimestampsToReturn.Neither, readValueIds)
                         .get(TIMEOUT_SECONDS, TimeUnit.SECONDS)
                         .getResults();
-
+                assert values != null;
                 for (int i = 0; i < batch.size(); i++) {
                     final DiscoveredVariable var = batch.get(i);
-                    final DataValue dataTypeValue = values[i * 3];
-                    final DataValue accessLevelValue = values[i * 3 + 1];
-                    final DataValue descriptionValue = values[i * 3 + 2];
-
-                    final String dataType = resolveDataTypeName(dataTypeValue);
-                    final String accessLevel = resolveAccessLevel(accessLevelValue);
-                    final String description = resolveDescription(descriptionValue);
+                    final String dataType = resolveDataTypeName(values[i * 3], dataTypeTree);
+                    final String accessLevel = resolveAccessLevel(values[i * 3 + 1]);
+                    final String description = resolveDescription(values[i * 3 + 2]);
 
                     result.add(new BrowsedNode(
                             var.path,
@@ -256,44 +254,27 @@ public class OpcUaNodeBrowser {
         return result;
     }
 
-    // --- Attribute resolution ---
-
-    private @NotNull String resolveDataTypeName(final @NotNull DataValue dataTypeValue) {
-        if (dataTypeValue.getValue().getValue() instanceof final NodeId dataTypeNodeId) {
-            // Try to resolve the data type NodeId to a human-readable name
-            return resolveBuiltinDataTypeName(dataTypeNodeId);
+    private @Nullable DataTypeTree getDataTypeTree() {
+        try {
+            return client.getDataTypeTree();
+        } catch (final UaException e) {
+            return null;
         }
-        return "Unknown";
     }
 
-    private @NotNull String resolveBuiltinDataTypeName(final @NotNull NodeId dataTypeNodeId) {
-        // Common OPC-UA built-in data types (namespace 0)
-        if (dataTypeNodeId.getNamespaceIndex().intValue() == 0) {
-            final Object id = dataTypeNodeId.getIdentifier();
-            if (id instanceof final Number num) {
-                return switch (num.intValue()) {
-                    case 1 -> "Boolean";
-                    case 2 -> "SByte";
-                    case 3 -> "Byte";
-                    case 4 -> "Int16";
-                    case 5 -> "UInt16";
-                    case 6 -> "Int32";
-                    case 7 -> "UInt32";
-                    case 8 -> "Int64";
-                    case 9 -> "UInt64";
-                    case 10 -> "Float";
-                    case 11 -> "Double";
-                    case 12 -> "String";
-                    case 13 -> "DateTime";
-                    case 14 -> "Guid";
-                    case 15 -> "ByteString";
-                    case 22 -> "ExtensionObject";
-                    case 24 -> "BaseDataType";
-                    case 26 -> "Number";
-                    case 28 -> "Integer";
-                    case 29 -> "UInteger";
-                    default -> dataTypeNodeId.toParseableString();
-                };
+    // --- Attribute resolution ---
+
+    private @NotNull String resolveDataTypeName(
+            final @NotNull DataValue dataTypeValue, final @Nullable DataTypeTree dataTypeTree) {
+        if (!(dataTypeValue.getValue().getValue() instanceof final NodeId dataTypeNodeId)) {
+            return "Unknown";
+        }
+        if (dataTypeTree != null) {
+            final DataType dataType = dataTypeTree.getDataType(dataTypeNodeId);
+            if (dataType != null
+                    && dataType.getBrowseName() != null
+                    && dataType.getBrowseName().getName() != null) {
+                return dataType.getBrowseName().getName();
             }
         }
         return dataTypeNodeId.toParseableString();
@@ -301,12 +282,18 @@ public class OpcUaNodeBrowser {
 
     private @NotNull String resolveAccessLevel(final @NotNull DataValue accessLevelValue) {
         if (accessLevelValue.getValue().getValue() instanceof final UByte accessByte) {
-            final int level = accessByte.intValue();
-            final boolean readable = (level & 0x01) != 0;
-            final boolean writable = (level & 0x02) != 0;
-            if (readable && writable) return "READ_WRITE";
-            if (readable) return "READ";
-            if (writable) return "WRITE";
+            final AccessLevelType accessLevel = new AccessLevelType(accessByte);
+            final boolean readable = accessLevel.getCurrentRead();
+            final boolean writable = accessLevel.getCurrentWrite();
+            if (readable && writable) {
+                return "READ_WRITE";
+            }
+            if (readable) {
+                return "READ";
+            }
+            if (writable) {
+                return "WRITE";
+            }
             return "NONE";
         }
         return "READ";
@@ -323,25 +310,19 @@ public class OpcUaNodeBrowser {
 
     @NotNull
     String generateTagNameDefault(final @NotNull String browseName) {
-        // {adapterId}-{sanitizedBrowseName} — lowercase, non-alphanumeric → -, collapse consecutive, strip edges
         return adapterId + "-" + sanitize(browseName);
     }
 
     @NotNull
     String generateNorthboundTopicDefault(final @NotNull String path) {
-        // {adapterId}/{sanitizedPath}
         return adapterId + "/" + sanitizePath(path);
     }
 
     @NotNull
     String generateSouthboundTopicDefault(final @NotNull String path) {
-        // {adapterId}/write/{sanitizedPath}
         return adapterId + "/write/" + sanitizePath(path);
     }
 
-    /**
-     * Sanitize a single name: lowercase, non-alphanumeric to '-', collapse consecutive dashes, strip edges.
-     */
     static @NotNull String sanitize(final @NotNull String input) {
         return input.toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9]", "-")
@@ -349,16 +330,17 @@ public class OpcUaNodeBrowser {
                 .replaceAll("^-|-$", "");
     }
 
-    /**
-     * Sanitize a path: strip leading '/', sanitize each segment, join with '/'.
-     */
     static @NotNull String sanitizePath(final @NotNull String path) {
         final String stripped = path.startsWith("/") ? path.substring(1) : path;
-        if (stripped.isEmpty()) return "";
+        if (stripped.isEmpty()) {
+            return "";
+        }
         final String[] segments = stripped.split("/");
         final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < segments.length; i++) {
-            if (i > 0) sb.append('/');
+            if (i > 0) {
+                sb.append('/');
+            }
             sb.append(sanitize(segments[i]));
         }
         return sb.toString();
