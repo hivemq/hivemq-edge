@@ -56,7 +56,7 @@ class DeviceTagValidatorTest {
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
         assertThat(errors).anySatisfy(e -> {
-            assertThat(e.code()).isEqualTo("DUPLICATE_NODE");
+            assertThat(e.code()).isEqualTo(ValidationError.Code.DUPLICATE_NODE);
             assertThat(e.value()).isEqualTo("ns=2;i=1");
         });
     }
@@ -81,7 +81,7 @@ class DeviceTagValidatorTest {
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
         assertThat(errors).anySatisfy(e -> {
-            assertThat(e.code()).isEqualTo("DUPLICATE_TAG_NAME");
+            assertThat(e.code()).isEqualTo(ValidationError.Code.DUPLICATE_TAG_NAME);
             assertThat(e.value()).isEqualTo("same-tag");
         });
     }
@@ -107,7 +107,7 @@ class DeviceTagValidatorTest {
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
-        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo("INVALID_TAG_NAME"));
+        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo(ValidationError.Code.INVALID_TAG_NAME));
     }
 
     @Test
@@ -119,7 +119,7 @@ class DeviceTagValidatorTest {
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
-        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo("INVALID_TAG_NAME"));
+        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo(ValidationError.Code.INVALID_TAG_NAME));
     }
 
     @Test
@@ -131,7 +131,7 @@ class DeviceTagValidatorTest {
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
         assertThat(errors).anySatisfy(e -> {
-            assertThat(e.code()).isEqualTo("INVALID_TAG_NAME");
+            assertThat(e.code()).isEqualTo(ValidationError.Code.INVALID_TAG_NAME);
             assertThat(e.message()).contains("maximum length");
         });
     }
@@ -172,7 +172,7 @@ class DeviceTagValidatorTest {
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
-        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo("INVALID_QOS"));
+        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo(ValidationError.Code.INVALID_QOS));
     }
 
     @Test
@@ -185,7 +185,7 @@ class DeviceTagValidatorTest {
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
-        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo("INVALID_QOS"));
+        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo(ValidationError.Code.INVALID_QOS));
     }
 
     // --- Topic validation ---
@@ -214,7 +214,7 @@ class DeviceTagValidatorTest {
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
         assertThat(errors).anySatisfy(e -> {
-            assertThat(e.code()).isEqualTo("INVALID_TOPIC");
+            assertThat(e.code()).isEqualTo(ValidationError.Code.INVALID_TOPIC);
             assertThat(e.column()).isEqualTo("northbound_topic");
         });
     }
@@ -229,7 +229,7 @@ class DeviceTagValidatorTest {
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
-        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo("INVALID_TOPIC"));
+        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo(ValidationError.Code.INVALID_TOPIC));
     }
 
     @Test
@@ -271,7 +271,7 @@ class DeviceTagValidatorTest {
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
-        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo("INVALID_EXPIRY"));
+        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo(ValidationError.Code.INVALID_EXPIRY));
     }
 
     @Test
@@ -284,7 +284,7 @@ class DeviceTagValidatorTest {
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
-        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo("INVALID_EXPIRY"));
+        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo(ValidationError.Code.INVALID_EXPIRY));
     }
 
     // --- Field mapping validation ---
@@ -313,7 +313,7 @@ class DeviceTagValidatorTest {
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
         assertThat(errors).anySatisfy(e -> {
-            assertThat(e.code()).isEqualTo("INVALID_FIELD_MAPPING");
+            assertThat(e.code()).isEqualTo(ValidationError.Code.INVALID_FIELD_MAPPING);
             assertThat(e.message()).contains("source");
         });
     }
@@ -329,7 +329,7 @@ class DeviceTagValidatorTest {
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
         assertThat(errors).anySatisfy(e -> {
-            assertThat(e.code()).isEqualTo("INVALID_FIELD_MAPPING");
+            assertThat(e.code()).isEqualTo(ValidationError.Code.INVALID_FIELD_MAPPING);
             assertThat(e.message()).contains("destination");
         });
     }
@@ -346,7 +346,8 @@ class DeviceTagValidatorTest {
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
-        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo("INVALID_USER_PROPERTIES"));
+        assertThat(errors)
+                .anySatisfy(e -> assertThat(e.code()).isEqualTo(ValidationError.Code.INVALID_USER_PROPERTIES));
     }
 
     // --- Mapping without tag ---
@@ -361,7 +362,7 @@ class DeviceTagValidatorTest {
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
         assertThat(errors).anySatisfy(e -> {
-            assertThat(e.code()).isEqualTo("MAPPING_WITHOUT_TAG");
+            assertThat(e.code()).isEqualTo(ValidationError.Code.MAPPING_WITHOUT_TAG);
             assertThat(e.column()).isEqualTo("northbound_topic");
         });
     }
@@ -376,7 +377,7 @@ class DeviceTagValidatorTest {
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
         assertThat(errors).anySatisfy(e -> {
-            assertThat(e.code()).isEqualTo("MAPPING_WITHOUT_TAG");
+            assertThat(e.code()).isEqualTo(ValidationError.Code.MAPPING_WITHOUT_TAG);
             assertThat(e.column()).isEqualTo("southbound_topic");
         });
     }
@@ -390,7 +391,7 @@ class DeviceTagValidatorTest {
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
-        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo("INVALID_NODE_ID"));
+        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo(ValidationError.Code.INVALID_NODE_ID));
     }
 
     @Test
@@ -418,9 +419,9 @@ class DeviceTagValidatorTest {
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
         assertThat(errors.size()).isGreaterThanOrEqualTo(3);
-        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo("INVALID_TAG_NAME"));
-        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo("INVALID_QOS"));
-        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo("INVALID_EXPIRY"));
+        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo(ValidationError.Code.INVALID_TAG_NAME));
+        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo(ValidationError.Code.INVALID_QOS));
+        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo(ValidationError.Code.INVALID_EXPIRY));
     }
 
     // --- Cross-reference validations ---
@@ -445,7 +446,7 @@ class DeviceTagValidatorTest {
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
-        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo("TAG_CONFLICT"));
+        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo(ValidationError.Code.TAG_CONFLICT));
     }
 
     @Test
@@ -467,7 +468,7 @@ class DeviceTagValidatorTest {
         final List<ValidationError> errors = validator.validate(rows, ImportMode.MERGE_SAFE, "adapter1");
 
         assertThat(errors).anySatisfy(e -> {
-            assertThat(e.code()).isEqualTo("TAG_CONFLICT");
+            assertThat(e.code()).isEqualTo(ValidationError.Code.TAG_CONFLICT);
             assertThat(e.message()).contains("MERGE_OVERWRITE");
         });
     }
@@ -515,7 +516,7 @@ class DeviceTagValidatorTest {
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
         assertThat(errors).anySatisfy(e -> {
-            assertThat(e.code()).isEqualTo("EDGE_TAG_CONFLICT");
+            assertThat(e.code()).isEqualTo(ValidationError.Code.EDGE_TAG_CONFLICT);
             assertThat(e.message()).contains("adapter2");
         });
     }
@@ -531,7 +532,7 @@ class DeviceTagValidatorTest {
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
         assertThat(errors).anySatisfy(e -> {
-            assertThat(e.code()).isEqualTo("INVALID_TAG_NAME");
+            assertThat(e.code()).isEqualTo(ValidationError.Code.INVALID_TAG_NAME);
             assertThat(e.row()).isEqualTo(2);
         });
     }
