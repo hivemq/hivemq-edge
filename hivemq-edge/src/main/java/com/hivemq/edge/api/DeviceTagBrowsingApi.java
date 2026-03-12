@@ -35,14 +35,14 @@ import jakarta.ws.rs.core.Response;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * JAX-RS API interface for bulk device tag browsing and import endpoints.
- */
 @Path("/api/v1/management/protocol-adapters/adapters/{adapterId}/device-tags")
-@Api(description = "the Device Tag Browsing API")
+@Api(value = "the Device Tag Browsing API")
 public interface DeviceTagBrowsingApi {
 
+    @NotNull
     String MEDIA_TYPE_CSV = "text/csv";
+
+    @NotNull
     String MEDIA_TYPE_YAML = "application/yaml";
 
     /**

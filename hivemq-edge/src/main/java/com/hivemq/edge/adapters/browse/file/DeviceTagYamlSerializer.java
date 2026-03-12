@@ -15,6 +15,10 @@
  */
 package com.hivemq.edge.adapters.browse.file;
 
+import static com.hivemq.edge.adapters.browse.file.DeviceTagJsonSerializer.FileDto;
+import static com.hivemq.edge.adapters.browse.file.DeviceTagJsonSerializer.fromFileDto;
+import static com.hivemq.edge.adapters.browse.file.DeviceTagJsonSerializer.toFileDto;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,22 +51,19 @@ public class DeviceTagYamlSerializer {
     }
 
     static @NotNull ObjectMapper createDefaultMapper() {
-        final YAMLFactory yamlFactory = YAMLFactory.builder()
-                .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
-                .build();
-        return new ObjectMapper(yamlFactory)
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+        return new ObjectMapper(YAMLFactory.builder()
+                        .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
+                        .build())
+                .setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
                 .configure(SerializationFeature.INDENT_OUTPUT, false)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     public byte @NotNull [] serialize(final @NotNull List<DeviceTagRow> rows) throws IOException {
-        final DeviceTagJsonSerializer.FileDto dto = DeviceTagJsonSerializer.toFileDto(rows);
-        return mapper.writeValueAsBytes(dto);
+        return mapper.writeValueAsBytes(toFileDto(rows));
     }
 
     public @NotNull List<DeviceTagRow> deserialize(final byte @NotNull [] data) throws IOException {
-        final DeviceTagJsonSerializer.FileDto dto = mapper.readValue(data, DeviceTagJsonSerializer.FileDto.class);
-        return DeviceTagJsonSerializer.fromFileDto(dto);
+        return fromFileDto(mapper.readValue(data, FileDto.class));
     }
 }

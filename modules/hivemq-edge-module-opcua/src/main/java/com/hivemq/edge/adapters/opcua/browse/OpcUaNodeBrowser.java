@@ -46,8 +46,6 @@ import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Browses an OPC-UA address space and collects variable nodes with their attributes.
@@ -55,7 +53,6 @@ import org.slf4j.LoggerFactory;
  */
 public class OpcUaNodeBrowser {
 
-    private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaNodeBrowser.class);
     private static final long TIMEOUT_SECONDS = 120;
     private static final int READ_BATCH_SIZE = 100;
 
@@ -262,7 +259,7 @@ public class OpcUaNodeBrowser {
     // --- Attribute resolution ---
 
     private @NotNull String resolveDataTypeName(final @NotNull DataValue dataTypeValue) {
-        if (dataTypeValue.getValue().getValue() instanceof NodeId dataTypeNodeId) {
+        if (dataTypeValue.getValue().getValue() instanceof final NodeId dataTypeNodeId) {
             // Try to resolve the data type NodeId to a human-readable name
             return resolveBuiltinDataTypeName(dataTypeNodeId);
         }
@@ -273,7 +270,7 @@ public class OpcUaNodeBrowser {
         // Common OPC-UA built-in data types (namespace 0)
         if (dataTypeNodeId.getNamespaceIndex().intValue() == 0) {
             final Object id = dataTypeNodeId.getIdentifier();
-            if (id instanceof Number num) {
+            if (id instanceof final Number num) {
                 return switch (num.intValue()) {
                     case 1 -> "Boolean";
                     case 2 -> "SByte";
@@ -303,7 +300,7 @@ public class OpcUaNodeBrowser {
     }
 
     private @NotNull String resolveAccessLevel(final @NotNull DataValue accessLevelValue) {
-        if (accessLevelValue.getValue().getValue() instanceof UByte accessByte) {
+        if (accessLevelValue.getValue().getValue() instanceof final UByte accessByte) {
             final int level = accessByte.intValue();
             final boolean readable = (level & 0x01) != 0;
             final boolean writable = (level & 0x02) != 0;
@@ -316,7 +313,7 @@ public class OpcUaNodeBrowser {
     }
 
     private @Nullable String resolveDescription(final @NotNull DataValue descriptionValue) {
-        if (descriptionValue.getValue().getValue() instanceof LocalizedText text) {
+        if (descriptionValue.getValue().getValue() instanceof final LocalizedText text) {
             return text.getText();
         }
         return null;
