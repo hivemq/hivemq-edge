@@ -16,7 +16,6 @@
 package com.hivemq.api.auth;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Splitter;
 import com.hivemq.api.auth.handler.AuthenticationResult;
 import com.hivemq.api.auth.handler.impl.AbstractHeaderAuthenticationHandler;
 import com.hivemq.api.auth.provider.IUsernameRolesProvider;
@@ -41,8 +40,8 @@ public class BasicAuthenticationHandler extends AbstractHeaderAuthenticationHand
 
     public static String getBasicAuthenticationHeaderValue(
             final @NotNull String username, final @NotNull String password) {
-        final var valueToEncode = username + ":" + password;
-        return "Basic " + Base64.getEncoder().encodeToString(valueToEncode.getBytes(StandardCharsets.UTF_8));
+        final var usernamePasswordDecodedString = username + SEP + password;
+        return METHOD + " " + Base64.getEncoder().encodeToString(usernamePasswordDecodedString.getBytes());
     }
 
     public BasicAuthenticationHandler(final @NotNull IUsernameRolesProvider provider) {
@@ -53,10 +52,11 @@ public class BasicAuthenticationHandler extends AbstractHeaderAuthenticationHand
     protected AuthenticationResult authenticateInternal(
             final @NotNull ContainerRequestContext requestContext, final @NotNull String authValue) {
         return parseValue(authValue)
-                .flatMap(supplied -> provider.findByUsernameAndPassword(supplied.getUserName(), supplied.getPassword()))
-                .map(record -> {
+                .flatMap(usernamePasswordRoles -> provider.findByUsernameAndPassword(
+                        usernamePasswordRoles.getUserName(), usernamePasswordRoles.getPassword()))
+                .map(usernameRoles -> {
                     final var result = AuthenticationResult.allowed(this);
-                    result.setPrincipal(record.toPrincipal());
+                    result.setPrincipal(usernameRoles.toPrincipal());
                     return result;
                 })
                 .orElseGet(() -> AuthenticationResult.denied(this));
@@ -73,17 +73,22 @@ public class BasicAuthenticationHandler extends AbstractHeaderAuthenticationHand
 
     protected static Optional<UsernamePasswordRoles> parseValue(final @NotNull String headerValue) {
         Preconditions.checkNotNull(headerValue);
-        final var userPass = new String(Base64.getDecoder().decode(headerValue.trim()), StandardCharsets.UTF_8);
-        if (userPass.contains(SEP)) {
-            final var userNamePassword = Splitter.on(SEP).splitToList(userPass);
-            if (userNamePassword.size() == 2) {
-                final var usernamePassword = new UsernamePasswordRoles();
-                usernamePassword.setUserName(userNamePassword.get(0));
-                usernamePassword.setPassword(userNamePassword.get(1).getBytes(StandardCharsets.UTF_8));
-                return Optional.of(usernamePassword);
-            }
+
+        final var usernamePasswordDecodedString = new String(Base64.getDecoder().decode(headerValue.trim()));
+        if (!usernamePasswordDecodedString.contains(SEP)) {
+            return Optional.empty();
         }
-        return Optional.empty();
+
+        final var usernamePasswordStringList = usernamePasswordDecodedString.split(SEP);
+        if (usernamePasswordStringList.length != 2) {
+            return Optional.empty();
+        }
+
+        final var usernamePassword = new UsernamePasswordRoles();
+        usernamePassword.setUserName(usernamePasswordStringList[0]);
+        usernamePassword.setPassword(usernamePasswordStringList[1].getBytes(StandardCharsets.UTF_8));
+
+        return Optional.of(usernamePassword);
     }
 
     @Override

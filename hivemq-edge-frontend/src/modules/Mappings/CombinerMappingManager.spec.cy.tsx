@@ -231,6 +231,26 @@ describe('CombinerMappingManager', () => {
     cy.get('[role="status"] > div').should('have.attr', 'data-status', 'success')
   })
 
+  it.skip('should capture native form screenshot for documentation', () => {
+    cy.mountWithProviders(<CombinerMappingManager />, {
+      routerProps: { initialEntries: [INITIAL_ENTRY] },
+      wrapper: getWrapperWith('idCombiner', [{ ...MOCK_NODE_COMBINER, position: { x: 0, y: 0 } }]),
+    })
+
+    // Open drawer
+    cy.getByTestId('test-reactflow-trigger-button').click()
+    cy.getByTestId('data-pathname').should('have.text', '/node/idCombiner')
+
+    // Toggle to native form
+    cy.get('label[for="modal-native-switch"]').click()
+
+    // Screenshot: Native RJSF form showing flat vertical list of all fields
+    cy.screenshot('combiner-native-form-flat', {
+      overwrite: true,
+      capture: 'viewport',
+    })
+  })
+
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(<CombinerMappingManager />, {

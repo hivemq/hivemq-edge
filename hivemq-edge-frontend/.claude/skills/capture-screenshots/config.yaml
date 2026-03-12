@@ -1,0 +1,15 @@
+storage:
+  pr: .tasks-log/screenshots/
+  docs: docs/assets/screenshots/
+  blog: .tasks-log/screenshots/blog/
+
+screenshot:
+  viewport_width: 1400
+  viewport_height: 1016
+  format: png
+  max_size_kb: 200
+  overwrite: true
+
+version: '1.0.0'
+last_updated: '2026-02-20'
+maintainer: 'Edge Frontend Team'
