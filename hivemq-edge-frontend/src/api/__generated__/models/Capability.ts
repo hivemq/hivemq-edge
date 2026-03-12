@@ -29,7 +29,6 @@ export namespace Capability {
     export enum id {
         CONFIG_WRITEABLE = 'config-writeable',
         BI_DIRECTIONAL_PROTOCOL_ADAPTERS = 'bi-directional protocol adapters',
-        CONTROL_PLANE_CONNECTIVITY = 'control-plane-connectivity',
         DATA_HUB = 'data-hub',
         MQTT_PERSISTENCE = 'mqtt-persistence',
         PULSE_ASSET_MANAGEMENT = 'pulse-asset-management',
