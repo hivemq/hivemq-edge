@@ -542,8 +542,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         if (clientOpt.isEmpty()) {
             throw new BrowseException("Browse failed: Client not connected");
         }
-        final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(clientOpt.get(), adapterId);
-        return browser.browse(rootNodeId, maxDepth);
+        return new OpcUaNodeBrowser(clientOpt.get(), adapterId).browse(rootNodeId, maxDepth);
     }
 
     @Override

@@ -155,7 +155,6 @@ public class DeviceTagImporter {
         for (int i = 0; i < rows.size(); i++) {
             final DeviceTagRow row = rows.get(i);
             final int rowNum = i + 1;
-
             if ("*".equals(row.getTagName())
                     && (row.getTagNameDefault() == null
                             || row.getTagNameDefault().isEmpty())) {
@@ -166,7 +165,6 @@ public class DeviceTagImporter {
                         WILDCARD_NO_DEFAULT,
                         "Wildcard '*' used for tag_name but no default value available"));
             }
-
             if ("*".equals(row.getNorthboundTopic())
                     && (row.getNorthboundTopicDefault() == null
                             || row.getNorthboundTopicDefault().isEmpty())) {
@@ -177,7 +175,6 @@ public class DeviceTagImporter {
                         WILDCARD_NO_DEFAULT,
                         "Wildcard '*' used for northbound_topic but no default value available"));
             }
-
             if ("*".equals(row.getSouthboundTopic())
                     && (row.getSouthboundTopicDefault() == null
                             || row.getSouthboundTopicDefault().isEmpty())) {

@@ -25,11 +25,11 @@ import com.hivemq.edge.adapters.browse.model.FieldMappingInstruction;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Serializes and deserializes {@link DeviceTagRow} lists to/from JSON format using Jackson.
@@ -51,38 +51,20 @@ public class DeviceTagJsonSerializer {
 
     static @NotNull ObjectMapper createDefaultMapper() {
         return new ObjectMapper()
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+                .setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
                 .configure(SerializationFeature.INDENT_OUTPUT, true)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
-    public byte @NotNull [] serialize(final @NotNull List<DeviceTagRow> rows) throws IOException {
-        final FileDto dto = toFileDto(rows);
-        return mapper.writeValueAsBytes(dto);
-    }
-
-    public @NotNull List<DeviceTagRow> deserialize(final byte @NotNull [] data) throws IOException {
-        final FileDto dto = mapper.readValue(data, FileDto.class);
-        return fromFileDto(dto);
-    }
-
-    // --- DTO conversion ---
-
     static @NotNull FileDto toFileDto(final @NotNull List<DeviceTagRow> rows) {
-        final List<RowDto> rowDtos = new ArrayList<>();
-        for (final DeviceTagRow row : rows) {
-            rowDtos.add(toRowDto(row));
-        }
-        return new FileDto(rowDtos);
+        return new FileDto(rows.stream().map(DeviceTagJsonSerializer::toRowDto).toList());
     }
 
     static @NotNull List<DeviceTagRow> fromFileDto(final @NotNull FileDto dto) {
-        if (dto.rows == null) return List.of();
-        final List<DeviceTagRow> rows = new ArrayList<>();
-        for (final RowDto rowDto : dto.rows) {
-            rows.add(fromRowDto(rowDto));
+        if (dto.rows == null) {
+            return List.of();
         }
-        return rows;
+        return dto.rows.stream().map(DeviceTagJsonSerializer::fromRowDto).toList();
     }
 
     private static @NotNull RowDto toRowDto(final @NotNull DeviceTagRow row) {
@@ -148,24 +130,7 @@ public class DeviceTagJsonSerializer {
     }
 
     private static @NotNull DeviceTagRow fromRowDto(final @NotNull RowDto rowDto) {
-        final DeviceTagRow.Builder builder = DeviceTagRow.builder();
-
-        if (rowDto.node != null) {
-            builder.nodePath(rowDto.node.nodePath);
-            builder.namespaceUri(rowDto.node.namespaceUri);
-            builder.namespaceIndex(rowDto.node.namespaceIndex);
-            builder.nodeId(rowDto.node.nodeId);
-            builder.dataType(rowDto.node.dataType);
-            builder.accessLevel(rowDto.node.accessLevel);
-            builder.nodeDescription(rowDto.node.nodeDescription);
-        }
-
-        if (rowDto.tag != null) {
-            builder.tagName(rowDto.tag.tagName);
-            builder.tagNameDefault(rowDto.tag.tagNameDefault);
-            builder.tagDescription(rowDto.tag.tagDescription);
-        }
-
+        final DeviceTagRow.Builder builder = getBuilder(rowDto);
         if (rowDto.northbound != null) {
             builder.northboundTopic(rowDto.northbound.topic);
             builder.northboundTopicDefault(rowDto.northbound.topicDefault);
@@ -176,7 +141,6 @@ public class DeviceTagJsonSerializer {
             builder.includeMetadata(rowDto.northbound.includeMetadata);
             builder.mqttUserProperties(rowDto.northbound.mqttUserProperties);
         }
-
         if (rowDto.southbound != null) {
             builder.southboundTopic(rowDto.southbound.topic);
             builder.southboundTopicDefault(rowDto.southbound.topicDefault);
@@ -186,28 +150,53 @@ public class DeviceTagJsonSerializer {
                         .toList());
             }
         }
-
         return builder.build();
     }
 
-    // --- DTOs for JSON structure ---
+    private static DeviceTagRow.@NonNull Builder getBuilder(final @NonNull RowDto rowDto) {
+        final DeviceTagRow.Builder builder = DeviceTagRow.builder();
+        if (rowDto.node != null) {
+            builder.nodePath(rowDto.node.nodePath);
+            builder.namespaceUri(rowDto.node.namespaceUri);
+            builder.namespaceIndex(rowDto.node.namespaceIndex);
+            builder.nodeId(rowDto.node.nodeId);
+            builder.dataType(rowDto.node.dataType);
+            builder.accessLevel(rowDto.node.accessLevel);
+            builder.nodeDescription(rowDto.node.nodeDescription);
+        }
+        if (rowDto.tag != null) {
+            builder.tagName(rowDto.tag.tagName);
+            builder.tagNameDefault(rowDto.tag.tagNameDefault);
+            builder.tagDescription(rowDto.tag.tagDescription);
+        }
+        return builder;
+    }
+
+    public byte @NotNull [] serialize(final @NotNull List<DeviceTagRow> rows) throws IOException {
+        return mapper.writeValueAsBytes(toFileDto(rows));
+    }
+
+    public @NotNull List<DeviceTagRow> deserialize(final byte @NotNull [] data) throws IOException {
+        return fromFileDto(mapper.readValue(data, FileDto.class));
+    }
 
     static class FileDto {
         @JsonProperty("rows")
+        @Nullable
         List<RowDto> rows;
 
-        FileDto() {}
-
-        FileDto(final List<RowDto> rows) {
+        FileDto(final @Nullable List<RowDto> rows) {
             this.rows = rows;
         }
     }
 
     static class RowDto {
         @JsonProperty("node")
+        @Nullable
         NodeDto node;
 
         @JsonProperty("tag")
+        @Nullable
         TagDto tag;
 
         @JsonProperty("northbound")
@@ -221,80 +210,102 @@ public class DeviceTagJsonSerializer {
 
     static class NodeDto {
         @JsonProperty("node_path")
+        @Nullable
         String nodePath;
 
         @JsonProperty("namespace_uri")
+        @Nullable
         String namespaceUri;
 
         @JsonProperty("namespace_index")
         int namespaceIndex;
 
         @JsonProperty("node_id")
+        @Nullable
         String nodeId;
 
         @JsonProperty("data_type")
+        @Nullable
         String dataType;
 
         @JsonProperty("access_level")
+        @Nullable
         String accessLevel;
 
         @JsonProperty("node_description")
+        @Nullable
         String nodeDescription;
     }
 
     static class TagDto {
         @JsonProperty("tag_name")
+        @Nullable
         String tagName;
 
         @JsonProperty("tag_name_default")
+        @Nullable
         String tagNameDefault;
 
         @JsonProperty("tag_description")
+        @Nullable
         String tagDescription;
     }
 
     static class NorthboundDto {
         @JsonProperty("topic")
+        @Nullable
         String topic;
 
         @JsonProperty("topic_default")
+        @Nullable
         String topicDefault;
 
         @JsonProperty("max_qos")
+        @Nullable
         Integer maxQos;
 
         @JsonProperty("message_expiry_interval")
+        @Nullable
         Long messageExpiryInterval;
 
         @JsonProperty("include_timestamp")
+        @Nullable
         Boolean includeTimestamp;
 
         @JsonProperty("include_tag_names")
+        @Nullable
         Boolean includeTagNames;
 
         @JsonProperty("include_metadata")
+        @Nullable
         Boolean includeMetadata;
 
         @JsonProperty("mqtt_user_properties")
+        @Nullable
         Map<String, String> mqttUserProperties;
     }
 
     static class SouthboundDto {
         @JsonProperty("topic")
+        @Nullable
         String topic;
 
         @JsonProperty("topic_default")
+        @Nullable
         String topicDefault;
 
         @JsonProperty("field_mapping")
+        @Nullable
         List<FieldMappingDto> fieldMapping;
     }
 
     static class FieldMappingDto {
         @JsonProperty("source")
+        @NotNull
         String source;
 
         @JsonProperty("destination")
+        @NotNull
         String destination;
     }
 }

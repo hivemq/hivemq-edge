@@ -15,6 +15,8 @@
  */
 package com.hivemq.edge.adapters.browse.rest;
 
+import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.discovery.BrowseException;
@@ -35,7 +37,6 @@ import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -73,18 +74,10 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
 
     private static @NotNull String resolveFormat(final @Nullable String accept) {
         if (accept == null || accept.isEmpty() || accept.contains("*/*")) {
-            return DeviceTagBrowsingApi.MEDIA_TYPE_CSV;
-        }
-        if (accept.contains("json")) {
-            return MediaType.APPLICATION_JSON;
-        }
-        if (accept.contains("yaml")) {
-            return MEDIA_TYPE_YAML;
-        }
-        if (accept.contains("csv") || accept.contains("text")) {
             return MEDIA_TYPE_CSV;
         }
-        return DeviceTagBrowsingApi.MEDIA_TYPE_CSV;
+        final String type = accept.toLowerCase();
+        return type.contains("json") ? APPLICATION_JSON : type.contains("yaml") ? MEDIA_TYPE_YAML : MEDIA_TYPE_CSV;
     }
 
     @Override
@@ -93,14 +86,12 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
             final @Nullable String rootNodeId,
             final int maxDepth,
             final @NotNull String accept) {
-
         // Lookup adapter
         final Optional<ProtocolAdapterWrapper> wrapperOpt =
                 protocolAdapterManager.getProtocolAdapterWrapperByAdapterId(adapterId);
         if (wrapperOpt.isEmpty()) {
             return errorResponse(Response.Status.NOT_FOUND, "Adapter '" + adapterId + "' not found");
         }
-
         final ProtocolAdapter adapter = wrapperOpt.get().getAdapter();
         if (!(adapter instanceof final BulkTagBrowser browser)) {
             return errorResponse(
@@ -128,13 +119,12 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         final String extension;
         final String mediaType;
         final byte[] data;
-
         try {
             switch (format) {
-                case MediaType.APPLICATION_JSON -> {
+                case APPLICATION_JSON -> {
                     data = jsonSerializer.serialize(rows);
                     extension = "json";
-                    mediaType = MediaType.APPLICATION_JSON;
+                    mediaType = APPLICATION_JSON;
                 }
                 case MEDIA_TYPE_YAML -> {
                     data = yamlSerializer.serialize(rows);
@@ -151,15 +141,12 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
             logger.error("Failed to serialize browse results for adapter '{}'", adapterId, e);
             return errorResponse(Response.Status.INTERNAL_SERVER_ERROR, "Serialization failed: " + e.getMessage());
         }
-
         return Response.ok(data, mediaType)
                 .header(
                         "Content-Disposition",
                         "attachment; filename=\"" + adapterId + "-device-tags." + extension + "\"")
                 .build();
     }
-
-    // --- Helpers ---
 
     @Override
     public @NotNull Response importTags(
@@ -168,7 +155,6 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
             final boolean validateNodes,
             final @Nullable String contentType,
             final byte @NotNull [] body) {
-
         // Lookup adapter
         final Optional<ProtocolAdapterWrapper> wrapperOpt =
                 protocolAdapterManager.getProtocolAdapterWrapperByAdapterId(adapterId);
@@ -202,7 +188,7 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
                         .entity(errorBody(
                                 "Unsupported Content-Type",
                                 "Supported types: text/csv, application/json, application/yaml"))
-                        .type(MediaType.APPLICATION_JSON)
+                        .type(APPLICATION_JSON)
                         .build();
             }
         } catch (final Exception e) {
@@ -213,7 +199,7 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         // Perform import
         try {
             final ImportResult result = importer.doImport(rows, importMode, adapterId);
-            return Response.ok(objectMapper.writeValueAsString(result), MediaType.APPLICATION_JSON)
+            return Response.ok(objectMapper.writeValueAsString(result), APPLICATION_JSON)
                     .build();
         } catch (final DeviceTagImporterException e) {
             return validationErrorResponse(e.getErrors());
@@ -226,7 +212,7 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
     private @NotNull Response errorResponse(final @NotNull Response.Status status, final @NotNull String detail) {
         return Response.status(status)
                 .entity(errorBody(status.getReasonPhrase(), detail))
-                .type(MediaType.APPLICATION_JSON)
+                .type(APPLICATION_JSON)
                 .build();
     }
 
@@ -238,12 +224,12 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         try {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(objectMapper.writeValueAsString(body))
-                    .type(MediaType.APPLICATION_JSON)
+                    .type(APPLICATION_JSON)
                     .build();
         } catch (final Exception e) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity("{\"title\":\"Validation Failed\"}")
-                    .type(MediaType.APPLICATION_JSON)
+                    .type(APPLICATION_JSON)
                     .build();
         }
     }

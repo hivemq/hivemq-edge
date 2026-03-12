@@ -47,9 +47,6 @@ import org.jetbrains.annotations.Nullable;
 @Singleton
 public class DeviceTagCsvSerializer {
 
-    @Inject
-    public DeviceTagCsvSerializer() {}
-
     // Column names in canonical order
     static final String COL_NODE_PATH = "node_path";
     static final String COL_NAMESPACE_URI = "namespace_uri";
@@ -72,7 +69,6 @@ public class DeviceTagCsvSerializer {
     static final String COL_INCLUDE_TAG_NAMES = "include_tag_names";
     static final String COL_INCLUDE_METADATA = "include_metadata";
     static final String COL_MQTT_USER_PROPERTIES = "mqtt_user_properties";
-
     private static final String[] HEADER = {
         COL_NODE_PATH,
         COL_NAMESPACE_URI,
@@ -96,7 +92,6 @@ public class DeviceTagCsvSerializer {
         COL_INCLUDE_METADATA,
         COL_MQTT_USER_PROPERTIES
     };
-
     private static final CSVFormat CSV_FORMAT = CSVFormat.RFC4180
             .builder()
             .setHeader()
@@ -104,6 +99,116 @@ public class DeviceTagCsvSerializer {
             .setIgnoreHeaderCase(true)
             .setTrim(true)
             .build();
+
+    @Inject
+    public DeviceTagCsvSerializer() {}
+
+    static @Nullable String encodeFieldMapping(final @Nullable List<FieldMappingInstruction> mappings) {
+        if (mappings == null || mappings.isEmpty()) {
+            return null;
+        }
+        final StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < mappings.size(); i++) {
+            if (i > 0) {
+                sb.append(';');
+            }
+            sb.append(mappings.get(i).source())
+                    .append("->")
+                    .append(mappings.get(i).destination());
+        }
+        return sb.toString();
+    }
+
+    static @Nullable List<FieldMappingInstruction> decodeFieldMapping(final @Nullable String encoded) {
+        if (encoded == null || encoded.isEmpty()) {
+            return null;
+        }
+        final List<FieldMappingInstruction> result = new ArrayList<>();
+        for (final String pair : encoded.split(";")) {
+            final String trimmed = pair.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            final int arrowIdx = trimmed.indexOf("->");
+            if (arrowIdx < 0) {
+                throw new IllegalArgumentException(
+                        "Invalid field mapping format: '" + trimmed + "'. Expected 'source->destination'.");
+            }
+            result.add(new FieldMappingInstruction(
+                    trimmed.substring(0, arrowIdx).trim(),
+                    trimmed.substring(arrowIdx + 2).trim()));
+        }
+        return result.isEmpty() ? null : result;
+    }
+
+    static @Nullable String encodeUserProperties(final @Nullable Map<String, String> properties) {
+        if (properties == null || properties.isEmpty()) {
+            return null;
+        }
+        final StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (final Map.Entry<String, String> entry : properties.entrySet()) {
+            if (!first) {
+                sb.append(';');
+            }
+            sb.append(entry.getKey()).append('=').append(entry.getValue());
+            first = false;
+        }
+        return sb.toString();
+    }
+
+    static @Nullable Map<String, String> decodeUserProperties(final @Nullable String encoded) {
+        if (encoded == null || encoded.isEmpty()) {
+            return null;
+        }
+        final Map<String, String> result = new LinkedHashMap<>();
+        for (final String pair : encoded.split(";")) {
+            final String trimmed = pair.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            final int eqIdx = trimmed.indexOf('=');
+            if (eqIdx < 0) {
+                throw new IllegalArgumentException(
+                        "Invalid user property format: '" + trimmed + "'. Expected 'key=value'.");
+            }
+            result.put(
+                    trimmed.substring(0, eqIdx).trim(),
+                    trimmed.substring(eqIdx + 1).trim());
+        }
+        return result.isEmpty() ? null : result;
+    }
+
+    private static @Nullable String getOptional(final @NotNull CSVRecord record, final @NotNull String column) {
+        if (!record.isMapped(column)) {
+            return null;
+        }
+        final String value = record.get(column);
+        return (value == null || value.isEmpty()) ? null : value;
+    }
+
+    private static int getIntOrZero(final @NotNull CSVRecord record, final @NotNull String column) {
+        final String value = getOptional(record, column);
+        return value != null ? Integer.parseInt(value) : 0;
+    }
+
+    private static @Nullable Integer getIntegerOrNull(final @NotNull CSVRecord record, final @NotNull String column) {
+        final String value = getOptional(record, column);
+        if (value == null) {
+            return null;
+        }
+        return value != null ? Integer.parseInt(value) : null;
+    }
+
+    private static @Nullable Long getLongOrNull(final @NotNull CSVRecord record, final @NotNull String column) {
+        final String value = getOptional(record, column);
+        return value != null ? Long.parseLong(value) : null;
+    }
+
+    private static @Nullable Boolean getBooleanOrNull(final @NotNull CSVRecord record, final @NotNull String column) {
+        final String value = getOptional(record, column);
+        return value != null ? Boolean.parseBoolean(value) : null;
+    }
 
     public byte @NotNull [] serialize(final @NotNull List<DeviceTagRow> rows) throws IOException {
         final List<DeviceTagRow> sorted = rows.stream()
@@ -152,17 +257,14 @@ public class DeviceTagCsvSerializer {
         try (final InputStreamReader reader =
                         new InputStreamReader(new ByteArrayInputStream(csvData), StandardCharsets.UTF_8);
                 final CSVParser parser = CSV_FORMAT.parse(reader)) {
-
             if (parser.getHeaderMap() == null || parser.getHeaderMap().isEmpty()) {
                 throw new IOException("CSV file is missing header row");
             }
-
             for (final CSVRecord record : parser) {
                 final DeviceTagRow.Builder builder = DeviceTagRow.builder();
-
                 builder.nodePath(getOptional(record, COL_NODE_PATH));
                 builder.namespaceUri(getOptional(record, COL_NAMESPACE_URI));
-                builder.namespaceIndex(getIntOrDefault(record, COL_NAMESPACE_INDEX, 0));
+                builder.namespaceIndex(getIntOrZero(record, COL_NAMESPACE_INDEX));
                 builder.nodeId(getOptional(record, COL_NODE_ID));
                 builder.dataType(getOptional(record, COL_DATA_TYPE));
                 builder.accessLevel(getOptional(record, COL_ACCESS_LEVEL));
@@ -181,115 +283,9 @@ public class DeviceTagCsvSerializer {
                 builder.includeTagNames(getBooleanOrNull(record, COL_INCLUDE_TAG_NAMES));
                 builder.includeMetadata(getBooleanOrNull(record, COL_INCLUDE_METADATA));
                 builder.mqttUserProperties(decodeUserProperties(getOptional(record, COL_MQTT_USER_PROPERTIES)));
-
                 rows.add(builder.build());
             }
         }
         return rows;
-    }
-
-    // --- Compact encoding helpers ---
-
-    static @Nullable String encodeFieldMapping(final @Nullable List<FieldMappingInstruction> mappings) {
-        if (mappings == null || mappings.isEmpty()) {
-            return null;
-        }
-        final StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < mappings.size(); i++) {
-            if (i > 0) sb.append(';');
-            sb.append(mappings.get(i).source())
-                    .append("->")
-                    .append(mappings.get(i).destination());
-        }
-        return sb.toString();
-    }
-
-    static @Nullable List<FieldMappingInstruction> decodeFieldMapping(final @Nullable String encoded) {
-        if (encoded == null || encoded.isEmpty()) {
-            return null;
-        }
-        final List<FieldMappingInstruction> result = new ArrayList<>();
-        for (final String pair : encoded.split(";")) {
-            final String trimmed = pair.trim();
-            if (trimmed.isEmpty()) continue;
-            final int arrowIdx = trimmed.indexOf("->");
-            if (arrowIdx < 0) {
-                throw new IllegalArgumentException(
-                        "Invalid field mapping format: '" + trimmed + "'. Expected 'source->destination'.");
-            }
-            result.add(new FieldMappingInstruction(
-                    trimmed.substring(0, arrowIdx).trim(),
-                    trimmed.substring(arrowIdx + 2).trim()));
-        }
-        return result.isEmpty() ? null : result;
-    }
-
-    static @Nullable String encodeUserProperties(final @Nullable Map<String, String> properties) {
-        if (properties == null || properties.isEmpty()) {
-            return null;
-        }
-        final StringBuilder sb = new StringBuilder();
-        boolean first = true;
-        for (final Map.Entry<String, String> entry : properties.entrySet()) {
-            if (!first) sb.append(';');
-            sb.append(entry.getKey()).append('=').append(entry.getValue());
-            first = false;
-        }
-        return sb.toString();
-    }
-
-    static @Nullable Map<String, String> decodeUserProperties(final @Nullable String encoded) {
-        if (encoded == null || encoded.isEmpty()) {
-            return null;
-        }
-        final Map<String, String> result = new LinkedHashMap<>();
-        for (final String pair : encoded.split(";")) {
-            final String trimmed = pair.trim();
-            if (trimmed.isEmpty()) continue;
-            final int eqIdx = trimmed.indexOf('=');
-            if (eqIdx < 0) {
-                throw new IllegalArgumentException(
-                        "Invalid user property format: '" + trimmed + "'. Expected 'key=value'.");
-            }
-            result.put(
-                    trimmed.substring(0, eqIdx).trim(),
-                    trimmed.substring(eqIdx + 1).trim());
-        }
-        return result.isEmpty() ? null : result;
-    }
-
-    // --- CSV record helpers ---
-
-    private static @Nullable String getOptional(final @NotNull CSVRecord record, final @NotNull String column) {
-        if (!record.isMapped(column)) {
-            return null;
-        }
-        final String value = record.get(column);
-        return (value == null || value.isEmpty()) ? null : value;
-    }
-
-    private static int getIntOrDefault(
-            final @NotNull CSVRecord record, final @NotNull String column, final int defaultValue) {
-        final String value = getOptional(record, column);
-        if (value == null) return defaultValue;
-        return Integer.parseInt(value);
-    }
-
-    private static @Nullable Integer getIntegerOrNull(final @NotNull CSVRecord record, final @NotNull String column) {
-        final String value = getOptional(record, column);
-        if (value == null) return null;
-        return Integer.parseInt(value);
-    }
-
-    private static @Nullable Long getLongOrNull(final @NotNull CSVRecord record, final @NotNull String column) {
-        final String value = getOptional(record, column);
-        if (value == null) return null;
-        return Long.parseLong(value);
-    }
-
-    private static @Nullable Boolean getBooleanOrNull(final @NotNull CSVRecord record, final @NotNull String column) {
-        final String value = getOptional(record, column);
-        if (value == null) return null;
-        return Boolean.parseBoolean(value);
     }
 }
