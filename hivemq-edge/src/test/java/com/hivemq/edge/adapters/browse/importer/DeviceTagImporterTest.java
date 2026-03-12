@@ -35,6 +35,7 @@ import com.hivemq.edge.adapters.browse.model.ImportMode;
 import com.hivemq.edge.adapters.browse.model.ImportResult;
 import com.hivemq.edge.adapters.browse.model.TagAction;
 import com.hivemq.edge.adapters.browse.validate.DeviceTagValidator;
+import com.hivemq.edge.adapters.browse.validate.ValidationError;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -323,7 +324,7 @@ class DeviceTagImporterTest {
                 .satisfies(ex -> {
                     final var importEx = (DeviceTagImporterException) ex;
                     assertThat(importEx.getErrors())
-                            .anySatisfy(e -> assertThat(e.code()).isEqualTo("WILDCARD_NO_DEFAULT"));
+                            .anySatisfy(e -> assertThat(e.code()).isEqualTo(ValidationError.Code.WILDCARD_NO_DEFAULT));
                 });
     }
 
@@ -535,7 +536,7 @@ class DeviceTagImporterTest {
                 .satisfies(ex -> {
                     final var importEx = (DeviceTagImporterException) ex;
                     assertThat(importEx.getErrors())
-                            .anySatisfy(e -> assertThat(e.code()).isEqualTo("UPDATE_FAILED"));
+                            .anySatisfy(e -> assertThat(e.code()).isEqualTo(ValidationError.Code.UPDATE_FAILED));
                 });
     }
 }
