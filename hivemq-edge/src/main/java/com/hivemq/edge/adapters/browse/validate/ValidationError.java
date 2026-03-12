@@ -28,10 +28,12 @@ import org.jetbrains.annotations.Nullable;
  * @param code    machine-readable error code (e.g. {@code INVALID_TAG_NAME})
  * @param message human-readable description of the problem
  */
-public record ValidationError(@JsonProperty("row") @Nullable Integer row,
-                              @JsonProperty("column") @Nullable String column,
-                              @JsonProperty("value") @Nullable String value, @JsonProperty("code") @NotNull Code code,
-                              @JsonProperty("message") @NotNull String message) {
+public record ValidationError(
+        @JsonProperty("row") @Nullable Integer row,
+        @JsonProperty("column") @Nullable String column,
+        @JsonProperty("value") @Nullable String value,
+        @JsonProperty("code") @NotNull Code code,
+        @JsonProperty("message") @NotNull String message) {
 
     public enum Code {
         ADAPTER_NOT_FOUND,

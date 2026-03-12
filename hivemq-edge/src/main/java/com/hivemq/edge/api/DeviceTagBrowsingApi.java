@@ -62,12 +62,15 @@ public interface DeviceTagBrowsingApi {
             value = "Browse device tags",
             notes = "Browse the device address space and return discovered nodes as a downloadable file.",
             tags = {"Protocol Adapters"})
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 404, message = "Adapter not found"),
-            @ApiResponse(code = 409, message = "Adapter does not support bulk tag browsing or browse failed"),
-            @ApiResponse(code = 504, message = "Browse timed out")})
-    @NotNull Response browse(
+    @ApiResponses(
+            value = {
+                @ApiResponse(code = 200, message = "Success"),
+                @ApiResponse(code = 404, message = "Adapter not found"),
+                @ApiResponse(code = 409, message = "Adapter does not support bulk tag browsing or browse failed"),
+                @ApiResponse(code = 504, message = "Browse timed out")
+            })
+    @NotNull
+    Response browse(
             @PathParam("adapterId") @ApiParam("The adapter ID.") @NotNull String adapterId,
             @QueryParam("rootNodeId") @ApiParam("Optional root node ID.") @Nullable String rootNodeId,
             @QueryParam("maxDepth") @DefaultValue("0") @ApiParam("Max browse depth (0 = unlimited).") int maxDepth,
@@ -92,15 +95,20 @@ public interface DeviceTagBrowsingApi {
             value = "Import device tags",
             notes = "Import device tags and mappings from a file.",
             tags = {"Protocol Adapters"})
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 400, message = "Invalid file or validation errors"),
-            @ApiResponse(code = 404, message = "Adapter not found"),
-            @ApiResponse(code = 415, message = "Unsupported media type")})
-    @NotNull Response importTags(
+    @ApiResponses(
+            value = {
+                @ApiResponse(code = 200, message = "Success"),
+                @ApiResponse(code = 400, message = "Invalid file or validation errors"),
+                @ApiResponse(code = 404, message = "Adapter not found"),
+                @ApiResponse(code = 415, message = "Unsupported media type")
+            })
+    @NotNull
+    Response importTags(
             @PathParam("adapterId") @ApiParam("The adapter ID.") @NotNull String adapterId,
-            @QueryParam("mode") @DefaultValue("MERGE_SAFE") @ApiParam("Import conflict-resolution mode.") @NotNull String mode,
-            @QueryParam("validateNodes") @DefaultValue("false") @ApiParam("Validate node existence.") boolean validateNodes,
+            @QueryParam("mode") @DefaultValue("MERGE_SAFE") @ApiParam("Import conflict-resolution mode.") @NotNull
+                    String mode,
+            @QueryParam("validateNodes") @DefaultValue("false") @ApiParam("Validate node existence.")
+                    boolean validateNodes,
             @HeaderParam(HttpHeaders.CONTENT_TYPE) @NotNull String contentType,
             byte @NotNull [] body);
 }

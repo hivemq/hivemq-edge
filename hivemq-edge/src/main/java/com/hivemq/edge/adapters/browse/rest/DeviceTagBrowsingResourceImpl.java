@@ -37,14 +37,13 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @Singleton
 public class DeviceTagBrowsingResourceImpl extends AbstractApi implements DeviceTagBrowsingApi {
@@ -104,8 +103,8 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
 
         final ProtocolAdapter adapter = wrapperOpt.get().getAdapter();
         if (!(adapter instanceof final BulkTagBrowser browser)) {
-            return errorResponse(Response.Status.CONFLICT,
-                    "Adapter '" + adapterId + "' does not support bulk tag browsing");
+            return errorResponse(
+                    Response.Status.CONFLICT, "Adapter '" + adapterId + "' does not support bulk tag browsing");
         }
 
         // Browse
@@ -121,7 +120,8 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         }
 
         // Map to DeviceTagRow
-        final List<DeviceTagRow> rows = nodes.stream().map(DeviceTagRow::fromBrowsedNode).toList();
+        final List<DeviceTagRow> rows =
+                nodes.stream().map(DeviceTagRow::fromBrowsedNode).toList();
 
         // Determine output format
         final String format = resolveFormat(accept);
@@ -153,7 +153,8 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         }
 
         return Response.ok(data, mediaType)
-                .header("Content-Disposition",
+                .header(
+                        "Content-Disposition",
                         "attachment; filename=\"" + adapterId + "-device-tags." + extension + "\"")
                 .build();
     }
@@ -180,10 +181,10 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         try {
             importMode = ImportMode.valueOf(mode);
         } catch (final IllegalArgumentException e) {
-            return errorResponse(Response.Status.BAD_REQUEST,
-                    "Invalid import mode '" +
-                            mode +
-                            "'. Valid values: CREATE, DELETE, OVERWRITE, MERGE_SAFE, MERGE_OVERWRITE");
+            return errorResponse(
+                    Response.Status.BAD_REQUEST,
+                    "Invalid import mode '" + mode
+                            + "'. Valid values: CREATE, DELETE, OVERWRITE, MERGE_SAFE, MERGE_OVERWRITE");
         }
 
         // Deserialize body based on Content-Type
@@ -198,7 +199,8 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
                 rows = csvSerializer.deserialize(body);
             } else {
                 return Response.status(Response.Status.UNSUPPORTED_MEDIA_TYPE)
-                        .entity(errorBody("Unsupported Content-Type",
+                        .entity(errorBody(
+                                "Unsupported Content-Type",
                                 "Supported types: text/csv, application/json, application/yaml"))
                         .type(MediaType.APPLICATION_JSON)
                         .build();
@@ -211,7 +213,8 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         // Perform import
         try {
             final ImportResult result = importer.doImport(rows, importMode, adapterId);
-            return Response.ok(objectMapper.writeValueAsString(result), MediaType.APPLICATION_JSON).build();
+            return Response.ok(objectMapper.writeValueAsString(result), MediaType.APPLICATION_JSON)
+                    .build();
         } catch (final DeviceTagImporterException e) {
             return validationErrorResponse(e.getErrors());
         } catch (final Exception e) {

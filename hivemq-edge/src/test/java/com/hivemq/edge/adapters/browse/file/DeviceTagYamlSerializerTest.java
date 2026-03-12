@@ -15,10 +15,11 @@
  */
 package com.hivemq.edge.adapters.browse.file;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.hivemq.edge.adapters.browse.model.DeviceTagRow;
 import com.hivemq.edge.adapters.browse.model.FieldMappingInstruction;
-import org.junit.jupiter.api.Test;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -28,9 +29,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.junit.jupiter.api.Test;
 
 class DeviceTagYamlSerializerTest {
 
@@ -102,8 +101,11 @@ class DeviceTagYamlSerializerTest {
 
     @Test
     void roundTrip_wildcardPreservation() throws IOException {
-        final DeviceTagRow row =
-                DeviceTagRow.builder().nodeId("ns=0;i=1").tagName("*").tagNameDefault("auto-tag").build();
+        final DeviceTagRow row = DeviceTagRow.builder()
+                .nodeId("ns=0;i=1")
+                .tagName("*")
+                .tagNameDefault("auto-tag")
+                .build();
 
         final byte[] yaml = serializer.serialize(List.of(row));
         final List<DeviceTagRow> result = serializer.deserialize(yaml);

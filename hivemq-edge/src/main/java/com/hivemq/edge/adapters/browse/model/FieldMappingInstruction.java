@@ -23,4 +23,5 @@ import org.jetbrains.annotations.NotNull;
  * @param source      the source field name
  * @param destination the destination field name
  */
-public record FieldMappingInstruction(@NotNull String source, @NotNull String destination) {}
+public record FieldMappingInstruction(
+        @NotNull String source, @NotNull String destination) {}

@@ -69,20 +69,17 @@ class OpcUaNodeBrowserTest {
 
     @Test
     void sanitizePath_stripsLeadingSlash() {
-        assertThat(OpcUaNodeBrowser.sanitizePath("/Data/Static/Int32"))
-                .isEqualTo("data/static/int32");
+        assertThat(OpcUaNodeBrowser.sanitizePath("/Data/Static/Int32")).isEqualTo("data/static/int32");
     }
 
     @Test
     void sanitizePath_handlesNoLeadingSlash() {
-        assertThat(OpcUaNodeBrowser.sanitizePath("Data/Static/Int32"))
-                .isEqualTo("data/static/int32");
+        assertThat(OpcUaNodeBrowser.sanitizePath("Data/Static/Int32")).isEqualTo("data/static/int32");
     }
 
     @Test
     void sanitizePath_sanitizesEachSegment() {
-        assertThat(OpcUaNodeBrowser.sanitizePath("/My Folder/Node Name!"))
-                .isEqualTo("my-folder/node-name");
+        assertThat(OpcUaNodeBrowser.sanitizePath("/My Folder/Node Name!")).isEqualTo("my-folder/node-name");
     }
 
     @Test
@@ -99,9 +96,9 @@ class OpcUaNodeBrowserTest {
 
     @ParameterizedTest
     @CsvSource({
-            "my-opcua, Int32Node, my-opcua-int32node",
-            "adapter1, CamelCase, adapter1-camelcase",
-            "opc, My Node, opc-my-node"
+        "my-opcua, Int32Node, my-opcua-int32node",
+        "adapter1, CamelCase, adapter1-camelcase",
+        "opc, My Node, opc-my-node"
     })
     void generateTagNameDefault(final String adapterId, final String browseName, final String expected) {
         final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(null, adapterId);
@@ -109,10 +106,7 @@ class OpcUaNodeBrowserTest {
     }
 
     @ParameterizedTest
-    @CsvSource({
-            "my-opcua, /Data/Static/Int32, my-opcua/data/static/int32",
-            "adapter1, /Objects, adapter1/objects"
-    })
+    @CsvSource({"my-opcua, /Data/Static/Int32, my-opcua/data/static/int32", "adapter1, /Objects, adapter1/objects"})
     void generateNorthboundTopicDefault(final String adapterId, final String path, final String expected) {
         final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(null, adapterId);
         assertThat(browser.generateNorthboundTopicDefault(path)).isEqualTo(expected);
@@ -120,8 +114,8 @@ class OpcUaNodeBrowserTest {
 
     @ParameterizedTest
     @CsvSource({
-            "my-opcua, /Data/Static/Int32, my-opcua/write/data/static/int32",
-            "adapter1, /Objects, adapter1/write/objects"
+        "my-opcua, /Data/Static/Int32, my-opcua/write/data/static/int32",
+        "adapter1, /Objects, adapter1/write/objects"
     })
     void generateSouthboundTopicDefault(final String adapterId, final String path, final String expected) {
         final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(null, adapterId);
