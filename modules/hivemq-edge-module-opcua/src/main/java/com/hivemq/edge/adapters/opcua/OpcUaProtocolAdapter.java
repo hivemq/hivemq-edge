@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadLocalRandom;
@@ -732,7 +733,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 adapterId,
                 backoffDelayMs);
 
-        final ScheduledFuture<?> future = retryScheduler.schedule(
+        final ScheduledFuture<?> future;
+        try {
+            future = retryScheduler.schedule(
                 () -> {
                     // Check if adapter was stopped before retry executes
                     if (stopped || this.parsedConfig == null || this.moduleServices == null) {
@@ -764,6 +767,14 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 },
                 backoffDelayMs,
                 TimeUnit.MILLISECONDS);
+        } catch (final RejectedExecutionException e) {
+            if (retryScheduler.isShutdown()) {
+                log.debug("OPC UA adapter '{}' retry scheduling rejected, executor is shutting down.", adapterId);
+                return;
+            } else {
+                throw e;
+            }
+        }
 
         // Store future so it can be cancelled if needed
         final ScheduledFuture<?> oldFuture = retryFuture.getAndSet(future);

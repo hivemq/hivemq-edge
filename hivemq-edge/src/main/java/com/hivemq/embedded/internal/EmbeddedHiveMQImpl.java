@@ -35,6 +35,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -113,8 +114,17 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
             if (shutDownFuture == null) {
                 log.info("Closing EmbeddedHiveMQ.");
                 this.desiredState = State.CLOSED;
-                stateChangeExecutor.submit(this::stateChange);
-                shutDownFuture = stateChangeExecutor.submit(stateChangeExecutor::shutdown);
+                try {
+                    stateChangeExecutor.submit(this::stateChange);
+                    shutDownFuture = stateChangeExecutor.submit(stateChangeExecutor::shutdown);
+                } catch (final RejectedExecutionException e) {
+                    if (stateChangeExecutor.isShutdown()) {
+                        log.debug("EmbeddedHiveMQ close task submission rejected, executor is shutting down.");
+                        return;
+                    } else {
+                        throw e;
+                    }
+                }
             }
         }
         shutDownFuture.get();
@@ -266,7 +276,17 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
             desiredState = State.RUNNING;
             final CompletableFuture<Void> future = new CompletableFuture<>();
             startFutures.add(future);
-            stateChangeExecutor.execute(this::stateChange);
+            try {
+                stateChangeExecutor.execute(this::stateChange);
+            } catch (final RejectedExecutionException e) {
+                if (stateChangeExecutor.isShutdown()) {
+                    log.debug("EmbeddedHiveMQ start task submission rejected, executor is shutting down.");
+                    future.completeExceptionally(
+                            new IllegalStateException("EmbeddedHiveMQ executor is shutting down"));
+                } else {
+                    throw e;
+                }
+            }
             return future;
         }
     }
@@ -280,7 +300,17 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
             desiredState = State.STOPPED;
             final CompletableFuture<Void> future = new CompletableFuture<>();
             stopFutures.add(future);
-            stateChangeExecutor.execute(this::stateChange);
+            try {
+                stateChangeExecutor.execute(this::stateChange);
+            } catch (final RejectedExecutionException e) {
+                if (stateChangeExecutor.isShutdown()) {
+                    log.debug("EmbeddedHiveMQ stop task submission rejected, executor is shutting down.");
+                    future.completeExceptionally(
+                            new IllegalStateException("EmbeddedHiveMQ executor is shutting down"));
+                } else {
+                    throw e;
+                }
+            }
             return future;
         }
     }
