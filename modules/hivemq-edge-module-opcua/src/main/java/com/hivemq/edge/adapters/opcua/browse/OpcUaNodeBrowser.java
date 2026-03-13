@@ -310,7 +310,7 @@ public class OpcUaNodeBrowser {
 
     @NotNull
     String generateTagNameDefault(final @NotNull String browseName) {
-        return adapterId + "-" + sanitize(browseName);
+        return sanitize(browseName);
     }
 
     @NotNull

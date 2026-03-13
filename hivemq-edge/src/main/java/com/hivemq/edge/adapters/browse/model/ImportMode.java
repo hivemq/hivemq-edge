@@ -19,8 +19,10 @@ package com.hivemq.edge.adapters.browse.model;
  * Conflict-resolution mode for bulk tag imports.
  *
  * <ul>
- *   <li>{@link #CREATE} — File-only tags are created. Fails if Edge has any existing tags for this adapter.</li>
- *   <li>{@link #DELETE} — Edge-only tags are deleted. Fails if file contains tags not in Edge.</li>
+ *   <li>{@link #CREATE} — File-only tags are created. Identical tags in both are a noop.
+ *       Fails if Edge has edge-only tags or if same tag name has different definition.</li>
+ *   <li>{@link #DELETE} — Edge-only tags are deleted. Identical tags in both are kept.
+ *       Fails if file contains tags not in Edge or if same tag name has different definition.</li>
  *   <li>{@link #OVERWRITE} — Result equals the file exactly. Edge-only deleted, file-only created, differing overwritten.</li>
  *   <li>{@link #MERGE_SAFE} — File-only created, Edge-only kept. Fails if same tag exists with different properties.</li>
  *   <li>{@link #MERGE_OVERWRITE} — File-only created, Edge-only kept. Same tag with different properties is overwritten.</li>
