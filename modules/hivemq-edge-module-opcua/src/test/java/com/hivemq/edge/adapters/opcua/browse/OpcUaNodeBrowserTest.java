@@ -95,11 +95,7 @@ class OpcUaNodeBrowserTest {
     // --- Default generation ---
 
     @ParameterizedTest
-    @CsvSource({
-        "my-opcua, Int32Node, int32node",
-        "adapter1, CamelCase, camelcase",
-        "opc, My Node, my-node"
-    })
+    @CsvSource({"my-opcua, Int32Node, int32node", "adapter1, CamelCase, camelcase", "opc, My Node, my-node"})
     void generateTagNameDefault(final String adapterId, final String browseName, final String expected) {
         final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(null, adapterId);
         assertThat(browser.generateTagNameDefault(browseName)).isEqualTo(expected);
