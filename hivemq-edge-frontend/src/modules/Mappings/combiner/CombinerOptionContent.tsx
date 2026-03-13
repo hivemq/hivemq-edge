@@ -2,7 +2,8 @@ import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HStack, Text, VStack } from '@chakra-ui/react'
 
-import type { DataIdentifierReference } from '@/api/__generated__'
+import { DataIdentifierReference } from '@/api/__generated__'
+import { PLCTagIcon, TopicFilterIcon } from '@/components/Icons/TopicIcon'
 
 interface CombinerOptionContentProps {
   label: string
@@ -13,15 +14,18 @@ interface CombinerOptionContentProps {
 
 export const CombinerOptionContent: FC<CombinerOptionContentProps> = ({ label, adapterId, type, description }) => {
   const { t } = useTranslation()
+  const displayLabel = adapterId ? `${adapterId} :: ${label}` : label
+
   return (
     <VStack gap={0} alignItems="stretch" w="100%">
       <HStack>
-        <Text flex={1}>{label}</Text>
-        {adapterId && (
-          <Text fontSize="sm" color="gray.500">
-            {adapterId}
-          </Text>
-        )}
+        <HStack flex={1} gap={1} overflow="hidden">
+          {type === DataIdentifierReference.type.TAG && <PLCTagIcon boxSize="12px" flexShrink={0} />}
+          {type === DataIdentifierReference.type.TOPIC_FILTER && (
+            <TopicFilterIcon boxSize="12px" flexShrink={0} />
+          )}
+          <Text isTruncated>{displayLabel}</Text>
+        </HStack>
         <Text fontSize="sm" fontWeight="bold">
           {t('combiner.schema.mapping.combinedSelector.type', { context: type })}
         </Text>
