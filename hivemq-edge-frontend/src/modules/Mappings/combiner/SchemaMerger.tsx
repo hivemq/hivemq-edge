@@ -116,7 +116,7 @@ const SchemaMerger: FC<SchemaMergerProps> = ({ formData, formContext, onClose, o
                 {properties.map((property) => {
                   return (
                     <ListItem key={[...property.path, property.key].join('-')} ml={(property?.path?.length || 0) * 8}>
-                      <PropertyItem property={property} hasTooltip />
+                      <PropertyItem property={property} hasTooltip showReadOnly={false} />
                     </ListItem>
                   )
                 })}

@@ -32,7 +32,7 @@ const DataModelDestination: FC<DataModelDestinationProps> = ({ topic, adapterId,
       <CardBody>
         {isLoading && <LoaderSpinner />}
         {isError && error && <ErrorMessage message={error.message} />}
-        {!isLoading && data && <JsonSchemaBrowser schema={data} />}
+        {!isLoading && data && <JsonSchemaBrowser schema={data} showReadOnly={false} />}
       </CardBody>
     </Card>
   )
