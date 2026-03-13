@@ -83,12 +83,12 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ id, formContext,
       return acc
     }, [])
 
-    // Sort by tag name first, then by adapterId — keeps same-named tags from different
-    // adapters adjacent in the list and preserves natural alphabetical browsing
+    // Sort by the full ownership display string — matches what the user sees in the list.
+    // For tags: "adapterId :: tagName"; for topic filters: plain value.
     return deduped.sort((a, b) => {
-      const tagCmp = a.value.localeCompare(b.value)
-      if (tagCmp !== 0) return tagCmp
-      return (a.adapterId ?? '').localeCompare(b.adapterId ?? '')
+      const displayA = a.adapterId ? `${a.adapterId} :: ${a.value}` : a.value
+      const displayB = b.adapterId ? `${b.adapterId} :: ${b.value}` : b.value
+      return displayA.localeCompare(displayB)
     })
   }, [formContext?.entityQueries, isLoading])
 
