@@ -4,6 +4,7 @@ import { HStack, Text, VStack } from '@chakra-ui/react'
 
 import { DataIdentifierReference } from '@/api/__generated__'
 import { PLCTagIcon, TopicFilterIcon } from '@/components/Icons/TopicIcon'
+import { formatOwnershipString } from '@/components/MQTT/topic-utils'
 
 interface CombinerOptionContentProps {
   label: string
@@ -14,12 +15,13 @@ interface CombinerOptionContentProps {
 
 export const CombinerOptionContent: FC<CombinerOptionContentProps> = ({ label, adapterId, type, description }) => {
   const { t } = useTranslation()
-  const displayLabel = adapterId ? `${adapterId} :: ${label}` : label
+  // const displayLabel = adapterId ? `${adapterId} :: ${label}` : label
+  const displayLabel = formatOwnershipString({ id: label, type, scope: adapterId })
 
   return (
     <VStack gap={0} alignItems="stretch" w="100%">
       <HStack>
-        <HStack flex={1} gap={1} overflow="hidden">
+        <HStack flex={1} gap={1} overflow="hidden" minW={0}>
           {type === DataIdentifierReference.type.TAG && <PLCTagIcon boxSize="12px" flexShrink={0} />}
           {type === DataIdentifierReference.type.TOPIC_FILTER && <TopicFilterIcon boxSize="12px" flexShrink={0} />}
           <Text isTruncated>{displayLabel}</Text>
