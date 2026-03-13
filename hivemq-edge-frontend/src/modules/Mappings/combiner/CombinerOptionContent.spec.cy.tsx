@@ -63,4 +63,28 @@ describe('CombinerOptionContent', () => {
     cy.get('p').should('contain.text', 'Topic Filter')
     cy.get('p').should('not.contain.text', 'Tag')
   })
+
+  it('should render long names with the proper display rule', () => {
+    const isTruncated = ($el: JQuery<HTMLElement>): boolean => {
+      const el = $el[0]
+      if (!el) return false
+      return el.scrollWidth > el.clientWidth
+    }
+
+    cy.mountWithProviders(
+      <CombinerOptionContent
+        label="my/topic/+/temp/then a very long long text that goes all the way to the end and even more"
+        type={DataIdentifierReference.type.TOPIC_FILTER}
+      />
+    )
+
+    cy.get('p')
+      .should(
+        'contain.text',
+        'my/topic/+/temp/then a very long long text that goes all the way to the end and even more'
+      )
+      .then(($el) => {
+        void expect(isTruncated($el)).to.be.true
+      })
+  })
 })

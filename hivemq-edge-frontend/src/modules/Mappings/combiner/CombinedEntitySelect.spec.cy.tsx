@@ -264,7 +264,7 @@ describe('CombinedEntitySelect', () => {
       cy.get('@options').filter(':contains("opcua-adapter :: humidity")').should('have.length', 1)
     })
 
-    it('should sort options by tag name so same-named tags from different adapters are adjacent', () => {
+    it('should sort options alphabetically by full ownership string (adapterId :: tagName)', () => {
       cy.mountWithProviders(
         <Box>
           <FormControl>
