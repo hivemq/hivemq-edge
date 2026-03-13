@@ -7,7 +7,7 @@ import { MockAdapterType } from '@/__test-utils__/adapters/types'
 import { useGetCombinedEntities } from '@/api/hooks/useDomainModel/useGetCombinedEntities'
 import { mockCombiner } from '@/api/hooks/useCombiners/__handlers__'
 import { MOCK_DEVICE_TAGS } from '@/api/hooks/useProtocolAdapters/__handlers__'
-import type { DomainTag, DomainTagList } from '@/api/__generated__'
+import type { DomainTag, DomainTagList, TopicFilter, TopicFilterList } from '@/api/__generated__'
 import { DataIdentifierReference, EntityType } from '@/api/__generated__'
 import type { CombinerContext, SelectedSources } from '@/modules/Mappings/types'
 
@@ -244,7 +244,7 @@ describe('CombinedEntitySelect', () => {
       ],
     }
 
-    it('should show adapterId as secondary text in each option row', () => {
+    it('should show ownership string (adapterId :: tag) in each tag option row', () => {
       cy.mountWithProviders(
         <Box>
           <FormControl>
@@ -257,8 +257,11 @@ describe('CombinedEntitySelect', () => {
       cy.get('#combiner-entity-select').click()
       cy.get('#react-select-entity-listbox').find('[role="option"]').as('options')
 
-      cy.get('@options').filter(':contains("modbus-adapter")').should('have.length', 2)
-      cy.get('@options').filter(':contains("opcua-adapter")').should('have.length', 2)
+      // Each tag option now shows "adapterId :: tagName" ownership format
+      cy.get('@options').filter(':contains("modbus-adapter :: temperature")').should('have.length', 1)
+      cy.get('@options').filter(':contains("modbus-adapter :: pressure")').should('have.length', 1)
+      cy.get('@options').filter(':contains("opcua-adapter :: temperature")').should('have.length', 1)
+      cy.get('@options').filter(':contains("opcua-adapter :: humidity")').should('have.length', 1)
     })
 
     it('should sort options by tag name so same-named tags from different adapters are adjacent', () => {
@@ -274,13 +277,14 @@ describe('CombinedEntitySelect', () => {
       cy.get('#combiner-entity-select').click()
       cy.get('#react-select-entity-listbox').find('[role="option"]').as('options')
 
-      // Alphabetical by tag name: humidity, pressure, temperature × 2
+      // Alphabetical by full ownership string "adapterId :: tagName":
+      //   modbus-adapter :: pressure, modbus-adapter :: temperature,
+      //   opcua-adapter :: humidity, opcua-adapter :: temperature
       cy.get('@options').should('have.length', 4)
-      cy.get('@options').eq(0).should('contain.text', 'humidity')
-      cy.get('@options').eq(1).should('contain.text', 'pressure')
-      // both temperature entries are adjacent (eq 2 and eq 3)
-      cy.get('@options').eq(2).should('contain.text', 'temperature')
-      cy.get('@options').eq(3).should('contain.text', 'temperature')
+      cy.get('@options').eq(0).should('contain.text', 'modbus-adapter :: pressure')
+      cy.get('@options').eq(1).should('contain.text', 'modbus-adapter :: temperature')
+      cy.get('@options').eq(2).should('contain.text', 'opcua-adapter :: humidity')
+      cy.get('@options').eq(3).should('contain.text', 'opcua-adapter :: temperature')
     })
 
     it('should filter options by adapter name when typed in search', () => {
@@ -301,6 +305,109 @@ describe('CombinedEntitySelect', () => {
         cy.wrap($el).should('contain.text', 'opcua-adapter')
       })
     })
+
+    it('should filter options by tag name when typed in search', () => {
+      cy.mountWithProviders(
+        <Box>
+          <FormControl>
+            <FormLabel htmlFor="option-filter-tag-test">Sources</FormLabel>
+            <CombinedEntitySelect
+              id="option-filter-tag-test"
+              formContext={contextWithDuplicates}
+              onChange={cy.stub()}
+            />
+          </FormControl>
+        </Box>
+      )
+
+      cy.get('#option-filter-tag-test').type('pressure')
+      cy.get('#react-select-entity-listbox').find('[role="option"]').as('options')
+
+      // Only one option matches the tag name "pressure"
+      cy.get('@options').should('have.length', 1)
+      cy.get('@options').eq(0).should('contain.text', 'modbus-adapter :: pressure')
+    })
+
+    it('should return no results when searching for "::" separator', () => {
+      // The "::" separator is a display-only string — it is NOT part of the searchable fields.
+      // The filter matches on raw tag name and adapterId independently, not on the formatted label.
+      cy.mountWithProviders(
+        <Box>
+          <FormControl>
+            <FormLabel htmlFor="option-filter-sep-test">Sources</FormLabel>
+            <CombinedEntitySelect
+              id="option-filter-sep-test"
+              formContext={contextWithDuplicates}
+              onChange={cy.stub()}
+            />
+          </FormControl>
+        </Box>
+      )
+
+      cy.get('#option-filter-sep-test').type('::')
+      cy.get('#react-select-entity-listbox').find('[role="option"]').should('have.length', 0)
+    })
+  })
+
+  it.skip('screenshot: sources dropdown — before/after', () => {
+    const mockTopicFilterQuery = (filters: TopicFilter[]): UseQueryResult<TopicFilterList, Error> =>
+      ({
+        data: { items: filters },
+        isLoading: false,
+        isSuccess: true,
+        isError: false,
+      }) as UseQueryResult<TopicFilterList, Error>
+
+    // Two tags are pre-selected (shown as chips, hidden from dropdown).
+    // Remaining options cover a mix of tags and topic filters, including a "temp" family:
+    //   temp/raw (tag, modbus), temporal/value (tag, opcua), temp/+/readings (topic filter)
+    // to illustrate how the adapter scope helps distinguish same-prefix entries.
+    const contextForScreenshot: CombinerContext = {
+      entityQueries: [
+        {
+          entity: { id: 'modbus-adapter', type: EntityType.ADAPTER },
+          query: mockTagQuery([
+            { name: 'temperature', description: 'Modbus temperature sensor reading' } as DomainTag, // selected → hidden
+            { name: 'temp/raw', description: 'Raw temperature before calibration' } as DomainTag,
+            { name: 'pressure', description: 'Pressure sensor in bar' } as DomainTag,
+          ]),
+        },
+        {
+          entity: { id: 'opcua-adapter', type: EntityType.ADAPTER },
+          query: mockTagQuery([
+            { name: 'temporal/value', description: 'Temporal shift value (OPC-UA node)' } as DomainTag,
+            { name: 'humidity', description: 'Humidity level sensor' } as DomainTag,
+          ]),
+        },
+        {
+          entity: { id: 'broker', type: EntityType.EDGE_BROKER },
+          query: mockTopicFilterQuery([
+            { topicFilter: 'factory/+/alerts', description: 'Factory alert events' } as TopicFilter, // selected → hidden
+            { topicFilter: 'temp/+/readings', description: 'Live temperature readings stream' } as TopicFilter,
+            { topicFilter: 'factory/+/reports', description: 'Factory daily summary reports' } as TopicFilter,
+          ]) as UseQueryResult<DomainTagList | TopicFilterList, Error>,
+        },
+      ],
+      selectedSources: {
+        tags: [{ id: 'temperature', type: DataIdentifierReference.type.TAG, scope: 'modbus-adapter' }],
+        topicFilters: [{ id: 'factory/+/alerts', type: DataIdentifierReference.type.TOPIC_FILTER, scope: null }],
+      },
+    }
+
+    cy.viewport(700, 650)
+    cy.mountWithProviders(
+      <Box p={6} maxW="500px">
+        <FormControl>
+          <FormLabel htmlFor="screenshot-test">Sources</FormLabel>
+          <CombinedEntitySelect id="screenshot-test" formContext={contextForScreenshot} onChange={cy.stub()} />
+        </FormControl>
+      </Box>
+    )
+
+    cy.get('#combiner-entity-select').realClick()
+    cy.get('#react-select-entity-listbox').should('be.visible')
+
+    cy.screenshot('sources-dropdown', { overwrite: true, capture: 'viewport' })
   })
 
   it('should be accessible', () => {
