@@ -40,7 +40,7 @@ used, with minimal refactoring.
 | `TagSchemaPanel`       | Device tag write schema                              | **YES**               |
 | `TopicSchemaManager`   | Topic filter schema browser                          | No                    |
 | `SchemaSampler`        | Topic filter schema sampler                          | No                    |
-| `MetadataExplorer`     | Domain ontology topic explorer                       | No                    |
+| `MetadataExplorer`     | Domain ontology topic explorer                       | **YES**               |
 | `DataModelSources`     | MQTT transformation source panel                     | No                    |
 | `DataModelDestination` | MQTT transformation destination panel                | No                    |
 | `CombinedSchemaLoader` | Combiner source schema browser                       | No                    |
