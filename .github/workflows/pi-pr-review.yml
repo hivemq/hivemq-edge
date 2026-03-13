@@ -53,7 +53,7 @@ jobs:
     steps:
       - name: Resolve PR context
         id: pr_context
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@v8
         with:
           github-token: ${{ github.token }}
           script: |
@@ -93,7 +93,7 @@ jobs:
             core.setOutput('head_ref', pr.head.ref);
             core.setOutput('head_sha', pr.head.sha);
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@v6
         with:
           ref: refs/pull/${{ steps.pr_context.outputs.number }}/merge
           fetch-depth: 0
@@ -115,7 +115,7 @@ jobs:
 
       - name: Install Node.js
         if: steps.deps.outputs.need_node == 'true'
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        uses: actions/setup-node@v6
         with:
           node-version: 24
 
@@ -239,7 +239,7 @@ jobs:
 
       - name: Upload Pi output
         if: always()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@v7
         with:
           name: pi-pr-review-${{ matrix.label }}-${{ steps.pr_context.outputs.number }}-${{ github.run_id }}
           path: |
@@ -259,7 +259,7 @@ jobs:
     steps:
       - name: Resolve PR context
         id: pr_context
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@v8
         with:
           github-token: ${{ github.token }}
           script: |
@@ -293,7 +293,7 @@ jobs:
 
             core.setOutput('number', String(pr.number));
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@v6
         with:
           ref: refs/pull/${{ steps.pr_context.outputs.number }}/merge
           fetch-depth: 1
@@ -308,7 +308,7 @@ jobs:
 
       - name: Install Node.js
         if: steps.deps.outputs.need_node == 'true'
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        uses: actions/setup-node@v6
         with:
           node-version: 24
 
@@ -320,7 +320,7 @@ jobs:
         run: pi --version
 
       - name: Download all review artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@v8
         with:
           pattern: pi-pr-review-*-${{ steps.pr_context.outputs.number }}-${{ github.run_id }}
           path: reviews
@@ -381,7 +381,7 @@ jobs:
 
       - name: Upsert judge comment
         if: ${{ steps.run_judge.outputs.final-message != '' && (github.event_name == 'pull_request' || github.event_name == 'issue_comment' || (github.event_name == 'workflow_dispatch' && github.event.inputs.post_comment == 'true')) }}
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@v8
         env:
           PI_FINAL_MESSAGE: ${{ steps.run_judge.outputs.final-message }}
           PR_NUMBER: ${{ steps.pr_context.outputs.number }}
@@ -432,7 +432,7 @@ jobs:
 
       - name: Upload judge output
         if: always()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@v7
         with:
           name: pi-judge-${{ steps.pr_context.outputs.number }}-${{ github.run_id }}
           path: |
