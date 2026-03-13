@@ -21,9 +21,7 @@ export const CombinerOptionContent: FC<CombinerOptionContentProps> = ({ label, a
       <HStack>
         <HStack flex={1} gap={1} overflow="hidden">
           {type === DataIdentifierReference.type.TAG && <PLCTagIcon boxSize="12px" flexShrink={0} />}
-          {type === DataIdentifierReference.type.TOPIC_FILTER && (
-            <TopicFilterIcon boxSize="12px" flexShrink={0} />
-          )}
+          {type === DataIdentifierReference.type.TOPIC_FILTER && <TopicFilterIcon boxSize="12px" flexShrink={0} />}
           <Text isTruncated>{displayLabel}</Text>
         </HStack>
         <Text fontSize="sm" fontWeight="bold">
