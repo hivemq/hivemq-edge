@@ -18,7 +18,7 @@ Therefore, in those contexts the readOnly information should be **completely ign
 
 ## Additional Context (from user)
 
-The visual element in question is the **lock icon** rendered by `PropertyItem` (the "flatend"
+The visual element in question is the **lock icon** rendered by `PropertyItem` (the "flattened"
 property renderer) when `property.readOnly === true`. The combiner mapping editor already
 correctly handles the readOnly case. The task is to make the lock icon (and any related readOnly
 logic) **conditional** across the many contexts where `PropertyItem` / `JsonSchemaBrowser` are
