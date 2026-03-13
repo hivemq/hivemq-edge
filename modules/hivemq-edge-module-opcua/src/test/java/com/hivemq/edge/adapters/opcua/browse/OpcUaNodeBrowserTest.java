@@ -96,9 +96,9 @@ class OpcUaNodeBrowserTest {
 
     @ParameterizedTest
     @CsvSource({
-        "my-opcua, Int32Node, my-opcua-int32node",
-        "adapter1, CamelCase, adapter1-camelcase",
-        "opc, My Node, opc-my-node"
+        "my-opcua, Int32Node, int32node",
+        "adapter1, CamelCase, camelcase",
+        "opc, My Node, my-node"
     })
     void generateTagNameDefault(final String adapterId, final String browseName, final String expected) {
         final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(null, adapterId);

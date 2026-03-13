@@ -300,21 +300,18 @@ public class DeviceTagImporter {
                     }
                 }
                 case CREATE -> {
-                    // CREATE mode: edge-only should have been caught by validation (TAG_CONFLICT)
-                    // but keep them for safety
-                    finalTags.add(edgeTagsByName.get(tagName));
-                    if (edgeNorthboundByTag.containsKey(tagName)) {
-                        finalNorthbound.add(edgeNorthboundByTag.get(tagName));
-                    }
-                    if (edgeSouthboundByTag.containsKey(tagName)) {
-                        finalSouthbound.add(edgeSouthboundByTag.get(tagName));
-                    }
+                    // CREATE mode: edge-only tags are rejected by validation.
+                    // This branch should never execute if validation passed.
                 }
             }
         }
 
-        // Process file-only tags
+        // Process file-only tags (DELETE mode: file-only should have been caught by validation)
         for (final String tagName : fileOnlyTags) {
+            if (mode == ImportMode.DELETE) {
+                // DELETE mode does not create tags — file-only tags are rejected by validation
+                continue;
+            }
             final DeviceTagRow row = fileRowsByTag.get(tagName);
             finalTags.add(toTagEntity(row));
             tagActions.add(new TagAction(tagName, TagAction.Action.CREATED));

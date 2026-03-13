@@ -58,7 +58,7 @@ import org.jetbrains.annotations.NotNull;
 @Singleton
 public class DeviceTagValidator {
 
-    private static final @NotNull Pattern TAG_NAME_PATTERN = Pattern.compile("[a-zA-Z0-9][a-zA-Z0-9._-]*");
+    private static final @NotNull Pattern TAG_NAME_PATTERN = Pattern.compile("\\S+");
     private static final int MAX_TAG_NAME_LENGTH = 256;
 
     private final @NotNull ProtocolAdapterExtractor adapterExtractor;
@@ -244,7 +244,7 @@ public class DeviceTagValidator {
                     "tag_name",
                     tagName,
                     INVALID_TAG_NAME,
-                    "Tag name must match pattern [a-zA-Z0-9][a-zA-Z0-9._-]*"));
+                    "Tag name must not contain whitespace"));
         }
     }
 
@@ -401,14 +401,62 @@ public class DeviceTagValidator {
 
         // Mode-specific conflict checks
         if (mode == ImportMode.CREATE) {
-            for (final String fileTag : fileTagNames) {
-                if (edgeTagsByName.containsKey(fileTag)) {
+            // Edge-only tags are an error in CREATE mode
+            final Set<String> edgeOnlyTags = new HashSet<>(edgeTagsByName.keySet());
+            edgeOnlyTags.removeAll(fileTagNames);
+            for (final String edgeOnly : edgeOnlyTags) {
+                errors.add(new ValidationError(
+                        null,
+                        "tag_name",
+                        edgeOnly,
+                        TAG_CONFLICT,
+                        "Tag '" + edgeOnly
+                                + "' exists on adapter but not in file. CREATE requires an empty adapter or use OVERWRITE mode."));
+            }
+            // Both-exist with different definition is an error
+            for (final DeviceTagRow row : rows) {
+                if (!row.hasTag()) {
+                    continue;
+                }
+                final TagEntity existing = edgeTagsByName.get(row.getTagName());
+                if (existing != null && !tagDefinitionsMatch(row, existing)) {
                     errors.add(new ValidationError(
                             null,
                             "tag_name",
-                            fileTag,
+                            row.getTagName(),
                             TAG_CONFLICT,
-                            "Tag '" + fileTag + "' already exists in adapter. Use MERGE_SAFE or OVERWRITE mode."));
+                            "Tag '" + row.getTagName()
+                                    + "' exists with different definition. Use OVERWRITE mode."));
+                }
+            }
+            // Both-exist with identical definition is a noop — no error
+        } else if (mode == ImportMode.DELETE) {
+            // File-only tags are an error in DELETE mode
+            final Set<String> fileOnlyTags = new HashSet<>(fileTagNames);
+            fileOnlyTags.removeAll(edgeTagsByName.keySet());
+            for (final String fileOnly : fileOnlyTags) {
+                errors.add(new ValidationError(
+                        null,
+                        "tag_name",
+                        fileOnly,
+                        TAG_CONFLICT,
+                        "Tag '" + fileOnly
+                                + "' is in the file but does not exist on the adapter. DELETE cannot create tags."));
+            }
+            // Both-exist with different definition is an error
+            for (final DeviceTagRow row : rows) {
+                if (!row.hasTag()) {
+                    continue;
+                }
+                final TagEntity existing = edgeTagsByName.get(row.getTagName());
+                if (existing != null && !tagDefinitionsMatch(row, existing)) {
+                    errors.add(new ValidationError(
+                            null,
+                            "tag_name",
+                            row.getTagName(),
+                            TAG_CONFLICT,
+                            "Tag '" + row.getTagName()
+                                    + "' exists with different definition. DELETE cannot modify tags."));
                 }
             }
         } else if (mode == ImportMode.MERGE_SAFE) {
