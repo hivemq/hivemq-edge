@@ -55,6 +55,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
@@ -164,7 +165,8 @@ public class ProtocolAdapterManager {
     }
 
     public void refresh(final @NotNull List<ProtocolAdapterEntity> configs) {
-        executorService.submit(() -> {
+        try {
+            executorService.submit(() -> {
             log.info("Refreshing adapters");
 
             final Map<String, ProtocolAdapterConfig> protocolAdapterConfigs = configs.stream()
@@ -269,6 +271,13 @@ public class ProtocolAdapterManager {
                         .fire();
             }
         });
+        } catch (final RejectedExecutionException e) {
+            if (executorService.isShutdown()) {
+                log.debug("Adapter refresh task submission rejected, executor is shutting down.");
+            } else {
+                throw e;
+            }
+        }
     }
 
     // INTERNAL
