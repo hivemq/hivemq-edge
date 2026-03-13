@@ -525,10 +525,8 @@ class DeviceTagValidatorTest {
         when(adapterExtractor.getAdapterByAdapterId("adapter1")).thenReturn(Optional.of(adapter));
         when(adapterExtractor.getAllConfigs()).thenReturn(List.of(adapter));
 
-        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
-                .nodeId("ns=2;i=1")
-                .tagName("not-on-edge")
-                .build());
+        final List<DeviceTagRow> rows = List.of(
+                DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("not-on-edge").build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.DELETE, "adapter1");
 
@@ -658,7 +656,10 @@ class DeviceTagValidatorTest {
     void validate_rowNumbersAre1Indexed() {
         final List<DeviceTagRow> rows = List.of(
                 DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("valid-tag").build(),
-                DeviceTagRow.builder().nodeId("ns=2;i=2").tagName("tag with spaces").build());
+                DeviceTagRow.builder()
+                        .nodeId("ns=2;i=2")
+                        .tagName("tag with spaces")
+                        .build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 

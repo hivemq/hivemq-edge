@@ -240,11 +240,7 @@ public class DeviceTagValidator {
                     "Tag name exceeds maximum length of " + MAX_TAG_NAME_LENGTH + " characters"));
         } else if (!TAG_NAME_PATTERN.matcher(tagName).matches()) {
             errors.add(new ValidationError(
-                    rowNum,
-                    "tag_name",
-                    tagName,
-                    INVALID_TAG_NAME,
-                    "Tag name must not contain whitespace"));
+                    rowNum, "tag_name", tagName, INVALID_TAG_NAME, "Tag name must not contain whitespace"));
         }
     }
 
@@ -405,13 +401,14 @@ public class DeviceTagValidator {
             final Set<String> edgeOnlyTags = new HashSet<>(edgeTagsByName.keySet());
             edgeOnlyTags.removeAll(fileTagNames);
             for (final String edgeOnly : edgeOnlyTags) {
-                errors.add(new ValidationError(
-                        null,
-                        "tag_name",
-                        edgeOnly,
-                        TAG_CONFLICT,
-                        "Tag '" + edgeOnly
-                                + "' exists on adapter but not in file. CREATE requires an empty adapter or use OVERWRITE mode."));
+                errors.add(
+                        new ValidationError(
+                                null,
+                                "tag_name",
+                                edgeOnly,
+                                TAG_CONFLICT,
+                                "Tag '" + edgeOnly
+                                        + "' exists on adapter but not in file. CREATE requires an empty adapter or use OVERWRITE mode."));
             }
             // Both-exist with different definition is an error
             for (final DeviceTagRow row : rows) {
@@ -425,8 +422,7 @@ public class DeviceTagValidator {
                             "tag_name",
                             row.getTagName(),
                             TAG_CONFLICT,
-                            "Tag '" + row.getTagName()
-                                    + "' exists with different definition. Use OVERWRITE mode."));
+                            "Tag '" + row.getTagName() + "' exists with different definition. Use OVERWRITE mode."));
                 }
             }
             // Both-exist with identical definition is a noop — no error

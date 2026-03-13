@@ -392,8 +392,8 @@ class DeviceTagImporterTest {
     void validationFailure_noMutations() {
         setupAdapter(emptyAdapter());
 
-        final List<DeviceTagRow> rows =
-                List.of(DeviceTagRow.builder().tagName("tag with spaces").maxQos(5).build());
+        final List<DeviceTagRow> rows = List.of(
+                DeviceTagRow.builder().tagName("tag with spaces").maxQos(5).build());
 
         assertThatThrownBy(() -> importer.doImport(rows, ImportMode.CREATE, ADAPTER_ID))
                 .isInstanceOf(DeviceTagImporterException.class);
