@@ -24,12 +24,12 @@ import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.edge.adapters.opcua.client.ParsedConfig;
 import com.hivemq.edge.adapters.opcua.client.Result;
 import com.hivemq.edge.adapters.opcua.client.Success;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
@@ -92,7 +92,7 @@ public class OpcUaClientConnectionTest {
                 null);
 
         // Create a tag that maps to a node in the test server
-        final OpcuaTag tag = new OpcuaTag(
+        final GenericTag tag = new GenericTag(
                 "testTag",
                 "Test tag for keep-alive",
                 new OpcuaTagDefinition(
@@ -185,18 +185,18 @@ public class OpcUaClientConnectionTest {
                 null);
 
         // Create multiple tags
-        final List<OpcuaTag> tags = List.of(
-                new OpcuaTag(
+        final List<GenericTag> tags = List.of(
+                new GenericTag(
                         "tag1",
                         "Int32 Tag",
                         new OpcuaTagDefinition(
                                 "ns=" + opcUaServerExtension.getTestNamespace().getNamespaceIndex() + ";i=10")),
-                new OpcuaTag(
+                new GenericTag(
                         "tag2",
                         "Int64 Tag",
                         new OpcuaTagDefinition(
                                 "ns=" + opcUaServerExtension.getTestNamespace().getNamespaceIndex() + ";i=12")),
-                new OpcuaTag(
+                new GenericTag(
                         "tag3",
                         "Double Tag",
                         new OpcuaTagDefinition(
@@ -316,7 +316,7 @@ public class OpcUaClientConnectionTest {
                 null,
                 null);
 
-        final OpcuaTag tag = new OpcuaTag(
+        final GenericTag tag = new GenericTag(
                 "testTag",
                 "Test tag",
                 new OpcuaTagDefinition(

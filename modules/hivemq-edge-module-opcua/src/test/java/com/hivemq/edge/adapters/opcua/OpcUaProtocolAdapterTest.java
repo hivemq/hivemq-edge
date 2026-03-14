@@ -33,11 +33,11 @@ import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.opcua.config.ConnectionOptions;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
@@ -101,7 +101,7 @@ public class OpcUaProtocolAdapterTest {
                 null);
 
         // Create a tag that maps to a node in the test server
-        final OpcuaTag tag = new OpcuaTag(
+        final GenericTag tag = new GenericTag(
                 "testTag",
                 "Test tag",
                 new OpcuaTagDefinition(
@@ -160,9 +160,9 @@ public class OpcUaProtocolAdapterTest {
                 null);
 
         // Create tags pointing to non-existent nodes to cause subscription failures
-        final List<OpcuaTag> tags = new ArrayList<>();
+        final List<GenericTag> tags = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            tags.add(new OpcuaTag(
+            tags.add(new GenericTag(
                     "invalidTag" + i,
                     "Invalid Tag " + i,
                     new OpcuaTagDefinition(
@@ -245,8 +245,8 @@ public class OpcUaProtocolAdapterTest {
                         true,
                         true));
 
-        final OpcuaTag tag =
-                new OpcuaTag("testTag", "Test tag", new OpcuaTagDefinition("ns=0;i=1234567890")); // Server/ServerStatus
+        final GenericTag tag = new GenericTag(
+                "testTag", "Test tag", new OpcuaTagDefinition("ns=0;i=1234567890")); // Server/ServerStatus
 
         // Mock adapter information
         final ProtocolAdapterInformation adapterInformation = mock(ProtocolAdapterInformation.class);
@@ -303,7 +303,7 @@ public class OpcUaProtocolAdapterTest {
     }
 
     private @NotNull ProtocolAdapterInput<OpcUaSpecificAdapterConfig> createMockedInput(
-            final @NotNull OpcUaSpecificAdapterConfig config, final @NotNull List<OpcuaTag> tags) {
+            final @NotNull OpcUaSpecificAdapterConfig config, final @NotNull List<? extends Tag> tags) {
         final ProtocolAdapterInput<OpcUaSpecificAdapterConfig> input = mock(ProtocolAdapterInput.class);
 
         // Basic properties

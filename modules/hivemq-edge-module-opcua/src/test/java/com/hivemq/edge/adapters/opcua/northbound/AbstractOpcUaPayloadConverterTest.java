@@ -28,11 +28,11 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterInformation;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
@@ -99,7 +99,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
         when(protocolAdapterInput.getTags())
-                .thenReturn(List.of(new OpcuaTag(subcribedNodeId, "", new OpcuaTagDefinition(subcribedNodeId))));
+                .thenReturn(List.of(new GenericTag(subcribedNodeId, "", new OpcuaTagDefinition(subcribedNodeId))));
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
