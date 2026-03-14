@@ -30,6 +30,7 @@ import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
@@ -40,7 +41,7 @@ import com.hivemq.edge.adapters.opcua.client.ParsedConfig;
 import com.hivemq.edge.adapters.opcua.client.Success;
 import com.hivemq.edge.adapters.opcua.config.ConnectionOptions;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
 import com.hivemq.edge.adapters.opcua.southbound.JsonSchemaGenerator;
 import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverter;
@@ -75,8 +76,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull String adapterId;
-    private final @NotNull Map<String, OpcuaTag> tagNameToTag;
-    private final @NotNull List<OpcuaTag> tagList;
+    private final @NotNull Map<String, GenericTag> tagNameToTag;
+    private final @NotNull List<GenericTag> tagList;
     private final @NotNull AtomicReference<OpcUaClientConnection> opcUaClientConnection;
 
     private final @NotNull DataPointFactory dataPointFactory;
@@ -108,8 +109,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         this.adapterId = input.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.protocolAdapterState = input.getProtocolAdapterState();
-        this.tagList = input.getTags().stream().map(tag -> (OpcuaTag) tag).toList();
-        this.tagNameToTag = tagList.stream().collect(Collectors.toMap(OpcuaTag::getName, Function.identity()));
+        this.tagList = input.getTags().stream().map(tag -> (GenericTag) tag).toList();
+        this.tagNameToTag = tagList.stream().collect(Collectors.toMap(GenericTag::getName, Function.identity()));
         this.dataPointFactory = input.adapterFactories().dataPointFactory();
         this.protocolAdapterMetricsService = input.getProtocolAdapterMetricsHelper();
         this.config = input.getConfig();
@@ -534,7 +535,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         final WritingContext writeContext = input.getWritingContext();
         final OpcUaPayload opcUAWritePayload = (OpcUaPayload) input.getWritingPayload();
         final String tagName = writeContext.getTagName();
-        final OpcuaTag opcuaTag = tagNameToTag.get(tagName);
+        final GenericTag opcuaTag = tagNameToTag.get(tagName);
         if (opcuaTag == null) {
             log.error("Attempted to write to non-existent tag '{}'", tagName);
             output.fail("Tag '" + tagName + "' not found.");
@@ -559,7 +560,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                             }
 
                             final NodeId nodeId =
-                                    NodeId.parse(opcuaTag.getDefinition().getNode());
+                                    NodeId.parse(((OpcuaTagDefinition) opcuaTag.getDefinition()).getNode());
                             final Object opcuaObject = converter.convertToOpcUAValue(opcUAWritePayload.value(), nodeId);
 
                             @SuppressWarnings("unused")
@@ -594,7 +595,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             return;
         }
         final String tagName = input.getTagName();
-        final OpcuaTag tag = tagNameToTag.get(tagName);
+        final GenericTag tag = tagNameToTag.get(tagName);
         if (tag == null) {
             log.error("Cannot create schema for non-existent tag '{}'", tagName);
             output.fail("Tag '" + tagName + "' not found.");

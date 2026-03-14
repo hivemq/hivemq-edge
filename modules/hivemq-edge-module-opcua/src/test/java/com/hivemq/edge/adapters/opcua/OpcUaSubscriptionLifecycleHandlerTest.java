@@ -25,10 +25,10 @@ import static org.mockito.Mockito.when;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.edge.adapters.opcua.config.ConnectionOptions;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaSubscriptionLifecycleHandler;
 import java.util.List;
@@ -75,8 +75,8 @@ class OpcUaSubscriptionLifecycleHandlerTest {
                 );
     }
 
-    private static @NotNull OpcuaTag createTestTag() {
-        return new OpcuaTag("test-tag", "Test tag for keep-alive testing", new OpcuaTagDefinition(NODE_ID));
+    private static @NotNull GenericTag createTestTag() {
+        return new GenericTag("test-tag", "Test tag for keep-alive testing", new OpcuaTagDefinition(NODE_ID));
     }
 
     /**

@@ -28,7 +28,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -61,8 +62,8 @@ public class JsonSchemaGenerator {
         }
     }
 
-    public @NotNull CompletableFuture<Optional<JsonNode>> createMqttPayloadJsonSchema(final @NotNull OpcuaTag tag) {
-        final String nodeId = tag.getDefinition().getNode();
+    public @NotNull CompletableFuture<Optional<JsonNode>> createMqttPayloadJsonSchema(final @NotNull GenericTag tag) {
+        final String nodeId = ((OpcuaTagDefinition) tag.getDefinition()).getNode();
         final var jsonSchemaGenerator = new JsonSchemaGenerator(client);
         final var parsed = NodeId.parse(nodeId);
         return jsonSchemaGenerator

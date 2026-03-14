@@ -23,9 +23,10 @@ import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.edge.adapters.opcua.Constants;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -62,9 +63,9 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     private final @NotNull ProtocolAdapterTagStreamingService tagStreamingService;
     private final @NotNull EventService eventService;
     private final @NotNull String adapterId;
-    private final @NotNull Map<OpcuaTag, Boolean> tagToFirstSeen;
-    private final @NotNull Map<NodeId, OpcuaTag> nodeIdToTag;
-    private final @NotNull List<OpcuaTag> tags;
+    private final @NotNull Map<GenericTag, Boolean> tagToFirstSeen;
+    private final @NotNull Map<NodeId, GenericTag> nodeIdToTag;
+    private final @NotNull List<GenericTag> tags;
     private final @NotNull OpcUaClient client;
     private final @NotNull DataPointFactory dataPointFactory;
     private final @NotNull OpcUaSpecificAdapterConfig config;
@@ -77,7 +78,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             final @NotNull ProtocolAdapterTagStreamingService tagStreamingService,
             final @NotNull EventService eventService,
             final @NotNull String adapterId,
-            final @NotNull List<OpcuaTag> tags,
+            final @NotNull List<GenericTag> tags,
             final @NotNull OpcUaClient client,
             final @NotNull DataPointFactory dataPointFactory,
             final @NotNull OpcUaSpecificAdapterConfig config) {
@@ -92,8 +93,9 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         this.tagToFirstSeen = new ConcurrentHashMap<>();
         this.lastKeepAliveTimestamp = System.currentTimeMillis();
         this.nodeIdToTag = tags.stream()
-                .collect(
-                        Collectors.toMap(tag -> NodeId.parse(tag.getDefinition().getNode()), Function.identity()));
+                .collect(Collectors.toMap(
+                        tag -> NodeId.parse(((OpcuaTagDefinition) tag.getDefinition()).getNode()),
+                        Function.identity()));
     }
 
     /**
@@ -171,12 +173,13 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
      */
     private boolean syncTagsAndMonitoredItems(
             final @NotNull OpcUaSubscription subscription,
-            final @NotNull List<OpcuaTag> tags,
+            final @NotNull List<GenericTag> tags,
             final @NotNull OpcUaSpecificAdapterConfig config) {
 
         final var nodeIdToTag = tags.stream()
-                .collect(
-                        Collectors.toMap(tag -> NodeId.parse(tag.getDefinition().getNode()), Function.identity()));
+                .collect(Collectors.toMap(
+                        tag -> NodeId.parse(((OpcuaTagDefinition) tag.getDefinition()).getNode()),
+                        Function.identity()));
         final var nodeIdToMonitoredItem = subscription.getMonitoredItems().stream()
                 .collect(Collectors.toMap(
                         monitoredItem -> monitoredItem.getReadValueId().getNodeId(), Function.identity()));
@@ -209,7 +212,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         // add new monitored items
         if (!monitoredItemsToAdd.isEmpty()) {
             monitoredItemsToAdd.forEach(opcuaTag -> {
-                final String nodeId = opcuaTag.getDefinition().getNode();
+                final String nodeId = ((OpcuaTagDefinition) opcuaTag.getDefinition()).getNode();
                 final var monitoredItem = OpcUaMonitoredItem.newDataItem(NodeId.parse(nodeId));
                 monitoredItem.setQueueSize(uint(config.getOpcuaToMqttConfig().serverQueueSize()));
                 monitoredItem.setSamplingInterval(config.getOpcuaToMqttConfig().publishingInterval());
@@ -218,7 +221,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             log.debug(
                     "Added monitored items: {}",
                     monitoredItemsToAdd.stream()
-                            .map(item -> item.getDefinition().getNode())
+                            .map(item -> ((OpcuaTagDefinition) item.getDefinition()).getNode())
                             .toList());
         }
 

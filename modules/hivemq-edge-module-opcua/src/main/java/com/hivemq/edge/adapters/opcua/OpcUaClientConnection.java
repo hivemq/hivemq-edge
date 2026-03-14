@@ -23,13 +23,13 @@ import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.edge.adapters.opcua.client.OpcUaClientConfigurator;
 import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
 import com.hivemq.edge.adapters.opcua.client.ParsedConfig;
 import com.hivemq.edge.adapters.opcua.config.MsgSecurityMode;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.SecPolicy;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaSessionActivityListener;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaSubscriptionLifecycleHandler;
@@ -55,7 +55,7 @@ public class OpcUaClientConnection {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaClientConnection.class);
 
     private final @NotNull OpcUaSpecificAdapterConfig config;
-    private final @NotNull List<OpcuaTag> tags;
+    private final @NotNull List<GenericTag> tags;
     private final @NotNull ProtocolAdapterTagStreamingService tagStreamingService;
     private final @NotNull DataPointFactory dataPointFactory;
     private final @NotNull EventService eventService;
@@ -68,7 +68,7 @@ public class OpcUaClientConnection {
 
     OpcUaClientConnection(
             final @NotNull String adapterId,
-            final @NotNull List<OpcuaTag> tags,
+            final @NotNull List<GenericTag> tags,
             final @NotNull ProtocolAdapterState protocolAdapterState,
             final @NotNull ProtocolAdapterTagStreamingService tagStreamingService,
             final @NotNull DataPointFactory dataPointFactory,
