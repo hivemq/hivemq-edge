@@ -22,13 +22,13 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.etherip.EipProtocolAdapterFactory;
-import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
 import com.hivemq.edge.adapters.etherip.config.tag.EipTagDefinition;
 import com.hivemq.protocols.ProtocolAdapterConfig;
 import com.hivemq.protocols.ProtocolAdapterConfigConverter;
@@ -67,7 +67,7 @@ class EipProtocolAdapterConfigTest {
 
         assertThat(protocolAdapterConfig.getTags()).allSatisfy(t -> {
             assertThat(t)
-                    .isInstanceOf(EipTag.class)
+                    .isInstanceOf(Tag.class)
                     .extracting("name", "description", "definition")
                     .contains("tag-name", "description", new EipTagDefinition("addressy", EipDataType.BOOL));
         });
@@ -93,7 +93,7 @@ class EipProtocolAdapterConfigTest {
 
         assertThat(protocolAdapterConfig.getTags()).allSatisfy(t -> {
             assertThat(t)
-                    .isInstanceOf(EipTag.class)
+                    .isInstanceOf(Tag.class)
                     .extracting("name", "description", "definition")
                     .contains("tag-name", "description", new EipTagDefinition("addressy", EipDataType.BOOL));
         });
