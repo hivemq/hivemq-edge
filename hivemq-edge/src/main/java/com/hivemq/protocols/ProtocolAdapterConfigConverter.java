@@ -22,7 +22,6 @@ import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
-import com.hivemq.configuration.entity.adapter.TagEntity;
 import com.hivemq.persistence.domain.DomainTag;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -56,8 +55,13 @@ public class ProtocolAdapterConfigConverter {
                 entity.getNorthboundMappings().stream()
                         .map(NorthboundMappingEntity::toPersistence)
                         .toList(),
-                factory.convertTagDefinitionObjects(
-                        mapper, entity.getTags().stream().map(TagEntity::toMap).toList()));
+                entity.getTags().stream()
+                        .map(tagEntity -> {
+                            final Tag tag = factory.convertTagDefinitionObject(mapper, tagEntity.toMap());
+                            tag.setScope(entity.getAdapterId());
+                            return tag;
+                        })
+                        .toList());
     }
 
     private @NotNull ProtocolAdapterFactory<?> getProtocolAdapterFactory(final @NotNull String protocolId) {
@@ -70,8 +74,10 @@ public class ProtocolAdapterConfigConverter {
     @SuppressWarnings("TypeParameterUnusedInFormals")
     public @NotNull <T extends Tag> T domainTagToTag(
             final @NotNull String protocolId, final @NotNull DomainTag domainTag) {
+        final Tag tag = getProtocolAdapterFactory(protocolId).convertTagDefinitionObject(mapper, domainTag.toTagMap());
+        tag.setScope(domainTag.getAdapterId());
         //noinspection unchecked
-        return (T) getProtocolAdapterFactory(protocolId).convertTagDefinitionObject(mapper, domainTag.toTagMap());
+        return (T) tag;
     }
 
     public @NotNull JsonNode convertTagDefinitionToJsonNode(final @NotNull TagDefinition tagDefinition) {
