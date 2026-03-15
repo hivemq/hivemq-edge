@@ -29,7 +29,6 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.tag.GenericTag;
-import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
@@ -92,9 +91,12 @@ public class HttpProtocolAdapterConfigTest {
         final HttpSpecificAdapterConfig config = (HttpSpecificAdapterConfig)
                 httpProtocolAdapterFactory.convertConfigObject(mapper, adapter.getConfig(), true);
 
-        final List<Map<String, Object>> tagMaps =
-                adapter.getTags().stream().map(tagEntity -> tagEntity.toMap()).collect(Collectors.toList());
-        final List<? extends Tag> tags = httpProtocolAdapterFactory.convertTagDefinitionObjects(mapper, tagMaps);
+        final List<GenericTag> tags = adapter.getTags().stream()
+                .map(tagEntity -> new GenericTag(
+                        tagEntity.getName(),
+                        tagEntity.getDescription() != null ? tagEntity.getDescription() : "",
+                        mapper.convertValue(tagEntity.getDefinition(), HttpTagDefinition.class)))
+                .collect(Collectors.toList());
 
         assertThat(adapter.getAdapterId()).isEqualTo("my-protocol-adapter");
         assertThat(adapter.getProtocolId()).isEqualTo("http");

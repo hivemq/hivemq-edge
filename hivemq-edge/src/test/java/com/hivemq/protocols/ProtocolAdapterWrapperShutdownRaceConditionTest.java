@@ -33,7 +33,7 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
@@ -348,8 +348,8 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
         }
 
         @Override
-        public @NotNull Class<? extends Tag> tagConfigurationClass() {
-            return null;
+        public @NotNull Class<? extends TagDefinition> tagDefinitionClass() {
+            return TagDefinition.class;
         }
 
         @Override

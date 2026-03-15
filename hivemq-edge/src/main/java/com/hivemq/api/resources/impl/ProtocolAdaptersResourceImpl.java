@@ -680,12 +680,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         return protocolAdapterManager
                 .getAdapterTypeById(protocolId)
                 .map(info -> {
-                    final Class<?> schemaClass = info.tagDefinitionClass() != null
-                            ? info.tagDefinitionClass()
-                            : info.tagConfigurationClass();
                     return Response.ok(new TagSchema()
                                     .protocolId(protocolId)
-                                    .configSchema(customConfigSchemaGenerator.generateJsonSchema(schemaClass)))
+                                    .configSchema(
+                                            customConfigSchemaGenerator.generateJsonSchema(info.tagDefinitionClass())))
                             .build();
                 })
                 .orElseGet(() -> {

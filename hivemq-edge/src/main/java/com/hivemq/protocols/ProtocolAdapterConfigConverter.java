@@ -18,6 +18,7 @@ package com.hivemq.protocols;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
@@ -25,6 +26,8 @@ import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.persistence.domain.DomainTag;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import java.util.Map;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 @Singleton
@@ -57,7 +60,12 @@ public class ProtocolAdapterConfigConverter {
                         .toList(),
                 entity.getTags().stream()
                         .map(tagEntity -> {
-                            final Tag tag = factory.convertTagDefinitionObject(mapper, tagEntity.toMap());
+                            final TagDefinition definition =
+                                    factory.convertTagDefinitionObject(mapper, tagEntity.getDefinition());
+                            final GenericTag tag = new GenericTag(
+                                    tagEntity.getName(),
+                                    Objects.requireNonNullElse(tagEntity.getDescription(), ""),
+                                    definition);
                             tag.setScope(entity.getAdapterId());
                             return tag;
                         })
@@ -74,7 +82,10 @@ public class ProtocolAdapterConfigConverter {
     @SuppressWarnings("TypeParameterUnusedInFormals")
     public @NotNull <T extends Tag> T domainTagToTag(
             final @NotNull String protocolId, final @NotNull DomainTag domainTag) {
-        final Tag tag = getProtocolAdapterFactory(protocolId).convertTagDefinitionObject(mapper, domainTag.toTagMap());
+        final ProtocolAdapterFactory<?> factory = getProtocolAdapterFactory(protocolId);
+        final TagDefinition definition =
+                factory.convertTagDefinitionObject(mapper, mapper.convertValue(domainTag.getDefinition(), Map.class));
+        final GenericTag tag = new GenericTag(domainTag.getTagName(), domainTag.getDescription(), definition);
         tag.setScope(domainTag.getAdapterId());
         //noinspection unchecked
         return (T) tag;
