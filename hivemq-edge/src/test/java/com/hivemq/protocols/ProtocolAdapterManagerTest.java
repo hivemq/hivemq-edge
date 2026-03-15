@@ -37,7 +37,7 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
@@ -321,8 +321,8 @@ class ProtocolAdapterManagerTest {
         }
 
         @Override
-        public @org.jetbrains.annotations.NotNull Class<? extends Tag> tagConfigurationClass() {
-            return null;
+        public @org.jetbrains.annotations.NotNull Class<? extends TagDefinition> tagDefinitionClass() {
+            return TagDefinition.class;
         }
 
         @Override
