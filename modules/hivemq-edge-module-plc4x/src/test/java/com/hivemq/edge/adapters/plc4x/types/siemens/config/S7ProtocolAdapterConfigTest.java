@@ -26,13 +26,13 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
-import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
 import com.hivemq.edge.adapters.plc4x.types.siemens.S7ProtocolAdapterFactory;
 import com.hivemq.exceptions.UnrecoverableException;
@@ -124,9 +124,12 @@ class S7ProtocolAdapterConfigTest {
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
         });
 
-        assertThat(protocolAdapterConfig.getTags().stream().map(t -> (Plc4xTag) t))
-                .containsExactly(new Plc4xTag(
-                        "tag-name", "description", new Plc4xTagDefinition("123", Plc4xDataType.DATA_TYPE.BOOL)));
+        assertThat(protocolAdapterConfig.getTags()).satisfiesExactly(t -> {
+            assertThat(t).isInstanceOf(GenericTag.class);
+            assertThat(t.getName()).isEqualTo("tag-name");
+            assertThat(t.getDescription()).isEqualTo("description");
+            assertThat(t.getDefinition()).isEqualTo(new Plc4xTagDefinition("123", Plc4xDataType.DATA_TYPE.BOOL));
+        });
     }
 
     @Test

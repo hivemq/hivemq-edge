@@ -17,9 +17,9 @@ package com.hivemq.edge.adapters.plc4x.impl;
 
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
 import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
-import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -160,7 +160,7 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
         return plcConnection != null && plcConnection.isConnected();
     }
 
-    public @NotNull CompletableFuture<? extends PlcReadResponse> read(final @NotNull List<Plc4xTag> tags) {
+    public @NotNull CompletableFuture<? extends PlcReadResponse> read(final @NotNull List<GenericTag> tags) {
         lazyConnectionCheck();
         if (!plcConnection.getMetadata().isReadSupported()) {
             return CompletableFuture.failedFuture(new Plc4xException("connection type read-blocking"));
@@ -178,7 +178,7 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
     }
 
     public @NotNull CompletableFuture<? extends PlcSubscriptionResponse> subscribe(
-            final @NotNull Plc4xTag tag, final @NotNull Consumer<PlcSubscriptionEvent> consumer) {
+            final @NotNull GenericTag tag, final @NotNull Consumer<PlcSubscriptionEvent> consumer) {
         lazyConnectionCheck();
         if (!plcConnection.getMetadata().isSubscribeSupported()) {
             return CompletableFuture.failedFuture(new Plc4xException("connection type cannot subscribe"));
@@ -220,5 +220,5 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
     /**
      * Each adapter type will have its own address format. The implementation should provide the defaults
      */
-    protected abstract @NotNull String getTagAddressForSubscription(final @NotNull Plc4xTag tag);
+    protected abstract @NotNull String getTagAddressForSubscription(final @NotNull GenericTag tag);
 }

@@ -31,11 +31,12 @@ import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
 import com.hivemq.edge.adapters.plc4x.PublishChangedDataOnlyHandler;
 import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
-import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -66,7 +67,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     protected static final @NotNull PlcDriverManager driverManager = PlcDriverManager.getDefault();
 
     protected final @NotNull T adapterConfig;
-    protected final @NotNull List<Plc4xTag> tags;
+    protected final @NotNull List<GenericTag> tags;
     protected final @NotNull AdapterFactories adapterFactories;
     private final @NotNull Logger log;
     private final @NotNull Object lock;
@@ -86,7 +87,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.adapterFactories = input.adapterFactories();
-        this.tags = input.getTags().stream().map(tag -> (Plc4xTag) tag).toList();
+        this.tags = input.getTags().stream().map(tag -> (GenericTag) tag).toList();
         this.log = LoggerFactory.getLogger(getClass());
         this.lock = new Object();
         this.lastSamples = new PublishChangedDataOnlyHandler();
@@ -234,7 +235,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
             }
 
             @Override
-            protected @NotNull String getTagAddressForSubscription(final @NotNull Plc4xTag tag) {
+            protected @NotNull String getTagAddressForSubscription(final @NotNull GenericTag tag) {
                 return createTagAddressForSubscription(tag);
             }
         };
@@ -260,10 +261,9 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
      * <p>
      * Default: tagAddress:expectedDataType eg. "0%20:BOOL"
      */
-    protected @NotNull String createTagAddressForSubscription(final @NotNull Plc4xTag tag) {
-        return tag.getDefinition().getTagAddress()
-                + TAG_ADDRESS_TYPE_SEP
-                + tag.getDefinition().getDataType();
+    protected @NotNull String createTagAddressForSubscription(final @NotNull GenericTag tag) {
+        final Plc4xTagDefinition definition = (Plc4xTagDefinition) tag.getDefinition();
+        return definition.getTagAddress() + TAG_ADDRESS_TYPE_SEP + definition.getDataType();
     }
 
     /**
@@ -284,7 +284,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     }
 
     protected @NotNull Plc4xDataSample processReadResponse(
-            final @NotNull List<Plc4xTag> tags, final @NotNull PlcReadResponse readEvent) {
+            final @NotNull List<GenericTag> tags, final @NotNull PlcReadResponse readEvent) {
         // it is possible that the read response does not contain any values at all, leading to unexpected error states
         if (readEvent instanceof final DefaultPlcReadResponse event) {
             if (tags.stream().allMatch(tag -> event.getResponseCode(tag.getName()) == PlcResponseCode.OK)) {
