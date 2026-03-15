@@ -30,8 +30,8 @@ import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationInput;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationSpecificAdapterConfig;
-import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTag;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
@@ -46,7 +46,7 @@ public class SimulationProtocolAdapter implements BatchPollingProtocolAdapter {
     private static final @NotNull Random RANDOM = new Random();
     private final @NotNull String adapterId;
     private final @NotNull ObjectMapper objectMapper = new ObjectMapper();
-    private final @NotNull List<SimulationTag> tags;
+    private final @NotNull List<GenericTag> tags;
 
     public SimulationProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -59,7 +59,7 @@ public class SimulationProtocolAdapter implements BatchPollingProtocolAdapter {
         this.timeWaiter = timeWaiter;
         this.protocolAdapterState.setConnectionStatus(STATELESS);
         this.tags = protocolAdapterInput.getTags().stream()
-                .map(tag -> (SimulationTag) tag)
+                .map(tag -> (GenericTag) tag)
                 .toList();
     }
 
@@ -87,7 +87,7 @@ public class SimulationProtocolAdapter implements BatchPollingProtocolAdapter {
     @Override
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         new Thread(() -> {
-                    for (final SimulationTag tag : tags) {
+                    for (final GenericTag tag : tags) {
                         final int minDelay = adapterConfig.getMinDelay();
                         final int maxDelay = adapterConfig.getMaxDelay();
                         if (minDelay > maxDelay) {
