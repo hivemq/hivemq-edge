@@ -20,9 +20,9 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
-import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterConfig;
-import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTag;
+import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTagDefinition;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.EnumSet;
@@ -121,8 +121,8 @@ public class MtConnectProtocolAdapterInformation implements ProtocolAdapterInfor
     }
 
     @Override
-    public @NotNull Class<? extends Tag> tagConfigurationClass() {
-        return MtConnectAdapterTag.class;
+    public @NotNull Class<? extends TagDefinition> tagDefinitionClass() {
+        return MtConnectAdapterTagDefinition.class;
     }
 
     @Override
