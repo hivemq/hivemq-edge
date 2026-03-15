@@ -16,16 +16,16 @@
 package com.hivemq.edge.adapters.file.payload;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.edge.adapters.file.tag.FileTag;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 public class FileDataPoint implements DataPoint {
 
     private final @NotNull Object tagValue;
-    private final @NotNull FileTag tag;
+    private final @NotNull GenericTag tag;
 
-    public FileDataPoint(final @NotNull FileTag tag, final @NotNull Object tagValue) {
+    public FileDataPoint(final @NotNull GenericTag tag, final @NotNull Object tagValue) {
         this.tag = tag;
         this.tagValue = tagValue;
     }
@@ -40,7 +40,7 @@ public class FileDataPoint implements DataPoint {
         return tag.getName();
     }
 
-    public @NotNull FileTag getTag() {
+    public @NotNull GenericTag getTag() {
         return tag;
     }
 
