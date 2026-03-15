@@ -21,6 +21,7 @@ import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.JsonPayloadCreator;
 import com.hivemq.edge.adapters.file.FilePollingProtocolAdapter;
+import com.hivemq.edge.adapters.file.tag.FileTagDefinition;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -44,7 +45,7 @@ public class FileJsonPayloadCreator implements JsonPayloadCreator {
                 final FilePayload value = new FilePayload(
                         pollingContext.getUserProperties(),
                         dataPoint.getTagValue(),
-                        fileDataPoint.getTag().getDefinition().getContentType(),
+                        ((FileTagDefinition) fileDataPoint.getTag().getDefinition()).getContentType(),
                         pollingContext.getIncludeTagNames() ? dataPoint.getTagName() : null,
                         pollingContext.getIncludeTimestamp() ? System.currentTimeMillis() : null);
                 payloads.add(objectMapper.writeValueAsBytes(value));
