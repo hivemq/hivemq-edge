@@ -23,9 +23,9 @@ import com.digitalpetri.modbus.pdu.ReadInputRegistersRequest;
 import com.digitalpetri.modbus.tcp.Netty;
 import com.digitalpetri.modbus.tcp.client.NettyTcpClientTransport;
 import com.digitalpetri.modbus.tcp.client.NettyTimeoutScheduler;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
 import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
-import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTagDefinition;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -66,8 +66,8 @@ class ModbusClient {
     }
 
     @NotNull
-    CompletionStage<Object> readRegisters(final @NotNull ModbusTag modbusTag) {
-        final ModbusTagDefinition def = modbusTag.getDefinition();
+    CompletionStage<Object> readRegisters(final @NotNull GenericTag modbusTag) {
+        final ModbusTagDefinition def = (ModbusTagDefinition) modbusTag.getDefinition();
         final var dataType = def.getDataType();
         return (switch (def.readType) {
             case HOLDING_REGISTERS -> readHoldingRegisters(def.startIdx, dataType, def.unitId, def.flipRegisters);
