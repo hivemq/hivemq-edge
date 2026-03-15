@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
@@ -38,7 +39,7 @@ import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.http.HttpProtocolAdapterFactory;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
-import com.hivemq.edge.adapters.http.tag.HttpTag;
+import com.hivemq.edge.adapters.http.tag.HttpTagDefinition;
 import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.protocols.ProtocolAdapterConfig;
@@ -112,21 +113,23 @@ public class HttpProtocolAdapterConfigTest {
         assertThat(httpToMqttMapping.getTopic()).isEqualTo("my/destination");
         assertThat(httpToMqttMapping.getMaxQoS()).isEqualTo(1);
 
-        final HttpTag tag = (HttpTag) tags.get(0);
+        final GenericTag tag = (GenericTag) tags.get(0);
+        final HttpTagDefinition tagDef = (HttpTagDefinition) tag.getDefinition();
         assertThat(tag.getName()).isEqualTo("tag1");
-        assertThat(tag.getDefinition().getHttpRequestMethod()).isEqualTo(GET);
-        assertThat(tag.getDefinition().getHttpRequestBodyContentType()).isEqualTo(JSON);
-        assertThat(tag.getDefinition().getHttpRequestBody()).isNull();
-        assertThat(tag.getDefinition().getHttpHeaders()).isEmpty();
-        assertThat(tag.getDefinition().getHttpRequestTimeoutSeconds()).isEqualTo(5);
+        assertThat(tagDef.getHttpRequestMethod()).isEqualTo(GET);
+        assertThat(tagDef.getHttpRequestBodyContentType()).isEqualTo(JSON);
+        assertThat(tagDef.getHttpRequestBody()).isNull();
+        assertThat(tagDef.getHttpHeaders()).isEmpty();
+        assertThat(tagDef.getHttpRequestTimeoutSeconds()).isEqualTo(5);
 
-        final HttpTag tag2 = (HttpTag) tags.get(0);
+        final GenericTag tag2 = (GenericTag) tags.get(0);
+        final HttpTagDefinition tagDef2 = (HttpTagDefinition) tag2.getDefinition();
         assertThat(tag2.getName()).isEqualTo("tag1");
-        assertThat(tag2.getDefinition().getHttpRequestMethod()).isEqualTo(GET);
-        assertThat(tag2.getDefinition().getHttpRequestBodyContentType()).isEqualTo(JSON);
-        assertThat(tag2.getDefinition().getHttpRequestBody()).isNull();
-        assertThat(tag2.getDefinition().getHttpHeaders()).isEmpty();
-        assertThat(tag2.getDefinition().getHttpRequestTimeoutSeconds()).isEqualTo(5);
+        assertThat(tagDef2.getHttpRequestMethod()).isEqualTo(GET);
+        assertThat(tagDef2.getHttpRequestBodyContentType()).isEqualTo(JSON);
+        assertThat(tagDef2.getHttpRequestBody()).isNull();
+        assertThat(tagDef2.getHttpHeaders()).isEmpty();
+        assertThat(tagDef2.getHttpRequestTimeoutSeconds()).isEqualTo(5);
 
         final SouthboundMappingEntity mqttToHttpMapping =
                 adapter.getSouthboundMappings().get(0);
@@ -163,11 +166,12 @@ public class HttpProtocolAdapterConfigTest {
         assertThat(httpToMqttMapping.getTagName()).isEqualTo("tag1");
         assertThat(httpToMqttMapping.getMqttQos()).isEqualTo(0);
 
-        final HttpTag tag = (HttpTag) protocolAdapterConfig.getTags().get(0);
-        assertThat(tag.getDefinition().getHttpRequestMethod()).isEqualTo(POST);
-        assertThat(tag.getDefinition().getHttpRequestBodyContentType()).isEqualTo(YAML);
-        assertThat(tag.getDefinition().getHttpRequestBody()).isNull();
-        assertThat(tag.getDefinition().getHttpHeaders()).isEmpty();
+        final GenericTag tag = (GenericTag) protocolAdapterConfig.getTags().get(0);
+        final HttpTagDefinition tagDef = (HttpTagDefinition) tag.getDefinition();
+        assertThat(tagDef.getHttpRequestMethod()).isEqualTo(POST);
+        assertThat(tagDef.getHttpRequestBodyContentType()).isEqualTo(YAML);
+        assertThat(tagDef.getHttpRequestBody()).isNull();
+        assertThat(tagDef.getHttpHeaders()).isEmpty();
         assertThat(httpToMqttMapping.getMqttTopic()).isEqualTo("my/destination");
     }
 
@@ -241,19 +245,17 @@ public class HttpProtocolAdapterConfigTest {
                         });
 
         assertThat(protocolAdapterConfig.getTags().stream()
-                        .map(tag -> (HttpTag) tag)
+                        .map(tag -> (GenericTag) tag)
                         .collect(Collectors.toList()))
                 .satisfiesExactly(
                         tag -> {
+                            final HttpTagDefinition def = (HttpTagDefinition) tag.getDefinition();
                             assertThat(tag.getName()).isEqualTo("tag1");
-                            assertThat(tag.getDefinition().getHttpRequestMethod())
-                                    .isEqualTo(GET);
-                            assertThat(tag.getDefinition().getHttpRequestTimeoutSeconds())
-                                    .isEqualTo(50);
-                            assertThat(tag.getDefinition().getHttpRequestBodyContentType())
-                                    .isEqualTo(YAML);
-                            assertThat(tag.getDefinition().getHttpRequestBody()).isEqualTo("my-body");
-                            assertThat(tag.getDefinition().getHttpHeaders())
+                            assertThat(def.getHttpRequestMethod()).isEqualTo(GET);
+                            assertThat(def.getHttpRequestTimeoutSeconds()).isEqualTo(50);
+                            assertThat(def.getHttpRequestBodyContentType()).isEqualTo(YAML);
+                            assertThat(def.getHttpRequestBody()).isEqualTo("my-body");
+                            assertThat(def.getHttpHeaders())
                                     .satisfiesExactlyInAnyOrder(
                                             header1 -> {
                                                 assertThat(header1.getName()).isEqualTo("foo 1");
@@ -265,13 +267,12 @@ public class HttpProtocolAdapterConfigTest {
                                             });
                         },
                         tag -> {
+                            final HttpTagDefinition def = (HttpTagDefinition) tag.getDefinition();
                             assertThat(tag.getName()).isEqualTo("tag2");
-                            assertThat(tag.getDefinition().getHttpRequestMethod())
-                                    .isEqualTo(GET);
-                            assertThat(tag.getDefinition().getHttpRequestBodyContentType())
-                                    .isEqualTo(YAML);
-                            assertThat(tag.getDefinition().getHttpRequestBody()).isEqualTo("my-body2");
-                            assertThat(tag.getDefinition().getHttpHeaders())
+                            assertThat(def.getHttpRequestMethod()).isEqualTo(GET);
+                            assertThat(def.getHttpRequestBodyContentType()).isEqualTo(YAML);
+                            assertThat(def.getHttpRequestBody()).isEqualTo("my-body2");
+                            assertThat(def.getHttpHeaders())
                                     .satisfiesExactlyInAnyOrder(
                                             header1 -> {
                                                 assertThat(header1.getName()).isEqualTo("foo 1");
@@ -283,12 +284,11 @@ public class HttpProtocolAdapterConfigTest {
                                             });
                         },
                         tag -> {
+                            final HttpTagDefinition def = (HttpTagDefinition) tag.getDefinition();
                             assertThat(tag.getName()).isEqualTo("tag3");
-                            assertThat(tag.getDefinition().getHttpRequestMethod())
-                                    .isEqualTo(POST);
-                            assertThat(tag.getDefinition().getHttpRequestTimeoutSeconds())
-                                    .isEqualTo(59);
-                            assertThat(tag.getDefinition().getHttpHeaders())
+                            assertThat(def.getHttpRequestMethod()).isEqualTo(POST);
+                            assertThat(def.getHttpRequestTimeoutSeconds()).isEqualTo(59);
+                            assertThat(def.getHttpHeaders())
                                     .satisfiesExactlyInAnyOrder(
                                             header1 -> {
                                                 assertThat(header1.getName()).isEqualTo("foo 1");
@@ -300,12 +300,11 @@ public class HttpProtocolAdapterConfigTest {
                                             });
                         },
                         tag -> {
+                            final HttpTagDefinition def = (HttpTagDefinition) tag.getDefinition();
                             assertThat(tag.getName()).isEqualTo("tag4");
-                            assertThat(tag.getDefinition().getHttpRequestMethod())
-                                    .isEqualTo(PUT);
-                            assertThat(tag.getDefinition().getHttpRequestTimeoutSeconds())
-                                    .isEqualTo(58);
-                            assertThat(tag.getDefinition().getHttpHeaders())
+                            assertThat(def.getHttpRequestMethod()).isEqualTo(PUT);
+                            assertThat(def.getHttpRequestTimeoutSeconds()).isEqualTo(58);
+                            assertThat(def.getHttpHeaders())
                                     .satisfiesExactlyInAnyOrder(
                                             header1 -> {
                                                 assertThat(header1.getName()).isEqualTo("foo 1");
