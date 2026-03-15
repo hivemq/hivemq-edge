@@ -33,7 +33,6 @@ import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.databases.config.DatabasesAdapterConfig;
-import com.hivemq.edge.adapters.databases.config.DatabasesAdapterTag;
 import com.hivemq.edge.adapters.databases.config.DatabasesAdapterTagDefinition;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -165,18 +164,18 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         /* Connect to the database and execute the query */
         log.debug("Handling tags for the adapter");
-        tags.forEach(tag -> loadDataFromDB(pollingOutput, (DatabasesAdapterTag) tag));
+        tags.forEach(tag -> loadDataFromDB(pollingOutput, tag));
 
         protocolAdapterState.setConnectionStatus(STATELESS);
         pollingOutput.finish();
     }
 
-    private void loadDataFromDB(final @NotNull BatchPollingOutput output, final @NotNull DatabasesAdapterTag tag) {
+    private void loadDataFromDB(final @NotNull BatchPollingOutput output, final @NotNull Tag tag) {
         // ARM to ensure the connection is closed afterward
         try (final Connection connection = databaseConnection.getConnection()) {
             log.debug("Getting tag definition");
             /* Get the tag definition (Query, RowLimit and Split Lines)*/
-            final DatabasesAdapterTagDefinition definition = tag.getDefinition();
+            final DatabasesAdapterTagDefinition definition = (DatabasesAdapterTagDefinition) tag.getDefinition();
             log.debug("Executing query : {}", definition.getQuery());
             /* Execute query and handle result */
             final PreparedStatement preparedStatement = connection.prepareStatement(definition.getQuery());

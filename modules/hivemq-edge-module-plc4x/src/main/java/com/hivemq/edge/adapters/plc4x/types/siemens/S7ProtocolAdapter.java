@@ -29,9 +29,10 @@ import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.WSTR
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
-import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
 import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig;
 import java.util.HashMap;
@@ -116,13 +117,13 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7SpecificAdapterCon
     }
 
     @Override
-    protected @NotNull String createTagAddressForSubscription(final @NotNull Plc4xTag tag) {
-        final String tagAddress = tag.getDefinition().getTagAddress();
+    protected @NotNull String createTagAddressForSubscription(final @NotNull GenericTag tag) {
+        final Plc4xTagDefinition definition = (Plc4xTagDefinition) tag.getDefinition();
+        final String tagAddress = definition.getTagAddress();
 
-        final String formattedAddress =
-                String.format("%s%s%s", tagAddress, ":", tag.getDefinition().getDataType());
+        final String formattedAddress = String.format("%s%s%s", tagAddress, ":", definition.getDataType());
 
-        if (SPECIAL_ADDRESS_SCHEME_TYPES.contains(tag.getDefinition().getDataType())) {
+        if (SPECIAL_ADDRESS_SCHEME_TYPES.contains(definition.getDataType())) {
             // correct Siemens` addressing scheme into a valid Plc4x addressing scheme (example replacement: %IW20 ->
             // %IX20)
             if (SHORT_BLOCK_ADDRESS_PATTERN.matcher(formattedAddress).matches()) {

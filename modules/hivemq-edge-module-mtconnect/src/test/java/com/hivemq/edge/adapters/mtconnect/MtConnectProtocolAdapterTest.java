@@ -40,9 +40,9 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterConfig;
 import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterHttpHeader;
-import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTag;
 import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTagDefinition;
 import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
 import com.hivemq.mtconnect.protocol.schemas.MtConnectSchema;
@@ -136,7 +136,7 @@ public class MtConnectProtocolAdapterTest {
         when(adapterInput.adapterFactories()).thenReturn(new AdapterFactoriesImpl());
         when(adapterInput.getConfig()).thenReturn(config);
         when(adapterInput.getTags())
-                .thenReturn(List.of(new MtConnectAdapterTag(
+                .thenReturn(List.of(new GenericTag(
                         "tagName",
                         "tagDescription",
                         new MtConnectAdapterTagDefinition(
@@ -201,7 +201,7 @@ public class MtConnectProtocolAdapterTest {
         when(adapterInput.adapterFactories()).thenReturn(new AdapterFactoriesImpl());
         when(adapterInput.getConfig()).thenReturn(config);
         when(adapterInput.getTags())
-                .thenReturn(List.of(new MtConnectAdapterTag(
+                .thenReturn(List.of(new GenericTag(
                         "tagName",
                         "tagDescription",
                         new MtConnectAdapterTagDefinition(

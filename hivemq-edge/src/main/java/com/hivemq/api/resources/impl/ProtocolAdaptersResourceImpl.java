@@ -679,11 +679,15 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public @NotNull Response getTagSchema(final @NotNull String protocolId) {
         return protocolAdapterManager
                 .getAdapterTypeById(protocolId)
-                .map(info -> Response.ok(new TagSchema()
-                                .protocolId(protocolId)
-                                .configSchema(
-                                        customConfigSchemaGenerator.generateJsonSchema(info.tagConfigurationClass())))
-                        .build())
+                .map(info -> {
+                    final Class<?> schemaClass = info.tagDefinitionClass() != null
+                            ? info.tagDefinitionClass()
+                            : info.tagConfigurationClass();
+                    return Response.ok(new TagSchema()
+                                    .protocolId(protocolId)
+                                    .configSchema(customConfigSchemaGenerator.generateJsonSchema(schemaClass)))
+                            .build();
+                })
                 .orElseGet(() -> {
                     log.warn(
                             "Json Schema for tags for protocols of type '{}' could not be generated because the protocol id is unknown ton this edge instance.",

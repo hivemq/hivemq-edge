@@ -20,8 +20,8 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
-import com.hivemq.adapter.sdk.api.tag.Tag;
-import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
+import com.hivemq.adapter.sdk.api.tag.TagDefinition;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
 import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -116,8 +116,8 @@ public class S7ProtocolAdapterInformation implements ProtocolAdapterInformation 
     }
 
     @Override
-    public @NotNull Class<? extends Tag> tagConfigurationClass() {
-        return Plc4xTag.class;
+    public @NotNull Class<? extends TagDefinition> tagDefinitionClass() {
+        return Plc4xTagDefinition.class;
     }
 
     @Override

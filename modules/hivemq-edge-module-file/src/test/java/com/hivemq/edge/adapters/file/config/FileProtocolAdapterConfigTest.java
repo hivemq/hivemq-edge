@@ -24,13 +24,13 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.file.FileProtocolAdapterFactory;
-import com.hivemq.edge.adapters.file.tag.FileTag;
 import com.hivemq.edge.adapters.file.tag.FileTagDefinition;
 import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.protocols.ProtocolAdapterConfig;
@@ -136,8 +136,12 @@ class FileProtocolAdapterConfigTest {
             assertThat(subscription.getTagName()).isEqualTo("tag1");
         });
 
-        assertThat(protocolAdapterConfig.getTags().stream().map(t -> (FileTag) t))
-                .contains(new FileTag("tag1", "decsription", new FileTagDefinition("pathy", ContentType.BINARY)));
+        assertThat(protocolAdapterConfig.getTags()).satisfiesExactly(tag -> {
+            assertThat(tag).isInstanceOf(GenericTag.class);
+            assertThat(tag.getName()).isEqualTo("tag1");
+            assertThat(tag.getDescription()).isEqualTo("decsription");
+            assertThat(tag.getDefinition()).isEqualTo(new FileTagDefinition("pathy", ContentType.BINARY));
+        });
     }
 
     @Test

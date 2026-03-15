@@ -26,12 +26,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.impl.polling.PollingOutputImpl;
 import com.hivemq.edge.modules.adapters.impl.polling.batch.BatchPollingInputImpl;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationSpecificAdapterConfig;
-import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTag;
 import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTagDefinition;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -56,8 +56,7 @@ class SimulationProtocolAdapterTest {
         when(input.getProtocolAdapterState())
                 .thenReturn(new ProtocolAdapterStateImpl(mock(), "simulation", "test-simulator"));
         when(input.getConfig()).thenReturn(protocolAdapterConfig);
-        when(input.getTags())
-                .thenReturn(List.of(new SimulationTag("tag1", "description", new SimulationTagDefinition())));
+        when(input.getTags()).thenReturn(List.of(new GenericTag("tag1", "description", new SimulationTagDefinition())));
         simulationProtocolAdapter =
                 new SimulationProtocolAdapter(SimulationProtocolAdapterInformation.INSTANCE, input, timeWaiter);
     }

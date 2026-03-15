@@ -25,10 +25,11 @@ import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.edge.adapters.file.config.FileSpecificAdapterConfig;
 import com.hivemq.edge.adapters.file.convertion.MappingException;
 import com.hivemq.edge.adapters.file.payload.FileDataPoint;
-import com.hivemq.edge.adapters.file.tag.FileTag;
+import com.hivemq.edge.adapters.file.tag.FileTagDefinition;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -44,7 +45,7 @@ public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
     private final @NotNull String adapterId;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
-    private final @NotNull List<FileTag> tags;
+    private final @NotNull List<GenericTag> tags;
 
     public FilePollingProtocolAdapter(
             final @NotNull String adapterId,
@@ -53,7 +54,7 @@ public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
         this.adapterId = adapterId;
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
-        this.tags = input.getTags().stream().map(tag -> (FileTag) tag).toList();
+        this.tags = input.getTags().stream().map(tag -> (GenericTag) tag).toList();
         this.protocolAdapterState = input.getProtocolAdapterState();
     }
 
@@ -90,8 +91,9 @@ public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         String absolutePathToFle = "";
         try {
-            for (final FileTag fileTag : tags) {
-                absolutePathToFle = fileTag.getDefinition().getFilePath();
+            for (final GenericTag fileTag : tags) {
+                final FileTagDefinition tagDef = (FileTagDefinition) fileTag.getDefinition();
+                absolutePathToFle = tagDef.getFilePath();
                 final var path = Path.of(absolutePathToFle);
                 final var length = path.toFile().length();
                 final var limit = 64_000; // not a constant to have a more compact code example
@@ -101,7 +103,7 @@ public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
                     return;
                 }
                 final var fileContentArray = Files.readAllBytes(path);
-                final var value = fileTag.getDefinition().getContentType().map(fileContentArray);
+                final var value = tagDef.getContentType().map(fileContentArray);
                 pollingOutput.addDataPoint(new FileDataPoint(fileTag, value));
             }
         } catch (final IOException e) {

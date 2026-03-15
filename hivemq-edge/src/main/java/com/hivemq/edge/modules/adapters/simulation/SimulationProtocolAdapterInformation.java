@@ -20,9 +20,9 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
-import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationSpecificAdapterConfig;
-import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTag;
+import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTagDefinition;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.EnumSet;
@@ -119,8 +119,8 @@ public class SimulationProtocolAdapterInformation implements ProtocolAdapterInfo
     }
 
     @Override
-    public @NotNull Class<? extends Tag> tagConfigurationClass() {
-        return SimulationTag.class;
+    public @NotNull Class<? extends TagDefinition> tagDefinitionClass() {
+        return SimulationTagDefinition.class;
     }
 
     @Override

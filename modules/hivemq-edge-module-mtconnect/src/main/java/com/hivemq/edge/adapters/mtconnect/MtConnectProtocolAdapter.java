@@ -33,9 +33,8 @@ import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterConfig;
-import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTag;
 import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTagDefinition;
 import com.hivemq.edge.adapters.mtconnect.models.MtConnectData;
 import com.hivemq.mtconnect.protocol.schemas.MtConnectSchema;
@@ -84,7 +83,7 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
         OBJECT_MAPPER_EXCLUDE_NULL.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
 
-    protected final @NotNull List<MtConnectAdapterTag> tags;
+    protected final @NotNull List<GenericTag> tags;
     protected final @NotNull MtConnectAdapterConfig adapterConfig;
     protected final @NotNull ProtocolAdapterInformation adapterInformation;
     protected final @NotNull ProtocolAdapterState protocolAdapterState;
@@ -101,8 +100,7 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
         this.adapterConfig = input.getConfig();
         this.adapterFactories = input.adapterFactories();
         this.protocolAdapterState = input.getProtocolAdapterState();
-        this.tags =
-                input.getTags().stream().map(tag -> (MtConnectAdapterTag) tag).toList();
+        this.tags = input.getTags().stream().map(tag -> (GenericTag) tag).toList();
         this.version = input.getVersion();
     }
 
@@ -212,8 +210,8 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
         }
     }
 
-    protected @NotNull CompletableFuture<MtConnectData> pollXml(final @NotNull MtConnectAdapterTag tag) {
-        final MtConnectAdapterTagDefinition definition = tag.getDefinition();
+    protected @NotNull CompletableFuture<MtConnectData> pollXml(final @NotNull GenericTag tag) {
+        final MtConnectAdapterTagDefinition definition = (MtConnectAdapterTagDefinition) tag.getDefinition();
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
         final String url = definition.getUrl();
         builder.uri(URI.create(url));
@@ -231,7 +229,7 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
     }
 
     protected @NotNull MtConnectData processHttpResponse(
-            final @NotNull HttpResponse<String> httpResponse, final @NotNull Tag tag) {
+            final @NotNull HttpResponse<String> httpResponse, final @NotNull GenericTag tag) {
         final MtConnectAdapterTagDefinition definition = (MtConnectAdapterTagDefinition) tag.getDefinition();
         final MtConnectData mtConnectData = new MtConnectData(
                 definition.getUrl(), isStatusCodeSuccessful(httpResponse.statusCode()), tag.getName());

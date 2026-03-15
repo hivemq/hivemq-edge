@@ -36,9 +36,9 @@ import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.edge.adapters.etherip.PublishChangedDataOnlyHandler;
 import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
-import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -62,7 +62,7 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
     private final @NotNull ModbusClient client;
     private final @NotNull PublishChangedDataOnlyHandler publishChangedDataOnlyHandler =
             new PublishChangedDataOnlyHandler();
-    private final @NotNull List<ModbusTag> tags;
+    private final @NotNull List<GenericTag> tags;
     private final @NotNull String adapterId;
     private final @NotNull DataPointFactory dataPointFactory;
     private final @NotNull AtomicBoolean stopRequested;
@@ -76,7 +76,7 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.dataPointFactory = input.adapterFactories().dataPointFactory();
-        this.tags = input.getTags().stream().map(t -> (ModbusTag) t).toList();
+        this.tags = input.getTags().stream().map(t -> (GenericTag) t).toList();
         this.client = new ModbusClient(input.getConfig());
         this.stopRequested = new AtomicBoolean(false);
         this.startRequested = new AtomicBoolean(false);
@@ -185,7 +185,7 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
             final int limit = tags.size();
             final CompletableFuture<ResulTuple>[] readRegisterFutures = new CompletableFuture[limit];
             for (int i = 0; i < limit; i++) {
-                final ModbusTag tag = tags.get(i);
+                final GenericTag tag = tags.get(i);
                 readRegisterFutures[i] = client.readRegisters(tag)
                         .thenApply(result -> new ResulTuple(tag.getName(), result))
                         .toCompletableFuture();

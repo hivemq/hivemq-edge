@@ -27,8 +27,9 @@ import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.edge.adapters.etherip.config.EipSpecificAdapterConfig;
-import com.hivemq.edge.adapters.etherip.config.tag.EipTag;
+import com.hivemq.edge.adapters.etherip.config.tag.EipTagDefinition;
 import com.hivemq.edge.adapters.etherip.model.EtherIpValueFactory;
 import etherip.EtherNetIP;
 import etherip.data.CipException;
@@ -53,7 +54,7 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
     private final @NotNull PublishChangedDataOnlyHandler lastSamples = new PublishChangedDataOnlyHandler();
     private final @NotNull DataPointFactory dataPointFactory;
 
-    private final @NotNull Map<String, EipTag> tags;
+    private final @NotNull Map<String, GenericTag> tags;
 
     public EipPollingProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -63,8 +64,8 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
         this.adapterConfig = input.getConfig();
         this.dataPointFactory = input.adapterFactories().dataPointFactory();
         this.tags = input.getTags().stream()
-                .map(tag -> (EipTag) tag)
-                .collect(Collectors.toMap(tag -> tag.getDefinition().getAddress(), tag -> tag));
+                .map(tag -> (GenericTag) tag)
+                .collect(Collectors.toMap(tag -> ((EipTagDefinition) tag.getDefinition()).getAddress(), tag -> tag));
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.adapterFactories = input.adapterFactories();
     }
@@ -123,8 +124,9 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
             return;
         }
 
-        final var tagAddresses =
-                tags.values().stream().map(v -> v.getDefinition().getAddress()).toArray(String[]::new);
+        final var tagAddresses = tags.values().stream()
+                .map(v -> ((EipTagDefinition) v.getDefinition()).getAddress())
+                .toArray(String[]::new);
         try {
             final var readCipData = client.readTags(tagAddresses);
             for (int i = 0; i < readCipData.length; i++) {

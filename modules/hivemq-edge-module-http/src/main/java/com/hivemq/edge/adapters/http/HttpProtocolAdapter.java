@@ -37,10 +37,10 @@ import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationInput;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig;
 import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.adapters.http.mqtt2http.JsonSchema;
-import com.hivemq.edge.adapters.http.tag.HttpTag;
 import com.hivemq.edge.adapters.http.tag.HttpTagDefinition;
 import java.net.Socket;
 import java.net.URI;
@@ -78,7 +78,7 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull HttpSpecificAdapterConfig adapterConfig;
-    private final @NotNull List<HttpTag> tags;
+    private final @NotNull List<GenericTag> tags;
     private final @NotNull String version;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ModuleServices moduleServices;
@@ -94,7 +94,7 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
         this.adapterId = input.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
-        this.tags = input.getTags().stream().map(tag -> (HttpTag) tag).toList();
+        this.tags = input.getTags().stream().map(tag -> (GenericTag) tag).toList();
         this.version = input.getVersion();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.moduleServices = input.moduleServices();
@@ -178,14 +178,15 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
                 });
     }
 
-    private CompletableFuture<HttpData> pollHttp(final @NotNull HttpClient httpClient, final @NotNull HttpTag httpTag) {
+    private CompletableFuture<HttpData> pollHttp(
+            final @NotNull HttpClient httpClient, final @NotNull GenericTag httpTag) {
 
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
-        final String url = httpTag.getDefinition().getUrl();
-        final HttpTagDefinition tagDef = httpTag.getDefinition();
+        final HttpTagDefinition tagDef = (HttpTagDefinition) httpTag.getDefinition();
+        final String url = tagDef.getUrl();
         builder.uri(URI.create(url));
 
-        builder.timeout(Duration.ofSeconds(httpTag.getDefinition().getHttpRequestTimeoutSeconds()));
+        builder.timeout(Duration.ofSeconds(tagDef.getHttpRequestTimeoutSeconds()));
         builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
 
         tagDef.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
