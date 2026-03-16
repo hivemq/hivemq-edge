@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.tag.GenericTag;
-import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
@@ -59,16 +58,13 @@ public class ProtocolAdapterConfigConverter {
                         .map(NorthboundMappingEntity::toPersistence)
                         .toList(),
                 entity.getTags().stream()
-                        .map(tagEntity -> {
-                            final TagDefinition definition =
-                                    factory.convertTagDefinitionObject(mapper, tagEntity.getDefinition());
-                            final GenericTag tag = new GenericTag(
-                                    tagEntity.getName(),
-                                    Objects.requireNonNullElse(tagEntity.getDescription(), ""),
-                                    definition);
-                            tag.setScope(entity.getAdapterId());
-                            return tag;
-                        })
+                        .map(tagEntity -> new GenericTag(
+                                tagEntity.getName(),
+                                Objects.requireNonNullElse(tagEntity.getDescription(), ""),
+                                mapper.convertValue(
+                                        tagEntity.getDefinition(),
+                                        factory.getInformation().tagDefinitionClass()),
+                                entity.getAdapterId()))
                         .toList());
     }
 
@@ -79,16 +75,12 @@ public class ProtocolAdapterConfigConverter {
                         "No Factory was found for adapter with protocol id '" + protocolId + "'"));
     }
 
-    @SuppressWarnings("TypeParameterUnusedInFormals")
-    public @NotNull <T extends Tag> T domainTagToTag(
-            final @NotNull String protocolId, final @NotNull DomainTag domainTag) {
+    public @NotNull GenericTag domainTagToTag(final @NotNull String protocolId, final @NotNull DomainTag domainTag) {
         final ProtocolAdapterFactory<?> factory = getProtocolAdapterFactory(protocolId);
-        final TagDefinition definition =
-                factory.convertTagDefinitionObject(mapper, mapper.convertValue(domainTag.getDefinition(), Map.class));
-        final GenericTag tag = new GenericTag(domainTag.getTagName(), domainTag.getDescription(), definition);
-        tag.setScope(domainTag.getAdapterId());
-        //noinspection unchecked
-        return (T) tag;
+        final TagDefinition definition = mapper.convertValue(
+                mapper.convertValue(domainTag.getDefinition(), Map.class),
+                factory.getInformation().tagDefinitionClass());
+        return new GenericTag(domainTag.getTagName(), domainTag.getDescription(), definition, domainTag.getAdapterId());
     }
 
     public @NotNull JsonNode convertTagDefinitionToJsonNode(final @NotNull TagDefinition tagDefinition) {

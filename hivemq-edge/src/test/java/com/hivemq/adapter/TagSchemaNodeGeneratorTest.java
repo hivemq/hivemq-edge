@@ -24,7 +24,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
 import org.jetbrains.annotations.NotNull;
@@ -80,7 +79,7 @@ public class TagSchemaNodeGeneratorTest {
     }
 
     @JsonPropertyOrder({"startIdx", "endIdx"})
-    static class TestTag implements Tag {
+    static class TestTag {
 
         @JsonProperty(value = "name")
         @ModuleConfigField(title = "Name")
@@ -103,17 +102,14 @@ public class TagSchemaNodeGeneratorTest {
             this.definition = definition;
         }
 
-        @Override
         public @NotNull TestTagDefinition getDefinition() {
             return definition;
         }
 
-        @Override
         public @NotNull String getName() {
             return name;
         }
 
-        @Override
         public @NotNull String getDescription() {
             return description;
         }

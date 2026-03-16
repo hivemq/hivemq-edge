@@ -16,7 +16,7 @@
 package com.hivemq.protocols;
 
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
-import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.persistence.mappings.SouthboundMapping;
 import java.util.HashSet;
@@ -29,7 +29,7 @@ import org.jetbrains.annotations.NotNull;
 public class ProtocolAdapterConfig {
 
     private final @NotNull ProtocolSpecificAdapterConfig adapterConfig;
-    private final @NotNull List<? extends Tag> tags;
+    private final @NotNull List<GenericTag> tags;
     private final @NotNull String adapterId;
     private final @NotNull String protocolId;
     private final int configVersion;
@@ -43,7 +43,7 @@ public class ProtocolAdapterConfig {
             final @NotNull ProtocolSpecificAdapterConfig protocolSpecificConfig,
             final @NotNull List<SouthboundMapping> southboundMappings,
             final @NotNull List<NorthboundMapping> northboundMappings,
-            final @NotNull List<? extends Tag> tags) {
+            final @NotNull List<GenericTag> tags) {
         this.adapterId = adapterId;
         this.protocolId = protocolId;
         this.configVersion = configVersion;
@@ -82,7 +82,7 @@ public class ProtocolAdapterConfig {
         return adapterConfig;
     }
 
-    public @NotNull List<? extends Tag> getTags() {
+    public @NotNull List<GenericTag> getTags() {
         return tags;
     }
 

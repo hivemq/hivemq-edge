@@ -19,7 +19,7 @@ import static java.util.Objects.requireNonNullElse;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.configuration.entity.EntityValidatable;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
 import com.hivemq.protocols.ProtocolAdapterConfig;
@@ -113,7 +113,7 @@ public class ProtocolAdapterEntity implements EntityValidatable {
                         .toList());
     }
 
-    private static TagEntity fromAdapterTag(final @NotNull Tag tag, final @NotNull ObjectMapper mapper) {
+    private static TagEntity fromAdapterTag(final @NotNull GenericTag tag, final @NotNull ObjectMapper mapper) {
         return new TagEntity(
                 tag.getName(), tag.getDescription(), mapper.convertValue(tag.getDefinition(), AS_MAP_TYPE_REF));
     }
