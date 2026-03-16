@@ -124,24 +124,18 @@
 
             ${IF:HIVEMQ_LDAP_USER_ROLES_ENABLED}
             <user-roles>
-                ${IF:HIVEMQ_LDAP_USER_ROLE_ADMIN_QUERY}
                 <user-role>
                     <role>ADMIN</role>
                     <query>${ENV:HIVEMQ_LDAP_USER_ROLE_ADMIN_QUERY}</query>
                 </user-role>
-                ${IF:HIVEMQ_LDAP_USER_ROLE_ADMIN_QUERY}
-                ${IF:HIVEMQ_LDAP_USER_ROLE_SUPER_QUERY}
                 <user-role>
                     <role>SUPER</role>
                     <query>${ENV:HIVEMQ_LDAP_USER_ROLE_SUPER_QUERY}</query>
                 </user-role>
-                ${IF:HIVEMQ_LDAP_USER_ROLE_SUPER_QUERY}
-                ${IF:HIVEMQ_LDAP_USER_ROLE_USER_QUERY}
                 <user-role>
                     <role>USER</role>
                     <query>${ENV:HIVEMQ_LDAP_USER_ROLE_USER_QUERY}</query>
                 </user-role>
-                ${IF:HIVEMQ_LDAP_USER_ROLE_USER_QUERY}
             </user-roles>
             ${IF:HIVEMQ_LDAP_USER_ROLES_ENABLED}
 
