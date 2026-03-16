@@ -27,22 +27,20 @@ import org.jetbrains.annotations.NotNull;
  */
 public class HiveMQEdgeEnvironmentUtils {
 
-    private static volatile UUID sessionToken;
-    private static Object lock = new Object();
+    private static class InstallationTokenHolder {
+        static final @NotNull String VALUE = getDefaultMachineId();
+    }
+
+    private static class SessionTokenHolder {
+        static final @NotNull String VALUE = UUID.randomUUID().toString();
+    }
 
     public static @NotNull String generateInstallationToken() {
-        return HiveMQEdgeEnvironmentUtils.getDefaultMachineId();
+        return InstallationTokenHolder.VALUE;
     }
 
     public static @NotNull String getSessionToken() {
-        if (sessionToken == null) {
-            synchronized (lock) {
-                if (sessionToken == null) {
-                    sessionToken = UUID.randomUUID();
-                }
-            }
-        }
-        return sessionToken.toString();
+        return SessionTokenHolder.VALUE;
     }
 
     public static @NotNull Map<String, String> generateEnvironmentMap() {
