@@ -1,12 +1,8 @@
 package com.hivemq.spotless
 
-import com.diffplug.gradle.spotless.JavaExtension
-import com.diffplug.gradle.spotless.KotlinGradleExtension
 import com.diffplug.gradle.spotless.SpotlessExtension
-import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.tasks.TaskProvider
 import java.io.File
 
 /**
@@ -31,7 +27,7 @@ class SpotlessConventionPlugin : Plugin<Project> {
         spotless.encoding("UTF-8")
 
         // Java formatting
-        spotless.java(Action<JavaExtension> {
+        spotless.java {
             target("src/*/java/**/*.java")
 
             // License header
@@ -53,12 +49,35 @@ class SpotlessConventionPlugin : Plugin<Project> {
 
             // Respect @formatter:off / @formatter:on directives
             toggleOffOn("@formatter:off", "@formatter:on")
-        })
+        }
+
+        spotless.kotlin {
+            target("src/*/kotlin/**/*.kt", "**/*.kts")
+
+            // License header
+            if (licenseHeaderFile != null) {
+                licenseHeaderFile(licenseHeaderFile)
+            }
+
+            ktlint("1.8.0").editorConfigOverride(
+                mapOf(
+                    "ktlint_code_style" to "ktlint_official",
+                    "indent_size" to "4",
+                    "max_line_length" to "120",
+                )
+            )
+
+            trimTrailingWhitespace()
+            endWithNewline()
+
+            // Respect @formatter:off / @formatter:on directives
+            toggleOffOn("@formatter:off", "@formatter:on")
+        }
 
         // Kotlin Gradle DSL formatting
-        spotless.kotlinGradle(Action<KotlinGradleExtension> {
+        spotless.kotlinGradle {
             target("*.gradle.kts")
-            ktlint("1.5.0").editorConfigOverride(
+            ktlint("1.8.0").editorConfigOverride(
                 mapOf(
                     "ktlint_code_style" to "ktlint_official",
                     "indent_size" to "4",
@@ -67,7 +86,7 @@ class SpotlessConventionPlugin : Plugin<Project> {
             )
             trimTrailingWhitespace()
             endWithNewline()
-        })
+        }
     }
 
     /**
