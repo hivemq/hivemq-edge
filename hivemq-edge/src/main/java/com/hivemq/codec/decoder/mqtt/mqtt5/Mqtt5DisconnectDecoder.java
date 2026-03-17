@@ -112,7 +112,8 @@ public class Mqtt5DisconnectDecoder extends AbstractMqttDecoder<DISCONNECT> {
                         return null;
                     }
                     final Long sessionExpiryIntervalFromChannel = clientConnection.getClientSessionExpiryInterval();
-                    if ((sessionExpiryInterval != 0) && (sessionExpiryIntervalFromChannel == 0)) {
+                    if ((sessionExpiryInterval != 0)
+                            && (sessionExpiryIntervalFromChannel != null && sessionExpiryIntervalFromChannel == 0)) {
                         disconnector.disconnect(
                                 clientConnection.getChannel(),
                                 "A client (IP: {}) sent a DISCONNECT with session expiry interval, but session expiry interval was set to zero at CONNECT. This is not allowed. Disconnecting client.",

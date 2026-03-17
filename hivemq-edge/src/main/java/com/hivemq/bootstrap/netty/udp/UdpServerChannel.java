@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -139,12 +140,12 @@ public class UdpServerChannel extends AbstractServerChannel {
     }
 
     @Override
-    protected SocketAddress localAddress0() {
+    protected @Nullable SocketAddress localAddress0() {
         return ioChannels.size() > 0 ? ioChannels.get(0).localAddress() : null;
     }
 
     @Override
-    public InetSocketAddress localAddress() {
+    public @Nullable InetSocketAddress localAddress() {
         return ioChannels.size() > 0 ? (InetSocketAddress) ioChannels.get(0).localAddress() : null;
     }
 
@@ -179,7 +180,7 @@ public class UdpServerChannel extends AbstractServerChannel {
     }
 
     @Override
-    public InetSocketAddress remoteAddress() {
+    public @Nullable InetSocketAddress remoteAddress() {
         return null;
     }
 

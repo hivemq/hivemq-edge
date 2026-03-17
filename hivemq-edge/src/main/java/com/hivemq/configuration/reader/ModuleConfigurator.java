@@ -21,13 +21,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ModuleConfigurator implements Configurator<Map<String, Object>> {
 
     private final @NotNull ModuleConfigurationService configurationService;
 
-    private volatile Map<String, Object> configEntity;
+    private volatile @Nullable Map<String, Object> configEntity;
     private volatile boolean initialized = false;
 
     public ModuleConfigurator(final @NotNull ModuleConfigurationService configurationService) {
@@ -47,9 +49,10 @@ public class ModuleConfigurator implements Configurator<Map<String, Object>> {
         this.configEntity = config.getModuleConfigs();
         this.initialized = true;
         // Follow the pattern of other configurations, and hand off a clone of the map to the config layer
+        final Map<String, Object> entity = Objects.requireNonNull(this.configEntity);
         final Map<String, Object> configMap = new HashMap<>();
-        for (final String key : configEntity.keySet()) {
-            Object value = configEntity.get(key);
+        for (final String key : entity.keySet()) {
+            Object value = entity.get(key);
             if (value instanceof List list) {
                 // if its a <structural element> ie. a list, create a shallow copy to additions and removals are
                 // distinct

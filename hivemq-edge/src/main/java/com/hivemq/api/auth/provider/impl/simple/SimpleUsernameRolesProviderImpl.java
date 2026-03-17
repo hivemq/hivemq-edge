@@ -22,6 +22,7 @@ import com.hivemq.api.auth.provider.IUsernameRolesProvider;
 import com.hivemq.http.core.UsernamePasswordRoles;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -62,7 +63,7 @@ public class SimpleUsernameRolesProviderImpl implements IUsernameRolesProvider {
             if (!Arrays.equals(user.getPassword(), password)) {
                 return null;
             } else {
-                return new UsernameRoles(user.getUserName(), Set.copyOf(user.getRoles()));
+                return new UsernameRoles(Objects.requireNonNull(user.getUserName()), Set.copyOf(user.getRoles()));
             }
         });
     }

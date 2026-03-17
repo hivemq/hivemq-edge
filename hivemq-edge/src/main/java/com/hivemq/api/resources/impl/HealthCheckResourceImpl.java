@@ -21,6 +21,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Simple health check response that returns status code 200.
@@ -47,11 +48,11 @@ public class HealthCheckResourceImpl extends AbstractApi implements HealthCheckE
 
     public static class HealthStatus {
 
-        public @NotNull String status;
+        public @Nullable String status;
 
         public HealthStatus() {}
 
-        public @NotNull String getStatus() {
+        public @Nullable String getStatus() {
             return status;
         }
     }

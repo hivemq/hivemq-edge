@@ -234,6 +234,7 @@ public class IncomingSubscribeService {
         return true;
     }
 
+    @SuppressWarnings("NullAway") // clientId and mqttVersion are always set when subscriptions are flowing
     private void persistSubscriptionForClient(
             final @NotNull ChannelHandlerContext ctx,
             final @NotNull SUBSCRIBE msg,

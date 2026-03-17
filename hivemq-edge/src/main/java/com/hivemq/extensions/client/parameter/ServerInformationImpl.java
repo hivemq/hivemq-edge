@@ -32,6 +32,9 @@ import org.jetbrains.annotations.NotNull;
  * @since 4.0.0
  */
 @Singleton
+// NullAway: SystemInformation fields (version, homeFolder, dataFolder, logFolder, extensionsFolder) are @Nullable
+// but are guaranteed to be initialized before ServerInformationImpl is used, as it is created after system init.
+@SuppressWarnings("NullAway")
 public class ServerInformationImpl implements ServerInformation {
 
     @NotNull

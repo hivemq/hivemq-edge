@@ -16,6 +16,7 @@
 package com.hivemq.configuration.entity;
 
 import jakarta.xml.bind.annotation.adapters.XmlAdapter;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Lukas Brandl
@@ -23,7 +24,7 @@ import jakarta.xml.bind.annotation.adapters.XmlAdapter;
 public class StringTrimAdapter extends XmlAdapter<String, String> {
 
     @Override
-    public String unmarshal(final String value) throws Exception {
+    public @Nullable String unmarshal(final @Nullable String value) throws Exception {
         if (value == null) {
             return null;
         }
@@ -31,7 +32,7 @@ public class StringTrimAdapter extends XmlAdapter<String, String> {
     }
 
     @Override
-    public String marshal(final String value) throws Exception {
+    public @Nullable String marshal(final @Nullable String value) throws Exception {
         if (value == null) {
             return null;
         }

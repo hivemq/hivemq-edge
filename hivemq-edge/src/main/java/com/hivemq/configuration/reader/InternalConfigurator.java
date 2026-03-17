@@ -19,13 +19,15 @@ import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.InternalConfigEntity;
 import com.hivemq.configuration.entity.OptionEntity;
 import com.hivemq.configuration.service.InternalConfigurationService;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class InternalConfigurator implements Configurator<InternalConfigEntity> {
 
     private final @NotNull InternalConfigurationService internalConfigurationService;
 
-    private volatile InternalConfigEntity configEntity;
+    private volatile @Nullable InternalConfigEntity configEntity;
     private volatile boolean initialized = false;
 
     public InternalConfigurator(final @NotNull InternalConfigurationService internalConfigurationService) {
@@ -45,7 +47,7 @@ public class InternalConfigurator implements Configurator<InternalConfigEntity> 
         this.configEntity = config.getInternal();
         this.initialized = true;
 
-        for (final OptionEntity optionEntity : configEntity.getOptions()) {
+        for (final OptionEntity optionEntity : Objects.requireNonNull(this.configEntity).getOptions()) {
             internalConfigurationService.set(optionEntity.getKey(), optionEntity.getValue());
         }
 

@@ -18,7 +18,9 @@ package com.hivemq.util;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Objects;
 import javax.annotation.concurrent.NotThreadSafe;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * This int to int map designed for minimal memory overhead for instaces with very few entries.
@@ -31,7 +33,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 @NotThreadSafe
 public class IntMap implements Iterable<IntMap.IntMapEntry> {
 
-    private int[] backingArray = null;
+    private int @Nullable [] backingArray = null;
 
     public IntMap() {}
 
@@ -140,6 +142,7 @@ public class IntMap implements Iterable<IntMap.IntMapEntry> {
      * @param value will be accessible by the key
      * @param index the index at which the entry is put
      */
+    @SuppressWarnings("NullAway") // intentionally unsafe method, caller must ensure backingArray is initialized
     public void putUnsafe(final int key, final int value, final int index) {
         final int keyIndex = index * 2;
 
@@ -217,8 +220,9 @@ public class IntMap implements Iterable<IntMap.IntMapEntry> {
     }
 
     private void growArray() {
-        final int[] newArray = new int[backingArray.length + 2];
-        System.arraycopy(backingArray, 0, newArray, 0, backingArray.length);
+        final int[] array = Objects.requireNonNull(backingArray);
+        final int[] newArray = new int[array.length + 2];
+        System.arraycopy(array, 0, newArray, 0, array.length);
         backingArray = newArray;
     }
 
@@ -259,11 +263,12 @@ public class IntMap implements Iterable<IntMap.IntMapEntry> {
         }
 
         @Override
-        public IntMapEntry next() {
+        public @Nullable IntMapEntry next() {
             if (!hasNext()) {
                 return null;
             }
-            final IntMapEntry entry = new IntMapEntry(map.backingArray[nextIndex], map.backingArray[nextIndex + 1]);
+            final int[] array = Objects.requireNonNull(map.backingArray);
+            final IntMapEntry entry = new IntMapEntry(array[nextIndex], array[nextIndex + 1]);
             nextIndex += 2;
             return entry;
         }

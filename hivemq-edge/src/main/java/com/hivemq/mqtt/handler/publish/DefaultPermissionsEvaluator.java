@@ -38,8 +38,11 @@ public final class DefaultPermissionsEvaluator {
     private DefaultPermissionsEvaluator() {}
 
     public static boolean checkWillPublish(
-            final @Nullable ModifiableDefaultPermissions permissions, final @NotNull MqttWillPublish willPublish) {
+            final @Nullable ModifiableDefaultPermissions permissions, final @Nullable MqttWillPublish willPublish) {
 
+        if (willPublish == null) {
+            return false;
+        }
         return checkPublish(permissions, willPublish.getTopic(), willPublish.getQos(), willPublish.isRetain());
     }
 

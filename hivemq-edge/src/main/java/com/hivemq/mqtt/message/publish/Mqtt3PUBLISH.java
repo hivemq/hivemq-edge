@@ -17,6 +17,7 @@ package com.hivemq.mqtt.message.publish;
 
 import com.hivemq.mqtt.message.Message;
 import com.hivemq.mqtt.message.QoS;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -42,6 +43,7 @@ public interface Mqtt3PUBLISH extends Message {
     /**
      * @return the payload of the publish message
      */
+    @Nullable
     byte[] getPayload();
 
     /**

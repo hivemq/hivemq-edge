@@ -28,6 +28,6 @@ public class BadRequestError extends ProblemDetails {
                 "Request could not be processed",
                 "Request could not be processed",
                 HttpStatus.BAD_REQUEST_400,
-                List.of(new Error(error)));
+                List.of(new Error(error != null ? error : "Bad request")));
     }
 }

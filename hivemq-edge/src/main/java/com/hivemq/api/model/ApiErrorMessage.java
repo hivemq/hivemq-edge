@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Bean to pass error messages back through the API in a meaningful way.
@@ -31,48 +32,48 @@ public class ApiErrorMessage {
 
     @JsonProperty("title")
     @Schema(description = "The title of this error")
-    private String title;
+    private @Nullable String title;
 
     @JsonProperty("detail")
     @Schema(description = "Detailed contextual description of this error")
-    private String detail;
+    private @Nullable String detail;
 
     @JsonProperty("fieldName")
     @Schema(description = "Application Error Code associate with this field")
-    private String fieldName;
+    private @Nullable String fieldName;
 
     public ApiErrorMessage() {}
 
     public ApiErrorMessage(
-            final @JsonProperty("fieldName") @NotNull String fieldName,
-            final @JsonProperty("title") @NotNull String title,
-            final @JsonProperty("detail") @NotNull String detail) {
+            final @JsonProperty("fieldName") @Nullable String fieldName,
+            final @JsonProperty("title") @Nullable String title,
+            final @JsonProperty("detail") @Nullable String detail) {
         this.fieldName = fieldName;
         this.title = title;
         this.detail = detail;
     }
 
-    public String getTitle() {
+    public @Nullable String getTitle() {
         return title;
     }
 
-    public void setTitle(final @NotNull String title) {
+    public void setTitle(final @Nullable String title) {
         this.title = title;
     }
 
-    public String getDetail() {
+    public @Nullable String getDetail() {
         return detail;
     }
 
-    public void setDetail(final @NotNull String detail) {
+    public void setDetail(final @Nullable String detail) {
         this.detail = detail;
     }
 
-    public void setFieldName(final @NotNull String fieldName) {
+    public void setFieldName(final @Nullable String fieldName) {
         this.fieldName = fieldName;
     }
 
-    public String getFieldName() {
+    public @Nullable String getFieldName() {
         return fieldName;
     }
 

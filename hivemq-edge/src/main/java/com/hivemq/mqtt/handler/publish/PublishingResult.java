@@ -28,7 +28,7 @@ public class PublishingResult {
 
     private final @NotNull PublishReturnCode publishReturnCode;
     private final @Nullable String reasonString;
-    private final @NotNull AckReasonCode ackReasonCode;
+    private final @Nullable AckReasonCode ackReasonCode;
 
     private PublishingResult(final @NotNull PublishReturnCode publishReturnCode, final @Nullable String reasonString) {
         this(publishReturnCode, reasonString, null);
@@ -56,7 +56,7 @@ public class PublishingResult {
         return reasonString;
     }
 
-    public @NotNull AckReasonCode getAckReasonCode() {
+    public @Nullable AckReasonCode getAckReasonCode() {
         return ackReasonCode;
     }
 

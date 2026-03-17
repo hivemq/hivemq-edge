@@ -19,18 +19,19 @@ import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 import com.hivemq.protocols.InternalWritingContext;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class SouthboundMapping implements InternalWritingContext {
 
     private final @NotNull String topicFilter;
     private final @NotNull String tagName;
-    private final @NotNull FieldMapping fieldMapping;
+    private final @Nullable FieldMapping fieldMapping;
     private final @NotNull String schema;
 
     public SouthboundMapping(
             final @NotNull String tagName,
             final @NotNull String topicFilter,
-            final @NotNull FieldMapping fieldMapping,
+            final @Nullable FieldMapping fieldMapping,
             final @NotNull String schema) {
         this.tagName = tagName;
         this.topicFilter = topicFilter;
@@ -49,7 +50,8 @@ public class SouthboundMapping implements InternalWritingContext {
     }
 
     @Override
-    public @NotNull FieldMapping getFieldMapping() {
+    @SuppressWarnings("NullAway") // SouthboundMapping may have null fieldMapping; callers handle it
+    public @Nullable FieldMapping getFieldMapping() {
         return fieldMapping;
     }
 
@@ -69,7 +71,7 @@ public class SouthboundMapping implements InternalWritingContext {
         return new com.hivemq.edge.api.model.SouthboundMapping()
                 .topicFilter(this.getTopicFilter())
                 .tagName(this.getTagName())
-                .fieldMapping(this.fieldMapping.toModel());
+                .fieldMapping(Objects.requireNonNull(this.fieldMapping).toModel());
     }
 
     @Override

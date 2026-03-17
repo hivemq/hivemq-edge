@@ -32,19 +32,19 @@ public class FirstUseInformation {
 
     @JsonProperty("prefillUsername")
     @Schema(description = "A String indicating if the prefill data for the username/password page.", nullable = true)
-    private final @NotNull String prefillUsername;
+    private final @Nullable String prefillUsername;
 
     @JsonProperty("prefillPassword")
     @Schema(description = "A String indicating if the prefill data for the username/password page.", nullable = true)
-    private final @NotNull String prefillPassword;
+    private final @Nullable String prefillPassword;
 
     @JsonProperty("firstUseTitle")
     @Schema(description = "A header string to use when firstUse = true.", nullable = true)
-    private final @NotNull String firstUseTitle;
+    private final @Nullable String firstUseTitle;
 
     @JsonProperty("firstUseDescription")
     @Schema(description = "A description string to use when firstUse = true.", nullable = true)
-    private final @NotNull String firstUseDescription;
+    private final @Nullable String firstUseDescription;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public FirstUseInformation(
@@ -64,19 +64,19 @@ public class FirstUseInformation {
         return firstUse;
     }
 
-    public String getPrefillUsername() {
+    public @Nullable String getPrefillUsername() {
         return prefillUsername;
     }
 
-    public String getPrefillPassword() {
+    public @Nullable String getPrefillPassword() {
         return prefillPassword;
     }
 
-    public String getFirstUseTitle() {
+    public @Nullable String getFirstUseTitle() {
         return firstUseTitle;
     }
 
-    public String getFirstUseDescription() {
+    public @Nullable String getFirstUseDescription() {
         return firstUseDescription;
     }
 }

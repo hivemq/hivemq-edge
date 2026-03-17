@@ -31,6 +31,7 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
@@ -94,7 +95,7 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayEndpointA
                 requireNonNullElse(getProtocolForPort(listener.getPort()), "mqtt"));
     }
 
-    private String getProtocolForPort(final int port) {
+    private @Nullable String getProtocolForPort(final int port) {
         // -- Uses IANA ports to map, otherwise its unknown
         // -- TODO Add element to config for protocol
         return switch (port) {
@@ -107,7 +108,7 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayEndpointA
         };
     }
 
-    private Listener.TRANSPORT getTransportForPort(final int port) {
+    private @Nullable Listener.TRANSPORT getTransportForPort(final int port) {
         // -- Uses IANA ports to map, otherwise its unknown
         // -- TODO Add element to config for protocol
         return switch (port) {

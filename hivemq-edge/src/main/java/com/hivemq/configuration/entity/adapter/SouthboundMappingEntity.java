@@ -113,7 +113,7 @@ public class SouthboundMappingEntity implements EntityValidatable {
         return new SouthboundMappingEntity(
                 southboundMapping.getTagName(),
                 southboundMapping.getTopicFilter(),
-                FieldMappingEntity.from(southboundMapping.getFieldMapping()),
+                Objects.requireNonNull(FieldMappingEntity.from(southboundMapping.getFieldMapping())),
                 southboundMapping.getSchema());
     }
 
@@ -123,7 +123,7 @@ public class SouthboundMappingEntity implements EntityValidatable {
         return new SouthboundMappingEntity(
                 southboundMapping.getTagName(),
                 southboundMapping.getTopicFilter(),
-                FieldMappingEntity.from(southboundMapping.getFieldMapping()),
+                Objects.requireNonNull(FieldMappingEntity.from(southboundMapping.getFieldMapping())),
                 schema);
     }
 

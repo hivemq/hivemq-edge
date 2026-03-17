@@ -22,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -109,7 +110,7 @@ public class ListenableFutureConverter {
                 listenableFuture,
                 new FutureCallback<>() {
                     @Override
-                    public void onSuccess(final T result) {
+                    public void onSuccess(final @Nullable T result) {
                         final ClassLoader current = Thread.currentThread().getContextClassLoader();
                         try {
                             if (nullableResult && result == null) {

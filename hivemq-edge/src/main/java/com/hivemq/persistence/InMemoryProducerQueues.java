@@ -96,7 +96,7 @@ public class InMemoryProducerQueues implements ProducerQueues {
         return submitInternal(bucketIndex, task, false);
     }
 
-    private <R> @Nullable ListenableFuture<R> submitInternal(
+    private <R> @NotNull ListenableFuture<R> submitInternal(
             final int bucketIndex, final @NotNull Task<R> task, final boolean ignoreShutdown) {
         if (!ignoreShutdown && shutdown.get() && System.currentTimeMillis() - shutdownStartTime > shutdownGracePeriod) {
             return SettableFuture.create(); // Future will never return since we are shutting down.

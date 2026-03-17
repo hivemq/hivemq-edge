@@ -23,6 +23,7 @@ import java.nio.channels.OverlappingFileLockException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.StandardOpenOption;
 import java.util.zip.GZIPOutputStream;
+import org.jetbrains.annotations.Nullable;
 
 public class Files {
 
@@ -45,7 +46,7 @@ public class Files {
         return name;
     }
 
-    public static String getFileExtension(String filePath) {
+    public static @Nullable String getFileExtension(String filePath) {
         int idx = filePath.lastIndexOf(PERIOD);
         String ext = null;
         if (idx > -1) {

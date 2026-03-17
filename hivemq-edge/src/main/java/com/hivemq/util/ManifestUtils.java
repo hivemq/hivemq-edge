@@ -23,6 +23,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +31,7 @@ public class ManifestUtils {
 
     private static final Logger log = LoggerFactory.getLogger(ManifestUtils.class);
 
-    public static String getValueFromManifest(final Class clazz, final String name) {
+    public static @Nullable String getValueFromManifest(final Class clazz, final String name) {
         try {
             final URL resource = getResource(clazz, "META-INF/MANIFEST.MF");
 
@@ -54,7 +55,7 @@ public class ManifestUtils {
     }
 
     @VisibleForTesting
-    public static URL getResource(final Class clazz, final String resourcePath) {
+    public static @Nullable URL getResource(final Class clazz, final String resourcePath) {
 
         try {
 

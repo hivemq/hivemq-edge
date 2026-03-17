@@ -132,7 +132,7 @@ class MatchingNodeSubscriptions {
         getAllSubscriptionsStream().filter(itemFilter).forEach(subscriber -> {
             if (subscribersBuilder != null) {
                 subscribersBuilder.add(subscriber);
-            } else {
+            } else if (subscriberNamesBuilder != null) {
                 subscriberNamesBuilder.add(subscriber.getSubscriber());
             }
         });

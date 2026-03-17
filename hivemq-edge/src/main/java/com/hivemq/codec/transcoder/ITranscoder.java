@@ -16,6 +16,7 @@
 package com.hivemq.codec.transcoder;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Convert messages from one type to another. Parameterized using Google convention where FromT is the type you
@@ -35,7 +36,7 @@ public interface ITranscoder<FromT, ToT> {
      * @return a new instance of the message you are converting to
      * @throws MessageTranscodingException a fatal error converting the type, for example a protocol violation
      */
-    @NotNull
+    @Nullable
     TranscodingResult<FromT, ToT> transcode(@NotNull ITranscodingContext context, @NotNull FromT messageIn);
 
     boolean canHandle(@NotNull ITranscodingContext context, @NotNull Class<? extends FromT> messageType);

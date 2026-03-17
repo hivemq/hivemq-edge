@@ -16,31 +16,32 @@
 package com.hivemq.http.core;
 
 import java.util.Map;
+import org.jetbrains.annotations.Nullable;
 
 public class HttpResponse {
 
-    Map<String, String> responseHeaders;
-    String requestUrl;
-    String statusMessage;
-    String contentEncoding;
+    @Nullable Map<String, String> responseHeaders;
+    @Nullable String requestUrl;
+    @Nullable String statusMessage;
+    @Nullable String contentEncoding;
     int statusCode;
-    byte[] responseBody;
+    byte @Nullable [] responseBody;
     int contentLength;
-    String contentType;
+    @Nullable String contentType;
 
-    public String getContentEncoding() {
+    public @Nullable String getContentEncoding() {
         return contentEncoding;
     }
 
-    public void setContentEncoding(String contentEncoding) {
+    public void setContentEncoding(@Nullable String contentEncoding) {
         this.contentEncoding = contentEncoding;
     }
 
-    public String getStatusMessage() {
+    public @Nullable String getStatusMessage() {
         return statusMessage;
     }
 
-    public void setStatusMessage(String statusMessage) {
+    public void setStatusMessage(@Nullable String statusMessage) {
         this.statusMessage = statusMessage;
     }
 
@@ -52,11 +53,11 @@ public class HttpResponse {
         this.statusCode = statusCode;
     }
 
-    public byte[] getResponseBody() {
+    public byte @Nullable [] getResponseBody() {
         return responseBody;
     }
 
-    public void setResponseBody(byte[] responseBody) {
+    public void setResponseBody(byte @Nullable [] responseBody) {
         this.responseBody = responseBody;
     }
 
@@ -68,11 +69,11 @@ public class HttpResponse {
         this.contentLength = contentLength;
     }
 
-    public String getContentType() {
+    public @Nullable String getContentType() {
         return contentType;
     }
 
-    public void setContentType(String contentType) {
+    public void setContentType(@Nullable String contentType) {
         this.contentType = contentType;
     }
 
@@ -80,19 +81,19 @@ public class HttpResponse {
         return getStatusCode() < 200 || getStatusCode() > 299;
     }
 
-    public String getRequestUrl() {
+    public @Nullable String getRequestUrl() {
         return requestUrl;
     }
 
-    public void setRequestUrl(String requestUrl) {
+    public void setRequestUrl(@Nullable String requestUrl) {
         this.requestUrl = requestUrl;
     }
 
-    public Map<String, String> getResponseHeaders() {
+    public @Nullable Map<String, String> getResponseHeaders() {
         return responseHeaders;
     }
 
-    public void setResponseHeaders(Map<String, String> responseHeaders) {
+    public void setResponseHeaders(@Nullable Map<String, String> responseHeaders) {
         this.responseHeaders = responseHeaders;
     }
 

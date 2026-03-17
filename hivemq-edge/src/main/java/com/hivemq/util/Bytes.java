@@ -91,7 +91,7 @@ public class Bytes {
      * indicated by the prefixed 16-bit length.
      * @throws NullPointerException if the passed {@link ByteBuf} is <code>null</code>
      */
-    public static byte[] getPrefixedBytes(final ByteBuf buf) {
+    public static byte @Nullable [] getPrefixedBytes(final ByteBuf buf) {
         checkNotNull(buf);
         if (buf.readableBytes() < 2) {
             return null;

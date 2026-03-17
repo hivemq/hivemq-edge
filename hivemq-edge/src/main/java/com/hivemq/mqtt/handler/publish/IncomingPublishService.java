@@ -128,9 +128,10 @@ public class IncomingPublishService {
             final Long maxPublishSize = clientConnection.getMaxPacketSizeSend();
             if (!isMessageSizeAllowed(maxPublishSize, publish)) {
                 final String clientId = clientConnection.getClientId();
+                final byte[] payload = publish.getPayload();
                 final String logMessage = "Client '" + clientId
                         + "' (IP: {}) sent a PUBLISH with "
-                        + publish.getPayload().length
+                        + (payload != null ? payload.length : 0)
                         + " bytes payload its max allowed size is "
                         + maxPublishSize
                         + " bytes. Disconnecting client.";
@@ -369,12 +370,20 @@ public class IncomingPublishService {
 
     private @NotNull Mqtt5PubRecReasonCode resolveMqtt5PubRecReasonCode(
             final @NotNull PublishingResult publishingResult) {
-        return Mqtt5PubRecReasonCode.from(publishingResult.getAckReasonCode());
+        final AckReasonCode ackReasonCode = publishingResult.getAckReasonCode();
+        if (ackReasonCode == null) {
+            return Mqtt5PubRecReasonCode.UNSPECIFIED_ERROR;
+        }
+        return Mqtt5PubRecReasonCode.from(ackReasonCode);
     }
 
     private @NotNull Mqtt5PubAckReasonCode resolveMqtt5PubAckReasonCode(
             final @NotNull PublishingResult publishingResult) {
-        return Mqtt5PubAckReasonCode.from(publishingResult.getAckReasonCode());
+        final AckReasonCode ackReasonCode = publishingResult.getAckReasonCode();
+        if (ackReasonCode == null) {
+            return Mqtt5PubAckReasonCode.UNSPECIFIED_ERROR;
+        }
+        return Mqtt5PubAckReasonCode.from(ackReasonCode);
     }
 
     private boolean isMessageSizeAllowed(final @Nullable Long maxPublishSize, final @NotNull PUBLISH publish) {

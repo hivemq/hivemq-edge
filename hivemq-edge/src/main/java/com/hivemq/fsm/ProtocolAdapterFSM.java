@@ -18,6 +18,7 @@ package com.hivemq.fsm;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
@@ -129,7 +130,7 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
     }
 
     public boolean transitionAdapterState(final @NotNull AdapterStateEnum newState) {
-        final var currentState = adapterState.get();
+        final var currentState = Objects.requireNonNull(adapterState.get());
         if (canTransition(currentState, newState)) {
             if (adapterState.compareAndSet(currentState, newState)) {
                 log.debug("Adapter state transition from {} to {} for adapter {}", currentState, newState, adapterId);
@@ -143,7 +144,7 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
     }
 
     public boolean transitionNorthboundState(final @NotNull StateEnum newState) {
-        final var currentState = northboundState.get();
+        final var currentState = Objects.requireNonNull(northboundState.get());
         if (canTransition(currentState, newState)) {
             if (northboundState.compareAndSet(currentState, newState)) {
                 log.debug(
@@ -158,7 +159,7 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
     }
 
     public boolean transitionSouthboundState(final @NotNull StateEnum newState) {
-        final var currentState = southboundState.get();
+        final var currentState = Objects.requireNonNull(southboundState.get());
         if (canTransition(currentState, newState)) {
             if (southboundState.compareAndSet(currentState, newState)) {
                 log.debug(
@@ -249,7 +250,10 @@ public abstract class ProtocolAdapterFSM implements Consumer<ProtocolAdapterStat
     }
 
     public State currentState() {
-        return new State(adapterState.get(), northboundState.get(), southboundState.get());
+        return new State(
+                Objects.requireNonNull(adapterState.get()),
+                Objects.requireNonNull(northboundState.get()),
+                Objects.requireNonNull(southboundState.get()));
     }
 
     private void notifyListenersAboutStateTransition(final @NotNull State newState) {

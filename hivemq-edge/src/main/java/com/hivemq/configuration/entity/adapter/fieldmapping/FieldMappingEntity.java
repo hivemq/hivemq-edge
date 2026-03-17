@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("unused")
 public class FieldMappingEntity implements EntityValidatable {
@@ -48,7 +49,7 @@ public class FieldMappingEntity implements EntityValidatable {
         return instructions;
     }
 
-    public static @NotNull FieldMappingEntity from(final @NotNull FieldMapping model) {
+    public static @Nullable FieldMappingEntity from(final @Nullable FieldMapping model) {
         if (model == null) {
             return null;
         }
@@ -57,7 +58,7 @@ public class FieldMappingEntity implements EntityValidatable {
         return new FieldMappingEntity(fieldMappingEntityList);
     }
 
-    public static @NotNull FieldMappingEntity from(final @NotNull com.hivemq.edge.api.model.FieldMapping model) {
+    public static @Nullable FieldMappingEntity from(final @Nullable com.hivemq.edge.api.model.FieldMapping model) {
         if (model == null) {
             return null;
         }

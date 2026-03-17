@@ -67,7 +67,8 @@ public class AsyncOutputImpl<T extends PluginTaskOutput> implements Async<T> {
         if (asyncFuture.isDone()) {
             try {
                 // timeout is not needed here, because the future is already done, but better safe than sorry
-                return asyncFuture.get(1, TimeUnit.SECONDS) ? Status.DONE : Status.CANCELED;
+                final Boolean done = asyncFuture.get(1, TimeUnit.SECONDS);
+                return Boolean.TRUE.equals(done) ? Status.DONE : Status.CANCELED;
             } catch (final Exception e) {
                 return Status.CANCELED;
             }

@@ -20,6 +20,7 @@ import com.hivemq.metrics.MetricsHolder;
 import java.text.NumberFormat;
 import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Georg Held
@@ -77,7 +78,7 @@ public class MessageDroppedServiceImpl implements MessageDroppedService {
      * Update the metrics if a qos 0 message was dropped because the client socket was not writable
      */
     @Override
-    public void notWritable(final @NotNull String clientId, final @NotNull String topic, final int qos) {
+    public void notWritable(final @Nullable String clientId, final @NotNull String topic, final int qos) {
         metricsHolder.getDroppedMessageCounter().inc();
         eventLog.messageDropped(clientId, topic, qos, "The tcp socket was not writable");
     }

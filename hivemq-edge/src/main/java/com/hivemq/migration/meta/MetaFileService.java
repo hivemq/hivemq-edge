@@ -19,6 +19,7 @@ import com.google.common.base.Preconditions;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.util.LocalPersistenceFileUtil;
 import java.io.File;
+import java.util.Objects;
 import java.io.IOException;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
@@ -41,7 +42,7 @@ public class MetaFileService {
     @NotNull
     public static MetaInformation readMetaFile(final @NotNull SystemInformation systemInformation) {
 
-        final File dataFolder = systemInformation.getDataFolder();
+        final File dataFolder = Objects.requireNonNull(systemInformation.getDataFolder());
         final MetaInformation metaInformation = new MetaInformation();
 
         if (!dataFolder.exists()) {

@@ -106,7 +106,7 @@ public class ProducerQueuesImpl implements ProducerQueues {
         return submitInternal(bucketIndex, task, false);
     }
 
-    @Nullable
+    @NotNull
     public <R> ListenableFuture<R> submitInternal(
             final int bucketIndex, final @NotNull Task<R> task, final boolean ignoreShutdown) {
         if (!ignoreShutdown

@@ -22,6 +22,7 @@ import jakarta.ws.rs.core.Response;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Simple Authentication chain where the first Success wins, and the last denied wins. For more complex operations
@@ -38,7 +39,8 @@ public class ChainedAuthenticationHandler extends AbstractAuthenticationHandler 
     }
 
     @Override
-    public AuthenticationResult authenticate(final ContainerRequestContext requestContext) {
+    @SuppressWarnings("NullAway") // Return type is @Nullable but superclass IAuthenticationHandler has no annotation
+    public @Nullable AuthenticationResult authenticate(final ContainerRequestContext requestContext) {
         AuthenticationResult finalResult = null;
         for (IAuthenticationHandler handler : handlers) {
             AuthenticationResult result = handler.authenticate(requestContext);

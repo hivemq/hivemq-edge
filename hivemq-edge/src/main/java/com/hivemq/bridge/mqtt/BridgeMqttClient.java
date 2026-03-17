@@ -292,7 +292,8 @@ public class BridgeMqttClient {
                     bridge.getId(),
                     operationState.get());
         }
-        return getOngoingOperation(operationState.get(), OperationState.STARTING);
+        final OperationState currentState = Objects.requireNonNull(operationState.get());
+        return getOngoingOperation(currentState, OperationState.STARTING);
     }
 
     public synchronized @NotNull ListenableFuture<Void> stop() {
@@ -347,7 +348,8 @@ public class BridgeMqttClient {
                     bridge.getId(),
                     operationState.get());
         }
-        return getOngoingOperation(operationState.get(), OperationState.STOPPING);
+        final OperationState currentState = Objects.requireNonNull(operationState.get());
+        return getOngoingOperation(currentState, OperationState.STOPPING);
     }
 
     public @NotNull Mqtt5AsyncClient getMqtt5Client() {

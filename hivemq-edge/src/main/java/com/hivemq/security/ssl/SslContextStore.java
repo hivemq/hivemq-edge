@@ -44,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -172,6 +173,7 @@ public class SslContextStore {
         INSTANCE;
 
         @Override
+        @SuppressWarnings("NullAway") // Funnel interface has @Nullable first param, but Tls is always non-null here
         public void funnel(final @NotNull Tls tls, final @NotNull PrimitiveSink sink) {
             funnelFile(tls.getKeystorePath(), sink);
 

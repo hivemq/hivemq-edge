@@ -19,6 +19,7 @@ import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import java.io.File;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +35,7 @@ public class ConfigurationFileProvider {
 
     public static ConfigurationFile get(final SystemInformation systemInformation) {
 
-        final File configFileFolder = systemInformation.getConfigFolder();
+        final File configFileFolder = Objects.requireNonNull(systemInformation.getConfigFolder());
         final boolean configFolderOk = checkConfigFolder(configFileFolder);
 
         String configFilename = DEFAULT_CONFIG_FILENAME;

@@ -59,7 +59,7 @@ public class EmbeddedHiveMQBuilderImpl implements EmbeddedHiveMQBuilder {
     }
 
     @Override
-    public @NotNull EmbeddedHiveMQBuilder withEmbeddedExtension(final @NotNull EmbeddedExtension embeddedExtension) {
+    public @NotNull EmbeddedHiveMQBuilder withEmbeddedExtension(final @Nullable EmbeddedExtension embeddedExtension) {
         // embedded extensions are not supported in HiveMQ Edge
         return this;
     }

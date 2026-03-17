@@ -150,6 +150,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
     @Override
     public @NotNull UnsExtractor unsExtractor() {
+        Preconditions.checkNotNull(configFileReaderWriter, "configFileReaderWriter must not be null");
         return configFileReaderWriter.getUnsExtractor();
     }
 
@@ -161,26 +162,31 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
     @Override
     public @NotNull ProtocolAdapterExtractor protocolAdapterExtractor() {
+        Preconditions.checkNotNull(configFileReaderWriter, "configFileReaderWriter must not be null");
         return configFileReaderWriter.getProtocolAdapterExtractor();
     }
 
     @Override
     public @NotNull BridgeExtractor bridgeExtractor() {
+        Preconditions.checkNotNull(configFileReaderWriter, "configFileReaderWriter must not be null");
         return configFileReaderWriter.getBridgeExtractor();
     }
 
     @Override
     public @NotNull DataCombiningExtractor dataCombiningExtractor() {
+        Preconditions.checkNotNull(configFileReaderWriter, "configFileReaderWriter must not be null");
         return configFileReaderWriter.getDataCombiningExtractor();
     }
 
     @Override
     public @NotNull AssetMappingExtractor assetMappingExtractor() {
+        Preconditions.checkNotNull(configFileReaderWriter, "configFileReaderWriter must not be null");
         return configFileReaderWriter.getAssetMappingExtractor();
     }
 
     @Override
     public @NotNull PulseExtractor pulseExtractor() {
+        Preconditions.checkNotNull(configFileReaderWriter, "configFileReaderWriter must not be null");
         return configFileReaderWriter.getPulseExtractor();
     }
 
@@ -201,7 +207,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
                     presentLock.lock();
                     return method.invoke(instance, args);
                 } finally {
-                    if (mutator) {
+                    if (mutator && configFileReaderWriter != null) {
                         flush(configFileReaderWriter);
                     }
                     presentLock.unlock();
@@ -229,6 +235,9 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
     @Override
     public @NotNull Optional<Long> getLastUpdateTime() {
+        if (configFileReaderWriter == null) {
+            return Optional.empty();
+        }
         final long l = configFileReaderWriter.getLastWrite();
         return l == 0 ? Optional.empty() : Optional.of(l);
     }

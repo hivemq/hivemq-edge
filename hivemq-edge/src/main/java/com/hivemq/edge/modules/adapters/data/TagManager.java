@@ -56,7 +56,7 @@ public class TagManager implements ProtocolAdapterTagStreamingService {
         try {
             final var tagConsumers = consumers.get(tagName);
             if (tagConsumers != null) {
-                consumers.get(tagName).forEach(consumer -> {
+                tagConsumers.forEach(consumer -> {
                     try {
                         consumer.accept(dataPoints);
                     } catch (final Exception e) {

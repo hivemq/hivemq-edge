@@ -49,8 +49,8 @@ public class PUBLISHFactory {
         private @Nullable String topic;
         private boolean duplicateDelivery;
         private boolean retain;
-        private @NotNull QoS qoS;
-        private @NotNull QoS onwardQos;
+        private @Nullable QoS qoS;
+        private @Nullable QoS onwardQos;
         private long messageExpiryInterval = MESSAGE_EXPIRY_INTERVAL_NOT_SET;
         private @Nullable String hivemqId;
         private @Nullable Mqtt5PayloadFormatIndicator payloadFormatIndicator;
@@ -86,6 +86,7 @@ public class PUBLISHFactory {
             return this;
         }
 
+        @SuppressWarnings("NullAway") // builder fields are set before build()
         public @NotNull PUBLISH build() {
 
             Preconditions.checkNotNull(hivemqId, "HivemqId may never be null");
@@ -218,8 +219,8 @@ public class PUBLISHFactory {
         private @Nullable String topic;
         private @Nullable PublishPayloadPersistence persistence;
 
-        private @NotNull QoS qoS;
-        private @NotNull QoS onwardQos;
+        private @Nullable QoS qoS;
+        private @Nullable QoS onwardQos;
         private @Nullable byte[] payload;
         private boolean retain;
 
@@ -247,6 +248,7 @@ public class PUBLISHFactory {
             return this;
         }
 
+        @SuppressWarnings("NullAway") // builder fields are set before build()
         public @NotNull PUBLISH build() {
 
             Preconditions.checkNotNull(hivemqId, "HivemqId may never be null");

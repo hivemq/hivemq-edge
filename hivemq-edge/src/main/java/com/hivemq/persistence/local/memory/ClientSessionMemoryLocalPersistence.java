@@ -47,6 +47,7 @@ import jakarta.inject.Singleton;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -208,7 +209,10 @@ public class ClientSessionMemoryLocalPersistence implements ClientSessionLocalPe
             final ClientSessionWill newWill = newClientSession.getWillPublish();
             if (newWill != null) {
                 metricsHolder.getStoredWillMessagesCount().inc();
-                payloadPersistence.add(newWill.getPayload(), newWill.getPublishId());
+                final byte[] payload = newWill.getPayload();
+                if (payload != null) {
+                    payloadPersistence.add(payload, newWill.getPublishId());
+                }
             }
 
             final PersistenceEntry<ClientSession> newEntry = new PersistenceEntry<>(usedSession, timestamp);
@@ -401,7 +405,7 @@ public class ClientSessionMemoryLocalPersistence implements ClientSessionLocalPe
                 .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, entry -> {
                     final PersistenceEntry<ClientSession> storedSession = entry.getValue();
                     final ClientSessionWill willPublish =
-                            storedSession.getObject().getWillPublish();
+                            Objects.requireNonNull(storedSession.getObject().getWillPublish()); // filtered above
 
                     return new PendingWillMessages.PendingWill(
                             Math.min(

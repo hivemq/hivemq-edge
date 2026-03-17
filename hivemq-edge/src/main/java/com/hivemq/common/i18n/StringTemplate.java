@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("JavaLangClash")
 public final class StringTemplate {
@@ -34,7 +35,7 @@ public final class StringTemplate {
 
     private StringTemplate() {}
 
-    public static @NotNull String format(
+    public static @Nullable String format(
             final @NotNull String stringTemplate, final @NotNull Map<String, Object> arguments) {
         try (final StringWriter stringWriter = new StringWriter(); ) {
             final Template template = new Template(stringTemplate, stringTemplate, CONFIGURATION);

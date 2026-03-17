@@ -22,6 +22,7 @@ import com.google.common.collect.Lists;
 import com.hivemq.http.error.Error;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
@@ -56,7 +57,7 @@ public class ApiErrorMessages {
     @JsonIgnore
     public List<Error> toErrorList() {
         return errors.stream()
-                .map(error -> new Error(error.getTitle(), error.getFieldName()))
+                .map(error -> new Error(Objects.requireNonNullElse(error.getTitle(), ""), error.getFieldName()))
                 .collect(Collectors.toList());
     }
 }

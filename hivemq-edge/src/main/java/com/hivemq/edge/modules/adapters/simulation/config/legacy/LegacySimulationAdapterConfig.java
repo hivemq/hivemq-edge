@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class LegacySimulationAdapterConfig {
 
@@ -27,7 +28,7 @@ public class LegacySimulationAdapterConfig {
     private @NotNull List<LegacySimulationPollingContext> pollingContexts = new ArrayList<>();
 
     @JsonProperty(value = "id", required = true)
-    protected @NotNull String id;
+    protected @Nullable String id;
 
     @JsonProperty("pollingIntervalMillis")
     @JsonAlias(value = "publishingInterval") // -- Ensure we cater for properties created with legacy configuration
@@ -52,7 +53,7 @@ public class LegacySimulationAdapterConfig {
         return pollingContexts;
     }
 
-    public @NotNull String getId() {
+    public @Nullable String getId() {
         return id;
     }
 

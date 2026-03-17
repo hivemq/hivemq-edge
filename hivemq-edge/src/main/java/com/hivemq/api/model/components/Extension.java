@@ -109,15 +109,15 @@ public class Extension {
         return priority;
     }
 
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return description;
     }
 
-    public Boolean getInstalled() {
+    public @Nullable Boolean getInstalled() {
         return installed;
     }
 
-    public Link getLink() {
+    public @Nullable Link getLink() {
         return link;
     }
 

@@ -47,7 +47,7 @@ public class M2MMqttSnTranscodingEncoder extends MessageToMessageEncoder<Message
         ITranscoder<Message, List<IMqttsnMessage>> transcoder = channelDependencies.getMqttToMqttsnTranscoder();
         if (transcoder.canHandle(transcodingContext, msg.getClass())) {
             TranscodingResult<Message, List<IMqttsnMessage>> result = transcoder.transcode(transcodingContext, msg);
-            if (result.isComplete()) {
+            if (result != null && result.isComplete()) {
                 Optional<List<IMqttsnMessage>> optional = result.getOutput();
                 if (optional.isPresent()) {
                     List<IMqttsnMessage> list = optional.get();

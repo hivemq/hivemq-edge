@@ -216,7 +216,7 @@ public class PublishDistributorImpl implements PublishDistributor {
             final @NotNull PUBLISH publish,
             final @NotNull String client,
             final boolean retainAsPublished,
-            final @NotNull ImmutableIntArray subscriptionIdentifier,
+            final @Nullable ImmutableIntArray subscriptionIdentifier,
             final @NotNull Long queueLimit,
             int appliedQoS) {
         // update with the configuration of the bridge, if it is a bridge client
@@ -322,7 +322,8 @@ public class PublishDistributorImpl implements PublishDistributor {
                 .withSubscriptionIdentifiers(identifiers);
 
         final int qos = Math.min(publish.getOnwardQoS().getQosNumber(), subscriptionQos);
-        builder.withQoS(QoS.valueOf(qos));
+        final QoS resolvedQoS = QoS.valueOf(qos);
+        builder.withQoS(resolvedQoS != null ? resolvedQoS : QoS.AT_MOST_ONCE);
 
         if (qos == 0) {
             builder.withPacketIdentifier(0);

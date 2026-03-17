@@ -34,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * @author Christoph Schäbel
  */
+@SuppressWarnings("NullAway") // certificate property getters delegate to certificateProperty() which may return null
 public class SslClientCertificateImpl implements SslClientCertificate {
 
     private final Certificate[] certificates;
@@ -93,7 +94,7 @@ public class SslClientCertificateImpl implements SslClientCertificate {
         return certificateProperty(BCStyle.ST);
     }
 
-    private String certificateProperty(final ASN1ObjectIdentifier objectIdentifier) {
+    private @Nullable String certificateProperty(final ASN1ObjectIdentifier objectIdentifier) {
 
         try {
             final X509Certificate cert = (X509Certificate) certificate();

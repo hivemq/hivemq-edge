@@ -20,6 +20,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.bootstrap.factories.HandlerResult;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandling;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandlingProvider;
+import com.hivemq.extension.sdk.api.packets.publish.AckReasonCode;
 import com.hivemq.mqtt.handler.publish.PublishingResult;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.mqtt.message.publish.PUBLISH;
@@ -88,8 +89,10 @@ public class PrePublishProcessorServiceImpl implements PrePublishProcessorServic
 
                     final PUBLISH modifiedPublish = handlerResult.getModifiedPublish();
                     if (handlerResult.isPreventPublish() || modifiedPublish == null) {
+                        final AckReasonCode ackReasonCode = handlerResult.getAckReasonCode();
                         return Futures.immediateFuture(PublishingResult.failed(
-                                handlerResult.getReasonString(), handlerResult.getAckReasonCode()));
+                                handlerResult.getReasonString(),
+                                ackReasonCode != null ? ackReasonCode : AckReasonCode.UNSPECIFIED_ERROR));
                     } else {
                         // already merged the original and modified Publish.
                         return internalPublishService.publish(modifiedPublish, executorService, sender);

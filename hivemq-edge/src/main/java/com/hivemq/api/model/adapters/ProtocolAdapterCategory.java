@@ -51,11 +51,11 @@ public class ProtocolAdapterCategory {
 
     @JsonProperty("description")
     @Schema(name = "description", description = "The description associated with the category.", format = "string")
-    private final @NotNull String description;
+    private final @Nullable String description;
 
     @JsonProperty("image")
     @Schema(name = "image", description = "The image associated with the category.", format = "string")
-    private final @NotNull String image;
+    private final @Nullable String image;
 
     public ProtocolAdapterCategory(
             @JsonProperty("name") final @NotNull String name,
@@ -76,11 +76,11 @@ public class ProtocolAdapterCategory {
         return displayName;
     }
 
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return description;
     }
 
-    public String getImage() {
+    public @Nullable String getImage() {
         return image;
     }
 }

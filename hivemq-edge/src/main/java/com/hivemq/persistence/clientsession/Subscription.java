@@ -17,6 +17,7 @@ package com.hivemq.persistence.clientsession;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
 import com.hivemq.mqtt.message.subscribe.Topic;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Lukas Brandl
@@ -25,9 +26,9 @@ import com.hivemq.mqtt.message.subscribe.Topic;
 public class Subscription {
     private final Topic topic;
     private final byte flags;
-    private final String sharedGroup;
+    private final @Nullable String sharedGroup;
 
-    public Subscription(final Topic topic, final byte flags, final String sharedGroup) {
+    public Subscription(final Topic topic, final byte flags, final @Nullable String sharedGroup) {
         this.topic = topic;
         this.flags = flags;
         this.sharedGroup = sharedGroup;
@@ -41,7 +42,7 @@ public class Subscription {
         return flags;
     }
 
-    public String getSharedGroup() {
+    public @Nullable String getSharedGroup() {
         return sharedGroup;
     }
 }

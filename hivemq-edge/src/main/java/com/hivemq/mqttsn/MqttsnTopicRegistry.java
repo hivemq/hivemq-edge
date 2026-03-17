@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slj.mqtt.sn.MqttsnConstants;
@@ -50,7 +51,7 @@ public class MqttsnTopicRegistry implements IMqttsnTopicRegistry {
 
     @Override
     public String readTopicName(
-            @NotNull String clientId, int topicIdType, byte[] topicData, boolean readNormalAsFullTopic)
+            @Nullable String clientId, int topicIdType, byte[] topicData, boolean readNormalAsFullTopic)
             throws MqttsnProtocolException {
 
         Preconditions.checkNotNull(clientId);
@@ -183,11 +184,13 @@ public class MqttsnTopicRegistry implements IMqttsnTopicRegistry {
 
     protected Optional<MqttsnTopicAlias> readRegisteredTopic(
             final @NotNull String clientId, final @NotNull String topicName) {
-        Map<Integer, MqttsnTopicAlias> m = sessionRegistrations.get(clientId);
-        Optional<MqttsnTopicAlias> alias = m.values().stream()
+        final Map<Integer, MqttsnTopicAlias> m = sessionRegistrations.get(clientId);
+        if (m == null) {
+            return Optional.empty();
+        }
+        return m.values().stream()
                 .filter(t -> topicName.equals(t.getTopicName()))
                 .findFirst();
-        return alias;
     }
 
     /**

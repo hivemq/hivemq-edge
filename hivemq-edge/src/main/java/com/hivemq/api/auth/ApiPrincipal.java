@@ -20,14 +20,15 @@ import java.security.Principal;
 import java.util.Objects;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
  */
 public class ApiPrincipal implements Principal {
 
-    private @NotNull String name;
-    private Set<String> roles;
+    private @Nullable String name;
+    private @Nullable Set<String> roles;
 
     public ApiPrincipal() {}
 
@@ -39,11 +40,15 @@ public class ApiPrincipal implements Principal {
     }
 
     @Override
+    @SuppressWarnings("NullAway") // name is @Nullable but Principal.getName() has no nullability annotation
     public String getName() {
         return name;
     }
 
     public boolean hasRole(String wantedRole) {
+        if (roles == null) {
+            return false;
+        }
         for (final String role : roles) {
             if (role.equalsIgnoreCase(wantedRole)) {
                 return true;
@@ -52,7 +57,7 @@ public class ApiPrincipal implements Principal {
         return false;
     }
 
-    public @NotNull Set<String> getRoles() {
+    public @Nullable Set<String> getRoles() {
         return roles;
     }
 

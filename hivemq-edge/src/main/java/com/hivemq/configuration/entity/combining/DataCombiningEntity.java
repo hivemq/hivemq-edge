@@ -30,20 +30,20 @@ public class DataCombiningEntity {
 
     @JsonProperty(value = "id", required = true)
     @XmlElement(name = "id", required = true)
-    private @NotNull UUID id;
+    private @Nullable UUID id;
 
     @JsonProperty(value = "sources", required = true)
     @XmlElement(name = "sources", required = true)
-    private @NotNull DataCombiningSourcesEntity sources;
+    private @Nullable DataCombiningSourcesEntity sources;
 
     @JsonProperty(value = "destination", required = true)
     @XmlElement(name = "destination", required = true)
-    private @NotNull DataCombiningDestinationEntity destination;
+    private @Nullable DataCombiningDestinationEntity destination;
 
     @JsonProperty(value = "instructions", required = true)
     @XmlElementWrapper(name = "instructions", required = true)
     @XmlElement(name = "instruction")
-    private @NotNull List<InstructionEntity> instructions;
+    private @Nullable List<InstructionEntity> instructions;
 
     // no-arg for jaxb
     public DataCombiningEntity() {}
@@ -63,19 +63,19 @@ public class DataCombiningEntity {
         this.instructions = instructions;
     }
 
-    public @NotNull UUID getId() {
+    public @Nullable UUID getId() {
         return id;
     }
 
-    public @NotNull List<InstructionEntity> getInstructions() {
+    public @Nullable List<InstructionEntity> getInstructions() {
         return instructions;
     }
 
-    public @NotNull DataCombiningSourcesEntity getSources() {
+    public @Nullable DataCombiningSourcesEntity getSources() {
         return sources;
     }
 
-    public @NotNull DataCombiningDestinationEntity getDestination() {
+    public @Nullable DataCombiningDestinationEntity getDestination() {
         return destination;
     }
 
@@ -97,18 +97,14 @@ public class DataCombiningEntity {
     public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
         if (!(o instanceof DataCombiningEntity that)) return false;
-        return id.equals(that.id)
-                && sources.equals(that.sources)
-                && destination.equals(that.destination)
-                && instructions.equals(that.instructions);
+        return Objects.equals(id, that.id)
+                && Objects.equals(sources, that.sources)
+                && Objects.equals(destination, that.destination)
+                && Objects.equals(instructions, that.instructions);
     }
 
     @Override
     public int hashCode() {
-        int result = id.hashCode();
-        result = 31 * result + sources.hashCode();
-        result = 31 * result + destination.hashCode();
-        result = 31 * result + instructions.hashCode();
-        return result;
+        return Objects.hash(id, sources, destination, instructions);
     }
 }

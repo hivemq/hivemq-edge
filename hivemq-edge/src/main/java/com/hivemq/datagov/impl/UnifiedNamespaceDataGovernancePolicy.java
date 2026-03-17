@@ -27,6 +27,7 @@ import com.hivemq.uns.UnifiedNamespaceService;
 import com.hivemq.uns.config.ISA95;
 import jakarta.inject.Inject;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author Simon L Johnson
@@ -55,7 +56,7 @@ public class UnifiedNamespaceDataGovernancePolicy extends DataGovernancePolicyIm
 
         MqttTopic mqttTopic = MqttTopic.of(input.getPublish().getTopic());
         // -- Topic modifications
-        ISA95 isa95 = unifiedNamespaceService.getISA95();
+        ISA95 isa95 = Objects.requireNonNull(unifiedNamespaceService.getISA95());
         if (isa95.isEnabled()) {
             builder.putAll(unifiedNamespaceService.getTopicReplacements(isa95));
             if (isa95.isPrefixAllTopics()) {
@@ -69,10 +70,10 @@ public class UnifiedNamespaceDataGovernancePolicy extends DataGovernancePolicyIm
 
         // -- Update the Resulting Object If Aspects Have Changed
         if (!MqttTopic.of(input.getPublish().getTopic()).equals(mqttTopic)) {
-            context.getResult()
+            Objects.requireNonNull(context.getResult())
                     .getOutput()
                     .setPublish(new PUBLISHFactory.Mqtt5Builder()
-                            .fromPublish(context.getResult().getOutput().getPublish())
+                            .fromPublish(Objects.requireNonNull(context.getResult()).getOutput().getPublish())
                             .withTopic(mqttTopic.toString())
                             .build());
         }

@@ -34,7 +34,7 @@ public class Link {
 
     @JsonProperty("displayText")
     @Schema(description = "The link display text", nullable = true)
-    private final @NotNull String displayText;
+    private final @Nullable String displayText;
 
     @JsonProperty("description")
     @Schema(description = "The optional link display description", nullable = true)
@@ -52,7 +52,7 @@ public class Link {
     @Schema(
             description =
                     "A mandatory Boolean indicating if the link is internal to the context or an external webLink")
-    private final @NotNull Boolean external;
+    private final @Nullable Boolean external;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public Link(
@@ -70,27 +70,27 @@ public class Link {
         this.external = external;
     }
 
-    public String getDisplayText() {
+    public @Nullable String getDisplayText() {
         return displayText;
     }
 
-    public String getUrl() {
+    public @NotNull String getUrl() {
         return url;
     }
 
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return description;
     }
 
-    public String getImageUrl() {
+    public @Nullable String getImageUrl() {
         return imageUrl;
     }
 
-    public String getTarget() {
+    public @Nullable String getTarget() {
         return target;
     }
 
-    public Boolean getExternal() {
+    public @Nullable Boolean getExternal() {
         return external;
     }
 
