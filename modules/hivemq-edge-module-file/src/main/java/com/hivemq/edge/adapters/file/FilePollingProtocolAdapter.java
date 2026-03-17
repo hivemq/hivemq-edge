@@ -102,6 +102,10 @@ public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
                 }
                 final var fileContentArray = Files.readAllBytes(path);
                 final var value = fileTag.getDefinition().getContentType().map(fileContentArray);
+                if (value == null) {
+                    pollingOutput.fail("Failed to map file content to a value for tag '" + fileTag.getName() + "'.");
+                    return;
+                }
                 pollingOutput.addDataPoint(new FileDataPoint(fileTag, value));
             }
         } catch (final IOException e) {
