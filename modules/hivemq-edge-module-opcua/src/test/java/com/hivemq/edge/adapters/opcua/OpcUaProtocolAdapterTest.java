@@ -34,7 +34,6 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.adapter.sdk.api.tag.GenericTag;
-import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.opcua.config.ConnectionOptions;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
@@ -303,7 +302,7 @@ public class OpcUaProtocolAdapterTest {
     }
 
     private @NotNull ProtocolAdapterInput<OpcUaSpecificAdapterConfig> createMockedInput(
-            final @NotNull OpcUaSpecificAdapterConfig config, final @NotNull List<? extends Tag> tags) {
+            final @NotNull OpcUaSpecificAdapterConfig config, final @NotNull List<GenericTag> tags) {
         final ProtocolAdapterInput<OpcUaSpecificAdapterConfig> input = mock(ProtocolAdapterInput.class);
 
         // Basic properties
@@ -312,8 +311,7 @@ public class OpcUaProtocolAdapterTest {
         when(input.getConfig()).thenReturn(config);
 
         // Tags
-        final List<Tag> genericTags = new ArrayList<>(tags);
-        when(input.getTags()).thenReturn(genericTags);
+        when(input.getTags()).thenReturn(new ArrayList<>(tags));
 
         // Data point factory
         final DataPointFactory dataPointFactory = new DataPointFactory() {
