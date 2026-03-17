@@ -93,7 +93,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     }
 
     public static @NotNull String nullSafe(final @Nullable Object o) {
-        return Objects.toString(o, null);
+        return Objects.toString(o);
     }
 
     @Override
@@ -109,7 +109,8 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                             if (t != null) {
                                 pollingOutput.fail(t, null);
                             } else {
-                                if (adapterConfig.getPlc4xToMqttConfig().getPublishChangedDataOnly()) {
+                                final var mqttConfig = adapterConfig.getPlc4xToMqttConfig();
+                                if (mqttConfig != null && mqttConfig.getPublishChangedDataOnly()) {
                                     sample.getDataPoints().stream()
                                             .collect(Collectors.groupingBy(DataPoint::getTagName))
                                             .forEach((tagName, tagValues) -> {
@@ -279,7 +280,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     /**
      * Hook method to format data from source tag
      */
-    protected @NotNull Object convertTagValue(final @NotNull PlcValue plcValue) {
+    protected @Nullable Object convertTagValue(final @NotNull PlcValue plcValue) {
         return Plc4xDataUtils.convertObject(plcValue);
     }
 
@@ -310,7 +311,12 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
         final Plc4xDataSample data = new Plc4xDataSample(adapterFactories.dataPointFactory());
         // -- For every tag value associated with the sample, write a data point to be published
         if (!l.isEmpty()) {
-            l.forEach(pair -> data.addDataPoint(pair.getLeft(), convertTagValue(pair.getValue())));
+            l.forEach(pair -> {
+                final Object value = convertTagValue(pair.getValue());
+                if (value != null) {
+                    data.addDataPoint(pair.getLeft(), value);
+                }
+            });
         }
         return data;
     }
