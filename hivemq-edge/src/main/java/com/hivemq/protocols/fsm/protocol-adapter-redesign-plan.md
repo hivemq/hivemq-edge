@@ -299,12 +299,12 @@ public interface ConnectionContext {
 
 ### 3.2 ProtocolAdapterWrapper2 Redesign
 
-> **Current Implementation Status**: A basic `ProtocolAdapterWrapper2` has been implemented with
-> FSM-based state management, synchronized transitions, and start/stop lifecycle methods.
-> It currently uses the existing `ProtocolAdapter` SDK interface (not `ProtocolAdapter2` which is
-> Phase 2 work). The current implementation does not yet include adapter precheck calls,
-> polling/writing/tag manager integration, southbound capability checks, or state change listeners.
-> These are planned for Phase 3. The code below shows the **target design** for the completed wrapper.
+> **Current Implementation Status**: `ProtocolAdapterWrapper2` has been implemented with FSM-based
+> state management, synchronized transitions, and start/stop lifecycle methods. It uses the
+> `ProtocolAdapter2` interface (Phase 2 complete). Old adapters are wrapped via `ProtocolAdapter2Bridge`.
+> The current implementation does not yet include adapter precheck calls, polling/writing/tag manager
+> integration, southbound capability checks, or state change listeners. These are planned for Phase 3.
+> The code below shows the **target design** for the completed wrapper.
 
 #### 3.2.1 Async Operation Coordination
 
@@ -901,19 +901,21 @@ public void connect(ConnectionContext context) throws ProtocolAdapterException {
 
 ### 5.2 Phase 2: Interface Design
 
-**Status**: 🔲 Not Started
+**Status**: ✅ Completed
 
 **Tasks**:
-- [ ] Design `ProtocolAdapter2` interface
-- [ ] Design `ConnectionContext` interface
-- [ ] Design new input/output types for connect/disconnect
-- [ ] Create adapter for existing `ProtocolAdapter` → `ProtocolAdapter2` (bridge pattern)
-- [ ] Update `ProtocolAdapterWrapper2` to use `ProtocolAdapter2`
+- [x] Design `ProtocolAdapter2` interface (synchronous connect/disconnect, precheck, supportsSouthbound)
+- [x] Design `ConnectionContext` interface (Direction enum, factory method)
+- [x] Reuse existing SDK input/output types for connect/disconnect (via `ProtocolAdapterStartOutputImpl`, `ProtocolAdapterStopOutputImpl`)
+- [x] Create bridge for existing `ProtocolAdapter` → `ProtocolAdapter2` (`ProtocolAdapter2Bridge`)
+- [x] Update `ProtocolAdapterWrapper2` to use `ProtocolAdapter2`
+- [x] Update `ProtocolAdapterManager2` to wrap factory-created adapters with bridge
+- [x] Add unit tests for bridge (`ProtocolAdapter2BridgeTest`)
 
 **Deliverables**:
 - `ProtocolAdapter2.java`
 - `ConnectionContext.java`
-- `ProtocolAdapter2Bridge.java` (wraps old adapters)
+- `ProtocolAdapter2Bridge.java` (wraps old adapters, maps start/stop to connect/disconnect)
 
 ### 5.3 Phase 3: Wrapper Completion
 
@@ -1088,12 +1090,15 @@ Until switchover:
 
 ## 10. Appendix: File List
 
-### Existing Files (Phase 1 & partial Phase 3/4 deliverables)
+### Existing Files (Phase 1, 2 & partial Phase 3/4 deliverables)
 
 ```
 src/main/java/com/hivemq/protocols/fsm/
-├── ClassLoaderUtils.java                          # ClassLoader context utility
-├── I18nProtocolAdapterMessage.java                # I18n error/message templates
+├── ClassLoaderUtils.java                          # ClassLoader context utility (Phase 1)
+├── ConnectionContext.java                         # Connection context interface (Phase 2)
+├── I18nProtocolAdapterMessage.java                # I18n error/message templates (Phase 1)
+├── ProtocolAdapter2.java                          # New adapter interface (Phase 2)
+├── ProtocolAdapter2Bridge.java                    # Bridge: old ProtocolAdapter → ProtocolAdapter2 (Phase 2)
 ├── ProtocolAdapterConnectionState.java            # Connection FSM enum (Phase 1)
 ├── ProtocolAdapterConnectionTransitionResponse.java # Connection transition response record (Phase 1)
 ├── ProtocolAdapterManager2.java                   # New manager with CRUD & refresh (Phase 4, in progress)
@@ -1108,11 +1113,6 @@ src/main/java/com/hivemq/protocols/fsm/
 
 ```
 src/main/java/com/hivemq/protocols/fsm/
-├── ProtocolAdapter2.java                    # New adapter interface (Phase 2)
-├── ConnectionContext.java                   # Connection context interface (Phase 2)
-├── ProtocolAdapter2Bridge.java              # Bridge for old adapters (Phase 2)
-├── ProtocolAdapterStartException.java       # Start failure exception
-├── ProtocolAdapterConnectException.java     # Connect failure exception
 └── StateChangeListener.java                 # State change notification (Phase 3)
 ```
 
@@ -1135,7 +1135,7 @@ src/main/java/com/hivemq/protocols/
 
 ---
 
-**Document Version**: 1.1
+**Document Version**: 1.2
 **Last Updated**: 2026-03-17
 **Author**: Claude (AI Assistant)
-**Status**: IN PROGRESS (Phase 1 complete, Phase 3 & 4 in progress)
+**Status**: IN PROGRESS (Phase 1 & 2 complete, Phase 3 & 4 in progress)
