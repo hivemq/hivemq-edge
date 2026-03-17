@@ -102,7 +102,7 @@ public class OpcUaToJsonConverter {
         return ByteBuffer.wrap(GSON.toJson(jsonObject).getBytes(StandardCharsets.UTF_8));
     }
 
-    private static JsonElement convertValue(
+    private static @Nullable JsonElement convertValue(
             final @Nullable Object value, final @NotNull EncodingContext serializationContext) {
         if (value == null) {
             return JsonNull.INSTANCE;

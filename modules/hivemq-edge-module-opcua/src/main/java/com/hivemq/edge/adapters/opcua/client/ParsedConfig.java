@@ -29,6 +29,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import org.eclipse.milo.opcua.sdk.client.identity.AnonymousProvider;
@@ -47,9 +48,9 @@ import org.slf4j.LoggerFactory;
 
 public record ParsedConfig(
         boolean tlsEnabled,
-        KeystoreUtil.KeyPairWithChain keyPairWithChain,
-        CertificateValidator clientCertificateValidator,
-        IdentityProvider identityProvider,
+        @Nullable KeystoreUtil.KeyPairWithChain keyPairWithChain,
+        @Nullable CertificateValidator clientCertificateValidator,
+        @NotNull IdentityProvider identityProvider,
         @Nullable String applicationUri) {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(ParsedConfig.class);
@@ -62,7 +63,7 @@ public record ParsedConfig(
             final var truststore = adapterConfig.getTls().truststore();
             final var certOptional = getTrustedCerts(truststore)
                     .map(trustedCerts -> createServerCertificateValidator(
-                            trustedCerts, adapterConfig.getTls().tlsChecks()));
+                            trustedCerts, Objects.requireNonNull(adapterConfig.getTls().tlsChecks())));
             if (certOptional.isEmpty()) {
                 return Failure.of("Failed to create certificate validator, check truststore configuration");
             }

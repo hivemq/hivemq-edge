@@ -47,6 +47,7 @@ import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverter;
 import com.hivemq.edge.adapters.opcua.southbound.OpcUaPayload;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -329,10 +330,11 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
             if (opcUaClientConnection.compareAndSet(null, newConn)) {
                 // Create a minimal ProtocolAdapterStartInput for attemptConnection
+                final ModuleServices ms = Objects.requireNonNull(moduleServices);
                 final ProtocolAdapterStartInput input = new ProtocolAdapterStartInput() {
                     @Override
                     public @NotNull ModuleServices moduleServices() {
-                        return moduleServices;
+                        return ms;
                     }
                 };
                 attemptConnection(newConn, parsedConfig, input);
@@ -357,7 +359,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         }
 
         final long healthCheckIntervalMs = config.getConnectionOptions().healthCheckIntervalMs();
-        final ScheduledFuture<?> future = healthCheckScheduler.scheduleAtFixedRate(
+        final ScheduledFuture<?> future = Objects.requireNonNull(healthCheckScheduler).scheduleAtFixedRate(
                 () -> {
                     // Check if adapter was stopped before health check executes
                     if (stopped) {

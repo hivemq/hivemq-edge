@@ -31,6 +31,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
@@ -69,10 +70,12 @@ public class JsonSchemaGenerator {
                 .collectTypeInfo(parsed)
                 .thenApply(info -> {
                     if (info.arrayDimensions() != null && info.arrayDimensions().length > 0) {
-                        return createJsonSchemaForArrayType(info.dataType(), info.arrayDimensions);
+                        return createJsonSchemaForArrayType(
+                                Objects.requireNonNull(info.dataType()),
+                                Objects.requireNonNull(info.arrayDimensions()));
                     } else if (info.nestedFields() == null
                             || info.nestedFields().isEmpty()) {
-                        return createJsonSchemaForBuiltInType(info.dataType());
+                        return createJsonSchemaForBuiltInType(Objects.requireNonNull(info.dataType()));
                     } else {
                         return jsonSchemaGenerator.jsonSchemaFromNodeId(info);
                     }
@@ -203,14 +206,14 @@ public class JsonSchemaGenerator {
 
     private void addNestedStructureInformation(
             final @NotNull ObjectNode propertiesNode, final @NotNull FieldInformation fieldType) {
-        final OpcUaDataType builtinDataType = fieldType.dataType;
+        final @Nullable OpcUaDataType builtinDataType = fieldType.dataType();
 
         final ObjectNode nestedPropertiesNode = MAPPER.createObjectNode();
         propertiesNode.set(fieldType.name(), nestedPropertiesNode);
 
-        if (builtinDataType != OpcUaDataType.ExtensionObject && fieldType.customDataType() == null) {
+        if (builtinDataType != null && builtinDataType != OpcUaDataType.ExtensionObject && fieldType.customDataType() == null) {
             populatePropertiesForBuiltinType(nestedPropertiesNode, builtinDataType, MAPPER);
-        } else if (fieldType.arrayDimensions() != null && fieldType.arrayDimensions().length > 0) {
+        } else if (builtinDataType != null && fieldType.arrayDimensions() != null && fieldType.arrayDimensions().length > 0) {
             populatePropertiesForArray(nestedPropertiesNode, builtinDataType, MAPPER, fieldType.arrayDimensions());
         } else {
             nestedPropertiesNode.set(TYPE, new TextNode(OBJECT_DATA_TYPE));
@@ -236,7 +239,7 @@ public class JsonSchemaGenerator {
         client.getStaticDataTypeManager().getTypeDictionary(fieldType.namespaceUri());
 
         final ExpandedNodeId expandedNodeId = fieldType.customDataType() == null
-                ? fieldType.dataType().getNodeId().expanded()
+                ? Objects.requireNonNull(fieldType.dataType()).getNodeId().expanded()
                 : fieldType.customDataType().getNodeId().expanded();
         final Optional<NodeId> optionalDataTypeId = expandedNodeId.toNodeId(client.getNamespaceTable());
         if (optionalDataTypeId.isEmpty()) {
@@ -262,7 +265,9 @@ public class JsonSchemaGenerator {
                 new TextNode("CustomStruct: "
                         + (fieldInformation.dataType() != null
                                 ? fieldInformation.dataType().getNodeId().toParseableString()
-                                : fieldInformation.customDataType().getNodeId().toParseableString())));
+                                : Objects.requireNonNull(fieldInformation.customDataType())
+                                        .getNodeId()
+                                        .toParseableString())));
         rootNode.set(TYPE, new TextNode(OBJECT_DATA_TYPE));
 
         final ObjectNode valueNode = MAPPER.createObjectNode();
@@ -290,12 +295,12 @@ public class JsonSchemaGenerator {
 
     @SuppressWarnings("ArrayRecordComponent")
     public record FieldInformation(
-            String name,
-            String namespaceUri,
-            OpcUaDataType dataType,
-            DataType customDataType,
+            @Nullable String name,
+            @Nullable String namespaceUri,
+            @Nullable OpcUaDataType dataType,
+            @Nullable DataType customDataType,
             boolean isEnum,
-            UInteger[] arrayDimensions,
+            UInteger @Nullable [] arrayDimensions,
             boolean required,
-            List<FieldInformation> nestedFields) {}
+            @NotNull List<FieldInformation> nestedFields) {}
 }
