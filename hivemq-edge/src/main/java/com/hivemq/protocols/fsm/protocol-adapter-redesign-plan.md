@@ -15,23 +15,20 @@ full feature parity.
 
 The current `ProtocolAdapterWrapper` suffers from:
 
-```
-╔════════════════════════════════════════════════════════════════════════════════════════════════╗
-║  PROBLEM: Nested async operations create unpredictable state transitions                       ║
-╠════════════════════════════════════════════════════════════════════════════════════════════════╣
-║                                                                                                ║
-║  startAsync()                                                                                  ║
-║    └─> CompletableFuture.supplyAsync()                                                         ║
-║          └─> adapter.start()                                                                   ║
-║                └─> output.getStartFuture() [Another CompletableFuture]                         ║
-║                      └─> .thenCompose()                                                        ║
-║                            └─> attemptStartingConsumers()                                      ║
-║                                  └─> protocolAdapterState.setConnectionStatusListener()        ║
-║                                        └─> [Callback waits 300s timeout]                       ║
-║                                              └─> startWritingAsync()                           ║
-║                                                    └─> [More async]                            ║
-║                                                                                                ║
-╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+```mermaid
+---
+title: "PROBLEM: Nested async operations create unpredictable state transitions"
+---
+graph TD
+    A["startAsync()"] --> B["CompletableFuture.supplyAsync()"]
+    B --> C["adapter.start()"]
+    C --> D["output.getStartFuture() [Another CompletableFuture]"]
+    D --> E[".thenCompose()"]
+    E --> F["attemptStartingConsumers()"]
+    F --> G["protocolAdapterState.setConnectionStatusListener()"]
+    G --> H["[Callback waits 300s timeout]"]
+    H --> I["startWritingAsync()"]
+    I --> J["[More async]"]
 ```
 
 **Specific Issues:**
@@ -81,8 +78,8 @@ cause unpredictable behavior.
 3. **Explicit Transitions**: All valid transitions are defined and enforced by the FSM.
 
 4. **Clear Ownership**:
-   - `ProtocolAdapterManager2` owns `ProtocolAdapterState`
-   - `ProtocolAdapterWrapper2` owns `ProtocolAdapterConnectionState` (×2: Northbound + Southbound)
+   - `ProtocolAdapterWrapper2` owns `ProtocolAdapterState` and `ProtocolAdapterConnectionState` (×2: Northbound + Southbound)
+   - `ProtocolAdapterManager2` manages the lifecycle of `ProtocolAdapterWrapper2` instances
 
 5. **Separation of Concerns**: The wrapper calls `ProtocolAdapter2.connect()` / `disconnect()`,
    not the other way around.
@@ -125,25 +122,20 @@ boolean canTransitionToIdle() {
 
 #### ProtocolAdapterState (Manager Level)
 
+```mermaid
+---
+title: ProtocolAdapterState
+---
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Precheck : start()
+    Precheck --> Working : success
+    Precheck --> Error : error
+    Working --> Stopping : stop()
+    Working --> Error : non-recoverable error
+    Stopping --> Idle : success (both connections disconnected)
+    Error --> Idle : reset/retry
 ```
-┌───────────────────────────────────────────────────────────────────────┐
-│                    ProtocolAdapterState                               │
-├───────────────────────────────────────────────────────────────────────┤
-│                                                                       │
-│    ┌──────┐    start()      ┌──────────┐    success     ┌─────────┐   │
-│    │ Idle │ ──────────────► │ Precheck │ ─────────────► │ Working │   │
-│    └──────┘                 └──────────┘                └─────────┘   │
-│       ▲                          │                          │         │
-│       │                          │ error                    │ stop()  │
-│       │                          ▼                          ▼         │
-│       │                     ┌─────────┐                ┌──────────┐   │
-│       ├──────────────────── │  Error  │ ◄───────────── │ Stopping │   │
-│       │ reset()             └─────────┘     error      └──────────┘   │
-│       │                                                     │         │
-│       └─────────────────────────────────────────────────────┘         │
-│                                        success → Idle                 │
-│                                                                       │
-└───────────────────────────────────────────────────────────────────────┘
 
 Valid Transitions:
 - Idle → Precheck (start called)
@@ -153,35 +145,24 @@ Valid Transitions:
 - Working → Error (non-recoverable error)
 - Stopping → Idle (both connections disconnected)
 - Error → Idle (reset/retry)
-```
 
 #### ProtocolAdapterConnectionState (Wrapper Level, ×2)
 
+```mermaid
+---
+title: ProtocolAdapterConnectionState
+---
+stateDiagram-v2
+    [*] --> Disconnected
+    Disconnected --> Connecting : connect()
+    Connecting --> Connected : success
+    Connecting --> Error : connection failed
+    Connecting --> Disconnecting : abort
+    Connected --> Error : connection lost
+    Connected --> Disconnecting : graceful stop / disconnect()
+    Error --> Disconnecting : cleanup / disconnect()
+    Disconnecting --> Disconnected : cleanup complete
 ```
-┌──────────────────────────────────────────────────────────────┐
-│               ProtocolAdapterConnectionState                  │
-├──────────────────────────────────────────────────────────────┤
-│                                                              │
-│    ┌──────────────┐     connect()     ┌────────────┐        │
-│    │ Disconnected │ ─────────────────► │ Connecting │        │
-│    └──────────────┘                   └────────────┘        │
-│           ▲                                 │                │
-│           │                                 ├── success ──► ┌───────────┐
-│           │                                 │               │ Connected │
-│           │                                 ├── error ────► └───────────┘
-│           │                                 │                    │
-│           │                                 ▼                    │
-│           │                           ┌─────────┐                │
-│           │         disconnect()      │  Error  │◄───────────────┤ error
-│           │              │            └─────────┘                │
-│           │              ▼                 │                     │
-│           │        ┌───────────────┐       │ disconnect()        │ disconnect()
-│           └────────│ Disconnecting │◄──────┘                     │
-│                    └───────────────┘◄────────────────────────────┘
-│                           │                                      │
-│                           └──► Disconnected                      │
-│                                                                  │
-└──────────────────────────────────────────────────────────────────┘
 
 Valid Transitions:
 - Disconnected → Connecting
@@ -192,7 +173,6 @@ Valid Transitions:
 - Connected → Disconnecting (graceful stop)
 - Error → Disconnecting (cleanup)
 - Disconnecting → Disconnected (cleanup complete)
-```
 
 ---
 
@@ -319,34 +299,46 @@ public interface ConnectionContext {
 
 ### 3.2 ProtocolAdapterWrapper2 Redesign
 
+> **Current Implementation Status**: A basic `ProtocolAdapterWrapper2` has been implemented with
+> FSM-based state management, synchronized transitions, and start/stop lifecycle methods.
+> It currently uses the existing `ProtocolAdapter` SDK interface (not `ProtocolAdapter2` which is
+> Phase 2 work). The current implementation does not yet include adapter precheck calls,
+> polling/writing/tag manager integration, southbound capability checks, or state change listeners.
+> These are planned for Phase 3. The code below shows the **target design** for the completed wrapper.
+
 #### 3.2.1 Async Operation Coordination
 
 The Web UI calls start/stop via REST API which expects async responses. The FSM state
 transitions themselves provide atomicity and conflict detection:
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                FSM-Based Operation Coordination                             │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ProtocolAdapterState FSM handles conflicts:                                │
-│                                                                             │
-│  start() called:                                                            │
-│    Idle → Precheck → Working                                                │
-│                                                                             │
-│  stop() called while in Precheck:                                           │
-│    Precheck → Stopping  ✗ INVALID (FSM rejects, no such transition)         │
-│                                                                             │
-│  stop() called while in Working:                                            │
-│    Working → Stopping → Idle  ✓ VALID                                       │
-│                                                                             │
-│  start() called while in Stopping:                                          │
-│    Stopping → Precheck  ✗ INVALID (FSM rejects)                             │
-│                                                                             │
-│  start() called while already in Precheck/Working:                          │
-│    Precheck/Working → Precheck  ✗ INVALID (FSM rejects)                     │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+---
+title: FSM-Based Operation Coordination
+---
+graph LR
+    subgraph "start() called"
+        A1[Idle] -->|"✓ VALID"| A2[Precheck] --> A3[Working]
+    end
+
+    subgraph "stop() called while in Precheck"
+        B1[Precheck] -->|"✗ INVALID<br/>FSM rejects"| B2[Stopping]
+    end
+
+    subgraph "stop() called while in Working"
+        C1[Working] -->|"✓ VALID"| C2[Stopping] --> C3[Idle]
+    end
+
+    subgraph "start() called while in Stopping"
+        D1[Stopping] -->|"✗ INVALID<br/>FSM rejects"| D2[Precheck]
+    end
+
+    subgraph "start() called while in Precheck/Working"
+        E1[Precheck/Working] -->|"✗ INVALID<br/>FSM rejects"| E2[Precheck]
+    end
+
+    style B2 stroke-dasharray: 5 5
+    style D2 stroke-dasharray: 5 5
+    style E2 stroke-dasharray: 5 5
 ```
 
 **Key behaviors:**
@@ -437,7 +429,7 @@ public class ProtocolAdapterWrapper2 {
      * @return true if started successfully, false if FSM rejected or error occurred
      */
     public synchronized boolean start() {
-        log.info("Starting adapter {}", getAdapterId());
+        LOGGER.info("Starting adapter {}", getAdapterId());
 
         // Step 1: Idle → Precheck
         if (!transitionTo(ProtocolAdapterState.Precheck).status().isSuccess()) {
@@ -448,7 +440,7 @@ public class ProtocolAdapterWrapper2 {
         try {
             adapter.precheck();
         } catch (Exception e) {
-            log.error("Precheck failed for adapter {}", getAdapterId(), e);
+            LOGGER.error("Precheck failed for adapter {}", getAdapterId(), e);
             transitionTo(ProtocolAdapterState.Error);
             return false;
         }
@@ -498,7 +490,7 @@ public class ProtocolAdapterWrapper2 {
      * @return true if stopped successfully, false if FSM rejected or error occurred
      */
     public synchronized boolean stop(boolean destroy) {
-        log.info("Stopping adapter {}", getAdapterId());
+        LOGGER.info("Stopping adapter {}", getAdapterId());
 
         // Step 1: Working → Stopping
         if (!transitionTo(ProtocolAdapterState.Stopping).status().isSuccess()) {
@@ -548,10 +540,10 @@ public class ProtocolAdapterWrapper2 {
      * Transitions: Disconnected → Connecting → Connected
      */
     protected synchronized boolean startNorthbound() {
-        log.info("Starting northbound for adapter {}", getAdapterId());
+        LOGGER.info("Starting northbound for adapter {}", getAdapterId());
 
         // Disconnected → Connecting
-        if (!transitionNorthboundTo(ProtocolAdapterConnectionState.Connecting).status().isSuccess()) {
+        if (!transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Connecting).status().isSuccess()) {
             return false;
         }
 
@@ -560,12 +552,12 @@ public class ProtocolAdapterWrapper2 {
             adapter.connect(context);
 
             // Connecting → Connected
-            return transitionNorthboundTo(ProtocolAdapterConnectionState.Connected).status().isSuccess();
+            return transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Connected).status().isSuccess();
 
         } catch (Exception e) {
-            log.error("Northbound connection failed for adapter {}", getAdapterId(), e);
+            LOGGER.error("Northbound connection failed for adapter {}", getAdapterId(), e);
             // Connecting → Error
-            transitionNorthboundTo(ProtocolAdapterConnectionState.Error);
+            transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Error);
             return false;
         }
     }
@@ -576,14 +568,14 @@ public class ProtocolAdapterWrapper2 {
      */
     protected synchronized boolean startSouthbound() {
         if (!supportsSouthbound()) {
-            log.debug("Adapter {} does not support southbound, skipping", getAdapterId());
+            LOGGER.debug("Adapter {} does not support southbound, skipping", getAdapterId());
             return true;  // No southbound needed
         }
 
-        log.info("Starting southbound for adapter {}", getAdapterId());
+        LOGGER.info("Starting southbound for adapter {}", getAdapterId());
 
         // Disconnected → Connecting
-        if (!transitionSouthboundTo(ProtocolAdapterConnectionState.Connecting).status().isSuccess()) {
+        if (!transitionSouthboundConnectionTo(ProtocolAdapterConnectionState.Connecting).status().isSuccess()) {
             return false;
         }
 
@@ -592,12 +584,12 @@ public class ProtocolAdapterWrapper2 {
             adapter.connect(context);
 
             // Connecting → Connected
-            return transitionSouthboundTo(ProtocolAdapterConnectionState.Connected).status().isSuccess();
+            return transitionSouthboundConnectionTo(ProtocolAdapterConnectionState.Connected).status().isSuccess();
 
         } catch (Exception e) {
-            log.error("Southbound connection failed for adapter {}", getAdapterId(), e);
+            LOGGER.error("Southbound connection failed for adapter {}", getAdapterId(), e);
             // Connecting → Error
-            transitionSouthboundTo(ProtocolAdapterConnectionState.Error);
+            transitionSouthboundConnectionTo(ProtocolAdapterConnectionState.Error);
             return false;
         }
     }
@@ -607,14 +599,14 @@ public class ProtocolAdapterWrapper2 {
      * Transitions: * → Disconnecting → Disconnected
      */
     protected synchronized boolean stopNorthbound() {
-        log.info("Stopping northbound for adapter {}", getAdapterId());
+        LOGGER.info("Stopping northbound for adapter {}", getAdapterId());
 
         if (northboundState.isDisconnected()) {
             return true;  // Already disconnected
         }
 
         // * → Disconnecting
-        if (!transitionNorthboundTo(ProtocolAdapterConnectionState.Disconnecting).status().isSuccess()) {
+        if (!transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Disconnecting).status().isSuccess()) {
             return false;
         }
 
@@ -622,12 +614,12 @@ public class ProtocolAdapterWrapper2 {
             ConnectionContext context = createContext(ConnectionContext.Direction.NORTHBOUND);
             adapter.disconnect(context);
         } catch (Exception e) {
-            log.warn("Error during northbound disconnect for adapter {}", getAdapterId(), e);
+            LOGGER.warn("Error during northbound disconnect for adapter {}", getAdapterId(), e);
             // Continue anyway - we want to reach Disconnected state
         }
 
         // Disconnecting → Disconnected
-        return transitionNorthboundTo(ProtocolAdapterConnectionState.Disconnected).status().isSuccess();
+        return transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Disconnected).status().isSuccess();
     }
 
     /**
@@ -639,14 +631,14 @@ public class ProtocolAdapterWrapper2 {
             return true;  // No southbound to stop
         }
 
-        log.info("Stopping southbound for adapter {}", getAdapterId());
+        LOGGER.info("Stopping southbound for adapter {}", getAdapterId());
 
         if (southboundState.isDisconnected()) {
             return true;
         }
 
         // * → Disconnecting
-        if (!transitionSouthboundTo(ProtocolAdapterConnectionState.Disconnecting).status().isSuccess()) {
+        if (!transitionSouthboundConnectionTo(ProtocolAdapterConnectionState.Disconnecting).status().isSuccess()) {
             return false;
         }
 
@@ -654,11 +646,11 @@ public class ProtocolAdapterWrapper2 {
             ConnectionContext context = createContext(ConnectionContext.Direction.SOUTHBOUND);
             adapter.disconnect(context);
         } catch (Exception e) {
-            log.warn("Error during southbound disconnect for adapter {}", getAdapterId(), e);
+            LOGGER.warn("Error during southbound disconnect for adapter {}", getAdapterId(), e);
         }
 
         // Disconnecting → Disconnected
-        return transitionSouthboundTo(ProtocolAdapterConnectionState.Disconnected).status().isSuccess();
+        return transitionSouthboundConnectionTo(ProtocolAdapterConnectionState.Disconnected).status().isSuccess();
     }
 
     // ... transition methods same as current implementation ...
@@ -666,6 +658,15 @@ public class ProtocolAdapterWrapper2 {
 ```
 
 ### 3.3 ProtocolAdapterManager2 Redesign
+
+> **Current Implementation Status**: `ProtocolAdapterManager2` has been implemented with full
+> CRUD operations, factory integration (`ProtocolAdapterFactoryManager`), parallel refresh using
+> `CompletableFuture.allOf()`, event service and metrics integration, ClassLoader management
+> (`ClassLoaderUtils`), I18n error messages (`I18nProtocolAdapterMessage`), and consumer registration
+> with `ProtocolAdapterExtractor`. The start/stop methods delegate synchronously to `ProtocolAdapterWrapper2`
+> and throw `ProtocolAdapterException` on failure. The code below shows the **target design** for the
+> completed manager; the current implementation already exceeds this baseline with parallel refresh
+> and full service integration.
 
 ```java
 /**
@@ -756,7 +757,7 @@ public class ProtocolAdapterManager2 {
             try {
                 doRefresh(configs);
             } catch (Exception e) {
-                log.error("Failed to refresh adapters", e);
+                LOGGER.error("Failed to refresh adapters", e);
                 eventService.configurationEvent()
                     .withSeverity(Event.SEVERITY.CRITICAL)
                     .withMessage("Configuration refresh failed")
@@ -779,7 +780,7 @@ public class ProtocolAdapterManager2 {
                 stop(id, true);
                 deleteAdapter(id);
             } catch (Exception e) {
-                log.error("Failed to delete adapter {}", id, e);
+                LOGGER.error("Failed to delete adapter {}", id, e);
                 failed.add(id);
             }
         }
@@ -790,7 +791,7 @@ public class ProtocolAdapterManager2 {
                 createAdapter(configs.stream().filter(c -> c.getId().equals(id)).findFirst().get());
                 start(id);
             } catch (Exception e) {
-                log.error("Failed to create adapter {}", id, e);
+                LOGGER.error("Failed to create adapter {}", id, e);
                 failed.add(id);
             }
         }
@@ -803,7 +804,7 @@ public class ProtocolAdapterManager2 {
                 createAdapter(configs.stream().filter(c -> c.getId().equals(id)).findFirst().get());
                 start(id);
             } catch (Exception e) {
-                log.error("Failed to update adapter {}", id, e);
+                LOGGER.error("Failed to update adapter {}", id, e);
                 failed.add(id);
             }
         }
@@ -882,16 +883,21 @@ public void connect(ConnectionContext context) throws ProtocolAdapterException {
 
 ## 5. Migration Strategy
 
-### 5.1 Phase 1: Foundation (Current)
+### 5.1 Phase 1: Foundation
 
 **Status**: ✅ Completed
 
 - [x] Create `ProtocolAdapterState` enum with FSM transitions
 - [x] Create `ProtocolAdapterConnectionState` enum with FSM transitions
-- [x] Create response types (`ProtocolAdapterTransitionResponse`, etc.)
+- [x] Create `ProtocolAdapterTransitionResponse` record
+- [x] Create `ProtocolAdapterConnectionTransitionResponse` record
+- [x] Create `ProtocolAdapterTransitionStatus` enum
+- [x] Create `ProtocolAdapterManagerState` enum
+- [x] Create `I18nProtocolAdapterMessage` for localized messages
+- [x] Create `ClassLoaderUtils` for classloader context management
 - [x] Create basic `ProtocolAdapterWrapper2` with state management
 - [x] Create basic `ProtocolAdapterManager2` with CRUD operations
-- [x] Add unit tests for FSM transitions
+- [x] Add unit tests for FSM transitions (`ProtocolAdapterStateTest`, `ProtocolAdapterConnectionStateTest`, `ProtocolAdapterWrapperTest`)
 
 ### 5.2 Phase 2: Interface Design
 
@@ -911,13 +917,15 @@ public void connect(ConnectionContext context) throws ProtocolAdapterException {
 
 ### 5.3 Phase 3: Wrapper Completion
 
-**Status**: 🔲 Not Started
+**Status**: 🔶 In Progress
 
 **Tasks**:
-- [ ] Implement full `ProtocolAdapterWrapper2.start()` with precheck
-- [ ] Implement full `ProtocolAdapterWrapper2.stop()`
-- [ ] Implement connection error handling
-- [ ] Implement state change notification
+- [x] Implement basic `ProtocolAdapterWrapper2.start()` (state transitions and connection lifecycle)
+- [x] Implement basic `ProtocolAdapterWrapper2.stop()` (state transitions and connection teardown)
+- [ ] Add adapter precheck calls (`adapter.precheck()`) during start
+- [ ] Implement connection error handling (try/catch around adapter connect/disconnect calls)
+- [ ] Add southbound capability check (`supportsSouthbound()`)
+- [ ] Implement state change notification (`StateChangeListener`)
 - [ ] Add polling service integration
 - [ ] Add writing service integration
 - [ ] Add tag manager integration
@@ -928,15 +936,19 @@ public void connect(ConnectionContext context) throws ProtocolAdapterException {
 
 ### 5.4 Phase 4: Manager Completion
 
-**Status**: 🔲 Not Started
+**Status**: 🔶 In Progress
 
 **Tasks**:
-- [ ] Implement `ProtocolAdapterManager2.createAdapter()` with factory
-- [ ] Implement `ProtocolAdapterManager2.deleteAdapter()`
-- [ ] Implement `ProtocolAdapterManager2.refresh()`
-- [ ] Add event service integration
-- [ ] Add metrics integration
-- [ ] Handle concurrent operations safely
+- [x] Implement `ProtocolAdapterManager2.createProtocolAdapter()` with factory (`ProtocolAdapterFactoryManager`)
+- [x] Implement `ProtocolAdapterManager2.deleteProtocolAdapterByAdapterId()`
+- [x] Implement `ProtocolAdapterManager2.refresh()` with parallel `CompletableFuture.allOf()` operations
+- [x] Add event service integration (`EventService`)
+- [x] Add metrics integration (`ProtocolAdapterMetrics`)
+- [x] Handle concurrent operations safely (`ConcurrentHashMap` + single-thread executor)
+- [x] Add I18n error messages (`I18nProtocolAdapterMessage`)
+- [x] Add ClassLoader management (`ClassLoaderUtils`)
+- [x] Register consumer with `ProtocolAdapterExtractor`
+- [ ] Add integration tests with mock services
 
 **Deliverables**:
 - Completed `ProtocolAdapterManager2.java`
@@ -1076,24 +1088,40 @@ Until switchover:
 
 ## 10. Appendix: File List
 
+### Existing Files (Phase 1 & partial Phase 3/4 deliverables)
+
+```
+src/main/java/com/hivemq/protocols/fsm/
+├── ClassLoaderUtils.java                          # ClassLoader context utility
+├── I18nProtocolAdapterMessage.java                # I18n error/message templates
+├── ProtocolAdapterConnectionState.java            # Connection FSM enum (Phase 1)
+├── ProtocolAdapterConnectionTransitionResponse.java # Connection transition response record (Phase 1)
+├── ProtocolAdapterManager2.java                   # New manager with CRUD & refresh (Phase 4, in progress)
+├── ProtocolAdapterManagerState.java               # Manager-level state enum (Phase 1)
+├── ProtocolAdapterState.java                      # Adapter FSM enum (Phase 1)
+├── ProtocolAdapterTransitionResponse.java         # Adapter transition response record (Phase 1)
+├── ProtocolAdapterTransitionStatus.java           # Transition status enum (Phase 1)
+└── ProtocolAdapterWrapper2.java                   # New wrapper with FSM (Phase 3, in progress)
+```
+
 ### New Files to Create
 
 ```
 src/main/java/com/hivemq/protocols/fsm/
-├── ProtocolAdapter2.java                    # New adapter interface
-├── ConnectionContext.java                   # Connection context interface
-├── ProtocolAdapter2Bridge.java              # Bridge for old adapters
+├── ProtocolAdapter2.java                    # New adapter interface (Phase 2)
+├── ConnectionContext.java                   # Connection context interface (Phase 2)
+├── ProtocolAdapter2Bridge.java              # Bridge for old adapters (Phase 2)
 ├── ProtocolAdapterStartException.java       # Start failure exception
 ├── ProtocolAdapterConnectException.java     # Connect failure exception
-└── StateChangeListener.java                 # State change notification
+└── StateChangeListener.java                 # State change notification (Phase 3)
 ```
 
 ### Files to Modify
 
 ```
 src/main/java/com/hivemq/protocols/fsm/
-├── ProtocolAdapterWrapper2.java            # Add full implementation
-└── ProtocolAdapterManager2.java            # Add full implementation
+├── ProtocolAdapterWrapper2.java            # Complete full implementation (Phase 3)
+└── ProtocolAdapterManager2.java            # Add integration tests (Phase 4)
 ```
 
 ### Files to Keep Unchanged (Old Design)
@@ -1107,7 +1135,7 @@ src/main/java/com/hivemq/protocols/
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2026-01-23
+**Document Version**: 1.1
+**Last Updated**: 2026-03-17
 **Author**: Claude (AI Assistant)
-**Status**: AWAITING APPROVAL
+**Status**: IN PROGRESS (Phase 1 complete, Phase 3 & 4 in progress)
