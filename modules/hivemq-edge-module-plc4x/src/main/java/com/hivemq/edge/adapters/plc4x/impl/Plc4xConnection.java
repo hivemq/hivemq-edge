@@ -21,6 +21,7 @@ import com.hivemq.edge.adapters.plc4x.Plc4xException;
 import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -129,9 +130,10 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
     }
 
     protected void lazyConnectionCheck() {
-        if (!plcConnection.isConnected()) {
+        final PlcConnection connection = Objects.requireNonNull(plcConnection, "PLC connection not initialized");
+        if (!connection.isConnected()) {
             synchronized (lock) {
-                if (!plcConnection.isConnected()) {
+                if (!connection.isConnected()) {
                     try {
                         plcConnection.connect();
                     } catch (PlcConnectionException e) {
@@ -162,13 +164,14 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
 
     public @NotNull CompletableFuture<? extends PlcReadResponse> read(final @NotNull List<Plc4xTag> tags) {
         lazyConnectionCheck();
-        if (!plcConnection.getMetadata().isReadSupported()) {
+        final PlcConnection conn = Objects.requireNonNull(plcConnection);
+        if (!conn.getMetadata().isReadSupported()) {
             return CompletableFuture.failedFuture(new Plc4xException("connection type read-blocking"));
         }
         if (log.isTraceEnabled()) {
             log.trace("Sending direct-read request to connection for {}.", tags);
         }
-        final PlcReadRequest.Builder builder = plcConnection.readRequestBuilder();
+        final PlcReadRequest.Builder builder = conn.readRequestBuilder();
         tags.forEach(tag -> builder.addTagAddress(tag.getName(), getTagAddressForSubscription(tag)));
         final PlcReadRequest readRequest = builder.build();
         // Ok - seems the reads are not thread safe
@@ -180,13 +183,14 @@ public abstract class Plc4xConnection<T extends Plc4XSpecificAdapterConfig<?>> {
     public @NotNull CompletableFuture<? extends PlcSubscriptionResponse> subscribe(
             final @NotNull Plc4xTag tag, final @NotNull Consumer<PlcSubscriptionEvent> consumer) {
         lazyConnectionCheck();
-        if (!plcConnection.getMetadata().isSubscribeSupported()) {
+        final PlcConnection conn = Objects.requireNonNull(plcConnection);
+        if (!conn.getMetadata().isSubscribeSupported()) {
             return CompletableFuture.failedFuture(new Plc4xException("connection type cannot subscribe"));
         }
         if (log.isTraceEnabled()) {
             log.trace("Sending subscribe request to connection for {}.", tag.getName());
         }
-        final PlcSubscriptionRequest.Builder builder = plcConnection.subscriptionRequestBuilder();
+        final PlcSubscriptionRequest.Builder builder = conn.subscriptionRequestBuilder();
 
         // TODO we're only registering for state change, could also register events
         builder.addChangeOfStateTagAddress(tag.getName(), getTagAddressForSubscription(tag));

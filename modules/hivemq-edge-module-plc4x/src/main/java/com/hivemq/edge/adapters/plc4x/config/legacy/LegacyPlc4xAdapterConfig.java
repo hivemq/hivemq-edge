@@ -25,6 +25,8 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+// NullAway: fields populated by Jackson deserialization, no-arg constructor required for legacy config
+@SuppressWarnings("NullAway.Init")
 public class LegacyPlc4xAdapterConfig {
 
     @JsonProperty(value = "id", required = true)
@@ -83,6 +85,8 @@ public class LegacyPlc4xAdapterConfig {
         return maxPollingErrorsBeforeRemoval;
     }
 
+    // NullAway: fields populated by Jackson deserialization
+    @SuppressWarnings("NullAway.Init")
     public static class PollingContextImpl {
 
         @JsonProperty(value = "tagName", required = true)

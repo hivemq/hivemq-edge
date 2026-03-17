@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
@@ -59,19 +60,19 @@ public class Plc4xDataType {
         DATE_AND_LTIME((short) 0x1F, LocalDateTime.class),
         RAW_BYTE_ARRAY((short) 0x71, Byte.class);
 
-        DATA_TYPE(short code, Class<?> javaType) {
+        DATA_TYPE(short code, @Nullable Class<?> javaType) {
             this.code = code;
             this.javaType = javaType;
         }
 
         private short code;
-        private Class<?> javaType;
+        private @Nullable Class<?> javaType;
 
         public short getCode() {
             return code;
         }
 
-        public Class<?> getJavaType() {
+        public @Nullable Class<?> getJavaType() {
             return javaType;
         }
     }
