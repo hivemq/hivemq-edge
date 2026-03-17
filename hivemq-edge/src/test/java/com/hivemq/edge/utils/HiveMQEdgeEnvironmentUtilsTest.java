@@ -66,7 +66,9 @@ class HiveMQEdgeEnvironmentUtilsTest {
         executor.shutdown();
         executor.awaitTermination(10, TimeUnit.SECONDS);
 
-        assertEquals(1, tokens.size(),
+        assertEquals(
+                1,
+                tokens.size(),
                 "All threads must observe the same installation token, but got " + tokens.size() + " distinct values");
     }
 
