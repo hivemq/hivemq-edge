@@ -14,6 +14,7 @@ plugins {
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.third-party-license-generator")
     id("com.hivemq.errorprone-convention")
+    id("com.hivemq.nullaway-convention")
     id("com.hivemq.spotless-convention")
 }
 
