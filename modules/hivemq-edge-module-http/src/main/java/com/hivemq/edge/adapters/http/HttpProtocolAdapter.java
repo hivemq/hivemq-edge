@@ -55,6 +55,7 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import javax.net.ssl.SSLContext;
@@ -84,7 +85,7 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
     private final @NotNull ModuleServices moduleServices;
     private final @NotNull AdapterFactories adapterFactories;
     private final @NotNull String adapterId;
-    private final @Nullable ObjectMapper objectMapper;
+    private final @NotNull ObjectMapper objectMapper;
 
     private volatile @Nullable HttpClient httpClient = null;
 
@@ -265,8 +266,11 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
             }
         }
 
-        final HttpData data =
-                new HttpData(url, httpResponse.statusCode(), responseContentType, adapterFactories.dataPointFactory());
+        final HttpData data = new HttpData(
+                url,
+                httpResponse.statusCode(),
+                Objects.requireNonNullElse(responseContentType, PLAIN_MIME_TYPE),
+                adapterFactories.dataPointFactory());
         // When the body is empty, just include the metadata
         if (payloadData != null) {
             data.addDataPoint(tagName, payloadData);
