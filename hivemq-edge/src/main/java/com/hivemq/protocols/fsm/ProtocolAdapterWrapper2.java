@@ -1,19 +1,18 @@
 /*
- *  Copyright 2019-present HiveMQ GmbH
+ * Copyright 2019-present HiveMQ GmbH
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
 package com.hivemq.protocols.fsm;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
@@ -126,22 +125,22 @@ public class ProtocolAdapterWrapper2 {
         return response.status().isSuccess();
     }
 
-    public synchronized @NotNull ProtocolAdapterTransitionResponse transitionTo(final @NotNull ProtocolAdapterState newState) {
+    public synchronized @NotNull ProtocolAdapterTransitionResponse transitionTo(
+            final @NotNull ProtocolAdapterState newState) {
         final ProtocolAdapterState fromState = state;
         final ProtocolAdapterTransitionResponse response = fromState.transition(newState);
         state = response.toState();
         switch (response.status()) {
             case Success -> {
-                LOGGER.debug("Protocol adapter '{}' transitioned from {} to {} successfully.",
+                LOGGER.debug(
+                        "Protocol adapter '{}' transitioned from {} to {} successfully.",
                         getAdapterId(),
                         fromState,
                         state);
             }
             case Failure -> {
-                LOGGER.error("Protocol adapter '{}' failed to transition from {} to {}.",
-                        getAdapterId(),
-                        fromState,
-                        state);
+                LOGGER.error(
+                        "Protocol adapter '{}' failed to transition from {} to {}.", getAdapterId(), fromState, state);
             }
             case NotChanged -> {
                 LOGGER.warn("Protocol adapter '{}' state {} is unchanged.", getAdapterId(), state);
@@ -157,19 +156,22 @@ public class ProtocolAdapterWrapper2 {
         southboundConnectionState = response.toState();
         switch (response.status()) {
             case Success -> {
-                LOGGER.debug("Protocol adapter '{}' southbound connection transitioned from {} to {} successfully.",
+                LOGGER.debug(
+                        "Protocol adapter '{}' southbound connection transitioned from {} to {} successfully.",
                         getAdapterId(),
                         fromState,
                         southboundConnectionState);
             }
             case Failure -> {
-                LOGGER.error("Protocol adapter '{}' southbound connection failed to transition from {} to {}.",
+                LOGGER.error(
+                        "Protocol adapter '{}' southbound connection failed to transition from {} to {}.",
                         getAdapterId(),
                         fromState,
                         southboundConnectionState);
             }
             case NotChanged -> {
-                LOGGER.warn("Protocol adapter '{}' southbound connection state {} is unchanged.",
+                LOGGER.warn(
+                        "Protocol adapter '{}' southbound connection state {} is unchanged.",
                         getAdapterId(),
                         southboundConnectionState);
             }
@@ -184,19 +186,22 @@ public class ProtocolAdapterWrapper2 {
         northboundConnectionState = response.toState();
         switch (response.status()) {
             case Success -> {
-                LOGGER.debug("Protocol adapter '{}' northbound connection transitioned from {} to {} successfully.",
+                LOGGER.debug(
+                        "Protocol adapter '{}' northbound connection transitioned from {} to {} successfully.",
                         getAdapterId(),
                         fromState,
                         northboundConnectionState);
             }
             case Failure -> {
-                LOGGER.error("Protocol adapter '{}' northbound connection failed to transition from {} to {}.",
+                LOGGER.error(
+                        "Protocol adapter '{}' northbound connection failed to transition from {} to {}.",
                         getAdapterId(),
                         fromState,
                         northboundConnectionState);
             }
             case NotChanged -> {
-                LOGGER.warn("Protocol adapter '{}' northbound connection state {} is unchanged.",
+                LOGGER.warn(
+                        "Protocol adapter '{}' northbound connection state {} is unchanged.",
                         getAdapterId(),
                         northboundConnectionState);
             }
