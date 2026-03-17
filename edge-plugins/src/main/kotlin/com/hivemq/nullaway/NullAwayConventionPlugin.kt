@@ -4,9 +4,11 @@ import net.ltgt.gradle.errorprone.ErrorPronePlugin
 import net.ltgt.gradle.errorprone.errorprone
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.dependencies
+import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.withType
 
 /**
@@ -23,8 +25,13 @@ class NullAwayConventionPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         project.plugins.apply(ErrorPronePlugin::class)
 
+        val libs = project.extensions.getByType<VersionCatalogsExtension>().named("libs")
+        val nullaway = libs.findLibrary("nullaway").orElseThrow {
+            IllegalStateException("Library 'nullaway' not found in version catalog 'libs'")
+        }
+
         project.dependencies {
-            add("errorprone", "com.uber.nullaway:nullaway:0.13.1")
+            add("errorprone", nullaway)
         }
 
         project.tasks.withType<JavaCompile>().configureEach {
