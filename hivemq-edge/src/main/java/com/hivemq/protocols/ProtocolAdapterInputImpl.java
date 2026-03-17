@@ -22,7 +22,7 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import java.util.List;
@@ -37,13 +37,13 @@ public class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig> i
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ModuleServices moduleServices;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
-    private final @NotNull List<Tag> tags;
+    private final @NotNull List<GenericTag> tags;
     private final @NotNull List<PollingContext> pollingContexts;
 
     public ProtocolAdapterInputImpl(
             final @NotNull String adapterId,
             final @NotNull T configObject,
-            final @NotNull List<Tag> tags,
+            final @NotNull List<GenericTag> tags,
             final @NotNull List<NorthboundMapping> northboundMappings,
             final @NotNull String version,
             final @NotNull ProtocolAdapterState protocolAdapterState,
@@ -96,7 +96,7 @@ public class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig> i
     }
 
     @Override
-    public @NotNull List<Tag> getTags() {
+    public @NotNull List<GenericTag> getTags() {
         return tags;
     }
 

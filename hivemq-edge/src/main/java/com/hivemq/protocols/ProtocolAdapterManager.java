@@ -28,7 +28,7 @@ import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
@@ -455,7 +455,7 @@ public class ProtocolAdapterManager {
         syncFuture(startAsync(createAdapterInternal(protocolAdapterConfig, versionProvider.getVersion())));
     }
 
-    private boolean updateAdapterTags(final @NotNull String adapterId, final @NotNull List<? extends Tag> tags) {
+    private boolean updateAdapterTags(final @NotNull String adapterId, final @NotNull List<GenericTag> tags) {
         Preconditions.checkNotNull(adapterId);
         return getProtocolAdapterWrapperByAdapterId(adapterId)
                 .map(wrapper -> {

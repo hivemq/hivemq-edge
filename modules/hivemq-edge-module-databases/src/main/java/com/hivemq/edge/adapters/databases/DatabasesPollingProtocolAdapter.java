@@ -31,7 +31,7 @@ import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.adapter.sdk.api.tag.GenericTag;
 import com.hivemq.edge.adapters.databases.config.DatabasesAdapterConfig;
 import com.hivemq.edge.adapters.databases.config.DatabasesAdapterTagDefinition;
 import java.sql.Connection;
@@ -56,7 +56,7 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull String adapterId;
-    private final @NotNull List<Tag> tags;
+    private final @NotNull List<GenericTag> tags;
     private final @NotNull DatabaseConnection databaseConnection;
     private final @NotNull AdapterFactories adapterFactories;
 
@@ -170,7 +170,7 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
         pollingOutput.finish();
     }
 
-    private void loadDataFromDB(final @NotNull BatchPollingOutput output, final @NotNull Tag tag) {
+    private void loadDataFromDB(final @NotNull BatchPollingOutput output, final @NotNull GenericTag tag) {
         // ARM to ensure the connection is closed afterward
         try (final Connection connection = databaseConnection.getConnection()) {
             log.debug("Getting tag definition");
