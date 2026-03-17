@@ -35,6 +35,7 @@ import etherip.data.CipException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -131,7 +132,8 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
                 final var cipData = readCipData[i];
                 final var tagAddress = tagAddresses[i];
                 EtherIpValueFactory.fromTagAddressAndCipData(tagAddress, cipData)
-                        .map(it -> dataPointFactory.create(tags.get(tagAddress).getName(), it.getValue()))
+                        .map(it -> dataPointFactory.create(
+                                Objects.requireNonNull(tags.get(tagAddress)).getName(), it.getValue()))
                         .ifPresent(dataPoint -> {
                             if (adapterConfig.getEipToMqttConfig().getPublishChangedDataOnly()) {
                                 if (lastSamples.replaceIfValueIsNew(dataPoint.getTagName(), List.of(dataPoint))) {
