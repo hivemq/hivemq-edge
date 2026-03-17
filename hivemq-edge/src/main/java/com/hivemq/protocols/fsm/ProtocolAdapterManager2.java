@@ -189,7 +189,8 @@ public class ProtocolAdapterManager2 {
                     // hen-egg problem. Rather solve this here as have not final fields in the adapter.
                     perModule.setAdapter(protocolAdapter);
                     protocolAdapterMetrics.increaseProtocolAdapterMetric(configProtocolId);
-                    return new ProtocolAdapterWrapper2(protocolAdapter);
+                    final ProtocolAdapter2 adapter2 = new ProtocolAdapter2Bridge(protocolAdapter, perModule);
+                    return new ProtocolAdapterWrapper2(adapter2);
                 });
 
         // Use putIfAbsent to handle race conditions - if another thread added it first, we discard ours

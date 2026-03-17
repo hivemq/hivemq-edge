@@ -18,7 +18,6 @@ package com.hivemq.protocols.fsm;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +31,7 @@ import org.mockito.quality.Strictness;
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class ProtocolAdapterWrapperTest {
     @Mock
-    private @NotNull ProtocolAdapter protocolAdapter;
+    private @NotNull ProtocolAdapter2 protocolAdapter;
 
     @BeforeEach
     public void setUp() {

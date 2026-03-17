@@ -15,7 +15,6 @@
  */
 package com.hivemq.protocols.fsm;
 
-import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -23,12 +22,12 @@ import org.slf4j.LoggerFactory;
 
 public class ProtocolAdapterWrapper2 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ProtocolAdapterWrapper2.class);
-    protected final @NotNull ProtocolAdapter adapter;
+    protected final @NotNull ProtocolAdapter2 adapter;
     protected volatile @NotNull ProtocolAdapterState state;
     protected volatile @NotNull ProtocolAdapterConnectionState northboundConnectionState;
     protected volatile @NotNull ProtocolAdapterConnectionState southboundConnectionState;
 
-    public ProtocolAdapterWrapper2(final @NotNull ProtocolAdapter adapter) {
+    public ProtocolAdapterWrapper2(final @NotNull ProtocolAdapter2 adapter) {
         this.adapter = adapter;
         northboundConnectionState = ProtocolAdapterConnectionState.Disconnected;
         southboundConnectionState = ProtocolAdapterConnectionState.Disconnected;
