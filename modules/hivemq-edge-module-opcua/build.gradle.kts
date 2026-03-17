@@ -17,6 +17,7 @@ plugins {
     id("com.hivemq.repository-convention")
     id("com.hivemq.jacoco-convention")
     id("com.hivemq.errorprone-convention")
+    id("com.hivemq.nullaway-convention")
     id("com.hivemq.spotless-convention")
 }
 

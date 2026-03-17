@@ -169,9 +169,10 @@ public class OpcUaClientConnection {
             } catch (final ExecutionException e) {
                 final Throwable cause = e.getCause();
                 log.error("Connection failed for OPC UA adapter '{}'", adapterId, cause);
+                final String causeMessage = cause != null ? cause.getMessage() : e.getMessage();
                 eventService
                         .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
-                        .withMessage("Connection failed for adapter '" + adapterId + "': " + cause.getMessage())
+                        .withMessage("Connection failed for adapter '" + adapterId + "': " + causeMessage)
                         .withSeverity(Event.SEVERITY.ERROR)
                         .fire();
                 protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
