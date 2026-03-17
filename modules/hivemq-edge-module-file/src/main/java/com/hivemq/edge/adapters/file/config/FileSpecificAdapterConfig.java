@@ -43,7 +43,7 @@ public class FileSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
             title = "File To MQTT Config",
             description = "The configuration for a data stream from File to MQTT",
             required = true)
-    private final @Nullable FileToMqttConfig fileToMqttConfig;
+    private final @NotNull FileToMqttConfig fileToMqttConfig;
 
     public FileSpecificAdapterConfig(
             @JsonProperty(value = "fileToMqtt") final @Nullable FileToMqttConfig fileToMqttConfig) {
