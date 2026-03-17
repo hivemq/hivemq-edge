@@ -24,6 +24,7 @@ import jakarta.inject.Singleton;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -47,7 +48,7 @@ public class PersistenceExecutorProvider implements Provider<ListeningExecutorSe
         if (executorService == null) {
             createExecutor();
         }
-        return executorService;
+        return Objects.requireNonNull(executorService);
     }
 
     private void createExecutor() {

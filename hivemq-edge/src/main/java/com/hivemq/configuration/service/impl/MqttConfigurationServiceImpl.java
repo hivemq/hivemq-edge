@@ -90,6 +90,7 @@ public class MqttConfigurationServiceImpl implements MqttConfigurationService {
     }
 
     @Override
+    @SuppressWarnings("NullAway") // AtomicReference is initialized with non-null value and only set with non-null values
     public @NotNull QueuedMessagesStrategy getQueuedMessagesStrategy() {
         return queuedMessagesStrategy.get();
     }
@@ -105,6 +106,7 @@ public class MqttConfigurationServiceImpl implements MqttConfigurationService {
     }
 
     @Override
+    @SuppressWarnings("NullAway") // AtomicReference is initialized with non-null value and only set with non-null values
     public @NotNull QoS maximumQos() {
         return maximumQos.get();
     }

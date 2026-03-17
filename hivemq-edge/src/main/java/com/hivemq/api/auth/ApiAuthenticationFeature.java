@@ -96,8 +96,12 @@ public class ApiAuthenticationFeature implements DynamicFeature {
     }
 
     protected ApiSecurityContext createSecurityContext(final @NotNull AuthenticationResult result) {
+        final ApiPrincipal principal = result.getPrincipal();
+        if (principal == null) {
+            throw new IllegalStateException("Authentication succeeded but principal is null");
+        }
         ApiSecurityContext context =
-                new ApiSecurityContext(result.getPrincipal(), result.getAuthenticationMethod(), true);
+                new ApiSecurityContext(principal, result.getAuthenticationMethod(), true);
         return context;
     }
 
@@ -129,13 +133,15 @@ public class ApiAuthenticationFeature implements DynamicFeature {
                 // first check the authorization and set the security context if authentication was successful
                 ChainedAuthenticationHandler handler = new ChainedAuthenticationHandler(authenticationHandler);
                 AuthenticationResult result = handler.authenticate(requestContext);
-                if (!result.isSuccess()) {
+                if (result == null || !result.isSuccess()) {
                     log.debug(
                             "Authentication failed for resource {}",
                             requestContext.getUriInfo().getPath());
                     // a bit counterintuitive but HTTP response codes specify UNAUTHORIZED(401) if authentication fails
                     Response.ResponseBuilder builder = Response.status(Response.Status.UNAUTHORIZED);
-                    handler.decorateResponse(result, builder);
+                    if (result != null) {
+                        handler.decorateResponse(result, builder);
+                    }
                     requestContext.abortWith(builder.build());
                     return;
                 } else {

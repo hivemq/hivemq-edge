@@ -276,7 +276,7 @@ public class PluginAuthorizerServiceImpl implements PluginAuthorizerService {
         if (clientConnection.getExtensionClientAuthorizers() == null) {
             clientConnection.setExtensionClientAuthorizers(new ClientAuthorizersImpl(extensionPriorityComparator));
         }
-        return clientConnection.getExtensionClientAuthorizers();
+        return java.util.Objects.requireNonNull(clientConnection.getExtensionClientAuthorizers());
     }
 
     private void disconnectWithReasonCode(

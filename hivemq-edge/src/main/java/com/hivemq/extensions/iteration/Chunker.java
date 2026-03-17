@@ -29,6 +29,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Georg Held
@@ -97,6 +98,6 @@ public class Chunker {
 
     public interface SingleWriterCall<T> {
         ListenableFuture<@NotNull BucketChunkResult<Map<String, T>>> call(
-                final int bucket, final @NotNull String lastKey, final int maxResults);
+                final int bucket, final @Nullable String lastKey, final int maxResults);
     }
 }

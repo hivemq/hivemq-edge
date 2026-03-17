@@ -625,7 +625,7 @@ public class PulseApiImpl implements PulseApi {
         final Set<String> unusableAssetIdSet = Sets.difference(allAssetIdSet, oldAssetIdSet);
         final Set<String> usedAssetIdSet = new HashSet<>();
         for (final var dataCombining : newDataCombiner.dataCombinings()) {
-            final String assetId = dataCombining.destination().assetId();
+            final String assetId = Objects.requireNonNull(dataCombining.destination().assetId());
             if (unusableAssetIdSet.contains(assetId)) {
                 return Optional.of(ErrorResponseUtil.errorResponse(new DuplicatedManagedAssetIdError(assetId)));
             }

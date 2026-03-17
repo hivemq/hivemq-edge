@@ -32,6 +32,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -201,7 +202,7 @@ public class ModuleLoader {
 
     protected void loadFromModulesDirectory(final @NotNull ClassLoader parentClassloader) {
         log.debug("Loading modules from HiveMQ Home.");
-        final File modulesFolder = systemInformation.getModulesFolder();
+        final File modulesFolder = Objects.requireNonNull(systemInformation.getModulesFolder());
         final File[] libs = modulesFolder.listFiles();
         if (libs != null) {
             for (final File lib : libs) {

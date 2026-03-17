@@ -18,6 +18,7 @@ package com.hivemq.api.auth.handler;
 import com.google.common.base.Preconditions;
 import com.hivemq.api.auth.ApiPrincipal;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
@@ -30,7 +31,7 @@ public class AuthenticationResult {
         INSUFFICIENT_INFORMATION
     }
 
-    private ApiPrincipal principal;
+    private @Nullable ApiPrincipal principal;
     private STATUS status;
     private final IAuthenticationHandler authenticationHandler;
 
@@ -50,7 +51,7 @@ public class AuthenticationResult {
         this.status = status;
     }
 
-    public ApiPrincipal getPrincipal() {
+    public @Nullable ApiPrincipal getPrincipal() {
         return principal;
     }
 

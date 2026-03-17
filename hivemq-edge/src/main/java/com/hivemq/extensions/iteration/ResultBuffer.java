@@ -26,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
 @ThreadSafe
 public class ResultBuffer<V> {
 
-    private ChunkResult<V> currentChunk = null;
+    private @Nullable ChunkResult<V> currentChunk = null;
 
     @NotNull
     private final NextChunkCallback<V> nextChunkCallback;

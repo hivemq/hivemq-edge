@@ -53,6 +53,9 @@ public class RegisterHandler extends SimpleChannelInboundHandler<MqttsnRegister>
         final ClientConnection clientConnection =
                 ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final String clientId = clientConnection.getClientId();
+        if (clientId == null) {
+            return;
+        }
         String topicName = msg.getTopicName();
         int alias = mqttsnTopicRegistry.register(clientId, topicName);
         IMqttsnMessage out = MqttsnConnectionHelper.getMessageFactoryForConnection(clientConnection)

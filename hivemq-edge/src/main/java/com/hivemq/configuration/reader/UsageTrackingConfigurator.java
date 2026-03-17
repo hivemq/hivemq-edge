@@ -19,13 +19,15 @@ import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.UsageTrackingConfigEntity;
 import com.hivemq.configuration.service.UsageTrackingConfigurationService;
 import jakarta.inject.Inject;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class UsageTrackingConfigurator implements Configurator<UsageTrackingConfigEntity> {
 
     private final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService;
 
-    private volatile UsageTrackingConfigEntity configEntity;
+    private volatile @Nullable UsageTrackingConfigEntity configEntity;
     private volatile boolean initialized = false;
 
     @Inject
@@ -47,7 +49,8 @@ public class UsageTrackingConfigurator implements Configurator<UsageTrackingConf
         this.configEntity = config.getUsageTracking();
         this.initialized = true;
 
-        usageTrackingConfigurationService.setTrackingEnabled(configEntity.isEnabled());
+        usageTrackingConfigurationService.setTrackingEnabled(
+                Objects.requireNonNull(this.configEntity).isEnabled());
 
         return ConfigResult.SUCCESS;
     }

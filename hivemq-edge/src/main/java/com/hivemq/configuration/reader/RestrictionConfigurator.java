@@ -20,7 +20,9 @@ import static com.hivemq.configuration.service.RestrictionsConfigurationService.
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.RestrictionsEntity;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +32,7 @@ public class RestrictionConfigurator implements Configurator<RestrictionsEntity>
 
     private final @NotNull RestrictionsConfigurationService restrictionsConfigurationService;
 
-    private volatile RestrictionsEntity configEntity;
+    private volatile @Nullable RestrictionsEntity configEntity;
     private volatile boolean initialized = false;
 
     public RestrictionConfigurator(final @NotNull RestrictionsConfigurationService restrictionsConfigurationService) {
@@ -50,14 +52,15 @@ public class RestrictionConfigurator implements Configurator<RestrictionsEntity>
         this.configEntity = config.getRestrictionsConfig();
         this.initialized = true;
 
-        restrictionsConfigurationService.setMaxConnections(validateMaxConnections(configEntity.getMaxConnections()));
+        final RestrictionsEntity entity = Objects.requireNonNull(this.configEntity);
+        restrictionsConfigurationService.setMaxConnections(validateMaxConnections(entity.getMaxConnections()));
         restrictionsConfigurationService.setMaxClientIdLength(
-                validateMaxClientIdLength(configEntity.getMaxClientIdLength()));
+                validateMaxClientIdLength(entity.getMaxClientIdLength()));
         restrictionsConfigurationService.setNoConnectIdleTimeout(
-                validateNoConnectIdleTimeout(configEntity.getNoConnectIdleTimeout()));
+                validateNoConnectIdleTimeout(entity.getNoConnectIdleTimeout()));
         restrictionsConfigurationService.setIncomingLimit(
-                validateIncomingLimit(configEntity.getIncomingBandwidthThrottling()));
-        restrictionsConfigurationService.setMaxTopicLength(validateMaxTopicLength(configEntity.getMaxTopicLength()));
+                validateIncomingLimit(entity.getIncomingBandwidthThrottling()));
+        restrictionsConfigurationService.setMaxTopicLength(validateMaxTopicLength(entity.getMaxTopicLength()));
         return ConfigResult.SUCCESS;
     }
 

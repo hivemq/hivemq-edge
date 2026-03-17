@@ -21,6 +21,7 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,15 +29,15 @@ import org.jetbrains.annotations.Nullable;
 public class DataCombinerEntity {
     @JsonProperty(value = "id", required = true)
     @XmlElement(name = "id", required = true)
-    private @NotNull UUID id;
+    private @Nullable UUID id;
 
     @JsonProperty(value = "name", required = true)
     @XmlElement(name = "name", required = true)
-    private @NotNull String name;
+    private @Nullable String name;
 
     @JsonProperty(value = "description", required = true)
     @XmlElement(name = "description", required = true)
-    private @NotNull String description;
+    private @Nullable String description;
 
     @JsonProperty(value = "entityReferences", required = true)
     @XmlElementWrapper(name = "entity-references", required = true)
@@ -93,28 +94,23 @@ public class DataCombinerEntity {
     public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
         if (!(o instanceof DataCombinerEntity that)) return false;
-        return id.equals(that.id)
-                && name.equals(that.name)
-                && description.equals(that.description)
+        return Objects.equals(id, that.id)
+                && Objects.equals(name, that.name)
+                && Objects.equals(description, that.description)
                 && entityReferenceEntities.equals(that.entityReferenceEntities)
                 && dataCombiningEntities.equals(that.dataCombiningEntities);
     }
 
     @Override
     public int hashCode() {
-        int result = id.hashCode();
-        result = 31 * result + name.hashCode();
-        result = 31 * result + description.hashCode();
-        result = 31 * result + entityReferenceEntities.hashCode();
-        result = 31 * result + dataCombiningEntities.hashCode();
-        return result;
+        return Objects.hash(id, name, description, entityReferenceEntities, dataCombiningEntities);
     }
 
     public @NotNull List<DataCombiningEntity> getDataCombiningEntities() {
         return dataCombiningEntities;
     }
 
-    public @NotNull String getDescription() {
+    public @Nullable String getDescription() {
         return description;
     }
 
@@ -122,11 +118,11 @@ public class DataCombinerEntity {
         return entityReferenceEntities;
     }
 
-    public @NotNull UUID getId() {
+    public @Nullable UUID getId() {
         return id;
     }
 
-    public @NotNull String getName() {
+    public @Nullable String getName() {
         return name;
     }
 }

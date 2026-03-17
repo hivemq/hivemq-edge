@@ -17,6 +17,7 @@ package com.hivemq.configuration.reader;
 
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import java.util.Objects;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +59,7 @@ public interface Configurator<T> {
      * @param newConfig
      * @return
      */
-    default boolean hasChanged(final T originalConfig, final T newConfig) {
+    default boolean hasChanged(final @Nullable T originalConfig, final @Nullable T newConfig) {
         return !Objects.equals(originalConfig, newConfig);
     }
 }

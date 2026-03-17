@@ -226,6 +226,10 @@ public class PluginAuthenticatorServiceImpl implements PluginAuthenticatorServic
         }
 
         final String clientId = clientConnection.getClientId();
+        if (clientId == null) {
+            noAuthAvailableDisconnect(ctx, reAuth);
+            return;
+        }
 
         final AuthenticatorProviderInput authenticatorProviderInput =
                 new AuthenticatorProviderInputImpl(serverInformation, ctx.channel(), clientId);
@@ -239,7 +243,9 @@ public class PluginAuthenticatorServiceImpl implements PluginAuthenticatorServic
 
         if (reAuth) {
             final ReAuthOutput output =
-                    new ReAuthOutput(asyncer, validateUTF8, defaultPermissions, clientSettings, timeout);
+                    new ReAuthOutput(asyncer, validateUTF8,
+                            defaultPermissions != null ? defaultPermissions : new com.hivemq.extensions.packets.general.ModifiableDefaultPermissionsImpl(),
+                            clientSettings, timeout);
             final ReAuthContext context =
                     new ReAuthContext(clientId, ctx, authSender, enhancedAuthenticatorCount, output, disconnector);
 
@@ -254,9 +260,15 @@ public class PluginAuthenticatorServiceImpl implements PluginAuthenticatorServic
             }
         } else {
             final CONNECT connect = clientConnection.getAuthConnect();
+            if (connect == null) {
+                noAuthAvailableDisconnect(ctx, false);
+                return;
+            }
 
             final ConnectAuthOutput output =
-                    new ConnectAuthOutput(asyncer, validateUTF8, defaultPermissions, clientSettings, timeout, true);
+                    new ConnectAuthOutput(asyncer, validateUTF8,
+                            defaultPermissions != null ? defaultPermissions : new com.hivemq.extensions.packets.general.ModifiableDefaultPermissionsImpl(),
+                            clientSettings, timeout, true);
             final ConnectAuthContext context = new ConnectAuthContext(
                     ctx,
                     authSender,
@@ -344,6 +356,6 @@ public class PluginAuthenticatorServiceImpl implements PluginAuthenticatorServic
         if (clientConnection.getExtensionClientAuthenticators() == null) {
             clientConnection.setExtensionClientAuthenticators(new ClientAuthenticatorsImpl(priorityComparator));
         }
-        return clientConnection.getExtensionClientAuthenticators();
+        return java.util.Objects.requireNonNull(clientConnection.getExtensionClientAuthenticators());
     }
 }

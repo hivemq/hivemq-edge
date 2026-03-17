@@ -27,6 +27,7 @@ import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.persistence.Sizable;
 import com.hivemq.util.Bytes;
 import com.hivemq.util.MemoryEstimator;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,19 +43,19 @@ public class MqttWillPublish implements Sizable {
     private int sizeInMemory = SIZE_NOT_CALCULATED;
 
     // MQTT 5 and 3
-    private final String topic;
-    private byte[] payload;
-    private final QoS qos;
+    private final @NotNull String topic;
+    private @Nullable byte[] payload;
+    private final @NotNull QoS qos;
     private final boolean retain;
 
     // MQTT 5
-    private final String hivemqId;
+    private final @NotNull String hivemqId;
     private long messageExpiryInterval;
-    private final Mqtt5PayloadFormatIndicator payloadFormatIndicator;
-    private final String contentType;
-    private final String responseTopic;
-    private final byte[] correlationData;
-    private final Mqtt5UserProperties userProperties;
+    private final @Nullable Mqtt5PayloadFormatIndicator payloadFormatIndicator;
+    private final @Nullable String contentType;
+    private final @Nullable String responseTopic;
+    private final @Nullable byte[] correlationData;
+    private final @NotNull Mqtt5UserProperties userProperties;
     private long delayInterval;
 
     protected MqttWillPublish(
@@ -136,7 +137,7 @@ public class MqttWillPublish implements Sizable {
                 hivemqId,
                 packet.getTopic(),
                 Bytes.getBytesFromReadOnlyBuffer(packet.getPayload()),
-                QoS.valueOf(packet.getQos().getQosNumber()),
+                Objects.requireNonNullElse(QoS.valueOf(packet.getQos().getQosNumber()), QoS.AT_MOST_ONCE),
                 packet.getRetain(),
                 packet.getMessageExpiryInterval().orElse(PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET),
                 payloadFormatIndicator,
@@ -159,7 +160,7 @@ public class MqttWillPublish implements Sizable {
         return topic;
     }
 
-    public byte[] getPayload() {
+    public @Nullable byte[] getPayload() {
         return payload;
     }
 
@@ -175,19 +176,19 @@ public class MqttWillPublish implements Sizable {
         return messageExpiryInterval;
     }
 
-    public Mqtt5PayloadFormatIndicator getPayloadFormatIndicator() {
+    public @Nullable Mqtt5PayloadFormatIndicator getPayloadFormatIndicator() {
         return payloadFormatIndicator;
     }
 
-    public String getContentType() {
+    public @Nullable String getContentType() {
         return contentType;
     }
 
-    public String getResponseTopic() {
+    public @Nullable String getResponseTopic() {
         return responseTopic;
     }
 
-    public byte[] getCorrelationData() {
+    public @Nullable byte[] getCorrelationData() {
         return correlationData;
     }
 
@@ -258,17 +259,18 @@ public class MqttWillPublish implements Sizable {
 
     public static class Mqtt3Builder {
 
-        private String topic;
-        private byte[] payload;
-        private QoS qos;
+        private @Nullable String topic;
+        private @Nullable byte[] payload;
+        private @Nullable QoS qos;
         private boolean retain;
-        private String hivemqId;
+        private @Nullable String hivemqId;
 
+        @SuppressWarnings("NullAway") // builder fields are set before build()
         public MqttWillPublish build() {
             return new MqttWillPublish(topic, payload, qos, retain, hivemqId);
         }
 
-        public Mqtt3Builder withTopic(final String topic) {
+        public Mqtt3Builder withTopic(final @Nullable String topic) {
             this.topic = topic;
             return this;
         }
@@ -296,19 +298,20 @@ public class MqttWillPublish implements Sizable {
 
     public static class Mqtt5Builder {
 
-        private String hivemqId;
-        private String topic;
-        private byte[] payload;
-        private QoS qos;
+        private @Nullable String hivemqId;
+        private @Nullable String topic;
+        private @Nullable byte[] payload;
+        private @Nullable QoS qos;
         private boolean retain;
         private long messageExpiryInterval;
-        private Mqtt5PayloadFormatIndicator payloadFormatIndicator;
-        private String contentType;
-        private String responseTopic;
-        private byte[] correlationData;
-        private Mqtt5UserProperties userProperties = Mqtt5UserProperties.NO_USER_PROPERTIES;
+        private @Nullable Mqtt5PayloadFormatIndicator payloadFormatIndicator;
+        private @Nullable String contentType;
+        private @Nullable String responseTopic;
+        private @Nullable byte[] correlationData;
+        private @NotNull Mqtt5UserProperties userProperties = Mqtt5UserProperties.NO_USER_PROPERTIES;
         private long delayInterval;
 
+        @SuppressWarnings("NullAway") // builder fields are set before build()
         public MqttWillPublish build() {
 
             return new MqttWillPublish(

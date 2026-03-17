@@ -15,6 +15,8 @@
  */
 package com.hivemq.combining.model;
 
+import static java.util.Objects.requireNonNull;
+
 import com.hivemq.configuration.entity.combining.EntityReferenceEntity;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,7 +24,9 @@ public record EntityReference(EntityType type, String id) {
 
     public static @NotNull EntityReference fromModel(
             final @NotNull com.hivemq.edge.api.model.EntityReference entityReference) {
-        return new EntityReference(EntityType.fromModel(entityReference.getType()), entityReference.getId());
+        return new EntityReference(
+                EntityType.fromModel(requireNonNull(entityReference.getType())),
+                requireNonNull(entityReference.getId()));
     }
 
     public @NotNull com.hivemq.edge.api.model.EntityReference toModel() {
@@ -30,7 +34,8 @@ public record EntityReference(EntityType type, String id) {
     }
 
     public static @NotNull EntityReference fromPersistence(final @NotNull EntityReferenceEntity entityReference) {
-        return new EntityReference(entityReference.getType(), entityReference.getId());
+        return new EntityReference(
+                requireNonNull(entityReference.getType()), requireNonNull(entityReference.getId()));
     }
 
     public @NotNull EntityReferenceEntity toPersistence() {

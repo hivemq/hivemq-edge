@@ -24,6 +24,7 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
@@ -39,7 +40,7 @@ public class ApiUtils {
         return false;
     }
 
-    public static String getWebContextRoot(
+    public static @Nullable String getWebContextRoot(
             final @NotNull ApiConfigurationService apiConfigurationService, final boolean trailingSlash) {
 
         final var listeners = apiConfigurationService.getListeners();

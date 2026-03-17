@@ -23,16 +23,17 @@ import jakarta.xml.bind.annotation.XmlElement;
 import java.util.List;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class DataIdentifierReferenceEntity implements EntityValidatable {
 
     @JsonProperty("id")
     @XmlElement(name = "id")
-    private @NotNull String id;
+    private @Nullable String id;
 
     @JsonProperty("type")
     @XmlElement(name = "type")
-    private @NotNull DataIdentifierReference.Type type;
+    private @Nullable DataIdentifierReference.Type type;
 
     // no-arg for jaxb
     public DataIdentifierReferenceEntity() {}
@@ -44,11 +45,11 @@ public class DataIdentifierReferenceEntity implements EntityValidatable {
         this.type = type;
     }
 
-    public @NotNull String getId() {
+    public @Nullable String getId() {
         return id;
     }
 
-    public @NotNull DataIdentifierReference.Type getType() {
+    public @Nullable DataIdentifierReference.Type getType() {
         return type;
     }
 

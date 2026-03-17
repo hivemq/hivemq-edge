@@ -58,7 +58,7 @@ public class JaxrsHttpServerConfiguration {
     protected @Nullable SSLContext sslContext;
     protected @Nullable HttpsConfigurator httpsConfigurator;
 
-    public SSLContext getSslContext() {
+    public @Nullable SSLContext getSslContext() {
         return sslContext;
     }
 
@@ -70,7 +70,7 @@ public class JaxrsHttpServerConfiguration {
         this.setProtocol(HTTPS_PROTOCOL);
     }
 
-    public HttpsConfigurator getHttpsConfigurator() {
+    public @Nullable HttpsConfigurator getHttpsConfigurator() {
         return httpsConfigurator;
     }
 
@@ -127,7 +127,7 @@ public class JaxrsHttpServerConfiguration {
         resourceClasses.addAll(Sets.newHashSet(clazzz));
     }
 
-    public ExecutorService getHttpThreadPoolExecutor() {
+    public @Nullable ExecutorService getHttpThreadPoolExecutor() {
         return httpThreadPoolExecutor;
     }
 
@@ -135,7 +135,7 @@ public class JaxrsHttpServerConfiguration {
         this.httpThreadPoolExecutor = httpThreadPoolExecutor;
     }
 
-    public ObjectMapper getObjectMapper() {
+    public @Nullable ObjectMapper getObjectMapper() {
         return objectMapper;
     }
 
@@ -155,12 +155,14 @@ public class JaxrsHttpServerConfiguration {
         staticResources.add(res);
     }
 
-    public List<ExceptionMapper> getExceptionMappers() {
+    public @Nullable List<ExceptionMapper> getExceptionMappers() {
         return exceptionMappers;
     }
 
     public void addExceptionMappers(ExceptionMapper... mappers) {
-        exceptionMappers.addAll(Arrays.asList(mappers));
+        if (exceptionMappers != null) {
+            exceptionMappers.addAll(Arrays.asList(mappers));
+        }
     }
 
     public int getHttpThreadPoolSize() {

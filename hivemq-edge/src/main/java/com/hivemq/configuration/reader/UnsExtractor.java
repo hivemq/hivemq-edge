@@ -60,6 +60,9 @@ public class UnsExtractor implements ReloadableExtractor<UnsConfigEntity, ISA95>
     @Override
     public synchronized void sync(final @NotNull HiveMQConfigEntity entity) {
         final ISA95 isa95 = config;
+        if (isa95 == null) {
+            return;
+        }
         final ISA95Entity isa95Entity = entity.getUns().getIsa95();
         isa95Entity.setEnabled(isa95.isEnabled());
         isa95Entity.setPrefixAllTopics(isa95.isPrefixAllTopics());

@@ -566,7 +566,11 @@ public class Mqtt5ConnectDecoder extends AbstractMqttConnectDecoder {
 
         final MqttWillPublish.Mqtt5Builder mqtt5Builder = new MqttWillPublish.Mqtt5Builder();
 
-        mqtt5Builder.withHivemqId(hiveMQId.get()).withQos(QoS.valueOf(willQos)).withRetain(willRetain);
+        final QoS willQoSLevel = QoS.valueOf(willQos);
+        if (willQoSLevel == null) {
+            return null;
+        }
+        mqtt5Builder.withHivemqId(hiveMQId.get()).withQos(willQoSLevel).withRetain(willRetain);
 
         final int willPropertiesLength = MqttVariableByteInteger.decode(buf);
         if (propertiesLengthInvalid(clientConnection, buf, willPropertiesLength)) {

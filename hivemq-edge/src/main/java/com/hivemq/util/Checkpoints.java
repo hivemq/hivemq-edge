@@ -21,6 +21,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -192,7 +193,7 @@ public class Checkpoints {
      * @param name the checkpoint name
      * @return a {@link  CountDownLatch} with value 1
      */
-    public static CountDownLatch blockAtCheckpoint(final @NotNull String name) {
+    public static @Nullable CountDownLatch blockAtCheckpoint(final @NotNull String name) {
         if (!enabled) {
             return null;
         }

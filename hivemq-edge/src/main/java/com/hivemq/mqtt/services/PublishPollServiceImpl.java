@@ -131,7 +131,7 @@ public class PublishPollServiceImpl implements PublishPollService {
         }
     }
 
-    protected boolean canReceive(final @NotNull ClientConnection clientConnection) {
+    protected boolean canReceive(final @Nullable ClientConnection clientConnection) {
         if (clientConnection == null
                 || clientConnection.getClientState() == ClientState.DISCONNECTING
                 || clientConnection.getClientState().disconnected()) {
@@ -143,6 +143,9 @@ public class PublishPollServiceImpl implements PublishPollService {
     @Override
     public void pollNewMessages(final @NotNull String client) {
         final ClientConnection clientConnection = connectionPersistence.get(client);
+        if (clientConnection == null) {
+            return;
+        }
         pollNewMessages(client, clientConnection.getChannel());
     }
 
@@ -173,7 +176,10 @@ public class PublishPollServiceImpl implements PublishPollService {
                 future,
                 new FutureCallback<>() {
                     @Override
-                    public void onSuccess(final ImmutableList<PUBLISH> publishes) {
+                    public void onSuccess(final @Nullable ImmutableList<PUBLISH> publishes) {
+                        if (publishes == null) {
+                            return;
+                        }
                         // Return unused ID's
                         int usedIds = 0;
                         for (int i = 0; i < publishes.size(); i++) {
@@ -246,7 +252,10 @@ public class PublishPollServiceImpl implements PublishPollService {
                 future,
                 new FutureCallback<>() {
                     @Override
-                    public void onSuccess(final ImmutableList<MessageWithID> messages) {
+                    public void onSuccess(final @Nullable ImmutableList<MessageWithID> messages) {
+                        if (messages == null) {
+                            return;
+                        }
 
                         final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
                                 .get();
@@ -377,8 +386,8 @@ public class PublishPollServiceImpl implements PublishPollService {
                 future,
                 new FutureCallback<>() {
                     @Override
-                    public void onSuccess(final @NotNull ImmutableList<PUBLISH> publishes) {
-                        if (publishes.isEmpty()) {
+                    public void onSuccess(final @Nullable ImmutableList<PUBLISH> publishes) {
+                        if (publishes == null || publishes.isEmpty()) {
                             return;
                         }
                         final FreePacketIdRanges freePacketIdRanges = clientConnection.getMessageIDPool();
@@ -396,8 +405,9 @@ public class PublishPollServiceImpl implements PublishPollService {
                                 }
                                 // We can't sent the qos when the message is queue, because we don't know the which
                                 // client is will be sent
-                                final QoS minQos = QoS.valueOf(
+                                final QoS resolvedMinQos = QoS.valueOf(
                                         Math.min(qos, publish.getOnwardQoS().getQosNumber()));
+                                final QoS minQos = resolvedMinQos != null ? resolvedMinQos : QoS.AT_MOST_ONCE;
                                 // There can only be one subscription ID for this message, because there are no
                                 // overlapping shared subscriptions
                                 final ImmutableIntArray subscriptionIdentifiers = subscriptionIdentifier != null
@@ -546,7 +556,7 @@ public class PublishPollServiceImpl implements PublishPollService {
         }
 
         @Override
-        public void onSuccess(final @NotNull PublishStatus result) {
+        public void onSuccess(final @Nullable PublishStatus result) {
             messageIDPool.returnId(message.getPacketIdentifier());
             if (result != PublishStatus.NOT_CONNECTED) {
                 final ListenableFuture<Void> future = removeMessageFromQueue(client, message.getPacketIdentifier());

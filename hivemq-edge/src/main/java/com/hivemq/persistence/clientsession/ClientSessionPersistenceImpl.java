@@ -115,6 +115,7 @@ public class ClientSessionPersistenceImpl extends AbstractPersistence implements
     }
 
     @Override
+    @SuppressWarnings("NullAway") // voids -> null is a valid Void return in Futures.transform
     public @NotNull ListenableFuture<Void> clientDisconnected(
             final @NotNull String client, final boolean sendWill, final long sessionExpiry) {
 
@@ -176,7 +177,11 @@ public class ClientSessionPersistenceImpl extends AbstractPersistence implements
                 submitFuture,
                 new FutureCallback<>() {
                     @Override
-                    public void onSuccess(final ConnectResult connectResult) {
+                    public void onSuccess(final @Nullable ConnectResult connectResult) {
+                        if (connectResult == null) {
+                            resultFuture.setException(new IllegalStateException("ConnectResult must not be null"));
+                            return;
+                        }
                         final Long previousTimestamp = connectResult.getPreviousTimestamp();
                         final ClientSession previousClientSession = connectResult.getPreviousClientSession();
 
@@ -189,7 +194,9 @@ public class ClientSessionPersistenceImpl extends AbstractPersistence implements
                         // If no clean start is required, a client might be re-connecting to the existing session.
                         // In this case, cancel any pending send of a will.
                         if (cleanStart) {
-                            pendingWillMessages.sendWillIfPending(client, previousClientSession);
+                            if (previousClientSession != null) {
+                                pendingWillMessages.sendWillIfPending(client, previousClientSession);
+                            }
                         } else {
                             pendingWillMessages.cancelWillIfPending(client);
                         }
@@ -198,18 +205,18 @@ public class ClientSessionPersistenceImpl extends AbstractPersistence implements
                         final ListenableFuture<Void> cleanupFuture;
                         if (cleanStart) {
                             cleanupFuture = cleanClientData(client);
+                        } else if (previousTimestamp != null
+                                && previousClientSession != null
+                                && previousClientSession.isExpired(
+                                        System.currentTimeMillis() - previousTimestamp)) {
+                            // timestamp in milliseconds + session expiry in seconds * 1000 = milliseconds
+                            eventLog.clientSessionExpired(
+                                    previousTimestamp
+                                            + previousClientSession.getSessionExpiryIntervalSec() * 1000,
+                                    client);
+                            cleanupFuture = cleanClientData(client);
                         } else {
-                            final boolean expired = previousTimestamp != null
-                                    && previousClientSession.isExpired(System.currentTimeMillis() - previousTimestamp);
-                            if (expired) {
-                                // timestamp in milliseconds + session expiry in seconds * 1000 = milliseconds
-                                eventLog.clientSessionExpired(
-                                        previousTimestamp + previousClientSession.getSessionExpiryIntervalSec() * 1000,
-                                        client);
-                                cleanupFuture = cleanClientData(client);
-                            } else {
-                                cleanupFuture = Futures.immediateFuture(null);
-                            }
+                            cleanupFuture = Futures.immediateFuture(null);
                         }
                         resultFuture.setFuture(cleanupFuture);
                     }
@@ -405,9 +412,9 @@ public class ClientSessionPersistenceImpl extends AbstractPersistence implements
                 setTTLFuture,
                 new FutureCallback<>() {
                     @Override
-                    public void onSuccess(final Boolean sessionExists) {
+                    public void onSuccess(final @Nullable Boolean sessionExists) {
 
-                        if (sessionExists) {
+                        if (sessionExists != null && sessionExists) {
                             final ListenableFuture<Boolean> disconnectClientFuture =
                                     forceDisconnectClient(clientId, false, disconnectSource);
                             resultFuture.setFuture(disconnectClientFuture);

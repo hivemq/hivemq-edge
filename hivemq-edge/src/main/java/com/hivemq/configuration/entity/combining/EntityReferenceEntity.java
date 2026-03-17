@@ -26,11 +26,11 @@ public class EntityReferenceEntity {
 
     @JsonProperty(value = "type", required = true)
     @XmlElement(name = "type", required = true)
-    private @NotNull EntityType type;
+    private @Nullable EntityType type;
 
     @JsonProperty(value = "id", required = true)
     @XmlElement(name = "id", required = true)
-    private @NotNull String id;
+    private @Nullable String id;
 
     // no-arg for jaxb
     public EntityReferenceEntity() {}
@@ -42,11 +42,11 @@ public class EntityReferenceEntity {
         this.id = id;
     }
 
-    public @NotNull String getId() {
+    public @Nullable String getId() {
         return id;
     }
 
-    public @NotNull EntityType getType() {
+    public @Nullable EntityType getType() {
         return type;
     }
 
@@ -63,13 +63,11 @@ public class EntityReferenceEntity {
         if (!(o instanceof EntityReferenceEntity that)) {
             return false;
         }
-        return type == that.type && id.equals(that.id);
+        return type == that.type && Objects.equals(id, that.id);
     }
 
     @Override
     public int hashCode() {
-        int result = type.hashCode();
-        result = 31 * result + id.hashCode();
-        return result;
+        return Objects.hash(type, id);
     }
 }

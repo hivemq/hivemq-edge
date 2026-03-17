@@ -230,7 +230,11 @@ public abstract class AbstractMqttConnectDecoder extends MqttDecoder<CONNECT> {
             final @NotNull HivemqId hiveMQId) {
 
         final MqttWillPublish.Mqtt3Builder willBuilder = new MqttWillPublish.Mqtt3Builder();
-        willBuilder.withQos(QoS.valueOf(willQoS));
+        final QoS willQos = QoS.valueOf(willQoS);
+        if (willQos == null) {
+            return null;
+        }
+        willBuilder.withQos(willQos);
         willBuilder.withRetain(isWillRetain);
 
         final String willTopic;
@@ -261,7 +265,7 @@ public abstract class AbstractMqttConnectDecoder extends MqttDecoder<CONNECT> {
             willTopic = Strings.getPrefixedString(buf, utf8StringLengthWill);
         }
 
-        if (isInvalidTopic(clientConnection, willTopic)) {
+        if (willTopic == null || isInvalidTopic(clientConnection, willTopic)) {
             mqttConnacker.connackError(
                     clientConnection.getChannel(),
                     null, // already logged

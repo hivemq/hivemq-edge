@@ -23,6 +23,7 @@ import com.hivemq.edge.api.model.DataPolicyValidator;
 import java.io.IOException;
 import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class CustomaPolicyValidatorTypeEnumSerializer extends StdDeserializer<DataPolicyValidator.TypeEnum> {
 
@@ -30,7 +31,7 @@ public class CustomaPolicyValidatorTypeEnumSerializer extends StdDeserializer<Da
         this(null);
     }
 
-    public CustomaPolicyValidatorTypeEnumSerializer(final @NotNull Class<?> vc) {
+    public CustomaPolicyValidatorTypeEnumSerializer(final @Nullable Class<?> vc) {
         super(vc);
     }
 

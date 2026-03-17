@@ -210,6 +210,11 @@ public class ProtocolAdapterManager {
                         if (log.isDebugEnabled()) {
                             log.debug("Creating adapter '{}'", name);
                         }
+                        final ProtocolAdapterConfig adapterConfig = protocolAdapterConfigs.get(name);
+                        if (adapterConfig == null) {
+                            log.error("Config for adapter '{}' not found, skipping creation", name);
+                            return;
+                        }
                         startAsync(createAdapterInternal(
                                         protocolAdapterConfigs.get(name), versionProvider.getVersion()))
                                 .get();
@@ -231,7 +236,12 @@ public class ProtocolAdapterManager {
                                     "Existing adapters were modified while a refresh was ongoing, adapter with name '{}' was deleted and could not be updated",
                                     name);
                         }
-                        if (wrapper != null && !protocolAdapterConfigs.get(name).equals(wrapper.getConfig())) {
+                        final ProtocolAdapterConfig updatedConfig = protocolAdapterConfigs.get(name);
+                        if (updatedConfig == null) {
+                            log.error("Config for adapter '{}' not found, skipping update", name);
+                            return;
+                        }
+                        if (wrapper != null && !updatedConfig.equals(wrapper.getConfig())) {
                             if (log.isDebugEnabled()) {
                                 log.debug("Updating adapter '{}'", name);
                             }
@@ -241,7 +251,7 @@ public class ProtocolAdapterManager {
                                         return null;
                                     })
                                     .thenCompose(ignored -> startAsync(createAdapterInternal(
-                                            protocolAdapterConfigs.get(name), versionProvider.getVersion())))
+                                            updatedConfig, versionProvider.getVersion())))
                                     .get();
                         } else {
                             if (log.isDebugEnabled()) {

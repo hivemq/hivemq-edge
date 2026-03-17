@@ -17,13 +17,14 @@ package com.hivemq.mqttsn;
 
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
  */
 public interface IMqttsnTopicRegistry {
 
-    String readTopicName(@NotNull String clientId, int topicIdType, byte[] topicData, boolean readNormalAsFullTopic)
+    String readTopicName(@Nullable String clientId, int topicIdType, byte[] topicData, boolean readNormalAsFullTopic)
             throws MqttsnProtocolException;
 
     Optional<MqttsnTopicAlias> readTopicAlias(@NotNull String clientId, @NotNull String topicName)

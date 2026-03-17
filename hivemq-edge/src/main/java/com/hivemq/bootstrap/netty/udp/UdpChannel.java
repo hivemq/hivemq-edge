@@ -21,6 +21,7 @@ import io.netty.util.ReferenceCountUtil;
 import io.netty.util.internal.RecyclableArrayList;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -137,7 +138,7 @@ public class UdpChannel extends AbstractChannel {
 
     @Override
     protected SocketAddress localAddress0() {
-        return channel.localAddress0();
+        return Objects.requireNonNull(channel.localAddress0());
     }
 
     @Override

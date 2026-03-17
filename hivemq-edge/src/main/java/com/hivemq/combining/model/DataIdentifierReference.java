@@ -15,6 +15,8 @@
  */
 package com.hivemq.combining.model;
 
+import static java.util.Objects.requireNonNull;
+
 import com.hivemq.configuration.entity.combining.DataIdentifierReferenceEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,7 +34,7 @@ public record DataIdentifierReference(String id, Type type) {
     }
 
     public static DataIdentifierReference fromPersistence(final @NotNull DataIdentifierReferenceEntity entity) {
-        return new DataIdentifierReference(entity.getId(), entity.getType());
+        return new DataIdentifierReference(requireNonNull(entity.getId()), requireNonNull(entity.getType()));
     }
 
     public @NotNull com.hivemq.edge.api.model.DataIdentifierReference to() {

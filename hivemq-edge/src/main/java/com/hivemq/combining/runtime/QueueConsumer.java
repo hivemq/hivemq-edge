@@ -27,6 +27,7 @@ import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.util.FutureUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,7 +120,7 @@ public abstract class QueueConsumer {
         submitPoll();
     }
 
-    private void handleExceptionDuringHandling(final @NotNull Throwable throwable, final @NotNull String message) {
+    private void handleExceptionDuringHandling(final @NotNull Throwable throwable, final @Nullable String message) {
         log.error("Failed to handle message. Message will be dropped because: {}", message);
         if (log.isDebugEnabled()) {
             log.debug("Original Exception: ", throwable);

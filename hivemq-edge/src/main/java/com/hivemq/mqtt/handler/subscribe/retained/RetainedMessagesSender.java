@@ -131,7 +131,7 @@ public class RetainedMessagesSender {
         private final @NotNull Topic[] subscribedTopics;
         private final @NotNull HivemqId hiveMQId;
         private final @NotNull PublishPayloadPersistence payloadPersistence;
-        private final @NotNull String clientId;
+        private final @Nullable String clientId;
         private final @NotNull SettableFuture<Void> resultFuture;
         private final @NotNull Channel channel;
         private final @NotNull ClientQueuePersistence clientQueuePersistence;
@@ -141,7 +141,7 @@ public class RetainedMessagesSender {
                 final @NotNull Topic[] subscribedTopics,
                 final @NotNull HivemqId hiveMQId,
                 final @NotNull PublishPayloadPersistence payloadPersistence,
-                final @NotNull String clientId,
+                final @Nullable String clientId,
                 final @NotNull SettableFuture<Void> resultFuture,
                 final @NotNull Channel channel,
                 final @NotNull ClientQueuePersistence clientQueuePersistence,
@@ -158,8 +158,11 @@ public class RetainedMessagesSender {
         }
 
         @Override
-        public void onSuccess(final List<RetainedMessage> retainedMessages) {
-
+        public void onSuccess(final @Nullable List<RetainedMessage> retainedMessages) {
+            if (retainedMessages == null) {
+                resultFuture.set(null);
+                return;
+            }
             final ImmutableList.Builder<PUBLISH> builder = ImmutableList.builder();
             for (int i = 0; i < retainedMessages.size(); i++) {
                 final RetainedMessage retainedMessage = retainedMessages.get(i);
@@ -235,7 +238,7 @@ public class RetainedMessagesSender {
             final Long queueLimit =
                     channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getQueueSizeMaximum();
             futures.add(clientQueuePersistence.add(
-                    clientId,
+                    Objects.requireNonNull(clientId),
                     false,
                     qos1and2Messages,
                     true,

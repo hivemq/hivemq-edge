@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import javax.xml.namespace.QName;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -65,7 +66,7 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
         return marshalInternal(v, null);
     }
 
-    public ElementMap marshalInternal(final @NotNull Map<String, Object> v, final String parentName) {
+    public ElementMap marshalInternal(final @NotNull Map<String, Object> v, final @Nullable String parentName) {
         final List elements = new ArrayList();
         for (final Map.Entry<String, Object> property : v.entrySet()) {
             final String key = property.getKey();
@@ -80,7 +81,7 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
             final @NotNull String currentKeyName,
             final @NotNull Object value,
             final @NotNull List<JAXBElement> currentEl,
-            final String parentName) {
+            final @Nullable String parentName) {
 
         //        System.err.println("---> currentKeyName="+ currentKeyName + ", object=" + value + ", parentName=" +
         // parentName);
@@ -186,7 +187,8 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
         if ((node.getLocalName() + "s").equals(parentName)
                 || "mqttUserProperties".equals(parentName)
                 || "userProperties".equals(parentName)) {
-            replaceWithList(map, value, parentName);
+            // parentName is non-null here because the equals checks above only pass for non-null values
+            replaceWithList(map, value, Objects.requireNonNull(parentName));
             return;
         }
 

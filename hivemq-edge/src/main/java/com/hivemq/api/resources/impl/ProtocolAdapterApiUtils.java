@@ -33,6 +33,7 @@ import com.hivemq.edge.VersionProvider;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.protocols.ProtocolAdapterSchemaManager;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
@@ -152,7 +153,7 @@ public class ProtocolAdapterApiUtils {
                 module.getId(),
                 module.getId(),
                 module.getName(),
-                module.getDescription(),
+                Objects.requireNonNullElse(module.getDescription(), ""),
                 module.getDocumentationLink() != null
                         ? module.getDocumentationLink().getUrl()
                         : null,
@@ -183,7 +184,7 @@ public class ProtocolAdapterApiUtils {
         return logoUrl;
     }
 
-    private static @NotNull String getLogoUrl(
+    private static @Nullable String getLogoUrl(
             final @NotNull ProtocolAdapterInformation info,
             final @NotNull ConfigurationService configurationService,
             final @Nullable String xOriginalURI) {
@@ -222,9 +223,9 @@ public class ProtocolAdapterApiUtils {
             // -- when we're in developer mode, ensure we make the logo urls fully qualified
             // -- as the FE maybe being run from a different development server.
             if (!logoUrl.startsWith(HttpConstants.HTTP)) {
-                return ApiUtils.getWebContextRoot(
-                                configurationService.apiConfiguration(), !logoUrl.startsWith(HttpConstants.SLASH))
-                        + logoUrl;
+                final String contextRoot = ApiUtils.getWebContextRoot(
+                        configurationService.apiConfiguration(), !logoUrl.startsWith(HttpConstants.SLASH));
+                return contextRoot != null ? contextRoot + logoUrl : logoUrl;
             }
         }
         return logoUrl;

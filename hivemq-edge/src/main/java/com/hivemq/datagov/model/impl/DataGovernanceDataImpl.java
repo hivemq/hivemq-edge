@@ -19,22 +19,23 @@ import com.hivemq.datagov.model.DataGovernanceData;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
  */
 public class DataGovernanceDataImpl implements DataGovernanceData {
 
-    private @NotNull String clientId;
+    private @Nullable String clientId;
     private @NotNull PUBLISH publish;
 
-    private DataGovernanceDataImpl(final @NotNull String clientId, final @NotNull PUBLISH publish) {
+    private DataGovernanceDataImpl(final @Nullable String clientId, final @NotNull PUBLISH publish) {
         this.clientId = clientId;
         this.publish = publish;
     }
 
     @Override
-    public @NotNull String getClientId() {
+    public @Nullable String getClientId() {
         return clientId;
     }
 
@@ -75,8 +76,8 @@ public class DataGovernanceDataImpl implements DataGovernanceData {
 
     public static class Builder {
 
-        private String clientId;
-        private PUBLISH publish;
+        private @Nullable String clientId;
+        private @Nullable PUBLISH publish;
 
         public Builder(final @NotNull DataGovernanceData data) {
             withClientId(data.getClientId());
@@ -85,7 +86,7 @@ public class DataGovernanceDataImpl implements DataGovernanceData {
 
         public Builder() {}
 
-        public Builder withClientId(final @NotNull String clientId) {
+        public Builder withClientId(final @Nullable String clientId) {
             this.clientId = clientId;
             return this;
         }
@@ -96,7 +97,7 @@ public class DataGovernanceDataImpl implements DataGovernanceData {
         }
 
         public DataGovernanceData build() {
-            return new DataGovernanceDataImpl(this.clientId, this.publish);
+            return new DataGovernanceDataImpl(this.clientId, Objects.requireNonNull(this.publish));
         }
     }
 }

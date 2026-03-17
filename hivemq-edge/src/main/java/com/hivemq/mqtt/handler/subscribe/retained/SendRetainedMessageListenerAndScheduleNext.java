@@ -28,6 +28,7 @@ import io.netty.channel.Channel;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +68,7 @@ public class SendRetainedMessageListenerAndScheduleNext implements FutureCallbac
     }
 
     @Override
-    public void onSuccess(final Void result) {
+    public void onSuccess(final @Nullable Void result) {
         if (!channel.isActive()) {
             return;
         }

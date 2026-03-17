@@ -54,7 +54,7 @@ public class ApiSecurityContext implements SecurityContext {
     }
 
     @Override
-    public String getAuthenticationScheme() {
+    public @Nullable String getAuthenticationScheme() {
         return authenticationScheme;
     }
 

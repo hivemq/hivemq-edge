@@ -18,6 +18,7 @@ package com.hivemq.http.core;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class UsernamePasswordRoles {
 
@@ -25,9 +26,9 @@ public class UsernamePasswordRoles {
     public static final String DEFAULT_PASSWORD = "hivemq";
     public static final byte[] DEFAULT_PASSWORD_BYTES = DEFAULT_PASSWORD.getBytes(StandardCharsets.UTF_8);
 
-    private String userName;
-    private byte[] password;
-    private String realm;
+    private @Nullable String userName;
+    private byte @Nullable [] password;
+    private @Nullable String realm;
     private Set<String> roles = Set.of();
 
     public UsernamePasswordRoles() {}
@@ -40,7 +41,7 @@ public class UsernamePasswordRoles {
         this.roles = roles;
     }
 
-    public String getUserName() {
+    public @Nullable String getUserName() {
         return userName;
     }
 
@@ -48,7 +49,7 @@ public class UsernamePasswordRoles {
         this.userName = userName;
     }
 
-    public byte[] getPassword() {
+    public byte @Nullable [] getPassword() {
         return password;
     }
 
@@ -56,7 +57,7 @@ public class UsernamePasswordRoles {
         this.password = password;
     }
 
-    public String getRealm() {
+    public @Nullable String getRealm() {
         return realm;
     }
 

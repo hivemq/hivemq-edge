@@ -50,7 +50,10 @@ public class HiveMQExceptionHandlerBootstrap {
             if (unrecoverableException.isShowException()) {
                 log.error("An unrecoverable Exception occurred. Exiting HiveMQ", t, e);
             }
-            terminator.get().run();
+            final Runnable terminatorRunnable = terminator.get();
+            if (terminatorRunnable != null) {
+                terminatorRunnable.run();
+            }
         }
         final Throwable rootCause = Throwables.getRootCause(e);
         if (rootCause instanceof UnrecoverableException unrecoverableRootCause) {

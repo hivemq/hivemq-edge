@@ -30,6 +30,7 @@ import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.security.auth.SslClientCertificate;
 import io.netty.channel.Channel;
 import java.security.cert.X509Certificate;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -50,7 +51,7 @@ public class ExtensionInformationUtil {
         if (clientConnection.getExtensionClientInformation() == null) {
             clientConnection.setExtensionClientInformation(new ClientInformationImpl(clientId));
         }
-        return clientConnection.getExtensionClientInformation();
+        return Objects.requireNonNull(clientConnection.getExtensionClientInformation());
     }
 
     public static @NotNull ConnectionInformation getAndSetConnectionInformation(final @NotNull Channel channel) {
@@ -59,7 +60,7 @@ public class ExtensionInformationUtil {
         if (clientConnection.getExtensionConnectionInformation() == null) {
             clientConnection.setExtensionConnectionInformation(new ConnectionInformationImpl(clientConnection));
         }
-        return clientConnection.getExtensionConnectionInformation();
+        return Objects.requireNonNull(clientConnection.getExtensionConnectionInformation());
     }
 
     public static @NotNull MqttVersion mqttVersionFromChannel(final @NotNull Channel channel) {

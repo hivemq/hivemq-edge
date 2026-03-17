@@ -28,7 +28,7 @@ public class DataCombiningSourcesEntity {
 
     @JsonProperty("primaryReference")
     @XmlElement(name = "primary-reference")
-    private @NotNull DataIdentifierReferenceEntity primaryIdentifier;
+    private @Nullable DataIdentifierReferenceEntity primaryIdentifier;
 
     @JsonProperty("tags")
     @XmlElementWrapper(name = "tags")
@@ -63,7 +63,7 @@ public class DataCombiningSourcesEntity {
         return topicFilters;
     }
 
-    public @NotNull DataIdentifierReferenceEntity getPrimaryIdentifier() {
+    public @Nullable DataIdentifierReferenceEntity getPrimaryIdentifier() {
         return primaryIdentifier;
     }
 
@@ -75,16 +75,13 @@ public class DataCombiningSourcesEntity {
         if (!(o instanceof DataCombiningSourcesEntity that)) {
             return false;
         }
-        return primaryIdentifier.equals(that.primaryIdentifier)
+        return Objects.equals(primaryIdentifier, that.primaryIdentifier)
                 && tags.equals(that.tags)
                 && topicFilters.equals(that.topicFilters);
     }
 
     @Override
     public int hashCode() {
-        int result = primaryIdentifier.hashCode();
-        result = 31 * result + tags.hashCode();
-        result = 31 * result + topicFilters.hashCode();
-        return result;
+        return Objects.hash(primaryIdentifier, tags, topicFilters);
     }
 }

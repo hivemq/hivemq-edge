@@ -59,8 +59,12 @@ public enum Mqtt5ConnAckReasonCode implements Mqtt5ReasonCode {
 
     Mqtt5ConnAckReasonCode(final int code) {
         this.code = code;
-        connackReasonCode = ConnackReasonCode.valueOf(name());
-        disconnectedReasonCode = DisconnectedReasonCode.valueOf(name());
+        @SuppressWarnings("NullAway") // enum valueOf() never returns null for matching names
+        final ConnackReasonCode crc = ConnackReasonCode.valueOf(name());
+        connackReasonCode = crc;
+        @SuppressWarnings("NullAway") // enum valueOf() never returns null for matching names
+        final DisconnectedReasonCode drdc = DisconnectedReasonCode.valueOf(name());
+        disconnectedReasonCode = drdc;
     }
 
     Mqtt5ConnAckReasonCode(final @NotNull MqttCommonReasonCode reasonCode) {
@@ -96,6 +100,11 @@ public enum Mqtt5ConnAckReasonCode implements Mqtt5ReasonCode {
             new Mqtt5ConnAckReasonCode[DisconnectedReasonCode.values().length];
 
     static {
+        initLookupArrays();
+    }
+
+    @SuppressWarnings("NullAway") // populating lookup arrays with non-null enum values
+    private static void initLookupArrays() {
         for (final Mqtt5ConnAckReasonCode reasonCode : values()) {
             if (reasonCode != SUCCESS) {
                 ERROR_CODE_LOOKUP[reasonCode.code - ERROR_CODE_MIN] = reasonCode;
@@ -112,6 +121,7 @@ public enum Mqtt5ConnAckReasonCode implements Mqtt5ReasonCode {
      * @return the CONNACK Reason Code belonging to the given byte code or <code>null</code> if the byte code is not a
      * valid CONNACK Reason Code code.
      */
+    @SuppressWarnings("NullAway") // array lookup is safe: ERROR_CODE_LOOKUP may have null slots, return type is @Nullable
     public static @Nullable Mqtt5ConnAckReasonCode fromCode(final int code) {
         if (code == SUCCESS.code) {
             return SUCCESS;
@@ -122,10 +132,12 @@ public enum Mqtt5ConnAckReasonCode implements Mqtt5ReasonCode {
         return ERROR_CODE_LOOKUP[code - ERROR_CODE_MIN];
     }
 
+    @SuppressWarnings("NullAway") // array is fully populated in static initializer
     public static @NotNull Mqtt5ConnAckReasonCode from(final @NotNull ConnackReasonCode reasonCode) {
         return CONNACK_LOOKUP[reasonCode.ordinal()];
     }
 
+    @SuppressWarnings("NullAway") // array lookup is safe: DISCONNECTED_LOOKUP may have null slots, return type is @Nullable
     public static @Nullable Mqtt5ConnAckReasonCode from(final @NotNull DisconnectedReasonCode reasonCode) {
         return DISCONNECTED_LOOKUP[reasonCode.ordinal()];
     }

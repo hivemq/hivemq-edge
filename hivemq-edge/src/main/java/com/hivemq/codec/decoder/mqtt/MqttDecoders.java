@@ -100,6 +100,7 @@ public class MqttDecoders {
         mqtt5Decoder[MessageType.AUTH.getType()] = mqtt5AuthDecoder;
     }
 
+    @SuppressWarnings("NullAway") // array elements are @Nullable, return type is @Nullable
     public @Nullable MqttDecoder<?> decoder(final @NotNull MessageType type, final @NotNull ProtocolVersion version) {
         if (version == ProtocolVersion.MQTTv5) {
             return mqtt5Decoder[type.getType()];

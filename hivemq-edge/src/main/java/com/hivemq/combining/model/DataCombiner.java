@@ -15,6 +15,8 @@
  */
 package com.hivemq.combining.model;
 
+import static java.util.Objects.requireNonNull;
+
 import com.hivemq.configuration.entity.combining.DataCombinerEntity;
 import com.hivemq.configuration.entity.combining.DataCombiningEntity;
 import com.hivemq.configuration.entity.combining.EntityReferenceEntity;
@@ -51,7 +53,11 @@ public record DataCombiner(
                 .map(EntityReference::fromModel)
                 .toList();
         return new DataCombiner(
-                combiner.getId(), combiner.getName(), combiner.getDescription(), referenceList, combining);
+                requireNonNull(combiner.getId()),
+                requireNonNull(combiner.getName()),
+                requireNonNull(combiner.getDescription()),
+                referenceList,
+                combining);
     }
 
     public static @NotNull DataCombiner fromPersistence(final @NotNull DataCombinerEntity combiner) {
@@ -62,7 +68,11 @@ public record DataCombiner(
                 .map(EntityReference::fromPersistence)
                 .toList();
         return new DataCombiner(
-                combiner.getId(), combiner.getName(), combiner.getDescription(), referenceList, combining);
+                requireNonNull(combiner.getId()),
+                requireNonNull(combiner.getName()),
+                requireNonNull(combiner.getDescription()),
+                referenceList,
+                combining);
     }
 
     public @NotNull Combiner toModel() {

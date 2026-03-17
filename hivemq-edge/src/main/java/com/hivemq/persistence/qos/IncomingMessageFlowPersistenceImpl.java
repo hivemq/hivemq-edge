@@ -20,6 +20,7 @@ import com.hivemq.persistence.local.IncomingMessageFlowLocalPersistence;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Dominik Obermaier
@@ -35,7 +36,7 @@ public class IncomingMessageFlowPersistenceImpl implements IncomingMessageFlowPe
     }
 
     @Override
-    public MessageWithID get(final @NotNull String client, final int messageId) {
+    public @Nullable MessageWithID get(final @NotNull String client, final int messageId) {
         return localPersistence.get(client, messageId);
     }
 

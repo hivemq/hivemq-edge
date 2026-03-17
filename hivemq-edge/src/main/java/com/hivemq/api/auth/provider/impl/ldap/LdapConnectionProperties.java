@@ -108,7 +108,9 @@ public record LdapConnectionProperties(
     public record LdapSimpleBind(
             @NotNull String rdns, @NotNull String userPassword) {
         public static LdapSimpleBind fromEntity(final @NotNull LdapSimpleBindEntity ldapSimpleBindEntity) {
-            return new LdapSimpleBind(ldapSimpleBindEntity.getRdns(), ldapSimpleBindEntity.getUserPassword());
+            return new LdapSimpleBind(
+                    Objects.requireNonNull(ldapSimpleBindEntity.getRdns()),
+                    Objects.requireNonNull(ldapSimpleBindEntity.getUserPassword()));
         }
 
         @Override
@@ -196,6 +198,7 @@ public record LdapConnectionProperties(
      * @return Configured LdapConnectionProperties for runtime use
      * @throws IllegalArgumentException if the entity configuration is invalid
      */
+    @SuppressWarnings("NullAway") // entity getters may return @Nullable but validated by the record compact constructor
     public static @NotNull LdapConnectionProperties fromEntity(final @NotNull LdapAuthenticationEntity entity) {
         // Parse TLS mode from string
         final TlsMode tlsMode;
@@ -288,6 +291,7 @@ public record LdapConnectionProperties(
      * @return A UserDnResolver configured based on this properties object
      * @throws IllegalStateException if Directory Descent is configured but no connection pool is provided
      */
+    @SuppressWarnings("NullAway") // uidAttribute is guaranteed non-null by the compact constructor validation
     public @NotNull UserDnResolver createUserDnResolver(final @Nullable LDAPConnectionPool connectionPool) {
 
         if (searchScope.equals(SearchScope.SUB)) {

@@ -21,11 +21,12 @@ import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class LegacySimulationPollingContext {
 
     @JsonProperty(value = "destination", required = true)
-    protected @NotNull String destination;
+    protected @Nullable String destination;
 
     @JsonProperty(value = "qos", required = true)
     protected int qos = 0;
@@ -42,7 +43,7 @@ public class LegacySimulationPollingContext {
     @JsonProperty(value = "userProperties")
     private @NotNull List<MqttUserProperty> userProperties = new ArrayList<>();
 
-    public @NotNull String getMqttTopic() {
+    public @Nullable String getMqttTopic() {
         return destination;
     }
 

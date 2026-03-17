@@ -143,7 +143,7 @@ public class DataUrl {
             this(null);
         }
 
-        public Serializer(final @NotNull Class<DataUrl> t) {
+        public Serializer(final @Nullable Class<DataUrl> t) {
             super(t);
         }
 

@@ -74,10 +74,17 @@ public class PublishFlushHandler extends ChannelInboundHandlerAdapter implements
     }
 
     public void sendPublishes(final @NotNull List<PublishWithFuture> publishes) {
-        assert ctx != null : "ctx can not be null because sendPublishes is called after handlerAdded";
-        ctx.channel().eventLoop().execute(() -> {
+        if (ctx == null) {
+            // Handler not yet added to pipeline, mark all as not connected
+            for (final PublishWithFuture publish : publishes) {
+                publish.getFuture().set(PublishStatus.NOT_CONNECTED);
+            }
+            return;
+        }
+        final ChannelHandlerContext localCtx = ctx;
+        localCtx.channel().eventLoop().execute(() -> {
             messagesToWrite.addAll(publishes);
-            if (ctx.channel().isActive()) {
+            if (localCtx.channel().isActive()) {
                 consumeQueue();
             } else {
                 handleChannelInactiveState();
@@ -91,11 +98,16 @@ public class PublishFlushHandler extends ChannelInboundHandlerAdapter implements
     }
 
     private void consumeQueue() {
-        assert ctx != null : "ctx can not be null because consumeQueue is called after handlerAdded";
+        final ChannelHandlerContext localCtx = ctx;
+        if (localCtx == null) {
+            // Handler not yet added to pipeline
+            handleChannelInactiveState();
+            return;
+        }
         int written = 0;
         while (!messagesToWrite.isEmpty()) {
 
-            if (!ctx.channel().isWritable()) {
+            if (!localCtx.channel().isWritable()) {
                 if (wasWritable) {
                     wasWritable = false;
                     channelNotWritable.inc();
@@ -105,15 +117,15 @@ public class PublishFlushHandler extends ChannelInboundHandlerAdapter implements
 
             final PublishWithFuture publish = messagesToWrite.poll();
 
-            ctx.write(publish).addListener(new PublishWriteFailedListener(publish.getFuture()));
+            localCtx.write(publish).addListener(new PublishWriteFailedListener(publish.getFuture()));
             written++;
             if (written >= maxWritesBeforeFlush) {
-                ctx.flush();
+                localCtx.flush();
                 written = 0;
             }
         }
         if (written > 0) {
-            ctx.flush();
+            localCtx.flush();
         }
     }
 }

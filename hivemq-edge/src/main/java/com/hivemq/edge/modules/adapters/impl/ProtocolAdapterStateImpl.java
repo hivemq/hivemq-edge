@@ -75,6 +75,7 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
     }
 
     @Override
+    @SuppressWarnings("NullAway") // AtomicReference is always initialized with a non-null value in the constructor
     public @NotNull ConnectionStatus getConnectionStatus() {
         return connectionStatus.get();
     }
@@ -110,6 +111,7 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
     }
 
     @Override
+    @SuppressWarnings("NullAway") // AtomicReference is always initialized with a non-null value in the constructor
     public @NotNull RuntimeStatus getRuntimeStatus() {
         return runtimeStatus.get();
     }

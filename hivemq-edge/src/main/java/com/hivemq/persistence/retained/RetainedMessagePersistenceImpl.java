@@ -82,7 +82,10 @@ public class RetainedMessagePersistenceImpl extends AbstractPersistence implemen
                 if (retainedMessage == null) {
                     return null;
                 }
-                payloadPersistence.add(retainedMessage.getMessage(), retainedMessage.getPublishId());
+                final byte[] message = retainedMessage.getMessage();
+                if (message != null) {
+                    payloadPersistence.add(message, retainedMessage.getPublishId());
+                }
                 return retainedMessage;
             });
 
@@ -118,7 +121,10 @@ public class RetainedMessagePersistenceImpl extends AbstractPersistence implemen
             checkNotNull(topic, "Topic must not be null");
             checkNotNull(retainedMessage, "Retained message must not be null");
 
-            payloadPersistence.add(retainedMessage.getMessage(), retainedMessage.getPublishId());
+            final byte[] message = retainedMessage.getMessage();
+            if (message != null) {
+                payloadPersistence.add(message, retainedMessage.getPublishId());
+            }
 
             return singleWriter.submit(topic, (bucketIndex) -> {
                 localPersistence.put(retainedMessage, topic, bucketIndex);

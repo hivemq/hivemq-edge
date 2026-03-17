@@ -225,7 +225,7 @@ public class PluginTaskExecutor {
             lock.lock();
             try {
                 final Queue<PluginTaskExecution> possiblyEmptyQueue = taskQueues.get(key);
-                if (possiblyEmptyQueue.isEmpty()) {
+                if (possiblyEmptyQueue == null || possiblyEmptyQueue.isEmpty()) {
                     taskQueues.remove(key);
                     return true;
                 }

@@ -53,6 +53,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -303,6 +304,7 @@ public class MessageForwarderImpl implements MessageForwarder {
         }
     }
 
+    @SuppressWarnings("NullAway") // Task<Void> lambda returning null is required for Void type
     public void messageProcessed(
             final @NotNull QoS qos,
             final @NotNull String uniqueId,
@@ -349,6 +351,7 @@ public class MessageForwarderImpl implements MessageForwarder {
     }
 
     @Override
+    @SuppressWarnings("NullAway") // Task<Void> lambda returning null is required for Void type
     public void messageAvailable(final @NotNull String queueId) {
         if (log.isTraceEnabled()) {
             log.trace("Message available notification for queue '{}'", queueId);
@@ -406,7 +409,10 @@ public class MessageForwarderImpl implements MessageForwarder {
                 Futures.allAsList(pollFuturesBuilder.build()),
                 new FutureCallback<>() {
                     @Override
-                    public void onSuccess(final @NotNull List<Boolean> result) {
+                    public void onSuccess(final @Nullable List<Boolean> result) {
+                        if (result == null) {
+                            return;
+                        }
                         if (log.isDebugEnabled()) {
                             final long durationMicros = (System.nanoTime() - pollingStartTime) / 1000;
                             final long nonEmptyQueues = result.stream()
@@ -465,7 +471,8 @@ public class MessageForwarderImpl implements MessageForwarder {
 
                         // which callback executor does not matter, but it must be scheduled to prevent a stack-overflow
                         // if multiple errors occur back-to-back
-                        singleWriterService.getQueuedMessagesQueue().submit("forwarder", bucketIndex -> {
+                        @SuppressWarnings("NullAway") // Task<Void> lambda returning null is required for Void type
+                        final var ignored = singleWriterService.getQueuedMessagesQueue().submit("forwarder", bucketIndex -> {
                             if (log.isDebugEnabled()) {
                                 log.debug("Retrying buffer check after polling failure");
                             }

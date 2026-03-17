@@ -20,6 +20,7 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * This class represents a user role mapping for LDAP authentication.
@@ -30,10 +31,10 @@ import org.jetbrains.annotations.NotNull;
 public class UserRoleEntity {
 
     @XmlElement(name = "role", required = true)
-    private @NotNull String role;
+    private @Nullable String role;
 
     @XmlElement(name = "query", required = true)
-    private @NotNull String query;
+    private @Nullable String query;
 
     public UserRoleEntity() {}
 
@@ -42,11 +43,11 @@ public class UserRoleEntity {
         this.query = query;
     }
 
-    public @NotNull String getRole() {
+    public @Nullable String getRole() {
         return role;
     }
 
-    public @NotNull String getQuery() {
+    public @Nullable String getQuery() {
         return query;
     }
 
