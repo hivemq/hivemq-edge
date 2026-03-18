@@ -24,6 +24,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -325,6 +328,257 @@ class ProtocolAdapterWrapperTest {
             // Northbound is already disconnected, stop again should handle gracefully
             // (stop from Idle fails at FSM level, but the internal stopNorthbound handles it)
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
+        }
+    }
+
+    @Nested
+    class ProtocolAdapterStateChangeListenerTests {
+
+        @Test
+        void listener_notifiedOnSuccessfulTransition() {
+            final List<ProtocolAdapterState> fromStates = new ArrayList<>();
+            final List<ProtocolAdapterState> toStates = new ArrayList<>();
+
+            wrapper.addStateChangeListener((from, to) -> {
+                fromStates.add(from);
+                toStates.add(to);
+            });
+
+            wrapper.start();
+
+            // start() transitions: Idle→Precheck, Precheck→Working
+            assertThat(fromStates).containsExactly(ProtocolAdapterState.Idle, ProtocolAdapterState.Precheck);
+            assertThat(toStates).containsExactly(ProtocolAdapterState.Precheck, ProtocolAdapterState.Working);
+        }
+
+        @Test
+        void listener_notifiedOnStop() {
+            wrapper.start();
+
+            final List<ProtocolAdapterState> fromStates = new ArrayList<>();
+            final List<ProtocolAdapterState> toStates = new ArrayList<>();
+
+            wrapper.addStateChangeListener((from, to) -> {
+                fromStates.add(from);
+                toStates.add(to);
+            });
+
+            wrapper.stop(false);
+
+            // stop() transitions: Working→Stopping, Stopping→Idle
+            assertThat(fromStates).containsExactly(ProtocolAdapterState.Working, ProtocolAdapterState.Stopping);
+            assertThat(toStates).containsExactly(ProtocolAdapterState.Stopping, ProtocolAdapterState.Idle);
+        }
+
+        @Test
+        void listener_removedSuccessfully() {
+            final AtomicInteger callCount = new AtomicInteger(0);
+            final ProtocolAdapterStateChangeListener listener = (from, to) -> callCount.incrementAndGet();
+
+            wrapper.addStateChangeListener(listener);
+            wrapper.start();
+
+            // Idle→Precheck, Precheck→Working = 2 calls
+            assertThat(callCount.get()).isEqualTo(2);
+
+            wrapper.removeStateChangeListener(listener);
+            wrapper.stop(false);
+
+            // Should still be 2 — listener was removed before stop
+            assertThat(callCount.get()).isEqualTo(2);
+        }
+
+        @Test
+        void listener_exceptionDoesNotPreventOtherListeners() {
+            final AtomicInteger secondListenerCalls = new AtomicInteger(0);
+
+            wrapper.addStateChangeListener((from, to) -> {
+                throw new RuntimeException("listener error");
+            });
+            wrapper.addStateChangeListener((from, to) -> secondListenerCalls.incrementAndGet());
+
+            wrapper.start();
+
+            // Second listener should still be called despite first throwing
+            assertThat(secondListenerCalls.get()).isEqualTo(2);
+        }
+
+        @Test
+        void listener_exceptionDoesNotPreventStateTransition() {
+            wrapper.addStateChangeListener((from, to) -> {
+                throw new RuntimeException("listener error");
+            });
+
+            assertThat(wrapper.start()).isTrue();
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Working);
+        }
+
+        @Test
+        void listener_notNotifiedOnFailedTransition() {
+            final AtomicInteger callCount = new AtomicInteger(0);
+            wrapper.addStateChangeListener((from, to) -> callCount.incrementAndGet());
+
+            // Idle→Stopping is invalid, should not notify
+            wrapper.stop(false);
+            assertThat(callCount.get()).isEqualTo(0);
+        }
+
+        @Test
+        void listener_notifiedOnErrorTransition() throws ProtocolAdapterException {
+            final List<ProtocolAdapterState> toStates = new ArrayList<>();
+            wrapper.addStateChangeListener((from, to) -> toStates.add(to));
+
+            doThrow(new ProtocolAdapterException("bad config"))
+                    .when(protocolAdapter)
+                    .precheck();
+            wrapper.start();
+
+            // Idle→Precheck (success), Precheck→Error (success)
+            assertThat(toStates).containsExactly(ProtocolAdapterState.Precheck, ProtocolAdapterState.Error);
+        }
+    }
+
+    @Nested
+    class ServiceLifecycleHooks {
+
+        private boolean pollingStarted;
+        private boolean pollingStopped;
+        private boolean writingStarted;
+        private boolean writingStopped;
+
+        @BeforeEach
+        void setUp() {
+            pollingStarted = false;
+            pollingStopped = false;
+            writingStarted = false;
+            writingStopped = false;
+
+            wrapper = new ProtocolAdapterWrapper2(protocolAdapter) {
+                @Override
+                protected void startPolling() {
+                    pollingStarted = true;
+                }
+
+                @Override
+                protected void stopPolling() {
+                    pollingStopped = true;
+                }
+
+                @Override
+                protected void startWriting() {
+                    writingStarted = true;
+                }
+
+                @Override
+                protected void stopWriting() {
+                    writingStopped = true;
+                }
+            };
+        }
+
+        @Test
+        void start_callsStartPollingAndStartWriting() {
+            assertThat(wrapper.start()).isTrue();
+
+            assertThat(pollingStarted).isTrue();
+            assertThat(writingStarted).isTrue();
+        }
+
+        @Test
+        void stop_callsStopPollingAndStopWriting() {
+            wrapper.start();
+            assertThat(wrapper.stop(false)).isTrue();
+
+            assertThat(pollingStopped).isTrue();
+            assertThat(writingStopped).isTrue();
+        }
+
+        @Test
+        void start_failure_doesNotCallStartPollingOrStartWriting() throws ProtocolAdapterException {
+            doThrow(new ProtocolAdapterException("bad config"))
+                    .when(protocolAdapter)
+                    .precheck();
+
+            assertThat(wrapper.start()).isFalse();
+
+            assertThat(pollingStarted).isFalse();
+            assertThat(writingStarted).isFalse();
+        }
+
+        @Test
+        void stop_fromError_callsStopPollingAndStopWriting() throws ProtocolAdapterException {
+            // Get into Error state via failed precheck
+            doThrow(new ProtocolAdapterException("bad config"))
+                    .when(protocolAdapter)
+                    .precheck();
+            wrapper.start();
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Error);
+
+            // Reset flags since start sets up the wrapper
+            pollingStopped = false;
+            writingStopped = false;
+
+            wrapper.stop(false);
+
+            assertThat(pollingStopped).isTrue();
+            assertThat(writingStopped).isTrue();
+        }
+
+        @Test
+        void stop_stopsServicesBeforeDisconnecting() {
+            final List<String> callOrder = new ArrayList<>();
+
+            wrapper = new ProtocolAdapterWrapper2(protocolAdapter) {
+                @Override
+                protected void stopPolling() {
+                    callOrder.add("stopPolling");
+                }
+
+                @Override
+                protected void stopWriting() {
+                    callOrder.add("stopWriting");
+                }
+
+                @Override
+                protected boolean stopNorthbound() {
+                    callOrder.add("stopNorthbound");
+                    return super.stopNorthbound();
+                }
+            };
+
+            wrapper.start();
+            wrapper.stop(false);
+
+            // Services should be stopped before connections are torn down
+            assertThat(callOrder).containsExactly("stopPolling", "stopWriting", "stopNorthbound");
+        }
+
+        @Test
+        void start_startsServicesAfterConnecting() {
+            final List<String> callOrder = new ArrayList<>();
+
+            wrapper = new ProtocolAdapterWrapper2(protocolAdapter) {
+                @Override
+                protected void startPolling() {
+                    callOrder.add("startPolling");
+                }
+
+                @Override
+                protected void startWriting() {
+                    callOrder.add("startWriting");
+                }
+
+                @Override
+                protected boolean startNorthbound() {
+                    callOrder.add("startNorthbound");
+                    return super.startNorthbound();
+                }
+            };
+
+            wrapper.start();
+
+            // Connections should be established before services are started
+            assertThat(callOrder).containsExactly("startNorthbound", "startPolling", "startWriting");
         }
     }
 }
