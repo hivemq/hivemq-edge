@@ -20,6 +20,9 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 /**
  * Manages the lifecycle and connection states of a single protocol adapter instance.
  * <p>
@@ -29,6 +32,8 @@ import org.slf4j.LoggerFactory;
  *       (northbound + southbound)</li>
  *   <li>Coordinates transitions between states</li>
  *   <li>Calls {@link ProtocolAdapter2} methods synchronously</li>
+ *   <li>Notifies {@link ProtocolAdapterStateChangeListener}s on successful state transitions</li>
+ *   <li>Manages service lifecycle (polling, writing) around connect/disconnect</li>
  * </ol>
  * <p>
  * Threading Model:
@@ -36,6 +41,7 @@ import org.slf4j.LoggerFactory;
  *   <li>{@link #start()} and {@link #stop(boolean)} are synchronized — only one thread can execute at a time</li>
  *   <li>All state transitions are synchronized</li>
  *   <li>Connect/disconnect operations run on the caller's thread</li>
+ *   <li>State change notifications run synchronously on the caller's thread</li>
  * </ul>
  */
 public class ProtocolAdapterWrapper2 {
@@ -43,6 +49,7 @@ public class ProtocolAdapterWrapper2 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ProtocolAdapterWrapper2.class);
 
     private final @NotNull ProtocolAdapter2 adapter;
+    private final @NotNull List<ProtocolAdapterStateChangeListener> stateChangeListeners = new CopyOnWriteArrayList<>();
     private volatile @NotNull ProtocolAdapterState state;
     private volatile @NotNull ProtocolAdapterConnectionState northboundConnectionState;
     private volatile @NotNull ProtocolAdapterConnectionState southboundConnectionState;
@@ -90,6 +97,24 @@ public class ProtocolAdapterWrapper2 {
     }
 
     /**
+     * Register a listener that will be notified on successful adapter state transitions.
+     *
+     * @param listener the listener to add
+     */
+    public void addStateChangeListener(final @NotNull ProtocolAdapterStateChangeListener listener) {
+        stateChangeListeners.add(listener);
+    }
+
+    /**
+     * Remove a previously registered state change listener.
+     *
+     * @param listener the listener to remove
+     */
+    public void removeStateChangeListener(final @NotNull ProtocolAdapterStateChangeListener listener) {
+        stateChangeListeners.remove(listener);
+    }
+
+    /**
      * Start the adapter.
      * <p>
      * This method is synchronized — only one thread can execute at a time.
@@ -104,6 +129,7 @@ public class ProtocolAdapterWrapper2 {
      *   <li>Precheck → Working</li>
      *   <li>Call {@link #startNorthbound()} → {@link ProtocolAdapter2#connect(ProtocolAdapterConnectionDirection)}</li>
      *   <li>Call {@link #startSouthbound()} → {@link ProtocolAdapter2#connect(ProtocolAdapterConnectionDirection)} (if supported)</li>
+     *   <li>Start polling and writing services</li>
      * </ol>
      * If any step fails, transitions to Error and cleans up any partially started connections.
      *
@@ -144,6 +170,10 @@ public class ProtocolAdapterWrapper2 {
             return false;
         }
 
+        // Step 6: Start services
+        startPolling();
+        startWriting();
+
         return true;
     }
 
@@ -158,6 +188,7 @@ public class ProtocolAdapterWrapper2 {
      * Flow:
      * <ol>
      *   <li>Working → Stopping (or continue from Stopping/Error)</li>
+     *   <li>Stop polling and writing services</li>
      *   <li>Disconnect southbound → {@link ProtocolAdapter2#disconnect(ProtocolAdapterConnectionDirection)} (if supported)</li>
      *   <li>Disconnect northbound → {@link ProtocolAdapter2#disconnect(ProtocolAdapterConnectionDirection)}</li>
      *   <li>When both disconnected → transition to Idle</li>
@@ -178,11 +209,15 @@ public class ProtocolAdapterWrapper2 {
             }
         }
 
-        // Step 2 & 3: Stop connections (southbound first, then northbound)
+        // Step 2: Stop services
+        stopPolling();
+        stopWriting();
+
+        // Step 3 & 4: Stop connections (southbound first, then northbound)
         final boolean southboundSuccess = stopSouthbound();
         final boolean northboundSuccess = stopNorthbound();
 
-        // Step 4: Check if connections are ready for Idle transition
+        // Step 5: Check if connections are ready for Idle transition
         final boolean northboundReady = northboundConnectionState.isDisconnected();
         final boolean southboundReady = !adapter.supportsSouthbound() || southboundConnectionState.isDisconnected();
 
@@ -204,7 +239,8 @@ public class ProtocolAdapterWrapper2 {
     /**
      * Start the northbound connection.
      * Transitions: Disconnected → Connecting → Connected.
-     * Calls {@link ProtocolAdapter2#connect(ProtocolAdapterConnectionDirection)} with {@link ProtocolAdapterConnectionDirection#Northbound}.
+     * Calls {@link ProtocolAdapter2#connect(ProtocolAdapterConnectionDirection)} with
+     * {@link ProtocolAdapterConnectionDirection#Northbound}.
      *
      * @return {@code true} if the northbound connection was established successfully
      */
@@ -212,18 +248,14 @@ public class ProtocolAdapterWrapper2 {
         LOGGER.info("Starting northbound for protocol adapter '{}'.", getAdapterId());
 
         // Disconnected → Connecting
-        if (!transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Connecting)
-                .status()
-                .isSuccess()) {
+        if (!transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Connecting).status().isSuccess()) {
             return false;
         }
 
         try {
             adapter.connect(ProtocolAdapterConnectionDirection.Northbound);
             // Connecting → Connected
-            return transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Connected)
-                    .status()
-                    .isSuccess();
+            return transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Connected).status().isSuccess();
         } catch (final Exception e) {
             LOGGER.error("Northbound connection failed for adapter '{}'.", getAdapterId(), e);
             // Connecting → Error
@@ -249,18 +281,14 @@ public class ProtocolAdapterWrapper2 {
         LOGGER.info("Starting southbound for protocol adapter '{}'.", getAdapterId());
 
         // Disconnected → Connecting
-        if (!transitionSouthboundConnectionTo(ProtocolAdapterConnectionState.Connecting)
-                .status()
-                .isSuccess()) {
+        if (!transitionSouthboundConnectionTo(ProtocolAdapterConnectionState.Connecting).status().isSuccess()) {
             return false;
         }
 
         try {
             adapter.connect(ProtocolAdapterConnectionDirection.Southbound);
             // Connecting → Connected
-            return transitionSouthboundConnectionTo(ProtocolAdapterConnectionState.Connected)
-                    .status()
-                    .isSuccess();
+            return transitionSouthboundConnectionTo(ProtocolAdapterConnectionState.Connected).status().isSuccess();
         } catch (final Exception e) {
             LOGGER.error("Southbound connection failed for adapter '{}'.", getAdapterId(), e);
             // Connecting → Error
@@ -273,7 +301,8 @@ public class ProtocolAdapterWrapper2 {
      * Stop the northbound connection.
      * If already disconnected, returns {@code true} immediately.
      * Otherwise transitions: current → Disconnecting → Disconnected.
-     * Calls {@link ProtocolAdapter2#disconnect(ProtocolAdapterConnectionDirection)} with {@link ProtocolAdapterConnectionDirection#Northbound}.
+     * Calls {@link ProtocolAdapter2#disconnect(ProtocolAdapterConnectionDirection)} with
+     * {@link ProtocolAdapterConnectionDirection#Northbound}.
      *
      * @return {@code true} if the northbound connection was disconnected successfully
      */
@@ -285,9 +314,7 @@ public class ProtocolAdapterWrapper2 {
         LOGGER.info("Stopping northbound for protocol adapter '{}'.", getAdapterId());
 
         // current → Disconnecting
-        if (!transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Disconnecting)
-                .status()
-                .isSuccess()) {
+        if (!transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Disconnecting).status().isSuccess()) {
             return false;
         }
 
@@ -299,9 +326,7 @@ public class ProtocolAdapterWrapper2 {
         }
 
         // Disconnecting → Disconnected
-        return transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Disconnected)
-                .status()
-                .isSuccess();
+        return transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Disconnected).status().isSuccess();
     }
 
     /**
@@ -324,9 +349,7 @@ public class ProtocolAdapterWrapper2 {
         LOGGER.info("Stopping southbound for protocol adapter '{}'.", getAdapterId());
 
         // current → Disconnecting
-        if (!transitionSouthboundConnectionTo(ProtocolAdapterConnectionState.Disconnecting)
-                .status()
-                .isSuccess()) {
+        if (!transitionSouthboundConnectionTo(ProtocolAdapterConnectionState.Disconnecting).status().isSuccess()) {
             return false;
         }
 
@@ -338,14 +361,57 @@ public class ProtocolAdapterWrapper2 {
         }
 
         // Disconnecting → Disconnected
-        return transitionSouthboundConnectionTo(ProtocolAdapterConnectionState.Disconnected)
-                .status()
-                .isSuccess();
+        return transitionSouthboundConnectionTo(ProtocolAdapterConnectionState.Disconnected).status().isSuccess();
+    }
+
+    /**
+     * Start polling for this adapter.
+     * Called after all connections are established during {@link #start()}.
+     * <p>
+     * This is an extension point for service integration. The default implementation
+     * is a no-op. Subclasses or the manager can override or configure this behavior.
+     */
+    protected void startPolling() {
+        LOGGER.debug("Starting polling for protocol adapter '{}'.", getAdapterId());
+    }
+
+    /**
+     * Stop polling for this adapter.
+     * Called before disconnecting connections during {@link #stop(boolean)}.
+     * <p>
+     * This is an extension point for service integration. The default implementation
+     * is a no-op. Subclasses or the manager can override or configure this behavior.
+     */
+    protected void stopPolling() {
+        LOGGER.debug("Stopping polling for protocol adapter '{}'.", getAdapterId());
+    }
+
+    /**
+     * Start writing for this adapter.
+     * Called after all connections are established during {@link #start()}.
+     * <p>
+     * This is an extension point for service integration. The default implementation
+     * is a no-op. Subclasses or the manager can override or configure this behavior.
+     */
+    protected void startWriting() {
+        LOGGER.debug("Starting writing for protocol adapter '{}'.", getAdapterId());
+    }
+
+    /**
+     * Stop writing for this adapter.
+     * Called before disconnecting connections during {@link #stop(boolean)}.
+     * <p>
+     * This is an extension point for service integration. The default implementation
+     * is a no-op. Subclasses or the manager can override or configure this behavior.
+     */
+    protected void stopWriting() {
+        LOGGER.debug("Stopping writing for protocol adapter '{}'.", getAdapterId());
     }
 
     /**
      * Transition the adapter state to the given new state.
      * This method is synchronized to ensure atomic state transitions.
+     * On successful transitions, all registered {@link ProtocolAdapterStateChangeListener}s are notified.
      *
      * @param newState the target state
      * @return the transition response indicating success, failure, or no change
@@ -356,15 +422,17 @@ public class ProtocolAdapterWrapper2 {
         final ProtocolAdapterTransitionResponse response = fromState.transition(newState);
         state = response.toState();
         switch (response.status()) {
-            case Success ->
-                LOGGER.debug(
-                        "Protocol adapter '{}' transitioned from {} to {} successfully.",
+            case Success -> {
+                LOGGER.debug("Protocol adapter '{}' transitioned from {} to {} successfully.",
                         getAdapterId(),
                         fromState,
                         state);
-            case Failure ->
-                LOGGER.error(
-                        "Protocol adapter '{}' failed to transition from {} to {}.", getAdapterId(), fromState, state);
+                notifyProtocolAdapterStateChangeListeners(fromState, state);
+            }
+            case Failure -> LOGGER.error("Protocol adapter '{}' failed to transition from {} to {}.",
+                    getAdapterId(),
+                    fromState,
+                    state);
             case NotChanged -> LOGGER.warn("Protocol adapter '{}' state {} is unchanged.", getAdapterId(), state);
         }
         return response;
@@ -383,23 +451,19 @@ public class ProtocolAdapterWrapper2 {
         final ProtocolAdapterConnectionTransitionResponse response = fromState.transition(newState);
         southboundConnectionState = response.toState();
         switch (response.status()) {
-            case Success ->
-                LOGGER.debug(
-                        "Protocol adapter '{}' southbound connection transitioned from {} to {} successfully.",
-                        getAdapterId(),
-                        fromState,
-                        southboundConnectionState);
-            case Failure ->
-                LOGGER.error(
-                        "Protocol adapter '{}' southbound connection failed to transition from {} to {}.",
-                        getAdapterId(),
-                        fromState,
-                        southboundConnectionState);
-            case NotChanged ->
-                LOGGER.warn(
-                        "Protocol adapter '{}' southbound connection state {} is unchanged.",
-                        getAdapterId(),
-                        southboundConnectionState);
+            case Success -> LOGGER.debug(
+                    "Protocol adapter '{}' southbound connection transitioned from {} to {} successfully.",
+                    getAdapterId(),
+                    fromState,
+                    southboundConnectionState);
+            case Failure -> LOGGER.error(
+                    "Protocol adapter '{}' southbound connection failed to transition from {} to {}.",
+                    getAdapterId(),
+                    fromState,
+                    southboundConnectionState);
+            case NotChanged -> LOGGER.warn("Protocol adapter '{}' southbound connection state {} is unchanged.",
+                    getAdapterId(),
+                    southboundConnectionState);
         }
         return response;
     }
@@ -417,24 +481,36 @@ public class ProtocolAdapterWrapper2 {
         final ProtocolAdapterConnectionTransitionResponse response = fromState.transition(newState);
         northboundConnectionState = response.toState();
         switch (response.status()) {
-            case Success ->
-                LOGGER.debug(
-                        "Protocol adapter '{}' northbound connection transitioned from {} to {} successfully.",
-                        getAdapterId(),
-                        fromState,
-                        northboundConnectionState);
-            case Failure ->
-                LOGGER.error(
-                        "Protocol adapter '{}' northbound connection failed to transition from {} to {}.",
-                        getAdapterId(),
-                        fromState,
-                        northboundConnectionState);
-            case NotChanged ->
-                LOGGER.warn(
-                        "Protocol adapter '{}' northbound connection state {} is unchanged.",
-                        getAdapterId(),
-                        northboundConnectionState);
+            case Success -> LOGGER.debug(
+                    "Protocol adapter '{}' northbound connection transitioned from {} to {} successfully.",
+                    getAdapterId(),
+                    fromState,
+                    northboundConnectionState);
+            case Failure -> LOGGER.error(
+                    "Protocol adapter '{}' northbound connection failed to transition from {} to {}.",
+                    getAdapterId(),
+                    fromState,
+                    northboundConnectionState);
+            case NotChanged -> LOGGER.warn("Protocol adapter '{}' northbound connection state {} is unchanged.",
+                    getAdapterId(),
+                    northboundConnectionState);
         }
         return response;
+    }
+
+    private void notifyProtocolAdapterStateChangeListeners(
+            final @NotNull ProtocolAdapterState fromState,
+            final @NotNull ProtocolAdapterState toState) {
+        for (final ProtocolAdapterStateChangeListener listener : stateChangeListeners) {
+            try {
+                listener.onStateChanged(fromState, toState);
+            } catch (final Exception e) {
+                LOGGER.warn("State change listener threw exception for adapter '{}' ({} → {}).",
+                        getAdapterId(),
+                        fromState,
+                        toState,
+                        e);
+            }
+        }
     }
 }

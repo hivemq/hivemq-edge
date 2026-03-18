@@ -294,12 +294,12 @@ public enum ProtocolAdapterConnectionDirection {
 
 ### 3.2 ProtocolAdapterWrapper2 Redesign
 
-> **Current Implementation Status**: `ProtocolAdapterWrapper2` has been implemented with FSM-based
-> state management, synchronized transitions, and start/stop lifecycle methods. It uses the
-> `ProtocolAdapter2` interface (Phase 2 complete). Old adapters are wrapped via `ProtocolAdapter2Bridge`.
-> The current implementation does not yet include adapter precheck calls, polling/writing/tag manager
-> integration, southbound capability checks, or state change listeners. These are planned for Phase 3.
-> The code below shows the **target design** for the completed wrapper.
+> **Implementation Status**: ✅ Complete. `ProtocolAdapterWrapper2` includes: FSM-based state management
+> with synchronized transitions, full start/stop lifecycle (precheck → connect → services → disconnect),
+> southbound capability checks, `ProtocolAdapterStateChangeListener` notifications via `CopyOnWriteArrayList`,
+> protected service lifecycle hooks (`startPolling`/`stopPolling`/`startWriting`/`stopWriting`),
+> and error cleanup (disconnect northbound on southbound failure). Old adapters are wrapped via
+> `ProtocolAdapter2Bridge`. The code below shows the reference design that the implementation follows.
 
 #### 3.2.1 Async Operation Coordination
 
@@ -399,7 +399,7 @@ public class ProtocolAdapterWrapper2 {
     private final @NotNull TagManager tagManager;
 
     // Listeners for state changes
-    private final List<StateChangeListener> stateListeners = new CopyOnWriteArrayList<>();
+    private final List<ProtocolAdapterStateChangeListener> stateChangeListeners = new CopyOnWriteArrayList<>();
 
     /**
      * Start the adapter.
@@ -650,14 +650,13 @@ public class ProtocolAdapterWrapper2 {
 
 ### 3.3 ProtocolAdapterManager2 Redesign
 
-> **Current Implementation Status**: `ProtocolAdapterManager2` has been implemented with full
-> CRUD operations, factory integration (`ProtocolAdapterFactoryManager`), parallel refresh using
-> `CompletableFuture.allOf()`, event service and metrics integration, ClassLoader management
-> (`ClassLoaderUtils`), I18n error messages (`I18nProtocolAdapterMessage`), and consumer registration
-> with `ProtocolAdapterExtractor`. The start/stop methods delegate synchronously to `ProtocolAdapterWrapper2`
-> and throw `ProtocolAdapterException` on failure. The code below shows the **target design** for the
-> completed manager; the current implementation already exceeds this baseline with parallel refresh
-> and full service integration.
+> **Implementation Status**: ✅ Complete. `ProtocolAdapterManager2` includes: full CRUD operations,
+> factory integration (`ProtocolAdapterFactoryManager`), parallel refresh using `CompletableFuture.allOf()`,
+> event service integration with event-firing `start()`/`stop()` methods (INFO on success, ERROR/WARN on
+> failure), metrics integration, ClassLoader management (`ClassLoaderUtils`), I18n error messages,
+> consumer registration with `ProtocolAdapterExtractor`, and `ConcurrentHashMap` for thread-safe adapter
+> storage. `start()` throws `ProtocolAdapterException` on failure; `stop()` fires a WARN event but does
+> not throw. The code below shows the reference design.
 
 ```java
 /**
@@ -910,7 +909,7 @@ public void connect(ProtocolAdapterConnectionDirection direction) throws Protoco
 
 ### 5.3 Phase 3: Wrapper Completion
 
-**Status**: 🔶 In Progress (core lifecycle complete, service integrations pending)
+**Status**: ✅ Completed
 
 **Tasks**:
 - [x] Implement basic `ProtocolAdapterWrapper2.start()` (state transitions and connection lifecycle)
@@ -924,18 +923,29 @@ public void connect(ProtocolAdapterConnectionDirection direction) throws Protoco
 - [x] Fix `ProtocolAdapterTransitionResponse.failure()` — `toState` now stays at `fromState` on failure
 - [x] Fix `ProtocolAdapterConnectionTransitionResponse.failure()` — same fix for connection transitions
 - [x] Comprehensive unit tests for wrapper (20+ tests covering all edge cases)
-- [ ] Implement state change notification (`StateChangeListener`)
-- [ ] Add polling service integration
-- [ ] Add writing service integration
-- [ ] Add tag manager integration
+- [x] Implement state change notification (`ProtocolAdapterStateChangeListener` functional interface + `CopyOnWriteArrayList`)
+- [x] Add polling service integration (protected `startPolling()`/`stopPolling()` extension points)
+- [x] Add writing service integration (protected `startWriting()`/`stopWriting()` extension points)
+- [x] Unit tests for `ProtocolAdapterStateChangeListener` (7 tests: notification, removal, exception isolation, error transitions)
+- [x] Unit tests for service lifecycle hooks (6 tests: ordering, failure cases, error state cleanup)
+
+**Design decisions**:
+- Service lifecycle hooks (`startPolling`, `stopPolling`, `startWriting`, `stopWriting`) are protected no-op methods
+  that serve as extension points. The `ProtocolAdapterManager2` or subclasses can override or delegate these to
+  concrete service implementations (e.g., `ProtocolAdapterPollingService`, `InternalProtocolAdapterWritingService`).
+- `ProtocolAdapterStateChangeListener` is a `@FunctionalInterface` that receives `(fromState, toState)` on successful transitions.
+  Listeners are stored in a `CopyOnWriteArrayList` for thread-safe iteration. Exceptions in listeners are caught
+  and logged — they do not prevent state transitions or other listener notifications.
+- Tag manager integration is deferred to Phase 5 (adapter migration) since it is adapter-specific configuration.
 
 **Deliverables**:
-- Completed `ProtocolAdapterWrapper2.java` (core lifecycle)
-- Comprehensive unit tests with mock adapters (`ProtocolAdapterWrapperTest.java`)
+- `ProtocolAdapterStateChangeListener.java` — functional interface for state transition notifications
+- Completed `ProtocolAdapterWrapper2.java` (full lifecycle with listeners and service hooks)
+- Comprehensive unit tests with mock adapters (`ProtocolAdapterWrapperTest.java` — 32 tests)
 
 ### 5.4 Phase 4: Manager Completion
 
-**Status**: 🔶 In Progress
+**Status**: ✅ Completed
 
 **Tasks**:
 - [x] Implement `ProtocolAdapterManager2.createProtocolAdapter()` with factory (`ProtocolAdapterFactoryManager`)
@@ -947,11 +957,20 @@ public void connect(ProtocolAdapterConnectionDirection direction) throws Protoco
 - [x] Add I18n error messages (`I18nProtocolAdapterMessage`)
 - [x] Add ClassLoader management (`ClassLoaderUtils`)
 - [x] Register consumer with `ProtocolAdapterExtractor`
-- [ ] Add integration tests with mock services
+- [x] Update `start()` — check wrapper return value, fire INFO/ERROR events, throw `ProtocolAdapterException` on failure
+- [x] Update `stop()` — fire INFO/WARN events based on wrapper return value
+- [x] Add integration tests with mock services (`ProtocolAdapterManager2Test.java`)
+
+**Design decisions**:
+- `start()` fires an `Event.SEVERITY.INFO` event on success, `Event.SEVERITY.ERROR` on failure, and throws
+  `ProtocolAdapterException` on failure so callers (e.g., `refresh()`) can catch and handle.
+- `stop()` fires `Event.SEVERITY.INFO` on success, `Event.SEVERITY.WARN` on partial failure. It does NOT throw
+  on stop failure since partial disconnect is not necessarily an error that should halt the caller.
+- Events use the fluent `EventBuilder` API: `eventService.createAdapterEvent(adapterId, protocolId).withSeverity(...).withMessage(...).fire()`.
 
 **Deliverables**:
-- Completed `ProtocolAdapterManager2.java`
-- Integration tests with mock services
+- Completed `ProtocolAdapterManager2.java` (with event-firing start/stop)
+- Integration tests with mock services (`ProtocolAdapterManager2Test.java` — 8 tests)
 
 ### 5.5 Phase 5: Adapter Migration
 
@@ -1010,12 +1029,14 @@ public void connect(ProtocolAdapterConnectionDirection direction) throws Protoco
 
 ### 6.1 Existing Tests Must Pass
 
-The following tests must continue to pass throughout migration:
+The following tests must continue to pass throughout migration (55 tests total):
 
 ```
-com.hivemq.protocols.fsm.ProtocolAdapterConnectionStateTest
-com.hivemq.protocols.fsm.ProtocolAdapterStateTest
-com.hivemq.protocols.fsm.ProtocolAdapterWrapperTest
+com.hivemq.protocols.fsm.ProtocolAdapterConnectionStateTest  # Connection FSM transitions
+com.hivemq.protocols.fsm.ProtocolAdapterStateTest            # Adapter FSM transitions
+com.hivemq.protocols.fsm.ProtocolAdapter2BridgeTest          # Bridge: old → new adapter interface
+com.hivemq.protocols.fsm.ProtocolAdapterWrapperTest          # Wrapper lifecycle, listeners, hooks
+com.hivemq.protocols.fsm.ProtocolAdapterManager2Test         # Manager start/stop events, lookup
 ```
 
 ### 6.2 New Test Categories
@@ -1087,38 +1108,35 @@ Until switchover:
 
 ## 10. Appendix: File List
 
-### Existing Files (Phase 1, 2 & partial Phase 3/4 deliverables)
+### Source Files (Phase 1–4 deliverables)
 
 ```
 src/main/java/com/hivemq/protocols/fsm/
 ├── ClassLoaderUtils.java                          # ClassLoader context utility (Phase 1)
-├── ProtocolAdapterConnectionDirection.java        # Connection direction enum (Phase 2)
 ├── I18nProtocolAdapterMessage.java                # I18n error/message templates (Phase 1)
 ├── ProtocolAdapter2.java                          # New adapter interface (Phase 2)
 ├── ProtocolAdapter2Bridge.java                    # Bridge: old ProtocolAdapter → ProtocolAdapter2 (Phase 2)
+├── ProtocolAdapterConnectionDirection.java        # Connection direction enum with isNorthbound()/isSouthbound() (Phase 2)
 ├── ProtocolAdapterConnectionState.java            # Connection FSM enum (Phase 1)
 ├── ProtocolAdapterConnectionTransitionResponse.java # Connection transition response record (Phase 1)
-├── ProtocolAdapterManager2.java                   # New manager with CRUD & refresh (Phase 4, in progress)
+├── ProtocolAdapterManager2.java                   # Manager with CRUD, refresh, event-firing start/stop (Phase 4)
 ├── ProtocolAdapterManagerState.java               # Manager-level state enum (Phase 1)
 ├── ProtocolAdapterState.java                      # Adapter FSM enum (Phase 1)
 ├── ProtocolAdapterTransitionResponse.java         # Adapter transition response record (Phase 1)
 ├── ProtocolAdapterTransitionStatus.java           # Transition status enum (Phase 1)
-└── ProtocolAdapterWrapper2.java                   # New wrapper with FSM (Phase 3, in progress)
+├── ProtocolAdapterWrapper2.java                   # Wrapper with FSM, listeners, service hooks (Phase 3)
+└── ProtocolAdapterStateChangeListener.java                       # State change notification interface (Phase 3)
 ```
 
-### New Files to Create
+### Test Files
 
 ```
-src/main/java/com/hivemq/protocols/fsm/
-└── StateChangeListener.java                 # State change notification (Phase 3)
-```
-
-### Files to Modify
-
-```
-src/main/java/com/hivemq/protocols/fsm/
-├── ProtocolAdapterWrapper2.java            # Complete full implementation (Phase 3)
-└── ProtocolAdapterManager2.java            # Add integration tests (Phase 4)
+src/test/java/com/hivemq/protocols/fsm/
+├── ProtocolAdapter2BridgeTest.java                # Bridge tests (Phase 2, 10 tests)
+├── ProtocolAdapterConnectionStateTest.java        # Connection FSM transition tests (Phase 1)
+├── ProtocolAdapterManager2Test.java               # Manager tests with mocks (Phase 4, 8 tests)
+├── ProtocolAdapterStateTest.java                  # Adapter FSM transition tests (Phase 1)
+└── ProtocolAdapterWrapperTest.java                # Wrapper lifecycle, listeners, hooks (Phase 3, 32 tests)
 ```
 
 ### Files to Keep Unchanged (Old Design)
