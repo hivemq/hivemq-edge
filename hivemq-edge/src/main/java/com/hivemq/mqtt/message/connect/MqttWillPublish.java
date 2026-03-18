@@ -365,17 +365,17 @@ public class MqttWillPublish implements Sizable {
             return this;
         }
 
-        public Mqtt5Builder withContentType(final String contentType) {
+        public Mqtt5Builder withContentType(final @Nullable String contentType) {
             this.contentType = contentType;
             return this;
         }
 
-        public Mqtt5Builder withResponseTopic(final String responseTopic) {
+        public Mqtt5Builder withResponseTopic(final @Nullable String responseTopic) {
             this.responseTopic = responseTopic;
             return this;
         }
 
-        public Mqtt5Builder withCorrelationData(final byte[] correlationData) {
+        public Mqtt5Builder withCorrelationData(final byte @Nullable [] correlationData) {
             this.correlationData = correlationData;
             return this;
         }
