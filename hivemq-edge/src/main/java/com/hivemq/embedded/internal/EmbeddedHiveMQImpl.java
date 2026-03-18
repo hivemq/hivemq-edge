@@ -282,7 +282,7 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
                 if (stateChangeExecutor.isShutdown()) {
                     log.debug("EmbeddedHiveMQ start task submission rejected, executor is shutting down.");
                     future.completeExceptionally(
-                            new IllegalStateException("EmbeddedHiveMQ executor is shutting down"));
+                            new IllegalStateException("EmbeddedHiveMQ executor is shutting down", e));
                 } else {
                     throw e;
                 }
@@ -306,7 +306,7 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
                 if (stateChangeExecutor.isShutdown()) {
                     log.debug("EmbeddedHiveMQ stop task submission rejected, executor is shutting down.");
                     future.completeExceptionally(
-                            new IllegalStateException("EmbeddedHiveMQ executor is shutting down"));
+                            new IllegalStateException("EmbeddedHiveMQ executor is shutting down", e));
                 } else {
                     throw e;
                 }
