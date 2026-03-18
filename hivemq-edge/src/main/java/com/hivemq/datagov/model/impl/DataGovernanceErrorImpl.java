@@ -26,18 +26,25 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings("NullAway") // Optional fields are nullable but always initialized before getter access
 public class DataGovernanceErrorImpl implements DataGovernanceError {
 
-    private @Nullable Optional<Throwable> error;
-    private @Nullable Optional<String> pipelineId;
-    private @Nullable Optional<String> functionId;
-    private @Nullable Optional<String> validatorId;
-    private @Nullable Optional<String> message;
+    private @NotNull Optional<Throwable> error;
+    private @NotNull Optional<String> pipelineId;
+    private @NotNull Optional<String> functionId;
+    private @NotNull Optional<String> validatorId;
+    private @NotNull Optional<String> message;
 
     public DataGovernanceErrorImpl(final @NotNull Throwable error) {
         this.error = Optional.of(error);
+        this.pipelineId = Optional.empty();
+        this.functionId = Optional.empty();
+        this.validatorId = Optional.empty();
         this.message = Optional.ofNullable(error.getMessage());
     }
 
     public DataGovernanceErrorImpl(final @NotNull String message) {
+        this.error = Optional.empty();
+        this.pipelineId = Optional.empty();
+        this.functionId = Optional.empty();
+        this.validatorId = Optional.empty();
         this.message = Optional.of(message);
     }
 

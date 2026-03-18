@@ -25,13 +25,13 @@ public class SouthboundMapping implements InternalWritingContext {
 
     private final @NotNull String topicFilter;
     private final @NotNull String tagName;
-    private final @Nullable FieldMapping fieldMapping;
+    private final @NotNull FieldMapping fieldMapping;
     private final @NotNull String schema;
 
     public SouthboundMapping(
             final @NotNull String tagName,
             final @NotNull String topicFilter,
-            final @Nullable FieldMapping fieldMapping,
+            final @NotNull FieldMapping fieldMapping,
             final @NotNull String schema) {
         this.tagName = tagName;
         this.topicFilter = topicFilter;
@@ -51,7 +51,7 @@ public class SouthboundMapping implements InternalWritingContext {
 
     @Override
     @SuppressWarnings("NullAway") // SouthboundMapping may have null fieldMapping; callers handle it
-    public @Nullable FieldMapping getFieldMapping() {
+    public @NotNull FieldMapping getFieldMapping() {
         return fieldMapping;
     }
 
@@ -71,7 +71,7 @@ public class SouthboundMapping implements InternalWritingContext {
         return new com.hivemq.edge.api.model.SouthboundMapping()
                 .topicFilter(this.getTopicFilter())
                 .tagName(this.getTagName())
-                .fieldMapping(Objects.requireNonNull(this.fieldMapping).toModel());
+                .fieldMapping(this.fieldMapping.toModel());
     }
 
     @Override

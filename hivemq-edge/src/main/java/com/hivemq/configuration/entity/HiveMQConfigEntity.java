@@ -113,6 +113,7 @@ public class HiveMQConfigEntity {
     private @NotNull Map<String, Object> moduleConfigs = new HashMap<>();
 
     // no-arg constructor as JaxB does need one
+    @SuppressWarnings("NullAway.Init")
     public HiveMQConfigEntity() {}
 
     public HiveMQConfigEntity(

@@ -159,8 +159,9 @@ public class LdapClient {
                     connectionProperties.servers().ports()[0]);
         } catch (final Exception e) {
             // Close the connection if pool creation fails
-            if (connectionPool != null) {
-                connectionPool.close();
+            final var connectionPoolTmp = this.connectionPool;
+            if (connectionPoolTmp != null) {
+                connectionPoolTmp.close();
             }
             throw e;
         }
@@ -175,8 +176,9 @@ public class LdapClient {
     public synchronized void stop() {
         log.debug("Stopping LDAP client");
 
-        if (connectionPool != null) {
-            connectionPool.close();
+        final var connectionPoolTmp = this.connectionPool;
+        if (connectionPoolTmp != null) {
+            connectionPoolTmp.close();
             connectionPool = null;
         }
 

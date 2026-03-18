@@ -29,13 +29,14 @@ public class DataCombiningDestinationEntity {
 
     @JsonProperty(value = "topic", required = true)
     @XmlElement(name = "topic", required = true)
-    private @Nullable String topic;
+    private @NotNull String topic;
 
     @JsonProperty(value = "schema", required = true)
     @XmlElement(name = "schema", required = true)
-    private @Nullable String schema;
+    private @NotNull String schema;
 
     // no-arg for jaxb
+    @SuppressWarnings("NullAway.Init")
     public DataCombiningDestinationEntity() {}
 
     public DataCombiningDestinationEntity(
@@ -47,11 +48,11 @@ public class DataCombiningDestinationEntity {
         this.topic = topic;
     }
 
-    public @Nullable String getSchema() {
+    public @NotNull String getSchema() {
         return schema;
     }
 
-    public @Nullable String getTopic() {
+    public @NotNull String getTopic() {
         return topic;
     }
 

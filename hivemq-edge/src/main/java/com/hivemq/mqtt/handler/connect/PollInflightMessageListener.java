@@ -40,7 +40,9 @@ public class PollInflightMessageListener implements ChannelFutureListener {
     }
 
     @Override
-    public void operationComplete(final @NotNull ChannelFuture future) throws Exception {
-        publishPollService.pollInflightMessages(Objects.requireNonNull(clientId), future.channel());
+    public void operationComplete(final @NotNull ChannelFuture future) {
+        if(clientId != null) {
+            publishPollService.pollInflightMessages(clientId, future.channel());
+        }
     }
 }

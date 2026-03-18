@@ -28,7 +28,7 @@ public class DataCombiningSourcesEntity {
 
     @JsonProperty("primaryReference")
     @XmlElement(name = "primary-reference")
-    private @Nullable DataIdentifierReferenceEntity primaryIdentifier;
+    private @NotNull DataIdentifierReferenceEntity primaryIdentifier;
 
     @JsonProperty("tags")
     @XmlElementWrapper(name = "tags")
@@ -41,7 +41,9 @@ public class DataCombiningSourcesEntity {
     private @NotNull List<String> topicFilters = new ArrayList<>();
 
     // no-arg for jaxb
-    public DataCombiningSourcesEntity() {}
+    @SuppressWarnings("NullAway.Init")
+    public DataCombiningSourcesEntity() {
+    }
 
     public DataCombiningSourcesEntity(
             final @NotNull DataIdentifierReferenceEntity primaryIdentifier,
@@ -63,7 +65,7 @@ public class DataCombiningSourcesEntity {
         return topicFilters;
     }
 
-    public @Nullable DataIdentifierReferenceEntity getPrimaryIdentifier() {
+    public @NotNull DataIdentifierReferenceEntity getPrimaryIdentifier() {
         return primaryIdentifier;
     }
 

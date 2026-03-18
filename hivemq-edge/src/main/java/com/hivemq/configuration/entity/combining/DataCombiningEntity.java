@@ -30,22 +30,23 @@ public class DataCombiningEntity {
 
     @JsonProperty(value = "id", required = true)
     @XmlElement(name = "id", required = true)
-    private @Nullable UUID id;
+    private @NotNull UUID id;
 
     @JsonProperty(value = "sources", required = true)
     @XmlElement(name = "sources", required = true)
-    private @Nullable DataCombiningSourcesEntity sources;
+    private @NotNull DataCombiningSourcesEntity sources;
 
     @JsonProperty(value = "destination", required = true)
     @XmlElement(name = "destination", required = true)
-    private @Nullable DataCombiningDestinationEntity destination;
+    private @NotNull DataCombiningDestinationEntity destination;
 
     @JsonProperty(value = "instructions", required = true)
     @XmlElementWrapper(name = "instructions", required = true)
     @XmlElement(name = "instruction")
-    private @Nullable List<InstructionEntity> instructions;
+    private @NotNull List<InstructionEntity> instructions;
 
     // no-arg for jaxb
+    @SuppressWarnings("NullAway.Init")
     public DataCombiningEntity() {}
 
     public DataCombiningEntity(
@@ -63,19 +64,19 @@ public class DataCombiningEntity {
         this.instructions = instructions;
     }
 
-    public @Nullable UUID getId() {
+    public @NotNull UUID getId() {
         return id;
     }
 
-    public @Nullable List<InstructionEntity> getInstructions() {
+    public @NotNull List<InstructionEntity> getInstructions() {
         return instructions;
     }
 
-    public @Nullable DataCombiningSourcesEntity getSources() {
+    public @NotNull DataCombiningSourcesEntity getSources() {
         return sources;
     }
 
-    public @Nullable DataCombiningDestinationEntity getDestination() {
+    public @NotNull DataCombiningDestinationEntity getDestination() {
         return destination;
     }
 

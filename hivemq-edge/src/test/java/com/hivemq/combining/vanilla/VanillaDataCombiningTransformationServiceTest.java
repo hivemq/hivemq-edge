@@ -62,8 +62,7 @@ public class VanillaDataCombiningTransformationServiceTest {
     @Mock
     private @NotNull DataCombining dataCombining;
 
-    @Mock
-    private @NotNull DataCombiningDestination dataCombiningDestination;
+    private final @NotNull DataCombiningDestination dataCombiningDestination = new DataCombiningDestination(null, EMPTY_OBJECT, TOPIC_DESTINATION);
 
     private @NotNull ArgumentCaptor<PUBLISH> publishCaptor;
 
@@ -75,7 +74,6 @@ public class VanillaDataCombiningTransformationServiceTest {
         service = new VanillaDataCombiningTransformationService(prePublishProcessorService);
         when(dataCombining.id()).thenReturn(DEFAULT_UUID);
         when(dataCombining.destination()).thenReturn(dataCombiningDestination);
-        when(dataCombiningDestination.topic()).thenReturn(TOPIC_DESTINATION);
         when(publish.getHivemqId()).thenReturn("hivemq-id");
         when(publish.getQoS()).thenReturn(QoS.AT_LEAST_ONCE);
         when(publish.getUserProperties()).thenReturn(Mqtt5UserProperties.NO_USER_PROPERTIES);
