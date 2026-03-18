@@ -49,10 +49,7 @@ public class IfUtil {
             "HIVEMQ_USERS_ENABLED",
             "HIVEMQ_LDAP_OBJECT_CLASS_ENABLED",
             "HIVEMQ_PRE_LOGIN_NOTICE_ENABLED",
-            "HIVEMQ_LDAP_USER_ROLES_ENABLED",
-            "HIVEMQ_LDAP_USER_ROLE_ADMIN_QUERY",
-            "HIVEMQ_LDAP_USER_ROLE_SUPER_QUERY",
-            "HIVEMQ_LDAP_USER_ROLE_USER_QUERY");
+            "HIVEMQ_LDAP_USER_ROLES_ENABLED");
 
     /**
      * Get a Java system property or system environment variable with the specified name.

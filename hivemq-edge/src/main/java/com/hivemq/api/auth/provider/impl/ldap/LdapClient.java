@@ -295,6 +295,9 @@ public class LdapClient {
         for (final var userRole : userRoles) {
             final String role = userRole.getRole();
             final String queryTemplate = userRole.getQuery();
+            if (queryTemplate.isBlank()) {
+                continue;
+            }
             try {
                 // Substitute {userDn} placeholder in query
                 final String query = queryTemplate.replace("{userDn}", userDn);
