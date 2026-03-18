@@ -26,13 +26,14 @@ public class EntityReferenceEntity {
 
     @JsonProperty(value = "type", required = true)
     @XmlElement(name = "type", required = true)
-    private @Nullable EntityType type;
+    private @NotNull EntityType type;
 
     @JsonProperty(value = "id", required = true)
     @XmlElement(name = "id", required = true)
-    private @Nullable String id;
+    private @NotNull String id;
 
     // no-arg for jaxb
+    @SuppressWarnings("NullAway.Init")
     public EntityReferenceEntity() {}
 
     public EntityReferenceEntity(@NotNull final EntityType type, @NotNull final String id) {
@@ -42,11 +43,11 @@ public class EntityReferenceEntity {
         this.id = id;
     }
 
-    public @Nullable String getId() {
+    public @NotNull String getId() {
         return id;
     }
 
-    public @Nullable EntityType getType() {
+    public @NotNull EntityType getType() {
         return type;
     }
 

@@ -30,13 +30,14 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public record DataCombiner(
-        UUID id,
-        String name,
-        String description,
-        List<EntityReference> entityReferences,
-        List<DataCombining> dataCombinings) {
+        @NotNull UUID id,
+        @NotNull String name,
+        @Nullable String description,
+        @NotNull List<EntityReference> entityReferences,
+        @NotNull List<DataCombining> dataCombinings) {
 
     public static @NotNull DataCombiner fromModel(final @NotNull Combiner combiner) {
         final List<DataCombining> combining;
@@ -55,7 +56,7 @@ public record DataCombiner(
         return new DataCombiner(
                 requireNonNull(combiner.getId()),
                 requireNonNull(combiner.getName()),
-                requireNonNull(combiner.getDescription()),
+                combiner.getDescription(),
                 referenceList,
                 combining);
     }
@@ -70,7 +71,7 @@ public record DataCombiner(
         return new DataCombiner(
                 requireNonNull(combiner.getId()),
                 requireNonNull(combiner.getName()),
-                requireNonNull(combiner.getDescription()),
+                combiner.getDescription(),
                 referenceList,
                 combining);
     }

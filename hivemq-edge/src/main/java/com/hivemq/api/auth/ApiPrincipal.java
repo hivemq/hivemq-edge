@@ -27,10 +27,14 @@ import org.jetbrains.annotations.Nullable;
  */
 public class ApiPrincipal implements Principal {
 
-    private @Nullable String name;
-    private @Nullable Set<String> roles;
+    private @NotNull String name;
+    private @NotNull Set<String> roles;
 
-    public ApiPrincipal() {}
+    @SuppressWarnings("NullAway.Init")
+    public ApiPrincipal() {
+        name = "";
+        roles = Set.of();
+    }
 
     public ApiPrincipal(final @NotNull String name, final @NotNull Set<String> roles) {
         Preconditions.checkNotNull(name);
@@ -40,15 +44,11 @@ public class ApiPrincipal implements Principal {
     }
 
     @Override
-    @SuppressWarnings("NullAway") // name is @Nullable but Principal.getName() has no nullability annotation
-    public String getName() {
+    public @NotNull String getName() {
         return name;
     }
 
-    public boolean hasRole(String wantedRole) {
-        if (roles == null) {
-            return false;
-        }
+    public boolean hasRole(final @NotNull String wantedRole) {
         for (final String role : roles) {
             if (role.equalsIgnoreCase(wantedRole)) {
                 return true;
@@ -57,26 +57,22 @@ public class ApiPrincipal implements Principal {
         return false;
     }
 
-    public @Nullable Set<String> getRoles() {
+    public @NotNull Set<String> getRoles() {
         return roles;
     }
 
-    public void setRoles(final Set<String> roles) {
+    public void setRoles(final @NotNull Set<String> roles) {
         this.roles = roles;
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ApiPrincipal{");
-        sb.append("name='").append(name).append('\'');
-        sb.append(", roles=").append(roles);
-        sb.append('}');
-        return sb.toString();
+        return "ApiPrincipal{" + "name='" + name + '\'' + ", roles=" + roles + '}';
     }
 
     @Override
     public boolean equals(final Object o) {
-        if (!(o instanceof ApiPrincipal that)) return false;
+        if (!(o instanceof final ApiPrincipal that)) return false;
         return Objects.equals(getName(), that.getName()) && Objects.equals(getRoles(), that.getRoles());
     }
 

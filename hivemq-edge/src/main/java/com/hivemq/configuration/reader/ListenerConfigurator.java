@@ -265,7 +265,7 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
             } else {
                 final File homeFolder = systemInformation.getHiveMQHomeFolder();
                 if (homeFolder == null) {
-                    return null;
+                    return file.getAbsolutePath();
                 }
                 return new File(homeFolder, path).getAbsolutePath();
             }

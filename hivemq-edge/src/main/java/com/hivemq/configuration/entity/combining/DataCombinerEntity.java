@@ -29,11 +29,11 @@ import org.jetbrains.annotations.Nullable;
 public class DataCombinerEntity {
     @JsonProperty(value = "id", required = true)
     @XmlElement(name = "id", required = true)
-    private @Nullable UUID id;
+    private @NotNull UUID id;
 
     @JsonProperty(value = "name", required = true)
     @XmlElement(name = "name", required = true)
-    private @Nullable String name;
+    private @NotNull String name;
 
     @JsonProperty(value = "description", required = true)
     @XmlElement(name = "description", required = true)
@@ -51,15 +51,14 @@ public class DataCombinerEntity {
     @XmlElement(name = "data-combining")
     private @NotNull List<DataCombiningEntity> dataCombiningEntities = new ArrayList<>();
 
-    ;
-
     // no-arg for jaxb
+    @SuppressWarnings("NullAway.Init")
     public DataCombinerEntity() {}
 
     public DataCombinerEntity(
             final @NotNull UUID id,
             final @NotNull String name,
-            final @NotNull String description,
+            final @Nullable String description,
             final @NotNull List<EntityReferenceEntity> entityReferenceEntities,
             final @NotNull List<DataCombiningEntity> dataCombiningEntities) {
         this.id = id;
@@ -118,11 +117,11 @@ public class DataCombinerEntity {
         return entityReferenceEntities;
     }
 
-    public @Nullable UUID getId() {
+    public @NotNull UUID getId() {
         return id;
     }
 
-    public @Nullable String getName() {
+    public @NotNull String getName() {
         return name;
     }
 }

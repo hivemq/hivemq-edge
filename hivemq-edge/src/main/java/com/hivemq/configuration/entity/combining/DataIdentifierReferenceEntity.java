@@ -29,13 +29,14 @@ public class DataIdentifierReferenceEntity implements EntityValidatable {
 
     @JsonProperty("id")
     @XmlElement(name = "id")
-    private @Nullable String id;
+    private @NotNull String id;
 
     @JsonProperty("type")
     @XmlElement(name = "type")
-    private @Nullable DataIdentifierReference.Type type;
+    private @NotNull DataIdentifierReference.Type type;
 
     // no-arg for jaxb
+    @SuppressWarnings("NullAway.Init")
     public DataIdentifierReferenceEntity() {}
 
     public DataIdentifierReferenceEntity(@NotNull final String id, @NotNull final DataIdentifierReference.Type type) {
@@ -45,11 +46,11 @@ public class DataIdentifierReferenceEntity implements EntityValidatable {
         this.type = type;
     }
 
-    public @Nullable String getId() {
+    public @NotNull String getId() {
         return id;
     }
 
-    public @Nullable DataIdentifierReference.Type getType() {
+    public @NotNull DataIdentifierReference.Type getType() {
         return type;
     }
 

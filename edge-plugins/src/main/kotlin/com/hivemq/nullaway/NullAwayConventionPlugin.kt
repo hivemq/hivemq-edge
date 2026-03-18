@@ -42,6 +42,11 @@ class NullAwayConventionPlugin : Plugin<Project> {
                 option("NullAway:TreatGeneratedAsUnannotated", "true")
                 option("NullAway:ExcludedFieldAnnotations", "dagger.Lazy")
             }
+            if (name.contains("Test")) {
+                options.errorprone {
+                    disable("NullAway")
+                }
+            }
         }
     }
 }

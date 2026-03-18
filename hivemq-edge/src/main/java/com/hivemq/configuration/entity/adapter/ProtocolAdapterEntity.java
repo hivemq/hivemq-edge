@@ -71,6 +71,7 @@ public class ProtocolAdapterEntity implements EntityValidatable {
     private @NotNull List<SouthboundMappingEntity> southboundMappings;
 
     // no-arg constructor for JaxB
+    @SuppressWarnings("NullAway.Init")
     public ProtocolAdapterEntity() {
         this("", "", DEFAULT_CONFIG_VERSION, new HashMap<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
     }

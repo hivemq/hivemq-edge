@@ -133,6 +133,8 @@ public class ConfigFileReaderWriter {
                     .add(UDPListenerEntity.class)
                     .add(UDPBroadcastListenerEntity.class)
                     .add(FieldMappingEntity.class)
+                    .add(TruststoreEntity.class)
+                    .add(KeystoreEntity.class)
                     .build()
                     .toArray(new Class<?>[0]));
         } catch (final Throwable e) {

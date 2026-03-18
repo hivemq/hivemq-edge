@@ -50,10 +50,10 @@ public class NorthboundMappingEntity implements EntityValidatable {
     private final @Nullable MessageHandlingOptions messageHandlingOptions;
 
     @XmlElement(name = "includeTagNames", required = true)
-    private final @Nullable Boolean includeTagNames;
+    private final @NotNull Boolean includeTagNames;
 
     @XmlElement(name = "includeTimestamp", required = true)
-    private final @Nullable Boolean includeTimestamp;
+    private final @NotNull Boolean includeTimestamp;
 
     @XmlElementWrapper(name = "mqttUserProperties", required = true)
     @XmlElement(name = "mqttUserProperty")
@@ -63,6 +63,7 @@ public class NorthboundMappingEntity implements EntityValidatable {
     private final @NotNull Long messageExpiryInterval;
 
     // no-arg constructor for JaxB
+    @SuppressWarnings("NullAway.Init")
     public NorthboundMappingEntity() {
         tagName = "";
         topic = "";
