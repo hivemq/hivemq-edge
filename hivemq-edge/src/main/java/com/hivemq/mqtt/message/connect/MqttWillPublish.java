@@ -359,7 +359,8 @@ public class MqttWillPublish implements Sizable {
             return this;
         }
 
-        public Mqtt5Builder withPayloadFormatIndicator(final Mqtt5PayloadFormatIndicator payloadFormatIndicator) {
+        public Mqtt5Builder withPayloadFormatIndicator(
+                final @Nullable Mqtt5PayloadFormatIndicator payloadFormatIndicator) {
             this.payloadFormatIndicator = payloadFormatIndicator;
             return this;
         }
