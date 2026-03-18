@@ -38,7 +38,7 @@ public class ProtocolAdapterStateTest {
             ProtocolAdapterState.Working,
             Set.of(ProtocolAdapterState.Stopping, ProtocolAdapterState.Error),
             ProtocolAdapterState.Stopping,
-            Set.of(ProtocolAdapterState.Idle),
+            Set.of(ProtocolAdapterState.Idle, ProtocolAdapterState.Error),
             ProtocolAdapterState.Error,
             Set.of(ProtocolAdapterState.Idle));
 

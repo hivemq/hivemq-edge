@@ -38,10 +38,10 @@ import org.slf4j.LoggerFactory;
  * <p>
  * Mapping:
  * <ul>
- *   <li>{@link #connect}(NORTHBOUND) calls {@link ProtocolAdapter#start} and blocks until the output signals completion</li>
- *   <li>{@link #connect}(SOUTHBOUND) is a no-op (old adapters handle southbound internally during start)</li>
- *   <li>{@link #disconnect}(NORTHBOUND) calls {@link ProtocolAdapter#stop} and blocks until the output signals completion</li>
- *   <li>{@link #disconnect}(SOUTHBOUND) is a no-op</li>
+ *   <li>{@link #connect}(Northbound) calls {@link ProtocolAdapter#start} and blocks until the output signals completion</li>
+ *   <li>{@link #connect}(Southbound) is a no-op (old adapters handle southbound internally during start)</li>
+ *   <li>{@link #disconnect}(Northbound) calls {@link ProtocolAdapter#stop} and blocks until the output signals completion</li>
+ *   <li>{@link #disconnect}(Southbound) is a no-op</li>
  *   <li>{@link #precheck} is a no-op (old adapters don't have this concept)</li>
  *   <li>{@link #supportsSouthbound} checks for {@link ProtocolAdapterCapability#WRITE}</li>
  * </ul>
@@ -80,8 +80,8 @@ public class ProtocolAdapter2Bridge implements ProtocolAdapter2 {
     }
 
     @Override
-    public void connect(final @NotNull ConnectionContext context) throws ProtocolAdapterException {
-        if (context.getDirection() == ConnectionContext.Direction.SOUTHBOUND) {
+    public void connect(final @NotNull ProtocolAdapterConnectionDirection direction) throws ProtocolAdapterException {
+        if (direction.isSouthbound()) {
             // Old adapters handle southbound internally during start - no separate action needed
             return;
         }
@@ -101,8 +101,8 @@ public class ProtocolAdapter2Bridge implements ProtocolAdapter2 {
     }
 
     @Override
-    public void disconnect(final @NotNull ConnectionContext context) {
-        if (context.getDirection() == ConnectionContext.Direction.SOUTHBOUND) {
+    public void disconnect(final @NotNull ProtocolAdapterConnectionDirection direction) {
+        if (direction.isSouthbound()) {
             // Old adapters handle southbound internally during stop - no separate action needed
             return;
         }

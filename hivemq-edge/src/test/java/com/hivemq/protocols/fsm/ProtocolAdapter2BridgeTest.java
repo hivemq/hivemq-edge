@@ -104,7 +104,7 @@ class ProtocolAdapter2BridgeTest {
                 .when(delegate)
                 .start(any(ProtocolAdapterStartInput.class), any(ProtocolAdapterStartOutput.class));
 
-        bridge.connect(ConnectionContext.of(ConnectionContext.Direction.NORTHBOUND));
+        bridge.connect(ProtocolAdapterConnectionDirection.Northbound);
 
         verify(delegate).start(any(ProtocolAdapterStartInput.class), any(ProtocolAdapterStartOutput.class));
     }
@@ -119,14 +119,14 @@ class ProtocolAdapter2BridgeTest {
                 .when(delegate)
                 .start(any(ProtocolAdapterStartInput.class), any(ProtocolAdapterStartOutput.class));
 
-        assertThatThrownBy(() -> bridge.connect(ConnectionContext.of(ConnectionContext.Direction.NORTHBOUND)))
+        assertThatThrownBy(() -> bridge.connect(ProtocolAdapterConnectionDirection.Northbound))
                 .isInstanceOf(ProtocolAdapterException.class)
                 .hasMessageContaining("test-adapter");
     }
 
     @Test
     void connectSouthbound_doesNotCallDelegateStart() throws ProtocolAdapterException {
-        bridge.connect(ConnectionContext.of(ConnectionContext.Direction.SOUTHBOUND));
+        bridge.connect(ProtocolAdapterConnectionDirection.Southbound);
 
         verify(delegate, never()).start(any(), any());
     }
@@ -141,7 +141,7 @@ class ProtocolAdapter2BridgeTest {
                 .when(delegate)
                 .stop(any(ProtocolAdapterStopInput.class), any(ProtocolAdapterStopOutput.class));
 
-        bridge.disconnect(ConnectionContext.of(ConnectionContext.Direction.NORTHBOUND));
+        bridge.disconnect(ProtocolAdapterConnectionDirection.Northbound);
 
         verify(delegate).stop(any(ProtocolAdapterStopInput.class), any(ProtocolAdapterStopOutput.class));
     }
@@ -157,14 +157,14 @@ class ProtocolAdapter2BridgeTest {
                 .stop(any(ProtocolAdapterStopInput.class), any(ProtocolAdapterStopOutput.class));
 
         // Should not throw - disconnect logs errors instead
-        bridge.disconnect(ConnectionContext.of(ConnectionContext.Direction.NORTHBOUND));
+        bridge.disconnect(ProtocolAdapterConnectionDirection.Northbound);
 
         verify(delegate).stop(any(ProtocolAdapterStopInput.class), any(ProtocolAdapterStopOutput.class));
     }
 
     @Test
     void disconnectSouthbound_doesNotCallDelegateStop() {
-        bridge.disconnect(ConnectionContext.of(ConnectionContext.Direction.SOUTHBOUND));
+        bridge.disconnect(ProtocolAdapterConnectionDirection.Southbound);
 
         verify(delegate, never()).stop(any(), any());
     }
@@ -188,6 +188,6 @@ class ProtocolAdapter2BridgeTest {
                 .when(delegate)
                 .start(any(ProtocolAdapterStartInput.class), any(ProtocolAdapterStartOutput.class));
 
-        bridge.connect(ConnectionContext.of(ConnectionContext.Direction.NORTHBOUND));
+        bridge.connect(ProtocolAdapterConnectionDirection.Northbound);
     }
 }
