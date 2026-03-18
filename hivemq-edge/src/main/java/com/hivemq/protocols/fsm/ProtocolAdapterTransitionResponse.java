@@ -53,7 +53,7 @@ public record ProtocolAdapterTransitionResponse(
             final @NotNull ProtocolAdapterState fromState, final @NotNull ProtocolAdapterState toState) {
         return new ProtocolAdapterTransitionResponse(
                 fromState,
-                toState,
+                fromState,
                 ProtocolAdapterTransitionStatus.Failure,
                 I18nProtocolAdapterMessage.FSM_TRANSITION_FAILURE_UNABLE_TO_TRANSITION_FROM_STATE_TO_STATE.get(
                         Map.of(FROM_STATE, fromState.name(), TO_STATE, toState.name())),

@@ -15,28 +15,22 @@
  */
 package com.hivemq.protocols.fsm;
 
-import org.jetbrains.annotations.NotNull;
-
 /**
- * Context provided during {@link ProtocolAdapter2#connect} and {@link ProtocolAdapter2#disconnect} operations.
+ * Direction of a protocol adapter connection.
+ * <ul>
+ *   <li>{@link #Northbound} — from device/service to MQTT</li>
+ *   <li>{@link #Southbound} — from MQTT to device/service</li>
+ * </ul>
  */
-public interface ConnectionContext {
+public enum ProtocolAdapterConnectionDirection {
+    Northbound,
+    Southbound;
 
-    enum Direction {
-        NORTHBOUND,
-        SOUTHBOUND
+    public boolean isNorthbound() {
+        return this == Northbound;
     }
 
-    /**
-     * @return the direction of this connection (northbound = device to MQTT, southbound = MQTT to device)
-     */
-    @NotNull
-    Direction getDirection();
-
-    /**
-     * Create a {@link ConnectionContext} for the given direction.
-     */
-    static @NotNull ConnectionContext of(final @NotNull Direction direction) {
-        return () -> direction;
+    public boolean isSouthbound() {
+        return this == Southbound;
     }
 }

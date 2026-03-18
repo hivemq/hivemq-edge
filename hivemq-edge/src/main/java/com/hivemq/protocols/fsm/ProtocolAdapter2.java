@@ -72,13 +72,11 @@ public interface ProtocolAdapter2 {
      *   <li>Return when connection is ready</li>
      *   <li>Throw on any failure</li>
      * </ul>
-     * The connection type (northbound vs southbound) is determined by
-     * the {@link ConnectionContext} parameter.
      *
-     * @param context contains connection direction
+     * @param direction the connection direction (northbound vs southbound)
      * @throws ProtocolAdapterException on connection failure
      */
-    void connect(@NotNull ConnectionContext context) throws ProtocolAdapterException;
+    void connect(@NotNull ProtocolAdapterConnectionDirection direction) throws ProtocolAdapterException;
 
     /**
      * Disconnect from the device/service.
@@ -91,9 +89,9 @@ public interface ProtocolAdapter2 {
      *   <li>NOT throw on failure (log errors instead)</li>
      * </ul>
      *
-     * @param context contains connection direction
+     * @param direction the connection direction (northbound vs southbound)
      */
-    void disconnect(@NotNull ConnectionContext context);
+    void disconnect(@NotNull ProtocolAdapterConnectionDirection direction);
 
     /**
      * Destroy the adapter instance.

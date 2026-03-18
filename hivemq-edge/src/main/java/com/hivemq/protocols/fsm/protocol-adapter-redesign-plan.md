@@ -231,13 +231,10 @@ public interface ProtocolAdapter2 {
      * - Return when connection is ready
      * - Throw on any failure
      *
-     * The connection type (northbound vs southbound) is determined by
-     * the ConnectionContext parameter.
-     *
-     * @param context Contains connection direction and configuration
+     * @param direction the connection direction (northbound vs southbound)
      * @throws ProtocolAdapterException on connection failure
      */
-    void connect(@NotNull ConnectionContext context) throws ProtocolAdapterException;
+    void connect(@NotNull ProtocolAdapterConnectionDirection direction) throws ProtocolAdapterException;
 
     /**
      * Disconnect from the device/service.
@@ -248,9 +245,9 @@ public interface ProtocolAdapter2 {
      * - Return when cleanup is complete
      * - NOT throw on failure (log errors instead)
      *
-     * @param context Contains connection direction and configuration
+     * @param direction the connection direction (northbound vs southbound)
      */
-    void disconnect(@NotNull ConnectionContext context);
+    void disconnect(@NotNull ProtocolAdapterConnectionDirection direction);
 
     /**
      * Destroy the adapter instance.
@@ -284,16 +281,14 @@ public interface ProtocolAdapter2 {
 }
 
 /**
- * Context provided during connect/disconnect operations
+ * Direction of a protocol adapter connection.
  */
-public interface ConnectionContext {
-    enum Direction { NORTHBOUND, SOUTHBOUND }
+public enum ProtocolAdapterConnectionDirection {
+    Northbound,
+    Southbound;
 
-    @NotNull Direction getDirection();
-    @NotNull ModuleServices getModuleServices();
-    @NotNull List<? extends Tag> getTags();
-    @NotNull List<NorthboundMapping> getNorthboundMappings();  // Only for NORTHBOUND
-    @NotNull List<SouthboundMapping> getSouthboundMappings();  // Only for SOUTHBOUND
+    public boolean isNorthbound() { return this == Northbound; }
+    public boolean isSouthbound() { return this == Southbound; }
 }
 ```
 
@@ -548,8 +543,7 @@ public class ProtocolAdapterWrapper2 {
         }
 
         try {
-            ConnectionContext context = createContext(ConnectionContext.Direction.NORTHBOUND);
-            adapter.connect(context);
+            adapter.connect(ProtocolAdapterConnectionDirection.Northbound);
 
             // Connecting → Connected
             return transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Connected).status().isSuccess();
@@ -580,8 +574,7 @@ public class ProtocolAdapterWrapper2 {
         }
 
         try {
-            ConnectionContext context = createContext(ConnectionContext.Direction.SOUTHBOUND);
-            adapter.connect(context);
+            adapter.connect(ProtocolAdapterConnectionDirection.Southbound);
 
             // Connecting → Connected
             return transitionSouthboundConnectionTo(ProtocolAdapterConnectionState.Connected).status().isSuccess();
@@ -611,8 +604,7 @@ public class ProtocolAdapterWrapper2 {
         }
 
         try {
-            ConnectionContext context = createContext(ConnectionContext.Direction.NORTHBOUND);
-            adapter.disconnect(context);
+            adapter.disconnect(ProtocolAdapterConnectionDirection.Northbound);
         } catch (Exception e) {
             LOGGER.warn("Error during northbound disconnect for adapter {}", getAdapterId(), e);
             // Continue anyway - we want to reach Disconnected state
@@ -643,8 +635,7 @@ public class ProtocolAdapterWrapper2 {
         }
 
         try {
-            ConnectionContext context = createContext(ConnectionContext.Direction.SOUTHBOUND);
-            adapter.disconnect(context);
+            adapter.disconnect(ProtocolAdapterConnectionDirection.Southbound);
         } catch (Exception e) {
             LOGGER.warn("Error during southbound disconnect for adapter {}", getAdapterId(), e);
         }
@@ -862,7 +853,7 @@ Adapter implementations must handle their own async operations internally:
 ```java
 // Example: OPC UA Adapter connect() implementation
 @Override
-public void connect(ConnectionContext context) throws ProtocolAdapterException {
+public void connect(ProtocolAdapterConnectionDirection direction) throws ProtocolAdapterException {
     try {
         // Create OPC UA client
         client = OpcUaClient.create(endpointUrl, ...);
@@ -905,7 +896,7 @@ public void connect(ConnectionContext context) throws ProtocolAdapterException {
 
 **Tasks**:
 - [x] Design `ProtocolAdapter2` interface (synchronous connect/disconnect, precheck, supportsSouthbound)
-- [x] Design `ConnectionContext` interface (Direction enum, factory method)
+- [x] Design `ProtocolAdapterConnectionDirection` enum (Northbound, Southbound)
 - [x] Reuse existing SDK input/output types for connect/disconnect (via `ProtocolAdapterStartOutputImpl`, `ProtocolAdapterStopOutputImpl`)
 - [x] Create bridge for existing `ProtocolAdapter` → `ProtocolAdapter2` (`ProtocolAdapter2Bridge`)
 - [x] Update `ProtocolAdapterWrapper2` to use `ProtocolAdapter2`
@@ -914,27 +905,33 @@ public void connect(ConnectionContext context) throws ProtocolAdapterException {
 
 **Deliverables**:
 - `ProtocolAdapter2.java`
-- `ConnectionContext.java`
+- `ProtocolAdapterConnectionDirection.java`
 - `ProtocolAdapter2Bridge.java` (wraps old adapters, maps start/stop to connect/disconnect)
 
 ### 5.3 Phase 3: Wrapper Completion
 
-**Status**: 🔶 In Progress
+**Status**: 🔶 In Progress (core lifecycle complete, service integrations pending)
 
 **Tasks**:
 - [x] Implement basic `ProtocolAdapterWrapper2.start()` (state transitions and connection lifecycle)
 - [x] Implement basic `ProtocolAdapterWrapper2.stop()` (state transitions and connection teardown)
-- [ ] Add adapter precheck calls (`adapter.precheck()`) during start
-- [ ] Implement connection error handling (try/catch around adapter connect/disconnect calls)
-- [ ] Add southbound capability check (`supportsSouthbound()`)
+- [x] Add adapter precheck calls (`adapter.precheck()`) during start
+- [x] Implement connection error handling (try/catch around adapter connect/disconnect calls)
+- [x] Add southbound capability check (`supportsSouthbound()`)
+- [x] Add cleanup on partial start failure (disconnect northbound if southbound fails)
+- [x] Add `destroy` flag support in `stop(boolean destroy)`
+- [x] Add `Error` as valid transition from `Stopping` state
+- [x] Fix `ProtocolAdapterTransitionResponse.failure()` — `toState` now stays at `fromState` on failure
+- [x] Fix `ProtocolAdapterConnectionTransitionResponse.failure()` — same fix for connection transitions
+- [x] Comprehensive unit tests for wrapper (20+ tests covering all edge cases)
 - [ ] Implement state change notification (`StateChangeListener`)
 - [ ] Add polling service integration
 - [ ] Add writing service integration
 - [ ] Add tag manager integration
 
 **Deliverables**:
-- Completed `ProtocolAdapterWrapper2.java`
-- Integration tests with mock adapters
+- Completed `ProtocolAdapterWrapper2.java` (core lifecycle)
+- Comprehensive unit tests with mock adapters (`ProtocolAdapterWrapperTest.java`)
 
 ### 5.4 Phase 4: Manager Completion
 
@@ -1095,7 +1092,7 @@ Until switchover:
 ```
 src/main/java/com/hivemq/protocols/fsm/
 ├── ClassLoaderUtils.java                          # ClassLoader context utility (Phase 1)
-├── ConnectionContext.java                         # Connection context interface (Phase 2)
+├── ProtocolAdapterConnectionDirection.java        # Connection direction enum (Phase 2)
 ├── I18nProtocolAdapterMessage.java                # I18n error/message templates (Phase 1)
 ├── ProtocolAdapter2.java                          # New adapter interface (Phase 2)
 ├── ProtocolAdapter2Bridge.java                    # Bridge: old ProtocolAdapter → ProtocolAdapter2 (Phase 2)
@@ -1135,7 +1132,7 @@ src/main/java/com/hivemq/protocols/
 
 ---
 
-**Document Version**: 1.2
+**Document Version**: 1.3
 **Last Updated**: 2026-03-17
 **Author**: Claude (AI Assistant)
-**Status**: IN PROGRESS (Phase 1 & 2 complete, Phase 3 & 4 in progress)
+**Status**: IN PROGRESS (Phase 1 & 2 complete, Phase 3 core lifecycle complete, Phase 4 in progress)
