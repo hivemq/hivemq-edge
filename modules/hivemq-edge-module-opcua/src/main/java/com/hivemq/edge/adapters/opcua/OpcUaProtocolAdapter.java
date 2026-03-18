@@ -733,9 +733,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 adapterId,
                 backoffDelayMs);
 
+        // Capture scheduler reference to avoid races with shutdown setting it to null
+        final ScheduledExecutorService scheduler = retryScheduler;
+        if (scheduler == null) {
+            log.debug("Skipping retry scheduling for adapter '{}' - retry scheduler is not available", adapterId);
+            return;
+        }
+
         final ScheduledFuture<?> future;
         try {
-            future = retryScheduler.schedule(
+            future = scheduler.schedule(
                 () -> {
                     // Check if adapter was stopped before retry executes
                     if (stopped || this.parsedConfig == null || this.moduleServices == null) {
@@ -768,7 +775,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 backoffDelayMs,
                 TimeUnit.MILLISECONDS);
         } catch (final RejectedExecutionException e) {
-            if (retryScheduler.isShutdown()) {
+            if (scheduler.isShutdown()) {
                 log.debug("OPC UA adapter '{}' retry scheduling rejected, executor is shutting down.", adapterId);
                 return;
             } else {
