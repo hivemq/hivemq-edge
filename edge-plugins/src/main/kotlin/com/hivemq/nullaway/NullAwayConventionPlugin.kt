@@ -36,7 +36,7 @@ class NullAwayConventionPlugin : Plugin<Project> {
 
         project.tasks.withType<JavaCompile>().configureEach {
             options.errorprone {
-                warn("NullAway")
+                error("NullAway")
                 option("NullAway:AnnotatedPackages", "com.hivemq")
                 option("NullAway:UnannotatedSubPackages", "com.hivemq.edge.api")
                 option("NullAway:TreatGeneratedAsUnannotated", "true")
