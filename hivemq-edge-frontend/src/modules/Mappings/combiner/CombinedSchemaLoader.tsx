@@ -65,6 +65,7 @@ export const CombinedSchemaLoader: FC<CombinedSchemaLoaderProps> = ({ formData, 
             isDraggable
             hasExamples
             isTagShown
+            showReadOnly={false}
             px={4}
             py={3}
           />
