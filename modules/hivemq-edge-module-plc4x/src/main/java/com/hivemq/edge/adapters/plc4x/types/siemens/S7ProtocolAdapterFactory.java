@@ -16,10 +16,12 @@
 package com.hivemq.edge.adapters.plc4x.types.siemens;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter2;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7SpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 
@@ -44,5 +46,11 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Specif
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterInput<S7SpecificAdapterConfig> input) {
         return new S7ProtocolAdapter(adapterInformation, input);
+    }
+
+    @Override
+    public @NotNull ProtocolAdapter2 createProtocolAdapter2(
+            final @NotNull ProtocolAdapter protocolAdapter, final @NotNull ModuleServices moduleServices) {
+        return new S7ProtocolAdapter2(protocolAdapter, moduleServices);
     }
 }
