@@ -743,37 +743,37 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         final ScheduledFuture<?> future;
         try {
             future = scheduler.schedule(
-                () -> {
-                    // Check if adapter was stopped before retry executes
-                    if (stopped || this.parsedConfig == null || this.moduleServices == null) {
-                        log.debug("OPC UA adapter '{}' retry cancelled - adapter was stopped", adapterId);
-                        return;
-                    }
+                    () -> {
+                        // Check if adapter was stopped before retry executes
+                        if (stopped || this.parsedConfig == null || this.moduleServices == null) {
+                            log.debug("OPC UA adapter '{}' retry cancelled - adapter was stopped", adapterId);
+                            return;
+                        }
 
-                    log.info("Executing retry attempt #{} for OPC UA adapter '{}'", attemptCount, adapterId);
+                        log.info("Executing retry attempt #{} for OPC UA adapter '{}'", attemptCount, adapterId);
 
-                    // Create new connection object for retry
-                    final OpcUaClientConnection newConn = new OpcUaClientConnection(
-                            adapterId,
-                            tagList,
-                            protocolAdapterState,
-                            this.moduleServices.protocolAdapterTagStreamingService(),
-                            dataPointFactory,
-                            this.moduleServices.eventService(),
-                            protocolAdapterMetricsService,
-                            config,
-                            opcUaServiceFaultListener);
+                        // Create new connection object for retry
+                        final OpcUaClientConnection newConn = new OpcUaClientConnection(
+                                adapterId,
+                                tagList,
+                                protocolAdapterState,
+                                this.moduleServices.protocolAdapterTagStreamingService(),
+                                dataPointFactory,
+                                this.moduleServices.eventService(),
+                                protocolAdapterMetricsService,
+                                config,
+                                opcUaServiceFaultListener);
 
-                    // Set as current connection and attempt
-                    protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
-                    if (opcUaClientConnection.compareAndSet(null, newConn)) {
-                        attemptConnection(newConn, this.parsedConfig, input);
-                    } else {
-                        log.debug("OPC UA adapter '{}' retry skipped - connection already exists", adapterId);
-                    }
-                },
-                backoffDelayMs,
-                TimeUnit.MILLISECONDS);
+                        // Set as current connection and attempt
+                        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+                        if (opcUaClientConnection.compareAndSet(null, newConn)) {
+                            attemptConnection(newConn, this.parsedConfig, input);
+                        } else {
+                            log.debug("OPC UA adapter '{}' retry skipped - connection already exists", adapterId);
+                        }
+                    },
+                    backoffDelayMs,
+                    TimeUnit.MILLISECONDS);
         } catch (final RejectedExecutionException e) {
             if (scheduler.isShutdown()) {
                 log.debug("OPC UA adapter '{}' retry scheduling rejected, executor is shutting down.", adapterId);
