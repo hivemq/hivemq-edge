@@ -24,12 +24,9 @@ public class ProtocolAdapterTagStreamingServiceImpl implements ProtocolAdapterTa
     }
 
     @Override
-    public @NotNull DataPointListBuilder dataPointSender() {
+    public @NotNull DataPointListBuilder dataPointsPublisher() {
         return new DataPointListBuilderImpl(
-                enricher,
-                dataPoints -> {
-                    tagManager.feed(dataPoints);
-                });
+                enricher, tagManager::feed);
     }
 
     @Override

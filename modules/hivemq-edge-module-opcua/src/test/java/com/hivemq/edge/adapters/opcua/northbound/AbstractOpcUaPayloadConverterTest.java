@@ -96,7 +96,8 @@ abstract class AbstractOpcUaPayloadConverterTest {
 
         when(moduleServices.protocolAdapterTagStreamingService())
                 .thenReturn(
-                        new ProtocolAdapterTagStreamingServiceImpl(tagManager, enrich -> {}));
+                        new ProtocolAdapterTagStreamingServiceImpl(tagManager, enrich -> {
+                        }));
 
         final AdapterFactories adapterFactories = mock(AdapterFactoriesImpl.class);
         when(protocolAdapterInput.adapterFactories()).thenReturn(adapterFactories);

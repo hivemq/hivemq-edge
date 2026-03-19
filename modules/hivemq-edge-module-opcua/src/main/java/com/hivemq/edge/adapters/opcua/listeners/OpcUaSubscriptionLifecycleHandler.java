@@ -16,7 +16,6 @@
 package com.hivemq.edge.adapters.opcua.listeners;
 
 import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
-import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
@@ -124,7 +123,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         return Optional.empty();
     }
 
-    private static void extractPayload(final @NotNull OpcUaClient client, final @NotNull DataValue value, DataPointBuilder builder)
+    private static void extractPayload(final @NotNull OpcUaClient client, final @NotNull DataValue value, final @NotNull DataPointBuilder<?> builder)
             throws UaException {
         OpcUaToJsonConverter.convertPayload(client.getDynamicEncodingContext(), value, builder);
     }
@@ -306,8 +305,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             final @NotNull List<OpcUaMonitoredItem> items,
             final @NotNull List<DataValue> values) {
         lastKeepAliveTimestamp = System.currentTimeMillis();
-        final var builder = tagStreamingService
-                .dataPointSender();
+        final var dataPointsPublisher = tagStreamingService.dataPointsPublisher();
         for (int i = 0; i < items.size(); i++) {
             final var tag = Objects.requireNonNull(nodeIdToTag.get(items.get(i).getReadValueId().getNodeId()));
             final String tn = tag.getName();
@@ -321,14 +319,13 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             try {
                 protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_RECEIVED_COUNT);
 
-                final var dataPointBuilder = builder.dataPoint(tn);
+                final var dataPointBuilder = dataPointsPublisher.addDataPoint(tag);
                 extractPayload(client, values.get(i), dataPointBuilder);
-                dataPointBuilder.finish();
             } catch (final Throwable e) {
                 protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_ERROR_COUNT);
                 throw new RuntimeException(e);
             }
         }
-        builder.send();
+        dataPointsPublisher.publish();
     }
 }

@@ -357,9 +357,9 @@ public class ProtocolAdapterManager {
                         new ProtocolAdapterTagStreamingServiceImpl(tagManager,
                                 enrich -> {
                                     enrich
-                                            .adapterDatapointMetadataStart()
-                                            .add("key", "value")
-                                            .adapterDatapointMetadataStop();
+                                            .startObjectContext()
+                                            .put("key", "value")
+                                            .endObject();
                                 }
                         ));
 

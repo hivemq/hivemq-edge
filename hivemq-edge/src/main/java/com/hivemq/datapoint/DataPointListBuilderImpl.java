@@ -3,16 +3,18 @@ package com.hivemq.datapoint;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
 import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public final class DataPointListBuilderImpl implements DataPointListBuilder {
     private final @NotNull Consumer<DataPointBuilder<?>> enricher;
     private final @NotNull Consumer<List<DataPoint>> receiver;
-    private final @NotNull List<DataPointBuilder<DataPointListBuilder>> points = new ArrayList<>();
+    private final @NotNull List<DataPointWithMetadata.DataPointBuilderImpl<DataPointListBuilder>> builders = new ArrayList<>();
 
     public DataPointListBuilderImpl(
             @NotNull final Consumer<DataPointBuilder<?>> enricher,
@@ -22,19 +24,20 @@ public final class DataPointListBuilderImpl implements DataPointListBuilder {
     }
 
     @Override
-    public @NotNull DataPointBuilder<DataPointListBuilder> dataPoint(final @NotNull String tagName) {
-        return DataPointWithMetadata.builder(tagName, System.currentTimeMillis(), dp -> {
-            points.add(dp);
-            return this;
-        });
+    public @NotNull DataPointBuilder<DataPointListBuilder> addDataPoint(final @NotNull Tag tag) {
+        final Function<DataPointBuilder<DataPointListBuilder>, DataPointListBuilder> completer = dp -> this;
+        final var builderImpl = (DataPointWithMetadata.DataPointBuilderImpl<DataPointListBuilder>)
+                DataPointWithMetadata.builder(tag, System.currentTimeMillis(), completer);
+        builders.add(builderImpl);
+        return builderImpl;
     }
 
     @Override
-    public void send() {
-        final var converted = points.stream()
-                .map(point -> {
-                    enricher.accept(point);
-                    return ((DataPointWithMetadata.DataPointBuilderImpl<?>) point).build();
+    public void publish() {
+        final var converted = builders.stream()
+                .<DataPoint>map(builder -> {
+                    enricher.accept(builder);
+                    return builder.build();
                 })
                 .toList();
         receiver.accept(converted);
