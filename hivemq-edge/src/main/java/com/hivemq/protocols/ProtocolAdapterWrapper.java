@@ -17,7 +17,6 @@ package com.hivemq.protocols;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
@@ -37,8 +36,6 @@ import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.persistence.mappings.SouthboundMapping;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import com.hivemq.protocols.northbound.NorthboundTagConsumer;
-import com.hivemq.protocols.northbound.PerAdapterSampler;
-import com.hivemq.protocols.northbound.PerContextSampler;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -53,7 +50,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -476,76 +472,35 @@ public class ProtocolAdapterWrapper {
         return adapter instanceof BatchPollingProtocolAdapter;
     }
 
+    // NOTE: This class is dead code (replaced by ProtocolAdapterWrapper2 + ProtocolAdapterManager2).
+    // The methods below are stubs to maintain compilation. They are never called at runtime.
+
+    @SuppressWarnings("unused")
     private void startPolling(
             final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService,
             final @NotNull EventService eventService) {
-
-        if (isBatchPolling()) {
-            log.debug("Schedule batch polling for protocol adapter with id '{}'", getId());
-            final PerAdapterSampler sampler = new PerAdapterSampler(this, eventService, tagManager);
-            protocolAdapterPollingService.schedulePolling(sampler);
-        }
-
-        if (isPolling()) {
-            config.getTags().forEach(tag -> {
-                final PerContextSampler sampler = new PerContextSampler(
-                        this,
-                        new PollingContextWrapper(
-                                "unused",
-                                tag.getName(),
-                                MessageHandlingOptions.MQTTMessagePerTag,
-                                false,
-                                false,
-                                List.of(),
-                                1,
-                                -1L),
-                        eventService,
-                        tagManager);
-                protocolAdapterPollingService.schedulePolling(sampler);
-            });
-        }
+        throw new UnsupportedOperationException("Dead code — use ProtocolAdapterWrapper2");
     }
 
+    @SuppressWarnings("unused")
     private void stopPolling(final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService) {
-        if (isPolling() || isBatchPolling()) {
-            log.debug("Stopping polling for protocol adapter with id '{}'", getId());
-            protocolAdapterPollingService.stopPollingForAdapterInstance(getAdapter());
-        }
+        throw new UnsupportedOperationException("Dead code — use ProtocolAdapterWrapper2");
     }
 
+    @SuppressWarnings("unused")
     private @NotNull CompletableFuture<Boolean> startWritingAsync(
             final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService) {
-        log.debug("Start writing for protocol adapter with id '{}'", getId());
-
-        final var southboundMappings = getSouthboundMappings();
-        final var writingContexts = southboundMappings.stream()
-                .map(InternalWritingContextImpl::new)
-                .collect(Collectors.<InternalWritingContext>toList());
-
-        return protocolAdapterWritingService.startWritingAsync(
-                (WritingProtocolAdapter) getAdapter(), getProtocolAdapterMetricsService(), writingContexts);
+        throw new UnsupportedOperationException("Dead code — use ProtocolAdapterWrapper2");
     }
 
+    @SuppressWarnings("unused")
     private void stopWriting(final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService) {
-        // no check for 'writing is enabled', as we have to stop it anyway since the license could have been removed in
-        // the meantime.
-        if (isWriting()) {
-            log.debug("Stopping writing for protocol adapter with id '{}'", getId());
-            final var writingContexts = getSouthboundMappings().stream()
-                    .map(mapping -> (InternalWritingContext) new InternalWritingContextImpl(mapping))
-                    .toList();
-            protocolAdapterWritingService.stopWriting((WritingProtocolAdapter) getAdapter(), writingContexts);
-        }
+        throw new UnsupportedOperationException("Dead code — use ProtocolAdapterWrapper2");
     }
 
+    @SuppressWarnings("unused")
     private void createAndSubscribeTagConsumer() {
-        getNorthboundMappings().stream()
-                .map(northboundMapping ->
-                        northboundConsumerFactory.build(this, northboundMapping, protocolAdapterMetricsService))
-                .forEach(northboundTagConsumer -> {
-                    tagManager.addConsumer(northboundTagConsumer);
-                    consumers.add(northboundTagConsumer);
-                });
+        throw new UnsupportedOperationException("Dead code — use ProtocolAdapterWrapper2");
     }
 
     /**

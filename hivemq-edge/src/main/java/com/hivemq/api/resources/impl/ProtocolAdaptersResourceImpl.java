@@ -22,8 +22,8 @@ import static com.hivemq.api.utils.ApiErrorUtils.hasRequestErrors;
 import static com.hivemq.api.utils.ApiErrorUtils.validateRequiredEntity;
 import static com.hivemq.api.utils.ApiErrorUtils.validateRequiredField;
 import static com.hivemq.api.utils.ApiErrorUtils.validateRequiredFieldRegex;
-import static com.hivemq.protocols.ProtocolAdapterManager.runWithContextLoader;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
+import static com.hivemq.protocols.fsm.ProtocolAdapterManager2.runWithContextLoader;
 import static com.hivemq.util.ErrorResponseUtil.errorResponse;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -91,9 +91,9 @@ import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterDiscoveryOutputImpl;
 import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
 import com.hivemq.persistence.topicfilter.TopicFilterPojo;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
-import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.protocols.ProtocolAdapterSchemaManager;
-import com.hivemq.protocols.ProtocolAdapterWrapper;
+import com.hivemq.protocols.fsm.ProtocolAdapterManager2;
+import com.hivemq.protocols.fsm.ProtocolAdapterWrapper2;
 import com.hivemq.protocols.tag.TagSchemaCreationInputImpl;
 import com.hivemq.protocols.tag.TagSchemaCreationOutputImpl;
 import jakarta.inject.Inject;
@@ -134,7 +134,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     private final @NotNull HiveMQEdgeRemoteService remoteService;
     private final @NotNull ConfigurationService configurationService;
-    private final @NotNull ProtocolAdapterManager protocolAdapterManager;
+    private final @NotNull ProtocolAdapterManager2 protocolAdapterManager;
     private final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService;
     private final @NotNull TopicFilterPersistence topicFilterPersistence;
     private final @NotNull ObjectMapper objectMapper;
@@ -147,7 +147,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public ProtocolAdaptersResourceImpl(
             final @NotNull HiveMQEdgeRemoteService remoteService,
             final @NotNull ConfigurationService configurationService,
-            final @NotNull ProtocolAdapterManager protocolAdapterManager,
+            final @NotNull ProtocolAdapterManager2 protocolAdapterManager,
             final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull VersionProvider versionProvider,
@@ -242,13 +242,13 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response discoverDataPoints(
             final @NotNull String adapterId, final @Nullable String rootNode, final @Nullable Integer depth) {
-        final Optional<ProtocolAdapterWrapper> maybeWrapper =
+        final Optional<ProtocolAdapterWrapper2> maybeWrapper =
                 protocolAdapterManager.getProtocolAdapterWrapperByAdapterId(adapterId);
         if (maybeWrapper.isEmpty()) {
             return adapterNotFoundError(adapterId).get();
         }
 
-        final ProtocolAdapterWrapper wrapper = maybeWrapper.get();
+        final ProtocolAdapterWrapper2 wrapper = maybeWrapper.get();
         if (!wrapper.getAdapterInformation().getCapabilities().contains(ProtocolAdapterCapability.DISCOVER)) {
             return errorResponse(new AdapterFailedValidationError("Adapter does not support discovery"));
         }
@@ -444,7 +444,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response getAdaptersStatus() {
         final ImmutableList.Builder<@NotNull Status> builder = new ImmutableList.Builder<>();
-        for (final ProtocolAdapterWrapper instance :
+        for (final ProtocolAdapterWrapper2 instance :
                 protocolAdapterManager.getProtocolAdapters().values()) {
             builder.add(AdapterStatusModelConversionUtils.getAdapterStatus(instance));
         }
@@ -710,7 +710,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public @NotNull Response getWritingSchema(final @NotNull String adapterId, final @NotNull String tagName) {
         final String decodedTagName = URLDecoder.decode(tagName, StandardCharsets.UTF_8);
 
-        final Optional<ProtocolAdapterWrapper> maybeWrapper =
+        final Optional<ProtocolAdapterWrapper2> maybeWrapper =
                 protocolAdapterManager.getProtocolAdapterWrapperByAdapterId(adapterId);
         if (maybeWrapper.isEmpty()) {
             log.warn("The Json Schema for an adapter '{}' was requested, but the adapter does not exist.", adapterId);
@@ -1074,7 +1074,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     private @NotNull AdaptersList getAdaptersInternal(final @Nullable String adapterType) {
-        Stream<ProtocolAdapterWrapper> stream = protocolAdapterManager.getProtocolAdapters().values().stream();
+        Stream<ProtocolAdapterWrapper2> stream = protocolAdapterManager.getProtocolAdapters().values().stream();
         if (adapterType != null) {
             stream = stream.filter(
                     wrapper -> wrapper.getAdapterInformation().getProtocolId().equals(adapterType));
@@ -1082,7 +1082,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         return new AdaptersList(stream.map(this::toAdapter).toList());
     }
 
-    private @NotNull Adapter toAdapter(final @NotNull ProtocolAdapterWrapper value) {
+    private @NotNull Adapter toAdapter(final @NotNull ProtocolAdapterWrapper2 value) {
         final Thread currentThread = Thread.currentThread();
         final ClassLoader ctxClassLoader = currentThread.getContextClassLoader();
         final Map<String, Object> config;
