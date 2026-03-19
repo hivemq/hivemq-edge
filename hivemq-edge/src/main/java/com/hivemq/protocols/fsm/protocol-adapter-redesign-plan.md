@@ -896,16 +896,20 @@ public void connect(ProtocolAdapterConnectionDirection direction) throws Protoco
 **Tasks**:
 - [x] Design `ProtocolAdapter2` interface (synchronous connect/disconnect, precheck, supportsSouthbound)
 - [x] Design `ProtocolAdapterConnectionDirection` enum (Northbound, Southbound)
-- [x] Reuse existing SDK input/output types for connect/disconnect (via `ProtocolAdapterStartOutputImpl`, `ProtocolAdapterStopOutputImpl`)
 - [x] Create bridge for existing `ProtocolAdapter` → `ProtocolAdapter2` (`ProtocolAdapter2Bridge`)
 - [x] Update `ProtocolAdapterWrapper2` to use `ProtocolAdapter2`
 - [x] Update `ProtocolAdapterManager2` to wrap factory-created adapters with bridge
 - [x] Add unit tests for bridge (`ProtocolAdapter2BridgeTest`)
 
+**Note**: In Phase 5, `ProtocolAdapter2`, `ProtocolAdapterConnectionDirection`, and `ProtocolAdapter2Bridge`
+were moved from core (`com.hivemq.protocols.fsm`) to the adapter SDK (`com.hivemq.adapter.sdk.api`) to
+support the plugin architecture where adapter modules only see the SDK. The bridge uses inline anonymous
+`ProtocolAdapterStartOutput`/`ProtocolAdapterStopOutput` implementations instead of core's `*Impl` classes.
+
 **Deliverables**:
-- `ProtocolAdapter2.java`
-- `ProtocolAdapterConnectionDirection.java`
-- `ProtocolAdapter2Bridge.java` (wraps old adapters, maps start/stop to connect/disconnect)
+- `ProtocolAdapter2.java` (now in adapter SDK)
+- `ProtocolAdapterConnectionDirection.java` (now in adapter SDK)
+- `ProtocolAdapter2Bridge.java` (now in adapter SDK, wraps old adapters, maps start/stop to connect/disconnect)
 
 ### 5.3 Phase 3: Wrapper Completion
 
@@ -972,24 +976,56 @@ public void connect(ProtocolAdapterConnectionDirection direction) throws Protoco
 - Completed `ProtocolAdapterManager2.java` (with event-firing start/stop)
 - Integration tests with mock services (`ProtocolAdapterManager2Test.java` — 8 tests)
 
-### 5.5 Phase 5: Adapter Migration
+### 5.5 Phase 5: Adapter Migration (Plugin Architecture)
 
-**Status**: 🔲 Not Started
+**Status**: ✅ Complete
+
+**Design Decision**: Both options (A) new implementations AND (B) bridge pattern are used together.
+The `ProtocolAdapter2`, `ProtocolAdapterConnectionDirection`, and `ProtocolAdapter2Bridge` types live
+in the **adapter SDK** (`com.hivemq.adapter.sdk.api`), not in core. This is required because adapter
+modules only see the SDK — they cannot depend on core classes. Each module creates its own
+`*ProtocolAdapter2` subclass extending `ProtocolAdapter2Bridge` from the SDK.
+
+**Architecture**:
+- `ProtocolAdapter2` interface → `hivemq-edge-adapter-sdk` (`com.hivemq.adapter.sdk.api`)
+- `ProtocolAdapterConnectionDirection` enum → `hivemq-edge-adapter-sdk` (`com.hivemq.adapter.sdk.api`)
+- `ProtocolAdapter2Bridge` base class → `hivemq-edge-adapter-sdk` (`com.hivemq.adapter.sdk.api`)
+- `ProtocolAdapterFactory.createProtocolAdapter2()` default method → returns `new ProtocolAdapter2Bridge(...)`
+- Per-module `*ProtocolAdapter2` classes → each adapter module's own package
+- Per-module factory overrides `createProtocolAdapter2()` → returns module-specific subclass
+- Core `ProtocolAdapterManager2` calls `factory.createProtocolAdapter2(adapter, moduleServices)`
+
+**SDK constraints addressed**:
+- No SLF4J in SDK: `ProtocolAdapter2Bridge` silently catches disconnect errors (caller handles reporting)
+- No core output impl classes in SDK: uses inline anonymous `ProtocolAdapterStartOutput`/`ProtocolAdapterStopOutput`
+  with `CompletableFuture` and `AtomicReference<String>` for error messages
 
 **Tasks**:
-- [ ] Create `ProtocolAdapter2` implementations for each adapter type:
-  - [ ] OPC UA
-  - [ ] Modbus
-  - [ ] HTTP
-  - [ ] File
-  - [ ] S7/ADS (PLC4X)
-  - [ ] EtherIP
-  - [ ] MTConnect
-  - [ ] Database adapters
-- [ ] OR use bridge pattern to wrap existing adapters
+- [x] Move `ProtocolAdapter2`, `ProtocolAdapterConnectionDirection`, `ProtocolAdapter2Bridge` to adapter SDK
+- [x] Add `createProtocolAdapter2()` default method to `ProtocolAdapterFactory`
+- [x] Update `ProtocolAdapterManager2` to call `factory.createProtocolAdapter2()` instead of direct construction
+- [x] Delete core versions of `ProtocolAdapter2.java`, `ProtocolAdapter2Bridge.java`, `ProtocolAdapterConnectionDirection.java`
+- [x] Update core imports in `ProtocolAdapterWrapper2`, `ProtocolAdapterManager2`, and their tests
+- [x] Create per-module `*ProtocolAdapter2` subclasses (10 modules):
+  - [x] OPC UA (`OpcUaProtocolAdapter2` — `supportsSouthbound() → true`)
+  - [x] Modbus (`ModbusProtocolAdapter2`)
+  - [x] HTTP (`HttpProtocolAdapter2`)
+  - [x] File (`FileProtocolAdapter2`)
+  - [x] S7 (`S7ProtocolAdapter2`)
+  - [x] ADS (`ADSProtocolAdapter2`)
+  - [x] EtherIP (`EipProtocolAdapter2`)
+  - [x] MTConnect (`MtConnectProtocolAdapter2`)
+  - [x] Databases (`DatabasesProtocolAdapter2`)
+  - [x] BACnet/IP (`BacnetIpProtocolAdapter2`)
+- [x] Update all 10 factory classes to override `createProtocolAdapter2()`
+- [x] Create per-module tests for all 10 adapters
 
 **Deliverables**:
-- `ProtocolAdapter2` implementations or bridge
+- SDK: `ProtocolAdapter2.java`, `ProtocolAdapterConnectionDirection.java`, `ProtocolAdapter2Bridge.java`
+- SDK: Updated `ProtocolAdapterFactory.java` with `createProtocolAdapter2()` default method
+- 10 per-module `*ProtocolAdapter2` classes
+- 10 updated `*ProtocolAdapterFactory` classes
+- 10 per-module `*ProtocolAdapter2Test` test classes
 
 ### 5.6 Phase 6: Integration & Testing
 
@@ -1022,6 +1058,37 @@ public void connect(ProtocolAdapterConnectionDirection direction) throws Protoco
 - Feature flag configuration
 - Migration documentation
 - Production deployment plan
+
+### 5.8 Phase 8: Post-Migration Cleanup
+
+**Status**: 🔲 Not Started
+
+**Goals**:
+
+1. **Remove `ProtocolAdapter2Bridge`**: The bridge exists only to wrap the old `ProtocolAdapter` interface
+   during the transition. Once all adapters implement `ProtocolAdapter2` natively (i.e., their connect/disconnect
+   logic no longer delegates to the old start/stop callbacks), `ProtocolAdapter2Bridge` is deleted from the SDK.
+   Each adapter's `*ProtocolAdapter2` class becomes a standalone implementation of `ProtocolAdapter2`.
+
+2. **Merge `ProtocolAdapter2` back into `ProtocolAdapter`**: The `ProtocolAdapter2` interface is a temporary
+   parallel interface. After migration, its API (synchronous `connect(direction)`, `disconnect(direction)`,
+   `precheck()`, `supportsSouthbound()`, `destroy()`) becomes the sole `ProtocolAdapter` contract. The old
+   `ProtocolAdapter` interface (with async `start(input, output)` / `stop(input, output)`) is removed, and
+   `ProtocolAdapter2` is renamed to `ProtocolAdapter`.
+
+**Tasks**:
+- [ ] Migrate each adapter's connect/disconnect logic out of the old start/stop callback pattern
+- [ ] Remove `ProtocolAdapter2Bridge` from the adapter SDK
+- [ ] Merge `ProtocolAdapter2` API into `ProtocolAdapter`
+- [ ] Remove old `ProtocolAdapter` interface
+- [ ] Update all adapter modules to implement the unified `ProtocolAdapter`
+- [ ] Remove old `ProtocolAdapterWrapper`, `ProtocolAdapterManager`, and related classes from core
+- [ ] Update tests
+
+**Deliverables**:
+- Single `ProtocolAdapter` interface with synchronous FSM-based lifecycle
+- No bridge classes
+- Clean adapter SDK without transitional types
 
 ---
 
@@ -1088,7 +1155,10 @@ Until switchover:
    - (B) Use a bridge pattern to wrap existing adapters?
    - (C) Modify existing adapters to support both interfaces?
 
-   **Recommendation**: Option (B) for initial migration, then (A) for new adapters.
+   **Decision**: Combined (A) + (B). `ProtocolAdapter2Bridge` in the SDK provides the bridge base class.
+   Each module creates a per-module subclass (e.g., `ModbusProtocolAdapter2 extends ProtocolAdapter2Bridge`)
+   that can override behavior like `supportsSouthbound()`. The factory default returns the generic bridge
+   for unmigrated modules. This was chosen because the plugin architecture requires types to live in the SDK.
 
 2. **Connection Timeout Configuration**: Should timeout be:
    - (A) Configured per-adapter in adapter config?
@@ -1108,15 +1178,12 @@ Until switchover:
 
 ## 10. Appendix: File List
 
-### Source Files (Phase 1–4 deliverables)
+### Source Files (Phase 1–4 deliverables, core)
 
 ```
-src/main/java/com/hivemq/protocols/fsm/
+hivemq-edge/hivemq-edge/src/main/java/com/hivemq/protocols/fsm/
 ├── ClassLoaderUtils.java                          # ClassLoader context utility (Phase 1)
 ├── I18nProtocolAdapterMessage.java                # I18n error/message templates (Phase 1)
-├── ProtocolAdapter2.java                          # New adapter interface (Phase 2)
-├── ProtocolAdapter2Bridge.java                    # Bridge: old ProtocolAdapter → ProtocolAdapter2 (Phase 2)
-├── ProtocolAdapterConnectionDirection.java        # Connection direction enum with isNorthbound()/isSouthbound() (Phase 2)
 ├── ProtocolAdapterConnectionState.java            # Connection FSM enum (Phase 1)
 ├── ProtocolAdapterConnectionTransitionResponse.java # Connection transition response record (Phase 1)
 ├── ProtocolAdapterManager2.java                   # Manager with CRUD, refresh, event-firing start/stop (Phase 4)
@@ -1125,13 +1192,39 @@ src/main/java/com/hivemq/protocols/fsm/
 ├── ProtocolAdapterTransitionResponse.java         # Adapter transition response record (Phase 1)
 ├── ProtocolAdapterTransitionStatus.java           # Transition status enum (Phase 1)
 ├── ProtocolAdapterWrapper2.java                   # Wrapper with FSM, listeners, service hooks (Phase 3)
-└── ProtocolAdapterStateChangeListener.java                       # State change notification interface (Phase 3)
+└── ProtocolAdapterStateChangeListener.java        # State change notification interface (Phase 3)
 ```
 
-### Test Files
+### Source Files (Phase 5, adapter SDK)
 
 ```
-src/test/java/com/hivemq/protocols/fsm/
+hivemq-edge-adapter-sdk/src/main/java/com/hivemq/adapter/sdk/api/
+├── ProtocolAdapter2.java                          # New adapter interface (moved from core in Phase 5)
+├── ProtocolAdapter2Bridge.java                    # Bridge: old ProtocolAdapter → ProtocolAdapter2 (moved from core in Phase 5)
+├── ProtocolAdapterConnectionDirection.java        # Connection direction enum (moved from core in Phase 5)
+└── factories/
+    └── ProtocolAdapterFactory.java                # Updated with createProtocolAdapter2() default method (Phase 5)
+```
+
+### Source Files (Phase 5, per-module ProtocolAdapter2 classes)
+
+```
+hivemq-edge/modules/hivemq-edge-module-opcua/.../opcua/OpcUaProtocolAdapter2.java           # supportsSouthbound() → true
+hivemq-edge/modules/hivemq-edge-module-modbus/.../modbus/ModbusProtocolAdapter2.java
+hivemq-edge/modules/hivemq-edge-module-http/.../http/HttpProtocolAdapter2.java
+hivemq-edge/modules/hivemq-edge-module-file/.../file/FileProtocolAdapter2.java
+hivemq-edge/modules/hivemq-edge-module-plc4x/.../plc4x/types/siemens/S7ProtocolAdapter2.java
+hivemq-edge/modules/hivemq-edge-module-plc4x/.../plc4x/types/ads/ADSProtocolAdapter2.java
+hivemq-edge/modules/hivemq-edge-module-etherip/.../etherip/EipProtocolAdapter2.java
+hivemq-edge/modules/hivemq-edge-module-mtconnect/.../mtconnect/MtConnectProtocolAdapter2.java
+hivemq-edge/modules/hivemq-edge-module-databases/.../databases/DatabasesProtocolAdapter2.java
+hivemq-edge-module-bacnetip/.../bacnetip/BacnetIpProtocolAdapter2.java
+```
+
+### Test Files (core)
+
+```
+hivemq-edge/hivemq-edge/src/test/java/com/hivemq/protocols/fsm/
 ├── ProtocolAdapter2BridgeTest.java                # Bridge tests (Phase 2, 10 tests)
 ├── ProtocolAdapterConnectionStateTest.java        # Connection FSM transition tests (Phase 1)
 ├── ProtocolAdapterManager2Test.java               # Manager tests with mocks (Phase 4, 8 tests)
@@ -1139,10 +1232,25 @@ src/test/java/com/hivemq/protocols/fsm/
 └── ProtocolAdapterWrapperTest.java                # Wrapper lifecycle, listeners, hooks (Phase 3, 32 tests)
 ```
 
+### Test Files (Phase 5, per-module)
+
+```
+hivemq-edge/modules/hivemq-edge-module-opcua/.../opcua/OpcUaProtocolAdapter2Test.java
+hivemq-edge/modules/hivemq-edge-module-modbus/.../modbus/ModbusProtocolAdapter2Test.java
+hivemq-edge/modules/hivemq-edge-module-http/.../http/HttpProtocolAdapter2Test.java
+hivemq-edge/modules/hivemq-edge-module-file/.../file/FileProtocolAdapter2Test.java
+hivemq-edge/modules/hivemq-edge-module-plc4x/.../plc4x/types/siemens/S7ProtocolAdapter2Test.java
+hivemq-edge/modules/hivemq-edge-module-plc4x/.../plc4x/types/ads/ADSProtocolAdapter2Test.java
+hivemq-edge/modules/hivemq-edge-module-etherip/.../etherip/EipProtocolAdapter2Test.java
+hivemq-edge/modules/hivemq-edge-module-mtconnect/.../mtconnect/MtConnectProtocolAdapter2Test.java
+hivemq-edge/modules/hivemq-edge-module-databases/.../databases/DatabasesProtocolAdapter2Test.java
+hivemq-edge-module-bacnetip/.../bacnetip/BacnetIpProtocolAdapter2Test.java
+```
+
 ### Files to Keep Unchanged (Old Design)
 
 ```
-src/main/java/com/hivemq/protocols/
+hivemq-edge/hivemq-edge/src/main/java/com/hivemq/protocols/
 ├── ProtocolAdapterManager.java             # Old manager
 ├── ProtocolAdapterWrapper.java             # Old wrapper
 └── ... all other existing files ...
@@ -1150,7 +1258,7 @@ src/main/java/com/hivemq/protocols/
 
 ---
 
-**Document Version**: 1.3
-**Last Updated**: 2026-03-17
+**Document Version**: 1.4
+**Last Updated**: 2026-03-19
 **Author**: Claude (AI Assistant)
-**Status**: IN PROGRESS (Phase 1 & 2 complete, Phase 3 core lifecycle complete, Phase 4 in progress)
+**Status**: IN PROGRESS (Phase 1–5 complete, Phase 6 not started)

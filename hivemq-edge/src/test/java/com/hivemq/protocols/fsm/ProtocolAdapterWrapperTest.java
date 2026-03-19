@@ -23,6 +23,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.hivemq.adapter.sdk.api.ProtocolAdapter2;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import java.util.ArrayList;
 import java.util.List;
