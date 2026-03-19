@@ -1090,84 +1090,182 @@ not the test. Fix the implementation to match the expected behavior.
 - `hivemq-edge` compiles cleanly (main + test), FSM + protocols tests pass
 - All existing `hivemq-edge-test` tests passing (pending — user to run manually)
 
-### 5.7 Phase 7: Merge `ProtocolAdapter2` into `ProtocolAdapter`
+### 5.7 Phase 7: Rename, Merge, and Remove Old Code
 
 **Status**: 🔲 Not Started
 
-**Goal**: `ProtocolAdapter2` is a temporary parallel interface. Its API (`connect(direction)`,
-`disconnect(direction)`, `precheck()`, `supportsSouthbound()`, `destroy()`) is merged into the existing
-`ProtocolAdapter` interface, replacing the old async `start(input, output)` / `stop(input, output)` contract.
+**Goal**: Remove the `2` suffix from all classes created in this redesign, merge the old interfaces
+into their replacements, remove all dead old code, and leave a clean codebase with no parallel
+implementations. All renamed classes stay in the `fsm` package (or the adapter SDK for SDK types).
 
-**Tasks**:
-- [ ] Add the `ProtocolAdapter2` methods to the `ProtocolAdapter` interface
-- [ ] Update all adapter implementations to implement the new methods directly on `ProtocolAdapter`
-- [ ] Remove the `ProtocolAdapter2` interface
-- [ ] Remove `ProtocolAdapter2Bridge` from the adapter SDK (no longer needed — adapters implement `ProtocolAdapter` directly)
-- [ ] Remove per-module `*ProtocolAdapter2` classes (their logic moves into the adapter classes themselves)
-- [ ] Remove `ProtocolAdapterFactory.createProtocolAdapter2()` — the factory returns `ProtocolAdapter` directly
-- [ ] Update core (`ProtocolAdapterWrapper2`, `ProtocolAdapterManager2`) to use `ProtocolAdapter` instead of `ProtocolAdapter2`
-- [ ] Remove `ProtocolAdapterWrapper`, `ProtocolAdapterManager`
-- [ ] Rename `ProtocolAdapterWrapper2` to `ProtocolAdapterWrapper`, `ProtocolAdapterManager2` to `ProtocolAdapterManager`
-- [ ] Run the tests under ``src/test/java/com/hivemq/edge/modules` in `hivemq-edge-test` suite — fix implementation until all tests pass
+**Inventory of all `*2` classes to rename or remove**:
+
+| Current Name | Action | Final Name / Location |
+|---|---|---|
+| `ProtocolAdapter2` (SDK) | Merge into `ProtocolAdapter` | `ProtocolAdapter` (`com.hivemq.adapter.sdk.api`) |
+| `ProtocolAdapter2Bridge` (SDK) | Delete | _(bridge logic becomes default methods on `ProtocolAdapter`)_ |
+| `ProtocolAdapterWrapper2` (fsm) | Rename | `ProtocolAdapterWrapper` (`com.hivemq.protocols.fsm`) |
+| `ProtocolAdapterManager2` (fsm) | Rename | `ProtocolAdapterManager` (`com.hivemq.protocols.fsm`) |
+| `ProtocolAdapter2BridgeTest` (fsm test) | Delete | _(bridge removed; coverage moves to wrapper + adapter tests)_ |
+| `ProtocolAdapterManager2Test` (fsm test) | Rename | `ProtocolAdapterManagerTest` (`com.hivemq.protocols.fsm`) |
+| 10× per-module `*ProtocolAdapter2` | Delete | _(bridge subclasses; no longer needed)_ |
+| 10× per-module `*ProtocolAdapter2Test` | Rename (drop `2`) | Same package, test factory wiring + `supportsSouthbound()` |
+
+**Old code to delete**:
+
+| File | Package | Reason |
+|---|---|---|
+| `ProtocolAdapterWrapper.java` | `com.hivemq.protocols` | Replaced by fsm `ProtocolAdapterWrapper` |
+| `ProtocolAdapterManager.java` | `com.hivemq.protocols` | Replaced by fsm `ProtocolAdapterManager` |
+| `ProtocolAdapterManagerTest.java` | `com.hivemq.protocols` | `@Disabled`, coverage carried over |
+| `ProtocolAdapterWrapperShutdownRaceConditionTest.java` | `com.hivemq.protocols` | `@Disabled`, coverage carried over |
+| Any other code only referenced by the above | — | Dead code cleanup |
+
+#### Step 1: Merge `ProtocolAdapter2` into `ProtocolAdapter`, remove bridge (SDK)
+
+The old `ProtocolAdapter` interface absorbs the new lifecycle methods from `ProtocolAdapter2`.
+The bridge translation logic (mapping `connect()` → old `start()`, `disconnect()` → old `stop()`)
+becomes **default methods** on `ProtocolAdapter` itself, so existing adapter implementations compile
+and work without changes. Each adapter can later override these defaults to implement the new
+lifecycle directly — but that is out of scope for this phase.
+
+The old async methods (`start(input, output)`, `stop(input, output)`) remain on the interface for now.
+They are called by the default `connect()`/`disconnect()` implementations. Once all adapters are
+migrated to override `connect()`/`disconnect()` directly, the old methods can be removed in a
+future cleanup.
+
+- [ ] Add `connect(direction)`, `disconnect(direction)`, `precheck()`, `supportsSouthbound()` to
+      `ProtocolAdapter` with default implementations:
+  - `connect(Northbound)` default: calls `start(input, output)`, blocks on output future (logic from `ProtocolAdapter2Bridge.connect()`)
+  - `connect(Southbound)` default: no-op (old adapters handle southbound internally)
+  - `disconnect(Northbound)` default: calls `stop(input, output)`, blocks on output future (logic from `ProtocolAdapter2Bridge.disconnect()`)
+  - `disconnect(Southbound)` default: no-op
+  - `precheck()` default: no-op
+  - `supportsSouthbound()` default: checks `getProtocolAdapterInformation().getCapabilities().contains(WRITE)`
+- [ ] Delete `ProtocolAdapter2.java` from the SDK
+- [ ] Delete `ProtocolAdapter2Bridge.java` from the SDK
+- [ ] Delete `ProtocolAdapter2BridgeTest.java` from core tests (bridge no longer exists;
+      the default-method behavior is covered by wrapper tests and integration tests)
+- [ ] Remove `ProtocolAdapterFactory.createProtocolAdapter2()` — the factory's existing
+      `createAdapter()` returns `ProtocolAdapter` which now has the new methods via defaults
+- [ ] Update `ProtocolAdapterWrapper2` to use `ProtocolAdapter` instead of `ProtocolAdapter2`
+- [ ] Update `ProtocolAdapterManager2.createProtocolAdapter()` to use `factory.createAdapter()` directly
+      (no bridge wrapping step)
+- [ ] Update all remaining imports that referenced `ProtocolAdapter2` or `ProtocolAdapter2Bridge`
+
+#### Step 2: Remove per-module `*ProtocolAdapter2` classes, rename tests (10 modules)
+
+The per-module bridge subclasses are no longer needed — `ProtocolAdapter` has a default
+`supportsSouthbound()` that checks capabilities, so no per-module override is required.
+
+The per-module tests are kept — they validate that each factory creates an adapter with the
+correct `supportsSouthbound()` behavior and other factory wiring. They are renamed to drop the
+`2` suffix.
+
+- [ ] Delete all 10 per-module `*ProtocolAdapter2.java` source files
+- [ ] Rename all 10 per-module `*ProtocolAdapter2Test.java` → drop the `2` suffix
+- [ ] Update renamed tests to call `factory.createAdapter()` and assert `supportsSouthbound()`,
+      `connect()`, `disconnect()` behavior directly on the returned `ProtocolAdapter`
+
+Source files deleted:
+```
+modules/hivemq-edge-module-opcua/.../OpcUaProtocolAdapter2.java
+modules/hivemq-edge-module-modbus/.../ModbusProtocolAdapter2.java
+modules/hivemq-edge-module-http/.../HttpProtocolAdapter2.java
+modules/hivemq-edge-module-file/.../FileProtocolAdapter2.java
+modules/hivemq-edge-module-plc4x/.../siemens/S7ProtocolAdapter2.java
+modules/hivemq-edge-module-plc4x/.../ads/ADSProtocolAdapter2.java
+modules/hivemq-edge-module-etherip/.../EipProtocolAdapter2.java
+modules/hivemq-edge-module-mtconnect/.../MtConnectProtocolAdapter2.java
+modules/hivemq-edge-module-databases/.../DatabasesProtocolAdapter2.java
+hivemq-edge-module-bacnetip/.../BacnetIpProtocolAdapter2.java
+```
+
+Test files renamed:
+```
+OpcUaProtocolAdapter2Test     → OpcUaProtocolAdapterTest
+ModbusProtocolAdapter2Test    → ModbusProtocolAdapterTest
+HttpProtocolAdapter2Test      → HttpProtocolAdapterTest
+FileProtocolAdapter2Test      → FileProtocolAdapterTest
+S7ProtocolAdapter2Test        → S7ProtocolAdapterTest
+ADSProtocolAdapter2Test       → ADSProtocolAdapterTest
+EipProtocolAdapter2Test       → EipProtocolAdapterTest
+MtConnectProtocolAdapter2Test → MtConnectProtocolAdapterTest
+DatabasesProtocolAdapter2Test → DatabasesProtocolAdapterTest
+BacnetIpProtocolAdapter2Test  → BacnetIpProtocolAdapterTest
+```
+
+#### Step 4: Rename core classes (fsm package)
+
+These renames are safe because the old classes live in `com.hivemq.protocols` (different package).
+Both old and new coexist until Step 5 deletes the old ones.
+
+- [ ] Rename `ProtocolAdapterWrapper2.java` → `ProtocolAdapterWrapper.java` (in `com.hivemq.protocols.fsm`)
+- [ ] Rename `ProtocolAdapterManager2.java` → `ProtocolAdapterManager.java` (in `com.hivemq.protocols.fsm`)
+- [ ] Rename `ProtocolAdapterManager2Test.java` → `ProtocolAdapterManagerTest.java` (in `com.hivemq.protocols.fsm`)
+- [ ] Update all references:
+  - `Injector.java`: `ProtocolAdapterManager2` → `ProtocolAdapterManager` (import changes from `protocols.fsm.ProtocolAdapterManager2` → `protocols.fsm.ProtocolAdapterManager`)
+  - `AfterHiveMQStartBootstrapService.java` + `Impl`: same
+  - `HiveMQEdgeGateway.java`: same
+  - `ProtocolAdaptersResourceImpl.java`: both manager and wrapper
+  - `FrontendResourceImpl.java`: manager
+  - `ProtocolAdapterApiUtils.java`: manager
+  - `AdapterStatusModelConversionUtils.java`: wrapper
+  - `AbstractSubscriptionSampler.java`: wrapper
+  - `NorthboundConsumerFactory.java`, `NorthboundTagConsumer.java`: wrapper
+  - `PerAdapterSampler.java`, `PerContextSampler.java`: wrapper
+  - `ExtendedAfterHiveMQStartBootstrapService.java` (commercial): manager
+  - `ProtocolAdaptersResourceImplTest.java`: manager
+  - `AdapterAssertions.java` (hivemq-edge-test): manager and wrapper
+- [ ] Compile and run `./gradlew :hivemq-edge-build:hivemq-edge:test --tests "com.hivemq.protocols.fsm.*"`
+
+#### Step 5: Delete old code
+
+With the renamed classes in place and all references updated, the old parallel implementation is dead code.
+
+- [ ] Delete `com.hivemq.protocols.ProtocolAdapterWrapper.java`
+- [ ] Delete `com.hivemq.protocols.ProtocolAdapterManager.java`
+- [ ] Delete `com.hivemq.protocols.ProtocolAdapterManagerTest.java` (`@Disabled`)
+- [ ] Delete `com.hivemq.protocols.ProtocolAdapterWrapperShutdownRaceConditionTest.java` (`@Disabled`)
+- [ ] Keep `ProtocolAdapterStartOutputImpl.java`, `ProtocolAdapterStopOutputImpl.java` (used by OPC UA tests and default methods)
+- [ ] Scan for any remaining dead code only referenced by the above (output classes, listener interfaces, etc.)
+- [ ] Run adapter integration tests — fix implementation until all tests pass:
+      `./gradlew :hivemq-edge-test:test --tests "com.hivemq.edge.modules.*"`
+
+#### Step 6: Final verification
+
+- [ ] `./gradlew :hivemq-edge-build:hivemq-edge:test --tests "com.hivemq.protocols.fsm.*"` — all unit tests pass
+- [ ] `./gradlew :hivemq-edge-test:test --tests "com.hivemq.edge.modules.*"` — all adapter integration tests pass
+- [ ] No class in the codebase has a `2` suffix from this redesign
+- [ ] No class in `com.hivemq.protocols` duplicates a class in `com.hivemq.protocols.fsm`
+- [ ] `grep -r "ProtocolAdapter2\|ProtocolAdapterWrapper2\|ProtocolAdapterManager2" --include="*.java"` returns zero results (excluding build dirs)
+
+**Principle**: The existing tests define the correct behavior. If a test fails, the implementation
+is fixed, not the test. Each step should be compilable and testable before proceeding to the next.
 
 **Deliverables**:
-- Single `ProtocolAdapter` interface with synchronous FSM-based lifecycle
-- No `ProtocolAdapter2`, no `ProtocolAdapter2Bridge`, no per-module `*ProtocolAdapter2` classes
-- All existing `hivemq-edge-test` tests passing
-
-### 5.8 Phase 8: Old Code Removal
-
-**Status**: 🔲 Not Started
-
-**Goal**: Remove all old implementation code that is no longer referenced after the switchover.
-
-**Tasks**:
-- [ ] Remove old `ProtocolAdapterWrapper` from core
-- [ ] Remove old `ProtocolAdapterManager` from core
-- [ ] Remove old async start/stop methods from `ProtocolAdapter` (if any remain)
-- [ ] Remove old output impl classes (`ProtocolAdapterStartOutputImpl`, `ProtocolAdapterStopOutputImpl`) if unused
-- [ ] Remove any other dead code left over from the old design
-- [ ] Run the full `hivemq-edge-test` suite — fix until all tests pass
-
-**Deliverables**:
-- Clean codebase with no dead old-design code
-- All existing `hivemq-edge-test` tests passing
-
-### 5.9 Phase 9: Remove `2` Suffix from Class Names
-
-**Status**: 🔲 Not Started
-
-**Goal**: With the old implementations removed, the `2` suffix on new classes is no longer meaningful.
-Rename all `*2` classes to drop the suffix so the codebase uses clean, final names.
-
-**Renames**:
-- `ProtocolAdapterWrapper2` → `ProtocolAdapterWrapper`
-- `ProtocolAdapterManager2` → `ProtocolAdapterManager`
-- Any other classes or test files with a `2` suffix introduced by this redesign
-
-**Tasks**:
-- [ ] Rename classes and files
-- [ ] Update all references (imports, DI bindings, configuration, etc.)
-- [ ] Rename corresponding test classes (e.g., `ProtocolAdapterWrapper2Test` → `ProtocolAdapterWrapperTest`)
-- [ ] Run the full `hivemq-edge-test` suite — fix until all tests pass
-
-**Deliverables**:
+- Single `ProtocolAdapter` interface with both old and new lifecycle methods (SDK)
+- `ProtocolAdapterBridge` replaces `ProtocolAdapter2Bridge` (SDK)
+- `ProtocolAdapterWrapper` in `com.hivemq.protocols.fsm` (no old duplicate)
+- `ProtocolAdapterManager` in `com.hivemq.protocols.fsm` (no old duplicate)
 - No `*2` suffixed class names remain
-- All existing `hivemq-edge-test` tests passing
+- No per-module bridge subclasses remain
+- No old dead code from the previous design
+- All `com.hivemq.edge.modules.*` tests in `hivemq-edge-test` passing
 
 ---
 
 ## 6. Test Strategy
 
-### 6.1 Primary Validation: `hivemq-edge-test`
+### 6.1 Primary Validation: `hivemq-edge-test` (adapter modules only)
 
-The existing comprehensive test suite in `hivemq-edge-test` is the primary validation gate for the migration.
-No new integration tests are created specifically for the FSM redesign. Instead, the new implementation must
-pass all existing tests — this ensures behavioral compatibility with the old design.
+The adapter integration tests under `src/test/java/com/hivemq/edge/modules` in `hivemq-edge-test`
+are the validation gate for the migration. The new implementation must pass all these tests —
+this ensures behavioral compatibility with the old design.
 
 **Validation command** (from `hivemq-edge-composite`):
 ```
-./gradlew :hivemq-edge-test:test
+./gradlew :hivemq-edge-test:test --tests "com.hivemq.edge.modules.*"
 ```
 
 ### 6.2 Unit Tests (Phase 1–6)
@@ -1211,8 +1309,9 @@ The existing tests define the correct behavior contract.
 4. Error recovery works correctly
 5. No performance regression (< 5% slower startup)
 6. Code complexity reduced (fewer callbacks, no nested futures)
-7. Single `ProtocolAdapter` interface — no `ProtocolAdapter2`, no bridge
-8. No old dead code remaining (`ProtocolAdapterWrapper`, `ProtocolAdapterManager`, etc.)
+7. Single `ProtocolAdapter` interface — no `ProtocolAdapter2`, bridge is a helper not a parallel interface
+8. No old dead code remaining (`ProtocolAdapterWrapper`, `ProtocolAdapterManager` in `com.hivemq.protocols`)
+9. No `*2` suffixed class names remain anywhere in the codebase
 
 ---
 
@@ -1246,82 +1345,94 @@ The existing tests define the correct behavior contract.
 
 ## 10. Appendix: File List
 
-### Source Files (Phase 1–4 deliverables, core)
+### Source Files — Final State After Phase 7 (core, fsm package)
 
 ```
 hivemq-edge/hivemq-edge/src/main/java/com/hivemq/protocols/fsm/
-├── ClassLoaderUtils.java                          # ClassLoader context utility (Phase 1)
-├── I18nProtocolAdapterMessage.java                # I18n error/message templates (Phase 1)
-├── ProtocolAdapterConnectionState.java            # Connection FSM enum (Phase 1)
-├── ProtocolAdapterConnectionTransitionResponse.java # Connection transition response record (Phase 1)
-├── ProtocolAdapterManager2.java                   # Manager with CRUD, refresh, event-firing start/stop (Phase 4)
-├── ProtocolAdapterManagerState.java               # Manager-level state enum (Phase 1)
-├── ProtocolAdapterState.java                      # Adapter FSM enum (Phase 1)
-├── ProtocolAdapterTransitionResponse.java         # Adapter transition response record (Phase 1)
-├── ProtocolAdapterTransitionStatus.java           # Transition status enum (Phase 1)
-├── ProtocolAdapterWrapper2.java                   # Wrapper with FSM, listeners, service hooks (Phase 3)
-└── ProtocolAdapterStateChangeListener.java        # State change notification interface (Phase 3)
+├── ClassLoaderUtils.java                          # ClassLoader context utility
+├── I18nProtocolAdapterMessage.java                # I18n error/message templates
+├── ProtocolAdapterConnectionState.java            # Connection FSM enum
+├── ProtocolAdapterConnectionTransitionResponse.java # Connection transition response record
+├── ProtocolAdapterManager.java                    # Manager (renamed from ProtocolAdapterManager2)
+├── ProtocolAdapterManagerState.java               # Manager-level state enum
+├── ProtocolAdapterState.java                      # Adapter FSM enum
+├── ProtocolAdapterStateChangeListener.java        # State change notification interface
+├── ProtocolAdapterTransitionResponse.java         # Adapter transition response record
+├── ProtocolAdapterTransitionStatus.java           # Transition status enum
+└── ProtocolAdapterWrapper.java                    # Wrapper (renamed from ProtocolAdapterWrapper2)
 ```
 
-### Source Files (Phase 5, adapter SDK)
+### Source Files — Final State After Phase 7 (adapter SDK)
 
 ```
 hivemq-edge-adapter-sdk/src/main/java/com/hivemq/adapter/sdk/api/
-├── ProtocolAdapter2.java                          # New adapter interface (moved from core in Phase 5)
-├── ProtocolAdapter2Bridge.java                    # Bridge: old ProtocolAdapter → ProtocolAdapter2 (moved from core in Phase 5)
-├── ProtocolAdapterConnectionDirection.java        # Connection direction enum (moved from core in Phase 5)
+├── ProtocolAdapter.java                           # Merged interface (old + new methods)
+├── ProtocolAdapterBridge.java                     # Bridge (renamed from ProtocolAdapter2Bridge)
+├── ProtocolAdapterConnectionDirection.java        # Connection direction enum
 └── factories/
-    └── ProtocolAdapterFactory.java                # Updated with createProtocolAdapter2() default method (Phase 5)
+    └── ProtocolAdapterFactory.java                # createProtocolAdapterBridge() (renamed from createProtocolAdapter2())
 ```
 
-### Source Files (Phase 5, per-module ProtocolAdapter2 classes)
-
-```
-hivemq-edge/modules/hivemq-edge-module-opcua/.../opcua/OpcUaProtocolAdapter2.java           # supportsSouthbound() → true
-hivemq-edge/modules/hivemq-edge-module-modbus/.../modbus/ModbusProtocolAdapter2.java
-hivemq-edge/modules/hivemq-edge-module-http/.../http/HttpProtocolAdapter2.java
-hivemq-edge/modules/hivemq-edge-module-file/.../file/FileProtocolAdapter2.java
-hivemq-edge/modules/hivemq-edge-module-plc4x/.../plc4x/types/siemens/S7ProtocolAdapter2.java
-hivemq-edge/modules/hivemq-edge-module-plc4x/.../plc4x/types/ads/ADSProtocolAdapter2.java
-hivemq-edge/modules/hivemq-edge-module-etherip/.../etherip/EipProtocolAdapter2.java
-hivemq-edge/modules/hivemq-edge-module-mtconnect/.../mtconnect/MtConnectProtocolAdapter2.java
-hivemq-edge/modules/hivemq-edge-module-databases/.../databases/DatabasesProtocolAdapter2.java
-hivemq-edge-module-bacnetip/.../bacnetip/BacnetIpProtocolAdapter2.java
-```
-
-### Test Files (core)
+### Test Files — Final State After Phase 7 (core)
 
 ```
 hivemq-edge/hivemq-edge/src/test/java/com/hivemq/protocols/fsm/
-├── ProtocolAdapter2BridgeTest.java                # Bridge tests (Phase 2, 10 tests)
-├── ProtocolAdapterConnectionStateTest.java        # Connection FSM transition tests (Phase 1)
-├── ProtocolAdapterManager2Test.java               # Manager tests with mocks (Phase 4, 8 tests)
-├── ProtocolAdapterStateTest.java                  # Adapter FSM transition tests (Phase 1)
-└── ProtocolAdapterWrapperTest.java                # Wrapper lifecycle, listeners, hooks (Phase 3, 32 tests)
+├── ProtocolAdapterBridgeTest.java                 # Bridge tests (renamed from ProtocolAdapter2BridgeTest)
+├── ProtocolAdapterConnectionStateTest.java        # Connection FSM transition tests
+├── ProtocolAdapterManagerTest.java                # Manager tests (renamed from ProtocolAdapterManager2Test)
+├── ProtocolAdapterStateTest.java                  # Adapter FSM transition tests
+└── ProtocolAdapterWrapperTest.java                # Wrapper lifecycle, listeners, hooks
 ```
 
-### Test Files (Phase 5, per-module)
+### Files Deleted in Phase 7
 
 ```
-hivemq-edge/modules/hivemq-edge-module-opcua/.../opcua/OpcUaProtocolAdapter2Test.java
-hivemq-edge/modules/hivemq-edge-module-modbus/.../modbus/ModbusProtocolAdapter2Test.java
-hivemq-edge/modules/hivemq-edge-module-http/.../http/HttpProtocolAdapter2Test.java
-hivemq-edge/modules/hivemq-edge-module-file/.../file/FileProtocolAdapter2Test.java
-hivemq-edge/modules/hivemq-edge-module-plc4x/.../plc4x/types/siemens/S7ProtocolAdapter2Test.java
-hivemq-edge/modules/hivemq-edge-module-plc4x/.../plc4x/types/ads/ADSProtocolAdapter2Test.java
-hivemq-edge/modules/hivemq-edge-module-etherip/.../etherip/EipProtocolAdapter2Test.java
-hivemq-edge/modules/hivemq-edge-module-mtconnect/.../mtconnect/MtConnectProtocolAdapter2Test.java
-hivemq-edge/modules/hivemq-edge-module-databases/.../databases/DatabasesProtocolAdapter2Test.java
-hivemq-edge-module-bacnetip/.../bacnetip/BacnetIpProtocolAdapter2Test.java
+# Old parallel implementation (com.hivemq.protocols)
+ProtocolAdapterWrapper.java
+ProtocolAdapterManager.java
+ProtocolAdapterManagerTest.java (@Disabled)
+ProtocolAdapterWrapperShutdownRaceConditionTest.java (@Disabled)
+
+# SDK (merged/renamed — old files deleted, new files created)
+ProtocolAdapter2.java (merged into ProtocolAdapter)
+ProtocolAdapter2Bridge.java (deleted)
+
+# Per-module bridge subclasses (source only — tests are renamed, not deleted)
+OpcUaProtocolAdapter2.java
+ModbusProtocolAdapter2.java
+HttpProtocolAdapter2.java
+FileProtocolAdapter2.java
+S7ProtocolAdapter2.java
+ADSProtocolAdapter2.java
+EipProtocolAdapter2.java
+MtConnectProtocolAdapter2.java
+DatabasesProtocolAdapter2.java
+BacnetIpProtocolAdapter2.java
 ```
 
-### Files to Keep Unchanged (Old Design)
+### Files Renamed in Phase 7
 
 ```
-hivemq-edge/hivemq-edge/src/main/java/com/hivemq/protocols/
-├── ProtocolAdapterManager.java             # Old manager
-├── ProtocolAdapterWrapper.java             # Old wrapper
-└── ... all other existing files ...
+# Core (fsm package)
+ProtocolAdapterWrapper2.java       → ProtocolAdapterWrapper.java
+ProtocolAdapterManager2.java       → ProtocolAdapterManager.java
+ProtocolAdapter2BridgeTest.java    → ProtocolAdapterBridgeTest.java
+ProtocolAdapterManager2Test.java   → ProtocolAdapterManagerTest.java
+
+# SDK
+ProtocolAdapter2Bridge.java        → ProtocolAdapterBridge.java
+
+# Per-module tests (renamed + updated to test factory→bridge wiring)
+OpcUaProtocolAdapter2Test.java     → OpcUaProtocolAdapterBridgeTest.java
+ModbusProtocolAdapter2Test.java    → ModbusProtocolAdapterBridgeTest.java
+HttpProtocolAdapter2Test.java      → HttpProtocolAdapterBridgeTest.java
+FileProtocolAdapter2Test.java      → FileProtocolAdapterBridgeTest.java
+S7ProtocolAdapter2Test.java        → S7ProtocolAdapterBridgeTest.java
+ADSProtocolAdapter2Test.java       → ADSProtocolAdapterBridgeTest.java
+EipProtocolAdapter2Test.java       → EipProtocolAdapterBridgeTest.java
+MtConnectProtocolAdapter2Test.java → MtConnectProtocolAdapterBridgeTest.java
+DatabasesProtocolAdapter2Test.java → DatabasesProtocolAdapterBridgeTest.java
+BacnetIpProtocolAdapter2Test.java  → BacnetIpProtocolAdapterBridgeTest.java
 ```
 
 ---
@@ -1330,51 +1441,29 @@ hivemq-edge/hivemq-edge/src/main/java/com/hivemq/protocols/
 
 All commands run from `hivemq-edge-composite/`.
 
-### Core FSM tests (75 tests)
+### Core FSM tests
 
 ```
 ./gradlew :hivemq-edge-build:hivemq-edge:test --tests "com.hivemq.protocols.fsm.*"
 ```
 
-### Per-module adapter tests (10 modules)
+### Adapter integration validation (Phase 7 gate)
 
 ```
-./gradlew :hivemq-edge-build:hivemq-edge-module-etherip:test --tests "*EipProtocolAdapter2Test"
-./gradlew :hivemq-edge-build:hivemq-edge-module-file:test --tests "*FileProtocolAdapter2Test"
-./gradlew :hivemq-edge-build:hivemq-edge-module-http:test --tests "*HttpProtocolAdapter2Test"
-./gradlew :hivemq-edge-build:hivemq-edge-module-modbus:test --tests "*ModbusProtocolAdapter2Test"
-./gradlew :hivemq-edge-build:hivemq-edge-module-opcua:test --tests "*OpcUaProtocolAdapter2Test"
-./gradlew :hivemq-edge-build:hivemq-edge-module-plc4x:test --tests "*S7ProtocolAdapter2Test" --tests "*ADSProtocolAdapter2Test"
-./gradlew :hivemq-edge-build:hivemq-edge-module-mtconnect:test --tests "*MtConnectProtocolAdapter2Test"
-./gradlew :hivemq-edge-build:hivemq-edge-module-databases:test --tests "*DatabasesProtocolAdapter2Test"
-./gradlew :hivemq-edge-module-bacnetip:test --tests "*BacnetIpProtocolAdapter2Test"
+./gradlew :hivemq-edge-test:test --tests "com.hivemq.edge.modules.*"
 ```
 
-### All FSM-related tests in one command
+### Phase 7 final verification (no `*2` classes remain)
 
-```
-./gradlew \
-  :hivemq-edge-build:hivemq-edge:test --tests "com.hivemq.protocols.fsm.*" \
-  :hivemq-edge-build:hivemq-edge-module-etherip:test --tests "*EipProtocolAdapter2Test" \
-  :hivemq-edge-build:hivemq-edge-module-file:test --tests "*FileProtocolAdapter2Test" \
-  :hivemq-edge-build:hivemq-edge-module-http:test --tests "*HttpProtocolAdapter2Test" \
-  :hivemq-edge-build:hivemq-edge-module-modbus:test --tests "*ModbusProtocolAdapter2Test" \
-  :hivemq-edge-build:hivemq-edge-module-opcua:test --tests "*OpcUaProtocolAdapter2Test" \
-  :hivemq-edge-build:hivemq-edge-module-plc4x:test --tests "*S7ProtocolAdapter2Test" --tests "*ADSProtocolAdapter2Test" \
-  :hivemq-edge-build:hivemq-edge-module-mtconnect:test --tests "*MtConnectProtocolAdapter2Test" \
-  :hivemq-edge-build:hivemq-edge-module-databases:test --tests "*DatabasesProtocolAdapter2Test" \
-  :hivemq-edge-module-bacnetip:test --tests "*BacnetIpProtocolAdapter2Test"
-```
-
-### Full integration validation (Phase 6 gate)
-
-```
-./gradlew :hivemq-edge-test:test
+```bash
+# Should return zero results (excluding build dirs and this plan file)
+grep -r "ProtocolAdapter2\|ProtocolAdapterWrapper2\|ProtocolAdapterManager2" \
+  --include="*.java" --exclude-dir=build .
 ```
 
 ---
 
-**Document Version**: 1.7
+**Document Version**: 1.8
 **Last Updated**: 2026-03-19
 **Author**: Claude (AI Assistant)
-**Status**: IN PROGRESS (Phase 1–6 DI wiring complete, awaiting hivemq-edge-test validation)
+**Status**: IN PROGRESS (Phase 1–6 complete, Phase 7 not started)
