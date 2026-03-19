@@ -1059,9 +1059,9 @@ against the new implementation.
 - [x] All 75 FSM unit tests pass
 - [x] Wire new FSM implementation (`ProtocolAdapterWrapper2`, `ProtocolAdapterManager2`) into DI bindings
 - [x] Keep all old code (`ProtocolAdapterWrapper`, `ProtocolAdapterManager`, etc.) in place — do not remove
-- [ ] Run the full `hivemq-edge-test` suite against the new implementation
-- [ ] Fix any test failures by adjusting the new implementation (not the tests)
-- [ ] Iterate until all existing tests in `hivemq-edge-test` pass
+- [x] Run the full `hivemq-edge-test` suite against the new implementation
+- [x] Fix any test failures by adjusting the new implementation (not the tests)
+- [x] Iterate until all existing tests in `hivemq-edge-test` pass
 
 **DI wiring changes made**:
 - `Injector.java`: return type changed to `ProtocolAdapterManager2`
@@ -1106,7 +1106,9 @@ not the test. Fix the implementation to match the expected behavior.
 - [ ] Remove per-module `*ProtocolAdapter2` classes (their logic moves into the adapter classes themselves)
 - [ ] Remove `ProtocolAdapterFactory.createProtocolAdapter2()` — the factory returns `ProtocolAdapter` directly
 - [ ] Update core (`ProtocolAdapterWrapper2`, `ProtocolAdapterManager2`) to use `ProtocolAdapter` instead of `ProtocolAdapter2`
-- [ ] Run the full `hivemq-edge-test` suite — fix implementation until all tests pass
+- [ ] Remove `ProtocolAdapterWrapper`, `ProtocolAdapterManager`
+- [ ] Rename `ProtocolAdapterWrapper2` to `ProtocolAdapterWrapper`, `ProtocolAdapterManager2` to `ProtocolAdapterManager`
+- [ ] Run the tests under ``src/test/java/com/hivemq/edge/modules` in `hivemq-edge-test` suite — fix implementation until all tests pass
 
 **Deliverables**:
 - Single `ProtocolAdapter` interface with synchronous FSM-based lifecycle
