@@ -324,13 +324,13 @@ public class ProtocolAdapterManager2 {
             eventService
                     .createAdapterEvent(adapterId, protocolId)
                     .withSeverity(Event.SEVERITY.INFO)
-                    .withMessage("Adapter started successfully")
+                    .withMessage("Adapter '" + adapterId + "' started OK.")
                     .fire();
         } else {
             eventService
                     .createAdapterEvent(adapterId, protocolId)
-                    .withSeverity(Event.SEVERITY.ERROR)
-                    .withMessage("Adapter failed to start")
+                    .withSeverity(Event.SEVERITY.CRITICAL)
+                    .withMessage("Error starting adapter '" + adapterId + "'.")
                     .fire();
             throw new ProtocolAdapterException("Failed to start adapter: " + adapterId);
         }
@@ -358,13 +358,13 @@ public class ProtocolAdapterManager2 {
             eventService
                     .createAdapterEvent(adapterId, protocolId)
                     .withSeverity(Event.SEVERITY.INFO)
-                    .withMessage("Adapter stopped successfully")
+                    .withMessage("Adapter '" + adapterId + "' stopped OK.")
                     .fire();
         } else {
             eventService
                     .createAdapterEvent(adapterId, protocolId)
-                    .withSeverity(Event.SEVERITY.WARN)
-                    .withMessage("Adapter stopped with errors")
+                    .withSeverity(Event.SEVERITY.CRITICAL)
+                    .withMessage("Error stopping adapter '" + adapterId + "'.")
                     .fire();
         }
     }
