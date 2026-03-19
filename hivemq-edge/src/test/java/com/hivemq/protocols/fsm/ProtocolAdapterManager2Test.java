@@ -185,7 +185,7 @@ class ProtocolAdapterManager2Test {
 
             verify(eventService).createAdapterEvent("adapter-1", "test-protocol");
             verify(eventBuilder).withSeverity(Event.SEVERITY.INFO);
-            verify(eventBuilder).withMessage("Adapter started successfully");
+            verify(eventBuilder).withMessage("Adapter 'adapter-1' started OK.");
             verify(eventBuilder).fire();
         }
 
@@ -199,8 +199,8 @@ class ProtocolAdapterManager2Test {
                     .hasMessageContaining("Failed to start adapter: adapter-1");
 
             verify(eventService).createAdapterEvent("adapter-1", "test-protocol");
-            verify(eventBuilder).withSeverity(Event.SEVERITY.ERROR);
-            verify(eventBuilder).withMessage("Adapter failed to start");
+            verify(eventBuilder).withSeverity(Event.SEVERITY.CRITICAL);
+            verify(eventBuilder).withMessage("Error starting adapter 'adapter-1'.");
             verify(eventBuilder).fire();
         }
     }
@@ -229,7 +229,7 @@ class ProtocolAdapterManager2Test {
 
             verify(eventService).createAdapterEvent("adapter-1", "test-protocol");
             verify(eventBuilder).withSeverity(Event.SEVERITY.INFO);
-            verify(eventBuilder).withMessage("Adapter stopped successfully");
+            verify(eventBuilder).withMessage("Adapter 'adapter-1' stopped OK.");
             verify(eventBuilder).fire();
         }
 
@@ -243,7 +243,7 @@ class ProtocolAdapterManager2Test {
 
             verify(eventService).createAdapterEvent("adapter-1", "test-protocol");
             verify(eventBuilder).withSeverity(Event.SEVERITY.INFO);
-            verify(eventBuilder).withMessage("Adapter stopped successfully");
+            verify(eventBuilder).withMessage("Adapter 'adapter-1' stopped OK.");
             verify(eventBuilder).fire();
         }
 
@@ -377,7 +377,7 @@ class ProtocolAdapterManager2Test {
             manager.start("adapter-1");
 
             verify(eventBuilder).withSeverity(Event.SEVERITY.INFO);
-            verify(eventBuilder).withMessage("Adapter started successfully");
+            verify(eventBuilder).withMessage("Adapter 'adapter-1' started OK.");
         }
 
         @Test
@@ -416,7 +416,7 @@ class ProtocolAdapterManager2Test {
 
             verify(eventService).createAdapterEvent("adapter-1", "test-protocol");
             verify(eventBuilder).withSeverity(Event.SEVERITY.INFO);
-            verify(eventBuilder).withMessage("Adapter stopped successfully");
+            verify(eventBuilder).withMessage("Adapter 'adapter-1' stopped OK.");
             verify(eventBuilder).fire();
         }
     }
@@ -451,7 +451,7 @@ class ProtocolAdapterManager2Test {
 
             verify(eventService).createAdapterEvent("adapter-1", "test-protocol");
             verify(eventBuilder).withSeverity(Event.SEVERITY.INFO);
-            verify(eventBuilder).withMessage("Adapter stopped successfully");
+            verify(eventBuilder).withMessage("Adapter 'adapter-1' stopped OK.");
         }
 
         @Test
