@@ -57,6 +57,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
+@org.junit.jupiter.api.Disabled("Dead code — ProtocolAdapterWrapper replaced by ProtocolAdapterWrapper2 (Phase 6)")
 class ProtocolAdapterWrapperShutdownRaceConditionTest {
 
     private @NotNull EventService eventService;

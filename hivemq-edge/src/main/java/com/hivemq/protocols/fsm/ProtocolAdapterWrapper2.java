@@ -15,12 +15,44 @@
  */
 package com.hivemq.protocols.fsm;
 
+import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter2;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter2Bridge;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
+import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
+import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
+import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.Tag;
+import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
+import com.hivemq.edge.modules.adapters.data.TagManager;
+import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
+import com.hivemq.persistence.mappings.NorthboundMapping;
+import com.hivemq.persistence.mappings.SouthboundMapping;
+import com.hivemq.protocols.InternalProtocolAdapterWritingService;
+import com.hivemq.protocols.InternalWritingContext;
+import com.hivemq.protocols.InternalWritingContextImpl;
+import com.hivemq.protocols.PollingContextWrapper;
+import com.hivemq.protocols.ProtocolAdapterConfig;
+import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
+import com.hivemq.protocols.northbound.NorthboundTagConsumer;
+import com.hivemq.protocols.northbound.PerAdapterSampler;
+import com.hivemq.protocols.northbound.PerContextSampler;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,12 +61,14 @@ import org.slf4j.LoggerFactory;
  * <p>
  * Responsibilities:
  * <ol>
- *   <li>Owns {@link ProtocolAdapterState} and both {@link ProtocolAdapterConnectionState} instances
- *       (northbound + southbound)</li>
+ *   <li>Owns {@link com.hivemq.protocols.fsm.ProtocolAdapterState} and both
+ *       {@link ProtocolAdapterConnectionState} instances (northbound + southbound)</li>
  *   <li>Coordinates transitions between states</li>
  *   <li>Calls {@link ProtocolAdapter2} methods synchronously</li>
  *   <li>Notifies {@link ProtocolAdapterStateChangeListener}s on successful state transitions</li>
  *   <li>Manages service lifecycle (polling, writing) around connect/disconnect</li>
+ *   <li>Provides backward-compatible API for consumers that previously used
+ *       {@link com.hivemq.protocols.ProtocolAdapterWrapper}</li>
  * </ol>
  * <p>
  * Threading Model:
@@ -51,16 +85,80 @@ public class ProtocolAdapterWrapper2 {
 
     private final @NotNull ProtocolAdapter2 adapter;
     private final @NotNull List<ProtocolAdapterStateChangeListener> stateChangeListeners = new CopyOnWriteArrayList<>();
-    private volatile @NotNull ProtocolAdapterState state;
+    private volatile @NotNull com.hivemq.protocols.fsm.ProtocolAdapterState state;
     private volatile @NotNull ProtocolAdapterConnectionState northboundConnectionState;
     private volatile @NotNull ProtocolAdapterConnectionState southboundConnectionState;
 
-    public ProtocolAdapterWrapper2(final @NotNull ProtocolAdapter2 adapter) {
+    // Additional context for backward compatibility with consumers of the old ProtocolAdapterWrapper
+    private final @Nullable ProtocolAdapterConfig config;
+    private final @Nullable ProtocolAdapterFactory<?> adapterFactory;
+    private final @Nullable ProtocolAdapterInformation adapterInformation;
+    private final @Nullable ProtocolAdapterMetricsService metricsService;
+    private final @Nullable ProtocolAdapterStateImpl protocolAdapterState;
+    private volatile @Nullable Long lastStartAttemptTime;
+
+    // Services for polling/writing lifecycle
+    private final @Nullable ProtocolAdapterPollingService protocolAdapterPollingService;
+    private final @Nullable EventService eventService;
+    private final @Nullable TagManager tagManager;
+    private final @Nullable NorthboundConsumerFactory northboundConsumerFactory;
+    private final @Nullable InternalProtocolAdapterWritingService protocolAdapterWritingService;
+    private final @NotNull List<NorthboundTagConsumer> consumers = new ArrayList<>();
+
+    /**
+     * Full constructor with all context needed for production use.
+     */
+    public ProtocolAdapterWrapper2(
+            final @NotNull ProtocolAdapter2 adapter,
+            final @NotNull ProtocolAdapterConfig config,
+            final @NotNull ProtocolAdapterFactory<?> adapterFactory,
+            final @NotNull ProtocolAdapterInformation adapterInformation,
+            final @NotNull ProtocolAdapterMetricsService metricsService,
+            final @NotNull ProtocolAdapterStateImpl protocolAdapterState,
+            final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService,
+            final @NotNull EventService eventService,
+            final @NotNull TagManager tagManager,
+            final @NotNull NorthboundConsumerFactory northboundConsumerFactory,
+            final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService) {
         this.adapter = adapter;
+        this.config = config;
+        this.adapterFactory = adapterFactory;
+        this.adapterInformation = adapterInformation;
+        this.metricsService = metricsService;
+        this.protocolAdapterState = protocolAdapterState;
+        this.protocolAdapterPollingService = protocolAdapterPollingService;
+        this.eventService = eventService;
+        this.tagManager = tagManager;
+        this.northboundConsumerFactory = northboundConsumerFactory;
+        this.protocolAdapterWritingService = protocolAdapterWritingService;
         this.northboundConnectionState = ProtocolAdapterConnectionState.Disconnected;
         this.southboundConnectionState = ProtocolAdapterConnectionState.Disconnected;
-        this.state = ProtocolAdapterState.Idle;
+        this.state = com.hivemq.protocols.fsm.ProtocolAdapterState.Idle;
     }
+
+    /**
+     * Simplified constructor for tests that only need the adapter.
+     *
+     * @param adapter the underlying protocol adapter
+     */
+    public ProtocolAdapterWrapper2(final @NotNull ProtocolAdapter2 adapter) {
+        this.adapter = adapter;
+        this.config = null;
+        this.adapterFactory = null;
+        this.adapterInformation = null;
+        this.metricsService = null;
+        this.protocolAdapterState = null;
+        this.protocolAdapterPollingService = null;
+        this.eventService = null;
+        this.tagManager = null;
+        this.northboundConsumerFactory = null;
+        this.protocolAdapterWritingService = null;
+        this.northboundConnectionState = ProtocolAdapterConnectionState.Disconnected;
+        this.southboundConnectionState = ProtocolAdapterConnectionState.Disconnected;
+        this.state = com.hivemq.protocols.fsm.ProtocolAdapterState.Idle;
+    }
+
+    // ===== FSM State Accessors =====
 
     /**
      * @return the current southbound connection state
@@ -72,7 +170,7 @@ public class ProtocolAdapterWrapper2 {
     /**
      * @return the current adapter state
      */
-    public @NotNull ProtocolAdapterState getState() {
+    public @NotNull com.hivemq.protocols.fsm.ProtocolAdapterState getState() {
         return state;
     }
 
@@ -91,11 +189,263 @@ public class ProtocolAdapterWrapper2 {
     }
 
     /**
+     * Alias for {@link #getAdapterId()} — matches the old ProtocolAdapterWrapper API.
+     *
+     * @return the unique identifier of the wrapped adapter
+     */
+    public @NotNull String getId() {
+        return adapter.getId();
+    }
+
+    /**
      * @return the protocol adapter information (protocol type, capabilities, etc.)
      */
     public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
         return adapter.getProtocolAdapterInformation();
     }
+
+    // ===== Backward-Compatible Accessors =====
+
+    /**
+     * Returns the underlying old-style {@link ProtocolAdapter}.
+     * If the adapter is a {@link ProtocolAdapter2Bridge}, returns the delegate.
+     * Otherwise, throws {@link IllegalStateException}.
+     *
+     * @return the underlying ProtocolAdapter
+     */
+    public @NotNull ProtocolAdapter getAdapter() {
+        if (adapter instanceof ProtocolAdapter2Bridge bridge) {
+            return bridge.getDelegate();
+        }
+        throw new IllegalStateException(
+                "Cannot get old ProtocolAdapter from non-bridge ProtocolAdapter2 implementation: "
+                        + adapter.getClass().getName());
+    }
+
+    /**
+     * @return the adapter factory that created this adapter
+     */
+    public @NotNull ProtocolAdapterFactory<?> getAdapterFactory() {
+        if (adapterFactory == null) {
+            throw new IllegalStateException("Adapter factory not available (test constructor used)");
+        }
+        return adapterFactory;
+    }
+
+    /**
+     * @return the adapter type information
+     */
+    public @NotNull ProtocolAdapterInformation getAdapterInformation() {
+        if (adapterInformation != null) {
+            return adapterInformation;
+        }
+        return adapter.getProtocolAdapterInformation();
+    }
+
+    /**
+     * @return the adapter-specific configuration object
+     */
+    public @NotNull ProtocolSpecificAdapterConfig getConfigObject() {
+        if (config == null) {
+            throw new IllegalStateException("Config not available (test constructor used)");
+        }
+        return config.getAdapterConfig();
+    }
+
+    /**
+     * @return the full adapter configuration
+     */
+    public @NotNull ProtocolAdapterConfig getConfig() {
+        if (config == null) {
+            throw new IllegalStateException("Config not available (test constructor used)");
+        }
+        return config;
+    }
+
+    /**
+     * @return the tags configured for this adapter
+     */
+    public @NotNull List<? extends Tag> getTags() {
+        if (config == null) {
+            return List.of();
+        }
+        return config.getTags();
+    }
+
+    /**
+     * @return the northbound mappings for this adapter
+     */
+    public @NotNull List<NorthboundMapping> getNorthboundMappings() {
+        if (config == null) {
+            return List.of();
+        }
+        return config.getNorthboundMappings();
+    }
+
+    /**
+     * @return the southbound mappings for this adapter
+     */
+    public @NotNull List<SouthboundMapping> getSouthboundMappings() {
+        if (config == null) {
+            return List.of();
+        }
+        return config.getSouthboundMappings();
+    }
+
+    /**
+     * @return the metrics service for this adapter, or null if not available
+     */
+    public @Nullable ProtocolAdapterMetricsService getProtocolAdapterMetricsService() {
+        return metricsService;
+    }
+
+    /**
+     * @return the timestamp of the last start attempt, or null if never started
+     */
+    public @Nullable Long getTimeOfLastStartAttempt() {
+        return lastStartAttemptTime;
+    }
+
+    /**
+     * Maps the FSM adapter state to the old RuntimeStatus enum.
+     *
+     * @return the runtime status compatible with the old API
+     */
+    public @NotNull ProtocolAdapterState.RuntimeStatus getRuntimeStatus() {
+        return switch (state) {
+            case Working -> ProtocolAdapterState.RuntimeStatus.STARTED;
+            default -> ProtocolAdapterState.RuntimeStatus.STOPPED;
+        };
+    }
+
+    /**
+     * Maps the connection state to the old ConnectionStatus enum.
+     * <p>
+     * Delegates to {@link ProtocolAdapterStateImpl} when available, since old adapters
+     * update their connection status internally (e.g., OPC UA health check detects
+     * connection loss and sets DISCONNECTED) without going through the wrapper's FSM.
+     * Falls back to the FSM northbound connection state for test-only wrappers.
+     *
+     * @return the connection status compatible with the old API
+     */
+    public @NotNull ProtocolAdapterState.ConnectionStatus getConnectionStatus() {
+        if (protocolAdapterState != null) {
+            return protocolAdapterState.getConnectionStatus();
+        }
+        return switch (northboundConnectionState) {
+            case Connected -> ProtocolAdapterState.ConnectionStatus.CONNECTED;
+            case Connecting -> ProtocolAdapterState.ConnectionStatus.CONNECTING;
+            case Disconnected, Disconnecting -> ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
+            case Error -> ProtocolAdapterState.ConnectionStatus.ERROR;
+        };
+    }
+
+    /**
+     * @return the last error message, or null if no error
+     */
+    public @Nullable String getErrorMessage() {
+        if (protocolAdapterState != null) {
+            return protocolAdapterState.getLastErrorMessage();
+        }
+        return null;
+    }
+
+    /**
+     * Sets the connection status to ERROR with the given exception.
+     * This is called by the polling infrastructure when a sampler error occurs.
+     *
+     * @param exception    the error that occurred
+     * @param errorMessage an optional error message
+     */
+    public void setErrorConnectionStatus(final @NotNull Throwable exception, final @Nullable String errorMessage) {
+        if (protocolAdapterState != null) {
+            protocolAdapterState.setErrorConnectionStatus(exception, errorMessage);
+        }
+        // Also transition the FSM northbound connection to Error if currently Connected
+        if (northboundConnectionState.isConnected()) {
+            transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Error);
+        }
+    }
+
+    /**
+     * Sets the runtime status on the old state object (backward compatibility).
+     *
+     * @param runtimeStatus the runtime status to set
+     */
+    public void setRuntimeStatus(final @NotNull ProtocolAdapterState.RuntimeStatus runtimeStatus) {
+        if (protocolAdapterState != null) {
+            protocolAdapterState.setRuntimeStatus(runtimeStatus);
+        }
+    }
+
+    /**
+     * Delegates discovery to the underlying adapter.
+     */
+    public void discoverValues(
+            final @NotNull ProtocolAdapterDiscoveryInput input, final @NotNull ProtocolAdapterDiscoveryOutput output) {
+        getAdapter().discoverValues(input, output);
+    }
+
+    /**
+     * @return true if the underlying adapter supports writing (southbound)
+     */
+    public boolean isWriting() {
+        if (adapter instanceof ProtocolAdapter2Bridge bridge) {
+            return bridge.getDelegate() instanceof WritingProtocolAdapter;
+        }
+        return adapter.supportsSouthbound();
+    }
+
+    /**
+     * @return true if the underlying adapter supports polling
+     */
+    public boolean isPolling() {
+        if (adapter instanceof ProtocolAdapter2Bridge bridge) {
+            return bridge.getDelegate() instanceof PollingProtocolAdapter;
+        }
+        return false;
+    }
+
+    /**
+     * @return true if the underlying adapter supports batch polling
+     */
+    public boolean isBatchPolling() {
+        if (adapter instanceof ProtocolAdapter2Bridge bridge) {
+            return bridge.getDelegate() instanceof BatchPollingProtocolAdapter;
+        }
+        return false;
+    }
+
+    /**
+     * Async wrapper for {@link #start()} that matches the old API signature.
+     * The REST API expects async start/stop for status transitions.
+     *
+     * @return a future that completes when the adapter is started
+     */
+    public @NotNull CompletableFuture<Void> startAsync() {
+        return CompletableFuture.supplyAsync(() -> {
+            final boolean success = start();
+            if (!success) {
+                throw new RuntimeException("Failed to start adapter: " + getAdapterId());
+            }
+            return null;
+        });
+    }
+
+    /**
+     * Async wrapper for {@link #stop(boolean)} that matches the old API signature.
+     *
+     * @param destroy whether to destroy the adapter after stopping
+     * @return a future that completes when the adapter is stopped
+     */
+    public @NotNull CompletableFuture<Void> stopAsync(final boolean destroy) {
+        return CompletableFuture.supplyAsync(() -> {
+            stop(destroy);
+            return null;
+        });
+    }
+
+    // ===== Listener Management =====
 
     /**
      * Register a listener that will be notified on successful adapter state transitions.
@@ -114,6 +464,8 @@ public class ProtocolAdapterWrapper2 {
     public void removeStateChangeListener(final @NotNull ProtocolAdapterStateChangeListener listener) {
         stateChangeListeners.remove(listener);
     }
+
+    // ===== FSM Lifecycle Methods =====
 
     /**
      * Start the adapter.
@@ -138,9 +490,12 @@ public class ProtocolAdapterWrapper2 {
      */
     public synchronized boolean start() {
         LOGGER.info("Starting protocol adapter '{}'.", getAdapterId());
+        lastStartAttemptTime = System.currentTimeMillis();
 
         // Step 1: Idle → Precheck
-        if (!transitionTo(ProtocolAdapterState.Precheck).status().isSuccess()) {
+        if (!transitionTo(com.hivemq.protocols.fsm.ProtocolAdapterState.Precheck)
+                .status()
+                .isSuccess()) {
             return false;
         }
 
@@ -149,13 +504,20 @@ public class ProtocolAdapterWrapper2 {
             adapter.precheck();
         } catch (final Exception e) {
             LOGGER.error("Precheck failed for adapter '{}'.", getAdapterId(), e);
-            transitionTo(ProtocolAdapterState.Error);
+            transitionTo(com.hivemq.protocols.fsm.ProtocolAdapterState.Error);
             return false;
         }
 
         // Step 3: Precheck → Working
-        if (!transitionTo(ProtocolAdapterState.Working).status().isSuccess()) {
+        if (!transitionTo(com.hivemq.protocols.fsm.ProtocolAdapterState.Working)
+                .status()
+                .isSuccess()) {
             return false;
+        }
+
+        // Update old state for backward compat
+        if (protocolAdapterState != null) {
+            protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
         }
 
         // Step 4 & 5: Start connections
@@ -167,11 +529,15 @@ public class ProtocolAdapterWrapper2 {
             if (northboundSuccess) {
                 stopNorthbound();
             }
-            transitionTo(ProtocolAdapterState.Error);
+            transitionTo(com.hivemq.protocols.fsm.ProtocolAdapterState.Error);
+            if (protocolAdapterState != null) {
+                protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
+            }
             return false;
         }
 
         // Step 6: Start services
+        createAndSubscribeTagConsumers();
         startPolling();
         startWriting();
 
@@ -202,8 +568,19 @@ public class ProtocolAdapterWrapper2 {
     public synchronized boolean stop(final boolean destroy) {
         LOGGER.info("Stopping protocol adapter '{}'.", getAdapterId());
 
+        // Already idle — nothing to stop
+        if (state.isIdle()) {
+            LOGGER.debug("Protocol adapter '{}' is already idle, nothing to stop.", getAdapterId());
+            if (destroy) {
+                adapter.destroy();
+            }
+            return true;
+        }
+
         // Step 1: Working → Stopping
-        if (!transitionTo(ProtocolAdapterState.Stopping).status().isSuccess()) {
+        if (!transitionTo(com.hivemq.protocols.fsm.ProtocolAdapterState.Stopping)
+                .status()
+                .isSuccess()) {
             // Allow proceeding if already in Stopping or Error state
             if (!state.isStopping() && !state.isError()) {
                 return false;
@@ -211,6 +588,7 @@ public class ProtocolAdapterWrapper2 {
         }
 
         // Step 2: Stop services
+        removeTagConsumers();
         stopPolling();
         stopWriting();
 
@@ -223,7 +601,11 @@ public class ProtocolAdapterWrapper2 {
         final boolean southboundReady = !adapter.supportsSouthbound() || southboundConnectionState.isDisconnected();
 
         if (northboundReady && southboundReady) {
-            transitionTo(ProtocolAdapterState.Idle);
+            transitionTo(com.hivemq.protocols.fsm.ProtocolAdapterState.Idle);
+            // Update old state for backward compat
+            if (protocolAdapterState != null) {
+                protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
+            }
             if (destroy) {
                 adapter.destroy();
             }
@@ -232,16 +614,19 @@ public class ProtocolAdapterWrapper2 {
 
         // If not fully disconnected, transition to Error
         if (!northboundSuccess || !southboundSuccess) {
-            transitionTo(ProtocolAdapterState.Error);
+            transitionTo(com.hivemq.protocols.fsm.ProtocolAdapterState.Error);
+        }
+        if (protocolAdapterState != null) {
+            protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
         }
         return false;
     }
 
+    // ===== Connection Management =====
+
     /**
      * Start the northbound connection.
      * Transitions: Disconnected → Connecting → Connected.
-     * Calls {@link ProtocolAdapter2#connect(ProtocolAdapterConnectionDirection)} with
-     * {@link ProtocolAdapterConnectionDirection#Northbound}.
      *
      * @return {@code true} if the northbound connection was established successfully
      */
@@ -258,22 +643,27 @@ public class ProtocolAdapterWrapper2 {
         try {
             adapter.connect(ProtocolAdapterConnectionDirection.Northbound);
             // Connecting → Connected
-            return transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Connected)
+            final boolean success = transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Connected)
                     .status()
                     .isSuccess();
+            if (success && protocolAdapterState != null) {
+                protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+            }
+            return success;
         } catch (final Exception e) {
             LOGGER.error("Northbound connection failed for adapter '{}'.", getAdapterId(), e);
             // Connecting → Error
             transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Error);
+            if (protocolAdapterState != null) {
+                protocolAdapterState.setErrorConnectionStatus(e, e.getMessage());
+            }
             return false;
         }
     }
 
     /**
      * Start the southbound connection.
-     * Only starts if the adapter supports southbound communication
-     * ({@link ProtocolAdapter2#supportsSouthbound()} returns {@code true}).
-     * Transitions: Disconnected → Connecting → Connected.
+     * Only starts if the adapter supports southbound communication.
      *
      * @return {@code true} if the southbound connection was established or not needed
      */
@@ -309,9 +699,6 @@ public class ProtocolAdapterWrapper2 {
     /**
      * Stop the northbound connection.
      * If already disconnected, returns {@code true} immediately.
-     * Otherwise transitions: current → Disconnecting → Disconnected.
-     * Calls {@link ProtocolAdapter2#disconnect(ProtocolAdapterConnectionDirection)} with
-     * {@link ProtocolAdapterConnectionDirection#Northbound}.
      *
      * @return {@code true} if the northbound connection was disconnected successfully
      */
@@ -337,16 +724,18 @@ public class ProtocolAdapterWrapper2 {
         }
 
         // Disconnecting → Disconnected
-        return transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Disconnected)
+        final boolean success = transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Disconnected)
                 .status()
                 .isSuccess();
+        if (success && protocolAdapterState != null) {
+            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+        }
+        return success;
     }
 
     /**
      * Stop the southbound connection.
      * Only stops if the adapter supports southbound communication.
-     * If already disconnected, returns {@code true} immediately.
-     * Otherwise transitions: current → Disconnecting → Disconnected.
      *
      * @return {@code true} if the southbound connection was disconnected or not needed
      */
@@ -381,61 +770,139 @@ public class ProtocolAdapterWrapper2 {
                 .isSuccess();
     }
 
+    // ===== Service Lifecycle Hooks =====
+
     /**
      * Start polling for this adapter.
      * Called after all connections are established during {@link #start()}.
-     * <p>
-     * This is an extension point for service integration. The default implementation
-     * is a no-op. Subclasses or the manager can override or configure this behavior.
      */
     protected void startPolling() {
-        LOGGER.debug("Starting polling for protocol adapter '{}'.", getAdapterId());
+        if (protocolAdapterPollingService == null || eventService == null || tagManager == null) {
+            return;
+        }
+
+        if (isBatchPolling()) {
+            LOGGER.debug("Schedule batch polling for protocol adapter with id '{}'", getId());
+            final PerAdapterSampler sampler = new PerAdapterSampler(this, eventService, tagManager);
+            protocolAdapterPollingService.schedulePolling(sampler);
+        }
+
+        if (isPolling()) {
+            if (config != null) {
+                config.getTags().forEach(tag -> {
+                    final PerContextSampler sampler = new PerContextSampler(
+                            this,
+                            new PollingContextWrapper(
+                                    "unused",
+                                    tag.getName(),
+                                    MessageHandlingOptions.MQTTMessagePerTag,
+                                    false,
+                                    false,
+                                    List.of(),
+                                    1,
+                                    -1),
+                            eventService,
+                            tagManager);
+                    protocolAdapterPollingService.schedulePolling(sampler);
+                });
+            }
+        }
     }
 
     /**
      * Stop polling for this adapter.
      * Called before disconnecting connections during {@link #stop(boolean)}.
-     * <p>
-     * This is an extension point for service integration. The default implementation
-     * is a no-op. Subclasses or the manager can override or configure this behavior.
      */
     protected void stopPolling() {
-        LOGGER.debug("Stopping polling for protocol adapter '{}'.", getAdapterId());
+        if (protocolAdapterPollingService == null) {
+            return;
+        }
+        if (isPolling() || isBatchPolling()) {
+            LOGGER.debug("Stopping polling for protocol adapter with id '{}'", getId());
+            protocolAdapterPollingService.stopPollingForAdapterInstance(getAdapter());
+        }
     }
 
     /**
      * Start writing for this adapter.
      * Called after all connections are established during {@link #start()}.
-     * <p>
-     * This is an extension point for service integration. The default implementation
-     * is a no-op. Subclasses or the manager can override or configure this behavior.
      */
     protected void startWriting() {
-        LOGGER.debug("Starting writing for protocol adapter '{}'.", getAdapterId());
+        if (protocolAdapterWritingService == null || !protocolAdapterWritingService.writingEnabled()) {
+            return;
+        }
+        if (!isWriting() || config == null || metricsService == null) {
+            return;
+        }
+        LOGGER.debug("Start writing for protocol adapter with id '{}'", getId());
+        final var writingContexts = getSouthboundMappings().stream()
+                .map(InternalWritingContextImpl::new)
+                .collect(Collectors.<InternalWritingContext>toList());
+        try {
+            protocolAdapterWritingService
+                    .startWritingAsync((WritingProtocolAdapter) getAdapter(), metricsService, writingContexts)
+                    .get();
+        } catch (final Exception e) {
+            LOGGER.error("Failed to start writing for adapter with id '{}'.", getId(), e);
+        }
     }
 
     /**
      * Stop writing for this adapter.
      * Called before disconnecting connections during {@link #stop(boolean)}.
-     * <p>
-     * This is an extension point for service integration. The default implementation
-     * is a no-op. Subclasses or the manager can override or configure this behavior.
      */
     protected void stopWriting() {
-        LOGGER.debug("Stopping writing for protocol adapter '{}'.", getAdapterId());
+        if (protocolAdapterWritingService == null) {
+            return;
+        }
+        if (isWriting() && config != null) {
+            LOGGER.debug("Stopping writing for protocol adapter with id '{}'", getId());
+            final var writingContexts = getSouthboundMappings().stream()
+                    .map(mapping -> (InternalWritingContext) new InternalWritingContextImpl(mapping))
+                    .toList();
+            protocolAdapterWritingService.stopWriting((WritingProtocolAdapter) getAdapter(), writingContexts);
+        }
     }
 
     /**
+     * Create and subscribe tag consumers for northbound data flow.
+     * Called during {@link #start()} after connections are established.
+     */
+    protected void createAndSubscribeTagConsumers() {
+        if (northboundConsumerFactory == null || tagManager == null || metricsService == null || config == null) {
+            return;
+        }
+        getNorthboundMappings().forEach(northboundMapping -> {
+            final NorthboundTagConsumer consumer =
+                    northboundConsumerFactory.build(this, northboundMapping, metricsService);
+            tagManager.addConsumer(consumer);
+            consumers.add(consumer);
+        });
+    }
+
+    /**
+     * Remove tag consumers. Called during {@link #stop(boolean)}.
+     */
+    protected void removeTagConsumers() {
+        if (tagManager == null) {
+            return;
+        }
+        consumers.forEach(tagManager::removeConsumer);
+        consumers.clear();
+    }
+
+    // ===== FSM Transition Methods =====
+
+    /**
      * Transition the adapter state to the given new state.
-     * This method is synchronized to ensure atomic state transitions.
      * On successful transitions, all registered {@link ProtocolAdapterStateChangeListener}s are notified.
      *
      * @param newState the target state
      * @return the transition response indicating success, failure, or no change
      */
     public synchronized @NotNull ProtocolAdapterTransitionResponse transitionTo(
-            final @NotNull ProtocolAdapterState newState) {
-        final ProtocolAdapterState fromState = state;
+            final @NotNull com.hivemq.protocols.fsm.ProtocolAdapterState newState) {
+        final com.hivemq.protocols.fsm.ProtocolAdapterState fromState = state;
         final ProtocolAdapterTransitionResponse response = fromState.transition(newState);
         state = response.toState();
         switch (response.status()) {
@@ -448,7 +915,7 @@ public class ProtocolAdapterWrapper2 {
                 notifyProtocolAdapterStateChangeListeners(fromState, state);
             }
             case Failure ->
-                LOGGER.error(
+                LOGGER.warn(
                         "Protocol adapter '{}' failed to transition from {} to {}.", getAdapterId(), fromState, state);
             case NotChanged -> LOGGER.warn("Protocol adapter '{}' state {} is unchanged.", getAdapterId(), state);
         }
@@ -457,7 +924,6 @@ public class ProtocolAdapterWrapper2 {
 
     /**
      * Transition the southbound connection state to the given new state.
-     * This method is synchronized to ensure atomic state transitions.
      *
      * @param newState the target connection state
      * @return the transition response indicating success, failure, or no change
@@ -491,7 +957,6 @@ public class ProtocolAdapterWrapper2 {
 
     /**
      * Transition the northbound connection state to the given new state.
-     * This method is synchronized to ensure atomic state transitions.
      *
      * @param newState the target connection state
      * @return the transition response indicating success, failure, or no change
@@ -524,7 +989,8 @@ public class ProtocolAdapterWrapper2 {
     }
 
     private void notifyProtocolAdapterStateChangeListeners(
-            final @NotNull ProtocolAdapterState fromState, final @NotNull ProtocolAdapterState toState) {
+            final @NotNull com.hivemq.protocols.fsm.ProtocolAdapterState fromState,
+            final @NotNull com.hivemq.protocols.fsm.ProtocolAdapterState toState) {
         for (final ProtocolAdapterStateChangeListener listener : stateChangeListeners) {
             try {
                 listener.onStateChanged(fromState, toState);

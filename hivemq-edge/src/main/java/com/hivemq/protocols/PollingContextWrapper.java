@@ -23,7 +23,7 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-class PollingContextWrapper implements PollingContext {
+public class PollingContextWrapper implements PollingContext {
     private final @NotNull String topic;
     private final @NotNull String tagName;
     private final @NotNull MessageHandlingOptions messageHandlingOptions;

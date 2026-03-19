@@ -42,7 +42,7 @@ import com.hivemq.edge.api.FrontendApi;
 import com.hivemq.edge.api.model.Capability;
 import com.hivemq.edge.api.model.CapabilityList;
 import com.hivemq.http.core.UsernamePasswordRoles;
-import com.hivemq.protocols.ProtocolAdapterManager;
+import com.hivemq.protocols.fsm.ProtocolAdapterManager2;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
@@ -53,7 +53,7 @@ import org.jetbrains.annotations.NotNull;
 public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
 
     private final @NotNull ConfigurationService configurationService;
-    private final @NotNull ProtocolAdapterManager protocolAdapterManager;
+    private final @NotNull ProtocolAdapterManager2 protocolAdapterManager;
     private final @NotNull ModulesAndExtensionsService modulesAndExtensionsService;
     private final @NotNull HiveMQEdgeRemoteService hiveMQEdgeRemoteConfigurationService;
     private final @NotNull HiveMQCapabilityService capabilityService;
@@ -63,7 +63,7 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
     @Inject
     public FrontendResourceImpl(
             final @NotNull ConfigurationService configurationService,
-            final @NotNull ProtocolAdapterManager protocolAdapterManager,
+            final @NotNull ProtocolAdapterManager2 protocolAdapterManager,
             final @NotNull ModulesAndExtensionsService modulesAndExtensionsService,
             final @NotNull HiveMQEdgeRemoteService hiveMQEdgeRemoteConfigurationService,
             final @NotNull HiveMQCapabilityService capabilityService,
