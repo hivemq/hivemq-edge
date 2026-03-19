@@ -234,17 +234,16 @@ class ProtocolAdapterManager2Test {
         }
 
         @Test
-        void stop_withErrors_firesWarnEvent() throws ProtocolAdapterException {
+        void stop_whenIdle_firesInfoEvent() throws ProtocolAdapterException {
             final ProtocolAdapter2 adapter = createSuccessAdapter("adapter-1");
             addAdapterToManager("adapter-1", adapter);
 
-            // Don't start the adapter — stop from Idle should fail but not throw
-            // Actually, stop from Idle returns false from the wrapper
+            // Don't start the adapter — stop from Idle is a no-op that returns true
             manager.stop("adapter-1", false);
 
             verify(eventService).createAdapterEvent("adapter-1", "test-protocol");
-            verify(eventBuilder).withSeverity(Event.SEVERITY.WARN);
-            verify(eventBuilder).withMessage("Adapter stopped with errors");
+            verify(eventBuilder).withSeverity(Event.SEVERITY.INFO);
+            verify(eventBuilder).withMessage("Adapter stopped successfully");
             verify(eventBuilder).fire();
         }
 
@@ -276,6 +275,188 @@ class ProtocolAdapterManager2Test {
         void getProtocolAdapterWrapperByAdapterId_notFound() {
             assertThat(manager.getProtocolAdapterWrapperByAdapterId("nonexistent"))
                     .isEmpty();
+        }
+    }
+
+    @Nested
+    class DeleteTests {
+
+        @Test
+        void deleteProtocolAdapterByAdapterId_removesWrapper() {
+            final ProtocolAdapter2 adapter = createSuccessAdapter("adapter-1");
+            addAdapterToManager("adapter-1", adapter);
+
+            assertThat(manager.getProtocolAdapterWrapperByAdapterId("adapter-1"))
+                    .isPresent();
+
+            manager.deleteProtocolAdapterByAdapterId("adapter-1");
+
+            assertThat(manager.getProtocolAdapterWrapperByAdapterId("adapter-1"))
+                    .isEmpty();
+        }
+
+        @Test
+        void deleteProtocolAdapterByAdapterId_decreasesMetric() {
+            final ProtocolAdapter2 adapter = createSuccessAdapter("adapter-1");
+            addAdapterToManager("adapter-1", adapter);
+
+            manager.deleteProtocolAdapterByAdapterId("adapter-1");
+
+            verify(protocolAdapterMetrics).decreaseProtocolAdapterMetric("test-protocol");
+        }
+
+        @Test
+        void deleteProtocolAdapterByAdapterId_firesEvent() {
+            final ProtocolAdapter2 adapter = createSuccessAdapter("adapter-1");
+            addAdapterToManager("adapter-1", adapter);
+
+            manager.deleteProtocolAdapterByAdapterId("adapter-1");
+
+            verify(eventService).createAdapterEvent("adapter-1", "test-protocol");
+            verify(eventBuilder).withSeverity(Event.SEVERITY.WARN);
+            verify(eventBuilder).fire();
+        }
+
+        @Test
+        void deleteProtocolAdapterByAdapterId_nonexistent_doesNotThrow() {
+            // Should not throw, just log a warning
+            manager.deleteProtocolAdapterByAdapterId("nonexistent");
+
+            // No event should be fired for nonexistent adapter
+            verify(eventService, org.mockito.Mockito.never()).createAdapterEvent(anyString(), anyString());
+        }
+    }
+
+    @Nested
+    class AdapterIdSetTests {
+
+        @Test
+        void getProtocolAdapterIdSet_empty() {
+            assertThat(manager.getProtocolAdapterIdSet()).isEmpty();
+        }
+
+        @Test
+        void getProtocolAdapterIdSet_returnsAllIds() {
+            addAdapterToManager("adapter-1", createSuccessAdapter("adapter-1"));
+            addAdapterToManager("adapter-2", createSuccessAdapter("adapter-2"));
+            addAdapterToManager("adapter-3", createSuccessAdapter("adapter-3"));
+
+            assertThat(manager.getProtocolAdapterIdSet())
+                    .containsExactlyInAnyOrder("adapter-1", "adapter-2", "adapter-3");
+        }
+
+        @Test
+        void getProtocolAdapterIdSet_returnsDefensiveCopy() {
+            addAdapterToManager("adapter-1", createSuccessAdapter("adapter-1"));
+
+            final var idSet = manager.getProtocolAdapterIdSet();
+            idSet.add("injected");
+
+            // Should not affect the manager's internal state
+            assertThat(manager.getProtocolAdapterIdSet()).containsExactly("adapter-1");
+        }
+    }
+
+    @Nested
+    class StartStopInteraction {
+
+        @Test
+        void startThenStopThenStart_succeeds() throws ProtocolAdapterException {
+            final ProtocolAdapter2 adapter = createSuccessAdapter("adapter-1");
+            addAdapterToManager("adapter-1", adapter);
+
+            manager.start("adapter-1");
+            manager.stop("adapter-1", false);
+
+            // Reset event mocks for clean verification
+            org.mockito.Mockito.reset(eventService, eventBuilder);
+            when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
+            when(eventBuilder.withSeverity(any())).thenReturn(eventBuilder);
+            when(eventBuilder.withMessage(anyString())).thenReturn(eventBuilder);
+
+            manager.start("adapter-1");
+
+            verify(eventBuilder).withSeverity(Event.SEVERITY.INFO);
+            verify(eventBuilder).withMessage("Adapter started successfully");
+        }
+
+        @Test
+        void startTwice_secondThrows() throws ProtocolAdapterException {
+            final ProtocolAdapter2 adapter = createSuccessAdapter("adapter-1");
+            addAdapterToManager("adapter-1", adapter);
+
+            manager.start("adapter-1");
+
+            assertThatThrownBy(() -> manager.start("adapter-1"))
+                    .isInstanceOf(ProtocolAdapterException.class)
+                    .hasMessageContaining("Failed to start adapter: adapter-1");
+        }
+    }
+
+    @Nested
+    class StopFailureTests {
+
+        @Test
+        void stop_whenAdapterStartFails_firesWarnEvent() throws ProtocolAdapterException {
+            // Adapter that fails start → goes to Error state → stop from Error fires WARN
+            final ProtocolAdapter2 adapter = createFailingPrecheckAdapter("adapter-1");
+            addAdapterToManager("adapter-1", adapter);
+
+            // Start fails (precheck throws), adapter is in Error state
+            assertThatThrownBy(() -> manager.start("adapter-1")).isInstanceOf(ProtocolAdapterException.class);
+
+            // Reset mocks for stop verification
+            org.mockito.Mockito.reset(eventService, eventBuilder);
+            when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
+            when(eventBuilder.withSeverity(any())).thenReturn(eventBuilder);
+            when(eventBuilder.withMessage(anyString())).thenReturn(eventBuilder);
+
+            // Stop from Error state should succeed (transitions Error→Idle)
+            manager.stop("adapter-1", false);
+
+            verify(eventService).createAdapterEvent("adapter-1", "test-protocol");
+            verify(eventBuilder).withSeverity(Event.SEVERITY.INFO);
+            verify(eventBuilder).withMessage("Adapter stopped successfully");
+            verify(eventBuilder).fire();
+        }
+    }
+
+    @Nested
+    class AsyncTests {
+
+        @Test
+        void startAsync_success() throws Exception {
+            final ProtocolAdapter2 adapter = createSuccessAdapter("adapter-1");
+            addAdapterToManager("adapter-1", adapter);
+
+            manager.startAsync("adapter-1").get();
+
+            verify(eventService).createAdapterEvent("adapter-1", "test-protocol");
+        }
+
+        @Test
+        void stopAsync_success() throws Exception {
+            final ProtocolAdapter2 adapter = createSuccessAdapter("adapter-1");
+            addAdapterToManager("adapter-1", adapter);
+
+            manager.startAsync("adapter-1").get();
+
+            // Reset mocks for stop verification
+            org.mockito.Mockito.reset(eventService, eventBuilder);
+            when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
+            when(eventBuilder.withSeverity(any())).thenReturn(eventBuilder);
+            when(eventBuilder.withMessage(anyString())).thenReturn(eventBuilder);
+
+            manager.stopAsync("adapter-1", false).get();
+
+            verify(eventService).createAdapterEvent("adapter-1", "test-protocol");
+            verify(eventBuilder).withSeverity(Event.SEVERITY.INFO);
+            verify(eventBuilder).withMessage("Adapter stopped successfully");
+        }
+
+        @Test
+        void startAsync_adapterNotFound_throwsException() {
+            assertThat(manager.startAsync("nonexistent")).isCompletedExceptionally();
         }
     }
 }

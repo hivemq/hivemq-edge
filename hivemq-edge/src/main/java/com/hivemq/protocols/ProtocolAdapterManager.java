@@ -43,8 +43,6 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +63,8 @@ import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Singleton
+// NOTE: @Inject and @Singleton removed — replaced by ProtocolAdapterManager2 (FSM redesign Phase 6).
+// This class is kept for reference but is no longer wired into the DI graph.
 @SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
 public class ProtocolAdapterManager {
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterManager.class);
@@ -86,7 +85,6 @@ public class ProtocolAdapterManager {
     private final @NotNull ProtocolAdapterExtractor protocolAdapterConfig;
     private final @NotNull ExecutorService executorService;
 
-    @Inject
     public ProtocolAdapterManager(
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull ModuleServicesImpl moduleServices,

@@ -31,7 +31,7 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishServiceImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
-import com.hivemq.protocols.ProtocolAdapterWrapper;
+import com.hivemq.protocols.fsm.ProtocolAdapterWrapper2;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +50,7 @@ public class NorthboundTagConsumer implements TagConsumer {
     private static final @NotNull TypeReference<Map<String, Object>> typeRef = new TypeReference<>() {};
 
     private final @NotNull PollingContext pollingContext;
-    private final @NotNull ProtocolAdapterWrapper protocolAdapter;
+    private final @NotNull ProtocolAdapterWrapper2 protocolAdapter;
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull JsonPayloadCreator jsonPayloadCreator;
     private final @NotNull ProtocolAdapterPublishServiceImpl protocolAdapterPublishService;
@@ -61,7 +61,7 @@ public class NorthboundTagConsumer implements TagConsumer {
 
     public NorthboundTagConsumer(
             final @NotNull PollingContext pollingContext,
-            final @NotNull ProtocolAdapterWrapper protocolAdapter,
+            final @NotNull ProtocolAdapterWrapper2 protocolAdapter,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull JsonPayloadCreator jsonPayloadCreator,
             final @NotNull ProtocolAdapterPublishServiceImpl protocolAdapterPublishService,
