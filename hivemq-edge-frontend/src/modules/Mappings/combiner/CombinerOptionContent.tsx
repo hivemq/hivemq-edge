@@ -21,7 +21,7 @@ export const CombinerOptionContent: FC<CombinerOptionContentProps> = ({ label, a
   return (
     <VStack gap={0} alignItems="stretch" w="100%">
       <HStack>
-        <HStack flex={1} gap={1} overflow="hidden" minW={0}>
+        <HStack flex={1} gap={2} overflow="hidden" minW={0}>
           {type === DataIdentifierReference.type.TAG && <PLCTagIcon boxSize="12px" flexShrink={0} />}
           {type === DataIdentifierReference.type.TOPIC_FILTER && <TopicFilterIcon boxSize="12px" flexShrink={0} />}
           <Text isTruncated>{displayLabel}</Text>
@@ -31,7 +31,7 @@ export const CombinerOptionContent: FC<CombinerOptionContentProps> = ({ label, a
         </Text>
       </HStack>
       {description && (
-        <Text fontSize="sm" noOfLines={3} ml={4} lineHeight="normal" textAlign="justify">
+        <Text fontSize="sm" noOfLines={3} ml={5} lineHeight="normal" textAlign="justify">
           {description}
         </Text>
       )}
