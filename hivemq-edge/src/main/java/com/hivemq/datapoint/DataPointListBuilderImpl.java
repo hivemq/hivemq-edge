@@ -27,7 +27,7 @@ public final class DataPointListBuilderImpl implements DataPointListBuilder {
     public @NotNull DataPointBuilder<DataPointListBuilder> addDataPoint(final @NotNull Tag tag) {
         final Function<DataPointBuilder<DataPointListBuilder>, DataPointListBuilder> completer = dp -> this;
         final var builderImpl = (DataPointWithMetadata.DataPointBuilderImpl<DataPointListBuilder>)
-                DataPointWithMetadata.builder(tag, System.currentTimeMillis(), completer);
+                DataPointWithMetadata.builder(tag, completer);
         builders.add(builderImpl);
         return builderImpl;
     }

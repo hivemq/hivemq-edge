@@ -59,8 +59,8 @@ public class TagManager {
 
     public void feed(@NotNull final List<DataPoint> dataPoints) {
         final var readlock = readWriteLock.readLock();
-        readlock.lock();
         final var consumers = new HashMap<String, List<SingleTagConsumer>>();
+        readlock.lock();
         try {
             dataPoints.forEach(dataPoint -> {
                 final var consuemr = singleTagConsumers.get(dataPoint.getTagName());

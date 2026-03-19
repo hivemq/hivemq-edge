@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -23,11 +24,9 @@ public class DataPointWithMetadata implements DataPoint {
 
     public static <R> @NotNull DataPointBuilder<R> builder(
             final @NotNull Tag tag,
-            final long timestamp,
             final @NotNull Function<DataPointBuilder<R>, R> completer) {
         final ObjectNode root = JsonNodeFactory.instance.objectNode();
         root.put("tagName", tag.getName());
-        root.put("timestamp", timestamp);
         return new DataPointBuilderImpl<>(root, completer);
     }
 
@@ -36,7 +35,7 @@ public class DataPointWithMetadata implements DataPoint {
         return jsonNode.get("value");
     }
 
-    public Long getTimestamp() {
+    public @NotNull Long getTimestamp() {
         return jsonNode.get("timestamp").asLong();
     }
 
@@ -45,11 +44,11 @@ public class DataPointWithMetadata implements DataPoint {
         return jsonNode.get("tagName").asText();
     }
 
-    public Optional<JsonNode> getMetadata() {
+    public @NotNull Optional<JsonNode> getMetadata() {
         return Optional.ofNullable(jsonNode.get("metadata"));
     }
 
-    public Optional<JsonNode> getContext() {
+    public @NotNull Optional<JsonNode> getContext() {
         return Optional.ofNullable(jsonNode.get("context"));
     }
 
@@ -177,11 +176,26 @@ public class DataPointWithMetadata implements DataPoint {
         }
 
         @Override
+        public @NotNull DataPointBuilder<R> timestamp(final long epochMillis) {
+            root.put("timestamp", epochMillis);
+            return this;
+        }
+
+        @Override
+        public @NotNull DataPointBuilder<R> timestamp(final @NotNull Instant instant) {
+            root.put("timestamp", instant.toEpochMilli());
+            return this;
+        }
+
+        @Override
         public R endDataPoint() {
             return completer.apply(this);
         }
 
         public @NotNull DataPointWithMetadata build() {
+            if (!root.has("timestamp")) {
+                root.put("timestamp", System.currentTimeMillis());
+            }
             return new DataPointWithMetadata(root);
         }
     }
