@@ -1027,100 +1027,124 @@ modules only see the SDK — they cannot depend on core classes. Each module cre
 - 10 updated `*ProtocolAdapterFactory` classes
 - 10 per-module `*ProtocolAdapter2Test` test classes
 
-### 5.6 Phase 6: Integration & Testing
+### 5.6 Phase 6: Switchover
 
 **Status**: 🔲 Not Started
 
+**Strategy**: No new tests are created. We leverage the existing comprehensive test suite in `hivemq-edge-test`
+as the validation gate. The new implementation is wired in alongside the old code — nothing is removed yet.
+The switchover is validated when all existing tests pass against the new implementation.
+
 **Tasks**:
-- [ ] Create integration tests with real adapter implementations
-- [ ] Test state transitions under various scenarios
-- [ ] Test error recovery
-- [ ] Test concurrent operations
-- [ ] Performance testing
-- [ ] Memory leak testing
+- [ ] Wire new FSM implementation (`ProtocolAdapterWrapper2`, `ProtocolAdapterManager2`) into DI bindings
+- [ ] Keep all old code (`ProtocolAdapterWrapper`, `ProtocolAdapterManager`, etc.) in place — do not remove
+- [ ] Run the full `hivemq-edge-test` suite against the new implementation
+- [ ] Fix any test failures by adjusting the new implementation (not the tests)
+- [ ] Iterate until all existing tests in `hivemq-edge-test` pass
+
+**Principle**: The existing tests define the correct behavior. If a test fails, the new implementation is wrong,
+not the test. Fix the implementation to match the expected behavior.
 
 **Deliverables**:
-- Comprehensive test suite in `hivemq-edge-test`
+- New FSM implementation wired into production code paths
+- All existing `hivemq-edge-test` tests passing
 
-### 5.7 Phase 7: Switchover
-
-**Status**: 🔲 Not Started
-
-**Tasks**:
-- [ ] Add feature flag for new FSM design
-- [ ] Update DI bindings to use new implementations
-- [ ] Create migration documentation
-- [ ] Deploy to staging environment
-- [ ] Monitor for issues
-- [ ] Remove old implementations after validation
-
-**Deliverables**:
-- Feature flag configuration
-- Migration documentation
-- Production deployment plan
-
-### 5.8 Phase 8: Post-Migration Cleanup
+### 5.7 Phase 7: Merge `ProtocolAdapter2` into `ProtocolAdapter`
 
 **Status**: 🔲 Not Started
 
-**Goals**:
-
-1. **Remove `ProtocolAdapter2Bridge`**: The bridge exists only to wrap the old `ProtocolAdapter` interface
-   during the transition. Once all adapters implement `ProtocolAdapter2` natively (i.e., their connect/disconnect
-   logic no longer delegates to the old start/stop callbacks), `ProtocolAdapter2Bridge` is deleted from the SDK.
-   Each adapter's `*ProtocolAdapter2` class becomes a standalone implementation of `ProtocolAdapter2`.
-
-2. **Merge `ProtocolAdapter2` back into `ProtocolAdapter`**: The `ProtocolAdapter2` interface is a temporary
-   parallel interface. After migration, its API (synchronous `connect(direction)`, `disconnect(direction)`,
-   `precheck()`, `supportsSouthbound()`, `destroy()`) becomes the sole `ProtocolAdapter` contract. The old
-   `ProtocolAdapter` interface (with async `start(input, output)` / `stop(input, output)`) is removed, and
-   `ProtocolAdapter2` is renamed to `ProtocolAdapter`.
+**Goal**: `ProtocolAdapter2` is a temporary parallel interface. Its API (`connect(direction)`,
+`disconnect(direction)`, `precheck()`, `supportsSouthbound()`, `destroy()`) is merged into the existing
+`ProtocolAdapter` interface, replacing the old async `start(input, output)` / `stop(input, output)` contract.
 
 **Tasks**:
-- [ ] Migrate each adapter's connect/disconnect logic out of the old start/stop callback pattern
-- [ ] Remove `ProtocolAdapter2Bridge` from the adapter SDK
-- [ ] Merge `ProtocolAdapter2` API into `ProtocolAdapter`
-- [ ] Remove old `ProtocolAdapter` interface
-- [ ] Update all adapter modules to implement the unified `ProtocolAdapter`
-- [ ] Remove old `ProtocolAdapterWrapper`, `ProtocolAdapterManager`, and related classes from core
-- [ ] Update tests
+- [ ] Add the `ProtocolAdapter2` methods to the `ProtocolAdapter` interface
+- [ ] Update all adapter implementations to implement the new methods directly on `ProtocolAdapter`
+- [ ] Remove the `ProtocolAdapter2` interface
+- [ ] Remove `ProtocolAdapter2Bridge` from the adapter SDK (no longer needed — adapters implement `ProtocolAdapter` directly)
+- [ ] Remove per-module `*ProtocolAdapter2` classes (their logic moves into the adapter classes themselves)
+- [ ] Remove `ProtocolAdapterFactory.createProtocolAdapter2()` — the factory returns `ProtocolAdapter` directly
+- [ ] Update core (`ProtocolAdapterWrapper2`, `ProtocolAdapterManager2`) to use `ProtocolAdapter` instead of `ProtocolAdapter2`
+- [ ] Run the full `hivemq-edge-test` suite — fix implementation until all tests pass
 
 **Deliverables**:
 - Single `ProtocolAdapter` interface with synchronous FSM-based lifecycle
-- No bridge classes
-- Clean adapter SDK without transitional types
+- No `ProtocolAdapter2`, no `ProtocolAdapter2Bridge`, no per-module `*ProtocolAdapter2` classes
+- All existing `hivemq-edge-test` tests passing
+
+### 5.8 Phase 8: Old Code Removal
+
+**Status**: 🔲 Not Started
+
+**Goal**: Remove all old implementation code that is no longer referenced after the switchover.
+
+**Tasks**:
+- [ ] Remove old `ProtocolAdapterWrapper` from core
+- [ ] Remove old `ProtocolAdapterManager` from core
+- [ ] Remove old async start/stop methods from `ProtocolAdapter` (if any remain)
+- [ ] Remove old output impl classes (`ProtocolAdapterStartOutputImpl`, `ProtocolAdapterStopOutputImpl`) if unused
+- [ ] Remove any other dead code left over from the old design
+- [ ] Run the full `hivemq-edge-test` suite — fix until all tests pass
+
+**Deliverables**:
+- Clean codebase with no dead old-design code
+- All existing `hivemq-edge-test` tests passing
+
+### 5.9 Phase 9: Remove `2` Suffix from Class Names
+
+**Status**: 🔲 Not Started
+
+**Goal**: With the old implementations removed, the `2` suffix on new classes is no longer meaningful.
+Rename all `*2` classes to drop the suffix so the codebase uses clean, final names.
+
+**Renames**:
+- `ProtocolAdapterWrapper2` → `ProtocolAdapterWrapper`
+- `ProtocolAdapterManager2` → `ProtocolAdapterManager`
+- Any other classes or test files with a `2` suffix introduced by this redesign
+
+**Tasks**:
+- [ ] Rename classes and files
+- [ ] Update all references (imports, DI bindings, configuration, etc.)
+- [ ] Rename corresponding test classes (e.g., `ProtocolAdapterWrapper2Test` → `ProtocolAdapterWrapperTest`)
+- [ ] Run the full `hivemq-edge-test` suite — fix until all tests pass
+
+**Deliverables**:
+- No `*2` suffixed class names remain
+- All existing `hivemq-edge-test` tests passing
 
 ---
 
 ## 6. Test Strategy
 
-### 6.1 Existing Tests Must Pass
+### 6.1 Primary Validation: `hivemq-edge-test`
 
-The following tests must continue to pass throughout migration (55 tests total):
+The existing comprehensive test suite in `hivemq-edge-test` is the primary validation gate for the migration.
+No new integration tests are created specifically for the FSM redesign. Instead, the new implementation must
+pass all existing tests — this ensures behavioral compatibility with the old design.
+
+**Validation command** (from `hivemq-edge-composite`):
+```
+./gradlew :hivemq-edge-test:test
+```
+
+### 6.2 Unit Tests (Phase 1–5)
+
+The following unit tests validate individual FSM components in isolation:
 
 ```
 com.hivemq.protocols.fsm.ProtocolAdapterConnectionStateTest  # Connection FSM transitions
 com.hivemq.protocols.fsm.ProtocolAdapterStateTest            # Adapter FSM transitions
 com.hivemq.protocols.fsm.ProtocolAdapter2BridgeTest          # Bridge: old → new adapter interface
 com.hivemq.protocols.fsm.ProtocolAdapterWrapperTest          # Wrapper lifecycle, listeners, hooks
-com.hivemq.protocols.fsm.ProtocolAdapterManager2Test         # Manager start/stop events, lookup
+com.hivemq.protocols.fsm.ProtocolAdapterManager2Test         # Manager tests with mocks
 ```
 
-### 6.2 New Test Categories
+Per-module smoke tests (10 modules) validate adapter-specific `ProtocolAdapter2` classes and factory wiring.
 
-1. **Unit Tests**: FSM transition tests (existing)
-2. **Component Tests**: Wrapper and Manager tests with mocks
-3. **Integration Tests**: Full adapter lifecycle with real services
-4. **Stress Tests**: Concurrent start/stop operations
-5. **Error Recovery Tests**: Failure scenarios and recovery
+### 6.3 Failure Resolution Principle
 
-### 6.3 Test Isolation
-
-Until switchover:
-- New code lives in `com.hivemq.protocols.fsm` package
-- Old code remains in `com.hivemq.protocols` package
-- Tests don't interfere with production code
-- Feature flag controls which implementation is used
+If an existing test fails after switchover, the **implementation is fixed**, not the test.
+The existing tests define the correct behavior contract.
 
 ---
 
@@ -1138,13 +1162,14 @@ Until switchover:
 
 ## 8. Success Criteria
 
-1. All existing FSM tests pass
+1. All existing `hivemq-edge-test` tests pass against the new implementation
 2. All adapter types can start/stop successfully
 3. State transitions are deterministic and traceable
 4. Error recovery works correctly
 5. No performance regression (< 5% slower startup)
 6. Code complexity reduced (fewer callbacks, no nested futures)
-7. Easier to debug and reason about
+7. Single `ProtocolAdapter` interface — no `ProtocolAdapter2`, no bridge
+8. No old dead code remaining (`ProtocolAdapterWrapper`, `ProtocolAdapterManager`, etc.)
 
 ---
 
@@ -1258,7 +1283,7 @@ hivemq-edge/hivemq-edge/src/main/java/com/hivemq/protocols/
 
 ---
 
-**Document Version**: 1.4
+**Document Version**: 1.6
 **Last Updated**: 2026-03-19
 **Author**: Claude (AI Assistant)
-**Status**: IN PROGRESS (Phase 1–5 complete, Phase 6 not started)
+**Status**: IN PROGRESS (Phase 1–5 complete, Phase 6–9 not started)
