@@ -1,7 +1,11 @@
 import { DataIdentifierReference } from '@/api/__generated__'
 import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser.tsx'
-import { MOCK_MQTT_SCHEMA_PLAIN, MOCK_MQTT_SCHEMA_REFS } from '@/__test-utils__/rjsf/schema.mocks.ts'
+import {
+  MOCK_MQTT_SCHEMA_PLAIN,
+  MOCK_MQTT_SCHEMA_READONLY,
+  MOCK_MQTT_SCHEMA_REFS,
+} from '@/__test-utils__/rjsf/schema.mocks.ts'
 
 const MOCK_SCHEMA_TITLED = { ...MOCK_MQTT_SCHEMA_PLAIN, title: 'temperature' }
 
@@ -50,6 +54,20 @@ describe('JsonSchemaBrowser', () => {
           expect(text).to.include('sensors')
           expect(text).not.to.include('::')
         })
+    })
+  })
+
+  describe('readOnly indicator', () => {
+    it('should render lock icon for readOnly properties when showReadOnly is true (default)', () => {
+      cy.mountWithProviders(<JsonSchemaBrowser schema={MOCK_MQTT_SCHEMA_READONLY} />)
+
+      cy.getByTestId('property-readonly').should('exist')
+    })
+
+    it('should not render lock icon for readOnly properties when showReadOnly is false', () => {
+      cy.mountWithProviders(<JsonSchemaBrowser schema={MOCK_MQTT_SCHEMA_READONLY} showReadOnly={false} />)
+
+      cy.getByTestId('property-readonly').should('not.exist')
     })
   })
 

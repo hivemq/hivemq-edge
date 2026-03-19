@@ -69,7 +69,9 @@ const TopicSchemaManager: FC<CurrentSchemaProps> = ({ topicFilter }) => {
                     {schemaHandler.error && (
                       <ErrorMessage message={schemaHandler.error} status={schemaHandler.status} />
                     )}
-                    {schemaHandler.schema && <JsonSchemaBrowser schema={schemaHandler.schema} hasExamples />}
+                    {schemaHandler.schema && (
+                      <JsonSchemaBrowser schema={schemaHandler.schema} hasExamples showReadOnly={false} />
+                    )}
                   </CardBody>
                   <CardFooter justifyContent="flex-end">
                     <Button isDisabled={Boolean(!topicFilter.schema)} onClick={onHandleClear}>

@@ -67,6 +67,14 @@ describe('PropertyItem', () => {
     cy.getByTestId('property-readonly').should('not.exist')
   })
 
+  it('should not render readonly indicator when showReadOnly is false even if property is readOnly', () => {
+    cy.mountWithProviders(
+      <PropertyItem property={{ ...MOCK_PROPERTY, readOnly: true }} isDraggable={false} showReadOnly={false} />
+    )
+
+    cy.getByTestId('property-readonly').should('not.exist')
+  })
+
   it('should show tooltip on readonly indicator interaction', () => {
     cy.mountWithProviders(<PropertyItem property={{ ...MOCK_PROPERTY, readOnly: true }} isDraggable={false} />)
 

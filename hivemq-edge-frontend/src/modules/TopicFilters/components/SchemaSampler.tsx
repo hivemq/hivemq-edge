@@ -31,7 +31,7 @@ const SchemaSampler: FC<SchemaManagerProps> = ({ topicFilter, onUpload }) => {
   return (
     <Card>
       <CardBody>
-        <JsonSchemaBrowser schema={schema as JSONSchema7} />
+        <JsonSchemaBrowser schema={schema as JSONSchema7} showReadOnly={false} />
       </CardBody>
       <CardFooter justifyContent="flex-end">
         <Button
