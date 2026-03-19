@@ -694,6 +694,63 @@ describe('DataCombiningEditorField', () => {
     })
   })
 
+  describe('PR Screenshots — EDG-38 readOnly indicator', { tags: ['@percy'] }, () => {
+    const readOnlySourceSchema = {
+      type: 'object',
+      title: 'Sensor Data',
+      properties: {
+        temperature: { type: 'number', title: 'Temperature' },
+        unit: { type: 'string', title: 'Unit', readOnly: true },
+        device_id: { type: 'string', title: 'Device ID', readOnly: true },
+        pressure: { type: 'number', title: 'Pressure' },
+      },
+    }
+
+    const destinationSchema = encodeDataUriJsonSchema({
+      type: 'object',
+      title: 'Output',
+      properties: { temperature: { type: 'number', title: 'Temperature' } },
+    })
+
+    beforeEach(() => {
+      // THIS MUST BE THE OUTPUT FOR OUR SCREENSHOTS
+      cy.viewport(1280, 720)
+    })
+
+    it('should render source schema properties without readOnly indicators', () => {
+      cy.intercept('GET', '**/writing-schema/adapter-a/**', { body: readOnlySourceSchema }).as('schema')
+
+      const formData: DataCombining = {
+        id: '58677276-fc48-4a9a-880c-41c755f5063b',
+        sources: {
+          primary: { id: 'sensor/data', type: DataIdentifierReference.type.TAG, scope: 'adapter-a' },
+          tags: ['sensor/data'],
+          topicFilters: [],
+        },
+        destination: { topic: 'plant/output', schema: destinationSchema },
+        instructions: [],
+      }
+
+      cy.mountWithProviders(
+        <CustomFormTesting
+          schema={mockDataCombiningTableSchema}
+          uiSchema={mockDataCombiningTableUISchema}
+          formData={formData}
+        />
+      )
+
+      cy.wait('@schema')
+
+      cy.getByTestId('combining-editor-sources-schemas').within(() => {
+        cy.getByTestId('topic-wrapper').should('have.length', 1)
+      })
+
+      cy.screenshot('edg38-readonly-source-schema', { capture: 'viewport', overwrite: true })
+
+      cy.getByTestId('property-readonly').should('not.exist')
+    })
+  })
+
   describe('Blog Post Screenshots — Tag Ownership Display', { tags: ['@percy'] }, () => {
     const boilerSourceSchema = {
       type: 'object',

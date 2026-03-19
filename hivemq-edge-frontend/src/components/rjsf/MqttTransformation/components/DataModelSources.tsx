@@ -51,7 +51,7 @@ const DataModelSources: FC<DataModelSourcesProps> = ({ topic, onChange, ...props
         {!isLoading &&
           schema &&
           structuredSchema.map((schema) => (
-            <JsonSchemaBrowser schema={schema} isDraggable hasExamples key={schema.title} />
+            <JsonSchemaBrowser schema={schema} isDraggable hasExamples showReadOnly={false} key={schema.title} />
           ))}
       </CardBody>
     </Card>

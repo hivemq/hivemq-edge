@@ -16,6 +16,7 @@ interface JsonSchemaBrowserProps extends ListProps {
   hasExamples?: boolean
   isTagShown?: boolean
   dataReference?: DataReference
+  showReadOnly?: boolean
 }
 
 const JsonSchemaBrowser: FC<JsonSchemaBrowserProps> = ({
@@ -23,6 +24,7 @@ const JsonSchemaBrowser: FC<JsonSchemaBrowserProps> = ({
   isDraggable = false,
   hasExamples = false,
   isTagShown = false,
+  showReadOnly = true,
   dataReference,
   ...props
 }) => {
@@ -53,6 +55,7 @@ const JsonSchemaBrowser: FC<JsonSchemaBrowserProps> = ({
                 isDraggable={isDraggable}
                 hasExamples={hasExamples}
                 hasTooltip
+                showReadOnly={showReadOnly}
               />
             </ListItem>
           )
