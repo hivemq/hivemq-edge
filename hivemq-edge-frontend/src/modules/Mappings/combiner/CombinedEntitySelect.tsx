@@ -27,6 +27,7 @@ interface EntityOption extends OptionBase {
   type: DataIdentifierReference.type
   adapterId?: string
   description?: string
+  sortKey?: string
 }
 
 const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ id, formContext, onChange, ...boxProps }) => {
@@ -55,6 +56,7 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ id, formContext,
             description: tag.description,
             adapterId: entity.id,
             type: DataIdentifierReference.type.TAG,
+            sortKey: entity.id ? `${entity.id} :: ${tag.name}` : tag.name,
           }))
           acc.push(...options)
         } else if ((query.data.items[0] as TopicFilter).topicFilter) {
@@ -63,6 +65,7 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ id, formContext,
             value: topicFilter.topicFilter,
             description: topicFilter.description,
             type: DataIdentifierReference.type.TOPIC_FILTER,
+            sortKey: topicFilter.topicFilter,
           }))
 
           acc.push(...options)
@@ -83,12 +86,10 @@ const CombinedEntitySelect: FC<EntityReferenceSelectProps> = ({ id, formContext,
       return acc
     }, [])
 
-    // Sort by tag name first, then by adapterId — keeps same-named tags from different
-    // adapters adjacent in the list and preserves natural alphabetical browsing
     return deduped.sort((a, b) => {
-      const tagCmp = a.value.localeCompare(b.value)
-      if (tagCmp !== 0) return tagCmp
-      return (a.adapterId ?? '').localeCompare(b.adapterId ?? '')
+      const keyA = a.sortKey ?? a.value
+      const keyB = b.sortKey ?? b.value
+      return keyA.localeCompare(keyB)
     })
   }, [formContext?.entityQueries, isLoading])
 
