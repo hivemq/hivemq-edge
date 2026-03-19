@@ -646,7 +646,11 @@ public class ProtocolAdapterWrapper2 {
             final boolean success = transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Connected)
                     .status()
                     .isSuccess();
-            if (success && protocolAdapterState != null) {
+            // Only set CONNECTED if the adapter hasn't already set its own status during connect().
+            // Stateless adapters (e.g., File, Simulation) set STATELESS during start() — we must not overwrite that.
+            if (success && protocolAdapterState != null
+                    && protocolAdapterState.getConnectionStatus()
+                            == ProtocolAdapterState.ConnectionStatus.DISCONNECTED) {
                 protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
             }
             return success;
