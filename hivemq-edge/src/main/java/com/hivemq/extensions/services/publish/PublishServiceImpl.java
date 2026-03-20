@@ -179,7 +179,8 @@ public class PublishServiceImpl implements PublishService {
                                 publish.getPayloadFormatIndicator().get())
                         : null;
 
-        final QoS qosValue = java.util.Objects.requireNonNull(QoS.valueOf(publish.getQos().getQosNumber()));
+        final QoS qosValue =
+                java.util.Objects.requireNonNull(QoS.valueOf(publish.getQos().getQosNumber()));
         return new PUBLISHFactory.Mqtt5Builder()
                 .withHivemqId(hiveMQId.get())
                 .withQoS(qosValue)

@@ -472,13 +472,15 @@ public class MessageForwarderImpl implements MessageForwarder {
                         // which callback executor does not matter, but it must be scheduled to prevent a stack-overflow
                         // if multiple errors occur back-to-back
                         @SuppressWarnings("NullAway") // Task<Void> lambda returning null is required for Void type
-                        final var ignored = singleWriterService.getQueuedMessagesQueue().submit("forwarder", bucketIndex -> {
-                            if (log.isDebugEnabled()) {
-                                log.debug("Retrying buffer check after polling failure");
-                            }
-                            checkBuffers();
-                            return null;
-                        });
+                        final var ignored = singleWriterService
+                                .getQueuedMessagesQueue()
+                                .submit("forwarder", bucketIndex -> {
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("Retrying buffer check after polling failure");
+                                    }
+                                    checkBuffers();
+                                    return null;
+                                });
                     }
                 },
                 MoreExecutors.directExecutor());

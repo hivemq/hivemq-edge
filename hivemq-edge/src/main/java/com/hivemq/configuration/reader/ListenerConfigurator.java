@@ -234,7 +234,8 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
         return new Tls.Builder()
                 .withKeystorePath(keystorePath)
                 .withKeystoreType(type)
-                .withKeystorePassword(Objects.requireNonNull(entity.getKeystoreEntity()).getPassword())
+                .withKeystorePassword(
+                        Objects.requireNonNull(entity.getKeystoreEntity()).getPassword())
                 .withPrivateKeyPassword(entity.getKeystoreEntity().getPrivateKeyPassword())
                 .withProtocols(entity.getProtocols())
                 .withTruststorePath(truststorePath)

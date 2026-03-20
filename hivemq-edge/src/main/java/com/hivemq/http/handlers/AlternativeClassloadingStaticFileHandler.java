@@ -64,7 +64,8 @@ public class AlternativeClassloadingStaticFileHandler extends StaticFileHandler 
         return inputStream;
     }
 
-    protected static @Nullable InputStream loadClasspathResourceInternal(final ClassLoader loader, final String resource) {
+    protected static @Nullable InputStream loadClasspathResourceInternal(
+            final ClassLoader loader, final String resource) {
         InputStream is = loader.getResourceAsStream(resource);
         if (is == null) {
             is = loader.getResourceAsStream("/" + resource);

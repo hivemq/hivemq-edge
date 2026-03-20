@@ -34,8 +34,7 @@ public record EntityReference(EntityType type, String id) {
     }
 
     public static @NotNull EntityReference fromPersistence(final @NotNull EntityReferenceEntity entityReference) {
-        return new EntityReference(
-                requireNonNull(entityReference.getType()), requireNonNull(entityReference.getId()));
+        return new EntityReference(requireNonNull(entityReference.getType()), requireNonNull(entityReference.getId()));
     }
 
     public @NotNull EntityReferenceEntity toPersistence() {

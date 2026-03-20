@@ -188,8 +188,7 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
                                                 data.setErrorMessage(
                                                         "Error while polling tag [" + data.getTagName() + "]");
                                             }
-                                            final String errorMessage =
-                                                    Objects.requireNonNull(data.getErrorMessage());
+                                            final String errorMessage = Objects.requireNonNull(data.getErrorMessage());
                                             if (data.getCause() == null) {
                                                 pollingOutput.fail(errorMessage);
                                             } else {

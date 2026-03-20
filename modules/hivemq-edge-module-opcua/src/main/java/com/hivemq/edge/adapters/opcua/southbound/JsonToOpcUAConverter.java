@@ -150,7 +150,8 @@ public class JsonToOpcUAConverter {
             final String namespaceURI = fieldType.namespaceUri();
             final DataType customDataType = Objects.requireNonNull(fieldType.customDataType());
             final ExpandedNodeId expandedNodeId = ExpandedNodeId.of(
-                    Objects.requireNonNull(namespaceURI), customDataType.getBrowseName().getName());
+                    Objects.requireNonNull(namespaceURI),
+                    customDataType.getBrowseName().getName());
 
             final Optional<NodeId> optionalDataTypeId = expandedNodeId.toNodeId(client.getNamespaceTable());
             if (optionalDataTypeId.isEmpty()) {

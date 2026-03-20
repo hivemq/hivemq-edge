@@ -18,7 +18,6 @@ package com.hivemq.datagov.model.impl;
 import com.hivemq.datagov.model.DataGovernanceError;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson

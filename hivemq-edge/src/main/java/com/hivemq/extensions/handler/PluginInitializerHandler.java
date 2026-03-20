@@ -164,9 +164,7 @@ public class PluginInitializerHandler extends ChannelOutboundHandlerAdapter {
             final ClientInitializer initializer = initializerEntry.getValue();
             final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(
                     initializer.getClass().getClassLoader());
-            final ClassLoader extensionClassloader = extension == null
-                    ? null
-                    : extension.getExtensionClassloader();
+            final ClassLoader extensionClassloader = extension == null ? null : extension.getExtensionClassloader();
             if (extensionClassloader == null) {
                 taskContext.finishInitializer();
                 continue;

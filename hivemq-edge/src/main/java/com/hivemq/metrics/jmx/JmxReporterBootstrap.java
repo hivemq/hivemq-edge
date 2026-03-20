@@ -38,7 +38,8 @@ public class JmxReporterBootstrap {
     private final MetricRegistry metricRegistry;
 
     @VisibleForTesting
-    @Nullable JmxReporter jmxReporter;
+    @Nullable
+    JmxReporter jmxReporter;
 
     @Inject
     public JmxReporterBootstrap(final MetricRegistry metricRegistry) {

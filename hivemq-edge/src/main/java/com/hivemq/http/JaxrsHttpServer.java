@@ -183,17 +183,13 @@ public class JaxrsHttpServer {
                         registerStaticRoot(config, httpServer);
 
                         // objectMapperProvider is non-null: set in bootstrapResources called above
-                        @SuppressWarnings("NullAway") final ObjectMapper mapper = objectMapperProvider.getMapper();
-                        registerContext(
-                                "/app", new WebAppHandler(mapper, "httpd"), httpServer);
-                        registerContext(
-                                "/images",
-                                new StaticFileHandler(mapper, "httpd/images"),
-                                httpServer);
+                        @SuppressWarnings("NullAway")
+                        final ObjectMapper mapper = objectMapperProvider.getMapper();
+                        registerContext("/app", new WebAppHandler(mapper, "httpd"), httpServer);
+                        registerContext("/images", new StaticFileHandler(mapper, "httpd/images"), httpServer);
                         registerContext(
                                 "/module/images",
-                                new AlternativeClassloadingStaticFileHandler(
-                                        mapper, "httpd/images", shutdownHooks),
+                                new AlternativeClassloadingStaticFileHandler(mapper, "httpd/images", shutdownHooks),
                                 httpServer);
 
                         httpServers.add(httpServer);
@@ -290,12 +286,11 @@ public class JaxrsHttpServer {
         List<Pair<String, String>> staticResources = config.getStaticResources();
         if (staticResources != null && !staticResources.isEmpty()) {
             // objectMapperProvider is non-null: set in bootstrapResources before this method is called
-            @SuppressWarnings("NullAway") final ObjectMapper staticMapper = objectMapperProvider.getMapper();
+            @SuppressWarnings("NullAway")
+            final ObjectMapper staticMapper = objectMapperProvider.getMapper();
             staticResources.stream()
-                    .forEach(s -> registerContext(
-                            s.getLeft(),
-                            new StaticFileHandler(staticMapper, s.getRight()),
-                            server));
+                    .forEach(s ->
+                            registerContext(s.getLeft(), new StaticFileHandler(staticMapper, s.getRight()), server));
         }
     }
 

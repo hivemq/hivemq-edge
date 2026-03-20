@@ -70,8 +70,7 @@ public class AwakeHandler extends SimpleChannelInboundHandler<MqttsnPingreq> {
             clientConnection
                     .getChannel()
                     .eventLoop()
-                    .submit(() ->
-                            pollService.pollNewMessages(nonNullClientId, clientConnection.getChannel()));
+                    .submit(() -> pollService.pollNewMessages(nonNullClientId, clientConnection.getChannel()));
             log.info(
                     "Waking ping-req clientId matches session clientId on the same connection, allow to wake {}",
                     clientConnection);

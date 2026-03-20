@@ -215,8 +215,7 @@ public class ProtocolAdapterManager {
                             log.error("Config for adapter '{}' not found, skipping creation", name);
                             return;
                         }
-                        startAsync(createAdapterInternal(
-                                        adapterConfig, versionProvider.getVersion()))
+                        startAsync(createAdapterInternal(adapterConfig, versionProvider.getVersion()))
                                 .get();
                     } catch (final InterruptedException e) {
                         Thread.currentThread().interrupt();
@@ -250,8 +249,8 @@ public class ProtocolAdapterManager {
                                         deleteAdapterInternal(name);
                                         return null;
                                     })
-                                    .thenCompose(ignored -> startAsync(createAdapterInternal(
-                                            updatedConfig, versionProvider.getVersion())))
+                                    .thenCompose(ignored -> startAsync(
+                                            createAdapterInternal(updatedConfig, versionProvider.getVersion())))
                                     .get();
                         } else {
                             if (log.isDebugEnabled()) {

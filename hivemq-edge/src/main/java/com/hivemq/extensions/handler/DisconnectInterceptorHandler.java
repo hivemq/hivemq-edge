@@ -105,7 +105,8 @@ public class DisconnectInterceptorHandler {
         final ClientInformation clientInfo = ExtensionInformationUtil.getAndSetClientInformation(channel, clientId);
         final ConnectionInformation connectionInfo = ExtensionInformationUtil.getAndSetConnectionInformation(channel);
         final Long originalSessionExpiryIntervalBoxed = clientConnection.getClientSessionExpiryInterval();
-        final long originalSessionExpiryInterval = originalSessionExpiryIntervalBoxed != null ? originalSessionExpiryIntervalBoxed : 0L;
+        final long originalSessionExpiryInterval =
+                originalSessionExpiryIntervalBoxed != null ? originalSessionExpiryIntervalBoxed : 0L;
 
         final DisconnectPacketImpl packet = new DisconnectPacketImpl(disconnect);
         final DisconnectInboundInputImpl input = new DisconnectInboundInputImpl(clientInfo, connectionInfo, packet);

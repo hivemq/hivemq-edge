@@ -54,8 +54,7 @@ public class RestrictionConfigurator implements Configurator<RestrictionsEntity>
 
         final RestrictionsEntity entity = Objects.requireNonNull(this.configEntity);
         restrictionsConfigurationService.setMaxConnections(validateMaxConnections(entity.getMaxConnections()));
-        restrictionsConfigurationService.setMaxClientIdLength(
-                validateMaxClientIdLength(entity.getMaxClientIdLength()));
+        restrictionsConfigurationService.setMaxClientIdLength(validateMaxClientIdLength(entity.getMaxClientIdLength()));
         restrictionsConfigurationService.setNoConnectIdleTimeout(
                 validateNoConnectIdleTimeout(entity.getNoConnectIdleTimeout()));
         restrictionsConfigurationService.setIncomingLimit(

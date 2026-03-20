@@ -72,7 +72,8 @@ public class ExtensionBootstrapImpl implements ExtensionBootstrap {
         log.info("Starting HiveMQ extension system.");
 
         shutdownHooks.add(new ExtensionSystemShutdownHook(this));
-        final Path extensionFolder = Objects.requireNonNull(systemInformation.getExtensionsFolder()).toPath();
+        final Path extensionFolder =
+                Objects.requireNonNull(systemInformation.getExtensionsFolder()).toPath();
 
         // load already installed extensions
         final ImmutableCollection<HiveMQExtensionEvent> hiveMQExtensionEvents =

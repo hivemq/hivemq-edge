@@ -35,7 +35,9 @@ public record DataCombining(
                 requireNonNull(model.getId()),
                 DataCombiningSources.fromModel(requireNonNull(model.getSources())),
                 DataCombiningDestination.from(requireNonNull(model.getDestination())),
-                requireNonNull(model.getInstructions()).stream().map(Instruction::from).toList());
+                requireNonNull(model.getInstructions()).stream()
+                        .map(Instruction::from)
+                        .toList());
     }
 
     public static @NotNull DataCombining fromPersistence(final @NotNull DataCombiningEntity model) {
@@ -43,7 +45,9 @@ public record DataCombining(
                 requireNonNull(model.getId()),
                 DataCombiningSources.fromPersistence(requireNonNull(model.getSources())),
                 DataCombiningDestination.fromPersistence(requireNonNull(model.getDestination())),
-                requireNonNull(model.getInstructions()).stream().map(InstructionEntity::to).toList());
+                requireNonNull(model.getInstructions()).stream()
+                        .map(InstructionEntity::to)
+                        .toList());
     }
 
     public @NotNull com.hivemq.edge.api.model.DataCombining toModel() {

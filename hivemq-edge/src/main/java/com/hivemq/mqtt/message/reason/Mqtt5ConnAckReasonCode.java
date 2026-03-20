@@ -121,7 +121,8 @@ public enum Mqtt5ConnAckReasonCode implements Mqtt5ReasonCode {
      * @return the CONNACK Reason Code belonging to the given byte code or <code>null</code> if the byte code is not a
      * valid CONNACK Reason Code code.
      */
-    @SuppressWarnings("NullAway") // array lookup is safe: ERROR_CODE_LOOKUP may have null slots, return type is @Nullable
+    @SuppressWarnings(
+            "NullAway") // array lookup is safe: ERROR_CODE_LOOKUP may have null slots, return type is @Nullable
     public static @Nullable Mqtt5ConnAckReasonCode fromCode(final int code) {
         if (code == SUCCESS.code) {
             return SUCCESS;
@@ -137,7 +138,8 @@ public enum Mqtt5ConnAckReasonCode implements Mqtt5ReasonCode {
         return CONNACK_LOOKUP[reasonCode.ordinal()];
     }
 
-    @SuppressWarnings("NullAway") // array lookup is safe: DISCONNECTED_LOOKUP may have null slots, return type is @Nullable
+    @SuppressWarnings(
+            "NullAway") // array lookup is safe: DISCONNECTED_LOOKUP may have null slots, return type is @Nullable
     public static @Nullable Mqtt5ConnAckReasonCode from(final @NotNull DisconnectedReasonCode reasonCode) {
         return DISCONNECTED_LOOKUP[reasonCode.ordinal()];
     }

@@ -55,8 +55,7 @@ public final class VanillaDataCombiningTransformationService implements DataComb
             LOGGER.warn("Merged payload is null, cannot apply data combining {}", dataCombining.id());
             return CompletableFuture.completedFuture(null);
         }
-        final Optional<DocumentContext> optionalDocumentContext =
-                JsonUtils.toDocumentContext(payload);
+        final Optional<DocumentContext> optionalDocumentContext = JsonUtils.toDocumentContext(payload);
         if (optionalDocumentContext.isEmpty()) {
             LOGGER.warn("Merged payload is not valid JSON, cannot apply data combining {}", dataCombining.id());
             return CompletableFuture.completedFuture(null);

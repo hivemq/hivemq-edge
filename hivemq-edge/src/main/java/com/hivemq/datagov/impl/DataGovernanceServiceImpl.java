@@ -108,9 +108,7 @@ public class DataGovernanceServiceImpl implements DataGovernanceService {
                     output.getPublish().getTopic(),
                     output.getPublish().getQoS().getQosNumber());
             return prePublishProcessorService.publish(
-                    output.getPublish(),
-                    getExecutorForContext(context),
-                    output.getClientId());
+                    output.getPublish(), getExecutorForContext(context), output.getClientId());
         } catch (final Exception e) {
             return Futures.immediateFailedFuture(e);
         }

@@ -207,12 +207,10 @@ public class ClientSessionPersistenceImpl extends AbstractPersistence implements
                             cleanupFuture = cleanClientData(client);
                         } else if (previousTimestamp != null
                                 && previousClientSession != null
-                                && previousClientSession.isExpired(
-                                        System.currentTimeMillis() - previousTimestamp)) {
+                                && previousClientSession.isExpired(System.currentTimeMillis() - previousTimestamp)) {
                             // timestamp in milliseconds + session expiry in seconds * 1000 = milliseconds
                             eventLog.clientSessionExpired(
-                                    previousTimestamp
-                                            + previousClientSession.getSessionExpiryIntervalSec() * 1000,
+                                    previousTimestamp + previousClientSession.getSessionExpiryIntervalSec() * 1000,
                                     client);
                             cleanupFuture = cleanClientData(client);
                         } else {

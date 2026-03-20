@@ -20,14 +20,24 @@ import org.jetbrains.annotations.Nullable;
 
 public class HttpResponse {
 
-    @Nullable Map<String, String> responseHeaders;
-    @Nullable String requestUrl;
-    @Nullable String statusMessage;
-    @Nullable String contentEncoding;
+    @Nullable
+    Map<String, String> responseHeaders;
+
+    @Nullable
+    String requestUrl;
+
+    @Nullable
+    String statusMessage;
+
+    @Nullable
+    String contentEncoding;
+
     int statusCode;
     byte @Nullable [] responseBody;
     int contentLength;
-    @Nullable String contentType;
+
+    @Nullable
+    String contentType;
 
     public @Nullable String getContentEncoding() {
         return contentEncoding;

@@ -26,7 +26,8 @@ import org.jetbrains.annotations.Nullable;
  */
 public interface UnifiedNamespaceService {
 
-    @Nullable ISA95 getISA95();
+    @Nullable
+    ISA95 getISA95();
 
     void setISA95(ISA95 isa95);
 

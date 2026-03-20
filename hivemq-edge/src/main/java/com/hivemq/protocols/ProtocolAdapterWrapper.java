@@ -107,7 +107,8 @@ public class ProtocolAdapterWrapper {
 
     public @NotNull CompletableFuture<Void> startAsync(
             final boolean writingEnabled, final @NotNull ModuleServices moduleServices) {
-        final var existingStartFuture = getOngoingOperationIfPresent(Objects.requireNonNull(operationState.get()), OperationState.STARTING);
+        final var existingStartFuture =
+                getOngoingOperationIfPresent(Objects.requireNonNull(operationState.get()), OperationState.STARTING);
         if (existingStartFuture != null) {
             return existingStartFuture;
         }
@@ -283,7 +284,8 @@ public class ProtocolAdapterWrapper {
     }
 
     public @NotNull CompletableFuture<Void> stopAsync(final boolean destroy) {
-        final var existingStopFuture = getOngoingOperationIfPresent(Objects.requireNonNull(operationState.get()), OperationState.STOPPING);
+        final var existingStopFuture =
+                getOngoingOperationIfPresent(Objects.requireNonNull(operationState.get()), OperationState.STOPPING);
         if (existingStopFuture != null) {
             return existingStopFuture;
         }

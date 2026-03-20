@@ -359,39 +359,41 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         }
 
         final long healthCheckIntervalMs = config.getConnectionOptions().healthCheckIntervalMs();
-        final ScheduledFuture<?> future = Objects.requireNonNull(healthCheckScheduler).scheduleAtFixedRate(
-                () -> {
-                    // Check if adapter was stopped before health check executes
-                    if (stopped) {
-                        log.debug("Health check skipped for adapter '{}' - adapter was stopped", adapterId);
-                        return;
-                    }
+        final ScheduledFuture<?> future = Objects.requireNonNull(healthCheckScheduler)
+                .scheduleAtFixedRate(
+                        () -> {
+                            // Check if adapter was stopped before health check executes
+                            if (stopped) {
+                                log.debug("Health check skipped for adapter '{}' - adapter was stopped", adapterId);
+                                return;
+                            }
 
-                    final OpcUaClientConnection conn = opcUaClientConnection.get();
-                    if (conn == null) {
-                        log.debug("Health check skipped - no active connection for adapter '{}'", adapterId);
-                        return;
-                    }
+                            final OpcUaClientConnection conn = opcUaClientConnection.get();
+                            if (conn == null) {
+                                log.debug("Health check skipped - no active connection for adapter '{}'", adapterId);
+                                return;
+                            }
 
-                    if (!conn.isHealthy()) {
-                        if (config.getConnectionOptions().autoReconnect()) {
-                            log.warn(
-                                    "Health check failed for adapter '{}' - triggering automatic reconnection",
-                                    adapterId);
-                            reconnect();
-                        } else {
-                            log.warn(
-                                    "Health check failed for adapter '{}' - automatic reconnection is disabled",
-                                    adapterId);
-                            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-                        }
-                    } else {
-                        log.debug("Health check passed for adapter '{}'", adapterId);
-                    }
-                },
-                healthCheckIntervalMs,
-                healthCheckIntervalMs,
-                TimeUnit.MILLISECONDS);
+                            if (!conn.isHealthy()) {
+                                if (config.getConnectionOptions().autoReconnect()) {
+                                    log.warn(
+                                            "Health check failed for adapter '{}' - triggering automatic reconnection",
+                                            adapterId);
+                                    reconnect();
+                                } else {
+                                    log.warn(
+                                            "Health check failed for adapter '{}' - automatic reconnection is disabled",
+                                            adapterId);
+                                    protocolAdapterState.setConnectionStatus(
+                                            ProtocolAdapterState.ConnectionStatus.ERROR);
+                                }
+                            } else {
+                                log.debug("Health check passed for adapter '{}'", adapterId);
+                            }
+                        },
+                        healthCheckIntervalMs,
+                        healthCheckIntervalMs,
+                        TimeUnit.MILLISECONDS);
 
         // Store future so it can be cancelled if needed
         final ScheduledFuture<?> oldFuture = healthCheckFuture.getAndSet(future);

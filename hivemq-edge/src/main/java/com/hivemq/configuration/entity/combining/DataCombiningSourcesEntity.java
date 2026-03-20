@@ -42,8 +42,7 @@ public class DataCombiningSourcesEntity {
 
     // no-arg for jaxb
     @SuppressWarnings("NullAway.Init")
-    public DataCombiningSourcesEntity() {
-    }
+    public DataCombiningSourcesEntity() {}
 
     public DataCombiningSourcesEntity(
             final @NotNull DataIdentifierReferenceEntity primaryIdentifier,
