@@ -89,6 +89,7 @@ public class OpcUaClientConnectionTest {
                 new OpcUaToMqttConfig(1, 1000),
                 // 1 second publishing interval
                 null,
+                null,
                 null);
 
         // Create a tag that maps to a node in the test server
@@ -182,6 +183,7 @@ public class OpcUaClientConnectionTest {
                 new OpcUaToMqttConfig(1, 2000),
                 // 2 second publishing interval
                 null,
+                null,
                 null);
 
         // Create multiple tags
@@ -264,6 +266,7 @@ public class OpcUaClientConnectionTest {
                 null,
                 new OpcUaToMqttConfig(1, 1000),
                 null,
+                null,
                 null);
 
         final DataPointFactory dataPointFactory = new DataPointFactory() {
@@ -313,6 +316,7 @@ public class OpcUaClientConnectionTest {
                 null,
                 null,
                 new OpcUaToMqttConfig(1, 1000),
+                null,
                 null,
                 null);
 

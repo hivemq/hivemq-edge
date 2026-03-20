@@ -51,9 +51,15 @@ public class JsonSchemaGenerator {
 
     private final @NotNull OpcUaClient client;
     private final @NotNull DataTypeTree tree;
+    private final boolean includeMetadata;
 
     public JsonSchemaGenerator(final @NotNull OpcUaClient client) {
+        this(client, false);
+    }
+
+    public JsonSchemaGenerator(final @NotNull OpcUaClient client, final boolean includeMetadata) {
         this.client = client;
+        this.includeMetadata = includeMetadata;
         try {
             this.tree = client.getDataTypeTree();
         } catch (final UaException e) {
@@ -63,16 +69,16 @@ public class JsonSchemaGenerator {
 
     public @NotNull CompletableFuture<Optional<JsonNode>> createMqttPayloadJsonSchema(final @NotNull OpcuaTag tag) {
         final String nodeId = tag.getDefinition().getNode();
-        final var jsonSchemaGenerator = new JsonSchemaGenerator(client);
+        final var jsonSchemaGenerator = new JsonSchemaGenerator(client, includeMetadata);
         final var parsed = NodeId.parse(nodeId);
         return jsonSchemaGenerator
                 .collectTypeInfo(parsed)
                 .thenApply(info -> {
                     if (info.arrayDimensions() != null && info.arrayDimensions().length > 0) {
-                        return createJsonSchemaForArrayType(info.dataType(), info.arrayDimensions);
+                        return createJsonSchemaForArrayType(info.dataType(), info.arrayDimensions, includeMetadata);
                     } else if (info.nestedFields() == null
                             || info.nestedFields().isEmpty()) {
-                        return createJsonSchemaForBuiltInType(info.dataType());
+                        return createJsonSchemaForBuiltInType(info.dataType(), includeMetadata);
                     } else {
                         return jsonSchemaGenerator.jsonSchemaFromNodeId(info);
                     }
@@ -266,7 +272,6 @@ public class JsonSchemaGenerator {
         rootNode.set(TYPE, new TextNode(OBJECT_DATA_TYPE));
 
         final ObjectNode valueNode = MAPPER.createObjectNode();
-        rootNode.set("value", valueNode);
         valueNode.set(TYPE, new TextNode(OBJECT_DATA_TYPE));
 
         final ObjectNode propertiesNode = MAPPER.createObjectNode();
@@ -281,6 +286,15 @@ public class JsonSchemaGenerator {
         });
 
         valueNode.set("required", requiredAttributesArray);
+
+        if (includeMetadata) {
+            final ObjectNode rootPropertiesNode = MAPPER.createObjectNode();
+            rootNode.set("properties", rootPropertiesNode);
+            rootPropertiesNode.set("value", valueNode);
+            BuiltinJsonSchema.addReadOnlyMetadataProperties(rootPropertiesNode, MAPPER);
+        } else {
+            rootNode.set("value", valueNode);
+        }
 
         final ArrayNode requiredProperties = MAPPER.createArrayNode();
         requiredProperties.add("value");
