@@ -36,6 +36,7 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.datagov.ioc.DataGovernanceModule;
 import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.modules.ModuleLoader;
+import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.ioc.ModulesModule;
 import com.hivemq.edge.modules.ioc.RemoteServiceModule;
 import com.hivemq.extensions.core.CommercialModuleLoaderDiscovery;
@@ -119,6 +120,8 @@ public interface Injector {
     AfterHiveMQStartBootstrapService afterHiveMQStartBootstrapService();
 
     ProtocolAdapterManager protocolAdapterManager();
+
+    TagManager tagManager();
 
     //    UnsServiceModule uns();
 

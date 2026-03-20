@@ -15,9 +15,7 @@
  */
 package com.hivemq.combining.runtime;
 
-import static com.hivemq.combining.model.DataIdentifierReference.Type.TAG;
 import static com.hivemq.combining.model.DataIdentifierReference.Type.TOPIC_FILTER;
-import static com.hivemq.combining.runtime.SourceSanitizer.sanitize;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -33,13 +31,16 @@ import com.hivemq.mqtt.topic.SubscriptionFlag;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
+import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 import com.hivemq.protocols.northbound.TagConsumer;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,9 +57,8 @@ public class DataCombiningRuntime {
     private final @NotNull DataCombiningPublishService dataCombiningPublishService;
     private final @NotNull DataCombiningTransformationService dataCombiningTransformationService;
     private final @NotNull ObjectMapper mapper;
-    private final @NotNull List<InternalTagConsumer> consumers;
-    private final @NotNull List<InternalSubscription> internalSubscriptions;
-    private final @NotNull ConcurrentHashMap<String, List<DataPoint>> tagResults;
+    private final @NotNull List<InternalConsumer> consumers;
+    private final @NotNull ConcurrentHashMap<DataIdentifierReference, List<DataPoint>> tagResults;
     private final @NotNull ConcurrentHashMap<String, PUBLISH> topicFilterToPublish;
 
     public DataCombiningRuntime(
@@ -78,7 +78,6 @@ public class DataCombiningRuntime {
         this.dataCombiningTransformationService = dataCombiningTransformationService;
         this.mapper = new ObjectMapper();
         this.consumers = new ArrayList<>();
-        this.internalSubscriptions = new ArrayList<>();
         this.tagResults = new ConcurrentHashMap<>();
         this.topicFilterToPublish = new ConcurrentHashMap<>();
     }
@@ -87,75 +86,49 @@ public class DataCombiningRuntime {
         log.debug("Starting data combining {}", combining.id());
         // prepare the script for the data combining
         dataCombiningTransformationService.addScriptForDataCombining(combining);
-
-        combining.sources().tags().stream()
-                .map(tag -> {
-                    log.debug("Starting tag consumer for tag {}", tag);
-                    return new InternalTagConsumer(
-                            tag,
-                            combining,
-                            TAG.equals(combining.sources().primaryReference().type())
-                                    && tag.equals(combining
-                                            .sources()
-                                            .primaryReference()
-                                            .id()));
-                })
-                .forEach(consumer -> {
-                    tagManager.addConsumer(consumer);
-                    consumers.add(consumer);
+        final DataIdentifierReference primaryRef = combining.sources().primaryReference();
+        final AtomicBoolean primaryProcessed = new AtomicBoolean();
+        combining.instructions().stream()
+                .map(Instruction::dataIdentifierReference)
+                .filter(Objects::nonNull)
+                .distinct()
+                .forEach(dataIdentifierReference -> {
+                    if (dataIdentifierReference.equals(primaryRef)) {
+                        primaryProcessed.set(true);
+                        subscribe(dataIdentifierReference, true, true);
+                    } else {
+                        subscribe(dataIdentifierReference, false, true);
+                    }
                 });
+        if (!primaryProcessed.get()) {
+            subscribe(primaryRef, true, false);
+        }
+    }
 
-        combining.sources().topicFilters().forEach(topicFilter -> {
-            log.debug("Starting mqtt consumer for filter {}", topicFilter);
-            internalSubscriptions.add(subscribeTopicFilter(
-                    combining,
-                    topicFilter,
-                    TOPIC_FILTER.equals(combining.sources().primaryReference().type())
-                            && topicFilter.equals(
-                                    combining.sources().primaryReference().id())));
-        });
-
-        internalSubscriptions.forEach(
-                internalSubscription -> internalSubscription.queueConsumer().start());
+    private void subscribe(
+            final @NotNull DataIdentifierReference ref, final boolean primary, final boolean storeDataPoints) {
+        InternalConsumer consumer = null;
+        switch (ref.type()) {
+            case TAG -> {
+                log.debug("Starting tag consumer for tag {} with scope {}", ref.id(), ref.scope());
+                consumer = new InternalTagConsumer(ref, primary, storeDataPoints);
+            }
+            case TOPIC_FILTER -> {
+                log.debug("Starting mqtt consumer for filter {}", ref.id());
+                consumer = new InternalTopicFilterConsumer(ref, primary, storeDataPoints);
+            }
+            default -> log.warn("Unsupported data identifier reference type: {}", ref.type());
+        }
+        if (consumer != null) {
+            consumers.add(consumer);
+            consumer.start();
+        }
     }
 
     public void stop() {
-        consumers.forEach(tagManager::removeConsumer);
-        internalSubscriptions.forEach(sub -> {
-            sub.queueConsumer().close();
-            localTopicTree.removeSubscriber(
-                    sub.subscriber(), sub.topic(), sub.sharedName()); // I guess we should keep the subscription?
-        });
-
+        consumers.forEach(InternalConsumer::close);
+        consumers.clear();
         dataCombiningTransformationService.removeScriptForDataCombining(combining);
-    }
-
-    public @NotNull InternalSubscription subscribeTopicFilter(
-            final @NotNull DataCombining dataCombining, final @NotNull String topicFilter, final boolean isPrimary) {
-        final String clientId = dataCombining.id() + "#";
-        final QoS qos = QoS.EXACTLY_ONCE;
-
-        final var subscription = new InternalSubscription(
-                clientId,
-                topicFilter,
-                dataCombining.id().toString(),
-                new QueueConsumer(clientQueuePersistence, dataCombining.id() + "/" + topicFilter, singleWriterService) {
-                    @Override
-                    public void process(final @NotNull PUBLISH publish) {
-                        topicFilterToPublish.put(topicFilter, publish);
-                        if (isPrimary) {
-                            triggerPublish(dataCombining);
-                        }
-                    }
-                });
-
-        localTopicTree.addTopic(
-                subscription.subscriber(),
-                new Topic(subscription.topic(), qos, false, true),
-                SubscriptionFlag.getDefaultFlags(true, true, false),
-                subscription.sharedName());
-
-        return subscription;
     }
 
     public void triggerPublish(final @NotNull DataCombining dataCombining) {
@@ -166,7 +139,7 @@ public class DataCombiningRuntime {
         topicFilterResults.forEach((topicFilter, publish) -> {
             try {
                 rootNode.set(
-                        sanitize(new DataIdentifierReference(topicFilter, TOPIC_FILTER)),
+                        new DataIdentifierReference(topicFilter, TOPIC_FILTER).toFullyQualifiedName(),
                         mapper.readTree(publish.getPayload()));
             } catch (final IOException e) {
                 log.warn("Exception during json parsing of payload '{}'", publish.getPayload());
@@ -174,10 +147,10 @@ public class DataCombiningRuntime {
             }
         });
 
-        tagsToDataPoints.forEach((tagName, dataPoints) -> dataPoints.forEach(dataPoint -> {
+        tagsToDataPoints.forEach((tagRef, dataPoints) -> dataPoints.forEach(dataPoint -> {
             try {
                 rootNode.set(
-                        sanitize(new DataIdentifierReference(tagName, TAG)),
+                        tagRef.toFullyQualifiedName(),
                         mapper.readTree(dataPoint.getTagValue().toString()));
             } catch (final IOException e) {
                 log.warn("Exception during json parsing of datapoint '{}'", dataPoint.getTagValue());
@@ -189,43 +162,117 @@ public class DataCombiningRuntime {
                 combining.destination(), rootNode.toString().getBytes(StandardCharsets.UTF_8), dataCombining);
     }
 
-    public record InternalSubscription(
-            @NotNull String subscriber,
-            @NotNull String topic,
-            @NotNull String sharedName,
-            @NotNull QueueConsumer queueConsumer) {
+    public abstract static class InternalConsumer {
+        protected final @NotNull DataIdentifierReference dataIdentifierReference;
+        protected final boolean primary;
+        protected final boolean storeDataPoints;
+
+        public InternalConsumer(
+                final @NotNull DataIdentifierReference dataIdentifierReference,
+                final boolean primary,
+                final boolean storeDataPoints) {
+            this.dataIdentifierReference = dataIdentifierReference;
+            this.primary = primary;
+            this.storeDataPoints = storeDataPoints;
+        }
+
+        public abstract void close();
+
+        public abstract void start();
+    }
+
+    public final class InternalTopicFilterConsumer extends InternalConsumer {
+        private static final byte DEFAULT_FLAGS = SubscriptionFlag.getDefaultFlags(true, true, false);
+        private final @NotNull QueueConsumer queueConsumer;
+        private final @NotNull String queueId;
+        private final @NotNull String subscriber;
+        private final @NotNull String topicFilter;
+
+        public InternalTopicFilterConsumer(
+                final @NotNull DataIdentifierReference dataIdentifierReference,
+                final boolean primary,
+                final boolean storeDataPoints) {
+            super(dataIdentifierReference, primary, storeDataPoints);
+            this.queueId = combining.id() + "/" + dataIdentifierReference.id();
+            this.subscriber = combining.id() + "#";
+            this.topicFilter = dataIdentifierReference.id();
+            this.queueConsumer =
+                    new QueueConsumer(clientQueuePersistence, combining.id() + "/" + topicFilter, singleWriterService) {
+                        @Override
+                        public void process(final @NotNull PUBLISH publish) {
+                            if (storeDataPoints) {
+                                topicFilterToPublish.put(topicFilter, publish);
+                            }
+                            if (primary) {
+                                triggerPublish(combining);
+                            }
+                        }
+                    };
+        }
+
         public @NotNull String getQueueId() {
-            return sharedName() + '/' + topic();
+            return queueId;
+        }
+
+        @Override
+        public void close() {
+            queueConsumer.close();
+            localTopicTree.removeSubscriber(
+                    subscriber, topicFilter, combining.id().toString()); // I guess we should keep the subscription?
+        }
+
+        @Override
+        public void start() {
+            localTopicTree.addTopic(
+                    subscriber,
+                    new Topic(topicFilter, QoS.EXACTLY_ONCE, false, true),
+                    DEFAULT_FLAGS,
+                    combining.id().toString());
+            queueConsumer.start();
         }
     }
 
-    public final class InternalTagConsumer implements TagConsumer {
-        private final @NotNull String tagName;
-        private final boolean isPrimary;
-        private final @NotNull DataCombining dataCombining;
-
+    public final class InternalTagConsumer extends InternalConsumer implements TagConsumer {
         public InternalTagConsumer(
-                final @NotNull String tagName, final @NotNull DataCombining dataCombining, final boolean isPrimary) {
-            this.tagName = tagName;
-            this.dataCombining = dataCombining;
-            this.isPrimary = isPrimary;
+                final @NotNull DataIdentifierReference dataIdentifierReference,
+                final boolean primary,
+                final boolean storeDataPoints) {
+            super(dataIdentifierReference, primary, storeDataPoints);
         }
 
         @Override
         public @NotNull String getTagName() {
-            return tagName;
+            return dataIdentifierReference.id();
+        }
+
+        @Override
+        public @NotNull String getScope() {
+            return dataIdentifierReference.scope();
         }
 
         @Override
         public void accept(final @NotNull List<DataPoint> dataPoints) {
-            tagResults.put(tagName, dataPoints);
-            if (isPrimary) {
+            // Use DataIdentifierReference as the key to include scope
+            if (storeDataPoints) {
+                tagResults.put(dataIdentifierReference, dataPoints);
+            }
+            if (primary) {
                 try {
-                    triggerPublish(dataCombining);
+                    triggerPublish(combining);
                 } catch (final Exception e) {
                     log.warn("Unable to process data points '{}'", dataPoints, e);
                 }
             }
+        }
+
+        @Override
+        public void start() {
+            tagManager.addConsumer(this);
+        }
+
+        @Override
+        public void close() {
+            tagManager.removeConsumer(this);
         }
     }
 }

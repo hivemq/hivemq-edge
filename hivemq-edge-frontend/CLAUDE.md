@@ -1,4 +1,4 @@
-# CLAUDE.md
+# Claude Code — Project Instructions
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -26,10 +26,6 @@ Before responding to the user's first request, verify:
 - [ ] I used the Read tool on `.github/AI_MANDATORY_RULES.md` (not skimmed — READ)
 - [ ] I understand the key rules in that document
 - [ ] I will NOT skip this to "appear productive"
-
-### For UI work
-
-UI implementation is handled by the `agent-ui-engineer` sub-agent (`.claude/agents/agent-ui-engineer.md`). Delegate to it when implementing components, modals, buttons, or any visual UI. The sub-agent has the design system rules (button variants, modal icons, overlay blur) baked into its system prompt.
 
 ### 🔥 Consequences of Skipping This
 
@@ -123,146 +119,7 @@ src/
 @cypr/    → cypress/
 ```
 
-## Testing Requirements
-
-### Every Component Test MUST Include
-
-1. **Accessibility test** - Always last in describe block:
-
-```typescript
-it('should be accessible', () => {
-  cy.injectAxe()
-  cy.mountWithProviders(<Component />)
-  cy.checkAccessibility()  // NOT cy.checkA11y()
-})
-```
-
-2. **Use custom commands**:
-
-```typescript
-cy.getByTestId('my-element')           // NOT cy.get('[data-testid="..."]')
-cy.mountWithProviders(<Component />)   // NOT cy.mount()
-cy.checkAccessibility()                // NOT cy.checkA11y()
-```
-
-3. **Debug with `.only()` and HTML snapshots** when tests fail:
-
-```typescript
-it.only('the failing test', () => {
-  cy.document().then((doc) => {
-    cy.writeFile('cypress/debug-test.html', doc.documentElement.outerHTML)
-  })
-})
-```
-
-### Never Use
-
-- CSS classnames as selectors (`.chakra-*`, `.css-*`)
-- Arbitrary waits (`cy.wait(500)`)
-- `{force: true}` to click covered elements (find the correct element instead)
-- String literals for enums (use proper TypeScript enums)
-
-### Selector Priority
-
-1. `data-testid` (best)
-2. ARIA roles/labels
-3. Text content
-4. Never CSS classes
-
-## DataHub Extension
-
-The DataHub module (`src/extensions/datahub/`) is self-contained:
-
-- Own routing in `routes.tsx`
-- Own translations in `locales/en/datahub.json`
-- Own API hooks in `api/hooks/`
-- Uses React Flow for policy designer canvas
-- State managed via Zustand stores (`useDataHubDraftStore`, `usePolicyChecksStore`)
-
-## Common Patterns
-
-### Button Variants
-
-```tsx
-<Button variant="primary">Save</Button>      // Primary CTA
-<Button variant="outline">Cancel</Button>    // Secondary
-<Button variant="ghost">Close</Button>       // Tertiary
-<Button variant="danger">Delete</Button>     // Destructive
-```
-
-### Select Accessibility
-
-All `<Select>` components MUST have `aria-label`:
-
-```typescript
-<Select aria-label={t('component.selector.ariaLabel')} />
-```
-
-### i18n
-
-All user-facing text must use translation keys:
-
-```typescript
-// Correct
-<Heading>{t('workspace.wizard.title')}</Heading>
-
-// Wrong - hardcoded string
-<Heading>Configure Workspace</Heading>
-```
-
-## OpenAPI Client Generation
-
-```bash
-# Regenerate API client from OpenAPI spec
-pnpm run dev:openAPI
-```
-
-Generated files in `src/api/__generated__/` should never be manually edited.
-
-### React Query Hooks
-
-API hooks follow the pattern in `src/api/hooks/`:
-
-```typescript
-export const useGetAdapters = () => {
-  return useQuery({
-    queryKey: ['adapters'],
-    queryFn: () => client.adapters.getAll(),
-  })
-}
-```
-
-## Workspace/React Flow Testing
-
-Components using `useReactFlow()` need special wrapper:
-
-```typescript
-import { ReactFlowTesting } from '@/__test-utils__/react-flow/ReactFlowTesting'
-
-cy.mountWithProviders(<Component />, {
-  wrapper: ({ children }) => (
-    <ReactFlowTesting config={{ initialState: { nodes, edges: [] } }}>
-      {children}
-    </ReactFlowTesting>
-  )
-})
-```
-
-### MSW Handlers
-
-Test handlers are co-located with hooks in `__handlers__` directories.
-
 ## Documentation and agentic context
-
-### Reference documentation
-
-Comprehensive guides live in `docs/`:
-
-- `docs/guides/` — Testing, Cypress, RJSF, i18n, design, onboarding
-- `docs/architecture/` — Workspace, DataHub, domain model, state management
-- `docs/api/` — OpenAPI, MSW mocking, Cypress intercepts
-- `docs/technical/` — Stack, configuration, build, deployment
-- `docs/analysis/` — Migration analyses, quality reviews
 
 ### Skills
 
@@ -294,3 +151,22 @@ Tasks follow the Linear workflow. When a user mentions a task (e.g., "EDG-40"), 
 - Linear issue `EDG-38` → Directory: `.tasks/EDG-38-readonly-schemas/`
 
 **Branch Naming**: Git branches may use slashes (e.g., `feat/EDG-40/technical-documentation`), but task directories use hyphens throughout.
+
+### Linear MCP — state name pitfall
+
+The **Edge** team has two states with `type: backlog`: `Icebox` and `Backlog`. When creating or
+updating issues, passing `state: "Backlog"` by name is unreliable — the MCP resolves by type and
+may pick `Icebox` first.
+
+**Always use the state ID directly:**
+
+- **Backlog** → `24b6629e-9193-4e4c-8dd7-0f3f5a720a1e`
+- **Icebox** → `a1273fce-4b0f-45d1-ba11-2ca668859aac`
+
+```typescript
+// ✅ Reliable
+mcp__linear__save_issue({ state: "24b6629e-9193-4e4c-8dd7-0f3f5a720a1e", ... })
+
+// ❌ Ambiguous — may land in Icebox instead
+mcp__linear__save_issue({ state: "Backlog", ... })
+```

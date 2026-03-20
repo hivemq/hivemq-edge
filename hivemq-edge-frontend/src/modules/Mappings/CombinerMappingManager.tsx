@@ -136,12 +136,15 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
   }
 
   const entities = useMemo(() => {
-    const entities = selectedNode.data.sources.items || []
+    const sourceItems = selectedNode.data.sources.items || []
     const isBridgeIn = Boolean(
-      entities.find((entity) => entity.id === IdStubs.EDGE_NODE && entity.type === EntityType.EDGE_BROKER)
+      sourceItems.find((entity) => entity.id === IdStubs.EDGE_NODE && entity.type === EntityType.EDGE_BROKER)
     )
-    if (!isBridgeIn) entities.push({ id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER })
-    return entities
+    // Create new array to avoid mutation
+    if (!isBridgeIn) {
+      return [...sourceItems, { id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER }]
+    }
+    return sourceItems
   }, [selectedNode.data.sources.items])
 
   const isAssetManager = useMemo(() => {
@@ -149,7 +152,26 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
   }, [entities])
 
   const sources = useGetCombinedEntities(entities)
-  // @ts-ignore wrong type; need a fix
+
+  // Build formContext with explicit entity-query pairings
+  // NOTE: selectedSources is NOT in the shared context because it's per-mapping, not per-combiner
+  // Each mapping editor (DataCombiningEditorField) manages its own selectedSources
+  const formContext = useMemo((): CombinerContext => {
+    const entityQueries = entities.map((entity, index) => ({
+      entity,
+      query: sources[index],
+    }))
+
+    return {
+      entityQueries,
+      // Backward compatibility: keep old fields during migration
+      queries: sources,
+      entities,
+    }
+    // Stabilize by checking if sources data has actually changed, not array reference
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entities, ...sources.map((s) => s.dataUpdatedAt)])
+
   const validator = useValidateCombiner(sources, entities)
   // TODO[NVL] Need to split the manager between Combiner and AssetMapper; no need to have so many hooks not in use
   const updateCombiner = useUpdateCombiner()
@@ -334,7 +356,7 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
             uiSchema={combinerMappingUiSchema(isAssetManager, tabId)}
             formData={selectedNode.data}
             onSubmit={handleOnSubmit}
-            formContext={{ queries: sources, entities } as CombinerContext}
+            formContext={formContext}
             customValidate={validator?.validateCombiner}
           />
         </DrawerBody>

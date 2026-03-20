@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.combining.runtime;
+package com.hivemq.configuration.entity.adapter;
 
-import com.hivemq.combining.model.DataIdentifierReference;
-import org.jetbrains.annotations.NotNull;
-
-public class SourceSanitizer {
-
-    public static @NotNull String sanitize(final @NotNull DataIdentifierReference dataIdRef) {
-        return dataIdRef.type() + ":" + dataIdRef.id().replaceAll("\\.", "/");
+public record AdapterTag(String adapterId, String tagName) {
+    @Override
+    public String toString() {
+        return "AdapterTag{" + "adapterId='" + adapterId + '\'' + ", tagName='" + tagName + '\'' + '}';
     }
 }

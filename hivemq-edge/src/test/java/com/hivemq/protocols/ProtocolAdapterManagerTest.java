@@ -114,6 +114,7 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
+                mock(),
                 tagManager);
 
         protocolAdapterManager.startAsync(adapterWrapper).get();
@@ -140,6 +141,7 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
+                mock(),
                 tagManager);
 
         protocolAdapterManager.startAsync(adapterWrapper).get();
@@ -170,6 +172,7 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
+                mock(),
                 tagManager);
 
         protocolAdapterManager.startAsync(adapterWrapper).get();
@@ -201,6 +204,7 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
+                mock(),
                 tagManager);
 
         protocolAdapterManager.startAsync(adapterWrapper).get();
@@ -228,6 +232,7 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
+                mock(),
                 tagManager);
 
         adapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
@@ -255,6 +260,7 @@ class ProtocolAdapterManagerTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
+                mock(),
                 tagManager);
 
         adapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);

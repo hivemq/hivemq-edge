@@ -6,6 +6,7 @@ import { Heading, List, ListItem } from '@chakra-ui/react'
 import { DataIdentifierReference } from '@/api/__generated__'
 import type { DataReference } from '@/api/hooks/useDomainModel/useGetCombinedDataSchemas'
 import { PLCTag, TopicFilter } from '@/components/MQTT/EntityTag'
+import { formatOwnershipString } from '@/components/MQTT/topic-utils'
 import { getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import PropertyItem from '@/components/rjsf/MqttTransformation/components/schema/PropertyItem.tsx'
 
@@ -15,6 +16,7 @@ interface JsonSchemaBrowserProps extends ListProps {
   hasExamples?: boolean
   isTagShown?: boolean
   dataReference?: DataReference
+  showReadOnly?: boolean
 }
 
 const JsonSchemaBrowser: FC<JsonSchemaBrowserProps> = ({
@@ -22,6 +24,7 @@ const JsonSchemaBrowser: FC<JsonSchemaBrowserProps> = ({
   isDraggable = false,
   hasExamples = false,
   isTagShown = false,
+  showReadOnly = true,
   dataReference,
   ...props
 }) => {
@@ -35,7 +38,7 @@ const JsonSchemaBrowser: FC<JsonSchemaBrowserProps> = ({
         <Heading as="h3" size="sm">
           {!isTagShown && schema.title}
           {isTagShown && dataReference?.type === DataIdentifierReference.type.TAG && (
-            <PLCTag tagTitle={dataReference?.id} mr={3} />
+            <PLCTag tagTitle={formatOwnershipString(dataReference)} mr={3} />
           )}
           {isTagShown && dataReference?.type === DataIdentifierReference.type.TOPIC_FILTER && (
             <TopicFilter tagTitle={dataReference?.id} mr={3} />
@@ -52,6 +55,7 @@ const JsonSchemaBrowser: FC<JsonSchemaBrowserProps> = ({
                 isDraggable={isDraggable}
                 hasExamples={hasExamples}
                 hasTooltip
+                showReadOnly={showReadOnly}
               />
             </ListItem>
           )

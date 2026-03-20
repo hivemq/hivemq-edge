@@ -1,4 +1,5 @@
 import type { FC } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getTemplate, getUiOptions, type FieldProps, type RJSFSchema } from '@rjsf/utils'
 import {
@@ -16,7 +17,8 @@ import type { DataCombining, Instruction } from '@/api/__generated__'
 import { DataIdentifierReference } from '@/api/__generated__'
 import { SelectTopic } from '@/components/MQTT/EntityCreatableSelect'
 import { Topic } from '@/components/MQTT/EntityTag.tsx'
-import type { CombinerContext } from '@/modules/Mappings/types'
+import type { CombinerContext, SelectedSources } from '@/modules/Mappings/types'
+import { reconstructSelectedSources } from '@/modules/Mappings/utils/combining.utils'
 import CombinedEntitySelect from './CombinedEntitySelect'
 import { CombinedSchemaLoader } from './CombinedSchemaLoader'
 import { AutoMapping } from './components/AutoMapping'
@@ -27,6 +29,46 @@ import { PrimarySelect } from './PrimarySelect'
 export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, CombinerContext>> = (props) => {
   const { t } = useTranslation()
   const { formData, formContext, uiSchema, registry } = props
+
+  // Per-mapping selectedSources state (not shared across mappings)
+  // This prevents showing tags from mapping1 when editing mapping2
+  const [selectedSources, setSelectedSources] = useState<SelectedSources | undefined>(undefined)
+
+  // Detect if queries are currently loaded (at least one query has data)
+  const queriesAreLoaded = useMemo(() => {
+    if (!formContext?.entityQueries?.length) return false
+    return formContext.entityQueries.some((eq) => eq.query.data !== undefined)
+  }, [formContext?.entityQueries])
+
+  // Initialize selectedSources for this specific mapping
+  useEffect(() => {
+    if (!formData) {
+      setSelectedSources({ tags: [], topicFilters: [] })
+      return
+    }
+
+    // Reconstruct from this mapping's instructions
+    // Runs when:
+    // 1. Mapping ID changes (editing different mapping)
+    // 2. Queries become available (fixes race condition where Strategy 3 context lookup
+    //    fails because queries haven't loaded yet on initial render)
+    setSelectedSources(() => reconstructSelectedSources(formData, formContext))
+
+    // Only re-run when:
+    // - formData.id changes (different mapping) - prevents cascade during edits
+    // - queriesAreLoaded changes (false→true transition) - fixes race condition
+    // Does NOT re-run on every query update (dataUpdatedAt) to avoid cascade
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData?.id, queriesAreLoaded])
+
+  // Create local context for this specific mapping
+  const localContext = useMemo((): CombinerContext => {
+    return {
+      ...formContext,
+      selectedSources,
+      onSelectedSourcesChange: setSelectedSources,
+    }
+  }, [formContext, selectedSources])
 
   const fieldOptions = getUiOptions(uiSchema)
 
@@ -97,19 +139,34 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
         <FormControl isInvalid={hasError(sourceErrors)}>
           <FormLabel>{t('combiner.schema.mappings.sources.combinedData.title')}</FormLabel>
           <CombinedEntitySelect
-            tags={formData?.sources?.tags}
-            topicFilters={formData?.sources?.topicFilters}
-            formContext={formContext}
+            formContext={localContext}
             onChange={(values) => {
               if (!formData) return
 
-              const tags = values
+              // Build DataIdentifierReference arrays with full ownership info
+              const tagsWithScope = values
                 .filter((entity) => entity.type === DataIdentifierReference.type.TAG)
-                .map((entity) => entity.value)
+                .map((entity) => ({
+                  id: entity.value,
+                  type: DataIdentifierReference.type.TAG,
+                  scope: entity.adapterId || null, // ✅ Preserve scope from selection
+                }))
 
-              const filters = values
+              const topicFiltersWithScope = values
                 .filter((entity) => entity.type === DataIdentifierReference.type.TOPIC_FILTER)
-                .map((entity) => entity.value)
+                .map((entity) => ({
+                  id: entity.value,
+                  type: DataIdentifierReference.type.TOPIC_FILTER,
+                  scope: null, // ✅ Topic filters always null
+                }))
+
+              // Update selectedSources state
+              if (localContext?.onSelectedSourcesChange) {
+                localContext.onSelectedSourcesChange({
+                  tags: tagsWithScope,
+                  topicFilters: topicFiltersWithScope,
+                })
+              }
 
               const isPrimary = values.some(
                 (entity) =>
@@ -120,8 +177,6 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
                 ...formData,
                 sources: {
                   ...formData.sources,
-                  tags: tags,
-                  topicFilters: filters,
                   // @ts-ignore TODO[30935] check for type clash on primary
                   primary: isPrimary ? formData.sources.primary : undefined,
                 },
@@ -159,7 +214,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
       <GridItem data-testid="combining-editor-sources-schemas">
         <FormControl>
           <FormLabel mt={1}>{t('combiner.schema.mappings.sources.combinedSchema.title')}</FormLabel>
-          <CombinedSchemaLoader formData={props.formData} formContext={formContext} />
+          <CombinedSchemaLoader formData={props.formData} formContext={localContext} />
           {!hasError(sourceErrors) && (
             <FormHelperText>{t('combiner.schema.mappings.sources.combinedSchema.description')}</FormHelperText>
           )}
@@ -170,7 +225,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
           <ButtonGroup size="sm" flexDirection="column" alignItems="flex-end" gap={2}>
             <AutoMapping
               formData={props.formData}
-              formContext={formContext}
+              formContext={localContext}
               onChange={(instructions: Instruction[]) => {
                 if (!props.formData) return
 
@@ -201,7 +256,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
           title={destSchemaOptions.title}
           description={destSchemaOptions.description}
           formData={props.formData}
-          formContext={formContext}
+          formContext={localContext}
           onChange={(schema, instructions) => {
             if (!props.formData) return
 
@@ -226,6 +281,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
           <FormLabel>{primaryOptions.title}</FormLabel>
           <PrimarySelect
             formData={formData}
+            formContext={localContext}
             id="mappings-primary"
             onChange={(values) => {
               if (!props.formData) return
@@ -239,6 +295,7 @@ export const DataCombiningEditorField: FC<FieldProps<DataCombining, RJSFSchema, 
                     ? {
                         id: values.value,
                         type: values.type,
+                        scope: values.adapterId ?? null,
                       }
                     : undefined,
                 },

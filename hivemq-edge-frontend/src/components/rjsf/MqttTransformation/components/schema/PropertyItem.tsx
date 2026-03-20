@@ -22,6 +22,7 @@ interface PropertyItemProps {
   hasDescription?: boolean
   dataReference?: DataReference
   hasPathAsName?: boolean
+  showReadOnly?: boolean
 }
 
 const PropertyItem: FC<PropertyItemProps> = ({
@@ -31,6 +32,7 @@ const PropertyItem: FC<PropertyItemProps> = ({
   hasExamples = false,
   hasDescription = false,
   hasPathAsName = false,
+  showReadOnly = true,
   dataReference,
 }) => {
   const { t } = useTranslation('components')
@@ -112,7 +114,7 @@ const PropertyItem: FC<PropertyItemProps> = ({
             {hasPathAsName ? path : propertyName}
           </Badge>
         </Tooltip>
-        {isReadOnly(property) && (
+        {showReadOnly && isReadOnly(property) && (
           <Tooltip label={t('GenericSchema.readOnly.tooltip')} placement="top" hasArrow>
             <Box as="span" display="inline-flex" data-testid="property-readonly">
               <Icon as={FaLock} boxSize={3} color="gray.500" aria-label={t('GenericSchema.readOnly.label')} />

@@ -27,7 +27,7 @@ describe('useGetCapability', () => {
   })
 
   it("should fail when capability doesn't exist", async () => {
-    const { result } = renderHook(() => useGetCapability(Capability.id.CONTROL_PLANE_CONNECTIVITY), { wrapper })
+    const { result } = renderHook(() => useGetCapability(Capability.id.BI_DIRECTIONAL_PROTOCOL_ADAPTERS), { wrapper })
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBeTruthy()
