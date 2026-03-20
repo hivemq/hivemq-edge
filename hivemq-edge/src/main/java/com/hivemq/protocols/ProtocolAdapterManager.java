@@ -216,7 +216,7 @@ public class ProtocolAdapterManager {
                             return;
                         }
                         startAsync(createAdapterInternal(
-                                        protocolAdapterConfigs.get(name), versionProvider.getVersion()))
+                                        adapterConfig, versionProvider.getVersion()))
                                 .get();
                     } catch (final InterruptedException e) {
                         Thread.currentThread().interrupt();
