@@ -16,18 +16,31 @@
 package com.hivemq.edge.adapters.plc4x.types.siemens;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
-import com.hivemq.adapter.sdk.api.ProtocolAdapter2Bridge;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter2;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * {@link com.hivemq.adapter.sdk.api.ProtocolAdapter2 ProtocolAdapter2} implementation for the Siemens S7 adapter.
- * Northbound only (read from PLC, publish to MQTT).
+ * {@link ProtocolAdapter2} implementation for S7ProtocolAdapter2.
  */
-public class S7ProtocolAdapter2 extends ProtocolAdapter2Bridge {
+public class S7ProtocolAdapter2 implements ProtocolAdapter2 {
+
+    private final @NotNull ProtocolAdapter legacyAdapter;
+    private final @NotNull ModuleServices moduleServices;
 
     public S7ProtocolAdapter2(final @NotNull ProtocolAdapter delegate, final @NotNull ModuleServices moduleServices) {
-        super(delegate, moduleServices);
+        this.legacyAdapter = delegate;
+        this.moduleServices = moduleServices;
+    }
+
+    @Override
+    public @NotNull ProtocolAdapter getLegacyAdapter() {
+        return legacyAdapter;
+    }
+
+    @Override
+    public @NotNull ModuleServices getModuleServices() {
+        return moduleServices;
     }
 
     @Override

@@ -16,18 +16,31 @@
 package com.hivemq.edge.adapters.etherip;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
-import com.hivemq.adapter.sdk.api.ProtocolAdapter2Bridge;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter2;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * {@link com.hivemq.adapter.sdk.api.ProtocolAdapter2 ProtocolAdapter2} implementation for the EtherNet/IP adapter.
- * Northbound only (read from device, publish to MQTT).
+ * {@link ProtocolAdapter2} implementation for EipProtocolAdapter2.
  */
-public class EipProtocolAdapter2 extends ProtocolAdapter2Bridge {
+public class EipProtocolAdapter2 implements ProtocolAdapter2 {
+
+    private final @NotNull ProtocolAdapter legacyAdapter;
+    private final @NotNull ModuleServices moduleServices;
 
     public EipProtocolAdapter2(final @NotNull ProtocolAdapter delegate, final @NotNull ModuleServices moduleServices) {
-        super(delegate, moduleServices);
+        this.legacyAdapter = delegate;
+        this.moduleServices = moduleServices;
+    }
+
+    @Override
+    public @NotNull ProtocolAdapter getLegacyAdapter() {
+        return legacyAdapter;
+    }
+
+    @Override
+    public @NotNull ModuleServices getModuleServices() {
+        return moduleServices;
     }
 
     @Override

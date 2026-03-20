@@ -24,7 +24,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
-import com.hivemq.adapter.sdk.api.ProtocolAdapter2Bridge;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter2;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
@@ -46,7 +46,7 @@ import org.mockito.quality.Strictness;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class ProtocolAdapter2BridgeTest {
+class ProtocolAdapter2DefaultMethodsTest {
 
     @Mock
     private @NotNull ProtocolAdapter delegate;
@@ -57,43 +57,52 @@ class ProtocolAdapter2BridgeTest {
     @Mock
     private @NotNull ProtocolAdapterInformation adapterInfo;
 
-    private @NotNull ProtocolAdapter2Bridge bridge;
+    private @NotNull ProtocolAdapter2 adapter2;
 
     @BeforeEach
     void setUp() {
         when(delegate.getId()).thenReturn("test-adapter");
         when(delegate.getProtocolAdapterInformation()).thenReturn(adapterInfo);
         when(adapterInfo.getCapabilities()).thenReturn(EnumSet.of(ProtocolAdapterCapability.READ));
-        bridge = new ProtocolAdapter2Bridge(delegate, moduleServices);
+        adapter2 = new ProtocolAdapter2() {
+            @Override
+            public @NotNull ProtocolAdapter getLegacyAdapter() {
+                return delegate;
+            }
+
+            @Override
+            public @NotNull ModuleServices getModuleServices() {
+                return moduleServices;
+            }
+        };
     }
 
     @Test
     void getId_delegatesToOldAdapter() {
-        assertThat(bridge.getId()).isEqualTo("test-adapter");
+        assertThat(adapter2.getId()).isEqualTo("test-adapter");
     }
 
     @Test
     void getProtocolAdapterInformation_delegatesToOldAdapter() {
-        assertThat(bridge.getProtocolAdapterInformation()).isSameAs(adapterInfo);
+        assertThat(adapter2.getProtocolAdapterInformation()).isSameAs(adapterInfo);
     }
 
     @Test
     void supportsSouthbound_falseWhenNoWriteCapability() {
         when(adapterInfo.getCapabilities()).thenReturn(EnumSet.of(ProtocolAdapterCapability.READ));
-        assertThat(bridge.supportsSouthbound()).isFalse();
+        assertThat(adapter2.supportsSouthbound()).isFalse();
     }
 
     @Test
     void supportsSouthbound_trueWhenWriteCapability() {
         when(adapterInfo.getCapabilities())
                 .thenReturn(EnumSet.of(ProtocolAdapterCapability.READ, ProtocolAdapterCapability.WRITE));
-        assertThat(bridge.supportsSouthbound()).isTrue();
+        assertThat(adapter2.supportsSouthbound()).isTrue();
     }
 
     @Test
     void precheck_isNoOp() throws ProtocolAdapterException {
-        bridge.precheck();
-        // No exception, no interaction with delegate
+        adapter2.precheck();
     }
 
     @Test
@@ -106,7 +115,7 @@ class ProtocolAdapter2BridgeTest {
                 .when(delegate)
                 .start(any(ProtocolAdapterStartInput.class), any(ProtocolAdapterStartOutput.class));
 
-        bridge.connect(ProtocolAdapterConnectionDirection.Northbound);
+        adapter2.connect(ProtocolAdapterConnectionDirection.Northbound);
 
         verify(delegate).start(any(ProtocolAdapterStartInput.class), any(ProtocolAdapterStartOutput.class));
     }
@@ -121,14 +130,14 @@ class ProtocolAdapter2BridgeTest {
                 .when(delegate)
                 .start(any(ProtocolAdapterStartInput.class), any(ProtocolAdapterStartOutput.class));
 
-        assertThatThrownBy(() -> bridge.connect(ProtocolAdapterConnectionDirection.Northbound))
+        assertThatThrownBy(() -> adapter2.connect(ProtocolAdapterConnectionDirection.Northbound))
                 .isInstanceOf(ProtocolAdapterException.class)
                 .hasMessageContaining("test-adapter");
     }
 
     @Test
     void connectSouthbound_doesNotCallDelegateStart() throws ProtocolAdapterException {
-        bridge.connect(ProtocolAdapterConnectionDirection.Southbound);
+        adapter2.connect(ProtocolAdapterConnectionDirection.Southbound);
 
         verify(delegate, never()).start(any(), any());
     }
@@ -143,13 +152,13 @@ class ProtocolAdapter2BridgeTest {
                 .when(delegate)
                 .stop(any(ProtocolAdapterStopInput.class), any(ProtocolAdapterStopOutput.class));
 
-        bridge.disconnect(ProtocolAdapterConnectionDirection.Northbound);
+        adapter2.disconnect(ProtocolAdapterConnectionDirection.Northbound);
 
         verify(delegate).stop(any(ProtocolAdapterStopInput.class), any(ProtocolAdapterStopOutput.class));
     }
 
     @Test
-    void disconnectNorthbound_logsWarningWhenDelegateStopFails() {
+    void disconnectNorthbound_doesNotThrowWhenDelegateStopFails() {
         doAnswer(invocation -> {
                     final ProtocolAdapterStopOutput output = invocation.getArgument(1);
                     output.failStop(new RuntimeException("stop error"), "Stop error");
@@ -158,22 +167,21 @@ class ProtocolAdapter2BridgeTest {
                 .when(delegate)
                 .stop(any(ProtocolAdapterStopInput.class), any(ProtocolAdapterStopOutput.class));
 
-        // Should not throw - disconnect logs errors instead
-        bridge.disconnect(ProtocolAdapterConnectionDirection.Northbound);
+        adapter2.disconnect(ProtocolAdapterConnectionDirection.Northbound);
 
         verify(delegate).stop(any(ProtocolAdapterStopInput.class), any(ProtocolAdapterStopOutput.class));
     }
 
     @Test
     void disconnectSouthbound_doesNotCallDelegateStop() {
-        bridge.disconnect(ProtocolAdapterConnectionDirection.Southbound);
+        adapter2.disconnect(ProtocolAdapterConnectionDirection.Southbound);
 
         verify(delegate, never()).stop(any(), any());
     }
 
     @Test
     void destroy_delegatesToOldAdapter() {
-        bridge.destroy();
+        adapter2.destroy();
 
         verify(delegate).destroy();
     }
@@ -190,6 +198,6 @@ class ProtocolAdapter2BridgeTest {
                 .when(delegate)
                 .start(any(ProtocolAdapterStartInput.class), any(ProtocolAdapterStartOutput.class));
 
-        bridge.connect(ProtocolAdapterConnectionDirection.Northbound);
+        adapter2.connect(ProtocolAdapterConnectionDirection.Northbound);
     }
 }

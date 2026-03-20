@@ -20,7 +20,6 @@ import static org.mockito.Mockito.when;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter2;
-import com.hivemq.adapter.sdk.api.ProtocolAdapter2Bridge;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
@@ -62,9 +61,10 @@ class ADSProtocolAdapter2Test {
     }
 
     @Test
-    void extendsProtocolAdapter2Bridge() {
+    void exposesLegacyAdapterAndModuleServices() {
         final ADSProtocolAdapter2 adapter = new ADSProtocolAdapter2(delegate, moduleServices);
-        assertThat(adapter).isInstanceOf(ProtocolAdapter2Bridge.class);
+        assertThat(adapter.getLegacyAdapter()).isSameAs(delegate);
+        assertThat(adapter.getModuleServices()).isSameAs(moduleServices);
     }
 
     @Test
