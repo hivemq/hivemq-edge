@@ -17,15 +17,12 @@ package com.hivemq.configuration.migration;
 
 import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.combining.model.DataCombining;
+import com.hivemq.combining.model.DataCombiningSources;
 import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.adapter.TagEntity;
-import com.hivemq.configuration.reader.AssetMappingExtractor;
-import com.hivemq.configuration.reader.DataCombiningExtractor;
-import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
+import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -39,51 +36,43 @@ import org.slf4j.LoggerFactory;
 /**
  * Migrates legacy combiner configurations that have TAG references without scope.
  * <p>
- * For legacy configs where instructions have TAG references with null scope:
+ * For legacy configs where primary or instruction TAG references have null scope:
  * <ul>
  *   <li>If the tag exists in exactly one adapter, backfill the scope with that adapter's ID</li>
  *   <li>If the tag exists in multiple adapters, log a warning</li>
  *   <li>If the tag doesn't exist in any adapter, log a warning</li>
  * </ul>
+ * <p>
+ * This migrator is invoked as a post-apply callback on {@link ConfigFileReaderWriter},
+ * so it runs both at startup and on every hot reload. When tags are migrated,
+ * the corrected config is persisted to disk via the extractors.
  */
-@Singleton
 public class DataCombiningScopeMigrator {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(DataCombiningScopeMigrator.class);
 
-    private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor;
-    private final @NotNull DataCombiningExtractor dataCombiningExtractor;
-    private final @NotNull AssetMappingExtractor assetMappingExtractor;
-
-    @Inject
-    public DataCombiningScopeMigrator(
-            final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor,
-            final @NotNull DataCombiningExtractor dataCombiningExtractor,
-            final @NotNull AssetMappingExtractor assetMappingExtractor) {
-        this.protocolAdapterExtractor = protocolAdapterExtractor;
-        this.dataCombiningExtractor = dataCombiningExtractor;
-        this.assetMappingExtractor = assetMappingExtractor;
-    }
-
     /**
-     * Migrates unscoped TAG references in all data combiners from both extractors.
-     * This method should be called once at startup after all configs are loaded.
+     * Migrates unscoped TAG references in all data combiners.
+     * Reads adapters and combiners from the given {@link ConfigFileReaderWriter},
+     * and writes back migrated combiners (which triggers persistence to disk).
      */
-    public void migrateUnscopedTags() {
-        final Map<String, List<String>> tagToAdapters = buildTagToAdaptersMap();
+    public void migrateUnscopedTags(final @NotNull ConfigFileReaderWriter configFileReaderWriter) {
+        final Map<String, List<String>> tagToAdapters = buildTagToAdaptersMap(
+                configFileReaderWriter.getProtocolAdapterExtractor().getAllConfigs());
 
         log.debug(
                 "Starting migration of unscoped TAG references. Found {} unique tags across all adapters.",
                 tagToAdapters.size());
 
-        // Migrate combiners from DataCombiningExtractor
+        final var dataCombiningExtractor = configFileReaderWriter.getDataCombiningExtractor();
+        final var assetMappingExtractor = configFileReaderWriter.getAssetMappingExtractor();
+
         migrateExtractor(
                 dataCombiningExtractor::getAllCombiners,
                 dataCombiningExtractor::updateDataCombiners,
                 "DataCombiningExtractor",
                 tagToAdapters);
 
-        // Migrate combiners from AssetMappingExtractor
         migrateExtractor(
                 assetMappingExtractor::getAllCombiners,
                 assetMappingExtractor::updateDataCombiners,
@@ -94,9 +83,10 @@ public class DataCombiningScopeMigrator {
     /**
      * Builds a map of tag name to list of adapter IDs that define that tag.
      */
-    private @NotNull Map<String, List<String>> buildTagToAdaptersMap() {
+    private @NotNull Map<String, List<String>> buildTagToAdaptersMap(
+            final @NotNull List<ProtocolAdapterEntity> adapters) {
         final Map<String, List<String>> tagToAdapters = new HashMap<>();
-        for (final ProtocolAdapterEntity adapter : protocolAdapterExtractor.getAllConfigs()) {
+        for (final ProtocolAdapterEntity adapter : adapters) {
             for (final TagEntity tag : adapter.getTags()) {
                 tagToAdapters
                         .computeIfAbsent(tag.getName(), k -> new ArrayList<>())
@@ -158,6 +148,7 @@ public class DataCombiningScopeMigrator {
 
     /**
      * Migrates a single DataCombining, returning the updated version if any changes were made.
+     * Migrates both the primary reference and instruction references.
      */
     private @NotNull DataCombining migrateDataCombining(
             final @NotNull DataCombiner combiner,
@@ -165,8 +156,17 @@ public class DataCombiningScopeMigrator {
             final @NotNull Map<String, List<String>> tagToAdapters) {
 
         boolean anyChanges = false;
-        final List<Instruction> migratedInstructions = new ArrayList<>();
 
+        // Migrate the primary reference
+        final DataIdentifierReference primaryRef = dataCombining.sources().primaryReference();
+        final DataIdentifierReference migratedPrimaryRef = migrateTagReference(combiner, primaryRef, tagToAdapters);
+        final boolean primaryChanged = !migratedPrimaryRef.equals(primaryRef);
+        if (primaryChanged) {
+            anyChanges = true;
+        }
+
+        // Migrate instructions
+        final List<Instruction> migratedInstructions = new ArrayList<>();
         for (final Instruction instruction : dataCombining.instructions()) {
             final Instruction migratedInstruction = migrateInstruction(combiner, instruction, tagToAdapters);
             migratedInstructions.add(migratedInstruction);
@@ -176,8 +176,14 @@ public class DataCombiningScopeMigrator {
         }
 
         if (anyChanges) {
+            final DataCombiningSources migratedSources = primaryChanged
+                    ? new DataCombiningSources(
+                            migratedPrimaryRef,
+                            dataCombining.sources().tags(),
+                            dataCombining.sources().topicFilters())
+                    : dataCombining.sources();
             return new DataCombining(
-                    dataCombining.id(), dataCombining.sources(), dataCombining.destination(), migratedInstructions);
+                    dataCombining.id(), migratedSources, dataCombining.destination(), migratedInstructions);
         }
         return dataCombining;
     }
@@ -192,30 +198,46 @@ public class DataCombiningScopeMigrator {
             final @NotNull Map<String, List<String>> tagToAdapters) {
 
         final DataIdentifierReference ref = instruction.dataIdentifierReference();
-
-        // Skip if no reference, not a TAG type, or already has scope
-        if (ref == null
-                || ref.type() != DataIdentifierReference.Type.TAG
-                || (ref.scope() != null && !ref.scope().isBlank())) {
+        if (ref == null) {
             return instruction;
+        }
+
+        final DataIdentifierReference migratedRef = migrateTagReference(combiner, ref, tagToAdapters);
+        if (migratedRef.equals(ref)) {
+            return instruction;
+        }
+        return new Instruction(instruction.sourceFieldName(), instruction.destinationFieldName(), migratedRef);
+    }
+
+    /**
+     * Migrates a single TAG reference by backfilling scope if it's missing.
+     * Returns the original reference if no migration is needed.
+     */
+    private @NotNull DataIdentifierReference migrateTagReference(
+            final @NotNull DataCombiner combiner,
+            final @NotNull DataIdentifierReference ref,
+            final @NotNull Map<String, List<String>> tagToAdapters) {
+
+        // Skip if not a TAG type or already has scope
+        if (ref.type() != DataIdentifierReference.Type.TAG
+                || (ref.scope() != null && !ref.scope().isBlank())) {
+            return ref;
         }
 
         final String tagName = ref.id();
         final List<String> adapters = tagToAdapters.get(tagName);
 
         if (adapters == null || adapters.isEmpty()) {
-            // Case C: Tag not found in any adapter
             log.warn(
                     "Legacy combiner '{}' ({}) has TAG reference '{}' without scope, "
                             + "and tag not found in any adapter. The combiner may not function correctly.",
                     combiner.name(),
                     combiner.id(),
                     tagName);
-            return instruction;
+            return ref;
         }
 
         if (adapters.size() == 1) {
-            // Case A: Tag found in exactly one adapter - backfill scope
             final String adapterId = adapters.get(0);
             log.info(
                     "Migrated TAG reference '{}' in combiner '{}' ({}) to scope '{}'.",
@@ -223,13 +245,9 @@ public class DataCombiningScopeMigrator {
                     combiner.name(),
                     combiner.id(),
                     adapterId);
-            return new Instruction(
-                    instruction.sourceFieldName(),
-                    instruction.destinationFieldName(),
-                    new DataIdentifierReference(ref.id(), ref.type(), adapterId));
+            return new DataIdentifierReference(ref.id(), ref.type(), adapterId);
         }
 
-        // Case B: Tag found in multiple adapters
         log.warn(
                 "Legacy combiner '{}' ({}) has TAG reference '{}' without scope, "
                         + "but tag exists in multiple adapters: {}. "
@@ -238,6 +256,6 @@ public class DataCombiningScopeMigrator {
                 combiner.id(),
                 tagName,
                 adapters);
-        return instruction;
+        return ref;
     }
 }
