@@ -594,8 +594,7 @@ public class ConfigFileReaderWriter {
             // executorService was just set via compareAndSet, so it cannot be null here
             final ScheduledExecutorService scheduler = Objects.requireNonNull(executorService.get());
             scheduler.scheduleAtFixedRate(
-                    () -> scheduledTask.executePeriodicTask(
-                            configFile, fileModified, fileModificationTimestamps),
+                    () -> scheduledTask.executePeriodicTask(configFile, fileModified, fileModificationTimestamps),
                     0,
                     interval,
                     TimeUnit.MILLISECONDS);

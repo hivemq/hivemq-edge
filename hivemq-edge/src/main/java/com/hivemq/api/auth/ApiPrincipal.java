@@ -20,7 +20,6 @@ import java.security.Principal;
 import java.util.Objects;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson

@@ -47,7 +47,8 @@ public class InternalConfigurator implements Configurator<InternalConfigEntity> 
         this.configEntity = config.getInternal();
         this.initialized = true;
 
-        for (final OptionEntity optionEntity : Objects.requireNonNull(this.configEntity).getOptions()) {
+        for (final OptionEntity optionEntity :
+                Objects.requireNonNull(this.configEntity).getOptions()) {
             internalConfigurationService.set(optionEntity.getKey(), optionEntity.getValue());
         }
 

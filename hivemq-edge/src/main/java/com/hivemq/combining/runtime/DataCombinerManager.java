@@ -117,7 +117,8 @@ public class DataCombinerManager {
         combinersToBeDeleted.forEach(uuid -> {
             try {
                 log.debug("Deleting data combiner '{}'", uuid);
-                final @Nullable DataCombiningInformation dataCombiningInformation = idToDataCombiningInformation.get(uuid);
+                final @Nullable DataCombiningInformation dataCombiningInformation =
+                        idToDataCombiningInformation.get(uuid);
                 deleteDataCombinerInternal(uuid);
                 if (dataCombiningInformation == null) {
                     return;

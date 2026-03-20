@@ -95,7 +95,9 @@ public class DataCombiningRuntime {
                     return new InternalTagConsumer(
                             tag,
                             combining,
-                            TAG.equals(Objects.requireNonNull(combining.sources().primaryReference()).type())
+                            TAG.equals(Objects.requireNonNull(
+                                                    combining.sources().primaryReference())
+                                            .type())
                                     && tag.equals(combining
                                             .sources()
                                             .primaryReference()
@@ -111,7 +113,9 @@ public class DataCombiningRuntime {
             internalSubscriptions.add(subscribeTopicFilter(
                     combining,
                     topicFilter,
-                    TOPIC_FILTER.equals(Objects.requireNonNull(combining.sources().primaryReference()).type())
+                    TOPIC_FILTER.equals(
+                                    Objects.requireNonNull(combining.sources().primaryReference())
+                                            .type())
                             && topicFilter.equals(
                                     combining.sources().primaryReference().id())));
         });

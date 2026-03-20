@@ -23,7 +23,11 @@ import org.jetbrains.annotations.Nullable;
 
 public class ValidationError extends ProblemDetails {
     public ValidationError(final @Nullable List<Error> errors) {
-        super("ValidationError", "Validation failed", "JSON failed validation.", HttpStatus.BAD_REQUEST_400,
+        super(
+                "ValidationError",
+                "Validation failed",
+                "JSON failed validation.",
+                HttpStatus.BAD_REQUEST_400,
                 errors != null ? errors : List.of());
     }
 }

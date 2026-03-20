@@ -242,10 +242,14 @@ public class PluginAuthenticatorServiceImpl implements PluginAuthenticatorServic
         final ClientAuthenticators clientAuthenticators = getClientAuthenticators(ctx);
 
         if (reAuth) {
-            final ReAuthOutput output =
-                    new ReAuthOutput(asyncer, validateUTF8,
-                            defaultPermissions != null ? defaultPermissions : new com.hivemq.extensions.packets.general.ModifiableDefaultPermissionsImpl(),
-                            clientSettings, timeout);
+            final ReAuthOutput output = new ReAuthOutput(
+                    asyncer,
+                    validateUTF8,
+                    defaultPermissions != null
+                            ? defaultPermissions
+                            : new com.hivemq.extensions.packets.general.ModifiableDefaultPermissionsImpl(),
+                    clientSettings,
+                    timeout);
             final ReAuthContext context =
                     new ReAuthContext(clientId, ctx, authSender, enhancedAuthenticatorCount, output, disconnector);
 
@@ -265,10 +269,15 @@ public class PluginAuthenticatorServiceImpl implements PluginAuthenticatorServic
                 return;
             }
 
-            final ConnectAuthOutput output =
-                    new ConnectAuthOutput(asyncer, validateUTF8,
-                            defaultPermissions != null ? defaultPermissions : new com.hivemq.extensions.packets.general.ModifiableDefaultPermissionsImpl(),
-                            clientSettings, timeout, true);
+            final ConnectAuthOutput output = new ConnectAuthOutput(
+                    asyncer,
+                    validateUTF8,
+                    defaultPermissions != null
+                            ? defaultPermissions
+                            : new com.hivemq.extensions.packets.general.ModifiableDefaultPermissionsImpl(),
+                    clientSettings,
+                    timeout,
+                    true);
             final ConnectAuthContext context = new ConnectAuthContext(
                     ctx,
                     authSender,

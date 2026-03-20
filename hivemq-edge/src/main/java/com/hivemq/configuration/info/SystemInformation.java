@@ -16,7 +16,6 @@
 package com.hivemq.configuration.info;
 
 import java.io.File;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**

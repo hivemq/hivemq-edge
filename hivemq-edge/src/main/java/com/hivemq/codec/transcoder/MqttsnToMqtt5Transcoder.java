@@ -200,8 +200,8 @@ public class MqttsnToMqtt5Transcoder implements ITranscoder<IMqttsnMessage, Mess
                     // mqttsnSubscribe.getQoS() is expected to be valid (0-2)
                     @SuppressWarnings("NullAway")
                     final QoS subscribeQoS = QoS.valueOf(mqttsnSubscribe.getQoS());
-                    final SUBSCRIBE subscribe = new SUBSCRIBE(
-                            mqttsnSubscribe.getId(), new Topic(topicName, subscribeQoS));
+                    final SUBSCRIBE subscribe =
+                            new SUBSCRIBE(mqttsnSubscribe.getId(), new Topic(topicName, subscribeQoS));
                     out = subscribe;
                 }
                 case MqttsnConstants.UNSUBSCRIBE -> {

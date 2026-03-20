@@ -71,7 +71,9 @@ public class UnifiedNamespaceDataGovernancePolicy extends DataGovernancePolicyIm
             Objects.requireNonNull(context.getResult())
                     .getOutput()
                     .setPublish(new PUBLISHFactory.Mqtt5Builder()
-                            .fromPublish(Objects.requireNonNull(context.getResult()).getOutput().getPublish())
+                            .fromPublish(Objects.requireNonNull(context.getResult())
+                                    .getOutput()
+                                    .getPublish())
                             .withTopic(mqttTopic.toString())
                             .build());
         }

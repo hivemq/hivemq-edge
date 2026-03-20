@@ -199,10 +199,7 @@ public class BridgeService {
             stopBridge(bridgeId, true, newForwarderIds(newBridgeConfig));
             final MqttBridge effectiveBridge = newBridgeConfig != null ? newBridgeConfig : client.bridge();
             activeBridgeNamesToClient.put(
-                    bridgeId,
-                    new MqttBridgeAndClient(
-                            effectiveBridge,
-                            internalStartBridge(effectiveBridge)));
+                    bridgeId, new MqttBridgeAndClient(effectiveBridge, internalStartBridge(effectiveBridge)));
             if (newBridgeConfig != null) {
                 allKnownBridgeConfigs.put(bridgeId, newBridgeConfig);
             }

@@ -209,8 +209,8 @@ public class Mqtt5SubscribeDecoder extends AbstractMqttDecoder<SUBSCRIBE> {
         if (qoSLevel == null) {
             return null;
         }
-        return topicBuilder.add(new Topic(
-                topicFilter, qoSLevel, noLocal, retainAsPublished, retainHandling, subscriptionIdentifier));
+        return topicBuilder.add(
+                new Topic(topicFilter, qoSLevel, noLocal, retainAsPublished, retainHandling, subscriptionIdentifier));
     }
 
     private int readSubscriptionIdentifier(

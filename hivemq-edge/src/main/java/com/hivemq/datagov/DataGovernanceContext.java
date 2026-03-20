@@ -25,7 +25,8 @@ public interface DataGovernanceContext {
 
     DataGovernanceData getInput();
 
-    @Nullable DataGovernanceResult getResult();
+    @Nullable
+    DataGovernanceResult getResult();
 
     DataGovernanceTokenProvider getTokenProvider();
 

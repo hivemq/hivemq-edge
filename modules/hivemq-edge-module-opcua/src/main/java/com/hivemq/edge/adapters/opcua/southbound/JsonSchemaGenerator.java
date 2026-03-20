@@ -211,9 +211,13 @@ public class JsonSchemaGenerator {
         final ObjectNode nestedPropertiesNode = MAPPER.createObjectNode();
         propertiesNode.set(fieldType.name(), nestedPropertiesNode);
 
-        if (builtinDataType != null && builtinDataType != OpcUaDataType.ExtensionObject && fieldType.customDataType() == null) {
+        if (builtinDataType != null
+                && builtinDataType != OpcUaDataType.ExtensionObject
+                && fieldType.customDataType() == null) {
             populatePropertiesForBuiltinType(nestedPropertiesNode, builtinDataType, MAPPER);
-        } else if (builtinDataType != null && fieldType.arrayDimensions() != null && fieldType.arrayDimensions().length > 0) {
+        } else if (builtinDataType != null
+                && fieldType.arrayDimensions() != null
+                && fieldType.arrayDimensions().length > 0) {
             populatePropertiesForArray(nestedPropertiesNode, builtinDataType, MAPPER, fieldType.arrayDimensions());
         } else {
             nestedPropertiesNode.set(TYPE, new TextNode(OBJECT_DATA_TYPE));

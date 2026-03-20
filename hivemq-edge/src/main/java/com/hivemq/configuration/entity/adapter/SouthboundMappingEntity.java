@@ -25,7 +25,6 @@ import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlElement;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -86,10 +85,7 @@ public class SouthboundMappingEntity implements EntityValidatable {
 
     public @NotNull SouthboundMapping toPersistence(final @NotNull ObjectMapper mapper) {
         return new SouthboundMapping(
-                this.getTagName(),
-                this.getTopicFilter(),
-                this.fieldMapping.to(mapper),
-                this.fromNorthSchema);
+                this.getTagName(), this.getTopicFilter(), this.fieldMapping.to(mapper), this.fromNorthSchema);
     }
 
     public @NotNull com.hivemq.edge.api.model.SouthboundMapping toAPi() {
@@ -97,13 +93,13 @@ public class SouthboundMappingEntity implements EntityValidatable {
                 .tagName(this.getTagName())
                 .topicFilter(this.getTopicFilter())
                 .fieldMapping(FieldMapping.builder()
-                                        .instructions(this.fieldMapping.getInstructions().stream()
-                                                .map(instruction -> (Instruction) Instruction.builder()
-                                                        .destination(instruction.getDestinationFieldName())
-                                                        .source(instruction.getSourceFieldName())
-                                                        .build())
-                                                .toList())
+                        .instructions(this.fieldMapping.getInstructions().stream()
+                                .map(instruction -> (Instruction) Instruction.builder()
+                                        .destination(instruction.getDestinationFieldName())
+                                        .source(instruction.getSourceFieldName())
                                         .build())
+                                .toList())
+                        .build())
                 .build();
     }
 

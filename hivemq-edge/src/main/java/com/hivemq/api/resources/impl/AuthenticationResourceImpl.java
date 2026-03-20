@@ -72,8 +72,10 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
             return ErrorResponseUtil.errorResponse(new AuthenticationValidationError(errorMessages.toErrorList()));
         } else {
             // credentials is non-null here: validateRequiredField would have added errors if null
-            @SuppressWarnings("NullAway") final String userName = credentials.getUserName();
-            @SuppressWarnings("NullAway") final String password = credentials.getPassword();
+            @SuppressWarnings("NullAway")
+            final String userName = credentials.getUserName();
+            @SuppressWarnings("NullAway")
+            final String password = credentials.getPassword();
             return usernamePasswordProvider
                     .findByUsernameAndPassword(userName, password.getBytes(StandardCharsets.UTF_8))
                     .map(user -> {

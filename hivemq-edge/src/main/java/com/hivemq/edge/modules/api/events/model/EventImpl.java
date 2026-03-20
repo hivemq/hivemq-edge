@@ -107,14 +107,16 @@ public class EventImpl implements Event {
     @Override
     public @NotNull Long getTimestamp() {
         // timestamp is nullable - suppress NullAway as interface requires @NotNull
-        @SuppressWarnings("NullAway") final Long ts = timestamp;
+        @SuppressWarnings("NullAway")
+        final Long ts = timestamp;
         return ts == null ? 0L : ts;
     }
 
     @Override
     public @NotNull Long getCreated() {
         // created is nullable - suppress NullAway as interface requires @NotNull
-        @SuppressWarnings("NullAway") final Long cr = created;
+        @SuppressWarnings("NullAway")
+        final Long cr = created;
         return cr == null ? 0L : cr;
     }
 

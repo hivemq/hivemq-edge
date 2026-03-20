@@ -148,7 +148,8 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
         }
     }
 
-    protected void writeASCIIResponse(final IHttpRequestResponse request, final int responseCode, final @Nullable String message)
+    protected void writeASCIIResponse(
+            final IHttpRequestResponse request, final int responseCode, final @Nullable String message)
             throws IOException {
         writeResponseInternal(
                 request,

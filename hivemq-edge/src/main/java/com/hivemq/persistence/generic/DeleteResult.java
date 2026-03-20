@@ -18,7 +18,8 @@ package com.hivemq.persistence.generic;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public record DeleteResult(DeleteStatus updateStatus, @Nullable String errorMessage) {
+public record DeleteResult(
+        DeleteStatus updateStatus, @Nullable String errorMessage) {
 
     public static @NotNull DeleteResult success() {
         return new DeleteResult(DeleteStatus.SUCCESS, null);

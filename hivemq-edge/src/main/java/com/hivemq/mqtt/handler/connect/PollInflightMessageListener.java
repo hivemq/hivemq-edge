@@ -16,7 +16,6 @@
 package com.hivemq.mqtt.handler.connect;
 
 import com.hivemq.mqtt.services.PublishPollService;
-import java.util.Objects;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import org.jetbrains.annotations.NotNull;
@@ -41,7 +40,7 @@ public class PollInflightMessageListener implements ChannelFutureListener {
 
     @Override
     public void operationComplete(final @NotNull ChannelFuture future) {
-        if(clientId != null) {
+        if (clientId != null) {
             publishPollService.pollInflightMessages(clientId, future.channel());
         }
     }

@@ -64,14 +64,13 @@ public class ApiSecurityContext implements SecurityContext {
 
     @Override
     public String toString() {
-        return "ApiSecurityContext{" +
-                "principal=" +
-                principal +
-                ", authenticationScheme='" +
-                authenticationScheme +
-                '\'' +
-                ", isSecure=" +
-                isSecure +
-                '}';
+        return "ApiSecurityContext{" + "principal="
+                + principal
+                + ", authenticationScheme='"
+                + authenticationScheme
+                + '\''
+                + ", isSecure="
+                + isSecure
+                + '}';
     }
 }

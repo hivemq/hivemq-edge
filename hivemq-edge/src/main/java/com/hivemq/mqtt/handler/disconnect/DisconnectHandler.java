@@ -162,9 +162,7 @@ public class DisconnectHandler extends SimpleChannelInboundHandler<DISCONNECT> {
         final Long sessionExpiryIntervalBoxed = clientConnection.getClientSessionExpiryInterval();
         final long sessionExpiryInterval = sessionExpiryIntervalBoxed != null ? sessionExpiryIntervalBoxed : 0L;
         final ListenableFuture<Void> persistenceFuture = clientSessionPersistence.clientDisconnected(
-                clientConnection.getClientId(),
-                clientConnection.isSendWill(),
-                sessionExpiryInterval);
+                clientConnection.getClientId(), clientConnection.isSendWill(), sessionExpiryInterval);
         Futures.addCallback(
                 persistenceFuture,
                 new FutureCallback<>() {

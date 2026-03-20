@@ -63,7 +63,8 @@ public record ParsedConfig(
             final var truststore = adapterConfig.getTls().truststore();
             final var certOptional = getTrustedCerts(truststore)
                     .map(trustedCerts -> createServerCertificateValidator(
-                            trustedCerts, Objects.requireNonNull(adapterConfig.getTls().tlsChecks())));
+                            trustedCerts,
+                            Objects.requireNonNull(adapterConfig.getTls().tlsChecks())));
             if (certOptional.isEmpty()) {
                 return Failure.of("Failed to create certificate validator, check truststore configuration");
             }

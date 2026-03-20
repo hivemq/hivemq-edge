@@ -51,8 +51,8 @@ public class PersistenceConfigurator implements Configurator<PersistenceEntity> 
         this.configEntity = config.getPersistenceConfig();
         this.initialized = true;
 
-        persistenceConfigurationService.setMode(
-                PersistenceMode.valueOf(Objects.requireNonNull(this.configEntity).getMode().name()));
+        persistenceConfigurationService.setMode(PersistenceMode.valueOf(
+                Objects.requireNonNull(this.configEntity).getMode().name()));
 
         return ConfigResult.SUCCESS;
     }

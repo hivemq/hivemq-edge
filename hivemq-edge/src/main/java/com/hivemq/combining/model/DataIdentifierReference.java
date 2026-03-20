@@ -26,7 +26,7 @@ public record DataIdentifierReference(String id, Type type) {
 
     public static @Nullable DataIdentifierReference from(
             final @Nullable com.hivemq.edge.api.model.DataIdentifierReference model) {
-        if(model == null) return null;
+        if (model == null) return null;
         return new DataIdentifierReference(model.getId(), Type.from(model.getType()));
     }
 

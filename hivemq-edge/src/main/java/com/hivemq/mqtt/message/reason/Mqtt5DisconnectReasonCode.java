@@ -143,7 +143,8 @@ public enum Mqtt5DisconnectReasonCode implements Mqtt5ReasonCode {
         return DISCONNECT_LOOKUP[reasonCode.ordinal()];
     }
 
-    @SuppressWarnings("NullAway") // array lookup is safe: DISCONNECTED_LOOKUP may have null slots, return type is @Nullable
+    @SuppressWarnings(
+            "NullAway") // array lookup is safe: DISCONNECTED_LOOKUP may have null slots, return type is @Nullable
     public static @Nullable Mqtt5DisconnectReasonCode from(final @NotNull DisconnectedReasonCode reasonCode) {
         return DISCONNECTED_LOOKUP[reasonCode.ordinal()];
     }

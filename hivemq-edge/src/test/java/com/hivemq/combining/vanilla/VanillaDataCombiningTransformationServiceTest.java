@@ -62,7 +62,8 @@ public class VanillaDataCombiningTransformationServiceTest {
     @Mock
     private @NotNull DataCombining dataCombining;
 
-    private final @NotNull DataCombiningDestination dataCombiningDestination = new DataCombiningDestination(null, EMPTY_OBJECT, TOPIC_DESTINATION);
+    private final @NotNull DataCombiningDestination dataCombiningDestination =
+            new DataCombiningDestination(null, EMPTY_OBJECT, TOPIC_DESTINATION);
 
     private @NotNull ArgumentCaptor<PUBLISH> publishCaptor;
 

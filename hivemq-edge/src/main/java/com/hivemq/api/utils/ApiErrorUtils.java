@@ -52,7 +52,10 @@ public class ApiErrorUtils {
     }
 
     public static void validateRequiredFieldRegex(
-            final ApiErrorMessages apiErrorMessages, final @Nullable String fieldName, final @Nullable String value, final @Nullable String regex) {
+            final ApiErrorMessages apiErrorMessages,
+            final @Nullable String fieldName,
+            final @Nullable String value,
+            final @Nullable String regex) {
         if (value == null || value.isEmpty()) {
             apiErrorMessages.addError(new ApiErrorMessage(fieldName, "Required field was null or empty", null));
             return;
