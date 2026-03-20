@@ -30,6 +30,7 @@ import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.adapter.TagEntity;
 import com.hivemq.configuration.reader.AssetMappingExtractor;
+import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.DataCombiningExtractor;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
@@ -37,23 +38,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 class DataCombiningScopeMigratorTest {
 
+    private final @NotNull ConfigFileReaderWriter configFileReaderWriter = mock(ConfigFileReaderWriter.class);
     private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor = mock(ProtocolAdapterExtractor.class);
     private final @NotNull DataCombiningExtractor dataCombiningExtractor = mock(DataCombiningExtractor.class);
     private final @NotNull AssetMappingExtractor assetMappingExtractor = mock(AssetMappingExtractor.class);
 
-    private @NonNull DataCombiningScopeMigrator migrator;
+    private final @NotNull DataCombiningScopeMigrator migrator = new DataCombiningScopeMigrator();
 
     @BeforeEach
     void setUp() {
-        migrator =
-                new DataCombiningScopeMigrator(protocolAdapterExtractor, dataCombiningExtractor, assetMappingExtractor);
+        when(configFileReaderWriter.getProtocolAdapterExtractor()).thenReturn(protocolAdapterExtractor);
+        when(configFileReaderWriter.getDataCombiningExtractor()).thenReturn(dataCombiningExtractor);
+        when(configFileReaderWriter.getAssetMappingExtractor()).thenReturn(assetMappingExtractor);
     }
 
     // --- Primary reference migration tests ---
@@ -70,7 +72,7 @@ class DataCombiningScopeMigratorTest {
         when(dataCombiningExtractor.updateDataCombiners(anyList())).thenReturn(1);
         when(assetMappingExtractor.getAllCombiners()).thenReturn(List.of());
 
-        migrator.migrateUnscopedTags();
+        migrator.migrateUnscopedTags(configFileReaderWriter);
 
         final ArgumentCaptor<List<DataCombiner>> captor = combinersCaptor();
         verify(dataCombiningExtractor).updateDataCombiners(captor.capture());
@@ -91,7 +93,7 @@ class DataCombiningScopeMigratorTest {
         when(dataCombiningExtractor.getAllCombiners()).thenReturn(List.of(combiner));
         when(assetMappingExtractor.getAllCombiners()).thenReturn(List.of());
 
-        migrator.migrateUnscopedTags();
+        migrator.migrateUnscopedTags(configFileReaderWriter);
 
         verify(dataCombiningExtractor, never()).updateDataCombiners(anyList());
     }
@@ -106,7 +108,7 @@ class DataCombiningScopeMigratorTest {
         when(dataCombiningExtractor.getAllCombiners()).thenReturn(List.of(combiner));
         when(assetMappingExtractor.getAllCombiners()).thenReturn(List.of());
 
-        migrator.migrateUnscopedTags();
+        migrator.migrateUnscopedTags(configFileReaderWriter);
 
         verify(dataCombiningExtractor, never()).updateDataCombiners(anyList());
     }
@@ -123,7 +125,7 @@ class DataCombiningScopeMigratorTest {
         when(dataCombiningExtractor.getAllCombiners()).thenReturn(List.of(combiner));
         when(assetMappingExtractor.getAllCombiners()).thenReturn(List.of());
 
-        migrator.migrateUnscopedTags();
+        migrator.migrateUnscopedTags(configFileReaderWriter);
 
         verify(dataCombiningExtractor, never()).updateDataCombiners(anyList());
     }
@@ -140,7 +142,7 @@ class DataCombiningScopeMigratorTest {
         when(dataCombiningExtractor.getAllCombiners()).thenReturn(List.of(combiner));
         when(assetMappingExtractor.getAllCombiners()).thenReturn(List.of());
 
-        migrator.migrateUnscopedTags();
+        migrator.migrateUnscopedTags(configFileReaderWriter);
 
         verify(dataCombiningExtractor, never()).updateDataCombiners(anyList());
     }
@@ -161,7 +163,7 @@ class DataCombiningScopeMigratorTest {
         when(dataCombiningExtractor.updateDataCombiners(anyList())).thenReturn(1);
         when(assetMappingExtractor.getAllCombiners()).thenReturn(List.of());
 
-        migrator.migrateUnscopedTags();
+        migrator.migrateUnscopedTags(configFileReaderWriter);
 
         final ArgumentCaptor<List<DataCombiner>> captor = combinersCaptor();
         verify(dataCombiningExtractor).updateDataCombiners(captor.capture());
@@ -187,14 +189,13 @@ class DataCombiningScopeMigratorTest {
         when(dataCombiningExtractor.updateDataCombiners(anyList())).thenReturn(1);
         when(assetMappingExtractor.getAllCombiners()).thenReturn(List.of());
 
-        migrator.migrateUnscopedTags();
+        migrator.migrateUnscopedTags(configFileReaderWriter);
 
         final ArgumentCaptor<List<DataCombiner>> captor = combinersCaptor();
         verify(dataCombiningExtractor).updateDataCombiners(captor.capture());
 
         final DataCombining migrated = captor.getValue().get(0).dataCombinings().get(0);
         assertThat(migrated.sources().primaryReference().scope()).isEqualTo("adapter-1");
-        // instruction was already scoped, should remain unchanged
         assertThat(migrated.instructions().get(0).dataIdentifierReference().scope())
                 .isEqualTo("adapter-1");
     }
@@ -213,13 +214,12 @@ class DataCombiningScopeMigratorTest {
         when(dataCombiningExtractor.updateDataCombiners(anyList())).thenReturn(1);
         when(assetMappingExtractor.getAllCombiners()).thenReturn(List.of());
 
-        migrator.migrateUnscopedTags();
+        migrator.migrateUnscopedTags(configFileReaderWriter);
 
         final ArgumentCaptor<List<DataCombiner>> captor = combinersCaptor();
         verify(dataCombiningExtractor).updateDataCombiners(captor.capture());
 
         final DataCombining migrated = captor.getValue().get(0).dataCombinings().get(0);
-        // primary was already scoped, should remain unchanged
         assertThat(migrated.sources().primaryReference().scope()).isEqualTo("adapter-1");
         assertThat(migrated.instructions().get(0).dataIdentifierReference().scope())
                 .isEqualTo("adapter-1");
@@ -240,7 +240,7 @@ class DataCombiningScopeMigratorTest {
         when(dataCombiningExtractor.updateDataCombiners(anyList())).thenReturn(1);
         when(assetMappingExtractor.getAllCombiners()).thenReturn(List.of());
 
-        migrator.migrateUnscopedTags();
+        migrator.migrateUnscopedTags(configFileReaderWriter);
 
         final ArgumentCaptor<List<DataCombiner>> captor = combinersCaptor();
         verify(dataCombiningExtractor).updateDataCombiners(captor.capture());
@@ -267,7 +267,7 @@ class DataCombiningScopeMigratorTest {
         when(dataCombiningExtractor.getAllCombiners()).thenReturn(List.of(combiner));
         when(assetMappingExtractor.getAllCombiners()).thenReturn(List.of());
 
-        migrator.migrateUnscopedTags();
+        migrator.migrateUnscopedTags(configFileReaderWriter);
 
         verify(dataCombiningExtractor, never()).updateDataCombiners(anyList());
     }
@@ -284,7 +284,7 @@ class DataCombiningScopeMigratorTest {
         when(assetMappingExtractor.getAllCombiners()).thenReturn(List.of(combiner));
         when(assetMappingExtractor.updateDataCombiners(anyList())).thenReturn(1);
 
-        migrator.migrateUnscopedTags();
+        migrator.migrateUnscopedTags(configFileReaderWriter);
 
         final ArgumentCaptor<List<DataCombiner>> captor = combinersCaptor();
         verify(assetMappingExtractor).updateDataCombiners(captor.capture());
