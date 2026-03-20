@@ -50,6 +50,7 @@ import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.persistence.mappings.SouthboundMapping;
+import com.hivemq.protocols.fsm.ProtocolAdapterManagerState;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import java.util.List;
 import java.util.Map;
@@ -231,6 +232,7 @@ class ProtocolAdapterManager2Test {
             Thread.sleep(10);
         }
         assertThat(managerUnderTest.isBusy()).isFalse();
+        assertThat(managerUnderTest.getState()).isEqualTo(ProtocolAdapterManagerState.Idle);
     }
 
     @Nested
@@ -484,6 +486,27 @@ class ProtocolAdapterManager2Test {
             verify(eventBuilder).withMessage("Adapter 'adapter-1' stopped OK.");
             verify(eventBuilder).fire();
         }
+
+        @Test
+        void stop_whenDisconnectFails_firesCriticalEvent() throws ProtocolAdapterException {
+            final ProtocolAdapter adapter = createSuccessAdapter("adapter-1");
+            doThrow(new RuntimeException("disconnect failed")).when(adapter).stop(any(), any(), any());
+            addAdapterToManager("adapter-1", adapter);
+
+            manager.start("adapter-1");
+
+            org.mockito.Mockito.reset(eventService, eventBuilder);
+            when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
+            when(eventBuilder.withSeverity(any())).thenReturn(eventBuilder);
+            when(eventBuilder.withMessage(anyString())).thenReturn(eventBuilder);
+
+            manager.stop("adapter-1", false);
+
+            verify(eventService).createAdapterEvent("adapter-1", "test-protocol");
+            verify(eventBuilder).withSeverity(Event.SEVERITY.CRITICAL);
+            verify(eventBuilder).withMessage("Error stopping adapter 'adapter-1'.");
+            verify(eventBuilder).fire();
+        }
     }
 
     @Nested
@@ -629,8 +652,10 @@ class ProtocolAdapterManager2Test {
             spyManager.refresh(List.of(entity));
 
             assertThat(spyManager.isBusy()).isTrue();
+            assertThat(spyManager.getState()).isEqualTo(ProtocolAdapterManagerState.Running);
             assertThat(startCalled.await(2, TimeUnit.SECONDS)).isTrue();
             assertThat(spyManager.isBusy()).isTrue();
+            assertThat(spyManager.getState()).isEqualTo(ProtocolAdapterManagerState.Running);
 
             continueStart.countDown();
             waitUntilNotBusy(spyManager);
