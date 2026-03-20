@@ -78,7 +78,7 @@ cause unpredictable behavior.
 3. **Explicit Transitions**: All valid transitions are defined and enforced by the FSM.
 
 4. **Clear Ownership**:
-   - `ProtocolAdapterWrapper2` owns `ProtocolAdapterState` and `ProtocolAdapterConnectionState` (×2: Northbound + Southbound)
+   - `ProtocolAdapterWrapper2` owns `ProtocolAdapterRuntimeState` and `ProtocolAdapterConnectionState` (×2: Northbound + Southbound)
    - `ProtocolAdapterManager2` manages the lifecycle of `ProtocolAdapterWrapper2` instances
 
 5. **Separation of Concerns**: The wrapper calls `ProtocolAdapter2.connect()` / `disconnect()`,
@@ -120,7 +120,7 @@ boolean canTransitionToIdle() {
 
 ### 2.3 State Machine Definitions
 
-#### ProtocolAdapterState (Manager Level)
+#### ProtocolAdapterRuntimeState (Manager Level)
 
 ```mermaid
 ---
@@ -294,12 +294,18 @@ public enum ProtocolAdapterConnectionDirection {
 
 ### 3.2 ProtocolAdapterWrapper2 Redesign
 
-> **Implementation Status**: ✅ Complete. `ProtocolAdapterWrapper2` includes: FSM-based state management
-> with synchronized transitions, full start/stop lifecycle (precheck → connect → services → disconnect),
-> southbound capability checks, `ProtocolAdapterStateChangeListener` notifications via `CopyOnWriteArrayList`,
-> protected service lifecycle hooks (`startPolling`/`stopPolling`/`startWriting`/`stopWriting`),
-> and error cleanup (disconnect northbound on southbound failure). Old adapters are wrapped via
-> `ProtocolAdapter2Bridge`. The code below shows the reference design that the implementation follows.
+> **Implementation Status**: ✅ Complete. `ProtocolAdapterWrapper2` (in `com.hivemq.protocols`) includes:
+> FSM-based state management with synchronized transitions, full start/stop lifecycle
+> (precheck → connect → services → disconnect), southbound capability checks,
+> `ProtocolAdapterStateChangeListener` notifications via `CopyOnWriteArrayList`, protected service
+> lifecycle hooks (`startPolling`/`stopPolling`/`startWriting`/`stopWriting`), error cleanup
+> (disconnect northbound on southbound failure), `clearShuttingDown()`/`markShuttingDown()` calls
+> on `ProtocolAdapterStateImpl` for race-condition safety, and `ModuleServices` as a constructor
+> parameter. For Bridge adapters (`ProtocolAdapter2Bridge`), `startNorthbound()`/`stopNorthbound()`
+> bypass the bridge's `connect()`/`disconnect()` and call the delegate's `start(input, output)` /
+> `stop(input, output)` directly using `ProtocolAdapterStartInputImpl`, `ProtocolAdapterStartOutputImpl`,
+> `ProtocolAdapterStopInputImpl`, `ProtocolAdapterStopOutputImpl` — the same Impl classes used by the
+> old `ProtocolAdapterWrapper`. The code below shows the reference design.
 
 #### 3.2.1 Async Operation Coordination
 
@@ -371,7 +377,7 @@ public CompletableFuture<Boolean> stopAsync(String adapterId, boolean destroy) {
  * ProtocolAdapterWrapper2 - Manages adapter lifecycle and connection states
  *
  * Responsibilities:
- * 1. Owns ProtocolAdapterState and both ProtocolAdapterConnectionState instances
+ * 1. Owns ProtocolAdapterRuntimeState and both ProtocolAdapterConnectionState instances
  * 2. Coordinates transitions between states
  * 3. Calls ProtocolAdapter2 methods synchronously
  * 4. Reports state changes to listeners
@@ -389,7 +395,7 @@ public class ProtocolAdapterWrapper2 {
 
     // State machines - owned by this wrapper
     // FSM transitions are atomic and handle conflict detection
-    private volatile @NotNull ProtocolAdapterState state = ProtocolAdapterState.Idle;
+    private volatile @NotNull ProtocolAdapterRuntimeState state = ProtocolAdapterRuntimeState.Idle;
     private volatile @NotNull ProtocolAdapterConnectionState northboundState = ProtocolAdapterConnectionState.Disconnected;
     private volatile @NotNull ProtocolAdapterConnectionState southboundState = ProtocolAdapterConnectionState.Disconnected;
 
@@ -427,7 +433,7 @@ public class ProtocolAdapterWrapper2 {
         LOGGER.info("Starting adapter {}", getAdapterId());
 
         // Step 1: Idle → Precheck
-        if (!transitionTo(ProtocolAdapterState.Precheck).status().isSuccess()) {
+        if (!transitionTo(ProtocolAdapterRuntimeState.Precheck).status().isSuccess()) {
             return false;
         }
 
@@ -436,12 +442,12 @@ public class ProtocolAdapterWrapper2 {
             adapter.precheck();
         } catch (Exception e) {
             LOGGER.error("Precheck failed for adapter {}", getAdapterId(), e);
-            transitionTo(ProtocolAdapterState.Error);
+            transitionTo(ProtocolAdapterRuntimeState.Error);
             return false;
         }
 
         // Step 3: Precheck → Working
-        if (!transitionTo(ProtocolAdapterState.Working).status().isSuccess()) {
+        if (!transitionTo(ProtocolAdapterRuntimeState.Working).status().isSuccess()) {
             return false;
         }
 
@@ -454,7 +460,7 @@ public class ProtocolAdapterWrapper2 {
             if (northboundSuccess) {
                 stopNorthbound();
             }
-            transitionTo(ProtocolAdapterState.Error);
+            transitionTo(ProtocolAdapterRuntimeState.Error);
             return false;
         }
 
@@ -488,7 +494,7 @@ public class ProtocolAdapterWrapper2 {
         LOGGER.info("Stopping adapter {}", getAdapterId());
 
         // Step 1: Working → Stopping
-        if (!transitionTo(ProtocolAdapterState.Stopping).status().isSuccess()) {
+        if (!transitionTo(ProtocolAdapterRuntimeState.Stopping).status().isSuccess()) {
             // Already stopping or in error - check if we can proceed
             if (!state.isStopping() && !state.isError()) {
                 return false;
@@ -509,7 +515,7 @@ public class ProtocolAdapterWrapper2 {
         boolean southboundReady = !supportsSouthbound() || southboundState.isDisconnected();
 
         if (northboundReady && southboundReady) {
-            transitionTo(ProtocolAdapterState.Idle);
+            transitionTo(ProtocolAdapterRuntimeState.Idle);
             if (destroy) {
                 adapter.destroy();
             }
@@ -518,7 +524,7 @@ public class ProtocolAdapterWrapper2 {
 
         // If not fully disconnected, stay in Stopping/Error
         if (!northboundSuccess || !southboundSuccess) {
-            transitionTo(ProtocolAdapterState.Error);
+            transitionTo(ProtocolAdapterRuntimeState.Error);
         }
         return false;
     }
@@ -650,13 +656,15 @@ public class ProtocolAdapterWrapper2 {
 
 ### 3.3 ProtocolAdapterManager2 Redesign
 
-> **Implementation Status**: ✅ Complete. `ProtocolAdapterManager2` includes: full CRUD operations,
-> factory integration (`ProtocolAdapterFactoryManager`), parallel refresh using `CompletableFuture.allOf()`,
-> event service integration with event-firing `start()`/`stop()` methods (INFO on success, ERROR/WARN on
-> failure), metrics integration, ClassLoader management (`ClassLoaderUtils`), I18n error messages,
-> consumer registration with `ProtocolAdapterExtractor`, and `ConcurrentHashMap` for thread-safe adapter
-> storage. `start()` throws `ProtocolAdapterException` on failure; `stop()` fires a WARN event but does
-> not throw. The code below shows the reference design.
+> **Implementation Status**: ✅ Complete. `ProtocolAdapterManager2` (in `com.hivemq.protocols`) includes:
+> full CRUD operations, factory integration (`ProtocolAdapterFactoryManager`), parallel refresh using
+> `CompletableFuture.allOf()`, event service integration with event-firing `start()`/`stop()` methods
+> (INFO on success, CRITICAL/WARN on failure), `HiveMQEdgeRemoteEvent` usage tracking
+> (`ADAPTER_STARTED`/`ADAPTER_ERROR` with `adapterType` user data) via `remoteService.fireUsageEvent()`,
+> metrics integration, ClassLoader management (`ClassLoaderUtils`), I18n error messages, consumer
+> registration with `ProtocolAdapterExtractor`, and `ConcurrentHashMap` for thread-safe adapter storage.
+> Log messages match the old `ProtocolAdapterManager` exactly. `start()` throws `ProtocolAdapterException`
+> on failure; `stop()` fires a WARN event but does not throw. The code below shows the reference design.
 
 ```java
 /**
@@ -877,7 +885,7 @@ public void connect(ProtocolAdapterConnectionDirection direction) throws Protoco
 
 **Status**: ✅ Completed
 
-- [x] Create `ProtocolAdapterState` enum with FSM transitions
+- [x] Create `ProtocolAdapterRuntimeState` enum with FSM transitions
 - [x] Create `ProtocolAdapterConnectionState` enum with FSM transitions
 - [x] Create `ProtocolAdapterTransitionResponse` record
 - [x] Create `ProtocolAdapterConnectionTransitionResponse` record
@@ -887,7 +895,7 @@ public void connect(ProtocolAdapterConnectionDirection direction) throws Protoco
 - [x] Create `ClassLoaderUtils` for classloader context management
 - [x] Create basic `ProtocolAdapterWrapper2` with state management
 - [x] Create basic `ProtocolAdapterManager2` with CRUD operations
-- [x] Add unit tests for FSM transitions (`ProtocolAdapterStateTest`, `ProtocolAdapterConnectionStateTest`, `ProtocolAdapterWrapperTest`)
+- [x] Add unit tests for FSM transitions (`ProtocolAdapterRuntimeStateTest`, `ProtocolAdapterConnectionStateTest`, `ProtocolAdapterWrapperTest`)
 
 ### 5.2 Phase 2: Interface Design
 
@@ -904,7 +912,9 @@ public void connect(ProtocolAdapterConnectionDirection direction) throws Protoco
 **Note**: In Phase 5, `ProtocolAdapter2`, `ProtocolAdapterConnectionDirection`, and `ProtocolAdapter2Bridge`
 were moved from core (`com.hivemq.protocols.fsm`) to the adapter SDK (`com.hivemq.adapter.sdk.api`) to
 support the plugin architecture where adapter modules only see the SDK. The bridge uses inline anonymous
-`ProtocolAdapterStartOutput`/`ProtocolAdapterStopOutput` implementations instead of core's `*Impl` classes.
+`ProtocolAdapterStartOutput`/`ProtocolAdapterStopOutput` implementations, but `ProtocolAdapterWrapper2`
+bypasses the bridge's `connect()`/`disconnect()` for Bridge adapters and calls the delegate's
+`start(input, output)` / `stop(input, output)` directly using core `*Impl` classes.
 
 **Deliverables**:
 - `ProtocolAdapter2.java` (now in adapter SDK)
@@ -997,8 +1007,12 @@ modules only see the SDK — they cannot depend on core classes. Each module cre
 
 **SDK constraints addressed**:
 - No SLF4J in SDK: `ProtocolAdapter2Bridge` silently catches disconnect errors (caller handles reporting)
-- No core output impl classes in SDK: uses inline anonymous `ProtocolAdapterStartOutput`/`ProtocolAdapterStopOutput`
-  with `CompletableFuture` and `AtomicReference<String>` for error messages
+- No core output impl classes in SDK: bridge uses inline anonymous `ProtocolAdapterStartOutput`/`ProtocolAdapterStopOutput`
+  with `CompletableFuture` and `AtomicReference<String>` for error messages.
+  **However**: `ProtocolAdapterWrapper2` bypasses the bridge for Bridge adapters, calling
+  `bridge.getDelegate().start(input, output)` / `stop(input, output)` directly with
+  `ProtocolAdapterStartInputImpl`/`ProtocolAdapterStartOutputImpl`/`ProtocolAdapterStopInputImpl`/
+  `ProtocolAdapterStopOutputImpl` from core — identical to the old `ProtocolAdapterWrapper` behavior
 
 **Tasks**:
 - [x] Move `ProtocolAdapter2`, `ProtocolAdapterConnectionDirection`, `ProtocolAdapter2Bridge` to adapter SDK
@@ -1029,7 +1043,7 @@ modules only see the SDK — they cannot depend on core classes. Each module cre
 
 ### 5.6 Phase 6: Switchover
 
-**Status**: ✅ DI wiring complete — awaiting `hivemq-edge-test` validation
+**Status**: ✅ DI wiring complete, code moved to `com.hivemq.protocols` — awaiting `hivemq-edge-test` validation
 
 **Strategy**: The new implementation is reviewed and hardened with edge case tests first, then wired
 in alongside the old code — nothing is removed yet. We leverage the existing comprehensive test suite
@@ -1049,6 +1063,15 @@ against the new implementation.
   - `ProtocolAdapterManager2Test`: delete adapter (removes wrapper, decreases metric, fires event,
     nonexistent adapter), adapter ID set (empty, all IDs, defensive copy), start/stop interaction
     (round-trip restart, double start throws)
+- **Package move**: `ProtocolAdapterWrapper2` and `ProtocolAdapterManager2` moved from
+  `com.hivemq.protocols.fsm` to `com.hivemq.protocols`. Tests moved to match.
+- **Feature parity fixes**: Wrapper2 now uses `ProtocolAdapterStartInputImpl`/`ProtocolAdapterStartOutputImpl`
+  and `ProtocolAdapterStopInputImpl`/`ProtocolAdapterStopOutputImpl` for Bridge adapters, bypassing the
+  bridge's `connect()`/`disconnect()`. Added `clearShuttingDown()`/`markShuttingDown()` calls, `ModuleServices`
+  constructor parameter. Manager2 now fires `HiveMQEdgeRemoteEvent` (ADAPTER_STARTED/ADAPTER_ERROR) for
+  usage tracking. Log messages and event severities match old code exactly.
+- **Test-only constructor removed**: Removed the `ProtocolAdapterWrapper2(ProtocolAdapter2)` constructor that
+  was only used in tests. All tests now use the full 12-argument constructor.
 
 **Tasks**:
 - [x] Review implementation for correctness against the design
@@ -1104,10 +1127,10 @@ implementations. All renamed classes stay in the `fsm` package (or the adapter S
 |---|---|---|
 | `ProtocolAdapter2` (SDK) | Merge into `ProtocolAdapter` | `ProtocolAdapter` (`com.hivemq.adapter.sdk.api`) |
 | `ProtocolAdapter2Bridge` (SDK) | Delete | _(bridge logic becomes default methods on `ProtocolAdapter`)_ |
-| `ProtocolAdapterWrapper2` (fsm) | Rename | `ProtocolAdapterWrapper` (`com.hivemq.protocols.fsm`) |
-| `ProtocolAdapterManager2` (fsm) | Rename | `ProtocolAdapterManager` (`com.hivemq.protocols.fsm`) |
+| `ProtocolAdapterWrapper2` (`com.hivemq.protocols`) | Rename | `ProtocolAdapterWrapper` (`com.hivemq.protocols`) |
+| `ProtocolAdapterManager2` (`com.hivemq.protocols`) | Rename | `ProtocolAdapterManager` (`com.hivemq.protocols`) |
 | `ProtocolAdapter2BridgeTest` (fsm test) | Delete | _(bridge removed; coverage moves to wrapper + adapter tests)_ |
-| `ProtocolAdapterManager2Test` (fsm test) | Rename | `ProtocolAdapterManagerTest` (`com.hivemq.protocols.fsm`) |
+| `ProtocolAdapterManager2Test` (`com.hivemq.protocols` test) | Rename | `ProtocolAdapterManagerTest` (`com.hivemq.protocols`) |
 | 10× per-module `*ProtocolAdapter2` | Delete | _(bridge subclasses; no longer needed)_ |
 | 10× per-module `*ProtocolAdapter2Test` | Rename (drop `2`) | Same package, test factory wiring + `supportsSouthbound()` |
 
@@ -1274,10 +1297,10 @@ The following unit tests validate individual FSM components in isolation (75 tes
 
 ```
 com.hivemq.protocols.fsm.ProtocolAdapterConnectionStateTest  # Connection FSM transitions (1 test)
-com.hivemq.protocols.fsm.ProtocolAdapterStateTest            # Adapter FSM transitions (1 test)
+com.hivemq.protocols.fsm.ProtocolAdapterRuntimeStateTest     # Adapter FSM transitions (1 test)
 com.hivemq.protocols.fsm.ProtocolAdapter2BridgeTest          # Bridge: old → new adapter interface (11 tests)
-com.hivemq.protocols.fsm.ProtocolAdapterWrapperTest          # Wrapper lifecycle, listeners, hooks, edge cases (43 tests)
-com.hivemq.protocols.fsm.ProtocolAdapterManager2Test         # Manager start/stop/delete, events, lookups (19 tests)
+com.hivemq.protocols.ProtocolAdapterWrapper2Test             # Wrapper lifecycle, listeners, hooks, edge cases (44 tests)
+com.hivemq.protocols.ProtocolAdapterManager2Test             # Manager start/stop/delete, events, lookups (17 tests)
 ```
 
 Per-module smoke tests (10 modules) validate adapter-specific `ProtocolAdapter2` classes and factory wiring.
@@ -1345,20 +1368,23 @@ The existing tests define the correct behavior contract.
 
 ## 10. Appendix: File List
 
-### Source Files — Final State After Phase 7 (core, fsm package)
+### Source Files — Final State After Phase 7
 
 ```
+# FSM infrastructure (com.hivemq.protocols.fsm)
 hivemq-edge/hivemq-edge/src/main/java/com/hivemq/protocols/fsm/
-├── ClassLoaderUtils.java                          # ClassLoader context utility
 ├── I18nProtocolAdapterMessage.java                # I18n error/message templates
 ├── ProtocolAdapterConnectionState.java            # Connection FSM enum
 ├── ProtocolAdapterConnectionTransitionResponse.java # Connection transition response record
-├── ProtocolAdapterManager.java                    # Manager (renamed from ProtocolAdapterManager2)
 ├── ProtocolAdapterManagerState.java               # Manager-level state enum
-├── ProtocolAdapterState.java                      # Adapter FSM enum
+├── ProtocolAdapterRuntimeState.java                # Adapter FSM enum
 ├── ProtocolAdapterStateChangeListener.java        # State change notification interface
 ├── ProtocolAdapterTransitionResponse.java         # Adapter transition response record
-├── ProtocolAdapterTransitionStatus.java           # Transition status enum
+└── ProtocolAdapterTransitionStatus.java           # Transition status enum
+
+# Core wrapper and manager (com.hivemq.protocols)
+hivemq-edge/hivemq-edge/src/main/java/com/hivemq/protocols/
+├── ProtocolAdapterManager.java                    # Manager (renamed from ProtocolAdapterManager2)
 └── ProtocolAdapterWrapper.java                    # Wrapper (renamed from ProtocolAdapterWrapper2)
 ```
 
@@ -1373,14 +1399,18 @@ hivemq-edge-adapter-sdk/src/main/java/com/hivemq/adapter/sdk/api/
     └── ProtocolAdapterFactory.java                # createProtocolAdapterBridge() (renamed from createProtocolAdapter2())
 ```
 
-### Test Files — Final State After Phase 7 (core)
+### Test Files — Final State After Phase 7
 
 ```
+# FSM tests (com.hivemq.protocols.fsm)
 hivemq-edge/hivemq-edge/src/test/java/com/hivemq/protocols/fsm/
 ├── ProtocolAdapterBridgeTest.java                 # Bridge tests (renamed from ProtocolAdapter2BridgeTest)
 ├── ProtocolAdapterConnectionStateTest.java        # Connection FSM transition tests
+└── ProtocolAdapterRuntimeStateTest.java            # Adapter FSM transition tests
+
+# Core tests (com.hivemq.protocols)
+hivemq-edge/hivemq-edge/src/test/java/com/hivemq/protocols/
 ├── ProtocolAdapterManagerTest.java                # Manager tests (renamed from ProtocolAdapterManager2Test)
-├── ProtocolAdapterStateTest.java                  # Adapter FSM transition tests
 └── ProtocolAdapterWrapperTest.java                # Wrapper lifecycle, listeners, hooks
 ```
 
@@ -1413,11 +1443,12 @@ BacnetIpProtocolAdapter2.java
 ### Files Renamed in Phase 7
 
 ```
-# Core (fsm package)
+# Core (com.hivemq.protocols — already moved from fsm package)
 ProtocolAdapterWrapper2.java       → ProtocolAdapterWrapper.java
 ProtocolAdapterManager2.java       → ProtocolAdapterManager.java
+
+# FSM tests (com.hivemq.protocols.fsm)
 ProtocolAdapter2BridgeTest.java    → ProtocolAdapterBridgeTest.java
-ProtocolAdapterManager2Test.java   → ProtocolAdapterManagerTest.java
 
 # SDK
 ProtocolAdapter2Bridge.java        → ProtocolAdapterBridge.java
@@ -1444,7 +1475,7 @@ All commands run from `hivemq-edge-composite/`.
 ### Core FSM tests
 
 ```
-./gradlew :hivemq-edge-build:hivemq-edge:test --tests "com.hivemq.protocols.fsm.*"
+./gradlew :hivemq-edge-build:hivemq-edge:test --tests "com.hivemq.protocols.fsm.*" --tests "com.hivemq.protocols.ProtocolAdapterWrapper2Test" --tests "com.hivemq.protocols.ProtocolAdapterManager2Test"
 ```
 
 ### Adapter integration validation (Phase 7 gate)
@@ -1463,7 +1494,7 @@ grep -r "ProtocolAdapter2\|ProtocolAdapterWrapper2\|ProtocolAdapterManager2" \
 
 ---
 
-**Document Version**: 1.8
-**Last Updated**: 2026-03-19
+**Document Version**: 1.9
+**Last Updated**: 2026-03-20
 **Author**: Claude (AI Assistant)
 **Status**: IN PROGRESS (Phase 1–6 complete, Phase 7 not started)

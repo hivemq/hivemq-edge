@@ -25,7 +25,7 @@ import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.impl.polling.PollingOutputImpl;
 import com.hivemq.edge.modules.adapters.impl.polling.batch.BatchPollingInputImpl;
 import com.hivemq.protocols.AbstractSubscriptionSampler;
-import com.hivemq.protocols.fsm.ProtocolAdapterWrapper2;
+import com.hivemq.protocols.ProtocolAdapterWrapper2;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;

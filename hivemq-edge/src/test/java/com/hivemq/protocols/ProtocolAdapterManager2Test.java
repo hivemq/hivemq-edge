@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.protocols.fsm;
+package com.hivemq.protocols;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -31,16 +31,16 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.events.model.EventBuilder;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.services.ModuleServices;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
+import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
-import com.hivemq.protocols.InternalProtocolAdapterWritingService;
-import com.hivemq.protocols.ProtocolAdapterConfigConverter;
-import com.hivemq.protocols.ProtocolAdapterFactoryManager;
-import com.hivemq.protocols.ProtocolAdapterMetrics;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -147,16 +147,28 @@ class ProtocolAdapterManager2Test {
 
     /**
      * Adds an adapter directly to the manager's internal map by creating a wrapper
-     * and using the protected method access pattern via a test subclass.
+     * and using reflection to access the protected map.
      */
     private void addAdapterToManager(final @NotNull String adapterId, final @NotNull ProtocolAdapter2 adapter) {
-        // Use reflection-free approach: directly access the wrapper map via getProtocolAdapterWrapperByAdapterId
-        // We need a way to add to the internal map. Use a test helper approach.
-        final ProtocolAdapterWrapper2 wrapper = new ProtocolAdapterWrapper2(adapter);
-        // Access the map via the manager's own methods — we use the protected deleteProtocolAdapterWrapperByAdapterId
-        // to verify it works, but for adding, we need the package-private approach.
-        // Since protocolAdapterMap is a ConcurrentHashMap accessible within the package,
-        // we use a test-friendly approach by directly putting into the map.
+        final ProtocolAdapterConfig adapterConfig = mock(ProtocolAdapterConfig.class);
+        final ProtocolAdapterFactory<?> factory = mock(ProtocolAdapterFactory.class);
+        final ProtocolAdapterMetricsService metricsService = mock(ProtocolAdapterMetricsService.class);
+        final ProtocolAdapterStateImpl state = mock(ProtocolAdapterStateImpl.class);
+        final ModuleServices moduleServicesMock = mock(ModuleServices.class);
+
+        final ProtocolAdapterWrapper2 wrapper = new ProtocolAdapterWrapper2(
+                adapter,
+                adapterConfig,
+                factory,
+                adapter.getProtocolAdapterInformation(),
+                metricsService,
+                state,
+                pollingService,
+                eventService,
+                moduleServicesMock,
+                tagManager,
+                northboundConsumerFactory,
+                writingService);
         try {
             final var field = ProtocolAdapterManager2.class.getDeclaredField("protocolAdapterMap");
             field.setAccessible(true);

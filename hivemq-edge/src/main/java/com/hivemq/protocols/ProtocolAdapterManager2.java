@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.protocols.fsm;
+package com.hivemq.protocols;
 
 import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatus.ADAPTER_MISSING;
 import static com.hivemq.persistence.domain.DomainTagAddResult.DomainTagPutStatus.ALREADY_EXISTS;
@@ -34,6 +34,7 @@ import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
+import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesPerModuleImpl;
@@ -42,12 +43,7 @@ import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImp
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
-import com.hivemq.protocols.InternalProtocolAdapterWritingService;
-import com.hivemq.protocols.ProtocolAdapterConfig;
-import com.hivemq.protocols.ProtocolAdapterConfigConverter;
-import com.hivemq.protocols.ProtocolAdapterFactoryManager;
-import com.hivemq.protocols.ProtocolAdapterInputImpl;
-import com.hivemq.protocols.ProtocolAdapterMetrics;
+import com.hivemq.protocols.fsm.I18nProtocolAdapterMessage;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -63,6 +59,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -310,6 +307,7 @@ public class ProtocolAdapterManager2 {
      * @throws ProtocolAdapterException if the adapter is not found or fails to start
      */
     public void start(final @NotNull String adapterId) throws ProtocolAdapterException {
+        LOGGER.info("Starting protocol-adapter '{}'.", adapterId);
         final var optionalWrapper = getProtocolAdapterWrapperByAdapterId(adapterId);
         if (optionalWrapper.isEmpty()) {
             throw new ProtocolAdapterException(
@@ -321,12 +319,22 @@ public class ProtocolAdapterManager2 {
         final boolean success = wrapper.start();
 
         if (success) {
+            LOGGER.info("Protocol-adapter '{}' started successfully.", adapterId);
+            final HiveMQEdgeRemoteEvent event =
+                    new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.ADAPTER_STARTED);
+            event.addUserData("adapterType", protocolId);
+            remoteService.fireUsageEvent(event);
             eventService
                     .createAdapterEvent(adapterId, protocolId)
                     .withSeverity(Event.SEVERITY.INFO)
                     .withMessage("Adapter '" + adapterId + "' started OK.")
                     .fire();
         } else {
+            LOGGER.warn("Protocol-adapter '{}' could not be started, reason: {}", adapterId, "unknown");
+            final HiveMQEdgeRemoteEvent event =
+                    new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.ADAPTER_ERROR);
+            event.addUserData("adapterType", protocolId);
+            remoteService.fireUsageEvent(event);
             eventService
                     .createAdapterEvent(adapterId, protocolId)
                     .withSeverity(Event.SEVERITY.CRITICAL)
@@ -344,6 +352,7 @@ public class ProtocolAdapterManager2 {
      * @throws ProtocolAdapterException if the adapter is not found
      */
     public void stop(final @NotNull String adapterId, final boolean destroy) throws ProtocolAdapterException {
+        LOGGER.info("Stopping protocol-adapter '{}'.", adapterId);
         final var optionalWrapper = getProtocolAdapterWrapperByAdapterId(adapterId);
         if (optionalWrapper.isEmpty()) {
             throw new ProtocolAdapterException(
@@ -355,12 +364,14 @@ public class ProtocolAdapterManager2 {
         final boolean success = wrapper.stop(destroy);
 
         if (success) {
+            LOGGER.info("Protocol-adapter '{}' stopped successfully.", adapterId);
             eventService
                     .createAdapterEvent(adapterId, protocolId)
                     .withSeverity(Event.SEVERITY.INFO)
                     .withMessage("Adapter '" + adapterId + "' stopped OK.")
                     .fire();
         } else {
+            LOGGER.warn("Protocol-adapter '{}' was unable to stop cleanly", adapterId);
             eventService
                     .createAdapterEvent(adapterId, protocolId)
                     .withSeverity(Event.SEVERITY.CRITICAL)
@@ -376,6 +387,10 @@ public class ProtocolAdapterManager2 {
      */
     public @NotNull CompletableFuture<Void> startAsync(final @NotNull String protocolAdapterId) {
         Preconditions.checkNotNull(protocolAdapterId);
+        if (!protocolAdapterMap.containsKey(protocolAdapterId)) {
+            return CompletableFuture.failedFuture(
+                    new ProtocolAdapterException("Adapter not found: " + protocolAdapterId));
+        }
         return CompletableFuture.runAsync(() -> {
             try {
                 start(protocolAdapterId);
@@ -433,7 +448,7 @@ public class ProtocolAdapterManager2 {
         });
 
         final ProtocolAdapterWrapper2 wrapper =
-                ClassLoaderUtils.runWithContextLoader(factory.getClass().getClassLoader(), () -> {
+                runWithContextLoader(factory.getClass().getClassLoader(), () -> {
                     final ProtocolAdapterMetricsService metricsService = new ProtocolAdapterMetricsServiceImpl(
                             configProtocolId, config.getAdapterId(), metricRegistry);
                     final ProtocolAdapterStateImpl state = new ProtocolAdapterStateImpl(
@@ -467,6 +482,7 @@ public class ProtocolAdapterManager2 {
                             state,
                             protocolAdapterPollingService,
                             eventService,
+                            perModule,
                             tagManager,
                             northboundConsumerFactory,
                             protocolAdapterWritingService);
@@ -492,9 +508,7 @@ public class ProtocolAdapterManager2 {
                             eventService
                                     .createAdapterEvent(adapterId, protocolId)
                                     .withSeverity(Event.SEVERITY.WARN)
-                                    .withMessage(
-                                            I18nProtocolAdapterMessage.PROTOCOL_ADAPTER_MANAGER_PROTOCOL_ADAPTER_DELETED
-                                                    .get(Map.of(ADAPTER_ID, adapterId)))
+                                    .withMessage("Adapter '" + adapterId + "' was deleted from the system permanently.")
                                     .fire();
                         },
                         () -> LOGGER.warn(
@@ -604,10 +618,15 @@ public class ProtocolAdapterManager2 {
 
     /**
      * Runs a supplier with a specific classloader set as the thread's context classloader.
-     * Delegates to {@link ClassLoaderUtils#runWithContextLoader}.
      */
     public static <T> @NotNull T runWithContextLoader(
-            final @NotNull ClassLoader contextLoader, final @NotNull java.util.function.Supplier<T> supplier) {
-        return ClassLoaderUtils.runWithContextLoader(contextLoader, supplier);
+            final @NotNull ClassLoader contextLoader, final @NotNull Supplier<T> supplier) {
+        final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(contextLoader);
+            return supplier.get();
+        } finally {
+            Thread.currentThread().setContextClassLoader(contextClassLoader);
+        }
     }
 }

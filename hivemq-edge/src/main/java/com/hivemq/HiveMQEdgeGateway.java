@@ -24,7 +24,7 @@ import com.hivemq.exceptions.HiveMQEdgeStartupException;
 import com.hivemq.extension.sdk.api.services.admin.AdminService;
 import com.hivemq.extensions.ExtensionBootstrap;
 import com.hivemq.extensions.services.admin.AdminServiceImpl;
-import com.hivemq.protocols.fsm.ProtocolAdapterManager2;
+import com.hivemq.protocols.ProtocolAdapterManager2;
 import com.hivemq.pulse.messaging.AssetMapperManager;
 import com.hivemq.util.Checkpoints;
 import jakarta.inject.Inject;

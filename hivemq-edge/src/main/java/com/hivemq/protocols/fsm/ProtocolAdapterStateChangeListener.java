@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Listener for protocol adapter state changes.
  * <p>
- * Implementations are notified whenever the adapter's {@link ProtocolAdapterState}
+ * Implementations are notified whenever the adapter's {@link ProtocolAdapterRuntimeState}
  * transitions successfully to a new state.
  */
 @FunctionalInterface
@@ -32,5 +32,6 @@ public interface ProtocolAdapterStateChangeListener {
      * @param fromState the previous state
      * @param toState   the new state
      */
-    void onStateChanged(final @NotNull ProtocolAdapterState fromState, final @NotNull ProtocolAdapterState toState);
+    void onStateChanged(
+            final @NotNull ProtocolAdapterRuntimeState fromState, final @NotNull ProtocolAdapterRuntimeState toState);
 }

@@ -31,6 +31,7 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.VersionProvider;
 import com.hivemq.http.HttpConstants;
+import com.hivemq.protocols.ProtocolAdapterManager2;
 import com.hivemq.protocols.ProtocolAdapterSchemaManager;
 import java.util.Objects;
 import com.hivemq.protocols.fsm.ProtocolAdapterManager2;

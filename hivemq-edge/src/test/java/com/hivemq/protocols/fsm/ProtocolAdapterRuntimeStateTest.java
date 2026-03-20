@@ -29,24 +29,25 @@ import org.mockito.quality.Strictness;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class ProtocolAdapterStateTest {
-    private static final Map<ProtocolAdapterState, Set<ProtocolAdapterState>> PROTOCOL_ADAPTER_STATE_MAP_MAP = Map.of(
-            ProtocolAdapterState.Idle,
-            Set.of(ProtocolAdapterState.Precheck),
-            ProtocolAdapterState.Precheck,
-            Set.of(ProtocolAdapterState.Working, ProtocolAdapterState.Error),
-            ProtocolAdapterState.Working,
-            Set.of(ProtocolAdapterState.Stopping, ProtocolAdapterState.Error),
-            ProtocolAdapterState.Stopping,
-            Set.of(ProtocolAdapterState.Idle, ProtocolAdapterState.Error),
-            ProtocolAdapterState.Error,
-            Set.of(ProtocolAdapterState.Idle));
+public class ProtocolAdapterRuntimeStateTest {
+    private static final Map<ProtocolAdapterRuntimeState, Set<ProtocolAdapterRuntimeState>>
+            PROTOCOL_ADAPTER_STATE_MAP_MAP = Map.of(
+                    ProtocolAdapterRuntimeState.Idle,
+                    Set.of(ProtocolAdapterRuntimeState.Precheck),
+                    ProtocolAdapterRuntimeState.Precheck,
+                    Set.of(ProtocolAdapterRuntimeState.Working, ProtocolAdapterRuntimeState.Error),
+                    ProtocolAdapterRuntimeState.Working,
+                    Set.of(ProtocolAdapterRuntimeState.Stopping, ProtocolAdapterRuntimeState.Error),
+                    ProtocolAdapterRuntimeState.Stopping,
+                    Set.of(ProtocolAdapterRuntimeState.Idle, ProtocolAdapterRuntimeState.Error),
+                    ProtocolAdapterRuntimeState.Error,
+                    Set.of(ProtocolAdapterRuntimeState.Idle));
 
     @Test
     public void whenEverythingWorks_thenTransitionShouldWork() {
-        final List<ProtocolAdapterState> states = List.of(ProtocolAdapterState.values());
+        final List<ProtocolAdapterRuntimeState> states = List.of(ProtocolAdapterRuntimeState.values());
         states.forEach(fromState -> {
-            final Set<ProtocolAdapterState> possibleToStates = PROTOCOL_ADAPTER_STATE_MAP_MAP.get(fromState);
+            final Set<ProtocolAdapterRuntimeState> possibleToStates = PROTOCOL_ADAPTER_STATE_MAP_MAP.get(fromState);
             assertThat(possibleToStates).isNotNull();
             states.forEach(toState -> {
                 final ProtocolAdapterTransitionResponse response = fromState.transition(toState);

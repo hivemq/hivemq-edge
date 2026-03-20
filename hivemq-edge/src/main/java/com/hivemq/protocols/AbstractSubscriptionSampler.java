@@ -20,7 +20,6 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
-import com.hivemq.protocols.fsm.ProtocolAdapterWrapper2;
 import java.util.Date;
 import java.util.Objects;
 import java.util.UUID;

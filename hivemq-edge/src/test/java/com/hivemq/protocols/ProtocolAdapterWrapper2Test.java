@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.protocols.fsm;
+package com.hivemq.protocols;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -27,7 +27,20 @@ import static org.mockito.Mockito.when;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter2;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.services.ModuleServices;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.edge.modules.adapters.data.TagManager;
+import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
+import com.hivemq.protocols.fsm.ProtocolAdapterConnectionState;
+import com.hivemq.protocols.fsm.ProtocolAdapterConnectionTransitionResponse;
+import com.hivemq.protocols.fsm.ProtocolAdapterRuntimeState;
+import com.hivemq.protocols.fsm.ProtocolAdapterStateChangeListener;
+import com.hivemq.protocols.fsm.ProtocolAdapterTransitionResponse;
+import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -43,13 +56,43 @@ import org.mockito.quality.Strictness;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class ProtocolAdapterWrapperTest {
+class ProtocolAdapterWrapper2Test {
 
     @Mock
     private @NotNull ProtocolAdapter2 protocolAdapter;
 
     @Mock
     private @NotNull ProtocolAdapterInformation adapterInformation;
+
+    @Mock
+    private @NotNull ProtocolAdapterConfig config;
+
+    @Mock
+    private @NotNull ProtocolAdapterFactory<?> adapterFactory;
+
+    @Mock
+    private @NotNull ProtocolAdapterMetricsService metricsService;
+
+    @Mock
+    private @NotNull ProtocolAdapterStateImpl protocolAdapterState;
+
+    @Mock
+    private @NotNull ProtocolAdapterPollingService protocolAdapterPollingService;
+
+    @Mock
+    private @NotNull EventService eventService;
+
+    @Mock
+    private @NotNull ModuleServices moduleServices;
+
+    @Mock
+    private @NotNull TagManager tagManager;
+
+    @Mock
+    private @NotNull NorthboundConsumerFactory northboundConsumerFactory;
+
+    @Mock
+    private @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService;
 
     private @NotNull ProtocolAdapterWrapper2 wrapper;
 
@@ -58,7 +101,19 @@ class ProtocolAdapterWrapperTest {
         when(protocolAdapter.getId()).thenReturn("test-adapter");
         when(protocolAdapter.supportsSouthbound()).thenReturn(false);
         when(protocolAdapter.getProtocolAdapterInformation()).thenReturn(adapterInformation);
-        wrapper = new ProtocolAdapterWrapper2(protocolAdapter);
+        wrapper = new ProtocolAdapterWrapper2(
+                protocolAdapter,
+                config,
+                adapterFactory,
+                adapterInformation,
+                metricsService,
+                protocolAdapterState,
+                protocolAdapterPollingService,
+                eventService,
+                moduleServices,
+                tagManager,
+                northboundConsumerFactory,
+                protocolAdapterWritingService);
     }
 
     @Nested
@@ -66,7 +121,7 @@ class ProtocolAdapterWrapperTest {
 
         @Test
         void initialState_isIdleWithBothDisconnected() {
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Idle);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
             assertThat(wrapper.getSouthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
         }
@@ -83,7 +138,7 @@ class ProtocolAdapterWrapperTest {
         @Test
         void startAndStop_fullLifecycle() throws ProtocolAdapterException {
             assertThat(wrapper.start()).isTrue();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Working);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Working);
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Connected);
             assertThat(wrapper.getSouthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
 
@@ -92,7 +147,7 @@ class ProtocolAdapterWrapperTest {
             verify(protocolAdapter, never()).connect(ProtocolAdapterConnectionDirection.Southbound);
 
             assertThat(wrapper.stop(false)).isTrue();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Idle);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
             assertThat(wrapper.getSouthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
 
@@ -128,7 +183,7 @@ class ProtocolAdapterWrapperTest {
         @Test
         void startAndStop_fullLifecycle() throws ProtocolAdapterException {
             assertThat(wrapper.start()).isTrue();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Working);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Working);
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Connected);
             assertThat(wrapper.getSouthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Connected);
 
@@ -137,7 +192,7 @@ class ProtocolAdapterWrapperTest {
             verify(protocolAdapter).connect(ProtocolAdapterConnectionDirection.Southbound);
 
             assertThat(wrapper.stop(true)).isTrue();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Idle);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
             assertThat(wrapper.getSouthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
 
@@ -156,7 +211,7 @@ class ProtocolAdapterWrapperTest {
                     .precheck();
 
             assertThat(wrapper.start()).isFalse();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Error);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Error);
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
 
             verify(protocolAdapter, never()).connect(any());
@@ -173,7 +228,7 @@ class ProtocolAdapterWrapperTest {
                     .connect(ProtocolAdapterConnectionDirection.Northbound);
 
             assertThat(wrapper.start()).isFalse();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Error);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Error);
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Error);
             assertThat(wrapper.getSouthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
         }
@@ -195,7 +250,7 @@ class ProtocolAdapterWrapperTest {
                     .connect(ProtocolAdapterConnectionDirection.Southbound);
 
             assertThat(wrapper.start()).isFalse();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Error);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Error);
             // Northbound should have been cleaned up (disconnected)
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
             // Southbound should be in Error from the failed connect
@@ -220,7 +275,7 @@ class ProtocolAdapterWrapperTest {
             // Stop should still succeed because disconnect errors are caught and
             // the connection transitions to Disconnected anyway
             assertThat(wrapper.stop(false)).isTrue();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Idle);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
         }
     }
@@ -231,27 +286,27 @@ class ProtocolAdapterWrapperTest {
         @Test
         void start_whenAlreadyStarted_returnsFalse() throws ProtocolAdapterException {
             assertThat(wrapper.start()).isTrue();
-            // Second start should fail because Working → Precheck is invalid
+            // Second start should fail because Working -> Precheck is invalid
             assertThat(wrapper.start()).isFalse();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Working);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Working);
         }
 
         @Test
         void stop_whenIdle_returnsFalse() {
-            // Idle → stop is a no-op that returns true (already stopped)
+            // Idle -> stop is a no-op that returns true (already stopped)
             assertThat(wrapper.stop(false)).isTrue();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Idle);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
         }
 
         @Test
         void start_afterStopAndRestart_succeeds() throws ProtocolAdapterException {
             assertThat(wrapper.start()).isTrue();
             assertThat(wrapper.stop(false)).isTrue();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Idle);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
 
             // Should be able to start again from Idle
             assertThat(wrapper.start()).isTrue();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Working);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Working);
         }
     }
 
@@ -265,11 +320,11 @@ class ProtocolAdapterWrapperTest {
                     .when(protocolAdapter)
                     .precheck();
             assertThat(wrapper.start()).isFalse();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Error);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Error);
 
-            // Stop from Error state should succeed (Error → Idle via stop logic)
+            // Stop from Error state should succeed (Error -> Idle via stop logic)
             assertThat(wrapper.stop(false)).isTrue();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Idle);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
         }
 
         @Test
@@ -278,7 +333,7 @@ class ProtocolAdapterWrapperTest {
                     .when(protocolAdapter)
                     .precheck();
             wrapper.start();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Error);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Error);
 
             wrapper.stop(true);
 
@@ -292,16 +347,16 @@ class ProtocolAdapterWrapperTest {
                     .when(protocolAdapter)
                     .precheck();
             wrapper.start();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Error);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Error);
 
             // Stop to get back to Idle
             wrapper.stop(false);
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Idle);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
 
             // Now fix the adapter and restart
             doNothing().when(protocolAdapter).precheck();
             assertThat(wrapper.start()).isTrue();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Working);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Working);
         }
 
         @Test
@@ -314,13 +369,13 @@ class ProtocolAdapterWrapperTest {
                     .connect(ProtocolAdapterConnectionDirection.Southbound);
 
             wrapper.start();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Error);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Error);
             // Northbound was cleaned up during start failure
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
 
             // Stop from Error should succeed
             assertThat(wrapper.stop(false)).isTrue();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Idle);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
         }
     }
 
@@ -344,8 +399,8 @@ class ProtocolAdapterWrapperTest {
 
         @Test
         void listener_notifiedOnSuccessfulTransition() {
-            final List<ProtocolAdapterState> fromStates = new ArrayList<>();
-            final List<ProtocolAdapterState> toStates = new ArrayList<>();
+            final List<ProtocolAdapterRuntimeState> fromStates = new ArrayList<>();
+            final List<ProtocolAdapterRuntimeState> toStates = new ArrayList<>();
 
             wrapper.addStateChangeListener((from, to) -> {
                 fromStates.add(from);
@@ -354,17 +409,19 @@ class ProtocolAdapterWrapperTest {
 
             wrapper.start();
 
-            // start() transitions: Idle→Precheck, Precheck→Working
-            assertThat(fromStates).containsExactly(ProtocolAdapterState.Idle, ProtocolAdapterState.Precheck);
-            assertThat(toStates).containsExactly(ProtocolAdapterState.Precheck, ProtocolAdapterState.Working);
+            // start() transitions: Idle->Precheck, Precheck->Working
+            assertThat(fromStates)
+                    .containsExactly(ProtocolAdapterRuntimeState.Idle, ProtocolAdapterRuntimeState.Precheck);
+            assertThat(toStates)
+                    .containsExactly(ProtocolAdapterRuntimeState.Precheck, ProtocolAdapterRuntimeState.Working);
         }
 
         @Test
         void listener_notifiedOnStop() {
             wrapper.start();
 
-            final List<ProtocolAdapterState> fromStates = new ArrayList<>();
-            final List<ProtocolAdapterState> toStates = new ArrayList<>();
+            final List<ProtocolAdapterRuntimeState> fromStates = new ArrayList<>();
+            final List<ProtocolAdapterRuntimeState> toStates = new ArrayList<>();
 
             wrapper.addStateChangeListener((from, to) -> {
                 fromStates.add(from);
@@ -373,9 +430,11 @@ class ProtocolAdapterWrapperTest {
 
             wrapper.stop(false);
 
-            // stop() transitions: Working→Stopping, Stopping→Idle
-            assertThat(fromStates).containsExactly(ProtocolAdapterState.Working, ProtocolAdapterState.Stopping);
-            assertThat(toStates).containsExactly(ProtocolAdapterState.Stopping, ProtocolAdapterState.Idle);
+            // stop() transitions: Working->Stopping, Stopping->Idle
+            assertThat(fromStates)
+                    .containsExactly(ProtocolAdapterRuntimeState.Working, ProtocolAdapterRuntimeState.Stopping);
+            assertThat(toStates)
+                    .containsExactly(ProtocolAdapterRuntimeState.Stopping, ProtocolAdapterRuntimeState.Idle);
         }
 
         @Test
@@ -386,13 +445,13 @@ class ProtocolAdapterWrapperTest {
             wrapper.addStateChangeListener(listener);
             wrapper.start();
 
-            // Idle→Precheck, Precheck→Working = 2 calls
+            // Idle->Precheck, Precheck->Working = 2 calls
             assertThat(callCount.get()).isEqualTo(2);
 
             wrapper.removeStateChangeListener(listener);
             wrapper.stop(false);
 
-            // Should still be 2 — listener was removed before stop
+            // Should still be 2 -- listener was removed before stop
             assertThat(callCount.get()).isEqualTo(2);
         }
 
@@ -418,7 +477,7 @@ class ProtocolAdapterWrapperTest {
             });
 
             assertThat(wrapper.start()).isTrue();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Working);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Working);
         }
 
         @Test
@@ -426,14 +485,14 @@ class ProtocolAdapterWrapperTest {
             final AtomicInteger callCount = new AtomicInteger(0);
             wrapper.addStateChangeListener((from, to) -> callCount.incrementAndGet());
 
-            // Idle→Stopping is invalid, should not notify
+            // Idle->Stopping is invalid, should not notify
             wrapper.stop(false);
             assertThat(callCount.get()).isEqualTo(0);
         }
 
         @Test
         void listener_notifiedOnErrorTransition() throws ProtocolAdapterException {
-            final List<ProtocolAdapterState> toStates = new ArrayList<>();
+            final List<ProtocolAdapterRuntimeState> toStates = new ArrayList<>();
             wrapper.addStateChangeListener((from, to) -> toStates.add(to));
 
             doThrow(new ProtocolAdapterException("bad config"))
@@ -441,8 +500,9 @@ class ProtocolAdapterWrapperTest {
                     .precheck();
             wrapper.start();
 
-            // Idle→Precheck (success), Precheck→Error (success)
-            assertThat(toStates).containsExactly(ProtocolAdapterState.Precheck, ProtocolAdapterState.Error);
+            // Idle->Precheck (success), Precheck->Error (success)
+            assertThat(toStates)
+                    .containsExactly(ProtocolAdapterRuntimeState.Precheck, ProtocolAdapterRuntimeState.Error);
         }
     }
 
@@ -461,27 +521,40 @@ class ProtocolAdapterWrapperTest {
             writingStarted = false;
             writingStopped = false;
 
-            wrapper = new ProtocolAdapterWrapper2(protocolAdapter) {
-                @Override
-                protected void startPolling() {
-                    pollingStarted = true;
-                }
+            wrapper =
+                    new ProtocolAdapterWrapper2(
+                            protocolAdapter,
+                            config,
+                            adapterFactory,
+                            adapterInformation,
+                            metricsService,
+                            protocolAdapterState,
+                            protocolAdapterPollingService,
+                            eventService,
+                            moduleServices,
+                            tagManager,
+                            northboundConsumerFactory,
+                            protocolAdapterWritingService) {
+                        @Override
+                        protected void startPolling() {
+                            pollingStarted = true;
+                        }
 
-                @Override
-                protected void stopPolling() {
-                    pollingStopped = true;
-                }
+                        @Override
+                        protected void stopPolling() {
+                            pollingStopped = true;
+                        }
 
-                @Override
-                protected void startWriting() {
-                    writingStarted = true;
-                }
+                        @Override
+                        protected void startWriting() {
+                            writingStarted = true;
+                        }
 
-                @Override
-                protected void stopWriting() {
-                    writingStopped = true;
-                }
-            };
+                        @Override
+                        protected void stopWriting() {
+                            writingStopped = true;
+                        }
+                    };
         }
 
         @Test
@@ -520,7 +593,7 @@ class ProtocolAdapterWrapperTest {
                     .when(protocolAdapter)
                     .precheck();
             wrapper.start();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Error);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Error);
 
             // Reset flags since start sets up the wrapper
             pollingStopped = false;
@@ -536,23 +609,36 @@ class ProtocolAdapterWrapperTest {
         void stop_stopsServicesBeforeDisconnecting() {
             final List<String> callOrder = new ArrayList<>();
 
-            wrapper = new ProtocolAdapterWrapper2(protocolAdapter) {
-                @Override
-                protected void stopPolling() {
-                    callOrder.add("stopPolling");
-                }
+            wrapper =
+                    new ProtocolAdapterWrapper2(
+                            protocolAdapter,
+                            config,
+                            adapterFactory,
+                            adapterInformation,
+                            metricsService,
+                            protocolAdapterState,
+                            protocolAdapterPollingService,
+                            eventService,
+                            moduleServices,
+                            tagManager,
+                            northboundConsumerFactory,
+                            protocolAdapterWritingService) {
+                        @Override
+                        protected void stopPolling() {
+                            callOrder.add("stopPolling");
+                        }
 
-                @Override
-                protected void stopWriting() {
-                    callOrder.add("stopWriting");
-                }
+                        @Override
+                        protected void stopWriting() {
+                            callOrder.add("stopWriting");
+                        }
 
-                @Override
-                protected boolean stopNorthbound() {
-                    callOrder.add("stopNorthbound");
-                    return super.stopNorthbound();
-                }
-            };
+                        @Override
+                        protected boolean stopNorthbound() {
+                            callOrder.add("stopNorthbound");
+                            return super.stopNorthbound();
+                        }
+                    };
 
             wrapper.start();
             wrapper.stop(false);
@@ -565,23 +651,36 @@ class ProtocolAdapterWrapperTest {
         void start_startsServicesAfterConnecting() {
             final List<String> callOrder = new ArrayList<>();
 
-            wrapper = new ProtocolAdapterWrapper2(protocolAdapter) {
-                @Override
-                protected void startPolling() {
-                    callOrder.add("startPolling");
-                }
+            wrapper =
+                    new ProtocolAdapterWrapper2(
+                            protocolAdapter,
+                            config,
+                            adapterFactory,
+                            adapterInformation,
+                            metricsService,
+                            protocolAdapterState,
+                            protocolAdapterPollingService,
+                            eventService,
+                            moduleServices,
+                            tagManager,
+                            northboundConsumerFactory,
+                            protocolAdapterWritingService) {
+                        @Override
+                        protected void startPolling() {
+                            callOrder.add("startPolling");
+                        }
 
-                @Override
-                protected void startWriting() {
-                    callOrder.add("startWriting");
-                }
+                        @Override
+                        protected void startWriting() {
+                            callOrder.add("startWriting");
+                        }
 
-                @Override
-                protected boolean startNorthbound() {
-                    callOrder.add("startNorthbound");
-                    return super.startNorthbound();
-                }
-            };
+                        @Override
+                        protected boolean startNorthbound() {
+                            callOrder.add("startNorthbound");
+                            return super.startNorthbound();
+                        }
+                    };
 
             wrapper.start();
 
@@ -600,12 +699,12 @@ class ProtocolAdapterWrapperTest {
                     .when(protocolAdapter)
                     .precheck();
             wrapper.start();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Error);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Error);
 
-            // Attempt start from Error without stop first — Error → Precheck is invalid
+            // Attempt start from Error without stop first -- Error -> Precheck is invalid
             doNothing().when(protocolAdapter).precheck();
             assertThat(wrapper.start()).isFalse();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Error);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Error);
         }
     }
 
@@ -620,15 +719,15 @@ class ProtocolAdapterWrapperTest {
         @Test
         void stop_southboundDisconnectThrows_stillTransitionsToIdle() throws ProtocolAdapterException {
             wrapper.start();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Working);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Working);
 
             doThrow(new RuntimeException("southbound disconnect error"))
                     .when(protocolAdapter)
                     .disconnect(ProtocolAdapterConnectionDirection.Southbound);
 
-            // Stop should still succeed — disconnect errors are caught
+            // Stop should still succeed -- disconnect errors are caught
             assertThat(wrapper.stop(false)).isTrue();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Idle);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
             assertThat(wrapper.getSouthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
         }
@@ -645,7 +744,7 @@ class ProtocolAdapterWrapperTest {
                     .disconnect(ProtocolAdapterConnectionDirection.Southbound);
 
             assertThat(wrapper.stop(false)).isTrue();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Idle);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
             assertThat(wrapper.getSouthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
         }
@@ -658,11 +757,11 @@ class ProtocolAdapterWrapperTest {
         void stop_calledTwice_secondReturnsTrueAsNoOp() {
             wrapper.start();
             assertThat(wrapper.stop(false)).isTrue();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Idle);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
 
             // Second stop from Idle is a no-op (already stopped)
             assertThat(wrapper.stop(false)).isTrue();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Idle);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
         }
     }
 
@@ -672,20 +771,21 @@ class ProtocolAdapterWrapperTest {
         @Test
         void transitionToError_fromWorking_thenStopAndRestart() throws ProtocolAdapterException {
             wrapper.start();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Working);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Working);
 
             // Simulate a runtime error detected externally
-            final ProtocolAdapterTransitionResponse errorResponse = wrapper.transitionTo(ProtocolAdapterState.Error);
+            final ProtocolAdapterTransitionResponse errorResponse =
+                    wrapper.transitionTo(ProtocolAdapterRuntimeState.Error);
             assertThat(errorResponse.status().isSuccess()).isTrue();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Error);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Error);
 
             // Stop from Error should work
             assertThat(wrapper.stop(false)).isTrue();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Idle);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
 
             // Restart should succeed
             assertThat(wrapper.start()).isTrue();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Working);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Working);
         }
 
         @Test
@@ -694,7 +794,7 @@ class ProtocolAdapterWrapperTest {
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Connected);
 
             // Transition to Error externally
-            wrapper.transitionTo(ProtocolAdapterState.Error);
+            wrapper.transitionTo(ProtocolAdapterRuntimeState.Error);
 
             // Stop should disconnect the northbound connection that was still connected
             assertThat(wrapper.stop(false)).isTrue();
@@ -717,7 +817,7 @@ class ProtocolAdapterWrapperTest {
 
         @Test
         void transitionNorthboundConnectionTo_invalidTransition_fails() {
-            // Disconnected → Connected is invalid (must go through Connecting first)
+            // Disconnected -> Connected is invalid (must go through Connecting first)
             final ProtocolAdapterConnectionTransitionResponse response =
                     wrapper.transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Connected);
             assertThat(response.status().isSuccess()).isFalse();
@@ -726,7 +826,7 @@ class ProtocolAdapterWrapperTest {
 
         @Test
         void transitionSouthboundConnectionTo_invalidTransition_fails() {
-            // Disconnected → Connected is invalid
+            // Disconnected -> Connected is invalid
             final ProtocolAdapterConnectionTransitionResponse response =
                     wrapper.transitionSouthboundConnectionTo(ProtocolAdapterConnectionState.Connected);
             assertThat(response.status().isSuccess()).isFalse();
@@ -774,7 +874,19 @@ class ProtocolAdapterWrapperTest {
                 when(adapter.getId()).thenReturn("adapter-" + i);
                 when(adapter.supportsSouthbound()).thenReturn(false);
                 when(adapter.getProtocolAdapterInformation()).thenReturn(adapterInformation);
-                final ProtocolAdapterWrapper2 w = new ProtocolAdapterWrapper2(adapter);
+                final ProtocolAdapterWrapper2 w = new ProtocolAdapterWrapper2(
+                        adapter,
+                        config,
+                        adapterFactory,
+                        adapterInformation,
+                        metricsService,
+                        protocolAdapterState,
+                        protocolAdapterPollingService,
+                        eventService,
+                        moduleServices,
+                        tagManager,
+                        northboundConsumerFactory,
+                        protocolAdapterWritingService);
 
                 final java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(2);
 
@@ -808,9 +920,12 @@ class ProtocolAdapterWrapperTest {
                         .get(5, java.util.concurrent.TimeUnit.SECONDS);
 
                 // Adapter should be in a valid terminal state (Idle or Working, never Precheck/Stopping)
-                final ProtocolAdapterState finalState = w.getState();
+                final ProtocolAdapterRuntimeState finalState = w.getState();
                 assertThat(finalState)
-                        .isIn(ProtocolAdapterState.Idle, ProtocolAdapterState.Working, ProtocolAdapterState.Error);
+                        .isIn(
+                                ProtocolAdapterRuntimeState.Idle,
+                                ProtocolAdapterRuntimeState.Working,
+                                ProtocolAdapterRuntimeState.Error);
             }
 
             executor.shutdown();
@@ -824,18 +939,18 @@ class ProtocolAdapterWrapperTest {
 
         @Test
         void stop_adapterDisconnectFails_managerStillReportsStop() throws ProtocolAdapterException {
-            // Simulate an adapter whose disconnect(Northbound) throws — stop should still succeed
+            // Simulate an adapter whose disconnect(Northbound) throws -- stop should still succeed
             doThrow(new RuntimeException("disconnect failed"))
                     .when(protocolAdapter)
                     .disconnect(ProtocolAdapterConnectionDirection.Northbound);
 
             wrapper.start();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Working);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Working);
 
             // Stop should handle the error gracefully
             final boolean stopped = wrapper.stop(false);
             assertThat(stopped).isTrue();
-            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterState.Idle);
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
         }
     }
