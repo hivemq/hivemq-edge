@@ -51,8 +51,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.hivemq.combining.runtime.SourceSanitizer.sanitize;
 import static com.hivemq.mqtt.message.publish.PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET;
 
-/// `DataCombiningRuntime` manages a **combiner mapping** (aka "datacombing"),
-/// that assembles inputs, which can be tags or topic-filters, into a destination message.
+/// `DataCombiningRuntime` manages a **data combiner mapping** (aka "datacombing"),
+/// that assembles values from inputs, which can be tags or topic-filters, into a destination message.
 /// `start()` subscribes to all the inputs (tags and topic-filters), including the trigger (aka primary).
 /// When values arrive (via `accept()` or `process()`), they are stored in the concurrent hashmap `values`.
 /// When the trigger arrives, the `assembleAndPublish()` method is called which assembles all inputs into an object
@@ -141,7 +141,7 @@ public class DataCombiningRuntime {
                 .map(ref -> internalSubscription(ref, false, true))
                 .toList());
 
-        /// collect a subscription for the trigger, check whether it is used in an instructions and we need its value
+        /// collect a subscription for the trigger, check whether it is used in an instructions and so we need its value
         boolean isValueUsed = dataCombining.instructions()
                 .stream()
                 .map(Instruction::dataIdentifierReference)
@@ -208,7 +208,7 @@ public class DataCombiningRuntime {
     /// so we don't convert raw values that are overwritten by other raw values before a trigger arrives.
     /// And we also don't convert a raw value multiple times,
     /// so we convert raw values that don't change while multiple triggers arrive only once.
-    /// There are two concrete implementations for `RawValue`, for tags and for topic-filters.
+    /// There are two concrete implementations for `RawValue`: one for tags and one for topic-filters.
     public static final class Value {
         @Nullable RawValue value;
         @Nullable JsonNode jsonNode;
