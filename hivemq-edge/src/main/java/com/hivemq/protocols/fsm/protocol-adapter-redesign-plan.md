@@ -134,6 +134,7 @@ stateDiagram-v2
     Working --> Stopping : stop()
     Working --> Error : non-recoverable error
     Stopping --> Idle : success (both connections disconnected)
+    Error --> Stopping : stop()
     Error --> Idle : reset/retry
 ```
 
@@ -144,6 +145,7 @@ Valid Transitions:
 - Working → Stopping (stop called)
 - Working → Error (non-recoverable error)
 - Stopping → Idle (both connections disconnected)
+- Error → Stopping (stop called, cleanup before returning to Idle)
 - Error → Idle (reset/retry)
 
 #### ProtocolAdapterConnectionState (Wrapper Level, ×2)
@@ -349,7 +351,7 @@ graph LR
 | Precheck      | FSM rejects    | FSM rejects (no transition) |
 | Working       | FSM rejects    | → Stopping ✓  |
 | Stopping      | FSM rejects    | FSM rejects (already stopping) |
-| Error         | FSM rejects    | → Idle ✓ (cleanup) |
+| Error         | FSM rejects    | → Stopping ✓ (cleanup, then → Idle) |
 
 The `synchronized` keyword on `start()` and `stop()` ensures only one thread executes
 at a time. The FSM transition response tells the caller whether the operation succeeded.
@@ -493,40 +495,29 @@ public class ProtocolAdapterWrapper2 {
     public synchronized boolean stop(boolean destroy) {
         LOGGER.info("Stopping adapter {}", getAdapterId());
 
-        // Step 1: Working → Stopping
+        // Step 1: Working → Stopping (or Error → Stopping)
         if (!transitionTo(ProtocolAdapterRuntimeState.Stopping).status().isSuccess()) {
-            // Already stopping or in error - check if we can proceed
-            if (!state.isStopping() && !state.isError()) {
-                return false;
-            }
+            return false;
         }
 
+        protocolAdapterState.markShuttingDown();
+
         // Step 2: Stop services
+        removeTagConsumers();
         stopPolling();
         stopWriting();
 
         // Step 3 & 4: Stop connections
-        boolean southboundSuccess = stopSouthbound();
-        boolean northboundSuccess = stopNorthbound();
+        stopSouthbound();
+        stopNorthbound();
 
-        // Step 5: Check if connections are ready for Idle transition
-        // For adapters without southbound, treat southbound as always ready
-        boolean northboundReady = northboundState.isDisconnected();
-        boolean southboundReady = !supportsSouthbound() || southboundState.isDisconnected();
-
-        if (northboundReady && southboundReady) {
-            transitionTo(ProtocolAdapterRuntimeState.Idle);
-            if (destroy) {
-                adapter.destroy();
-            }
-            return true;
+        // Step 5: Transition to Idle
+        transitionTo(ProtocolAdapterRuntimeState.Idle);
+        protocolAdapterState.setRuntimeStatus(RuntimeStatus.STOPPED);
+        if (destroy) {
+            adapter.destroy();
         }
-
-        // If not fully disconnected, stay in Stopping/Error
-        if (!northboundSuccess || !southboundSuccess) {
-            transitionTo(ProtocolAdapterRuntimeState.Error);
-        }
-        return false;
+        return true;
     }
 
     /**
@@ -1494,7 +1485,7 @@ grep -r "ProtocolAdapter2\|ProtocolAdapterWrapper2\|ProtocolAdapterManager2" \
 
 ---
 
-**Document Version**: 1.9
+**Document Version**: 1.11
 **Last Updated**: 2026-03-20
 **Author**: Claude (AI Assistant)
 **Status**: IN PROGRESS (Phase 1–6 complete, Phase 7 not started)

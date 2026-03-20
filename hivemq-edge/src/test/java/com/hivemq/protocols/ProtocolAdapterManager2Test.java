@@ -246,16 +246,16 @@ class ProtocolAdapterManager2Test {
         }
 
         @Test
-        void stop_whenIdle_firesInfoEvent() throws ProtocolAdapterException {
+        void stop_whenIdle_firesCriticalEvent() throws ProtocolAdapterException {
             final ProtocolAdapter2 adapter = createSuccessAdapter("adapter-1");
             addAdapterToManager("adapter-1", adapter);
 
-            // Don't start the adapter — stop from Idle is a no-op that returns true
+            // Don't start the adapter — stop from Idle fails (Idle → Stopping is invalid)
             manager.stop("adapter-1", false);
 
             verify(eventService).createAdapterEvent("adapter-1", "test-protocol");
-            verify(eventBuilder).withSeverity(Event.SEVERITY.INFO);
-            verify(eventBuilder).withMessage("Adapter 'adapter-1' stopped OK.");
+            verify(eventBuilder).withSeverity(Event.SEVERITY.CRITICAL);
+            verify(eventBuilder).withMessage("Error stopping adapter 'adapter-1'.");
             verify(eventBuilder).fire();
         }
 

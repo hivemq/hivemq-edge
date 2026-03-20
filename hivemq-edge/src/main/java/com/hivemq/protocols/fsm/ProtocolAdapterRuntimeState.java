@@ -79,7 +79,7 @@ public enum ProtocolAdapterRuntimeState {
         final ProtocolAdapterRuntimeState fromState = ProtocolAdapterRuntimeState.Error;
         return switch (toState) {
             case Error -> ProtocolAdapterTransitionResponse.notChanged(fromState);
-            case Idle -> ProtocolAdapterTransitionResponse.success(fromState, toState);
+            case Stopping, Idle -> ProtocolAdapterTransitionResponse.success(fromState, toState);
             default -> ProtocolAdapterTransitionResponse.failure(fromState, toState);
         };
     }
