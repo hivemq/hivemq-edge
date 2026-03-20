@@ -55,6 +55,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
@@ -164,111 +165,120 @@ public class ProtocolAdapterManager {
     }
 
     public void refresh(final @NotNull List<ProtocolAdapterEntity> configs) {
-        executorService.submit(() -> {
-            log.info("Refreshing adapters");
+        try {
+            executorService.submit(() -> {
+                log.info("Refreshing adapters");
 
-            final Map<String, ProtocolAdapterConfig> protocolAdapterConfigs = configs.stream()
-                    .map(configConverter::fromEntity)
-                    .collect(Collectors.toMap(ProtocolAdapterConfig::getAdapterId, Function.identity()));
+                final Map<String, ProtocolAdapterConfig> protocolAdapterConfigs = configs.stream()
+                        .map(configConverter::fromEntity)
+                        .collect(Collectors.toMap(ProtocolAdapterConfig::getAdapterId, Function.identity()));
 
-            final List<String> loadListOfAdapterNames = new ArrayList<>(protocolAdapterConfigs.keySet());
+                final List<String> loadListOfAdapterNames = new ArrayList<>(protocolAdapterConfigs.keySet());
 
-            final List<String> adaptersToBeDeleted = new ArrayList<>(protocolAdapters.keySet());
-            adaptersToBeDeleted.removeAll(loadListOfAdapterNames);
+                final List<String> adaptersToBeDeleted = new ArrayList<>(protocolAdapters.keySet());
+                adaptersToBeDeleted.removeAll(loadListOfAdapterNames);
 
-            final List<String> adaptersToBeCreated = new ArrayList<>(loadListOfAdapterNames);
-            adaptersToBeCreated.removeAll(protocolAdapters.keySet());
+                final List<String> adaptersToBeCreated = new ArrayList<>(loadListOfAdapterNames);
+                adaptersToBeCreated.removeAll(protocolAdapters.keySet());
 
-            final List<String> adaptersToBeUpdated = new ArrayList<>(protocolAdapters.keySet());
-            adaptersToBeUpdated.removeAll(adaptersToBeCreated);
-            adaptersToBeUpdated.removeAll(adaptersToBeDeleted);
+                final List<String> adaptersToBeUpdated = new ArrayList<>(protocolAdapters.keySet());
+                adaptersToBeUpdated.removeAll(adaptersToBeCreated);
+                adaptersToBeUpdated.removeAll(adaptersToBeDeleted);
 
-            final List<String> failedAdapters = new ArrayList<>();
+                final List<String> failedAdapters = new ArrayList<>();
 
-            adaptersToBeDeleted.forEach(name -> {
-                try {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Deleting adapter '{}'", name);
-                    }
-                    stopAsync(name, true)
-                            .whenComplete((ignored, t) -> deleteAdapterInternal(name))
-                            .get();
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    failedAdapters.add(name);
-                    log.error("Interrupted while deleting adapter {}", name, e);
-                } catch (final ExecutionException e) {
-                    failedAdapters.add(name);
-                    log.error("Failed deleting adapter {}", name, e);
-                }
-            });
-
-            adaptersToBeCreated.forEach(name -> {
-                try {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Creating adapter '{}'", name);
-                    }
-                    startAsync(createAdapterInternal(protocolAdapterConfigs.get(name), versionProvider.getVersion()))
-                            .get();
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    failedAdapters.add(name);
-                    log.error("Interrupted while adding adapter {}", name, e);
-                } catch (final ExecutionException e) {
-                    failedAdapters.add(name);
-                    log.error("Failed adding adapter {}", name, e);
-                }
-            });
-
-            adaptersToBeUpdated.forEach(name -> {
-                try {
-                    final var wrapper = protocolAdapters.get(name);
-                    if (wrapper == null) {
-                        log.error(
-                                "Existing adapters were modified while a refresh was ongoing, adapter with name '{}' was deleted and could not be updated",
-                                name);
-                    }
-                    if (wrapper != null && !protocolAdapterConfigs.get(name).equals(wrapper.getConfig())) {
+                adaptersToBeDeleted.forEach(name -> {
+                    try {
                         if (log.isDebugEnabled()) {
-                            log.debug("Updating adapter '{}'", name);
+                            log.debug("Deleting adapter '{}'", name);
                         }
                         stopAsync(name, true)
-                                .thenApply(v -> {
-                                    deleteAdapterInternal(name);
-                                    return null;
-                                })
-                                .thenCompose(ignored -> startAsync(createAdapterInternal(
-                                        protocolAdapterConfigs.get(name), versionProvider.getVersion())))
+                                .whenComplete((ignored, t) -> deleteAdapterInternal(name))
                                 .get();
-                    } else {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Not-updating adapter '{}' since the config is unchanged", name);
-                        }
+                    } catch (final InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        failedAdapters.add(name);
+                        log.error("Interrupted while deleting adapter {}", name, e);
+                    } catch (final ExecutionException e) {
+                        failedAdapters.add(name);
+                        log.error("Failed deleting adapter {}", name, e);
                     }
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    failedAdapters.add(name);
-                    log.error("Interrupted while updating adapter {}", name, e);
-                } catch (final ExecutionException e) {
-                    failedAdapters.add(name);
-                    log.error("Failed updating adapter {}", name, e);
+                });
+
+                adaptersToBeCreated.forEach(name -> {
+                    try {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Creating adapter '{}'", name);
+                        }
+                        startAsync(createAdapterInternal(
+                                        protocolAdapterConfigs.get(name), versionProvider.getVersion()))
+                                .get();
+                    } catch (final InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        failedAdapters.add(name);
+                        log.error("Interrupted while adding adapter {}", name, e);
+                    } catch (final ExecutionException e) {
+                        failedAdapters.add(name);
+                        log.error("Failed adding adapter {}", name, e);
+                    }
+                });
+
+                adaptersToBeUpdated.forEach(name -> {
+                    try {
+                        final var wrapper = protocolAdapters.get(name);
+                        if (wrapper == null) {
+                            log.error(
+                                    "Existing adapters were modified while a refresh was ongoing, adapter with name '{}' was deleted and could not be updated",
+                                    name);
+                        }
+                        if (wrapper != null && !protocolAdapterConfigs.get(name).equals(wrapper.getConfig())) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Updating adapter '{}'", name);
+                            }
+                            stopAsync(name, true)
+                                    .thenApply(v -> {
+                                        deleteAdapterInternal(name);
+                                        return null;
+                                    })
+                                    .thenCompose(ignored -> startAsync(createAdapterInternal(
+                                            protocolAdapterConfigs.get(name), versionProvider.getVersion())))
+                                    .get();
+                        } else {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Not-updating adapter '{}' since the config is unchanged", name);
+                            }
+                        }
+                    } catch (final InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        failedAdapters.add(name);
+                        log.error("Interrupted while updating adapter {}", name, e);
+                    } catch (final ExecutionException e) {
+                        failedAdapters.add(name);
+                        log.error("Failed updating adapter {}", name, e);
+                    }
+                });
+
+                if (failedAdapters.isEmpty()) {
+                    eventService
+                            .configurationEvent()
+                            .withSeverity(Event.SEVERITY.INFO)
+                            .withMessage("Configuration has been successfully updated")
+                            .fire();
+                } else {
+                    eventService
+                            .configurationEvent()
+                            .withSeverity(Event.SEVERITY.CRITICAL)
+                            .withMessage("Reloading of configuration failed")
+                            .fire();
                 }
             });
-
-            if (failedAdapters.isEmpty()) {
-                eventService
-                        .configurationEvent()
-                        .withSeverity(Event.SEVERITY.INFO)
-                        .withMessage("Configuration has been successfully updated")
-                        .fire();
+        } catch (final RejectedExecutionException e) {
+            if (executorService.isShutdown()) {
+                log.debug("Adapter refresh task submission rejected, executor is shutting down.");
             } else {
-                eventService
-                        .configurationEvent()
-                        .withSeverity(Event.SEVERITY.CRITICAL)
-                        .withMessage("Reloading of configuration failed")
-                        .fire();
+                throw e;
             }
-        });
+        }
     }
 
     // INTERNAL

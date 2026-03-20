@@ -38,6 +38,7 @@ import java.io.UncheckedIOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -118,11 +119,19 @@ public class SslContextStore {
                     throw new UnrecoverableException();
                 }
                 // only start scheduled execution if first hash went through
-                executorService.scheduleAtFixedRate(
-                        new SslContextScheduledRunnable(tls),
-                        SSL_RELOAD_INTERVAL_SEC,
-                        SSL_RELOAD_INTERVAL_SEC,
-                        TimeUnit.SECONDS);
+                try {
+                    executorService.scheduleAtFixedRate(
+                            new SslContextScheduledRunnable(tls),
+                            SSL_RELOAD_INTERVAL_SEC,
+                            SSL_RELOAD_INTERVAL_SEC,
+                            TimeUnit.SECONDS);
+                } catch (final RejectedExecutionException e) {
+                    if (executorService.isShutdown()) {
+                        log.debug("SSL context reload scheduling rejected, executor is shutting down.");
+                    } else {
+                        throw e;
+                    }
+                }
             }
         }
     }
