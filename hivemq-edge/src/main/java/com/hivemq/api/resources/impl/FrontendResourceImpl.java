@@ -42,7 +42,7 @@ import com.hivemq.edge.api.FrontendApi;
 import com.hivemq.edge.api.model.Capability;
 import com.hivemq.edge.api.model.CapabilityList;
 import com.hivemq.http.core.UsernamePasswordRoles;
-import com.hivemq.protocols.fsm.ProtocolAdapterManager2;
+import com.hivemq.protocols.ProtocolAdapterManager2;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
 import java.util.List;

@@ -16,7 +16,7 @@
 package com.hivemq.bootstrap.services;
 
 import com.hivemq.edge.ModulesAndExtensionsService;
-import com.hivemq.protocols.fsm.ProtocolAdapterManager2;
+import com.hivemq.protocols.ProtocolAdapterManager2;
 import org.jetbrains.annotations.NotNull;
 
 public interface AfterHiveMQStartBootstrapService extends CompleteBootstrapService {
