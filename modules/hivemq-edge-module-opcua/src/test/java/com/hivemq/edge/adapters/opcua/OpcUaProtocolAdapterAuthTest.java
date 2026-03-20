@@ -90,7 +90,7 @@ class OpcUaProtocolAdapterAuthTest {
 
         final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(moduleServices);
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
-        protocolAdapter.start(in, out);
+        protocolAdapter.start(ProtocolAdapterConnectionDirection.Northbound, in, out);
 
         final var metricsService = mock(ProtocolAdapterMetricsService.class);
         when(protocolAdapterInput.getProtocolAdapterMetricsHelper()).thenReturn(metricsService);
@@ -112,7 +112,7 @@ class OpcUaProtocolAdapterAuthTest {
 
         final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(moduleServices);
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
-        protocolAdapter.start(in, out);
+        protocolAdapter.start(ProtocolAdapterConnectionDirection.Northbound, in, out);
 
         await().until(() ->
                 CONNECTED == protocolAdapter.getProtocolAdapterState().getConnectionStatus());
@@ -132,7 +132,7 @@ class OpcUaProtocolAdapterAuthTest {
 
         final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(moduleServices);
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
-        protocolAdapter.start(in, out);
+        protocolAdapter.start(ProtocolAdapterConnectionDirection.Northbound, in, out);
 
         await().until(() ->
                 CONNECTED == protocolAdapter.getProtocolAdapterState().getConnectionStatus());
@@ -158,7 +158,7 @@ class OpcUaProtocolAdapterAuthTest {
 
         final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput(moduleServices);
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
-        protocolAdapter.start(in, out);
+        protocolAdapter.start(ProtocolAdapterConnectionDirection.Northbound, in, out);
 
         await().until(() ->
                 CONNECTED == protocolAdapter.getProtocolAdapterState().getConnectionStatus());

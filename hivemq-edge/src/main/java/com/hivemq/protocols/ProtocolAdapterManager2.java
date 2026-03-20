@@ -22,7 +22,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
-import com.hivemq.adapter.sdk.api.ProtocolAdapter2;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
@@ -359,7 +358,7 @@ public class ProtocolAdapterManager2 {
      * Stop an adapter by ID.
      *
      * @param adapterId the adapter to stop
-     * @param destroy   whether to call {@link ProtocolAdapter2#destroy()} after stopping
+     * @param destroy   whether to call {@link ProtocolAdapter#destroy()} after stopping
      * @throws ProtocolAdapterException if the adapter is not found
      */
     public void stop(final @NotNull String adapterId, final boolean destroy) throws ProtocolAdapterException {
@@ -476,9 +475,8 @@ public class ProtocolAdapterManager2 {
                                 metricsService));
                 // hen-egg problem. Rather solve this here as have not final fields in the adapter.
                 perModule.setAdapter(protocolAdapter);
-                final ProtocolAdapter2 adapter2 = factory.createProtocolAdapter2(protocolAdapter, perModule);
                 final ProtocolAdapterWrapper2 wrapper = new ProtocolAdapterWrapper2(
-                        adapter2,
+                        protocolAdapter,
                         config,
                         factory,
                         factory.getInformation(),

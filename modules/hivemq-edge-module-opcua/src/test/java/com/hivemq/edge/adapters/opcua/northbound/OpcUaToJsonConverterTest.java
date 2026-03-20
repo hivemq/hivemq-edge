@@ -116,7 +116,10 @@ class OpcUaToJsonConverterTest extends AbstractOpcUaPayloadConverterTest {
                 protocolAdapter.getProtocolAdapterState().getConnectionStatus()));
 
         final var received = expectAdapterPublish();
-        protocolAdapter.stop(new ProtocolAdapterStopInput() {}, new ProtocolAdapterStopOutputImpl());
+        protocolAdapter.stop(
+                ProtocolAdapterConnectionDirection.Northbound,
+                new ProtocolAdapterStopInput() {},
+                new ProtocolAdapterStopOutputImpl());
 
         assertThat(received).extractingByKey(nodeId).satisfies(dataPoint -> assertThat(dataPoint)
                 .asInstanceOf(InstanceOfAssertFactories.type(DataPointWithMetadata.class))

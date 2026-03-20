@@ -91,7 +91,10 @@ class OpcUaStringPayloadConverterTest extends AbstractOpcUaPayloadConverterTest 
                 ProtocolAdapterState.ConnectionStatus.CONNECTED,
                 protocolAdapter.getProtocolAdapterState().getConnectionStatus());
         final var received = expectAdapterPublish();
-        protocolAdapter.stop(new ProtocolAdapterStopInput() {}, new ProtocolAdapterStopOutputImpl());
+        protocolAdapter.stop(
+                ProtocolAdapterConnectionDirection.Northbound,
+                new ProtocolAdapterStopInput() {},
+                new ProtocolAdapterStopOutputImpl());
 
         assertThat(received).extractingByKey(nodeId).satisfies(dataPoints -> {
             assertThat(dataPoints)

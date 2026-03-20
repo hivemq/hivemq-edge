@@ -22,6 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
@@ -398,7 +399,9 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
 
         @Override
         public void start(
-                final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
+                final @NotNull ProtocolAdapterConnectionDirection direction,
+                final @NotNull ProtocolAdapterStartInput input,
+                final @NotNull ProtocolAdapterStartOutput output) {
             if (success) {
                 adapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
                 output.startedSuccessfully();
@@ -409,7 +412,9 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
 
         @Override
         public void stop(
-                final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
+                final @NotNull ProtocolAdapterConnectionDirection direction,
+                final @NotNull ProtocolAdapterStopInput input,
+                final @NotNull ProtocolAdapterStopOutput output) {
             if (success) {
                 adapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
                 output.stoppedSuccessfully();

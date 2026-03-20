@@ -15,7 +15,7 @@ This section is the authoritative implementation delta for the latest review pas
 | --- | --- | --- |
 | 1. `refresh()` restarts unchanged adapters | ✅ Fixed | `ProtocolAdapterManager2.refresh()` now skips stop/delete/create/start when config is unchanged. |
 | 2. `createProtocolAdapter()` atomicity | ✅ Fixed | Uses `ConcurrentHashMap.computeIfAbsent` so duplicate creation and duplicate metric increments are prevented under concurrency. |
-| 3. Bridge-specific behavior in wrapper path | ✅ Fixed | `ProtocolAdapter2Bridge` removed from SDK; `ProtocolAdapter2` default methods now provide legacy delegation; wrapper always uses `connect()/disconnect()`. |
+| 3. Bridge-specific behavior in wrapper path | ✅ Fixed | `ProtocolAdapter2Bridge` removed from SDK; `ProtocolAdapter2` eliminated; wrapper always uses `start(direction)/stop(direction)`. |
 | 4. Event severity text mismatch | ✅ Plan updated | Design text now matches code: start failure is `CRITICAL`, stop failure is `CRITICAL`. |
 | 5. Listener threading mismatch | ✅ Plan updated | Listener invocation is synchronous on caller thread (not fire-and-forget). |
 | 6. Manager busy/state model | ✅ Fixed | `ProtocolAdapterManager2` tracks queued/running refresh work via `refreshTasksInProgress`; `isBusy()` reflects active refresh lifecycle. |
@@ -95,7 +95,7 @@ cause unpredictable behavior.
    - `ProtocolAdapterWrapper2` owns `ProtocolAdapterRuntimeState` and `ProtocolAdapterConnectionState` (×2: Northbound + Southbound)
    - `ProtocolAdapterManager2` manages the lifecycle of `ProtocolAdapterWrapper2` instances
 
-5. **Separation of Concerns**: The wrapper calls `ProtocolAdapter2.connect()` / `disconnect()`,
+5. **Separation of Concerns**: The wrapper calls `ProtocolAdapter.start(direction)` / `stop(direction)`,
    not the other way around.
 
 6. **Optional Southbound Support**: Not all protocol adapters support Southbound communication.
@@ -1114,7 +1114,7 @@ not the test. Fix the implementation to match the expected behavior.
 
 ### 5.7 Phase 7: Rename, Merge, and Remove Old Code
 
-**Status**: 🔲 Not Started
+**Status**: 🟡 In Progress (Steps 1-2 complete)
 
 **Goal**: Remove the `2` suffix from all classes created in this redesign, merge the old interfaces
 into their replacements, remove all dead old code, and leave a clean codebase with no parallel
@@ -1146,34 +1146,83 @@ implementations. All renamed classes stay in the `fsm` package (or the adapter S
 #### Step 1: Merge `ProtocolAdapter2` into `ProtocolAdapter`, remove bridge (SDK)
 
 The old `ProtocolAdapter` interface absorbs the new lifecycle methods from `ProtocolAdapter2`.
-The bridge translation logic (mapping `connect()` → old `start()`, `disconnect()` → old `stop()`)
-becomes **default methods** on `ProtocolAdapter` itself, so existing adapter implementations compile
-and work without changes. Each adapter can later override these defaults to implement the new
-lifecycle directly — but that is out of scope for this phase.
+The key change is that `start(input, output)` and `stop(input, output)` gain a `direction`
+parameter: `start(direction, input, output)` and `stop(direction, input, output)`.
+This unifies the lifecycle into a single pair of methods that handle both northbound and southbound.
 
-The old async methods (`start(input, output)`, `stop(input, output)`) remain on the interface for now.
-They are called by the default `connect()`/`disconnect()` implementations. Once all adapters are
-migrated to override `connect()`/`disconnect()` directly, the old methods can be removed in a
-future cleanup.
+**Method signatures on `ProtocolAdapter`**:
 
-- [ ] Add `connect(direction)`, `disconnect(direction)`, `precheck()`, `supportsSouthbound()` to
-      `ProtocolAdapter` with default implementations:
-  - `connect(Northbound)` default: calls `start(input, output)`, blocks on output future (logic from `ProtocolAdapter2Bridge.connect()`)
-  - `connect(Southbound)` default: no-op (old adapters handle southbound internally)
-  - `disconnect(Northbound)` default: calls `stop(input, output)`, blocks on output future (logic from `ProtocolAdapter2Bridge.disconnect()`)
-  - `disconnect(Southbound)` default: no-op
-  - `precheck()` default: no-op
-  - `supportsSouthbound()` default: checks `getProtocolAdapterInformation().getCapabilities().contains(WRITE)`
-- [ ] Delete `ProtocolAdapter2.java` from the SDK
+```java
+// Called by the wrapper for each direction. Default delegates DOWN to the 2-arg overload.
+// Only OPC UA overrides this (direction-aware behavior).
+default void start(
+        @NotNull ProtocolAdapterConnectionDirection direction,
+        @NotNull ProtocolAdapterStartInput input,
+        @NotNull ProtocolAdapterStartOutput output) {
+    start(input, output);  // delegates to 2-arg
+}
+
+// Base case — most adapters override this (northbound-only).
+default void start(
+        @NotNull ProtocolAdapterStartInput input,
+        @NotNull ProtocolAdapterStartOutput output) {
+    output.startedSuccessfully();
+}
+
+// Called by the wrapper for each direction. Default delegates DOWN to the 2-arg overload.
+// Only OPC UA overrides this (direction-aware behavior).
+default void stop(
+        @NotNull ProtocolAdapterConnectionDirection direction,
+        @NotNull ProtocolAdapterStopInput input,
+        @NotNull ProtocolAdapterStopOutput output) {
+    stop(input, output);  // delegates to 2-arg
+}
+
+// Base case — most adapters override this (northbound-only).
+default void stop(
+        @NotNull ProtocolAdapterStopInput input,
+        @NotNull ProtocolAdapterStopOutput output) {
+    output.stoppedSuccessfully();
+}
+
+// Validate configuration before starting. Default is no-op.
+default void precheck() throws ProtocolAdapterException {}
+
+// Whether this adapter supports southbound (MQTT → device).
+// Default checks capabilities for WRITE.
+default boolean supportsSouthbound() {
+    return getProtocolAdapterInformation().getCapabilities()
+            .contains(ProtocolAdapterCapability.WRITE);
+}
+```
+
+**Delegation pattern**: The 3-arg `start(direction, input, output)` default delegates DOWN to the
+2-arg `start(input, output)`. The 2-arg default is the base case (`output.startedSuccessfully()`).
+Northbound-only adapters override the 2-arg version — the wrapper calls the 3-arg version which
+delegates to their override. Adapters needing direction-awareness (OPC UA) override the 3-arg
+version directly. Same pattern for `stop`.
+
+**Tasks**:
+- [x] Add `start(direction, input, output)`, `stop(direction, input, output)`, `precheck()`,
+      `supportsSouthbound()` to `ProtocolAdapter` with default implementations
+- [x] Add backward-compatible `start(input, output)` and `stop(input, output)` convenience
+      overloads that delegate to the 3-arg versions with `Northbound` direction
+- [x] Update adapter implementations:
+  - OPC UA adapter (`OpcUaProtocolAdapter`) — overrides 3-arg version, handles Southbound as no-op
+  - All other adapters override 2-arg `start(input, output)` / `stop(input, output)` (no direction param needed):
+    Modbus, HTTP, File, S7/ADS (AbstractPlc4xAdapter), EtherIP, MTConnect, Databases, BACnet/IP, Simulation
+- [x] Update `ProtocolAdapterWrapper2` to call `adapter.start(direction, input, output)` /
+      `adapter.stop(direction, input, output)` (via `invokeStart`/`invokeStop` helpers)
+- [x] Delete `ProtocolAdapter2.java` from the SDK
 - [x] Delete `ProtocolAdapter2Bridge.java` from the SDK
 - [x] Replace `ProtocolAdapter2BridgeTest.java` with `ProtocolAdapter2DefaultMethodsTest.java`
-      (default-method compatibility behavior remains explicitly covered)
-- [ ] Remove `ProtocolAdapterFactory.createProtocolAdapter2()` — the factory's existing
-      `createAdapter()` returns `ProtocolAdapter` which now has the new methods via defaults
-- [ ] Update `ProtocolAdapterWrapper2` to use `ProtocolAdapter` instead of `ProtocolAdapter2`
-- [ ] Update `ProtocolAdapterManager2.createProtocolAdapter()` to use `factory.createAdapter()` directly
-      (no bridge wrapping step)
-- [ ] Update all remaining imports that referenced `ProtocolAdapter2` or `ProtocolAdapter2Bridge`
+- [x] Remove `ProtocolAdapterFactory.createProtocolAdapter2()`
+- [x] Update `ProtocolAdapterWrapper2` to use `ProtocolAdapter` instead of `ProtocolAdapter2`
+- [x] Update `ProtocolAdapterManager2.createProtocolAdapter()` to use `factory.createAdapter()` directly
+- [x] Update all remaining imports that referenced `ProtocolAdapter2` or `ProtocolAdapter2Bridge`
+- [x] Update all tests that mock or test `start()`/`stop()` to use `start(direction)`/`stop(direction)`
+- [x] Use `ProtocolAdapterStartInputImpl`/`ProtocolAdapterStopInputImpl` instead of anonymous classes
+- [x] Use `ProtocolAdapterStartOutputImpl`/`ProtocolAdapterStopOutputImpl` instead of anonymous classes
 
 #### Step 2: Remove per-module `*ProtocolAdapter2` classes, rename tests (10 modules)
 
@@ -1184,10 +1233,10 @@ The per-module tests are kept — they validate that each factory creates an ada
 correct `supportsSouthbound()` behavior and other factory wiring. They are renamed to drop the
 `2` suffix.
 
-- [ ] Delete all 10 per-module `*ProtocolAdapter2.java` source files
-- [ ] Rename all 10 per-module `*ProtocolAdapter2Test.java` → drop the `2` suffix
-- [ ] Update renamed tests to call `factory.createAdapter()` and assert `supportsSouthbound()`,
-      `connect()`, `disconnect()` behavior directly on the returned `ProtocolAdapter`
+- [x] Delete all 10 per-module `*ProtocolAdapter2.java` source files
+- [x] Rename all 10 per-module `*ProtocolAdapter2Test.java` → drop the `2` suffix
+- [x] Update renamed tests to call `factory.createAdapter()` and assert `supportsSouthbound()`,
+      `start()`, `stop()` behavior directly on the returned `ProtocolAdapter`
 
 Source files deleted:
 ```
@@ -1217,16 +1266,17 @@ DatabasesProtocolAdapter2Test → DatabasesProtocolAdapterTest
 BacnetIpProtocolAdapter2Test  → BacnetIpProtocolAdapterTest
 ```
 
-#### Step 4: Rename core classes (fsm package)
+#### Step 3: Rename core classes
 
-These renames are safe because the old classes live in `com.hivemq.protocols` (different package).
-Both old and new coexist until Step 5 deletes the old ones.
+The `*2` classes already live in `com.hivemq.protocols`. After old code is deleted (Step 4),
+they are renamed in-place to drop the `2` suffix.
 
-- [ ] Rename `ProtocolAdapterWrapper2.java` → `ProtocolAdapterWrapper.java` (in `com.hivemq.protocols.fsm`)
-- [ ] Rename `ProtocolAdapterManager2.java` → `ProtocolAdapterManager.java` (in `com.hivemq.protocols.fsm`)
-- [ ] Rename `ProtocolAdapterManager2Test.java` → `ProtocolAdapterManagerTest.java` (in `com.hivemq.protocols.fsm`)
+- [ ] Rename `ProtocolAdapterWrapper2.java` → `ProtocolAdapterWrapper.java` (in `com.hivemq.protocols`)
+- [ ] Rename `ProtocolAdapterManager2.java` → `ProtocolAdapterManager.java` (in `com.hivemq.protocols`)
+- [ ] Rename `ProtocolAdapterWrapper2Test.java` → `ProtocolAdapterWrapperTest.java`
+- [ ] Rename `ProtocolAdapterManager2Test.java` → `ProtocolAdapterManagerTest.java`
 - [ ] Update all references:
-  - `Injector.java`: `ProtocolAdapterManager2` → `ProtocolAdapterManager` (import changes from `protocols.fsm.ProtocolAdapterManager2` → `protocols.fsm.ProtocolAdapterManager`)
+  - `Injector.java`: `ProtocolAdapterManager2` → `ProtocolAdapterManager`
   - `AfterHiveMQStartBootstrapService.java` + `Impl`: same
   - `HiveMQEdgeGateway.java`: same
   - `ProtocolAdaptersResourceImpl.java`: both manager and wrapper
@@ -1239,37 +1289,37 @@ Both old and new coexist until Step 5 deletes the old ones.
   - `ExtendedAfterHiveMQStartBootstrapService.java` (commercial): manager
   - `ProtocolAdaptersResourceImplTest.java`: manager
   - `AdapterAssertions.java` (hivemq-edge-test): manager and wrapper
-- [ ] Compile and run `./gradlew :hivemq-edge-build:hivemq-edge:test --tests "com.hivemq.protocols.fsm.*"`
+- [ ] Compile and run `./gradlew :hivemq-edge-build:hivemq-edge:test --tests "com.hivemq.protocols.*"`
 
-#### Step 5: Delete old code
+#### Step 4: Delete old code
 
 With the renamed classes in place and all references updated, the old parallel implementation is dead code.
 
-- [ ] Delete `com.hivemq.protocols.ProtocolAdapterWrapper.java`
-- [ ] Delete `com.hivemq.protocols.ProtocolAdapterManager.java`
+- [ ] Delete `com.hivemq.protocols.ProtocolAdapterWrapper.java` (old)
+- [ ] Delete `com.hivemq.protocols.ProtocolAdapterManager.java` (old)
 - [ ] Delete `com.hivemq.protocols.ProtocolAdapterManagerTest.java` (`@Disabled`)
 - [ ] Delete `com.hivemq.protocols.ProtocolAdapterWrapperShutdownRaceConditionTest.java` (`@Disabled`)
-- [ ] Keep `ProtocolAdapterStartOutputImpl.java`, `ProtocolAdapterStopOutputImpl.java` (used by OPC UA tests and default methods)
 - [ ] Scan for any remaining dead code only referenced by the above (output classes, listener interfaces, etc.)
 - [ ] Run adapter integration tests — fix implementation until all tests pass:
       `./gradlew :hivemq-edge-test:test --tests "com.hivemq.edge.modules.*"`
 
-#### Step 6: Final verification
+#### Step 5: Final verification
 
-- [ ] `./gradlew :hivemq-edge-build:hivemq-edge:test --tests "com.hivemq.protocols.fsm.*"` — all unit tests pass
+- [ ] `./gradlew :hivemq-edge-build:hivemq-edge:test --tests "com.hivemq.protocols.*"` — all unit tests pass
 - [ ] `./gradlew :hivemq-edge-test:test --tests "com.hivemq.edge.modules.*"` — all adapter integration tests pass
 - [ ] No class in the codebase has a `2` suffix from this redesign
-- [ ] No class in `com.hivemq.protocols` duplicates a class in `com.hivemq.protocols.fsm`
-- [ ] `grep -r "ProtocolAdapter2\|ProtocolAdapterWrapper2\|ProtocolAdapterManager2" --include="*.java"` returns zero results (excluding build dirs)
+- [ ] `grep -r "ProtocolAdapter2\|ProtocolAdapterWrapper2\|ProtocolAdapterManager2" --include="*.java" --exclude-dir=build` returns zero results
 
 **Principle**: The existing tests define the correct behavior. If a test fails, the implementation
 is fixed, not the test. Each step should be compilable and testable before proceeding to the next.
 
 **Deliverables**:
-- Single `ProtocolAdapter` interface with both old and new lifecycle methods (SDK)
-- No bridge class remains in SDK (compatibility handled by default methods)
-- `ProtocolAdapterWrapper` in `com.hivemq.protocols.fsm` (no old duplicate)
-- `ProtocolAdapterManager` in `com.hivemq.protocols.fsm` (no old duplicate)
+- Single `ProtocolAdapter` interface with `start(direction, input, output)` / `stop(direction, input, output)` (SDK)
+- Backward-compatible `start(input, output)` / `stop(input, output)` convenience overloads for northbound-only adapters
+- No `ProtocolAdapter2` interface remains
+- No bridge class remains in SDK
+- `ProtocolAdapterWrapper` in `com.hivemq.protocols` (no old duplicate)
+- `ProtocolAdapterManager` in `com.hivemq.protocols` (no old duplicate)
 - No `*2` suffixed class names remain
 - No per-module bridge subclasses remain
 - No old dead code from the previous design
@@ -1295,11 +1345,11 @@ this ensures behavioral compatibility with the old design.
 The following unit tests validate individual FSM components in isolation:
 
 ```
-com.hivemq.protocols.fsm.ProtocolAdapterConnectionStateTest  # Connection FSM transitions (1 test)
-com.hivemq.protocols.fsm.ProtocolAdapterRuntimeStateTest     # Adapter FSM transitions (1 test)
-com.hivemq.protocols.fsm.ProtocolAdapter2DefaultMethodsTest  # ProtocolAdapter2 default-method compatibility
-com.hivemq.protocols.ProtocolAdapterWrapper2Test             # Wrapper lifecycle, listeners, hooks, edge cases (44 tests)
-com.hivemq.protocols.ProtocolAdapterManager2Test             # Manager start/stop/delete, events, lookups (17 tests)
+com.hivemq.protocols.fsm.ProtocolAdapterConnectionStateTest     # Connection FSM transitions (1 test)
+com.hivemq.protocols.fsm.ProtocolAdapterRuntimeStateTest        # Adapter FSM transitions (1 test)
+com.hivemq.protocols.fsm.ProtocolAdapter2DefaultMethodsTest     # Default-method compatibility (to be renamed in Step 3)
+com.hivemq.protocols.ProtocolAdapterWrapper2Test                # Wrapper lifecycle, listeners, hooks, edge cases (to be renamed in Step 3)
+com.hivemq.protocols.ProtocolAdapterManager2Test                # Manager start/stop/delete, events, lookups (to be renamed in Step 3)
 ```
 
 Per-module smoke tests (10 modules) validate adapter-specific `ProtocolAdapter2` classes and factory wiring.
@@ -1331,7 +1381,7 @@ The existing tests define the correct behavior contract.
 4. Error recovery works correctly
 5. No performance regression (< 5% slower startup)
 6. Code complexity reduced (fewer callbacks, no nested futures)
-7. Single `ProtocolAdapter` interface — no `ProtocolAdapter2`, bridge is a helper not a parallel interface
+7. Single `ProtocolAdapter` interface with `start(direction)`/`stop(direction)` — no `ProtocolAdapter2`, no bridge classes
 8. No old dead code remaining (`ProtocolAdapterWrapper`, `ProtocolAdapterManager` in `com.hivemq.protocols`)
 9. No `*2` suffixed class names remain anywhere in the codebase
 
@@ -1344,10 +1394,10 @@ The existing tests define the correct behavior contract.
    - (B) Use a bridge pattern to wrap existing adapters?
    - (C) Modify existing adapters to support both interfaces?
 
-   **Decision**: (A) with SDK-level default-method compatibility.
-   `ProtocolAdapter2Bridge` was removed. `ProtocolAdapter2` default methods provide legacy delegation,
-   while modules keep per-module `*ProtocolAdapter2` implementations for adapter-specific behavior
-   (for example, OPC UA southbound support).
+   **Decision**: (C) — direct modification. `ProtocolAdapter2` and `ProtocolAdapter2Bridge` were
+   eliminated. The existing `ProtocolAdapter` interface gained `start(direction, input, output)` /
+   `stop(direction, input, output)` / `precheck()` / `supportsSouthbound()`. All adapters were
+   updated in-place. No bridge subclasses remain.
 
 2. **Connection Timeout Configuration**: Should timeout be:
    - (A) Configured per-adapter in adapter config?
@@ -1391,11 +1441,10 @@ hivemq-edge/hivemq-edge/src/main/java/com/hivemq/protocols/
 
 ```
 hivemq-edge-adapter-sdk/src/main/java/com/hivemq/adapter/sdk/api/
-├── ProtocolAdapter.java                           # Merged interface (old + new methods)
-├── ProtocolAdapterBridge.java                     # Bridge (renamed from ProtocolAdapter2Bridge)
-├── ProtocolAdapterConnectionDirection.java        # Connection direction enum
+├── ProtocolAdapter.java                           # Unified interface with start(direction)/stop(direction)
+├── ProtocolAdapterConnectionDirection.java        # Connection direction enum (Northbound/Southbound)
 └── factories/
-    └── ProtocolAdapterFactory.java                # createProtocolAdapterBridge() (renamed from createProtocolAdapter2())
+    └── ProtocolAdapterFactory.java                # createAdapter() returns ProtocolAdapter
 ```
 
 ### Test Files — Final State After Phase 7
@@ -1403,7 +1452,7 @@ hivemq-edge-adapter-sdk/src/main/java/com/hivemq/adapter/sdk/api/
 ```
 # FSM tests (com.hivemq.protocols.fsm)
 hivemq-edge/hivemq-edge/src/test/java/com/hivemq/protocols/fsm/
-├── ProtocolAdapterBridgeTest.java                 # Bridge tests (renamed from ProtocolAdapter2BridgeTest)
+├── ProtocolAdapterDefaultMethodsTest.java         # Default-method compatibility tests
 ├── ProtocolAdapterConnectionStateTest.java        # Connection FSM transition tests
 └── ProtocolAdapterRuntimeStateTest.java            # Adapter FSM transition tests
 
@@ -1416,53 +1465,30 @@ hivemq-edge/hivemq-edge/src/test/java/com/hivemq/protocols/
 ### Files Deleted in Phase 7
 
 ```
-# Old parallel implementation (com.hivemq.protocols)
-ProtocolAdapterWrapper.java
-ProtocolAdapterManager.java
-ProtocolAdapterManagerTest.java (@Disabled)
-ProtocolAdapterWrapperShutdownRaceConditionTest.java (@Disabled)
-
-# SDK (merged/renamed — old files deleted, new files created)
+# Already deleted (Steps 1-2):
 ProtocolAdapter2.java (merged into ProtocolAdapter)
 ProtocolAdapter2Bridge.java (deleted)
+10× per-module *ProtocolAdapter2.java bridge subclasses (deleted)
 
-# Per-module bridge subclasses (source only — tests are renamed, not deleted)
-OpcUaProtocolAdapter2.java
-ModbusProtocolAdapter2.java
-HttpProtocolAdapter2.java
-FileProtocolAdapter2.java
-S7ProtocolAdapter2.java
-ADSProtocolAdapter2.java
-EipProtocolAdapter2.java
-MtConnectProtocolAdapter2.java
-DatabasesProtocolAdapter2.java
-BacnetIpProtocolAdapter2.java
+# To delete (Steps 3-4):
+ProtocolAdapterWrapper.java (old, com.hivemq.protocols)
+ProtocolAdapterManager.java (old, com.hivemq.protocols)
+ProtocolAdapterManagerTest.java (@Disabled)
+ProtocolAdapterWrapperShutdownRaceConditionTest.java (@Disabled)
 ```
 
 ### Files Renamed in Phase 7
 
 ```
-# Core (com.hivemq.protocols — already moved from fsm package)
+# Already renamed (Steps 1-2):
+ProtocolAdapter2DefaultMethodsTest.java → ProtocolAdapterDefaultMethodsTest.java (FSM test)
+10× per-module *ProtocolAdapter2Test.java → *ProtocolAdapterTest.java (drop 2 suffix)
+
+# To rename (Step 3):
 ProtocolAdapterWrapper2.java       → ProtocolAdapterWrapper.java
 ProtocolAdapterManager2.java       → ProtocolAdapterManager.java
-
-# FSM tests (com.hivemq.protocols.fsm)
-ProtocolAdapter2BridgeTest.java    → ProtocolAdapterBridgeTest.java
-
-# SDK
-ProtocolAdapter2Bridge.java        → ProtocolAdapterBridge.java
-
-# Per-module tests (renamed + updated to test factory→bridge wiring)
-OpcUaProtocolAdapter2Test.java     → OpcUaProtocolAdapterBridgeTest.java
-ModbusProtocolAdapter2Test.java    → ModbusProtocolAdapterBridgeTest.java
-HttpProtocolAdapter2Test.java      → HttpProtocolAdapterBridgeTest.java
-FileProtocolAdapter2Test.java      → FileProtocolAdapterBridgeTest.java
-S7ProtocolAdapter2Test.java        → S7ProtocolAdapterBridgeTest.java
-ADSProtocolAdapter2Test.java       → ADSProtocolAdapterBridgeTest.java
-EipProtocolAdapter2Test.java       → EipProtocolAdapterBridgeTest.java
-MtConnectProtocolAdapter2Test.java → MtConnectProtocolAdapterBridgeTest.java
-DatabasesProtocolAdapter2Test.java → DatabasesProtocolAdapterBridgeTest.java
-BacnetIpProtocolAdapter2Test.java  → BacnetIpProtocolAdapterBridgeTest.java
+ProtocolAdapterWrapper2Test.java   → ProtocolAdapterWrapperTest.java
+ProtocolAdapterManager2Test.java   → ProtocolAdapterManagerTest.java
 ```
 
 ---
@@ -1493,7 +1519,7 @@ grep -r "ProtocolAdapter2\|ProtocolAdapterWrapper2\|ProtocolAdapterManager2" \
 
 ---
 
-**Document Version**: 1.11
+**Document Version**: 1.15
 **Last Updated**: 2026-03-20
 **Author**: Claude (AI Assistant)
-**Status**: IN PROGRESS (Phase 1–6 complete, Phase 7 not started)
+**Status**: IN PROGRESS (Phase 1–6 complete, Phase 7 Steps 1-2 complete, Steps 3-5 remaining)

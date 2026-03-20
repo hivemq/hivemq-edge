@@ -16,12 +16,10 @@
 package com.hivemq.edge.adapters.opcua;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
-import com.hivemq.adapter.sdk.api.ProtocolAdapter2;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 
@@ -43,11 +41,5 @@ public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUa
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterInput<OpcUaSpecificAdapterConfig> input) {
         return new OpcUaProtocolAdapter(adapterInformation, input);
-    }
-
-    @Override
-    public @NotNull ProtocolAdapter2 createProtocolAdapter2(
-            final @NotNull ProtocolAdapter protocolAdapter, final @NotNull ModuleServices moduleServices) {
-        return new OpcUaProtocolAdapter2(protocolAdapter, moduleServices);
     }
 }

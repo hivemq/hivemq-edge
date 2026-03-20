@@ -17,6 +17,8 @@ package com.hivemq.protocols;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -24,14 +26,17 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.hivemq.adapter.sdk.api.ProtocolAdapter2;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
@@ -43,13 +48,20 @@ import com.hivemq.protocols.fsm.ProtocolAdapterTransitionResponse;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -59,7 +71,7 @@ import org.mockito.quality.Strictness;
 class ProtocolAdapterWrapper2Test {
 
     @Mock
-    private @NotNull ProtocolAdapter2 protocolAdapter;
+    private @NotNull ProtocolAdapter protocolAdapter;
 
     @Mock
     private @NotNull ProtocolAdapterInformation adapterInformation;
@@ -101,6 +113,22 @@ class ProtocolAdapterWrapper2Test {
         when(protocolAdapter.getId()).thenReturn("test-adapter");
         when(protocolAdapter.supportsSouthbound()).thenReturn(false);
         when(protocolAdapter.getProtocolAdapterInformation()).thenReturn(adapterInformation);
+        // Default: connect calls output.startedSuccessfully()
+        doAnswer(invocation -> {
+                    final ProtocolAdapterStartOutput output = invocation.getArgument(2);
+                    output.startedSuccessfully();
+                    return null;
+                })
+                .when(protocolAdapter)
+                .start(any(), any(), any());
+        // Default: disconnect calls output.stoppedSuccessfully()
+        doAnswer(invocation -> {
+                    final ProtocolAdapterStopOutput output = invocation.getArgument(2);
+                    output.stoppedSuccessfully();
+                    return null;
+                })
+                .when(protocolAdapter)
+                .stop(any(), any(), any());
         wrapper = new ProtocolAdapterWrapper2(
                 protocolAdapter,
                 config,
@@ -143,16 +171,16 @@ class ProtocolAdapterWrapper2Test {
             assertThat(wrapper.getSouthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
 
             verify(protocolAdapter).precheck();
-            verify(protocolAdapter).connect(ProtocolAdapterConnectionDirection.Northbound);
-            verify(protocolAdapter, never()).connect(ProtocolAdapterConnectionDirection.Southbound);
+            verify(protocolAdapter).start(eq(ProtocolAdapterConnectionDirection.Northbound), any(), any());
+            verify(protocolAdapter, never()).start(eq(ProtocolAdapterConnectionDirection.Southbound), any(), any());
 
             assertThat(wrapper.stop(false)).isTrue();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
             assertThat(wrapper.getSouthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
 
-            verify(protocolAdapter).disconnect(ProtocolAdapterConnectionDirection.Northbound);
-            verify(protocolAdapter, never()).disconnect(ProtocolAdapterConnectionDirection.Southbound);
+            verify(protocolAdapter).stop(eq(ProtocolAdapterConnectionDirection.Northbound), any(), any());
+            verify(protocolAdapter, never()).stop(eq(ProtocolAdapterConnectionDirection.Southbound), any(), any());
         }
 
         @Test
@@ -188,16 +216,16 @@ class ProtocolAdapterWrapper2Test {
             assertThat(wrapper.getSouthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Connected);
 
             verify(protocolAdapter).precheck();
-            verify(protocolAdapter).connect(ProtocolAdapterConnectionDirection.Northbound);
-            verify(protocolAdapter).connect(ProtocolAdapterConnectionDirection.Southbound);
+            verify(protocolAdapter).start(eq(ProtocolAdapterConnectionDirection.Northbound), any(), any());
+            verify(protocolAdapter).start(eq(ProtocolAdapterConnectionDirection.Southbound), any(), any());
 
             assertThat(wrapper.stop(true)).isTrue();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
             assertThat(wrapper.getSouthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
 
-            verify(protocolAdapter).disconnect(ProtocolAdapterConnectionDirection.Northbound);
-            verify(protocolAdapter).disconnect(ProtocolAdapterConnectionDirection.Southbound);
+            verify(protocolAdapter).stop(eq(ProtocolAdapterConnectionDirection.Northbound), any(), any());
+            verify(protocolAdapter).stop(eq(ProtocolAdapterConnectionDirection.Southbound), any(), any());
         }
     }
 
@@ -214,7 +242,7 @@ class ProtocolAdapterWrapper2Test {
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Error);
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
 
-            verify(protocolAdapter, never()).connect(any());
+            verify(protocolAdapter, never()).start(any(), any(), any());
         }
     }
 
@@ -223,9 +251,13 @@ class ProtocolAdapterWrapper2Test {
 
         @Test
         void start_northboundConnectThrows_transitionsToError() throws ProtocolAdapterException {
-            doThrow(new ProtocolAdapterException("connection refused"))
+            doAnswer(invocation -> {
+                        final ProtocolAdapterStartOutput output = invocation.getArgument(2);
+                        output.failStart(new RuntimeException("connection refused"), "connection refused");
+                        return null;
+                    })
                     .when(protocolAdapter)
-                    .connect(ProtocolAdapterConnectionDirection.Northbound);
+                    .start(eq(ProtocolAdapterConnectionDirection.Northbound), any(), any());
 
             assertThat(wrapper.start()).isFalse();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Error);
@@ -244,10 +276,14 @@ class ProtocolAdapterWrapper2Test {
 
         @Test
         void start_southboundConnectThrows_cleansUpNorthboundAndTransitionsToError() throws ProtocolAdapterException {
-            doNothing().when(protocolAdapter).connect(ProtocolAdapterConnectionDirection.Northbound);
-            doThrow(new ProtocolAdapterException("southbound refused"))
+            // Northbound succeeds (default doAnswer already set up)
+            doAnswer(invocation -> {
+                        final ProtocolAdapterStartOutput output = invocation.getArgument(2);
+                        output.failStart(new RuntimeException("southbound refused"), "southbound refused");
+                        return null;
+                    })
                     .when(protocolAdapter)
-                    .connect(ProtocolAdapterConnectionDirection.Southbound);
+                    .start(eq(ProtocolAdapterConnectionDirection.Southbound), any(), any());
 
             assertThat(wrapper.start()).isFalse();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Error);
@@ -257,7 +293,7 @@ class ProtocolAdapterWrapper2Test {
             assertThat(wrapper.getSouthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Error);
 
             // Verify northbound was disconnected as cleanup
-            verify(protocolAdapter).disconnect(ProtocolAdapterConnectionDirection.Northbound);
+            verify(protocolAdapter).stop(eq(ProtocolAdapterConnectionDirection.Northbound), any(), any());
         }
     }
 
@@ -270,7 +306,7 @@ class ProtocolAdapterWrapper2Test {
 
             doThrow(new RuntimeException("disconnect error"))
                     .when(protocolAdapter)
-                    .disconnect(ProtocolAdapterConnectionDirection.Northbound);
+                    .stop(eq(ProtocolAdapterConnectionDirection.Northbound), any(), any());
 
             // Stop should still succeed because disconnect errors are caught and
             // the connection transitions to Disconnected anyway
@@ -363,10 +399,14 @@ class ProtocolAdapterWrapper2Test {
         void stop_fromErrorState_withConnectedNorthbound_disconnects() throws ProtocolAdapterException {
             // Get into Error state after northbound connected but southbound failed
             when(protocolAdapter.supportsSouthbound()).thenReturn(true);
-            doNothing().when(protocolAdapter).connect(ProtocolAdapterConnectionDirection.Northbound);
-            doThrow(new ProtocolAdapterException("southbound refused"))
+            // Northbound succeeds (default doAnswer already set up)
+            doAnswer(invocation -> {
+                        final ProtocolAdapterStartOutput output = invocation.getArgument(2);
+                        output.failStart(new RuntimeException("southbound refused"), "southbound refused");
+                        return null;
+                    })
                     .when(protocolAdapter)
-                    .connect(ProtocolAdapterConnectionDirection.Southbound);
+                    .start(eq(ProtocolAdapterConnectionDirection.Southbound), any(), any());
 
             wrapper.start();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Error);
@@ -723,7 +763,7 @@ class ProtocolAdapterWrapper2Test {
 
             doThrow(new RuntimeException("southbound disconnect error"))
                     .when(protocolAdapter)
-                    .disconnect(ProtocolAdapterConnectionDirection.Southbound);
+                    .stop(eq(ProtocolAdapterConnectionDirection.Southbound), any(), any());
 
             // Stop should still succeed -- disconnect errors are caught
             assertThat(wrapper.stop(false)).isTrue();
@@ -738,10 +778,10 @@ class ProtocolAdapterWrapper2Test {
 
             doThrow(new RuntimeException("northbound disconnect error"))
                     .when(protocolAdapter)
-                    .disconnect(ProtocolAdapterConnectionDirection.Northbound);
+                    .stop(eq(ProtocolAdapterConnectionDirection.Northbound), any(), any());
             doThrow(new RuntimeException("southbound disconnect error"))
                     .when(protocolAdapter)
-                    .disconnect(ProtocolAdapterConnectionDirection.Southbound);
+                    .stop(eq(ProtocolAdapterConnectionDirection.Southbound), any(), any());
 
             assertThat(wrapper.stop(false)).isTrue();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
@@ -798,7 +838,7 @@ class ProtocolAdapterWrapper2Test {
 
             // Stop should disconnect the northbound connection that was still connected
             assertThat(wrapper.stop(false)).isTrue();
-            verify(protocolAdapter, times(1)).disconnect(ProtocolAdapterConnectionDirection.Northbound);
+            verify(protocolAdapter, times(1)).stop(eq(ProtocolAdapterConnectionDirection.Northbound), any(), any());
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
         }
     }
@@ -864,16 +904,30 @@ class ProtocolAdapterWrapper2Test {
     class ConcurrentStartStop {
 
         @Test
-        @org.junit.jupiter.api.Timeout(10)
+        @Timeout(10)
         void concurrentStartAndStop_noRaceCondition() throws Exception {
             final int numIterations = 20;
-            final java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newFixedThreadPool(4);
+            final ExecutorService executor = Executors.newFixedThreadPool(4);
 
             for (int i = 0; i < numIterations; i++) {
-                final ProtocolAdapter2 adapter = org.mockito.Mockito.mock(ProtocolAdapter2.class);
+                final ProtocolAdapter adapter = Mockito.mock(ProtocolAdapter.class);
                 when(adapter.getId()).thenReturn("adapter-" + i);
                 when(adapter.supportsSouthbound()).thenReturn(false);
                 when(adapter.getProtocolAdapterInformation()).thenReturn(adapterInformation);
+                doAnswer(inv -> {
+                            final ProtocolAdapterStartOutput out = inv.getArgument(2);
+                            out.startedSuccessfully();
+                            return null;
+                        })
+                        .when(adapter)
+                        .start(any(), any(), any());
+                doAnswer(inv -> {
+                            final ProtocolAdapterStopOutput out = inv.getArgument(2);
+                            out.stoppedSuccessfully();
+                            return null;
+                        })
+                        .when(adapter)
+                        .stop(any(), any(), any());
                 final ProtocolAdapterWrapper2 w = new ProtocolAdapterWrapper2(
                         adapter,
                         config,
@@ -888,36 +942,33 @@ class ProtocolAdapterWrapper2Test {
                         northboundConsumerFactory,
                         protocolAdapterWritingService);
 
-                final java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(2);
+                final CountDownLatch latch = new CountDownLatch(2);
 
-                final java.util.concurrent.CompletableFuture<Void> startFuture =
-                        java.util.concurrent.CompletableFuture.runAsync(
-                                () -> {
-                                    latch.countDown();
-                                    try {
-                                        latch.await(2, java.util.concurrent.TimeUnit.SECONDS);
-                                    } catch (final InterruptedException e) {
-                                        Thread.currentThread().interrupt();
-                                    }
-                                    w.start();
-                                },
-                                executor);
+                final CompletableFuture<Void> startFuture = CompletableFuture.runAsync(
+                        () -> {
+                            latch.countDown();
+                            try {
+                                latch.await(2, TimeUnit.SECONDS);
+                            } catch (final InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            }
+                            w.start();
+                        },
+                        executor);
 
-                final java.util.concurrent.CompletableFuture<Void> stopFuture =
-                        java.util.concurrent.CompletableFuture.runAsync(
-                                () -> {
-                                    latch.countDown();
-                                    try {
-                                        latch.await(2, java.util.concurrent.TimeUnit.SECONDS);
-                                    } catch (final InterruptedException e) {
-                                        Thread.currentThread().interrupt();
-                                    }
-                                    w.stop(false);
-                                },
-                                executor);
+                final CompletableFuture<Void> stopFuture = CompletableFuture.runAsync(
+                        () -> {
+                            latch.countDown();
+                            try {
+                                latch.await(2, TimeUnit.SECONDS);
+                            } catch (final InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            }
+                            w.stop(false);
+                        },
+                        executor);
 
-                java.util.concurrent.CompletableFuture.allOf(startFuture, stopFuture)
-                        .get(5, java.util.concurrent.TimeUnit.SECONDS);
+                CompletableFuture.allOf(startFuture, stopFuture).get(5, TimeUnit.SECONDS);
 
                 // Adapter should be in a valid terminal state (Idle or Working, never Precheck/Stopping)
                 final ProtocolAdapterRuntimeState finalState = w.getState();
@@ -929,8 +980,7 @@ class ProtocolAdapterWrapper2Test {
             }
 
             executor.shutdown();
-            assertThat(executor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS))
-                    .isTrue();
+            assertThat(executor.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
         }
     }
 
@@ -942,7 +992,7 @@ class ProtocolAdapterWrapper2Test {
             // Simulate an adapter whose disconnect(Northbound) throws -- stop should still succeed
             doThrow(new RuntimeException("disconnect failed"))
                     .when(protocolAdapter)
-                    .disconnect(ProtocolAdapterConnectionDirection.Northbound);
+                    .stop(eq(ProtocolAdapterConnectionDirection.Northbound), any(), any());
 
             wrapper.start();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Working);
@@ -952,6 +1002,166 @@ class ProtocolAdapterWrapper2Test {
             assertThat(stopped).isTrue();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
+        }
+    }
+
+    /**
+     * Tests that verify the shutdown flag behavior on {@link ProtocolAdapterStateImpl}.
+     * These use a REAL (non-mocked) {@link ProtocolAdapterStateImpl} to validate that
+     * the wrapper correctly marks/clears the shutdown flag during stop/start,
+     * preventing race conditions between connection status changes and adapter shutdown.
+     */
+    @Nested
+    class ShutdownRaceConditionPrevention {
+
+        private @NotNull ProtocolAdapterStateImpl realAdapterState;
+        private @NotNull ProtocolAdapterWrapper2 wrapperWithRealState;
+
+        @BeforeEach
+        void setUp() {
+            realAdapterState = new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol");
+            wrapperWithRealState = new ProtocolAdapterWrapper2(
+                    protocolAdapter,
+                    config,
+                    adapterFactory,
+                    adapterInformation,
+                    metricsService,
+                    realAdapterState,
+                    protocolAdapterPollingService,
+                    eventService,
+                    moduleServices,
+                    tagManager,
+                    northboundConsumerFactory,
+                    protocolAdapterWritingService);
+        }
+
+        @Test
+        void stop_preventsConnectionStatusChangesDuringShutdown() {
+            wrapperWithRealState.start();
+            realAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+
+            wrapperWithRealState.stop(false);
+
+            // After stop, status changes should be blocked by the shutdown flag
+            final boolean changed = realAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+            assertThat(changed).isFalse();
+            assertThat(wrapperWithRealState.getRuntimeStatus()).isEqualTo(ProtocolAdapterState.RuntimeStatus.STOPPED);
+        }
+
+        @Test
+        void startAfterStop_clearsShutdownFlag_allowsStatusChangesAgain() {
+            // Start, stop
+            wrapperWithRealState.start();
+            realAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+            wrapperWithRealState.stop(false);
+
+            // After stop, status changes should be blocked
+            boolean changed = realAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+            assertThat(changed).isFalse();
+
+            // Start again — shutdown flag should be cleared
+            wrapperWithRealState.start();
+
+            // Now status changes should work again
+            changed = realAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+            assertThat(changed).isTrue();
+            assertThat(realAdapterState.getConnectionStatus()).isEqualTo(ProtocolAdapterState.ConnectionStatus.ERROR);
+        }
+
+        @Test
+        void listenerNotCalledDuringShutdown() {
+            final AtomicInteger listenerCallCount = new AtomicInteger(0);
+
+            wrapperWithRealState.start();
+            realAdapterState.setConnectionStatusListener(status -> listenerCallCount.incrementAndGet());
+            realAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+
+            final int callCountBeforeStop = listenerCallCount.get();
+
+            wrapperWithRealState.stop(false);
+
+            // Try to trigger listener after stop — should not fire
+            realAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+            assertThat(listenerCallCount.get()).isEqualTo(callCountBeforeStop);
+        }
+
+        @Test
+        void failedStart_preventsConnectionStatusChanges() throws ProtocolAdapterException {
+            doThrow(new ProtocolAdapterException("bad config"))
+                    .when(protocolAdapter)
+                    .precheck();
+
+            wrapperWithRealState.start();
+            assertThat(wrapperWithRealState.getState()).isEqualTo(ProtocolAdapterRuntimeState.Error);
+
+            // Even after stop from error state, status changes should be blocked if not restarted
+            wrapperWithRealState.stop(false);
+            final boolean changed =
+                    realAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+            assertThat(changed).isFalse();
+        }
+
+        @Test
+        @Timeout(10)
+        void concurrentStopAndStatusChange_noRaceCondition() throws Exception {
+            final int numIterations = 20;
+            final ExecutorService executor = Executors.newFixedThreadPool(4);
+
+            for (int i = 0; i < numIterations; i++) {
+                final ProtocolAdapterStateImpl iterationState =
+                        new ProtocolAdapterStateImpl(eventService, "test-adapter-" + i, "test-protocol");
+                final ProtocolAdapterWrapper2 iterationWrapper = new ProtocolAdapterWrapper2(
+                        protocolAdapter,
+                        config,
+                        adapterFactory,
+                        adapterInformation,
+                        metricsService,
+                        iterationState,
+                        protocolAdapterPollingService,
+                        eventService,
+                        moduleServices,
+                        tagManager,
+                        northboundConsumerFactory,
+                        protocolAdapterWritingService);
+
+                iterationWrapper.start();
+                iterationState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
+
+                final CountDownLatch bothStarted = new CountDownLatch(2);
+
+                final CompletableFuture<Void> stopFuture = CompletableFuture.runAsync(
+                        () -> {
+                            bothStarted.countDown();
+                            try {
+                                bothStarted.await(2, TimeUnit.SECONDS);
+                            } catch (final InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            }
+                            iterationWrapper.stop(false);
+                        },
+                        executor);
+
+                final CompletableFuture<Void> statusChangeFuture = CompletableFuture.runAsync(
+                        () -> {
+                            bothStarted.countDown();
+                            try {
+                                bothStarted.await(2, TimeUnit.SECONDS);
+                                Thread.sleep(10);
+                            } catch (final InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            }
+                            iterationState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
+                        },
+                        executor);
+
+                CompletableFuture.allOf(stopFuture, statusChangeFuture).get(5, TimeUnit.SECONDS);
+
+                // Verify the adapter is in a valid state after concurrent operations
+                assertThat(iterationWrapper.getRuntimeStatus()).isEqualTo(ProtocolAdapterState.RuntimeStatus.STOPPED);
+            }
+
+            executor.shutdown();
+            assertThat(executor.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
         }
     }
 }

@@ -16,6 +16,7 @@
 package com.hivemq.protocols;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
@@ -126,7 +127,7 @@ public class ProtocolAdapterWrapper {
         final var input = new ProtocolAdapterStartInputImpl(perModule);
         final var startFuture = CompletableFuture.supplyAsync(() -> {
                     try {
-                        adapter.start(input, output);
+                        adapter.start(ProtocolAdapterConnectionDirection.Northbound, input, output);
                     } catch (final Throwable throwable) {
                         output.getStartFuture().completeExceptionally(throwable);
                     }
@@ -185,7 +186,7 @@ public class ProtocolAdapterWrapper {
         stopPolling(protocolAdapterPollingService);
         stopWriting(protocolAdapterWritingService);
         try {
-            adapter.stop(stopInput, stopOutput);
+            adapter.stop(ProtocolAdapterConnectionDirection.Northbound, stopInput, stopOutput);
         } catch (final Throwable throwable) {
             log.error("Stopping adapter after a start error failed", throwable);
         }
@@ -341,7 +342,7 @@ public class ProtocolAdapterWrapper {
                     stopPolling(protocolAdapterPollingService);
                     stopWriting(protocolAdapterWritingService);
                     try {
-                        adapter.stop(input, output);
+                        adapter.stop(ProtocolAdapterConnectionDirection.Northbound, input, output);
                     } catch (final Throwable throwable) {
                         output.getOutputFuture().completeExceptionally(throwable);
                     }

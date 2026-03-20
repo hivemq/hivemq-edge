@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -27,7 +28,6 @@ import static org.mockito.Mockito.when;
 
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
-import com.hivemq.adapter.sdk.api.ProtocolAdapter2;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.events.EventService;
@@ -35,6 +35,8 @@ import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.events.model.EventBuilder;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
@@ -138,18 +140,32 @@ class ProtocolAdapterManager2Test {
                 protocolAdapterExtractor);
     }
 
-    private @NotNull ProtocolAdapter2 createSuccessAdapter(final @NotNull String adapterId) {
-        final ProtocolAdapter2 adapter = mock(ProtocolAdapter2.class);
+    private @NotNull ProtocolAdapter createSuccessAdapter(final @NotNull String adapterId) {
+        final ProtocolAdapter adapter = mock(ProtocolAdapter.class);
         final ProtocolAdapterInformation info = mock(ProtocolAdapterInformation.class);
         when(adapter.getId()).thenReturn(adapterId);
         when(adapter.getProtocolAdapterInformation()).thenReturn(info);
         when(info.getProtocolId()).thenReturn("test-protocol");
         when(adapter.supportsSouthbound()).thenReturn(false);
+        doAnswer(invocation -> {
+                    final ProtocolAdapterStartOutput output = invocation.getArgument(2);
+                    output.startedSuccessfully();
+                    return null;
+                })
+                .when(adapter)
+                .start(any(), any(), any());
+        doAnswer(invocation -> {
+                    final ProtocolAdapterStopOutput output = invocation.getArgument(2);
+                    output.stoppedSuccessfully();
+                    return null;
+                })
+                .when(adapter)
+                .stop(any(), any(), any());
         return adapter;
     }
 
-    private @NotNull ProtocolAdapter2 createFailingPrecheckAdapter(final @NotNull String adapterId) {
-        final ProtocolAdapter2 adapter = createSuccessAdapter(adapterId);
+    private @NotNull ProtocolAdapter createFailingPrecheckAdapter(final @NotNull String adapterId) {
+        final ProtocolAdapter adapter = createSuccessAdapter(adapterId);
         try {
             doThrow(new ProtocolAdapterException("precheck failed"))
                     .when(adapter)
@@ -164,13 +180,13 @@ class ProtocolAdapterManager2Test {
      * Adds an adapter directly to the manager's internal map by creating a wrapper
      * and using reflection to access the protected map.
      */
-    private void addAdapterToManager(final @NotNull String adapterId, final @NotNull ProtocolAdapter2 adapter) {
+    private void addAdapterToManager(final @NotNull String adapterId, final @NotNull ProtocolAdapter adapter) {
         addAdapterToManager(adapterId, adapter, mock(ProtocolAdapterConfig.class));
     }
 
     private void addAdapterToManager(
             final @NotNull String adapterId,
-            final @NotNull ProtocolAdapter2 adapter,
+            final @NotNull ProtocolAdapter adapter,
             final @NotNull ProtocolAdapterConfig adapterConfig) {
         addAdapterToManager(manager, adapterId, adapter, adapterConfig);
     }
@@ -178,7 +194,7 @@ class ProtocolAdapterManager2Test {
     private void addAdapterToManager(
             final @NotNull ProtocolAdapterManager2 managerUnderTest,
             final @NotNull String adapterId,
-            final @NotNull ProtocolAdapter2 adapter,
+            final @NotNull ProtocolAdapter adapter,
             final @NotNull ProtocolAdapterConfig adapterConfig) {
         final ProtocolAdapterFactory<?> factory = mock(ProtocolAdapterFactory.class);
         final ProtocolAdapterMetricsService metricsService = mock(ProtocolAdapterMetricsService.class);
@@ -227,7 +243,7 @@ class ProtocolAdapterManager2Test {
 
         @Test
         void start_success_firesInfoEvent() throws ProtocolAdapterException {
-            final ProtocolAdapter2 adapter = createSuccessAdapter("adapter-1");
+            final ProtocolAdapter adapter = createSuccessAdapter("adapter-1");
             addAdapterToManager("adapter-1", adapter);
 
             manager.start("adapter-1");
@@ -240,7 +256,7 @@ class ProtocolAdapterManager2Test {
 
         @Test
         void start_failure_firesErrorEventAndThrows() throws ProtocolAdapterException {
-            final ProtocolAdapter2 adapter = createFailingPrecheckAdapter("adapter-1");
+            final ProtocolAdapter adapter = createFailingPrecheckAdapter("adapter-1");
             addAdapterToManager("adapter-1", adapter);
 
             assertThatThrownBy(() -> manager.start("adapter-1"))
@@ -264,7 +280,7 @@ class ProtocolAdapterManager2Test {
 
         @Test
         void stop_success_firesInfoEvent() throws ProtocolAdapterException {
-            final ProtocolAdapter2 adapter = createSuccessAdapter("adapter-1");
+            final ProtocolAdapter adapter = createSuccessAdapter("adapter-1");
             addAdapterToManager("adapter-1", adapter);
 
             manager.start("adapter-1");
@@ -284,7 +300,7 @@ class ProtocolAdapterManager2Test {
 
         @Test
         void stop_whenIdle_firesCriticalEvent() throws ProtocolAdapterException {
-            final ProtocolAdapter2 adapter = createSuccessAdapter("adapter-1");
+            final ProtocolAdapter adapter = createSuccessAdapter("adapter-1");
             addAdapterToManager("adapter-1", adapter);
 
             // Don't start the adapter — stop from Idle fails (Idle → Stopping is invalid)
@@ -298,7 +314,7 @@ class ProtocolAdapterManager2Test {
 
         @Test
         void stop_withDestroy_callsDestroyOnAdapter() throws ProtocolAdapterException {
-            final ProtocolAdapter2 adapter = createSuccessAdapter("adapter-1");
+            final ProtocolAdapter adapter = createSuccessAdapter("adapter-1");
             addAdapterToManager("adapter-1", adapter);
 
             manager.start("adapter-1");
@@ -313,7 +329,7 @@ class ProtocolAdapterManager2Test {
 
         @Test
         void getProtocolAdapterWrapperByAdapterId_found() {
-            final ProtocolAdapter2 adapter = createSuccessAdapter("adapter-1");
+            final ProtocolAdapter adapter = createSuccessAdapter("adapter-1");
             addAdapterToManager("adapter-1", adapter);
 
             assertThat(manager.getProtocolAdapterWrapperByAdapterId("adapter-1"))
@@ -332,7 +348,7 @@ class ProtocolAdapterManager2Test {
 
         @Test
         void deleteProtocolAdapterByAdapterId_removesWrapper() {
-            final ProtocolAdapter2 adapter = createSuccessAdapter("adapter-1");
+            final ProtocolAdapter adapter = createSuccessAdapter("adapter-1");
             addAdapterToManager("adapter-1", adapter);
 
             assertThat(manager.getProtocolAdapterWrapperByAdapterId("adapter-1"))
@@ -346,7 +362,7 @@ class ProtocolAdapterManager2Test {
 
         @Test
         void deleteProtocolAdapterByAdapterId_decreasesMetric() {
-            final ProtocolAdapter2 adapter = createSuccessAdapter("adapter-1");
+            final ProtocolAdapter adapter = createSuccessAdapter("adapter-1");
             addAdapterToManager("adapter-1", adapter);
 
             manager.deleteProtocolAdapterByAdapterId("adapter-1");
@@ -356,7 +372,7 @@ class ProtocolAdapterManager2Test {
 
         @Test
         void deleteProtocolAdapterByAdapterId_firesEvent() {
-            final ProtocolAdapter2 adapter = createSuccessAdapter("adapter-1");
+            final ProtocolAdapter adapter = createSuccessAdapter("adapter-1");
             addAdapterToManager("adapter-1", adapter);
 
             manager.deleteProtocolAdapterByAdapterId("adapter-1");
@@ -411,7 +427,7 @@ class ProtocolAdapterManager2Test {
 
         @Test
         void startThenStopThenStart_succeeds() throws ProtocolAdapterException {
-            final ProtocolAdapter2 adapter = createSuccessAdapter("adapter-1");
+            final ProtocolAdapter adapter = createSuccessAdapter("adapter-1");
             addAdapterToManager("adapter-1", adapter);
 
             manager.start("adapter-1");
@@ -431,7 +447,7 @@ class ProtocolAdapterManager2Test {
 
         @Test
         void startTwice_secondThrows() throws ProtocolAdapterException {
-            final ProtocolAdapter2 adapter = createSuccessAdapter("adapter-1");
+            final ProtocolAdapter adapter = createSuccessAdapter("adapter-1");
             addAdapterToManager("adapter-1", adapter);
 
             manager.start("adapter-1");
@@ -448,7 +464,7 @@ class ProtocolAdapterManager2Test {
         @Test
         void stop_whenAdapterStartFails_firesWarnEvent() throws ProtocolAdapterException {
             // Adapter that fails start → goes to Error state → stop from Error fires WARN
-            final ProtocolAdapter2 adapter = createFailingPrecheckAdapter("adapter-1");
+            final ProtocolAdapter adapter = createFailingPrecheckAdapter("adapter-1");
             addAdapterToManager("adapter-1", adapter);
 
             // Start fails (precheck throws), adapter is in Error state
@@ -475,7 +491,7 @@ class ProtocolAdapterManager2Test {
 
         @Test
         void startAsync_success() throws Exception {
-            final ProtocolAdapter2 adapter = createSuccessAdapter("adapter-1");
+            final ProtocolAdapter adapter = createSuccessAdapter("adapter-1");
             addAdapterToManager("adapter-1", adapter);
 
             manager.startAsync("adapter-1").get();
@@ -485,7 +501,7 @@ class ProtocolAdapterManager2Test {
 
         @Test
         void stopAsync_success() throws Exception {
-            final ProtocolAdapter2 adapter = createSuccessAdapter("adapter-1");
+            final ProtocolAdapter adapter = createSuccessAdapter("adapter-1");
             addAdapterToManager("adapter-1", adapter);
 
             manager.startAsync("adapter-1").get();
@@ -515,7 +531,7 @@ class ProtocolAdapterManager2Test {
         @Test
         void refresh_unchangedConfig_doesNotRestartAdapter() throws Exception {
             final ProtocolAdapterManager2 spyManager = org.mockito.Mockito.spy(manager);
-            final ProtocolAdapter2 adapter = createSuccessAdapter("adapter-1");
+            final ProtocolAdapter adapter = createSuccessAdapter("adapter-1");
             final ProtocolAdapterConfig unchangedConfig = mock(ProtocolAdapterConfig.class);
             final ProtocolAdapterEntity entity = mock(ProtocolAdapterEntity.class);
 
@@ -538,8 +554,7 @@ class ProtocolAdapterManager2Test {
             final ProtocolSpecificAdapterConfig adapterConfig = mock(ProtocolSpecificAdapterConfig.class);
             final ProtocolAdapterFactory<?> factory = mock(ProtocolAdapterFactory.class);
             final ProtocolAdapterInformation info = mock(ProtocolAdapterInformation.class);
-            final ProtocolAdapter legacyAdapter = mock(ProtocolAdapter.class);
-            final ProtocolAdapter2 adapter2 = mock(ProtocolAdapter2.class);
+            final ProtocolAdapter createdAdapter = mock(ProtocolAdapter.class);
             final ProtocolAdapterPublishService publishService = mock(ProtocolAdapterPublishService.class);
 
             when(config.getAdapterId()).thenReturn("adapter-1");
@@ -553,10 +568,9 @@ class ProtocolAdapterManager2Test {
             when(factoryManager.get("test-protocol")).thenReturn(Optional.of(factory));
             when(factory.getInformation()).thenReturn(info);
             when(info.getProtocolId()).thenReturn("test-protocol");
-            when(factory.createAdapter(any(), any())).thenReturn(legacyAdapter);
-            when(factory.createProtocolAdapter2(any(), any())).thenReturn(adapter2);
-            when(adapter2.getId()).thenReturn("adapter-1");
-            when(adapter2.getProtocolAdapterInformation()).thenReturn(info);
+            when(factory.createAdapter(any(), any())).thenReturn(createdAdapter);
+            when(createdAdapter.getId()).thenReturn("adapter-1");
+            when(createdAdapter.getProtocolAdapterInformation()).thenReturn(info);
 
             when(moduleServices.eventService()).thenReturn(eventService);
             when(moduleServices.adapterPublishService()).thenReturn(publishService);
@@ -588,7 +602,6 @@ class ProtocolAdapterManager2Test {
 
             assertThat(manager.getProtocolAdapters()).hasSize(1);
             verify(factory, times(1)).createAdapter(any(), any());
-            verify(factory, times(1)).createProtocolAdapter2(any(), any());
             verify(protocolAdapterMetrics, times(1)).increaseProtocolAdapterMetric("test-protocol");
         }
 
