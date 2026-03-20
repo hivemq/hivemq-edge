@@ -17,7 +17,6 @@ package com.hivemq.protocols;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter2;
-import com.hivemq.adapter.sdk.api.ProtocolAdapter2Bridge;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
@@ -51,7 +50,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -191,18 +189,11 @@ public class ProtocolAdapterWrapper2 {
 
     /**
      * Returns the underlying old-style {@link ProtocolAdapter}.
-     * If the adapter is a {@link ProtocolAdapter2Bridge}, returns the delegate.
-     * Otherwise, throws {@link IllegalStateException}.
      *
      * @return the underlying ProtocolAdapter
      */
     public @NotNull ProtocolAdapter getAdapter() {
-        if (adapter instanceof ProtocolAdapter2Bridge bridge) {
-            return bridge.getDelegate();
-        }
-        throw new IllegalStateException(
-                "Cannot get old ProtocolAdapter from non-bridge ProtocolAdapter2 implementation: "
-                        + adapter.getClass().getName());
+        return adapter.getLegacyAdapter();
     }
 
     /**
@@ -337,30 +328,21 @@ public class ProtocolAdapterWrapper2 {
      * @return true if the underlying adapter supports writing (southbound)
      */
     public boolean isWriting() {
-        if (adapter instanceof ProtocolAdapter2Bridge bridge) {
-            return bridge.getDelegate() instanceof WritingProtocolAdapter;
-        }
-        return adapter.supportsSouthbound();
+        return getAdapter() instanceof WritingProtocolAdapter;
     }
 
     /**
      * @return true if the underlying adapter supports polling
      */
     public boolean isPolling() {
-        if (adapter instanceof ProtocolAdapter2Bridge bridge) {
-            return bridge.getDelegate() instanceof PollingProtocolAdapter;
-        }
-        return false;
+        return getAdapter() instanceof PollingProtocolAdapter;
     }
 
     /**
      * @return true if the underlying adapter supports batch polling
      */
     public boolean isBatchPolling() {
-        if (adapter instanceof ProtocolAdapter2Bridge bridge) {
-            return bridge.getDelegate() instanceof BatchPollingProtocolAdapter;
-        }
-        return false;
+        return getAdapter() instanceof BatchPollingProtocolAdapter;
     }
 
     /**
@@ -556,14 +538,7 @@ public class ProtocolAdapterWrapper2 {
         }
 
         try {
-            if (adapter instanceof ProtocolAdapter2Bridge bridge) {
-                final var input = new ProtocolAdapterStartInputImpl(moduleServices);
-                final var output = new ProtocolAdapterStartOutputImpl();
-                bridge.getDelegate().start(input, output);
-                output.getStartFuture().get();
-            } else {
-                adapter.connect(ProtocolAdapterConnectionDirection.Northbound);
-            }
+            adapter.connect(ProtocolAdapterConnectionDirection.Northbound);
             // Connecting → Connected
             final boolean success = transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Connected)
                     .status()
@@ -576,19 +551,6 @@ public class ProtocolAdapterWrapper2 {
                 protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
             }
             return success;
-        } catch (final InterruptedException e) {
-            Thread.currentThread().interrupt();
-            LOGGER.error("Northbound connection failed for adapter '{}'.", getAdapterId(), e);
-            // Connecting → Error
-            transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Error);
-            protocolAdapterState.setErrorConnectionStatus(e, e.getMessage());
-            return false;
-        } catch (final ExecutionException e) {
-            LOGGER.error("Northbound connection failed for adapter '{}'.", getAdapterId(), e);
-            // Connecting → Error
-            transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Error);
-            protocolAdapterState.setErrorConnectionStatus(e, e.getMessage());
-            return false;
         } catch (final Exception e) {
             LOGGER.error("Northbound connection failed for adapter '{}'.", getAdapterId(), e);
             // Connecting → Error
@@ -654,21 +616,7 @@ public class ProtocolAdapterWrapper2 {
         }
 
         try {
-            if (adapter instanceof ProtocolAdapter2Bridge bridge) {
-                final var input = new ProtocolAdapterStopInputImpl();
-                final var output = new ProtocolAdapterStopOutputImpl();
-                bridge.getDelegate().stop(input, output);
-                output.getOutputFuture().get();
-            } else {
-                adapter.disconnect(ProtocolAdapterConnectionDirection.Northbound);
-            }
-        } catch (final InterruptedException e) {
-            Thread.currentThread().interrupt();
-            LOGGER.warn("Error during northbound disconnect for adapter '{}'.", getAdapterId(), e);
-            // Continue anyway — we want to reach Disconnected state
-        } catch (final ExecutionException e) {
-            LOGGER.warn("Error during northbound disconnect for adapter '{}'.", getAdapterId(), e);
-            // Continue anyway — we want to reach Disconnected state
+            adapter.disconnect(ProtocolAdapterConnectionDirection.Northbound);
         } catch (final Exception e) {
             LOGGER.warn("Error during northbound disconnect for adapter '{}'.", getAdapterId(), e);
             // Continue anyway — we want to reach Disconnected state
@@ -773,8 +721,7 @@ public class ProtocolAdapterWrapper2 {
         if (!protocolAdapterWritingService.writingEnabled()) {
             return;
         }
-        if (!(adapter instanceof ProtocolAdapter2Bridge bridge)
-                || !(bridge.getDelegate() instanceof WritingProtocolAdapter writingAdapter)) {
+        if (!(getAdapter() instanceof WritingProtocolAdapter writingAdapter)) {
             return;
         }
         LOGGER.debug("Start writing for protocol adapter with id '{}'", getId());
@@ -795,8 +742,7 @@ public class ProtocolAdapterWrapper2 {
      * Called before disconnecting connections during {@link #stop(boolean)}.
      */
     protected void stopWriting() {
-        if (!(adapter instanceof ProtocolAdapter2Bridge bridge)
-                || !(bridge.getDelegate() instanceof WritingProtocolAdapter writingAdapter)) {
+        if (!(getAdapter() instanceof WritingProtocolAdapter writingAdapter)) {
             return;
         }
         LOGGER.debug("Stopping writing for protocol adapter with id '{}'", getId());
