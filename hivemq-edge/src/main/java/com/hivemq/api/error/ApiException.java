@@ -17,17 +17,18 @@ package com.hivemq.api.error;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
  */
 public class ApiException extends RuntimeException {
 
-    private Object subject = null;
-    private String errorMessage;
+    private @Nullable Object subject = null;
+    private @Nullable String errorMessage;
     private int httpStatusCode = 500;
-    private Throwable cause;
-    private String fieldName;
+    private @Nullable Throwable cause;
+    private @Nullable String fieldName;
 
     public ApiException(final @NotNull String errorMessage) {
         this.errorMessage = errorMessage;
@@ -64,7 +65,7 @@ public class ApiException extends RuntimeException {
         this.cause = cause;
     }
 
-    public Object getSubject() {
+    public @Nullable Object getSubject() {
         return subject;
     }
 
@@ -72,7 +73,7 @@ public class ApiException extends RuntimeException {
         this.subject = subject;
     }
 
-    public String getErrorMessage() {
+    public @Nullable String getErrorMessage() {
         return errorMessage;
     }
 
@@ -91,7 +92,7 @@ public class ApiException extends RuntimeException {
     @JsonIgnore
     @SuppressWarnings("UnsynchronizedOverridesSynchronized") // ApiException is not designed for concurrent access
     @Override
-    public Throwable getCause() {
+    public @Nullable Throwable getCause() {
         return cause;
     }
 
@@ -99,7 +100,7 @@ public class ApiException extends RuntimeException {
         this.cause = cause;
     }
 
-    public String getFieldName() {
+    public @Nullable String getFieldName() {
         return fieldName;
     }
 

@@ -21,6 +21,7 @@ import com.hivemq.mqtt.message.Message;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Florian Limpöck
@@ -46,6 +47,7 @@ public interface Mqtt5PUBLISH extends Message {
     /**
      * @return the payload of the publish message
      */
+    @Nullable
     byte[] getPayload();
 
     /**
@@ -91,21 +93,25 @@ public interface Mqtt5PUBLISH extends Message {
     /**
      * @return the payload format indicator of the publish message
      */
+    @Nullable
     Mqtt5PayloadFormatIndicator getPayloadFormatIndicator();
 
     /**
      * @return the content type of the publish message
      */
+    @Nullable
     String getContentType();
 
     /**
      * @return the response topic of the publish message
      */
+    @Nullable
     String getResponseTopic();
 
     /**
      * @return the correlation data of the publish message
      */
+    @Nullable
     byte[] getCorrelationData();
 
     /**
@@ -116,6 +122,7 @@ public interface Mqtt5PUBLISH extends Message {
     /**
      * @return the subscription identifiers of the publish message
      */
+    @Nullable
     ImmutableIntArray getSubscriptionIdentifiers();
 
     /**
@@ -126,5 +133,6 @@ public interface Mqtt5PUBLISH extends Message {
     /**
      * @return the publish payload persistence
      */
+    @Nullable
     PublishPayloadPersistence getPersistence();
 }

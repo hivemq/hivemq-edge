@@ -19,8 +19,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.internal.RecyclableArrayList;
+import org.jetbrains.annotations.Nullable;
+
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -136,6 +139,7 @@ public class UdpChannel extends AbstractChannel {
     }
 
     @Override
+    @Nullable
     protected SocketAddress localAddress0() {
         return channel.localAddress0();
     }

@@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
 public class ProtocolAdapterPublisherJsonPayload extends AbstractProtocolAdapterJsonPayload {
 
     @JsonProperty("value")
-    private @NotNull Object value;
+    private @Nullable Object value;
 
     @JsonProperty("tagName")
     private @Nullable String tagName;
@@ -38,7 +38,7 @@ public class ProtocolAdapterPublisherJsonPayload extends AbstractProtocolAdapter
         this.tagName = sample.getTagName();
     }
 
-    @NotNull
+    @Nullable
     public Object getValue() {
         return value;
     }

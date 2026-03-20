@@ -105,8 +105,8 @@ public class MqttSnDecoder extends ByteToMessageDecoder {
                 if (transcoder.canHandle(transcodingContext, mqttsnMessage.getClass())) {
                     TranscodingResult<IMqttsnMessage, Message> result =
                             transcoder.transcode(transcodingContext, mqttsnMessage);
-                    handled = result.isComplete();
-                    if (handled) {
+                    handled = result != null && result.isComplete();
+                    if (handled && result != null) {
                         Optional<Message> optional = result.getOutput();
                         if (optional.isPresent()) {
                             // Add the output of the transcoder to the pipeline

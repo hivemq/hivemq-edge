@@ -19,6 +19,7 @@ import com.hivemq.configuration.info.SystemInformation;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.io.File;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +42,7 @@ public class LocalPersistenceFileUtil {
     }
 
     public synchronized File getLocalPersistenceFolder() {
-        final File dataFolder = systemInformation.getDataFolder();
+        final File dataFolder = Objects.requireNonNull(systemInformation.getDataFolder());
 
         final File persistenceFolder = new File(dataFolder, PERSISTENCE_SUBFOLDER_NAME);
         if (!persistenceFolder.exists()) {

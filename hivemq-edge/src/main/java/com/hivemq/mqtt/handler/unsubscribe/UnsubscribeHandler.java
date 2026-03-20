@@ -39,6 +39,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,6 +68,7 @@ public class UnsubscribeHandler extends SimpleChannelInboundHandler<UNSUBSCRIBE>
     }
 
     @Override
+    @SuppressWarnings("NullAway") // clientId is always set for connected clients
     protected void channelRead0(final @NotNull ChannelHandlerContext ctx, final @NotNull UNSUBSCRIBE msg)
             throws Exception {
 
@@ -103,7 +105,7 @@ public class UnsubscribeHandler extends SimpleChannelInboundHandler<UNSUBSCRIBE>
                 future,
                 new FutureCallback<>() {
                     @Override
-                    public void onSuccess(final @NotNull Void aVoid) {
+                    public void onSuccess(final @Nullable Void aVoid) {
 
                         for (final String topic : msg.getTopics()) {
                             final SharedSubscription sharedSubscription =

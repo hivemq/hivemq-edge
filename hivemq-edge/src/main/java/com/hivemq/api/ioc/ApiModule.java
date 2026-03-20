@@ -117,6 +117,7 @@ public abstract class ApiModule {
 
     @Provides
     @Singleton
+    @SuppressWarnings("NullAway") // getApiJwtConfiguration() is non-null when API is configured
     static @NotNull JwtAuthenticationProvider jwtAuthenticationProvider(
             final ApiConfigurationService apiConfigurationService) {
         return new JwtAuthenticationProvider(apiConfigurationService.getApiJwtConfiguration());

@@ -45,15 +45,15 @@ public class ApiPermissionUtils {
             if (a != null) {
                 return Optional.of(a);
             }
-            Class<?>[] interfaces = clz.getInterfaces();
-            for (Class<?> c : interfaces) {
+            final Class<?>[] interfaces = clz.getInterfaces();
+            for (final Class<?> c : interfaces) {
                 a = c.getAnnotation(t);
                 if (a != null) {
                     return Optional.of(a);
                 }
             }
             return Optional.empty();
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -67,24 +67,24 @@ public class ApiPermissionUtils {
         Preconditions.checkNotNull(t);
         Preconditions.checkNotNull(method);
         try {
-            T a = method.getAnnotation(t);
+            final T a = method.getAnnotation(t);
             if (a != null) {
                 return Optional.of(a);
             }
-            Class<?> searchClass = method.getDeclaringClass();
-            Class<?>[] interfaces = searchClass.getInterfaces();
-            for (Class c : interfaces) {
+            final Class<?> searchClass = method.getDeclaringClass();
+            final Class<?>[] interfaces = searchClass.getInterfaces();
+            for (final Class<?> c : interfaces) {
                 try {
-                    Method m = c.getMethod(method.getName(), method.getParameterTypes());
-                    T annotation = m.getAnnotation(t);
+                    final Method m = c.getMethod(method.getName(), method.getParameterTypes());
+                    final T annotation = m.getAnnotation(t);
                     if (annotation != null) {
                         return Optional.of(annotation);
                     }
-                } catch (NoSuchMethodException ignored) {
+                } catch (final NoSuchMethodException ignored) {
                 }
             }
             return Optional.empty();
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new RuntimeException(e);
         }
     }

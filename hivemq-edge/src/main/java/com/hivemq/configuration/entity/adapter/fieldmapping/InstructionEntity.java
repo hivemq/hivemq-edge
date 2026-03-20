@@ -32,11 +32,11 @@ public class InstructionEntity implements EntityValidatable {
 
     @JsonProperty("source")
     @XmlElement(name = "source")
-    private @NotNull String sourceFieldName;
+    private @Nullable String sourceFieldName;
 
     @JsonProperty("destination")
     @XmlElement(name = "destination")
-    private @NotNull String destinationFieldName;
+    private @Nullable String destinationFieldName;
 
     @JsonProperty("origin")
     @XmlElement(name = "origin")
@@ -54,11 +54,11 @@ public class InstructionEntity implements EntityValidatable {
         this.origin = origin;
     }
 
-    public @NotNull String getDestinationFieldName() {
+    public @Nullable String getDestinationFieldName() {
         return destinationFieldName;
     }
 
-    public @NotNull String getSourceFieldName() {
+    public @Nullable String getSourceFieldName() {
         return sourceFieldName;
     }
 
@@ -84,8 +84,8 @@ public class InstructionEntity implements EntityValidatable {
 
     public @NotNull Instruction to() {
         return new Instruction(
-                getSourceFieldName(),
-                getDestinationFieldName(),
+                Objects.requireNonNull(getSourceFieldName()),
+                Objects.requireNonNull(getDestinationFieldName()),
                 getOrigin() != null ? DataIdentifierReference.fromPersistence(getOrigin()) : null);
     }
 

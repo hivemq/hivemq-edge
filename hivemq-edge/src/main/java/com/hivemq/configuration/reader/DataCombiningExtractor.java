@@ -20,6 +20,7 @@ import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.combining.DataCombinerEntity;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -56,7 +57,7 @@ public class DataCombiningExtractor
         final var updated = new AtomicBoolean(false);
         final var newConfigs = config.stream()
                 .map(oldInstance -> {
-                    if (oldInstance.getId().equals(dataCombiner.id())) {
+                    if (Objects.equals(oldInstance.getId(), dataCombiner.id())) {
                         updated.set(true);
                         return dataCombiner.toPersistence();
                     } else {
@@ -91,7 +92,7 @@ public class DataCombiningExtractor
 
     public Optional<DataCombiner> getCombinerById(final @NotNull UUID id) {
         return config.stream()
-                .filter(oldInstance -> oldInstance.getId().equals(id))
+                .filter(oldInstance -> Objects.equals(oldInstance.getId(), id))
                 .findFirst()
                 .map(DataCombiner::fromPersistence);
     }
@@ -104,7 +105,7 @@ public class DataCombiningExtractor
         var removed = new AtomicBoolean(false);
         var newConfigs = config.stream()
                 .filter(combiner -> {
-                    if (combiner.getId().equals(dataCombinerId)) {
+                    if (Objects.equals(combiner.getId(), dataCombinerId)) {
                         removed.set(true);
                         return false;
                     }

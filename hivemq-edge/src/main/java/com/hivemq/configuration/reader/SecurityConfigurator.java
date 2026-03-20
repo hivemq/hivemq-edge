@@ -18,13 +18,15 @@ package com.hivemq.configuration.reader;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.SecurityConfigEntity;
 import com.hivemq.configuration.service.SecurityConfigurationService;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class SecurityConfigurator implements Configurator<SecurityConfigEntity> {
 
     protected final @NotNull SecurityConfigurationService securityConfigurationService;
 
-    private volatile SecurityConfigEntity configEntity;
+    private volatile @Nullable SecurityConfigEntity configEntity;
     private volatile boolean initialized = false;
 
     public SecurityConfigurator(final @NotNull SecurityConfigurationService securityConfigurationService) {
@@ -44,14 +46,15 @@ public class SecurityConfigurator implements Configurator<SecurityConfigEntity> 
         this.configEntity = config.getSecurityConfig();
         this.initialized = true;
 
+        final SecurityConfigEntity entity = Objects.requireNonNull(this.configEntity);
         securityConfigurationService.setAllowServerAssignedClientId(
-                configEntity.getAllowEmptyClientIdEntity().isEnabled());
+                entity.getAllowEmptyClientIdEntity().isEnabled());
         securityConfigurationService.setValidateUTF8(
-                configEntity.getUtf8ValidationEntity().isEnabled());
+                entity.getUtf8ValidationEntity().isEnabled());
         securityConfigurationService.setPayloadFormatValidation(
-                configEntity.getPayloadFormatValidationEntity().isEnabled());
+                entity.getPayloadFormatValidationEntity().isEnabled());
         securityConfigurationService.setAllowRequestProblemInformation(
-                configEntity.getAllowRequestProblemInformationEntity().isEnabled());
+                entity.getAllowRequestProblemInformationEntity().isEnabled());
 
         return ConfigResult.SUCCESS;
     }

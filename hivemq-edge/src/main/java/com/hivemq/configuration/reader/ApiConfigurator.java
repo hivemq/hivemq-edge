@@ -42,6 +42,7 @@ import com.hivemq.http.core.UsernamePasswordRoles;
 import jakarta.inject.Inject;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -65,8 +66,8 @@ public class ApiConfigurator implements Configurator<AdminApiEntity> {
 
     private static @NotNull UsernamePasswordRoles fromModel(final @NotNull UserEntity userEntity) {
         return new UsernamePasswordRoles(
-                userEntity.getUserName(),
-                userEntity.getPassword().getBytes(StandardCharsets.UTF_8),
+                Objects.requireNonNull(userEntity.getUserName()),
+                Objects.requireNonNull(userEntity.getPassword()).getBytes(StandardCharsets.UTF_8),
                 Set.copyOf(userEntity.getRoles()));
     }
 

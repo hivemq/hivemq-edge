@@ -28,6 +28,7 @@ import com.hivemq.persistence.util.FutureUtils;
 import io.netty.channel.Channel;
 import java.util.concurrent.CancellationException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,7 +83,7 @@ public class PublishStatusFutureCallback implements FutureCallback<PublishStatus
     }
 
     @Override
-    public void onSuccess(final PublishStatus status) {
+    public void onSuccess(final @Nullable PublishStatus status) {
         try {
             if (status == PublishStatus.IN_PROGRESS) {
                 log.error("'IN_PROGRESS' is not an expected publish status in the PublishStatusFutureCallback");

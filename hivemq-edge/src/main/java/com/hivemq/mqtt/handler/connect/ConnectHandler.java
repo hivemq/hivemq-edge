@@ -509,6 +509,7 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
         return false;
     }
 
+    @SuppressWarnings("NullAway") // connackWillNotAuthorized is only called when will publish is present
     private void connackWillNotAuthorized(
             final @NotNull ChannelHandlerContext ctx,
             final @NotNull CONNECT msg,
@@ -731,11 +732,18 @@ public class ConnectHandler extends SimpleChannelInboundHandler<CONNECT> {
             }
         });
 
+        final com.google.common.util.concurrent.SettableFuture<Void> disconnectFuture =
+                persistedClientConnection.getDisconnectFuture();
+        if (disconnectFuture == null) {
+            // Already disconnected, retry immediately
+            disconnectClientWithSameClientId(clientConnection, ctx, msg);
+            return;
+        }
         Futures.addCallback(
-                persistedClientConnection.getDisconnectFuture(),
+                disconnectFuture,
                 new FutureCallback<>() {
                     @Override
-                    public void onSuccess(final Void result) {
+                    public void onSuccess(final @Nullable Void result) {
                         disconnectClientWithSameClientId(clientConnection, ctx, msg);
                     }
 

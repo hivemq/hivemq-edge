@@ -36,6 +36,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slj.mqtt.sn.codec.MqttsnCodecs;
@@ -50,7 +51,7 @@ public class GatewayBroadcastServiceImpl implements IGatewayBroadcastService {
 
     private final @NotNull ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
     final @NotNull MqttsnConfigurationService mqttsnConfigurationService;
-    private volatile ScheduledFuture task;
+    private volatile @Nullable ScheduledFuture task;
     private final @NotNull Object mutex = new Object();
 
     @Inject

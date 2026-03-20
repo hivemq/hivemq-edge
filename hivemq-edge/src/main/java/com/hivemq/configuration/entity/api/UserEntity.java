@@ -24,26 +24,27 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 @XmlRootElement(name = "user")
 @XmlAccessorType(XmlAccessType.NONE)
 public class UserEntity {
     @XmlElement(name = "username")
-    private String userName = null;
+    private @Nullable String userName = null;
 
     @XmlElement(name = "password")
-    private String password = null;
+    private @Nullable String password = null;
 
     @XmlElementWrapper(name = "roles")
     @XmlElement(name = "role")
     private @NotNull List<String> roles = new ArrayList<>();
 
-    public String getUserName() {
+    public @Nullable String getUserName() {
         return userName;
     }
 
-    public String getPassword() {
+    public @Nullable String getPassword() {
         return password;
     }
 

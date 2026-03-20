@@ -116,7 +116,7 @@ public class PublishTopicTree {
             final String currentSubTopic = subTopics.get(0);
 
             if (child != null) {
-                if (childSubTopic.equals(currentSubTopic)) {
+                if (currentSubTopic.equals(childSubTopic)) {
                     final ArrayList<String> nextSubTopics = new ArrayList<>(subTopics);
                     nextSubTopics.remove(0);
                     final boolean removed = child.remove(nextSubTopics);
@@ -129,7 +129,7 @@ public class PublishTopicTree {
                     return false;
                 }
             } else {
-                final Node node = childNodes.get(currentSubTopic);
+                final Node node = Objects.requireNonNull(childNodes).get(currentSubTopic);
                 if (node == null) {
                     return false;
                 }
@@ -220,7 +220,7 @@ public class PublishTopicTree {
                         return result;
                     }
                 } else {
-                    if (child == null || !childSubTopic.equals(currentSubTopic)) {
+                    if (child == null || !currentSubTopic.equals(childSubTopic)) {
                         return result;
                     }
                     nextChild = child;

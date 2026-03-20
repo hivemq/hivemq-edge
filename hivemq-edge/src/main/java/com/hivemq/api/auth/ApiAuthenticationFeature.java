@@ -33,13 +33,14 @@ import jakarta.ws.rs.core.FeatureContext;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.ext.Provider;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.Set;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A feature that binds in the Auth lifecycle using a dynamic feature. During bootstrap the Resources
@@ -96,9 +97,11 @@ public class ApiAuthenticationFeature implements DynamicFeature {
     }
 
     protected ApiSecurityContext createSecurityContext(final @NotNull AuthenticationResult result) {
-        ApiSecurityContext context =
-                new ApiSecurityContext(result.getPrincipal(), result.getAuthenticationMethod(), true);
-        return context;
+        final ApiPrincipal principal = result.getPrincipal();
+        if (principal == null) {
+            throw new IllegalStateException("Authentication succeeded but principal is null");
+        }
+        return new ApiSecurityContext(principal, result.getAuthenticationMethod(), true);
     }
 
     /**
@@ -127,19 +130,21 @@ public class ApiAuthenticationFeature implements DynamicFeature {
             try {
 
                 // first check the authorization and set the security context if authentication was successful
-                ChainedAuthenticationHandler handler = new ChainedAuthenticationHandler(authenticationHandler);
-                AuthenticationResult result = handler.authenticate(requestContext);
-                if (!result.isSuccess()) {
+                final ChainedAuthenticationHandler handler = new ChainedAuthenticationHandler(authenticationHandler);
+                final AuthenticationResult result = handler.authenticate(requestContext);
+                if (result == null || !result.isSuccess()) {
                     log.debug(
                             "Authentication failed for resource {}",
                             requestContext.getUriInfo().getPath());
                     // a bit counterintuitive but HTTP response codes specify UNAUTHORIZED(401) if authentication fails
-                    Response.ResponseBuilder builder = Response.status(Response.Status.UNAUTHORIZED);
-                    handler.decorateResponse(result, builder);
+                    final Response.ResponseBuilder builder = Response.status(Response.Status.UNAUTHORIZED);
+                    if (result != null) {
+                        handler.decorateResponse(result, builder);
+                    }
                     requestContext.abortWith(builder.build());
                     return;
                 } else {
-                    SecurityContext context = createSecurityContext(result);
+                    final SecurityContext context = createSecurityContext(result);
                     requestContext.setSecurityContext(context);
                     if (log.isTraceEnabled()) {
                         log.trace(
@@ -157,7 +162,7 @@ public class ApiAuthenticationFeature implements DynamicFeature {
                                 requestContext.getUriInfo().getPath(),
                                 requestContext.getSecurityContext());
                         // a bit counterintuitive but HTTP response codes specify FORBIDDEN(403) if authorization fails
-                        Response.ResponseBuilder builder = Response.status(Response.Status.FORBIDDEN);
+                        final Response.ResponseBuilder builder = Response.status(Response.Status.FORBIDDEN);
                         handler.decorateResponse(result, builder);
                         requestContext.abortWith(builder.build());
                     } else {

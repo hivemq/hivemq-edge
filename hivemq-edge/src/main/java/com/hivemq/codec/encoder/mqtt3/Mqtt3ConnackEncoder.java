@@ -44,16 +44,19 @@ public class Mqtt3ConnackEncoder implements MqttEncoder<Mqtt3CONNACK> {
         out.writeByte(CONNACK_REMAINING_LENGTH);
 
         final Mqtt3ConnAckReturnCode returnCode = msg.getReturnCode();
-        switch (clientConnection.getProtocolVersion()) {
-            case MQTTv3_1 -> out.writeByte(CONNACK_FLAGS_EMPTY);
-            case MQTTv3_1_1 -> {
-                if (returnCode == Mqtt3ConnAckReturnCode.ACCEPTED && msg.isSessionPresent()) {
-                    out.writeByte(CONNACK_FLAGS_SP_SET);
-                } else {
-                    out.writeByte(CONNACK_FLAGS_EMPTY);
+        final var protocolVersion = clientConnection.getProtocolVersion();
+        if (protocolVersion != null) {
+            switch (protocolVersion) {
+                case MQTTv3_1 -> out.writeByte(CONNACK_FLAGS_EMPTY);
+                case MQTTv3_1_1 -> {
+                    if (returnCode == Mqtt3ConnAckReturnCode.ACCEPTED && msg.isSessionPresent()) {
+                        out.writeByte(CONNACK_FLAGS_SP_SET);
+                    } else {
+                        out.writeByte(CONNACK_FLAGS_EMPTY);
+                    }
                 }
+                default -> {}
             }
-            default -> {}
         }
         out.writeByte(returnCode.getCode());
     }

@@ -22,6 +22,7 @@ import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Dominik Obermaier
@@ -46,7 +47,7 @@ public class Strings {
      * indicated by the prefixed 16-bit length.
      * @throws NullPointerException if the passed {@link ByteBuf} is <code>null</code>
      */
-    public static String getPrefixedString(final ByteBuf buf) {
+    public static @Nullable String getPrefixedString(final ByteBuf buf) {
         checkNotNull(buf);
         if (buf.readableBytes() < 2) {
             return null;
@@ -61,7 +62,7 @@ public class Strings {
         return getPrefixedString(buf, utf8StringLength);
     }
 
-    public static String getPrefixedString(final ByteBuf buf, final int utf8StringLength) {
+    public static @Nullable String getPrefixedString(final ByteBuf buf, final int utf8StringLength) {
         checkNotNull(buf);
         final String string = buf.toString(buf.readerIndex(), utf8StringLength, UTF_8);
         // The ByteBuf.toString method, doesn't move the read index, therefor we have to do this manually.
@@ -69,7 +70,7 @@ public class Strings {
         return string;
     }
 
-    public static String getValidatedPrefixedString(
+    public static @Nullable String getValidatedPrefixedString(
             final @NotNull ByteBuf buf, final int utf8StringLength, final boolean validateShouldNotCharacters) {
         checkNotNull(buf);
 

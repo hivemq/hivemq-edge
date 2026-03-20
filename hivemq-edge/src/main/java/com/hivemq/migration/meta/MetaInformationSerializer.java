@@ -127,7 +127,7 @@ public class MetaInformationSerializer {
         return metaInformation;
     }
 
-    private PersistenceMode getTypeFromBuffer(final ByteBuffer metaFileAsByteBuffer) {
+    private @Nullable PersistenceMode getTypeFromBuffer(final ByteBuffer metaFileAsByteBuffer) {
         final byte typeAsByte = metaFileAsByteBuffer.get();
         return typeAsByte > -1 ? PersistenceMode.forCode(typeAsByte) : null;
     }

@@ -69,6 +69,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
@@ -132,6 +133,8 @@ public class ConfigFileReaderWriter {
                     .add(UDPListenerEntity.class)
                     .add(UDPBroadcastListenerEntity.class)
                     .add(FieldMappingEntity.class)
+                    .add(TruststoreEntity.class)
+                    .add(KeystoreEntity.class)
                     .build()
                     .toArray(new Class<?>[0]));
         } catch (final Throwable e) {
@@ -302,7 +305,11 @@ public class ConfigFileReaderWriter {
             log.error("Unable to apply the given configuration.");
             throw new UnrecoverableException(false);
         }
-        return configEntity.get();
+        final HiveMQConfigEntity entity = configEntity.get();
+        if (entity == null) {
+            throw new UnrecoverableException(false);
+        }
+        return entity;
     }
 
     public void applyConfigAndWatch(final long checkIntervalInMs) {
@@ -584,14 +591,14 @@ public class ConfigFileReaderWriter {
             }
 
             log.info("Rereading config file every {} ms", interval);
-            executorService
-                    .get()
-                    .scheduleAtFixedRate(
-                            () -> scheduledTask.executePeriodicTask(
-                                    configFile, fileModified, fileModificationTimestamps),
-                            0,
-                            interval,
-                            TimeUnit.MILLISECONDS);
+            // executorService was just set via compareAndSet, so it cannot be null here
+            final ScheduledExecutorService scheduler = Objects.requireNonNull(executorService.get());
+            scheduler.scheduleAtFixedRate(
+                    () -> scheduledTask.executePeriodicTask(
+                            configFile, fileModified, fileModificationTimestamps),
+                    0,
+                    interval,
+                    TimeUnit.MILLISECONDS);
             Runtime.getRuntime().addShutdownHook(new Thread(this::stopWatching));
         } else {
             throw new IllegalStateException("Config watch was already started");

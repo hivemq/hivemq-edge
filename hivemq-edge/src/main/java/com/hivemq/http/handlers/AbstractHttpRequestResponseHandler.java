@@ -35,6 +35,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -147,7 +148,7 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
         }
     }
 
-    protected void writeASCIIResponse(final IHttpRequestResponse request, final int responseCode, final String message)
+    protected void writeASCIIResponse(final IHttpRequestResponse request, final int responseCode, final @Nullable String message)
             throws IOException {
         writeResponseInternal(
                 request,
@@ -227,6 +228,10 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
             sendNotFoundResponse(requestResponse);
         } else {
             final var ext = Files.getFileExtension(resourcePath);
+            if (ext == null) {
+                sendNotFoundResponse(requestResponse);
+                return;
+            }
             final var mimeType = HttpUtils.getMimeTypeFromFileExtension(ext);
             writeStreamResponse(requestResponse, HttpConstants.SC_OK, mimeType, is);
         }
@@ -273,7 +278,7 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
             value = value.substring(value.lastIndexOf(" ") + 1);
             value = new String(Base64.getDecoder().decode(value), StandardCharsets.UTF_8);
             final List<String> userNamePassword = Splitter.on(':').splitToList(value);
-            if (usernamePassword.getUserName().equals(userNamePassword.get(0))
+            if (userNamePassword.get(0).equals(usernamePassword.getUserName())
                     && Objects.deepEquals(
                             usernamePassword.getPassword(),
                             userNamePassword.get(1).getBytes(StandardCharsets.UTF_8))) {
@@ -289,14 +294,14 @@ public abstract class AbstractHttpRequestResponseHandler implements IHttpRequest
         return false;
     }
 
-    protected UsernamePasswordRoles getRequiredCredentials(final IHttpRequestResponse request) {
+    protected @Nullable UsernamePasswordRoles getRequiredCredentials(final IHttpRequestResponse request) {
         return null;
     }
 
     public static class Message {
 
-        public String title;
-        public String message;
+        public @Nullable String title;
+        public @Nullable String message;
         public boolean success;
 
         public Message() {}

@@ -19,12 +19,13 @@ import com.hivemq.datagov.model.DataGovernanceData;
 import com.hivemq.datagov.model.DataGovernanceResult;
 import com.hivemq.datagov.provider.DataGovernanceTokenProvider;
 import java.util.concurrent.ExecutorService;
+import org.jetbrains.annotations.Nullable;
 
 public interface DataGovernanceContext {
 
     DataGovernanceData getInput();
 
-    DataGovernanceResult getResult();
+    @Nullable DataGovernanceResult getResult();
 
     DataGovernanceTokenProvider getTokenProvider();
 

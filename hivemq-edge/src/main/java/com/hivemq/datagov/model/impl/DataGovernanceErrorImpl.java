@@ -18,24 +18,33 @@ package com.hivemq.datagov.model.impl;
 import com.hivemq.datagov.model.DataGovernanceError;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
  */
+@SuppressWarnings("NullAway") // Optional fields are nullable but always initialized before getter access
 public class DataGovernanceErrorImpl implements DataGovernanceError {
 
-    private Optional<Throwable> error;
-    private Optional<String> pipelineId;
-    private Optional<String> functionId;
-    private Optional<String> validatorId;
-    private Optional<String> message;
+    private @NotNull Optional<Throwable> error;
+    private @NotNull Optional<String> pipelineId;
+    private @NotNull Optional<String> functionId;
+    private @NotNull Optional<String> validatorId;
+    private @NotNull Optional<String> message;
 
     public DataGovernanceErrorImpl(final @NotNull Throwable error) {
         this.error = Optional.of(error);
+        this.pipelineId = Optional.empty();
+        this.functionId = Optional.empty();
+        this.validatorId = Optional.empty();
         this.message = Optional.ofNullable(error.getMessage());
     }
 
     public DataGovernanceErrorImpl(final @NotNull String message) {
+        this.error = Optional.empty();
+        this.pipelineId = Optional.empty();
+        this.functionId = Optional.empty();
+        this.validatorId = Optional.empty();
         this.message = Optional.of(message);
     }
 

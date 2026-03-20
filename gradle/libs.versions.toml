@@ -48,6 +48,7 @@ mqtt-sn-codec = "838f51d691"
 mssql = "12.10.2.jre11"
 mtconnect-protocol = "1.0.0"
 netty = "4.2.10.Final"
+nullaway = "0.13.1"
 pmd = "6.55.0"
 postgresql = "42.7.10"
 protobuf = "4.33.5"
@@ -67,14 +68,14 @@ zeroallocationhashing = "0.27ea1"
 plugin-cyclonedx = "1.10.0"
 plugin-spotless = "7.2.1"
 plugin-defaults = "0.2.0"
-plugin-errorprone = "4.4.0"
+plugin-errorprone = "5.1.0"
 plugin-forbiddenapis = "3.10"
 plugin-github-release = "2.5.2"
 plugin-javadoc-links = "0.9.0"
-plugin-license = "0.16.1"
+plugin-hivemq-license = "1.0.0"
 plugin-metadata = "0.6.0"
 plugin-openapigenerator = "7.20.0"
-plugin-shadow = "8.3.9"
+plugin-shadow = "9.3.2"
 plugin-spotbugs = "6.4.8"
 plugin-versions = "0.53.0"
 
@@ -142,6 +143,7 @@ mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.
 mqtt-sn-codec = { module = "com.github.simon622.mqtt-sn:mqtt-sn-codec", version.ref = "mqtt-sn-codec" }
 mssql = { module = "com.microsoft.sqlserver:mssql-jdbc", version.ref = "mssql" }
 mtconnect-protocol = { module = "com.hivemq:hivemq-mtconnect-protocol", version.ref = "mtconnect-protocol"}
+nullaway = { module = "com.uber.nullaway:nullaway", version.ref = "nullaway" }
 netty-buffer = { module = "io.netty:netty-buffer", version.ref = "netty" }
 netty-codec = { module = "io.netty:netty-codec", version.ref = "netty" }
 netty-codec-http = { module = "io.netty:netty-codec-http", version.ref = "netty" }
@@ -177,7 +179,7 @@ errorprone = { id = "net.ltgt.errorprone", version.ref = "plugin-errorprone" }
 forbiddenapis = { id = "de.thetaphi.forbiddenapis", version.ref = "plugin-forbiddenapis" }
 githubrelease = { id = "com.github.breadmoirai.github-release", version.ref = "plugin-github-release" }
 javadoclinks = { id = "io.github.sgtsilvio.gradle.javadoc-links", version.ref = "plugin-javadoc-links" }
-license = { id = "com.github.hierynomus.license", version.ref = "plugin-license" }
+hivemq-license = { id = "com.hivemq.tools.license", version.ref = "plugin-hivemq-license" }
 metadata = { id = "io.github.sgtsilvio.gradle.metadata", version.ref = "plugin-metadata" }
 openapi-generator = { id = "org.openapi.generator", version.ref = "plugin-openapigenerator" }
 shadow = { id = "com.gradleup.shadow", version.ref = "plugin-shadow" }

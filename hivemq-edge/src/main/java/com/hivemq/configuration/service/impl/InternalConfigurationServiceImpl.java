@@ -23,6 +23,7 @@ import com.hivemq.configuration.service.InternalConfigurations;
 import jakarta.inject.Singleton;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +35,7 @@ public class InternalConfigurationServiceImpl implements InternalConfigurationSe
     private final @NotNull Map<String, String> values = Maps.newConcurrentMap();
 
     @Override
-    public @NotNull String get(final @NotNull String key) {
+    public @Nullable String get(final @NotNull String key) {
         final String value = values.get(key);
         if (value != null) {
             return value;

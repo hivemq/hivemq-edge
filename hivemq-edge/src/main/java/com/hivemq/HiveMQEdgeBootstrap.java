@@ -107,7 +107,7 @@ public class HiveMQEdgeBootstrap {
         }
 
         log.trace("Initializing Logging");
-        LoggingBootstrap.initLogging(systemInformation.getConfigFolder());
+        LoggingBootstrap.initLogging(Objects.requireNonNull(systemInformation.getConfigFolder()));
 
         // load available modules after system information is bootstrapped and logging is bootstrapped.
         moduleLoader.loadModules();
@@ -117,7 +117,7 @@ public class HiveMQEdgeBootstrap {
 
         // ungraceful shutdown does not delete tmp folders, so we clean them up on broker start
         log.trace("Cleaning up temporary folders");
-        deleteTmpFolder(systemInformation.getDataFolder());
+        deleteTmpFolder(Objects.requireNonNull(systemInformation.getDataFolder()));
 
         // it is not null in case of integration tests
         // it is null when edge is started "usually"
@@ -164,7 +164,7 @@ public class HiveMQEdgeBootstrap {
         log.trace("Initializing injector");
         final long startDagger = System.currentTimeMillis();
         injector = DaggerInjector.builder()
-                .configurationService(configService)
+                .configurationService(Objects.requireNonNull(configService))
                 .systemInformation(systemInformation)
                 .metricRegistry(metricRegistry)
                 .persistenceService(persistencesService)
@@ -176,8 +176,8 @@ public class HiveMQEdgeBootstrap {
                 .restComponentService(restComponentsService)
                 .restComponentsHolder(genericAPIHolder)
                 .connectionPersistence(connectionPersistence)
-                .commercialModuleDiscovery(commercialModuleLoaderDiscovery)
-                .generalBootstrapService(generalBootstrapService)
+                .commercialModuleDiscovery(Objects.requireNonNull(commercialModuleLoaderDiscovery))
+                .generalBootstrapService(Objects.requireNonNull(generalBootstrapService))
                 .hivemqId(hivemqId)
                 .edgeCoreFactoryService(edgeCoreFactoryService)
                 .build();

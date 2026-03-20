@@ -19,6 +19,7 @@ import com.hivemq.persistence.mappings.fieldmapping.FieldMapping;
 import com.hivemq.protocols.InternalWritingContext;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class SouthboundMapping implements InternalWritingContext {
 
@@ -49,6 +50,7 @@ public class SouthboundMapping implements InternalWritingContext {
     }
 
     @Override
+    @SuppressWarnings("NullAway") // SouthboundMapping may have null fieldMapping; callers handle it
     public @NotNull FieldMapping getFieldMapping() {
         return fieldMapping;
     }

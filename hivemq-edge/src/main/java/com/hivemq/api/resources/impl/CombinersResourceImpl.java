@@ -181,6 +181,7 @@ public class CombinersResourceImpl implements CombinersApi {
         return Response.ok().entity(new InstructionList(instructions)).build();
     }
 
+    @SuppressWarnings("NullAway") // dataIdentifierReference is checked non-null via Objects.nonNull filter above
     private @NotNull Optional<Response> checkDataCombiner(final @NotNull DataCombiner dataCombiner) {
         if (dataCombiner.entityReferences().stream()
                 .anyMatch(entityReference -> entityReference.type() == EntityType.PULSE_AGENT)) {

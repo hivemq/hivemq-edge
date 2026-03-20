@@ -180,7 +180,9 @@ public class HiveMQEdgeMain {
 
     @VisibleForTesting
     public void shutdownProtocolAdapters() {
-        injector.protocolAdapterManager().shutdown();
+        if (injector != null) {
+            injector.protocolAdapterManager().shutdown();
+        }
         try {
             Runtime.getRuntime().removeShutdownHook(shutdownThread);
         } catch (final IllegalStateException ignored) {

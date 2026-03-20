@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,7 +86,7 @@ public class PendingWillMessages {
         checkNotNull(clientId, "Client id must not be null");
         checkNotNull(session, "Client session must not be null");
         final ClientSessionWill sessionWill = session.getWillPublish();
-        if (session.getWillPublish() == null) {
+        if (sessionWill == null) {
             return;
         }
         if (sessionWill.getDelayInterval() == 0
@@ -158,8 +159,10 @@ public class PendingWillMessages {
                 future,
                 new FutureCallback<>() {
                     @Override
-                    public void onSuccess(final @NotNull Map<String, PendingWill> result) {
-                        pendingWills.putAll(result);
+                    public void onSuccess(final @Nullable Map<String, PendingWill> result) {
+                        if (result != null) {
+                            pendingWills.putAll(result);
+                        }
                     }
 
                     @Override
@@ -185,7 +188,7 @@ public class PendingWillMessages {
                 publishFuture,
                 new FutureCallback<>() {
                     @Override
-                    public void onSuccess(final @NotNull PublishingResult result) {
+                    public void onSuccess(final @Nullable PublishingResult result) {
                         metricsHolder.getPublishedWillMessagesCount().inc();
                     }
 

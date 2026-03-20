@@ -33,6 +33,7 @@ import java.util.Scanner;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
@@ -162,9 +163,15 @@ public class CreateAdapterBlueprint {
             System.exit(1);
         }
 
-        if (!adapterName.matches("^[a-zA-Z0-9]*$")) {
+        if (adapterName == null || !adapterName.matches("^[a-zA-Z0-9]*$")) {
             System.err.println("Adapter must contain only alpha numeric values " + adapterName);
             System.exit(1);
+            return;
+        }
+        if (templateFile == null || moduleDirectory == null) {
+            System.err.println("Could not determine template or module directory");
+            System.exit(1);
+            return;
         }
 
         final var adapterModuleName = adapterName.toLowerCase(Locale.ROOT);
@@ -187,7 +194,7 @@ public class CreateAdapterBlueprint {
                 7);
     }
 
-    protected static File detectEdgeHomeDir() {
+    protected static @Nullable File detectEdgeHomeDir() {
         File edgeHome = null;
         final var file = new File(System.getProperty("user.dir"));
         if (file.exists() && file.isDirectory()) {

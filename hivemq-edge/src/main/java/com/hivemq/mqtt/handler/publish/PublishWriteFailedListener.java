@@ -48,7 +48,7 @@ public class PublishWriteFailedListener implements GenericFutureListener<Future<
             } else if (cause instanceof EncoderException) {
                 Exceptions.rethrowError("Failed to write publish. Encoding Failure.", cause);
                 final Throwable rootCause = cause.getCause();
-                if (cause != rootCause) {
+                if (rootCause != null && cause != rootCause) {
                     Exceptions.rethrowError("Failed to write publish. Encoding Failure, root cause:", rootCause);
                 }
                 statusFuture.set(PublishStatus.FAILED);

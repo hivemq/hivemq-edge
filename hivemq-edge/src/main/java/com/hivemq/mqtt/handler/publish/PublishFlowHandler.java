@@ -46,6 +46,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -194,8 +195,9 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
         super.channelInactive(ctx);
     }
 
+    @SuppressWarnings("NullAway") // client is always set when PUBLISH messages are flowing
     private void handlePublish(
-            final @NotNull ChannelHandlerContext ctx, final @NotNull PUBLISH publish, final @NotNull String client)
+            final @NotNull ChannelHandlerContext ctx, final @NotNull PUBLISH publish, final @Nullable String client)
             throws Exception {
         if (publish.getQoS() == QoS.AT_MOST_ONCE) { // do nothing
             incomingPublishHandler.interceptOrDelegate(ctx, publish, client);
@@ -237,7 +239,7 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
     }
 
     private void handlePuback(
-            final @NotNull ChannelHandlerContext ctx, final PUBACK msg, final @NotNull String client) {
+            final @NotNull ChannelHandlerContext ctx, final PUBACK msg, final @Nullable String client) {
 
         log.trace("Client {}: Received PUBACK", client);
         final int messageId = msg.getPacketIdentifier();
@@ -247,8 +249,9 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
         }
     }
 
+    @SuppressWarnings("NullAway") // client is always set when PUBREC messages are flowing
     private void handlePubrec(
-            final @NotNull ChannelHandlerContext ctx, final @NotNull PUBREC msg, final @NotNull String client) {
+            final @NotNull ChannelHandlerContext ctx, final @NotNull PUBREC msg, final @Nullable String client) {
         log.trace("Client {}: Received pubrec", client);
 
         if (msg.getReasonCode() != Mqtt5PubRecReasonCode.SUCCESS
@@ -265,6 +268,7 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
         ctx.channel().writeAndFlush(new PUBREL(msg.getPacketIdentifier()));
     }
 
+    @SuppressWarnings("NullAway") // clientId is always set when messages are flowing
     private void handlePubrel(final ChannelHandlerContext ctx, final PUBREL pubrel) {
         final String client = ctx.channel()
                 .attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)
@@ -278,7 +282,7 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
     }
 
     private void handlePubcomp(
-            final @NotNull ChannelHandlerContext ctx, final @NotNull PUBCOMP msg, final @NotNull String client) {
+            final @NotNull ChannelHandlerContext ctx, final @NotNull PUBCOMP msg, final @Nullable String client) {
         log.trace("Client {}: Received PUBCOMP", client);
 
         orderedTopicService.messageFlowComplete(ctx, msg.getPacketIdentifier());
@@ -291,12 +295,12 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
     private static class PubcompSentListener implements ChannelFutureListener {
 
         private final int messageId;
-        private final @NotNull String client;
+        private final @Nullable String client;
         private final @NotNull IncomingMessageFlowPersistence persistence;
 
         PubcompSentListener(
                 final int messageId,
-                final @NotNull String client,
+                final @Nullable String client,
                 final @NotNull IncomingMessageFlowPersistence persistence) {
             this.messageId = messageId;
             this.client = client;
@@ -304,6 +308,7 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
         }
 
         @Override
+        @SuppressWarnings("NullAway") // client is always set when PUBCOMP messages are flowing
         public void operationComplete(final ChannelFuture future) throws Exception {
             if (future.isSuccess()) {
                 UNACKNOWLEDGED_PUBLISHES_COUNTER.decrementAndGet();

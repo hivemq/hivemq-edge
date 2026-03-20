@@ -15,9 +15,11 @@
  */
 package com.hivemq.http.core;
 
+import org.jetbrains.annotations.Nullable;
+
 public class HttpException extends Exception {
 
-    private String responseMessage;
+    private @Nullable String responseMessage;
     private int responseCode;
 
     private HttpException() {}
@@ -26,17 +28,17 @@ public class HttpException extends Exception {
         this(responseCode, responseMessage, null);
     }
 
-    public HttpException(int responseCode, String responseMessage, Throwable cause) {
+    public HttpException(int responseCode, String responseMessage, @Nullable Throwable cause) {
         super(responseMessage, cause);
         this.responseCode = responseCode;
         setResponseMessage(responseMessage);
     }
 
-    public String getResponseMessage() {
+    public @Nullable String getResponseMessage() {
         return responseMessage == null ? super.getMessage() : responseMessage;
     }
 
-    public void setResponseMessage(String responseMessage) {
+    public void setResponseMessage(@Nullable String responseMessage) {
         this.responseMessage = responseMessage;
     }
 

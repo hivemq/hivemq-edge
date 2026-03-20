@@ -266,7 +266,11 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
         if (payload != null) {
             return payload;
         }
-        return persistence.get(publishId);
+        final PublishPayloadPersistence localPersistence = persistence;
+        if (localPersistence == null) {
+            return null;
+        }
+        return localPersistence.get(publishId);
     }
 
     @Override
@@ -454,7 +458,7 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
         return sizeInMemory;
     }
 
-    public void setPayload(byte[] payload) {
+    public void setPayload(final byte @Nullable [] payload) {
         this.payload = payload;
     }
 }

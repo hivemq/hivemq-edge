@@ -47,8 +47,10 @@ import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverter;
 import com.hivemq.edge.adapters.opcua.southbound.OpcUaPayload;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadLocalRandom;
@@ -328,10 +330,11 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
             if (opcUaClientConnection.compareAndSet(null, newConn)) {
                 // Create a minimal ProtocolAdapterStartInput for attemptConnection
+                final ModuleServices ms = Objects.requireNonNull(moduleServices);
                 final ProtocolAdapterStartInput input = new ProtocolAdapterStartInput() {
                     @Override
                     public @NotNull ModuleServices moduleServices() {
-                        return moduleServices;
+                        return ms;
                     }
                 };
                 attemptConnection(newConn, parsedConfig, input);
@@ -356,7 +359,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         }
 
         final long healthCheckIntervalMs = config.getConnectionOptions().healthCheckIntervalMs();
-        final ScheduledFuture<?> future = healthCheckScheduler.scheduleAtFixedRate(
+        final ScheduledFuture<?> future = Objects.requireNonNull(healthCheckScheduler).scheduleAtFixedRate(
                 () -> {
                     // Check if adapter was stopped before health check executes
                     if (stopped) {
@@ -732,38 +735,55 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 adapterId,
                 backoffDelayMs);
 
-        final ScheduledFuture<?> future = retryScheduler.schedule(
-                () -> {
-                    // Check if adapter was stopped before retry executes
-                    if (stopped || this.parsedConfig == null || this.moduleServices == null) {
-                        log.debug("OPC UA adapter '{}' retry cancelled - adapter was stopped", adapterId);
-                        return;
-                    }
+        // Capture scheduler reference to avoid races with shutdown setting it to null
+        final ScheduledExecutorService scheduler = retryScheduler;
+        if (scheduler == null) {
+            log.debug("Skipping retry scheduling for adapter '{}' - retry scheduler is not available", adapterId);
+            return;
+        }
 
-                    log.info("Executing retry attempt #{} for OPC UA adapter '{}'", attemptCount, adapterId);
+        final ScheduledFuture<?> future;
+        try {
+            future = scheduler.schedule(
+                    () -> {
+                        // Check if adapter was stopped before retry executes
+                        if (stopped || this.parsedConfig == null || this.moduleServices == null) {
+                            log.debug("OPC UA adapter '{}' retry cancelled - adapter was stopped", adapterId);
+                            return;
+                        }
 
-                    // Create new connection object for retry
-                    final OpcUaClientConnection newConn = new OpcUaClientConnection(
-                            adapterId,
-                            tagList,
-                            protocolAdapterState,
-                            this.moduleServices.protocolAdapterTagStreamingService(),
-                            dataPointFactory,
-                            this.moduleServices.eventService(),
-                            protocolAdapterMetricsService,
-                            config,
-                            opcUaServiceFaultListener);
+                        log.info("Executing retry attempt #{} for OPC UA adapter '{}'", attemptCount, adapterId);
 
-                    // Set as current connection and attempt
-                    protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
-                    if (opcUaClientConnection.compareAndSet(null, newConn)) {
-                        attemptConnection(newConn, this.parsedConfig, input);
-                    } else {
-                        log.debug("OPC UA adapter '{}' retry skipped - connection already exists", adapterId);
-                    }
-                },
-                backoffDelayMs,
-                TimeUnit.MILLISECONDS);
+                        // Create new connection object for retry
+                        final OpcUaClientConnection newConn = new OpcUaClientConnection(
+                                adapterId,
+                                tagList,
+                                protocolAdapterState,
+                                this.moduleServices.protocolAdapterTagStreamingService(),
+                                dataPointFactory,
+                                this.moduleServices.eventService(),
+                                protocolAdapterMetricsService,
+                                config,
+                                opcUaServiceFaultListener);
+
+                        // Set as current connection and attempt
+                        protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+                        if (opcUaClientConnection.compareAndSet(null, newConn)) {
+                            attemptConnection(newConn, this.parsedConfig, input);
+                        } else {
+                            log.debug("OPC UA adapter '{}' retry skipped - connection already exists", adapterId);
+                        }
+                    },
+                    backoffDelayMs,
+                    TimeUnit.MILLISECONDS);
+        } catch (final RejectedExecutionException e) {
+            if (scheduler.isShutdown()) {
+                log.debug("OPC UA adapter '{}' retry scheduling rejected, executor is shutting down.", adapterId);
+                return;
+            } else {
+                throw e;
+            }
+        }
 
         // Store future so it can be cancelled if needed
         final ScheduledFuture<?> oldFuture = retryFuture.getAndSet(future);

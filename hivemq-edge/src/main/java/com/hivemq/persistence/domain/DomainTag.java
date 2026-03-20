@@ -67,7 +67,7 @@ public class DomainTag {
         return adapterId;
     }
 
-    public @NotNull String getDescription() {
+    public @Nullable String getDescription() {
         return description;
     }
 

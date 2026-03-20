@@ -20,6 +20,7 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.Objects;
+import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 @XmlRootElement(name = "resource-path")
@@ -27,16 +28,16 @@ import java.util.Objects;
 public class ResourcePath {
 
     @XmlElement(name = "path")
-    private String path = null;
+    private @Nullable String path = null;
 
     @XmlElement(name = "uri")
-    private String uri = null;
+    private @Nullable String uri = null;
 
-    public String getPath() {
+    public @Nullable String getPath() {
         return path;
     }
 
-    public String getUri() {
+    public @Nullable String getUri() {
         return uri;
     }
 

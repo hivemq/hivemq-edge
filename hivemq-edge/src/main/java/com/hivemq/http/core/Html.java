@@ -16,6 +16,7 @@
 package com.hivemq.http.core;
 
 import java.util.Collections;
+import org.jetbrains.annotations.Nullable;
 
 public class Html {
 
@@ -80,7 +81,7 @@ public class Html {
     }
 
     public static String span(
-            String text, String colorCode, boolean embolden, String backgroundColor, boolean italic, String classes) {
+            String text, String colorCode, boolean embolden, String backgroundColor, boolean italic, @Nullable String classes) {
         String weight = embolden ? "bold" : "normal";
         backgroundColor = backgroundColor == null ? "" : backgroundColor;
         colorCode = colorCode == null ? "" : colorCode;

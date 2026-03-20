@@ -31,7 +31,9 @@ import com.hivemq.configuration.entity.MqttConfigEntity;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.mqtt.message.QoS;
 import jakarta.inject.Inject;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +41,7 @@ public class MqttConfigurator implements Configurator<MqttConfigEntity> {
 
     private final @NotNull MqttConfigurationService mqttConfigurationService;
     private static final Logger log = LoggerFactory.getLogger(MqttConfigurator.class);
-    private volatile MqttConfigEntity configEntity;
+    private volatile @Nullable MqttConfigEntity configEntity;
     private volatile boolean initialized = false;
 
     @Inject
@@ -60,6 +62,7 @@ public class MqttConfigurator implements Configurator<MqttConfigEntity> {
         this.configEntity = config.getMqttConfig();
         this.initialized = true;
 
+        final MqttConfigEntity configEntity = Objects.requireNonNull(this.configEntity);
         mqttConfigurationService.setRetainedMessagesEnabled(
                 configEntity.getRetainedMessagesConfigEntity().isEnabled());
 

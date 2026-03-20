@@ -16,6 +16,7 @@
 package com.hivemq.mqtt.message.dropping;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The MessageDroppedService is used to centralize the update of dropped message metrics. The corresponding method
@@ -44,7 +45,7 @@ public interface MessageDroppedService {
     /**
      * Update the metrics if a qos 0 message was dropped because the client socket was not writable
      */
-    void notWritable(final String clientId, final String topic, final int qos);
+    void notWritable(final @Nullable String clientId, final String topic, final int qos);
 
     /**
      * Update the metrics if a PUBLISH was dropped because an extension prevented onward delivery.

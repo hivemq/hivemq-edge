@@ -188,10 +188,12 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
                                                 data.setErrorMessage(
                                                         "Error while polling tag [" + data.getTagName() + "]");
                                             }
+                                            final String errorMessage =
+                                                    Objects.requireNonNull(data.getErrorMessage());
                                             if (data.getCause() == null) {
-                                                pollingOutput.fail(data.getErrorMessage());
+                                                pollingOutput.fail(errorMessage);
                                             } else {
-                                                pollingOutput.fail(data.getCause(), data.getErrorMessage());
+                                                pollingOutput.fail(data.getCause(), errorMessage);
                                             }
                                         },
                                         () -> {
@@ -246,7 +248,7 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
                 } catch (final Exception e) {
                     mtConnectData.setSuccessful(false);
                     mtConnectData.setCause(e);
-                    mtConnectData.setErrorMessage(e.getMessage());
+                    mtConnectData.setErrorMessage(Objects.requireNonNullElse(e.getMessage(), e.toString()));
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug(e.getMessage(), e);
                     }

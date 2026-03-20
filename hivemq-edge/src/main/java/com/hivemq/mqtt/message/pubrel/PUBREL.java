@@ -102,12 +102,15 @@ public class PUBREL extends MqttMessageWithUserProperties.MqttMessageWithIdAndRe
         if (isExpiryDisabled()) {
             return PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET;
         }
-        final long waitingSeconds = (System.currentTimeMillis() - publishTimestamp) / 1000;
-        return Math.max(0, messageExpiryInterval - waitingSeconds);
+        final long publishTs = publishTimestamp != null ? publishTimestamp : 0L;
+        final long expiryInterval = messageExpiryInterval != null ? messageExpiryInterval : PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET;
+        final long waitingSeconds = (System.currentTimeMillis() - publishTs) / 1000;
+        return Math.max(0, expiryInterval - waitingSeconds);
     }
 
     public boolean isExpiryDisabled() {
-        return (messageExpiryInterval == MqttConfigurationDefaults.TTL_DISABLED)
+        return messageExpiryInterval == null
+                || (messageExpiryInterval == MqttConfigurationDefaults.TTL_DISABLED)
                 || (messageExpiryInterval == PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET);
     }
 

@@ -86,6 +86,10 @@ public class WebAppHandler extends AbstractHttpRequestResponseHandler {
                             HttpConstants.HTML_MIME_TYPE,
                             indexContent.getBytes(StandardCharsets.UTF_8));
                 } else {
+                    if (ext == null) {
+                        sendNotFoundResponse(requestResponse);
+                        return;
+                    }
                     final String mimeType = HttpUtils.getMimeTypeFromFileExtension(ext);
                     writeStreamResponse(requestResponse, HttpConstants.SC_OK, mimeType, inputStream);
                 }

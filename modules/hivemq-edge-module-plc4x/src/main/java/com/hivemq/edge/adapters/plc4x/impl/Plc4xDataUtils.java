@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.Nullable;
 import org.apache.plc4x.java.api.messages.PlcReadResponse;
 import org.apache.plc4x.java.api.types.PlcValueType;
 import org.apache.plc4x.java.api.value.PlcValue;
@@ -202,7 +203,7 @@ public class Plc4xDataUtils {
         }
     }
 
-    public static Object convertObject(final PlcValue value) {
+    public static @Nullable Object convertObject(final PlcValue value) {
         final PlcValueType type = value.getPlcValueType();
         switch (type) {
             case BOOL: // Boolean 1bit

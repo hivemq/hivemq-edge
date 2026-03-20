@@ -31,7 +31,7 @@ class PollingContextWrapper implements PollingContext {
     private final boolean includeTimestamp;
     private final @NotNull List<MqttUserProperty> userProperties;
     private final int maxQoS;
-    private final long messageExpiryInterval;
+    private final @Nullable Long messageExpiryInterval;
 
     public PollingContextWrapper(
             final String topic,
@@ -41,7 +41,7 @@ class PollingContextWrapper implements PollingContext {
             final boolean includeTimestamp,
             final List<MqttUserProperty> userProperties,
             final int maxQoS,
-            final long messageExpiryInterval) {
+            final @Nullable Long messageExpiryInterval) {
         this.topic = topic;
         this.tagName = tagName;
         this.messageHandlingOptions = messageHandlingOptions;

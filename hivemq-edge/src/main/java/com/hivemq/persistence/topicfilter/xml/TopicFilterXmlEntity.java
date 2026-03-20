@@ -34,7 +34,7 @@ public class TopicFilterXmlEntity {
     private final @Nullable String schema;
 
     // no-arg for JaxB
-    @SuppressWarnings("unused")
+    @SuppressWarnings("NullAway.Init")
     public TopicFilterXmlEntity() {
         this.description = "";
         this.topicFilter = "";
