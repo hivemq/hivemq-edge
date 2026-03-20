@@ -1,0 +1,27 @@
+Third Party Licenses
+==============================
+
+hivemq-edge-module-opcua uses the following third party libraries:
+
+ Module                                                                     | Version                                   | License ID    | License URL
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ com.digitalpetri.fsm:strict-machine                                        | 1.0.0                                     | EPL-2.0       | https://spdx.org/licenses/EPL-2.0.html
+ com.digitalpetri.netty:netty-channel-fsm                                   | 1.0.2                                     | EPL-2.0       | https://spdx.org/licenses/EPL-2.0.html
+ com.google.code.gson:gson                                                  | 2.13.2                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.google.errorprone:error_prone_annotations                              | 2.41.0                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ jakarta.activation:jakarta.activation-api                                  | 2.1.3                                     | BSD-3-Clause  | https://spdx.org/licenses/BSD-3-Clause.html
+ jakarta.xml.bind:jakarta.xml.bind-api                                      | 4.0.2                                     | BSD-3-Clause  | https://spdx.org/licenses/BSD-3-Clause.html
+ org.eclipse.milo:milo-dtd-core                                             | 1.1.1                                     | EPL-2.0       | https://spdx.org/licenses/EPL-2.0.html
+ org.eclipse.milo:milo-dtd-manager                                          | 1.1.1                                     | EPL-2.0       | https://spdx.org/licenses/EPL-2.0.html
+ org.eclipse.milo:milo-dtd-reader                                           | 1.1.1                                     | EPL-2.0       | https://spdx.org/licenses/EPL-2.0.html
+ org.eclipse.milo:milo-encoding-json                                        | 1.1.1                                     | EPL-2.0       | https://spdx.org/licenses/EPL-2.0.html
+ org.eclipse.milo:milo-encoding-xml                                         | 1.1.1                                     | EPL-2.0       | https://spdx.org/licenses/EPL-2.0.html
+ org.eclipse.milo:milo-sdk-client                                           | 1.1.1                                     | EPL-2.0       | https://spdx.org/licenses/EPL-2.0.html
+ org.eclipse.milo:milo-sdk-core                                             | 1.1.1                                     | EPL-2.0       | https://spdx.org/licenses/EPL-2.0.html
+ org.eclipse.milo:milo-sdk-server                                           | 1.1.1                                     | EPL-2.0       | https://spdx.org/licenses/EPL-2.0.html
+ org.eclipse.milo:milo-stack-core                                           | 1.1.1                                     | EPL-2.0       | https://spdx.org/licenses/EPL-2.0.html
+ org.eclipse.milo:milo-transport                                            | 1.1.1                                     | EPL-2.0       | https://spdx.org/licenses/EPL-2.0.html
+ org.jspecify:jspecify                                                      | 1.0.0                                     | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+The open source code of the libraries can be obtained by sending an email to legal@hivemq.com.
