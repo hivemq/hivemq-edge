@@ -16,7 +16,6 @@
 package com.hivemq.protocols;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
-import com.hivemq.adapter.sdk.api.ProtocolAdapter2;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
@@ -50,6 +49,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -64,7 +64,7 @@ import org.slf4j.LoggerFactory;
  *   <li>Owns {@link ProtocolAdapterRuntimeState} and both
  *       {@link ProtocolAdapterConnectionState} instances (northbound + southbound)</li>
  *   <li>Coordinates transitions between states</li>
- *   <li>Calls {@link ProtocolAdapter2} methods synchronously</li>
+ *   <li>Calls {@link ProtocolAdapter} methods synchronously</li>
  *   <li>Notifies {@link ProtocolAdapterStateChangeListener}s on successful state transitions</li>
  *   <li>Manages service lifecycle (polling, writing) around connect/disconnect</li>
  *   <li>Provides backward-compatible API for consumers that previously used
@@ -83,7 +83,7 @@ public class ProtocolAdapterWrapper2 {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ProtocolAdapterWrapper2.class);
 
-    private final @NotNull ProtocolAdapter2 adapter;
+    private final @NotNull ProtocolAdapter adapter;
     private final @NotNull List<ProtocolAdapterStateChangeListener> stateChangeListeners = new CopyOnWriteArrayList<>();
     private volatile @NotNull ProtocolAdapterRuntimeState state;
     private volatile @NotNull ProtocolAdapterConnectionState northboundConnectionState;
@@ -110,7 +110,7 @@ public class ProtocolAdapterWrapper2 {
      * Full constructor with all context needed for production use.
      */
     public ProtocolAdapterWrapper2(
-            final @NotNull ProtocolAdapter2 adapter,
+            final @NotNull ProtocolAdapter adapter,
             final @NotNull ProtocolAdapterConfig config,
             final @NotNull ProtocolAdapterFactory<?> adapterFactory,
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -188,12 +188,12 @@ public class ProtocolAdapterWrapper2 {
     // ===== Backward-Compatible Accessors =====
 
     /**
-     * Returns the underlying old-style {@link ProtocolAdapter}.
+     * Returns the underlying {@link ProtocolAdapter}.
      *
      * @return the underlying ProtocolAdapter
      */
     public @NotNull ProtocolAdapter getAdapter() {
-        return adapter.getLegacyAdapter();
+        return adapter;
     }
 
     /**
@@ -410,10 +410,10 @@ public class ProtocolAdapterWrapper2 {
      * Flow:
      * <ol>
      *   <li>Idle → Precheck</li>
-     *   <li>Call {@link ProtocolAdapter2#precheck()}</li>
+     *   <li>Call {@link ProtocolAdapter#precheck()}</li>
      *   <li>Precheck → Working</li>
-     *   <li>Call {@link #startNorthbound()} → {@link ProtocolAdapter2#connect(ProtocolAdapterConnectionDirection)}</li>
-     *   <li>Call {@link #startSouthbound()} → {@link ProtocolAdapter2#connect(ProtocolAdapterConnectionDirection)} (if supported)</li>
+     *   <li>Call {@link #startNorthbound()} → {@link ProtocolAdapter#start(ProtocolAdapterConnectionDirection, com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput, com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput)}</li>
+     *   <li>Call {@link #startSouthbound()} → {@link ProtocolAdapter#start(ProtocolAdapterConnectionDirection, com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput, com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput)} (if supported)</li>
      *   <li>Start polling and writing services</li>
      * </ol>
      * If any step fails, transitions to Error and cleans up any partially started connections.
@@ -482,13 +482,13 @@ public class ProtocolAdapterWrapper2 {
      * <ol>
      *   <li>Working → Stopping (or Error → Stopping)</li>
      *   <li>Stop polling and writing services</li>
-     *   <li>Disconnect southbound → {@link ProtocolAdapter2#disconnect(ProtocolAdapterConnectionDirection)} (if supported)</li>
-     *   <li>Disconnect northbound → {@link ProtocolAdapter2#disconnect(ProtocolAdapterConnectionDirection)}</li>
+     *   <li>Disconnect southbound → {@link ProtocolAdapter#stop(ProtocolAdapterConnectionDirection, com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput, com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput)} (if supported)</li>
+     *   <li>Disconnect northbound → {@link ProtocolAdapter#stop(ProtocolAdapterConnectionDirection, com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput, com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput)}</li>
      *   <li>Stopping → Idle</li>
-     *   <li>If {@code destroy} is true, call {@link ProtocolAdapter2#destroy()}</li>
+     *   <li>If {@code destroy} is true, call {@link ProtocolAdapter#destroy()}</li>
      * </ol>
      *
-     * @param destroy whether to call {@link ProtocolAdapter2#destroy()} after stopping
+     * @param destroy whether to call {@link ProtocolAdapter#destroy()} after stopping
      * @return {@code true} if stopped successfully, {@code false} if FSM rejected or error occurred
      */
     public synchronized boolean stop(final boolean destroy) {
@@ -538,7 +538,7 @@ public class ProtocolAdapterWrapper2 {
         }
 
         try {
-            adapter.connect(ProtocolAdapterConnectionDirection.Northbound);
+            invokeStart(ProtocolAdapterConnectionDirection.Northbound);
             // Connecting → Connected
             final boolean success = transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Connected)
                     .status()
@@ -582,7 +582,7 @@ public class ProtocolAdapterWrapper2 {
         }
 
         try {
-            adapter.connect(ProtocolAdapterConnectionDirection.Southbound);
+            invokeStart(ProtocolAdapterConnectionDirection.Southbound);
             // Connecting → Connected
             return transitionSouthboundConnectionTo(ProtocolAdapterConnectionState.Connected)
                     .status()
@@ -616,7 +616,7 @@ public class ProtocolAdapterWrapper2 {
         }
 
         try {
-            adapter.disconnect(ProtocolAdapterConnectionDirection.Northbound);
+            invokeStop(ProtocolAdapterConnectionDirection.Northbound);
         } catch (final Exception e) {
             LOGGER.warn("Error during northbound disconnect for adapter '{}'.", getAdapterId(), e);
             // Continue anyway — we want to reach Disconnected state
@@ -657,7 +657,7 @@ public class ProtocolAdapterWrapper2 {
         }
 
         try {
-            adapter.disconnect(ProtocolAdapterConnectionDirection.Southbound);
+            invokeStop(ProtocolAdapterConnectionDirection.Southbound);
         } catch (final Exception e) {
             LOGGER.warn("Error during southbound disconnect for adapter '{}'.", getAdapterId(), e);
             // Continue anyway — we want to reach Disconnected state
@@ -771,6 +771,64 @@ public class ProtocolAdapterWrapper2 {
     protected void removeTagConsumers() {
         consumers.forEach(tagManager::removeConsumer);
         consumers.clear();
+    }
+
+    // ===== Adapter Invocation Helpers =====
+
+    /**
+     * Invoke {@link ProtocolAdapter#start(ProtocolAdapterConnectionDirection, ProtocolAdapterStartInput, ProtocolAdapterStartOutput)}
+     * and block until the adapter signals success or failure via the output callbacks.
+     *
+     * @param direction the connection direction (northbound or southbound)
+     * @throws Exception if the adapter signals failure or throws
+     */
+    private void invokeStart(final @NotNull ProtocolAdapterConnectionDirection direction) throws Exception {
+        final ProtocolAdapterStartInputImpl input = new ProtocolAdapterStartInputImpl(moduleServices);
+        final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();
+        try {
+            adapter.start(direction, input, output);
+        } catch (final Exception e) {
+            if (!output.getStartFuture().isDone()) {
+                output.getStartFuture().completeExceptionally(e);
+            }
+        }
+        try {
+            output.getStartFuture().get();
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw e;
+        } catch (final ExecutionException e) {
+            final Throwable cause = e.getCause();
+            throw cause instanceof Exception ? (Exception) cause : new RuntimeException(cause);
+        }
+    }
+
+    /**
+     * Invoke {@link ProtocolAdapter#stop(ProtocolAdapterConnectionDirection, ProtocolAdapterStopInput, ProtocolAdapterStopOutput)}
+     * and block until the adapter signals success or failure via the output callbacks.
+     *
+     * @param direction the connection direction (northbound or southbound)
+     * @throws Exception if the adapter signals failure or throws
+     */
+    private void invokeStop(final @NotNull ProtocolAdapterConnectionDirection direction) throws Exception {
+        final ProtocolAdapterStopInputImpl input = new ProtocolAdapterStopInputImpl();
+        final ProtocolAdapterStopOutputImpl output = new ProtocolAdapterStopOutputImpl();
+        try {
+            adapter.stop(direction, input, output);
+        } catch (final Exception e) {
+            if (!output.getOutputFuture().isDone()) {
+                output.getOutputFuture().completeExceptionally(e);
+            }
+        }
+        try {
+            output.getOutputFuture().get();
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw e;
+        } catch (final ExecutionException e) {
+            final Throwable cause = e.getCause();
+            throw cause instanceof Exception ? (Exception) cause : new RuntimeException(cause);
+        }
     }
 
     // ===== FSM Transition Methods =====

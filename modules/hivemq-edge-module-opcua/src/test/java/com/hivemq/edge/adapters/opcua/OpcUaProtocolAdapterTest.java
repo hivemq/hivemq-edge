@@ -21,6 +21,7 @@ import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.model.Event;
@@ -130,7 +131,7 @@ public class OpcUaProtocolAdapterTest {
         final ProtocolAdapterStartOutput startOutput = mock(ProtocolAdapterStartOutput.class);
 
         // Act - Start the adapter
-        adapter.start(startInput, startOutput);
+        adapter.start(ProtocolAdapterConnectionDirection.Northbound, startInput, startOutput);
 
         // Assert - Wait for connection to be established
         await().untilAsserted(() -> {
@@ -193,7 +194,7 @@ public class OpcUaProtocolAdapterTest {
         final ProtocolAdapterStartOutput startOutput = mock(ProtocolAdapterStartOutput.class);
 
         // Act - Start the adapter (will fail to subscribe due to invalid node IDs)
-        adapter.start(startInput, startOutput);
+        adapter.start(ProtocolAdapterConnectionDirection.Northbound, startInput, startOutput);
 
         Thread.sleep(5000);
 
@@ -270,7 +271,7 @@ public class OpcUaProtocolAdapterTest {
         final ProtocolAdapterStartOutput startOutput = mock(ProtocolAdapterStartOutput.class);
 
         // Act - Start the adapter (will fail to connect)
-        adapter.start(startInput, startOutput);
+        adapter.start(ProtocolAdapterConnectionDirection.Northbound, startInput, startOutput);
 
         // Assert - Connection should fail and remain in ERROR state
         await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> {

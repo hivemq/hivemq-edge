@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.opcua.northbound;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
@@ -116,7 +117,10 @@ class OpcUaToJsonConverterTest extends AbstractOpcUaPayloadConverterTest {
                 protocolAdapter.getProtocolAdapterState().getConnectionStatus()));
 
         final var received = expectAdapterPublish();
-        protocolAdapter.stop(new ProtocolAdapterStopInput() {}, new ProtocolAdapterStopOutputImpl());
+        protocolAdapter.stop(
+                ProtocolAdapterConnectionDirection.Northbound,
+                new ProtocolAdapterStopInput() {},
+                new ProtocolAdapterStopOutputImpl());
 
         assertThat(received).extractingByKey(nodeId).satisfies(dataPoints -> {
             assertThat(dataPoints)
