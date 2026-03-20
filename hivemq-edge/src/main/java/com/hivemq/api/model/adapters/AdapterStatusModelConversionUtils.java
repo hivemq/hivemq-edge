@@ -19,7 +19,7 @@ import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.api.model.ApiConstants;
 import com.hivemq.edge.api.model.Status;
-import com.hivemq.protocols.ProtocolAdapterWrapper;
+import com.hivemq.protocols.ProtocolAdapterWrapper2;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -30,7 +30,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class AdapterStatusModelConversionUtils {
 
-    public static @NotNull Status getAdapterStatus(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
+    public static @NotNull Status getAdapterStatus(final @NotNull ProtocolAdapterWrapper2 protocolAdapterWrapper) {
         Preconditions.checkNotNull(protocolAdapterWrapper);
         final OffsetDateTime offsetDateTime = protocolAdapterWrapper.getTimeOfLastStartAttempt() == null
                 ? null

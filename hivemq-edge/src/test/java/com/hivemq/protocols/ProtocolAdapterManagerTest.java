@@ -58,6 +58,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+@org.junit.jupiter.api.Disabled("Dead code — ProtocolAdapterManager replaced by ProtocolAdapterManager2 (Phase 6)")
 class ProtocolAdapterManagerTest {
 
     private final @NotNull MetricRegistry metricRegistry = mock();

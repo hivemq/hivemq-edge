@@ -45,12 +45,12 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     private volatile @Nullable ScheduledFuture<?> future;
 
     protected final @NotNull AtomicBoolean closed = new AtomicBoolean(false);
-    protected final @NotNull ProtocolAdapterWrapper protocolAdapter;
+    protected final @NotNull ProtocolAdapterWrapper2 protocolAdapter;
     protected final @NotNull EventService eventService;
 
     @SuppressWarnings("JavaUtilDate")
     public AbstractSubscriptionSampler(
-            final @NotNull ProtocolAdapterWrapper protocolAdapter, final @NotNull EventService eventService) {
+            final @NotNull ProtocolAdapterWrapper2 protocolAdapter, final @NotNull EventService eventService) {
         this.protocolAdapter = protocolAdapter;
         this.adapterId = protocolAdapter.getId();
 

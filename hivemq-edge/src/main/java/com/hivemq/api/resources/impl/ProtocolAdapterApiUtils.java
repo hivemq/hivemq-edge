@@ -31,7 +31,7 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.VersionProvider;
 import com.hivemq.http.HttpConstants;
-import com.hivemq.protocols.ProtocolAdapterManager;
+import com.hivemq.protocols.ProtocolAdapterManager2;
 import com.hivemq.protocols.ProtocolAdapterSchemaManager;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -64,7 +64,7 @@ public class ProtocolAdapterApiUtils {
      */
     public static @Nullable ProtocolAdapter convertInstalledAdapterType(
             final @NotNull ObjectMapper objectMapper,
-            final @NotNull ProtocolAdapterManager adapterManager,
+            final @NotNull ProtocolAdapterManager2 adapterManager,
             final @NotNull ProtocolAdapterInformation info,
             final @NotNull ConfigurationService configurationService,
             final @NotNull VersionProvider versionProvider,

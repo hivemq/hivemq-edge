@@ -26,7 +26,7 @@ import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.impl.polling.PollingInputImpl;
 import com.hivemq.edge.modules.adapters.impl.polling.PollingOutputImpl;
 import com.hivemq.protocols.AbstractSubscriptionSampler;
-import com.hivemq.protocols.ProtocolAdapterWrapper;
+import com.hivemq.protocols.ProtocolAdapterWrapper2;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -44,7 +44,7 @@ public class PerContextSampler extends AbstractSubscriptionSampler {
     private final @NotNull TagManager tagManager;
 
     public PerContextSampler(
-            final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper,
+            final @NotNull ProtocolAdapterWrapper2 protocolAdapterWrapper,
             final @NotNull PollingContext pollingContext,
             final @NotNull EventService eventService,
             final @NotNull TagManager tagManager) {

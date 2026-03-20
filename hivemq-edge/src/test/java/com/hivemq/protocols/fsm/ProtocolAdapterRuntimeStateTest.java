@@ -1,0 +1,78 @@
+/*
+ * Copyright 2019-present HiveMQ GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.hivemq.protocols.fsm;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.hivemq.common.i18n.StringTemplate;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+public class ProtocolAdapterRuntimeStateTest {
+    private static final Map<ProtocolAdapterRuntimeState, Set<ProtocolAdapterRuntimeState>>
+            PROTOCOL_ADAPTER_STATE_MAP_MAP = Map.of(
+                    ProtocolAdapterRuntimeState.Idle,
+                    Set.of(ProtocolAdapterRuntimeState.Precheck),
+                    ProtocolAdapterRuntimeState.Precheck,
+                    Set.of(ProtocolAdapterRuntimeState.Working, ProtocolAdapterRuntimeState.Error),
+                    ProtocolAdapterRuntimeState.Working,
+                    Set.of(ProtocolAdapterRuntimeState.Stopping, ProtocolAdapterRuntimeState.Error),
+                    ProtocolAdapterRuntimeState.Stopping,
+                    Set.of(ProtocolAdapterRuntimeState.Idle, ProtocolAdapterRuntimeState.Error),
+                    ProtocolAdapterRuntimeState.Error,
+                    Set.of(ProtocolAdapterRuntimeState.Stopping, ProtocolAdapterRuntimeState.Idle));
+
+    @Test
+    public void whenEverythingWorks_thenTransitionShouldWork() {
+        final List<ProtocolAdapterRuntimeState> states = List.of(ProtocolAdapterRuntimeState.values());
+        states.forEach(fromState -> {
+            final Set<ProtocolAdapterRuntimeState> possibleToStates = PROTOCOL_ADAPTER_STATE_MAP_MAP.get(fromState);
+            assertThat(possibleToStates).isNotNull();
+            states.forEach(toState -> {
+                final ProtocolAdapterTransitionResponse response = fromState.transition(toState);
+                switch (response.status()) {
+                    case Success -> {
+                        assertThat(possibleToStates).contains(toState);
+                        assertThat(response.message())
+                                .isEqualTo(StringTemplate.format(
+                                        "Transitioned from ${fromState} to ${toState}.",
+                                        Map.of("fromState", fromState, "toState", toState)));
+                    }
+                    case Failure -> {
+                        assertThat(possibleToStates).doesNotContain(toState);
+                        assertThat(response.message())
+                                .isEqualTo(StringTemplate.format(
+                                        "Unable to transition from ${fromState} to ${toState}.",
+                                        Map.of("fromState", fromState, "toState", toState)));
+                    }
+                    case NotChanged -> {
+                        assertThat(toState).isEqualTo(fromState);
+                        assertThat(response.message())
+                                .isEqualTo(StringTemplate.format("${state} is unchanged.", Map.of("state", fromState)));
+                    }
+                }
+            });
+        });
+    }
+}

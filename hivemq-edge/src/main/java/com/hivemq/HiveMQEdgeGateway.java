@@ -24,7 +24,7 @@ import com.hivemq.exceptions.HiveMQEdgeStartupException;
 import com.hivemq.extension.sdk.api.services.admin.AdminService;
 import com.hivemq.extensions.ExtensionBootstrap;
 import com.hivemq.extensions.services.admin.AdminServiceImpl;
-import com.hivemq.protocols.ProtocolAdapterManager;
+import com.hivemq.protocols.ProtocolAdapterManager2;
 import com.hivemq.pulse.messaging.AssetMapperManager;
 import com.hivemq.util.Checkpoints;
 import jakarta.inject.Inject;
@@ -37,7 +37,7 @@ public class HiveMQEdgeGateway {
     private final @NotNull HiveMQEdgeNettyBootstrap nettyBootstrap;
     private final @NotNull ExtensionBootstrap extensionBootstrap;
     private final @NotNull AdminService adminService;
-    private final @NotNull ProtocolAdapterManager protocolAdapterManager;
+    private final @NotNull ProtocolAdapterManager2 protocolAdapterManager;
     private final @NotNull DataCombinerManager dataCombinerManager;
     private final @NotNull AssetMapperManager assetMapperManager;
 
@@ -46,7 +46,7 @@ public class HiveMQEdgeGateway {
             final @NotNull HiveMQEdgeNettyBootstrap nettyBootstrap,
             final @NotNull ExtensionBootstrap extensionBootstrap,
             final @NotNull AdminService adminService,
-            final @NotNull ProtocolAdapterManager protocolAdapterManager,
+            final @NotNull ProtocolAdapterManager2 protocolAdapterManager,
             final @NotNull DataCombinerManager dataCombinerManager,
             final @NotNull AssetMapperManager assetMapperManager) {
         this.nettyBootstrap = nettyBootstrap;
