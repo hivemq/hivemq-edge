@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
@@ -369,7 +370,9 @@ class ProtocolAdapterManagerTest {
 
         @Override
         public void start(
-                final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
+                final @NotNull ProtocolAdapterConnectionDirection direction,
+                final @NotNull ProtocolAdapterStartInput input,
+                final @NotNull ProtocolAdapterStartOutput output) {
             if (success) {
                 adapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
                 output.startedSuccessfully();
@@ -380,7 +383,9 @@ class ProtocolAdapterManagerTest {
 
         @Override
         public void stop(
-                final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
+                final @NotNull ProtocolAdapterConnectionDirection direction,
+                final @NotNull ProtocolAdapterStopInput input,
+                final @NotNull ProtocolAdapterStopOutput output) {
             if (success) {
                 adapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
                 output.stoppedSuccessfully();

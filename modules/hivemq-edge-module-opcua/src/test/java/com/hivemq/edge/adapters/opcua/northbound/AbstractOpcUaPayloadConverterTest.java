@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
@@ -116,7 +117,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
                 startFuture.completeExceptionally(t);
             }
         };
-        protocolAdapter.start(in, out);
+        protocolAdapter.start(ProtocolAdapterConnectionDirection.Northbound, in, out);
         startFuture.get();
         return protocolAdapter;
     }

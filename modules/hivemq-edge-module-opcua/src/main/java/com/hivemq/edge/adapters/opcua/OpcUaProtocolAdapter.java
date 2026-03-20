@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
+import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.discovery.NodeTree;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
@@ -160,7 +161,17 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
     @Override
     public synchronized void start(
-            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
+            final @NotNull ProtocolAdapterConnectionDirection direction,
+            final @NotNull ProtocolAdapterStartInput input,
+            final @NotNull ProtocolAdapterStartOutput output) {
+        // OPC UA uses a single client for both northbound and southbound.
+        // The full connection setup happens during Northbound connect;
+        // Southbound connect is a no-op since the shared client is already available.
+        if (direction == ProtocolAdapterConnectionDirection.Southbound) {
+            output.startedSuccessfully();
+            return;
+        }
+
         log.info("Starting OPC UA protocol adapter {}", adapterId);
 
         // Reset stopped flag
@@ -217,7 +228,17 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
     @Override
     public synchronized void stop(
-            final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
+            final @NotNull ProtocolAdapterConnectionDirection direction,
+            final @NotNull ProtocolAdapterStopInput input,
+            final @NotNull ProtocolAdapterStopOutput output) {
+        // OPC UA uses a single client for both northbound and southbound.
+        // The full teardown happens during Northbound disconnect;
+        // Southbound disconnect is a no-op since the shared client will be torn down later.
+        if (direction == ProtocolAdapterConnectionDirection.Southbound) {
+            output.stoppedSuccessfully();
+            return;
+        }
+
         log.info("Stopping OPC UA protocol adapter {}", adapterId);
 
         // Set stopped flag to prevent new scheduling
