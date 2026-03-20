@@ -43,6 +43,7 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.protocols.fsm.I18nProtocolAdapterMessage;
+import com.hivemq.protocols.fsm.ProtocolAdapterManagerState;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -54,10 +55,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -83,7 +84,7 @@ import org.slf4j.LoggerFactory;
  * <ul>
  *   <li>Adapter map uses {@link ConcurrentHashMap} for thread-safe access</li>
  *   <li>Configuration refresh runs on a single-threaded executor to serialize refresh operations</li>
- *   <li>Within a refresh, individual adapter create/delete operations may run concurrently</li>
+ *   <li>Within a refresh, adapter create/update/delete operations run sequentially on that refresh thread</li>
  * </ul>
  */
 @Singleton
@@ -107,6 +108,8 @@ public class ProtocolAdapterManager2 {
     private final @NotNull ProtocolAdapterExtractor protocolAdapterConfig;
     private final @NotNull ExecutorService executorService;
     private final @NotNull AtomicInteger refreshTasksInProgress = new AtomicInteger(0);
+    private final @NotNull AtomicReference<ProtocolAdapterManagerState> managerState =
+            new AtomicReference<>(ProtocolAdapterManagerState.Idle);
 
     @Inject
     public ProtocolAdapterManager2(
@@ -153,6 +156,15 @@ public class ProtocolAdapterManager2 {
      */
     public boolean isBusy() {
         return refreshTasksInProgress.get() > 0;
+    }
+
+    /**
+     * Returns the high-level manager state.
+     *
+     * @return {@link ProtocolAdapterManagerState#Running} while refresh work is queued/running; otherwise {@link ProtocolAdapterManagerState#Idle}
+     */
+    public @NotNull ProtocolAdapterManagerState getState() {
+        return managerState.get();
     }
 
     /**
@@ -519,8 +531,17 @@ public class ProtocolAdapterManager2 {
 
     // ===== Configuration Refresh =====
 
-    protected void refresh(final @NotNull List<ProtocolAdapterEntity> configs) {
+    /**
+     * Refreshes protocol adapters from the latest configuration snapshot.
+     * <p>
+     * The operation is serialized on a dedicated single-thread executor. Any concurrent calls are queued
+     * and processed in order.
+     *
+     * @param configs the latest adapter configuration entities
+     */
+    public void refresh(final @NotNull List<ProtocolAdapterEntity> configs) {
         refreshTasksInProgress.incrementAndGet();
+        managerState.set(ProtocolAdapterManagerState.Running);
         try {
             executorService.execute(() -> {
                 LOGGER.info("Refreshing adapters");
@@ -539,82 +560,10 @@ public class ProtocolAdapterManager2 {
                     final Set<String> toBeUpdatedProtocolAdapterIdSet =
                             new HashSet<>(Sets.intersection(newProtocolAdapterIdSet, oldProtocolAdapterIdSet));
 
-                    final Set<String> failedAdapterSet = ConcurrentHashMap.newKeySet();
-
-                    CompletableFuture.allOf(toBeDeletedProtocolAdapterIdSet.stream()
-                                    .map(adapterId -> CompletableFuture.runAsync(() -> {
-                                        try {
-                                            if (LOGGER.isDebugEnabled()) {
-                                                LOGGER.debug("Deleting adapter '{}'", adapterId);
-                                            }
-                                            stop(adapterId, true);
-                                            deleteProtocolAdapterByAdapterId(adapterId);
-                                        } catch (final Exception e) {
-                                            failedAdapterSet.add(adapterId);
-                                            LOGGER.error("Failed deleting adapter {}", adapterId, e);
-                                        }
-                                    }))
-                                    .toList()
-                                    .toArray(new CompletableFuture[0]))
-                            .get();
-
-                    CompletableFuture.allOf(toBeCreatedProtocolAdapterIdSet.stream()
-                                    .map(adapterId -> CompletableFuture.runAsync(() -> {
-                                        try {
-                                            if (LOGGER.isDebugEnabled()) {
-                                                LOGGER.debug("Creating adapter '{}'", adapterId);
-                                            }
-                                            createProtocolAdapter(
-                                                    protocolAdapterConfigs.get(adapterId),
-                                                    versionProvider.getVersion());
-                                            start(adapterId);
-                                        } catch (final Exception e) {
-                                            failedAdapterSet.add(adapterId);
-                                            LOGGER.error("Failed creating adapter {}", adapterId, e);
-                                        }
-                                    }))
-                                    .toList()
-                                    .toArray(new CompletableFuture[0]))
-                            .get();
-
-                    CompletableFuture.allOf(toBeUpdatedProtocolAdapterIdSet.stream()
-                                    .map(adapterId -> CompletableFuture.runAsync(() -> {
-                                        try {
-                                            final ProtocolAdapterWrapper2 wrapper = protocolAdapterMap.get(adapterId);
-                                            if (wrapper == null) {
-                                                failedAdapterSet.add(adapterId);
-                                                LOGGER.error(
-                                                        "Existing adapters were modified while a refresh was ongoing, adapter '{}' was deleted and could not be updated",
-                                                        adapterId);
-                                                return;
-                                            }
-                                            if (protocolAdapterConfigs
-                                                    .get(adapterId)
-                                                    .equals(wrapper.getConfig())) {
-                                                if (LOGGER.isDebugEnabled()) {
-                                                    LOGGER.debug(
-                                                            "Not-updating adapter '{}' since the config is unchanged",
-                                                            adapterId);
-                                                }
-                                                return;
-                                            }
-                                            if (LOGGER.isDebugEnabled()) {
-                                                LOGGER.debug("Updating adapter '{}'", adapterId);
-                                            }
-                                            stop(adapterId, true);
-                                            deleteProtocolAdapterByAdapterId(adapterId);
-                                            createProtocolAdapter(
-                                                    protocolAdapterConfigs.get(adapterId),
-                                                    versionProvider.getVersion());
-                                            start(adapterId);
-                                        } catch (final Exception e) {
-                                            failedAdapterSet.add(adapterId);
-                                            LOGGER.error("Failed updating adapter {}", adapterId, e);
-                                        }
-                                    }))
-                                    .toList()
-                                    .toArray(new CompletableFuture[0]))
-                            .get();
+                    final Set<String> failedAdapterSet = new HashSet<>();
+                    refreshDeletedAdapters(toBeDeletedProtocolAdapterIdSet, failedAdapterSet);
+                    refreshCreatedAdapters(toBeCreatedProtocolAdapterIdSet, protocolAdapterConfigs, failedAdapterSet);
+                    refreshUpdatedAdapters(toBeUpdatedProtocolAdapterIdSet, protocolAdapterConfigs, failedAdapterSet);
 
                     if (failedAdapterSet.isEmpty()) {
                         eventService
@@ -629,18 +578,89 @@ public class ProtocolAdapterManager2 {
                                 .withMessage("Reloading of configuration failed")
                                 .fire();
                     }
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    LOGGER.error("Interrupted while refreshing adapters", e);
-                } catch (final ExecutionException e) {
+                } catch (final Exception e) {
                     LOGGER.error("Failed refreshing adapters", e);
                 } finally {
-                    refreshTasksInProgress.decrementAndGet();
+                    final int remainingTasks = refreshTasksInProgress.decrementAndGet();
+                    if (remainingTasks == 0) {
+                        managerState.set(ProtocolAdapterManagerState.Idle);
+                    }
                 }
             });
         } catch (final RuntimeException e) {
-            refreshTasksInProgress.decrementAndGet();
+            final int remainingTasks = refreshTasksInProgress.decrementAndGet();
+            if (remainingTasks == 0) {
+                managerState.set(ProtocolAdapterManagerState.Idle);
+            }
             throw e;
+        }
+    }
+
+    private void refreshDeletedAdapters(
+            final @NotNull Set<String> adapterIds, final @NotNull Set<String> failedAdapterSet) {
+        for (final String adapterId : adapterIds) {
+            try {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Deleting adapter '{}'", adapterId);
+                }
+                stop(adapterId, true);
+                deleteProtocolAdapterByAdapterId(adapterId);
+            } catch (final Exception e) {
+                failedAdapterSet.add(adapterId);
+                LOGGER.error("Failed deleting adapter {}", adapterId, e);
+            }
+        }
+    }
+
+    private void refreshCreatedAdapters(
+            final @NotNull Set<String> adapterIds,
+            final @NotNull Map<String, ProtocolAdapterConfig> protocolAdapterConfigs,
+            final @NotNull Set<String> failedAdapterSet) {
+        for (final String adapterId : adapterIds) {
+            try {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Creating adapter '{}'", adapterId);
+                }
+                createProtocolAdapter(protocolAdapterConfigs.get(adapterId), versionProvider.getVersion());
+                start(adapterId);
+            } catch (final Exception e) {
+                failedAdapterSet.add(adapterId);
+                LOGGER.error("Failed creating adapter {}", adapterId, e);
+            }
+        }
+    }
+
+    private void refreshUpdatedAdapters(
+            final @NotNull Set<String> adapterIds,
+            final @NotNull Map<String, ProtocolAdapterConfig> protocolAdapterConfigs,
+            final @NotNull Set<String> failedAdapterSet) {
+        for (final String adapterId : adapterIds) {
+            try {
+                final ProtocolAdapterWrapper2 wrapper = protocolAdapterMap.get(adapterId);
+                if (wrapper == null) {
+                    failedAdapterSet.add(adapterId);
+                    LOGGER.error(
+                            "Existing adapters were modified while a refresh was ongoing, adapter '{}' was deleted and could not be updated",
+                            adapterId);
+                    continue;
+                }
+                if (protocolAdapterConfigs.get(adapterId).equals(wrapper.getConfig())) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Not-updating adapter '{}' since the config is unchanged", adapterId);
+                    }
+                    continue;
+                }
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Updating adapter '{}'", adapterId);
+                }
+                stop(adapterId, true);
+                deleteProtocolAdapterByAdapterId(adapterId);
+                createProtocolAdapter(protocolAdapterConfigs.get(adapterId), versionProvider.getVersion());
+                start(adapterId);
+            } catch (final Exception e) {
+                failedAdapterSet.add(adapterId);
+                LOGGER.error("Failed updating adapter {}", adapterId, e);
+            }
         }
     }
 

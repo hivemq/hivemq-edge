@@ -489,7 +489,7 @@ public class ProtocolAdapterWrapper2 {
      * </ol>
      *
      * @param destroy whether to call {@link ProtocolAdapter#destroy()} after stopping
-     * @return {@code true} if stopped successfully, {@code false} if FSM rejected or error occurred
+     * @return {@code true} if stopped fully cleanly, {@code false} if FSM rejected or any disconnect step failed
      */
     public synchronized boolean stop(final boolean destroy) {
         LOGGER.info("Stopping protocol adapter '{}'.", getAdapterId());
@@ -507,16 +507,17 @@ public class ProtocolAdapterWrapper2 {
         stopWriting();
 
         // Step 3 & 4: Stop connections (southbound first, then northbound)
-        stopSouthbound();
-        stopNorthbound();
+        final boolean southboundSuccess = stopSouthbound();
+        final boolean northboundSuccess = stopNorthbound();
 
         // Step 5: Transition to Idle
-        transitionTo(ProtocolAdapterRuntimeState.Idle);
+        final boolean stateTransitionSuccess =
+                transitionTo(ProtocolAdapterRuntimeState.Idle).status().isSuccess();
         protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
         if (destroy) {
             adapter.destroy();
         }
-        return true;
+        return stateTransitionSuccess && southboundSuccess && northboundSuccess;
     }
 
     // ===== Connection Management =====
@@ -615,11 +616,13 @@ public class ProtocolAdapterWrapper2 {
             return false;
         }
 
+        boolean disconnectSuccess = true;
         try {
             invokeStop(ProtocolAdapterConnectionDirection.Northbound);
         } catch (final Exception e) {
             LOGGER.warn("Error during northbound disconnect for adapter '{}'.", getAdapterId(), e);
             // Continue anyway — we want to reach Disconnected state
+            disconnectSuccess = false;
         }
 
         // Disconnecting → Disconnected
@@ -629,7 +632,7 @@ public class ProtocolAdapterWrapper2 {
         if (success) {
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
         }
-        return success;
+        return disconnectSuccess && success;
     }
 
     /**
@@ -656,17 +659,20 @@ public class ProtocolAdapterWrapper2 {
             return false;
         }
 
+        boolean disconnectSuccess = true;
         try {
             invokeStop(ProtocolAdapterConnectionDirection.Southbound);
         } catch (final Exception e) {
             LOGGER.warn("Error during southbound disconnect for adapter '{}'.", getAdapterId(), e);
             // Continue anyway — we want to reach Disconnected state
+            disconnectSuccess = false;
         }
 
         // Disconnecting → Disconnected
-        return transitionSouthboundConnectionTo(ProtocolAdapterConnectionState.Disconnected)
+        final boolean transitionSuccess = transitionSouthboundConnectionTo(ProtocolAdapterConnectionState.Disconnected)
                 .status()
                 .isSuccess();
+        return disconnectSuccess && transitionSuccess;
     }
 
     // ===== Service Lifecycle Hooks =====

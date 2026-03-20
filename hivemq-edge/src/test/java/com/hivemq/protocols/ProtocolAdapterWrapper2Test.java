@@ -308,9 +308,9 @@ class ProtocolAdapterWrapper2Test {
                     .when(protocolAdapter)
                     .stop(eq(ProtocolAdapterConnectionDirection.Northbound), any(), any());
 
-            // Stop should still succeed because disconnect errors are caught and
-            // the connection transitions to Disconnected anyway
-            assertThat(wrapper.stop(false)).isTrue();
+            // Stop must report failure so manager can emit CRITICAL events,
+            // while still cleaning up to a disconnected idle state.
+            assertThat(wrapper.stop(false)).isFalse();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
         }
@@ -765,8 +765,8 @@ class ProtocolAdapterWrapper2Test {
                     .when(protocolAdapter)
                     .stop(eq(ProtocolAdapterConnectionDirection.Southbound), any(), any());
 
-            // Stop should still succeed -- disconnect errors are caught
-            assertThat(wrapper.stop(false)).isTrue();
+            // Stop should still clean up to Idle/Disconnected but report failure.
+            assertThat(wrapper.stop(false)).isFalse();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
             assertThat(wrapper.getSouthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
@@ -783,7 +783,7 @@ class ProtocolAdapterWrapper2Test {
                     .when(protocolAdapter)
                     .stop(eq(ProtocolAdapterConnectionDirection.Southbound), any(), any());
 
-            assertThat(wrapper.stop(false)).isTrue();
+            assertThat(wrapper.stop(false)).isFalse();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
             assertThat(wrapper.getSouthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
@@ -989,7 +989,7 @@ class ProtocolAdapterWrapper2Test {
 
         @Test
         void stop_adapterDisconnectFails_managerStillReportsStop() throws ProtocolAdapterException {
-            // Simulate an adapter whose disconnect(Northbound) throws -- stop should still succeed
+            // Simulate an adapter whose disconnect(Northbound) throws -- stop should clean up but return failure
             doThrow(new RuntimeException("disconnect failed"))
                     .when(protocolAdapter)
                     .stop(eq(ProtocolAdapterConnectionDirection.Northbound), any(), any());
@@ -997,9 +997,9 @@ class ProtocolAdapterWrapper2Test {
             wrapper.start();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Working);
 
-            // Stop should handle the error gracefully
+            // Stop should handle the error gracefully but indicate partial failure.
             final boolean stopped = wrapper.stop(false);
-            assertThat(stopped).isTrue();
+            assertThat(stopped).isFalse();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
         }
