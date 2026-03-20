@@ -19,8 +19,8 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 public record ProtocolAdapterTransitionResponse(
-        ProtocolAdapterState fromState,
-        ProtocolAdapterState toState,
+        ProtocolAdapterRuntimeState fromState,
+        ProtocolAdapterRuntimeState toState,
         ProtocolAdapterTransitionStatus status,
         String message,
         Throwable error) {
@@ -30,7 +30,7 @@ public record ProtocolAdapterTransitionResponse(
     public static final String STATE = "state";
 
     public static ProtocolAdapterTransitionResponse success(
-            final @NotNull ProtocolAdapterState fromState, final @NotNull ProtocolAdapterState toState) {
+            final @NotNull ProtocolAdapterRuntimeState fromState, final @NotNull ProtocolAdapterRuntimeState toState) {
         return new ProtocolAdapterTransitionResponse(
                 fromState,
                 toState,
@@ -40,7 +40,7 @@ public record ProtocolAdapterTransitionResponse(
                 null);
     }
 
-    public static ProtocolAdapterTransitionResponse notChanged(final @NotNull ProtocolAdapterState state) {
+    public static ProtocolAdapterTransitionResponse notChanged(final @NotNull ProtocolAdapterRuntimeState state) {
         return new ProtocolAdapterTransitionResponse(
                 state,
                 state,
@@ -50,7 +50,7 @@ public record ProtocolAdapterTransitionResponse(
     }
 
     public static ProtocolAdapterTransitionResponse failure(
-            final @NotNull ProtocolAdapterState fromState, final @NotNull ProtocolAdapterState toState) {
+            final @NotNull ProtocolAdapterRuntimeState fromState, final @NotNull ProtocolAdapterRuntimeState toState) {
         return new ProtocolAdapterTransitionResponse(
                 fromState,
                 fromState,

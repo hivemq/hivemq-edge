@@ -19,7 +19,7 @@ import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.api.model.ApiConstants;
 import com.hivemq.edge.api.model.Status;
-import com.hivemq.protocols.fsm.ProtocolAdapterWrapper2;
+import com.hivemq.protocols.ProtocolAdapterWrapper2;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;

@@ -31,7 +31,7 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishServiceImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
-import com.hivemq.protocols.fsm.ProtocolAdapterWrapper2;
+import com.hivemq.protocols.ProtocolAdapterWrapper2;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
