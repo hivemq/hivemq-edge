@@ -17,6 +17,7 @@ package com.hivemq.configuration.migration;
 
 import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.combining.model.DataCombining;
+import com.hivemq.combining.model.DataCombiningSources;
 import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.adapter.TagEntity;
@@ -158,6 +159,7 @@ public class DataCombiningScopeMigrator {
 
     /**
      * Migrates a single DataCombining, returning the updated version if any changes were made.
+     * Migrates both the primary reference and instruction references.
      */
     private @NotNull DataCombining migrateDataCombining(
             final @NotNull DataCombiner combiner,
@@ -165,8 +167,17 @@ public class DataCombiningScopeMigrator {
             final @NotNull Map<String, List<String>> tagToAdapters) {
 
         boolean anyChanges = false;
-        final List<Instruction> migratedInstructions = new ArrayList<>();
 
+        // Migrate the primary reference
+        final DataIdentifierReference primaryRef = dataCombining.sources().primaryReference();
+        final DataIdentifierReference migratedPrimaryRef = migrateTagReference(combiner, primaryRef, tagToAdapters);
+        final boolean primaryChanged = !migratedPrimaryRef.equals(primaryRef);
+        if (primaryChanged) {
+            anyChanges = true;
+        }
+
+        // Migrate instructions
+        final List<Instruction> migratedInstructions = new ArrayList<>();
         for (final Instruction instruction : dataCombining.instructions()) {
             final Instruction migratedInstruction = migrateInstruction(combiner, instruction, tagToAdapters);
             migratedInstructions.add(migratedInstruction);
@@ -176,8 +187,14 @@ public class DataCombiningScopeMigrator {
         }
 
         if (anyChanges) {
+            final DataCombiningSources migratedSources = primaryChanged
+                    ? new DataCombiningSources(
+                            migratedPrimaryRef,
+                            dataCombining.sources().tags(),
+                            dataCombining.sources().topicFilters())
+                    : dataCombining.sources();
             return new DataCombining(
-                    dataCombining.id(), dataCombining.sources(), dataCombining.destination(), migratedInstructions);
+                    dataCombining.id(), migratedSources, dataCombining.destination(), migratedInstructions);
         }
         return dataCombining;
     }
@@ -192,30 +209,46 @@ public class DataCombiningScopeMigrator {
             final @NotNull Map<String, List<String>> tagToAdapters) {
 
         final DataIdentifierReference ref = instruction.dataIdentifierReference();
-
-        // Skip if no reference, not a TAG type, or already has scope
-        if (ref == null
-                || ref.type() != DataIdentifierReference.Type.TAG
-                || (ref.scope() != null && !ref.scope().isBlank())) {
+        if (ref == null) {
             return instruction;
+        }
+
+        final DataIdentifierReference migratedRef = migrateTagReference(combiner, ref, tagToAdapters);
+        if (migratedRef.equals(ref)) {
+            return instruction;
+        }
+        return new Instruction(instruction.sourceFieldName(), instruction.destinationFieldName(), migratedRef);
+    }
+
+    /**
+     * Migrates a single TAG reference by backfilling scope if it's missing.
+     * Returns the original reference if no migration is needed.
+     */
+    private @NotNull DataIdentifierReference migrateTagReference(
+            final @NotNull DataCombiner combiner,
+            final @NotNull DataIdentifierReference ref,
+            final @NotNull Map<String, List<String>> tagToAdapters) {
+
+        // Skip if not a TAG type or already has scope
+        if (ref.type() != DataIdentifierReference.Type.TAG
+                || (ref.scope() != null && !ref.scope().isBlank())) {
+            return ref;
         }
 
         final String tagName = ref.id();
         final List<String> adapters = tagToAdapters.get(tagName);
 
         if (adapters == null || adapters.isEmpty()) {
-            // Case C: Tag not found in any adapter
             log.warn(
                     "Legacy combiner '{}' ({}) has TAG reference '{}' without scope, "
                             + "and tag not found in any adapter. The combiner may not function correctly.",
                     combiner.name(),
                     combiner.id(),
                     tagName);
-            return instruction;
+            return ref;
         }
 
         if (adapters.size() == 1) {
-            // Case A: Tag found in exactly one adapter - backfill scope
             final String adapterId = adapters.get(0);
             log.info(
                     "Migrated TAG reference '{}' in combiner '{}' ({}) to scope '{}'.",
@@ -223,13 +256,9 @@ public class DataCombiningScopeMigrator {
                     combiner.name(),
                     combiner.id(),
                     adapterId);
-            return new Instruction(
-                    instruction.sourceFieldName(),
-                    instruction.destinationFieldName(),
-                    new DataIdentifierReference(ref.id(), ref.type(), adapterId));
+            return new DataIdentifierReference(ref.id(), ref.type(), adapterId);
         }
 
-        // Case B: Tag found in multiple adapters
         log.warn(
                 "Legacy combiner '{}' ({}) has TAG reference '{}' without scope, "
                         + "but tag exists in multiple adapters: {}. "
@@ -238,6 +267,6 @@ public class DataCombiningScopeMigrator {
                 combiner.id(),
                 tagName,
                 adapters);
-        return instruction;
+        return ref;
     }
 }
