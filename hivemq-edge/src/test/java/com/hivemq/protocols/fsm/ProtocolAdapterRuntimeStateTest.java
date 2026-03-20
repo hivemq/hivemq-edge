@@ -41,7 +41,7 @@ public class ProtocolAdapterRuntimeStateTest {
                     ProtocolAdapterRuntimeState.Stopping,
                     Set.of(ProtocolAdapterRuntimeState.Idle, ProtocolAdapterRuntimeState.Error),
                     ProtocolAdapterRuntimeState.Error,
-                    Set.of(ProtocolAdapterRuntimeState.Idle));
+                    Set.of(ProtocolAdapterRuntimeState.Stopping, ProtocolAdapterRuntimeState.Idle));
 
     @Test
     public void whenEverythingWorks_thenTransitionShouldWork() {

@@ -293,8 +293,8 @@ class ProtocolAdapterWrapper2Test {
 
         @Test
         void stop_whenIdle_returnsFalse() {
-            // Idle -> stop is a no-op that returns true (already stopped)
-            assertThat(wrapper.stop(false)).isTrue();
+            // Idle -> Stopping is invalid, stop returns false
+            assertThat(wrapper.stop(false)).isFalse();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
         }
 
@@ -754,13 +754,13 @@ class ProtocolAdapterWrapper2Test {
     class StopIdempotency {
 
         @Test
-        void stop_calledTwice_secondReturnsTrueAsNoOp() {
+        void stop_calledTwice_secondReturnsFalse() {
             wrapper.start();
             assertThat(wrapper.stop(false)).isTrue();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
 
-            // Second stop from Idle is a no-op (already stopped)
-            assertThat(wrapper.stop(false)).isTrue();
+            // Second stop from Idle fails — Idle → Stopping is invalid
+            assertThat(wrapper.stop(false)).isFalse();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
         }
     }
