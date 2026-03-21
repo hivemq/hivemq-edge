@@ -90,7 +90,7 @@
     },
     "preLogin": {
       "forceReading": "Please read the notice fully before continuing",
-      "submit": "Proceed to sign in"
+      "submit": "Sign In"
     },
     "title": "Sign in",
     "username": {
