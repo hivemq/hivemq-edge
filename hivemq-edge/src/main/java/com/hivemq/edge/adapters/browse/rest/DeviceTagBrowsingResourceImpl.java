@@ -41,6 +41,7 @@ import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
@@ -76,7 +77,7 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         if (accept == null || accept.isEmpty() || accept.contains("*/*")) {
             return MEDIA_TYPE_CSV;
         }
-        final String type = accept.toLowerCase();
+        final String type = accept.toLowerCase(Locale.ROOT);
         return type.contains("json") ? APPLICATION_JSON : type.contains("yaml") ? MEDIA_TYPE_YAML : MEDIA_TYPE_CSV;
     }
 
@@ -107,7 +108,7 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
             if (e.getMessage() != null && e.getMessage().contains("timed out")) {
                 return errorResponse(Response.Status.GATEWAY_TIMEOUT, e.getMessage());
             }
-            return errorResponse(Response.Status.CONFLICT, e.getMessage());
+            return errorResponse(Response.Status.CONFLICT, e.getMessage() != null ? e.getMessage() : "Browse failed");
         }
 
         // Map to DeviceTagRow
@@ -176,7 +177,7 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         // Deserialize body based on Content-Type
         final List<DeviceTagRow> rows;
         try {
-            final String ct = contentType != null ? contentType.toLowerCase() : "";
+            final String ct = contentType != null ? contentType.toLowerCase(Locale.ROOT) : "";
             if (ct.contains("json")) {
                 rows = jsonSerializer.deserialize(body);
             } else if (ct.contains("yaml")) {

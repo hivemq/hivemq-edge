@@ -64,12 +64,13 @@ public class DeviceTagImporter {
         this.adapterExtractor = adapterExtractor;
     }
 
-    private static @Nullable String resolveWildcard(final @Nullable String value, final @NotNull String defaultValue) {
+    private static @Nullable String resolveWildcard(final @Nullable String value, final @Nullable String defaultValue) {
         return "*".equals(value) ? defaultValue : value;
     }
 
     private static @NotNull TagEntity toTagEntity(final @NotNull DeviceTagRow row) {
-        return new TagEntity(row.getTagName(), row.getTagDescription(), Map.of("node", row.getNodeId()));
+        return new TagEntity(
+                Objects.requireNonNull(row.getTagName()), row.getTagDescription(), Map.of("node", row.getNodeId()));
     }
 
     private static @NotNull NorthboundMappingEntity toNorthboundMappingEntity(final @NotNull DeviceTagRow row) {
@@ -86,8 +87,8 @@ public class DeviceTagImporter {
             userProperties = List.of();
         }
         return new NorthboundMappingEntity(
-                row.getTagName(),
-                row.getNorthboundTopic(),
+                Objects.requireNonNull(row.getTagName()),
+                Objects.requireNonNull(row.getNorthboundTopic()),
                 qos,
                 null, // messageHandlingOptions — always MQTTMessagePerTag
                 includeTagNames,
@@ -108,8 +109,8 @@ public class DeviceTagImporter {
             instructions = List.of(new InstructionEntity("value", "value", null));
         }
         return new SouthboundMappingEntity(
-                row.getTagName(),
-                row.getSouthboundTopic(),
+                Objects.requireNonNull(row.getTagName()),
+                Objects.requireNonNull(row.getSouthboundTopic()),
                 new FieldMappingEntity(instructions),
                 ""); // fromNorthSchema — empty; populated after tag creation by the adapter
     }
@@ -312,7 +313,7 @@ public class DeviceTagImporter {
                 // DELETE mode does not create tags — file-only tags are rejected by validation
                 continue;
             }
-            final DeviceTagRow row = fileRowsByTag.get(tagName);
+            final DeviceTagRow row = Objects.requireNonNull(fileRowsByTag.get(tagName));
             finalTags.add(toTagEntity(row));
             tagActions.add(new TagAction(tagName, TagAction.Action.CREATED));
             tagsCreated++;
@@ -329,8 +330,8 @@ public class DeviceTagImporter {
 
         // Process in-both tags
         for (final String tagName : inBothTags) {
-            final DeviceTagRow row = fileRowsByTag.get(tagName);
-            final TagEntity existing = edgeTagsByName.get(tagName);
+            final DeviceTagRow row = Objects.requireNonNull(fileRowsByTag.get(tagName));
+            final TagEntity existing = Objects.requireNonNull(edgeTagsByName.get(tagName));
 
             final boolean identical = tagDefinitionsMatch(row, existing)
                     && mappingsMatch(row, edgeNorthboundByTag.get(tagName), edgeSouthboundByTag.get(tagName));
