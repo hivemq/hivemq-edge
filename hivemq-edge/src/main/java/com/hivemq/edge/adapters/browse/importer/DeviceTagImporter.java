@@ -1,0 +1,416 @@
+/*
+ * Copyright 2019-present HiveMQ GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.hivemq.edge.adapters.browse.importer;
+
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.ADAPTER_NOT_FOUND;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.UPDATE_FAILED;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.WILDCARD_NO_DEFAULT;
+
+import com.hivemq.configuration.entity.adapter.MqttUserPropertyEntity;
+import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
+import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
+import com.hivemq.configuration.entity.adapter.SouthboundMappingEntity;
+import com.hivemq.configuration.entity.adapter.TagEntity;
+import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
+import com.hivemq.configuration.entity.adapter.fieldmapping.InstructionEntity;
+import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
+import com.hivemq.edge.adapters.browse.model.DeviceTagRow;
+import com.hivemq.edge.adapters.browse.model.ImportMode;
+import com.hivemq.edge.adapters.browse.model.ImportResult;
+import com.hivemq.edge.adapters.browse.model.TagAction;
+import com.hivemq.edge.adapters.browse.validate.DeviceTagValidator;
+import com.hivemq.edge.adapters.browse.validate.ValidationError;
+import com.hivemq.mqtt.message.QoS;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+@Singleton
+public class DeviceTagImporter {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(DeviceTagImporter.class);
+
+    private final @NotNull DeviceTagValidator validator;
+    private final @NotNull ProtocolAdapterExtractor adapterExtractor;
+
+    @Inject
+    public DeviceTagImporter(
+            final @NotNull DeviceTagValidator validator, final @NotNull ProtocolAdapterExtractor adapterExtractor) {
+        this.validator = validator;
+        this.adapterExtractor = adapterExtractor;
+    }
+
+    private static @Nullable String resolveWildcard(final @Nullable String value, final @Nullable String defaultValue) {
+        return "*".equals(value) ? defaultValue : value;
+    }
+
+    private static @NotNull TagEntity toTagEntity(final @NotNull DeviceTagRow row) {
+        return new TagEntity(
+                Objects.requireNonNull(row.getTagName()), row.getTagDescription(), Map.of("node", row.getNodeId()));
+    }
+
+    private static @NotNull NorthboundMappingEntity toNorthboundMappingEntity(final @NotNull DeviceTagRow row) {
+        final int qos = row.getMaxQos() != null ? row.getMaxQos() : QoS.AT_LEAST_ONCE.getQosNumber();
+        final boolean includeTagNames = row.getIncludeTagNames() != null ? row.getIncludeTagNames() : false;
+        final boolean includeTimestamp = row.getIncludeTimestamp() != null ? row.getIncludeTimestamp() : true;
+        final Long expiry = row.getMessageExpiryInterval();
+        final List<MqttUserPropertyEntity> userProperties;
+        if (row.getMqttUserProperties() != null) {
+            userProperties = row.getMqttUserProperties().entrySet().stream()
+                    .map(e -> new MqttUserPropertyEntity(e.getKey(), e.getValue()))
+                    .toList();
+        } else {
+            userProperties = List.of();
+        }
+        return new NorthboundMappingEntity(
+                Objects.requireNonNull(row.getTagName()),
+                Objects.requireNonNull(row.getNorthboundTopic()),
+                qos,
+                null, // messageHandlingOptions — always MQTTMessagePerTag
+                includeTagNames,
+                includeTimestamp,
+                userProperties,
+                expiry);
+    }
+
+    private static @NotNull SouthboundMappingEntity toSouthboundMappingEntity(final @NotNull DeviceTagRow row) {
+        final List<InstructionEntity> instructions;
+        if (row.getSouthboundFieldMapping() != null
+                && !row.getSouthboundFieldMapping().isEmpty()) {
+            instructions = row.getSouthboundFieldMapping().stream()
+                    .map(fm -> new InstructionEntity(fm.source(), fm.destination(), null))
+                    .toList();
+        } else {
+            // Default: value -> value
+            instructions = List.of(new InstructionEntity("value", "value", null));
+        }
+        return new SouthboundMappingEntity(
+                Objects.requireNonNull(row.getTagName()),
+                Objects.requireNonNull(row.getSouthboundTopic()),
+                new FieldMappingEntity(instructions),
+                ""); // fromNorthSchema — empty; populated after tag creation by the adapter
+    }
+
+    private static boolean tagDefinitionsMatch(final @NotNull DeviceTagRow row, final @NotNull TagEntity existing) {
+        final Map<String, Object> existingDef = existing.getDefinition();
+        final String existingNode =
+                existingDef.get("node") != null ? existingDef.get("node").toString() : null;
+        return Objects.equals(row.getNodeId(), existingNode)
+                && Objects.equals(nullToEmpty(row.getTagDescription()), nullToEmpty(existing.getDescription()));
+    }
+
+    private static @NotNull String nullToEmpty(final @Nullable String s) {
+        return s == null ? "" : s;
+    }
+
+    private static boolean mappingsMatch(
+            final @NotNull DeviceTagRow row,
+            final @Nullable NorthboundMappingEntity existingNb,
+            final @Nullable SouthboundMappingEntity existingSb) {
+        if (row.hasNorthboundMapping()) {
+            if (existingNb == null) {
+                return false;
+            }
+            if (!Objects.equals(row.getNorthboundTopic(), existingNb.getTopic())) {
+                return false;
+            }
+            if (row.getMaxQos() != null && row.getMaxQos() != existingNb.getMaxQoS()) {
+                return false;
+            }
+        }
+        if (row.hasSouthboundMapping()) {
+            if (existingSb == null) {
+                return false;
+            }
+            return Objects.equals(row.getSouthboundTopic(), existingSb.getTopicFilter());
+        }
+        return true;
+    }
+
+    private static @NotNull List<ValidationError> collectWildcardErrors(final @NotNull List<DeviceTagRow> rows) {
+        final List<ValidationError> errors = new ArrayList<>();
+        for (int i = 0; i < rows.size(); i++) {
+            final DeviceTagRow row = rows.get(i);
+            final int rowNum = i + 1;
+            if ("*".equals(row.getTagName())
+                    && (row.getTagNameDefault() == null
+                            || row.getTagNameDefault().isEmpty())) {
+                errors.add(new ValidationError(
+                        rowNum,
+                        "tag_name",
+                        "*",
+                        WILDCARD_NO_DEFAULT,
+                        "Wildcard '*' used for tag_name but no default value available"));
+            }
+            if ("*".equals(row.getNorthboundTopic())
+                    && (row.getNorthboundTopicDefault() == null
+                            || row.getNorthboundTopicDefault().isEmpty())) {
+                errors.add(new ValidationError(
+                        rowNum,
+                        "northbound_topic",
+                        "*",
+                        WILDCARD_NO_DEFAULT,
+                        "Wildcard '*' used for northbound_topic but no default value available"));
+            }
+            if ("*".equals(row.getSouthboundTopic())
+                    && (row.getSouthboundTopicDefault() == null
+                            || row.getSouthboundTopicDefault().isEmpty())) {
+                errors.add(new ValidationError(
+                        rowNum,
+                        "southbound_topic",
+                        "*",
+                        WILDCARD_NO_DEFAULT,
+                        "Wildcard '*' used for southbound_topic but no default value available"));
+            }
+        }
+        return errors;
+    }
+
+    public @NotNull ImportResult doImport(
+            final @NotNull List<DeviceTagRow> rows, final @NotNull ImportMode mode, final @NotNull String adapterId)
+            throws DeviceTagImporterException {
+
+        // Step 1: Resolve wildcards
+        final List<DeviceTagRow> resolved = new ArrayList<>();
+        for (final DeviceTagRow row : rows) {
+            final DeviceTagRow.Builder builder = DeviceTagRow.builder()
+                    .nodePath(row.getNodePath())
+                    .namespaceUri(row.getNamespaceUri())
+                    .namespaceIndex(row.getNamespaceIndex())
+                    .nodeId(row.getNodeId())
+                    .dataType(row.getDataType())
+                    .accessLevel(row.getAccessLevel())
+                    .nodeDescription(row.getNodeDescription())
+                    .tagNameDefault(row.getTagNameDefault())
+                    .tagDescription(row.getTagDescription())
+                    .northboundTopicDefault(row.getNorthboundTopicDefault())
+                    .southboundTopicDefault(row.getSouthboundTopicDefault())
+                    .southboundFieldMapping(row.getSouthboundFieldMapping())
+                    .maxQos(row.getMaxQos())
+                    .messageExpiryInterval(row.getMessageExpiryInterval())
+                    .includeTimestamp(row.getIncludeTimestamp())
+                    .includeTagNames(row.getIncludeTagNames())
+                    .includeMetadata(row.getIncludeMetadata())
+                    .mqttUserProperties(row.getMqttUserProperties());
+            // Resolve * wildcards
+            builder.tagName(resolveWildcard(row.getTagName(), row.getTagNameDefault()));
+            builder.northboundTopic(resolveWildcard(row.getNorthboundTopic(), row.getNorthboundTopicDefault()));
+            builder.southboundTopic(resolveWildcard(row.getSouthboundTopic(), row.getSouthboundTopicDefault()));
+            resolved.add(builder.build());
+        }
+
+        // Step 2: Validate
+        final List<ValidationError> errors = validator.validate(resolved, mode, adapterId);
+
+        // Collect wildcard resolution errors
+        final List<ValidationError> wildcardErrors = collectWildcardErrors(rows);
+        final List<ValidationError> allErrors = new ArrayList<>(errors);
+        allErrors.addAll(wildcardErrors);
+
+        // Step 3: If errors, fail
+        if (!allErrors.isEmpty()) {
+            throw new DeviceTagImporterException(allErrors);
+        }
+
+        // Step 4: Load current state
+        final ProtocolAdapterEntity adapter = adapterExtractor
+                .getAdapterByAdapterId(adapterId)
+                .orElseThrow(() -> new DeviceTagImporterException(List.of(new ValidationError(
+                        null, null, adapterId, ADAPTER_NOT_FOUND, "Adapter '" + adapterId + "' not found"))));
+
+        // Build maps of current edge state
+        final Map<String, TagEntity> edgeTagsByName =
+                adapter.getTags().stream().collect(Collectors.toMap(TagEntity::getName, t -> t, (a, b) -> a));
+        final Map<String, NorthboundMappingEntity> edgeNorthboundByTag = adapter.getNorthboundMappings().stream()
+                .collect(Collectors.toMap(NorthboundMappingEntity::getTagName, m -> m, (a, b) -> a));
+        final Map<String, SouthboundMappingEntity> edgeSouthboundByTag = adapter.getSouthboundMappings().stream()
+                .collect(Collectors.toMap(SouthboundMappingEntity::getTagName, m -> m, (a, b) -> a));
+
+        // Build map of file rows (only those with tags)
+        final Map<String, DeviceTagRow> fileRowsByTag = new LinkedHashMap<>();
+        for (final DeviceTagRow row : resolved) {
+            if (row.hasTag()) {
+                fileRowsByTag.put(row.getTagName(), row);
+            }
+        }
+
+        // Step 5: Classify tags
+        final Set<String> edgeOnlyTags = new HashSet<>(edgeTagsByName.keySet());
+        edgeOnlyTags.removeAll(fileRowsByTag.keySet());
+
+        final Set<String> fileOnlyTags = new HashSet<>(fileRowsByTag.keySet());
+        fileOnlyTags.removeAll(edgeTagsByName.keySet());
+
+        final Set<String> inBothTags = new HashSet<>(fileRowsByTag.keySet());
+        inBothTags.retainAll(edgeTagsByName.keySet());
+
+        // Step 6: Determine actions per mode
+        final List<TagAction> tagActions = new ArrayList<>();
+        final List<TagEntity> finalTags = new ArrayList<>();
+        final List<NorthboundMappingEntity> finalNorthbound = new ArrayList<>();
+        final List<SouthboundMappingEntity> finalSouthbound = new ArrayList<>();
+
+        int tagsCreated = 0, tagsUpdated = 0, tagsDeleted = 0;
+        int nbCreated = 0, nbDeleted = 0, sbCreated = 0, sbDeleted = 0;
+
+        // Process edge-only tags
+        for (final String tagName : edgeOnlyTags) {
+            switch (mode) {
+                case DELETE, OVERWRITE -> {
+                    tagActions.add(new TagAction(tagName, TagAction.Action.DELETED));
+                    tagsDeleted++;
+                    if (edgeNorthboundByTag.containsKey(tagName)) {
+                        nbDeleted++;
+                    }
+                    if (edgeSouthboundByTag.containsKey(tagName)) {
+                        sbDeleted++;
+                    }
+                }
+                case MERGE_SAFE, MERGE_OVERWRITE -> {
+                    // KEEP — add to final lists
+                    finalTags.add(edgeTagsByName.get(tagName));
+                    if (edgeNorthboundByTag.containsKey(tagName)) {
+                        finalNorthbound.add(edgeNorthboundByTag.get(tagName));
+                    }
+                    if (edgeSouthboundByTag.containsKey(tagName)) {
+                        finalSouthbound.add(edgeSouthboundByTag.get(tagName));
+                    }
+                }
+                case CREATE -> {
+                    // CREATE mode: edge-only tags are rejected by validation.
+                    // This branch should never execute if validation passed.
+                }
+            }
+        }
+
+        // Process file-only tags (DELETE mode: file-only should have been caught by validation)
+        for (final String tagName : fileOnlyTags) {
+            if (mode == ImportMode.DELETE) {
+                // DELETE mode does not create tags — file-only tags are rejected by validation
+                continue;
+            }
+            final DeviceTagRow row = Objects.requireNonNull(fileRowsByTag.get(tagName));
+            finalTags.add(toTagEntity(row));
+            tagActions.add(new TagAction(tagName, TagAction.Action.CREATED));
+            tagsCreated++;
+
+            if (row.hasNorthboundMapping()) {
+                finalNorthbound.add(toNorthboundMappingEntity(row));
+                nbCreated++;
+            }
+            if (row.hasSouthboundMapping()) {
+                finalSouthbound.add(toSouthboundMappingEntity(row));
+                sbCreated++;
+            }
+        }
+
+        // Process in-both tags
+        for (final String tagName : inBothTags) {
+            final DeviceTagRow row = Objects.requireNonNull(fileRowsByTag.get(tagName));
+            final TagEntity existing = Objects.requireNonNull(edgeTagsByName.get(tagName));
+
+            final boolean identical = tagDefinitionsMatch(row, existing)
+                    && mappingsMatch(row, edgeNorthboundByTag.get(tagName), edgeSouthboundByTag.get(tagName));
+
+            if (identical) {
+                // No-op — keep existing
+                finalTags.add(existing);
+                if (edgeNorthboundByTag.containsKey(tagName)) {
+                    finalNorthbound.add(edgeNorthboundByTag.get(tagName));
+                }
+                if (edgeSouthboundByTag.containsKey(tagName)) {
+                    finalSouthbound.add(edgeSouthboundByTag.get(tagName));
+                }
+            } else {
+                // Differ
+                switch (mode) {
+                    case OVERWRITE, MERGE_OVERWRITE -> {
+                        finalTags.add(toTagEntity(row));
+                        tagActions.add(new TagAction(tagName, TagAction.Action.UPDATED));
+                        tagsUpdated++;
+
+                        // Replace mappings
+                        if (edgeNorthboundByTag.containsKey(tagName)) {
+                            nbDeleted++;
+                        }
+                        if (edgeSouthboundByTag.containsKey(tagName)) {
+                            sbDeleted++;
+                        }
+                        if (row.hasNorthboundMapping()) {
+                            finalNorthbound.add(toNorthboundMappingEntity(row));
+                            nbCreated++;
+                        }
+                        if (row.hasSouthboundMapping()) {
+                            finalSouthbound.add(toSouthboundMappingEntity(row));
+                            sbCreated++;
+                        }
+                    }
+                    default -> {
+                        // CREATE, DELETE, MERGE_SAFE: conflict should have been caught by validation
+                        finalTags.add(existing);
+                        if (edgeNorthboundByTag.containsKey(tagName)) {
+                            finalNorthbound.add(edgeNorthboundByTag.get(tagName));
+                        }
+                        if (edgeSouthboundByTag.containsKey(tagName)) {
+                            finalSouthbound.add(edgeSouthboundByTag.get(tagName));
+                        }
+                    }
+                }
+            }
+        }
+
+        // Step 7: Apply mutations atomically
+        final ProtocolAdapterEntity updatedAdapter = new ProtocolAdapterEntity(
+                adapter.getAdapterId(),
+                adapter.getProtocolId(),
+                adapter.getConfigVersion(),
+                adapter.getConfig(),
+                finalNorthbound,
+                finalSouthbound,
+                finalTags);
+
+        final boolean success = adapterExtractor.updateAdapter(updatedAdapter);
+        if (!success) {
+            throw new DeviceTagImporterException(List.of(new ValidationError(
+                    null,
+                    null,
+                    null,
+                    UPDATE_FAILED,
+                    "Failed to update adapter configuration. Possible tag name conflict.")));
+        }
+
+        log.info(
+                "Import completed for adapter '{}': {} tags created, {} updated, {} deleted",
+                adapterId,
+                tagsCreated,
+                tagsUpdated,
+                tagsDeleted);
+
+        return new ImportResult(
+                tagsCreated, tagsUpdated, tagsDeleted, nbCreated, nbDeleted, sbCreated, sbDeleted, tagActions);
+    }
+}
