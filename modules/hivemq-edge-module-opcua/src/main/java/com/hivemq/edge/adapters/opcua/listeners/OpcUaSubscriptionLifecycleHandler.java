@@ -15,28 +15,15 @@
  */
 package com.hivemq.edge.adapters.opcua.listeners;
 
-import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
-import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
-
+import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
-import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.edge.adapters.opcua.Constants;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.MonitoredItemServiceOperationResult;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.MonitoredItemSynchronizationException;
@@ -50,6 +37,20 @@ import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
+import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.SubscriptionListener {
 
@@ -66,7 +67,6 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
     private final @NotNull Map<NodeId, OpcuaTag> nodeIdToTag;
     private final @NotNull List<OpcuaTag> tags;
     private final @NotNull OpcUaClient client;
-    private final @NotNull DataPointFactory dataPointFactory;
     private final @NotNull OpcUaSpecificAdapterConfig config;
 
     // Track last keep-alive timestamp for health monitoring
@@ -79,7 +79,6 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             final @NotNull String adapterId,
             final @NotNull List<OpcuaTag> tags,
             final @NotNull OpcUaClient client,
-            final @NotNull DataPointFactory dataPointFactory,
             final @NotNull OpcUaSpecificAdapterConfig config) {
         this.config = config;
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
@@ -87,7 +86,6 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         this.eventService = eventService;
         this.adapterId = adapterId;
         this.client = client;
-        this.dataPointFactory = dataPointFactory;
         this.tags = tags;
         this.tagToFirstSeen = new ConcurrentHashMap<>();
         this.lastKeepAliveTimestamp = System.currentTimeMillis();
@@ -125,16 +123,9 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         return Optional.empty();
     }
 
-    private static @NotNull String extractPayload(final @NotNull OpcUaClient client, final @NotNull DataValue value)
+    private static void extractPayload(final @NotNull OpcUaClient client, final @NotNull DataValue value, final @NotNull DataPointBuilder<?> builder)
             throws UaException {
-        if (value.getValue().getValue() == null) {
-            return "";
-        }
-
-        final ByteBuffer byteBuffer = OpcUaToJsonConverter.convertPayload(client.getDynamicEncodingContext(), value);
-        final byte[] buffer = new byte[byteBuffer.remaining()];
-        byteBuffer.get(buffer);
-        return new String(buffer, StandardCharsets.UTF_8);
+        OpcUaToJsonConverter.convertPayload(client.getDynamicEncodingContext(), value, builder);
     }
 
     /**
@@ -314,6 +305,7 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             final @NotNull List<OpcUaMonitoredItem> items,
             final @NotNull List<DataValue> values) {
         lastKeepAliveTimestamp = System.currentTimeMillis();
+        final var dataPointsPublisher = tagStreamingService.dataPointsPublisher();
         for (int i = 0; i < items.size(); i++) {
             final var tag = Objects.requireNonNull(
                     nodeIdToTag.get(items.get(i).getReadValueId().getNodeId()));
@@ -327,12 +319,14 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             }
             try {
                 protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_RECEIVED_COUNT);
-                final String payload = extractPayload(client, values.get(i));
-                tagStreamingService.feed(tn, List.of(dataPointFactory.createJsonDataPoint(tn, payload)));
+
+                final var dataPointBuilder = dataPointsPublisher.addDataPoint(tag);
+                extractPayload(client, values.get(i), dataPointBuilder);
             } catch (final Throwable e) {
                 protocolAdapterMetricsService.increment(Constants.METRIC_SUBSCRIPTION_DATA_ERROR_COUNT);
                 throw new RuntimeException(e);
             }
         }
+        dataPointsPublisher.publish();
     }
 }

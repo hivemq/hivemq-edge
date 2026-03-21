@@ -31,6 +31,7 @@ import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.modules.adapters.data.TagManager;
+import com.hivemq.edge.modules.adapters.impl.ModuleServicesPerModuleImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.persistence.mappings.NorthboundMapping;
@@ -80,6 +81,7 @@ public class ProtocolAdapterWrapper {
     private final AtomicReference<OperationState> operationState = new AtomicReference<>(OperationState.IDLE);
     private final AtomicReference<ScheduledExecutorService> schedulerRef = new AtomicReference<>(null);
     private final AtomicReference<ScheduledFuture<?>> schedulerFutureRef = new AtomicReference<>(null);
+    private final ModuleServicesPerModuleImpl perModule;
     protected @Nullable Long lastStartAttemptTime;
 
     public ProtocolAdapterWrapper(
@@ -92,7 +94,8 @@ public class ProtocolAdapterWrapper {
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterStateImpl protocolAdapterState,
             final @NotNull NorthboundConsumerFactory northboundConsumerFactory,
-            final @NotNull TagManager tagManager) {
+            final @NotNull TagManager tagManager,
+            final @NotNull ModuleServicesPerModuleImpl perModule) {
         this.protocolAdapterWritingService = protocolAdapterWritingService;
         this.protocolAdapterPollingService = protocolAdapterPollingService;
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
@@ -103,6 +106,11 @@ public class ProtocolAdapterWrapper {
         this.config = config;
         this.northboundConsumerFactory = northboundConsumerFactory;
         this.tagManager = tagManager;
+        this.perModule = perModule;
+    }
+
+    public ModuleServicesPerModuleImpl getPerModule() {
+        return perModule;
     }
 
     public @NotNull CompletableFuture<Void> startAsync(

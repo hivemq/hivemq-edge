@@ -19,7 +19,6 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.discovery.NodeTree;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
-import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -45,6 +44,16 @@ import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
 import com.hivemq.edge.adapters.opcua.southbound.JsonSchemaGenerator;
 import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverter;
 import com.hivemq.edge.adapters.opcua.southbound.OpcUaPayload;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
+import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -61,15 +70,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
-import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
-import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
-import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.VisibleForTesting;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
@@ -81,7 +81,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private final @NotNull List<OpcuaTag> tagList;
     private final @NotNull AtomicReference<OpcUaClientConnection> opcUaClientConnection;
 
-    private final @NotNull DataPointFactory dataPointFactory;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull OpcUaSpecificAdapterConfig config;
     private final @NotNull AtomicReference<ScheduledFuture<?>> retryFuture = new AtomicReference<>();
@@ -112,7 +111,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.tagList = input.getTags().stream().map(tag -> (OpcuaTag) tag).toList();
         this.tagNameToTag = tagList.stream().collect(Collectors.toMap(OpcuaTag::getName, Function.identity()));
-        this.dataPointFactory = input.adapterFactories().dataPointFactory();
         this.protocolAdapterMetricsService = input.getProtocolAdapterMetricsHelper();
         this.config = input.getConfig();
         this.opcUaClientConnection = new AtomicReference<>();
@@ -194,7 +192,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 tagList,
                 protocolAdapterState,
                 input.moduleServices().protocolAdapterTagStreamingService(),
-                dataPointFactory,
                 input.moduleServices().eventService(),
                 protocolAdapterMetricsService,
                 config,
@@ -320,7 +317,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                     tagList,
                     protocolAdapterState,
                     moduleServices.protocolAdapterTagStreamingService(),
-                    dataPointFactory,
                     moduleServices.eventService(),
                     protocolAdapterMetricsService,
                     config,
@@ -756,17 +752,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
 
                         log.info("Executing retry attempt #{} for OPC UA adapter '{}'", attemptCount, adapterId);
 
-                        // Create new connection object for retry
-                        final OpcUaClientConnection newConn = new OpcUaClientConnection(
-                                adapterId,
-                                tagList,
-                                protocolAdapterState,
-                                this.moduleServices.protocolAdapterTagStreamingService(),
-                                dataPointFactory,
-                                this.moduleServices.eventService(),
-                                protocolAdapterMetricsService,
-                                config,
-                                opcUaServiceFaultListener);
+                    // Create new connection object for retry
+                    final OpcUaClientConnection newConn = new OpcUaClientConnection(
+                            adapterId,
+                            tagList,
+                            protocolAdapterState,
+                            this.moduleServices.protocolAdapterTagStreamingService(),
+                            this.moduleServices.eventService(),
+                            protocolAdapterMetricsService,
+                            config,
+                            opcUaServiceFaultListener);
 
                         // Set as current connection and attempt
                         protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);

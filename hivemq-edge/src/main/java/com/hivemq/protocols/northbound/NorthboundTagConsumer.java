@@ -18,6 +18,7 @@ package com.hivemq.protocols.northbound;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
@@ -28,12 +29,12 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.datapoint.DataPointWithMetadata;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishServiceImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -43,7 +44,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class NorthboundTagConsumer implements TagConsumer {
+public class NorthboundTagConsumer implements SingleTagConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(NorthboundTagConsumer.class);
 
@@ -89,8 +90,8 @@ public class NorthboundTagConsumer implements TagConsumer {
     }
 
     @Override
-    public void accept(final @NotNull List<DataPoint> dataPoints) {
-        Preconditions.checkNotNull(dataPoints);
+    public void accept(final @NotNull DataPoint dataPoint) {
+        Preconditions.checkNotNull(dataPoint);
         Preconditions.checkNotNull(pollingContext);
         Preconditions.checkNotNull(pollingContext.getMqttTopic());
 
@@ -98,68 +99,73 @@ public class NorthboundTagConsumer implements TagConsumer {
                 pollingContext.getMqttQos() <= 2 && pollingContext.getMqttQos() >= 0,
                 "QoS needs to be a valid QoS value (0,1,2)");
         try {
-            final List<byte[]> jsonPayloadsAsBytes = new ArrayList<>();
-
             final JsonPayloadCreator jsonPayloadCreatorOverride = pollingContext.getJsonPayloadCreator();
 
-            final List<DataPoint> jsonDataPoints =
-                    dataPoints.stream().filter(DataPoint::treatTagValueAsJson).toList();
+            final byte[] jsonToSend;
+            if(dataPoint instanceof final DataPointWithMetadata dpMeta) {
+                final var node = JsonNodeFactory.instance.objectNode();
+                node.set("value", dpMeta.getTagValue());
+                node.set("timestamp", JsonNodeFactory.instance.numberNode(dpMeta.getTimestamp()));
+                jsonToSend = node.toString().getBytes(StandardCharsets.UTF_8);
+            } else {
+                final DataPoint processedDataPoint;
+                if (dataPoint.treatTagValueAsJson()) {
+                    try {
+                        final var jsonMap = objectMapper.readValue((String) dataPoint.getTagValue(), typeRef);
+                        final var value = jsonMap.get("value");
+                        if (value != null) {
+                            processedDataPoint = dataPointFactory.create(dataPoint.getTagName(), value);
+                        } else {
+                            throw new RuntimeException("No value entry in JSON message");
+                        }
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                } else {
+                    processedDataPoint = dataPoint;
+                }
+                jsonToSend = Objects.requireNonNullElse(jsonPayloadCreatorOverride, jsonPayloadCreator)
+                        .convertToJson(
+                                List.of(dataPointFactory.create(dataPoint.getTagName(), processedDataPoint)),
+                                pollingContext,
+                                objectMapper)
+                        .getFirst();
+            }
 
-            final var preparedJsonDataPoints = jsonDataPoints.stream()
-                    .map(jsonDataPoint -> {
-                        try {
-                            final var jsonMap = objectMapper.readValue((String) jsonDataPoint.getTagValue(), typeRef);
-                            final var value = jsonMap.get("value");
-                            if (value != null) {
-                                return dataPointFactory.create(jsonDataPoint.getTagName(), value);
-                            } else {
-                                throw new RuntimeException("No value entry in JSON message");
-                            }
-                        } catch (JsonProcessingException e) {
-                            throw new RuntimeException(e);
+
+
+            final ProtocolAdapterPublishBuilder publishBuilder = protocolAdapterPublishService
+                    .createPublish()
+                    .withTopic(pollingContext.getMqttTopic())
+                    .withQoS(pollingContext.getMqttQos())
+                    .withPayload(jsonToSend)
+                    .withAdapter(protocolAdapter.getAdapter());
+            final CompletableFuture<ProtocolPublishResult> publishFuture = publishBuilder.send();
+            publishFuture
+                    .thenAccept(publishReturnCode -> {
+                        protocolAdapterMetricsService.incrementReadPublishSuccess();
+                        if (publishCount.incrementAndGet() == 1) {
+                            eventService
+                                    .createAdapterEvent(
+                                            protocolAdapter.getId(),
+                                            protocolAdapter
+                                                    .getAdapterInformation()
+                                                    .getProtocolId())
+                                    .withSeverity(EventImpl.SEVERITY.INFO)
+                                    .withTimestamp(System.currentTimeMillis())
+                                    .withMessage(String.format(
+                                            "Adapter '%s' took first sample to be published to '%s'",
+                                            protocolAdapter.getId(), pollingContext.getMqttTopic()))
+                                    .withPayload(
+                                            Payload.ContentType.JSON, new String(jsonToSend, StandardCharsets.UTF_8))
+                                    .fire();
                         }
                     })
-                    .toList();
-
-            final var dataPointsCopied = new ArrayList<>(dataPoints);
-            dataPointsCopied.removeAll(jsonDataPoints);
-            dataPointsCopied.addAll(preparedJsonDataPoints);
-            jsonPayloadsAsBytes.addAll(Objects.requireNonNullElse(jsonPayloadCreatorOverride, jsonPayloadCreator)
-                    .convertToJson(dataPointsCopied, pollingContext, objectMapper));
-
-            for (final byte[] json : jsonPayloadsAsBytes) {
-                final ProtocolAdapterPublishBuilder publishBuilder = protocolAdapterPublishService
-                        .createPublish()
-                        .withTopic(pollingContext.getMqttTopic())
-                        .withQoS(pollingContext.getMqttQos())
-                        .withPayload(json)
-                        .withAdapter(protocolAdapter.getAdapter());
-                final CompletableFuture<ProtocolPublishResult> publishFuture = publishBuilder.send();
-                publishFuture
-                        .thenAccept(publishReturnCode -> {
-                            protocolAdapterMetricsService.incrementReadPublishSuccess();
-                            if (publishCount.incrementAndGet() == 1) {
-                                eventService
-                                        .createAdapterEvent(
-                                                protocolAdapter.getId(),
-                                                protocolAdapter
-                                                        .getAdapterInformation()
-                                                        .getProtocolId())
-                                        .withSeverity(EventImpl.SEVERITY.INFO)
-                                        .withTimestamp(System.currentTimeMillis())
-                                        .withMessage(String.format(
-                                                "Adapter '%s' took first sample to be published to '%s'",
-                                                protocolAdapter.getId(), pollingContext.getMqttTopic()))
-                                        .withPayload(Payload.ContentType.JSON, new String(json, StandardCharsets.UTF_8))
-                                        .fire();
-                            }
-                        })
-                        .exceptionally(throwable -> {
-                            protocolAdapterMetricsService.incrementReadPublishFailure();
-                            log.warn("Error publishing adapter payload", throwable);
-                            return null;
-                        });
-            }
+                    .exceptionally(throwable -> {
+                        protocolAdapterMetricsService.incrementReadPublishFailure();
+                        log.warn("Error publishing adapter payload", throwable);
+                        return null;
+                    });
         } catch (final Exception e) {
             log.warn("Exception during polling of data for adapters '{}':", protocolAdapter.getId(), e);
         }

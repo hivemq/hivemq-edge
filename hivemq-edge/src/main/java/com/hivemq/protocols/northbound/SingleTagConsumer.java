@@ -16,11 +16,10 @@
 package com.hivemq.protocols.northbound;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import java.util.List;
 import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 
-public interface TagConsumer extends Consumer<List<DataPoint>> {
+public interface SingleTagConsumer extends Consumer<DataPoint> {
 
     @NotNull
     String getTagName();

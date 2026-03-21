@@ -15,18 +15,11 @@
  */
 package com.hivemq.edge.adapters.modbus;
 
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
-import static com.hivemq.edge.adapters.modbus.config.ModbusToMqttConfig.DEFAULT_MAX_POLL_ERRORS_BEFORE_REMOVAL;
-import static com.hivemq.edge.adapters.modbus.config.ModbusToMqttConfig.DEFAULT_POLL_INTERVAL_MILLIS;
-
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.discovery.NodeTree;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
-import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -36,16 +29,22 @@ import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.edge.adapters.etherip.PublishChangedDataOnlyHandler;
 import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
+import static com.hivemq.edge.adapters.modbus.config.ModbusToMqttConfig.DEFAULT_MAX_POLL_ERRORS_BEFORE_REMOVAL;
+import static com.hivemq.edge.adapters.modbus.config.ModbusToMqttConfig.DEFAULT_POLL_INTERVAL_MILLIS;
 
 public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
     private static final Logger log = LoggerFactory.getLogger(ModbusProtocolAdapter.class);
@@ -64,7 +63,6 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
             new PublishChangedDataOnlyHandler();
     private final @NotNull List<ModbusTag> tags;
     private final @NotNull String adapterId;
-    private final @NotNull DataPointFactory dataPointFactory;
     private final @NotNull AtomicBoolean stopRequested;
     private final @NotNull AtomicBoolean startRequested;
 
@@ -75,7 +73,6 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
-        this.dataPointFactory = input.adapterFactories().dataPointFactory();
         this.tags = input.getTags().stream().map(t -> (ModbusTag) t).toList();
         this.client = new ModbusClient(input.getConfig());
         this.stopRequested = new AtomicBoolean(false);
@@ -182,12 +179,14 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         if (startRequested.get() && !stopRequested.get() && client.isConnected()) {
 
+            final var dataPointsPublisher = pollingOutput.dataPointsPublisher();
+
             final int limit = tags.size();
             final CompletableFuture<ResulTuple>[] readRegisterFutures = new CompletableFuture[limit];
             for (int i = 0; i < limit; i++) {
                 final ModbusTag tag = tags.get(i);
                 readRegisterFutures[i] = client.readRegisters(tag)
-                        .thenApply(result -> new ResulTuple(tag.getName(), result))
+                        .thenApply(result -> new ResulTuple(tag, result))
                         .toCompletableFuture();
             }
 
@@ -206,16 +205,25 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
 
                     for (final CompletableFuture<ResulTuple> readRegisterFuture : readRegisterFutures) {
                         final ResulTuple entry = readRegisterFuture.join();
-                        final var tagName = entry.tagName();
+                        final var tag = entry.tag();
                         final var value = entry.value();
-                        final var dataPoints = List.of(dataPointFactory.create(tagName, value));
                         if (publishAllChanges
-                                || publishChangedDataOnlyHandler.replaceIfValueIsNew(tagName, dataPoints)) {
-                            dataPoints.forEach(pollingOutput::addDataPoint);
+                                || publishChangedDataOnlyHandler.replaceIfValueIsNew(tag.getName(), value)) {
+                            final var dataPointBuilder = dataPointsPublisher.addDataPoint(tag);
+                            switch (value) {
+                                case final Long val -> dataPointBuilder.value(val);
+                                case final Integer val -> dataPointBuilder.value(val);
+                                case final Float val -> dataPointBuilder.value(val);
+                                case final Double val -> dataPointBuilder.value(val);
+                                case final Short val -> dataPointBuilder.value(val);
+                                case final String val -> dataPointBuilder.value(val);
+                                default -> log.error("Unsupported data type {} for tag {}, skipping", value.getClass(), tag.getName());
+                            }
                         }
                     }
-                } finally {
-                    pollingOutput.finish();
+                    dataPointsPublisher.publish();
+                } catch (final Exception e) {
+                    pollingOutput.fail(e, "Unable to read tags from modbus");
                 }
             });
         }
@@ -267,5 +275,5 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
         return adapterInformation;
     }
 
-    private record ResulTuple(String tagName, Object value) {}
+    private record ResulTuple(ModbusTag tag, Object value) {}
 }
