@@ -306,10 +306,10 @@ public class DeviceTagJsonSerializer {
     static class FieldMappingDto {
         @JsonProperty("source")
         @NotNull
-        String source;
+        String source = "";
 
         @JsonProperty("destination")
         @NotNull
-        String destination;
+        String destination = "";
     }
 }

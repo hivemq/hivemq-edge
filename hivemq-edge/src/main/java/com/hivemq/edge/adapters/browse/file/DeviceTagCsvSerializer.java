@@ -124,7 +124,7 @@ public class DeviceTagCsvSerializer {
             return null;
         }
         final List<FieldMappingInstruction> result = new ArrayList<>();
-        for (final String pair : encoded.split(";")) {
+        for (final String pair : encoded.split(";", -1)) {
             final String trimmed = pair.trim();
             if (trimmed.isEmpty()) {
                 continue;
@@ -162,7 +162,7 @@ public class DeviceTagCsvSerializer {
             return null;
         }
         final Map<String, String> result = new LinkedHashMap<>();
-        for (final String pair : encoded.split(";")) {
+        for (final String pair : encoded.split(";", -1)) {
             final String trimmed = pair.trim();
             if (trimmed.isEmpty()) {
                 continue;
