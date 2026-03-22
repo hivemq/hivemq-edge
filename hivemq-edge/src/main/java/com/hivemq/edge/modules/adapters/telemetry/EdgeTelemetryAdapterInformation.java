@@ -84,7 +84,7 @@ public class EdgeTelemetryAdapterInformation implements ProtocolAdapterInformati
 
     @Override
     public @NotNull ProtocolAdapterCategory getCategory() {
-        return ProtocolAdapterCategory.SIMULATION;
+        return ProtocolAdapterCategory.TELEMETRY;
     }
 
     @Override
