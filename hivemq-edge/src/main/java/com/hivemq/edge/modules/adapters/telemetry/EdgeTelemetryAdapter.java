@@ -135,12 +135,16 @@ public class EdgeTelemetryAdapter implements ProtocolAdapter {
             final @NotNull String topicFilter) {
         try {
             final long count = service.getAndResetCount(tagKey);
-            final ObjectNode payload = MAPPER.createObjectNode();
-            payload.put("topicFilter", topicFilter);
-            payload.put("count", count);
-            payload.put("windowSeconds", PUBLISH_INTERVAL_SECONDS);
+            final ObjectNode inner = MAPPER.createObjectNode();
+            inner.put("value", count);
+            final ObjectNode context = inner.putObject("context");
+            context.put("topicFilter", topicFilter);
+            context.put("windowSeconds", PUBLISH_INTERVAL_SECONDS);
 
-            final DataPoint dataPoint = dataPointFactory.create(tagName, MAPPER.writeValueAsString(payload));
+            final ObjectNode wrapper = MAPPER.createObjectNode();
+            wrapper.set("value", inner);
+            final DataPoint dataPoint =
+                    dataPointFactory.createJsonDataPoint(tagName, MAPPER.writeValueAsString(wrapper));
             streamingService.feed(tagName, List.of(dataPoint));
         } catch (final Exception e) {
             log.warn("[{}] Failed to publish count for tag '{}'", adapterId, tagName, e);
