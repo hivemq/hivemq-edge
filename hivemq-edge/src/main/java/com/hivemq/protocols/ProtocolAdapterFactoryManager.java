@@ -21,6 +21,7 @@ import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.edge.modules.adapters.simulation.SimulationProtocolAdapterFactory;
+import com.hivemq.edge.modules.adapters.telemetry.EdgeTelemetryAdapterFactory;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.lang.reflect.Constructor;
@@ -84,6 +85,7 @@ public class ProtocolAdapterFactoryManager {
                 moduleLoader.findImplementations(ProtocolAdapterFactory.class);
 
         implementations.add(SimulationProtocolAdapterFactory.class);
+        implementations.add(EdgeTelemetryAdapterFactory.class);
 
         for (final Class<? extends ProtocolAdapterFactory> factoryClass : implementations) {
             try {

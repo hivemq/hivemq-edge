@@ -1,0 +1,18 @@
+{
+  "ui:tabs" : [
+    {
+      "id" : "coreFields",
+      "title" : "Settings",
+      "properties" : [
+        "id"
+      ]
+    }
+  ],
+  "id" : {
+    "ui:disabled" : false
+  },
+  "ui:order" : [
+    "id",
+    "*"
+  ]
+}

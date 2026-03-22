@@ -19,6 +19,7 @@ import com.hivemq.bootstrap.HiveMQEdgeNettyBootstrap;
 import com.hivemq.bootstrap.ListenerStartupInformation;
 import com.hivemq.bootstrap.StartupListenerVerifier;
 import com.hivemq.combining.runtime.DataCombinerManager;
+import com.hivemq.edge.modules.adapters.telemetry.EdgeTelemetryService;
 import com.hivemq.embedded.EmbeddedExtension;
 import com.hivemq.exceptions.HiveMQEdgeStartupException;
 import com.hivemq.extension.sdk.api.services.admin.AdminService;
@@ -43,6 +44,9 @@ public class HiveMQEdgeGateway {
     private final @NotNull AssetMapperManager assetMapperManager;
     private final @NotNull TopicBufferService topicBufferService;
 
+    @SuppressWarnings("unused") // instantiated for side-effect: sets EdgeTelemetryService.INSTANCE
+    private final @NotNull EdgeTelemetryService edgeTelemetryService;
+
     @Inject
     public HiveMQEdgeGateway(
             final @NotNull HiveMQEdgeNettyBootstrap nettyBootstrap,
@@ -51,7 +55,8 @@ public class HiveMQEdgeGateway {
             final @NotNull ProtocolAdapterManager protocolAdapterManager,
             final @NotNull DataCombinerManager dataCombinerManager,
             final @NotNull AssetMapperManager assetMapperManager,
-            final @NotNull TopicBufferService topicBufferService) {
+            final @NotNull TopicBufferService topicBufferService,
+            final @NotNull EdgeTelemetryService edgeTelemetryService) {
         this.nettyBootstrap = nettyBootstrap;
         this.extensionBootstrap = extensionBootstrap;
         this.adminService = adminService;
@@ -59,6 +64,7 @@ public class HiveMQEdgeGateway {
         this.dataCombinerManager = dataCombinerManager;
         this.assetMapperManager = assetMapperManager;
         this.topicBufferService = topicBufferService;
+        this.edgeTelemetryService = edgeTelemetryService;
     }
 
     public void start(final @Nullable EmbeddedExtension embeddedExtension) throws HiveMQEdgeStartupException {
