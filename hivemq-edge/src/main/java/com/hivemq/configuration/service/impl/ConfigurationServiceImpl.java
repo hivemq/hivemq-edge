@@ -22,6 +22,7 @@ import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.DataCombiningExtractor;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.configuration.reader.PulseExtractor;
+import com.hivemq.configuration.reader.TopicBufferExtractor;
 import com.hivemq.configuration.reader.UnsExtractor;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
@@ -152,6 +153,12 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     public @NotNull UnsExtractor unsExtractor() {
         Preconditions.checkNotNull(configFileReaderWriter, "configFileReaderWriter must not be null");
         return configFileReaderWriter.getUnsExtractor();
+    }
+
+    @Override
+    public @NotNull TopicBufferExtractor topicBufferExtractor() {
+        Preconditions.checkNotNull(configFileReaderWriter, "configFileReaderWriter must not be null");
+        return configFileReaderWriter.getTopicBufferExtractor();
     }
 
     @Override

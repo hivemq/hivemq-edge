@@ -88,6 +88,20 @@
                 </xs:complexType>
             </xs:element>
             <xs:element name="uns" type="unsEntity" minOccurs="0"/>
+            <xs:element name="topic-buffer-subscriptions" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="topic-buffer-subscription" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:all>
+                                    <xs:element name="topic-filter" type="xs:string"/>
+                                    <xs:element name="max-messages" type="xs:int" minOccurs="0"/>
+                                </xs:all>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
             <xs:element name="dynamic-configuration" type="dynamicConfigEntity" minOccurs="0"/>
             <xs:element name="usage-tracking" type="usageTrackingEntity" minOccurs="0"/>
             <xs:element name="internal" type="internalConfigEntity" minOccurs="0"/>

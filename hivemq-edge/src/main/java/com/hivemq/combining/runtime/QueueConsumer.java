@@ -58,12 +58,12 @@ public abstract class QueueConsumer {
         };
     }
 
-    void start() {
+    public void start() {
         clientQueuePersistence.addPublishAvailableCallback(callback, queueId);
         submitPoll();
     }
 
-    void close() {
+    public void close() {
         clientQueuePersistence.removePublishAvailableCallback(queueId);
     }
 

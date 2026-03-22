@@ -26,6 +26,7 @@ import com.hivemq.extensions.ExtensionBootstrap;
 import com.hivemq.extensions.services.admin.AdminServiceImpl;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.pulse.messaging.AssetMapperManager;
+import com.hivemq.topicbuffer.TopicBufferService;
 import com.hivemq.util.Checkpoints;
 import jakarta.inject.Inject;
 import java.util.List;
@@ -40,6 +41,7 @@ public class HiveMQEdgeGateway {
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
     private final @NotNull DataCombinerManager dataCombinerManager;
     private final @NotNull AssetMapperManager assetMapperManager;
+    private final @NotNull TopicBufferService topicBufferService;
 
     @Inject
     public HiveMQEdgeGateway(
@@ -48,13 +50,15 @@ public class HiveMQEdgeGateway {
             final @NotNull AdminService adminService,
             final @NotNull ProtocolAdapterManager protocolAdapterManager,
             final @NotNull DataCombinerManager dataCombinerManager,
-            final @NotNull AssetMapperManager assetMapperManager) {
+            final @NotNull AssetMapperManager assetMapperManager,
+            final @NotNull TopicBufferService topicBufferService) {
         this.nettyBootstrap = nettyBootstrap;
         this.extensionBootstrap = extensionBootstrap;
         this.adminService = adminService;
         this.protocolAdapterManager = protocolAdapterManager;
         this.dataCombinerManager = dataCombinerManager;
         this.assetMapperManager = assetMapperManager;
+        this.topicBufferService = topicBufferService;
     }
 
     public void start(final @Nullable EmbeddedExtension embeddedExtension) throws HiveMQEdgeStartupException {
@@ -63,6 +67,7 @@ public class HiveMQEdgeGateway {
             protocolAdapterManager.start();
             dataCombinerManager.start();
             assetMapperManager.start();
+            topicBufferService.start();
 
             final List<ListenerStartupInformation> startupInformation =
                     nettyBootstrap.bootstrapServer().get();
