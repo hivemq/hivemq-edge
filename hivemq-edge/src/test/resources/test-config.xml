@@ -355,5 +355,6 @@
         <managed-assets/>
     </pulse>
     <modules/>
+    <topic-buffer-subscriptions/>
     <internal/>
 </hivemq>

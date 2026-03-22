@@ -35,6 +35,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +50,7 @@ public class EdgeTelemetryAdapter implements ProtocolAdapter {
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull DataPointFactory dataPointFactory;
 
-    private @NotNull ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+    private @Nullable ScheduledExecutorService scheduler;
     private final @NotNull List<ScheduledFuture<?>> scheduledFutures = new ArrayList<>();
 
     public EdgeTelemetryAdapter(final @NotNull ProtocolAdapterInput<EdgeTelemetryAdapterConfig> input) {
@@ -110,7 +111,10 @@ public class EdgeTelemetryAdapter implements ProtocolAdapter {
     public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
         scheduledFutures.forEach(f -> f.cancel(false));
         scheduledFutures.clear();
-        scheduler.shutdownNow();
+        if (scheduler != null) {
+            scheduler.shutdownNow();
+            scheduler = null;
+        }
 
         final EdgeTelemetryService service = EdgeTelemetryService.getInstance();
         if (service != null) {
