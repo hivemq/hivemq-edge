@@ -19,13 +19,15 @@ import com.hivemq.configuration.entity.DynamicConfigEntity;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.service.DynamicConfigurationService;
 import jakarta.inject.Inject;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class DynamicConfigConfigurator implements Configurator<DynamicConfigEntity> {
 
     private final @NotNull DynamicConfigurationService dynamicConfigService;
 
-    private volatile DynamicConfigEntity configEntity;
+    private volatile @Nullable DynamicConfigEntity configEntity;
     private volatile boolean initialized = false;
 
     @Inject
@@ -46,9 +48,10 @@ public class DynamicConfigConfigurator implements Configurator<DynamicConfigEnti
         this.configEntity = config.getGatewayConfig();
         this.initialized = true;
 
-        dynamicConfigService.setConfigurationExportEnabled(configEntity.isConfigurationExportEnabled());
+        final DynamicConfigEntity entity = Objects.requireNonNull(this.configEntity);
+        dynamicConfigService.setConfigurationExportEnabled(entity.isConfigurationExportEnabled());
 
-        dynamicConfigService.setMutableConfigurationEnabled(configEntity.isMutableConfigurationEnabled());
+        dynamicConfigService.setMutableConfigurationEnabled(entity.isMutableConfigurationEnabled());
 
         return ConfigResult.SUCCESS;
     }

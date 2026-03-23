@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.Objects;
 import java.util.Optional;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.core.types.DynamicStructType;
@@ -147,8 +148,10 @@ public class JsonToOpcUAConverter {
 
         if (builtinDataType == OpcUaDataType.ExtensionObject || fieldType.customDataType() != null) {
             final String namespaceURI = fieldType.namespaceUri();
+            final DataType customDataType = Objects.requireNonNull(fieldType.customDataType());
             final ExpandedNodeId expandedNodeId = ExpandedNodeId.of(
-                    namespaceURI, fieldType.customDataType().getBrowseName().getName());
+                    Objects.requireNonNull(namespaceURI),
+                    customDataType.getBrowseName().getName());
 
             final Optional<NodeId> optionalDataTypeId = expandedNodeId.toNodeId(client.getNamespaceTable());
             if (optionalDataTypeId.isEmpty()) {
@@ -182,7 +185,7 @@ public class JsonToOpcUAConverter {
             return extractExtensionObject(jsonNode, fieldType);
         }
 
-        return parsetoOpcUAObject(builtinDataType, jsonNode);
+        return parsetoOpcUAObject(Objects.requireNonNull(builtinDataType), jsonNode);
     }
 
     private @NotNull DynamicStructType extractExtensionObject(
@@ -199,6 +202,6 @@ public class JsonToOpcUAConverter {
             fields.put(key, parsed);
         });
 
-        return new DynamicStructType(fieldInformation.customDataType(), fields);
+        return new DynamicStructType(Objects.requireNonNull(fieldInformation.customDataType()), fields);
     }
 }

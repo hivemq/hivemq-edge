@@ -182,16 +182,14 @@ public class JaxrsHttpServer {
                         // -- If a static resource path has been supplied in config, ensure we mount it
                         registerStaticRoot(config, httpServer);
 
-                        registerContext(
-                                "/app", new WebAppHandler(objectMapperProvider.getMapper(), "httpd"), httpServer);
-                        registerContext(
-                                "/images",
-                                new StaticFileHandler(objectMapperProvider.getMapper(), "httpd/images"),
-                                httpServer);
+                        // objectMapperProvider is non-null: set in bootstrapResources called above
+                        @SuppressWarnings("NullAway")
+                        final ObjectMapper mapper = objectMapperProvider.getMapper();
+                        registerContext("/app", new WebAppHandler(mapper, "httpd"), httpServer);
+                        registerContext("/images", new StaticFileHandler(mapper, "httpd/images"), httpServer);
                         registerContext(
                                 "/module/images",
-                                new AlternativeClassloadingStaticFileHandler(
-                                        objectMapperProvider.getMapper(), "httpd/images", shutdownHooks),
+                                new AlternativeClassloadingStaticFileHandler(mapper, "httpd/images", shutdownHooks),
                                 httpServer);
 
                         httpServers.add(httpServer);
@@ -229,7 +227,7 @@ public class JaxrsHttpServer {
 
         // -- Register any supplied mappers
         final List<ExceptionMapper> mappers = config.getExceptionMappers();
-        if (!mappers.isEmpty()) {
+        if (mappers != null && !mappers.isEmpty()) {
             mappers.stream().forEach(resources::register);
         }
     }
@@ -287,11 +285,12 @@ public class JaxrsHttpServer {
             final @NotNull JaxrsHttpServerConfiguration config, final @NotNull HttpServer server) {
         List<Pair<String, String>> staticResources = config.getStaticResources();
         if (staticResources != null && !staticResources.isEmpty()) {
+            // objectMapperProvider is non-null: set in bootstrapResources before this method is called
+            @SuppressWarnings("NullAway")
+            final ObjectMapper staticMapper = objectMapperProvider.getMapper();
             staticResources.stream()
-                    .forEach(s -> registerContext(
-                            s.getLeft(),
-                            new StaticFileHandler(objectMapperProvider.getMapper(), s.getRight()),
-                            server));
+                    .forEach(s ->
+                            registerContext(s.getLeft(), new StaticFileHandler(staticMapper, s.getRight()), server));
         }
     }
 

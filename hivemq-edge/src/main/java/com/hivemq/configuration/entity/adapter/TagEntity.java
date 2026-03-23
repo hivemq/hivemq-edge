@@ -42,6 +42,7 @@ public class TagEntity implements EntityValidatable {
     private final @NotNull Map<String, Object> definition;
 
     // no-arg constructor for JaxB
+    @SuppressWarnings("NullAway.Init")
     public TagEntity() {
         this("", "", new HashMap<>());
     }

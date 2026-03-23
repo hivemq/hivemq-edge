@@ -315,7 +315,8 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             final @NotNull List<DataValue> values) {
         lastKeepAliveTimestamp = System.currentTimeMillis();
         for (int i = 0; i < items.size(); i++) {
-            final var tag = nodeIdToTag.get(items.get(i).getReadValueId().getNodeId());
+            final var tag = Objects.requireNonNull(
+                    nodeIdToTag.get(items.get(i).getReadValueId().getNodeId()));
             final String tn = tag.getName();
             if (null == tagToFirstSeen.putIfAbsent(tag, true)) {
                 eventService

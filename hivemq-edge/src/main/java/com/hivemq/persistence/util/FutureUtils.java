@@ -47,7 +47,7 @@ public class FutureUtils {
                                         future,
                                         new FutureCallback<>() {
                                             @Override
-                                            public void onSuccess(final Void entry) {}
+                                            public void onSuccess(final @Nullable Void entry) {}
 
                                             @Override
                                             public void onFailure(final Throwable t) {

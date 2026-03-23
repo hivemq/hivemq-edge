@@ -724,13 +724,16 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             log.debug("Original exception: ", e);
             return errorResponse(new InternalServerError(null));
         } catch (final @NotNull ExecutionException e) {
+            final Throwable cause = e.getCause();
+            if (cause == null) {
+                return errorResponse(new InternalServerError(null));
+            }
             return switch (tagSchemaCreationOutput.getStatus()) {
                 case NOT_SUPPORTED ->
-                    errorResponse(new AdapterOperationNotSupportedError(
-                            "Operation not supported:" + e.getCause().getMessage()));
+                    errorResponse(
+                            new AdapterOperationNotSupportedError("Operation not supported:" + cause.getMessage()));
                 case ADAPTER_NOT_STARTED ->
-                    errorResponse(new AdapterOperationNotSupportedError(
-                            "Adapter not started: " + e.getCause().getMessage()));
+                    errorResponse(new AdapterOperationNotSupportedError("Adapter not started: " + cause.getMessage()));
                 case TAG_NOT_FOUND -> errorResponse(new DomainTagNotFoundError(tagName));
                 default -> {
                     log.warn("Exception was raised during creation of json schema for writing to PLCs.");

@@ -19,12 +19,14 @@ import com.hivemq.client.mqtt.datatypes.MqttTopic;
 import com.hivemq.uns.config.ISA95;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
  */
 public interface UnifiedNamespaceService {
 
+    @Nullable
     ISA95 getISA95();
 
     void setISA95(ISA95 isa95);

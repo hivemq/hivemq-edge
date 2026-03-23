@@ -47,6 +47,7 @@ import com.hivemq.edge.adapters.opcua.southbound.JsonToOpcUAConverter;
 import com.hivemq.edge.adapters.opcua.southbound.OpcUaPayload;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -329,10 +330,11 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
             if (opcUaClientConnection.compareAndSet(null, newConn)) {
                 // Create a minimal ProtocolAdapterStartInput for attemptConnection
+                final ModuleServices ms = Objects.requireNonNull(moduleServices);
                 final ProtocolAdapterStartInput input = new ProtocolAdapterStartInput() {
                     @Override
                     public @NotNull ModuleServices moduleServices() {
-                        return moduleServices;
+                        return ms;
                     }
                 };
                 attemptConnection(newConn, parsedConfig, input);
@@ -357,39 +359,41 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         }
 
         final long healthCheckIntervalMs = config.getConnectionOptions().healthCheckIntervalMs();
-        final ScheduledFuture<?> future = healthCheckScheduler.scheduleAtFixedRate(
-                () -> {
-                    // Check if adapter was stopped before health check executes
-                    if (stopped) {
-                        log.debug("Health check skipped for adapter '{}' - adapter was stopped", adapterId);
-                        return;
-                    }
+        final ScheduledFuture<?> future = Objects.requireNonNull(healthCheckScheduler)
+                .scheduleAtFixedRate(
+                        () -> {
+                            // Check if adapter was stopped before health check executes
+                            if (stopped) {
+                                log.debug("Health check skipped for adapter '{}' - adapter was stopped", adapterId);
+                                return;
+                            }
 
-                    final OpcUaClientConnection conn = opcUaClientConnection.get();
-                    if (conn == null) {
-                        log.debug("Health check skipped - no active connection for adapter '{}'", adapterId);
-                        return;
-                    }
+                            final OpcUaClientConnection conn = opcUaClientConnection.get();
+                            if (conn == null) {
+                                log.debug("Health check skipped - no active connection for adapter '{}'", adapterId);
+                                return;
+                            }
 
-                    if (!conn.isHealthy()) {
-                        if (config.getConnectionOptions().autoReconnect()) {
-                            log.warn(
-                                    "Health check failed for adapter '{}' - triggering automatic reconnection",
-                                    adapterId);
-                            reconnect();
-                        } else {
-                            log.warn(
-                                    "Health check failed for adapter '{}' - automatic reconnection is disabled",
-                                    adapterId);
-                            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
-                        }
-                    } else {
-                        log.debug("Health check passed for adapter '{}'", adapterId);
-                    }
-                },
-                healthCheckIntervalMs,
-                healthCheckIntervalMs,
-                TimeUnit.MILLISECONDS);
+                            if (!conn.isHealthy()) {
+                                if (config.getConnectionOptions().autoReconnect()) {
+                                    log.warn(
+                                            "Health check failed for adapter '{}' - triggering automatic reconnection",
+                                            adapterId);
+                                    reconnect();
+                                } else {
+                                    log.warn(
+                                            "Health check failed for adapter '{}' - automatic reconnection is disabled",
+                                            adapterId);
+                                    protocolAdapterState.setConnectionStatus(
+                                            ProtocolAdapterState.ConnectionStatus.ERROR);
+                                }
+                            } else {
+                                log.debug("Health check passed for adapter '{}'", adapterId);
+                            }
+                        },
+                        healthCheckIntervalMs,
+                        healthCheckIntervalMs,
+                        TimeUnit.MILLISECONDS);
 
         // Store future so it can be cancelled if needed
         final ScheduledFuture<?> oldFuture = healthCheckFuture.getAndSet(future);

@@ -39,6 +39,7 @@ import org.apache.plc4x.java.api.messages.PlcReadResponse;
 import org.apache.plc4x.java.api.types.PlcValueType;
 import org.apache.plc4x.java.api.value.PlcValue;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -202,7 +203,7 @@ public class Plc4xDataUtils {
         }
     }
 
-    public static Object convertObject(final PlcValue value) {
+    public static @Nullable Object convertObject(final PlcValue value) {
         final PlcValueType type = value.getPlcValueType();
         switch (type) {
             case BOOL: // Boolean 1bit

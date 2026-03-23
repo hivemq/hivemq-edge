@@ -21,8 +21,11 @@ import jakarta.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.UUID;
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,10 +39,11 @@ public class HivemqId {
 
     private final SystemInformation systemInformation;
 
-    private String hivemqId;
+    private @Nullable String hivemqId;
 
     @Inject
-    public HivemqId(final SystemInformation systemInformation) {
+    public HivemqId(final @NotNull SystemInformation systemInformation) {
+        Objects.requireNonNull(systemInformation);
         this.systemInformation = systemInformation;
     }
 

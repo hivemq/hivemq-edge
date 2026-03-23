@@ -23,7 +23,6 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterWritingService;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.edge.modules.adapters.data.TagManager;
-import dagger.internal.Preconditions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -84,10 +83,13 @@ public class ModuleServicesPerModuleImpl implements ModuleServices {
 
         @Override
         public @NotNull ProtocolAdapterPublishBuilder createPublish() {
-            Preconditions.checkNotNull(adapter, "Adapter must not be null");
+            final ProtocolAdapter localAdapter = adapter;
+            if (localAdapter == null) {
+                throw new NullPointerException("Adapter must not be null");
+            }
             final ProtocolAdapterPublishBuilderImpl builder =
                     (ProtocolAdapterPublishBuilderImpl) delegate.createPublish();
-            return builder.withAdapter(adapter);
+            return builder.withAdapter(localAdapter);
         }
     }
 }

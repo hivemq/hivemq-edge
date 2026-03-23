@@ -21,6 +21,7 @@ import com.hivemq.extension.sdk.api.packets.publish.AckReasonCode;
 import com.hivemq.extensions.auth.parameter.PublishAuthorizerOutputImpl;
 import com.hivemq.extensions.handler.PluginAuthorizerServiceImpl;
 import com.hivemq.mqtt.message.connect.CONNECT;
+import com.hivemq.mqtt.message.connect.MqttWillPublish;
 import com.hivemq.util.Exceptions;
 import io.netty.channel.ChannelHandlerContext;
 import org.jetbrains.annotations.NotNull;
@@ -94,9 +95,13 @@ public class WillPublishAuthorizationProcessedTask implements FutureCallback<Pub
     }
 
     private String getReasonString(final @NotNull CONNECT connect) {
+        final MqttWillPublish willPublish = connect.getWillPublish();
+        if (willPublish == null) {
+            return "Not allowed to connect with Will Publish (unauthorized)";
+        }
         return "Not allowed to connect with Will Publish for unauthorized topic '"
-                + connect.getWillPublish().getTopic() + "' with QoS '"
-                + connect.getWillPublish().getQos().getQosNumber() + "' and retain '"
-                + connect.getWillPublish().isRetain() + "'";
+                + willPublish.getTopic() + "' with QoS '"
+                + willPublish.getQos().getQosNumber() + "' and retain '"
+                + willPublish.isRetain() + "'";
     }
 }

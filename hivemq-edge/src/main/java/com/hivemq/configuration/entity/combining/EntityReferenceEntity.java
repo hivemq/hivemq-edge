@@ -33,6 +33,7 @@ public class EntityReferenceEntity {
     private @NotNull String id;
 
     // no-arg for jaxb
+    @SuppressWarnings("NullAway.Init")
     public EntityReferenceEntity() {}
 
     public EntityReferenceEntity(@NotNull final EntityType type, @NotNull final String id) {
@@ -63,13 +64,11 @@ public class EntityReferenceEntity {
         if (!(o instanceof EntityReferenceEntity that)) {
             return false;
         }
-        return type == that.type && id.equals(that.id);
+        return type == that.type && Objects.equals(id, that.id);
     }
 
     @Override
     public int hashCode() {
-        int result = type.hashCode();
-        result = 31 * result + id.hashCode();
-        return result;
+        return Objects.hash(type, id);
     }
 }

@@ -81,7 +81,7 @@ public class RemoteSubscriptionEntity {
         this.preserveRetain = preserveRetain;
     }
 
-    public void setDestination(final String destination) {
+    public void setDestination(final @Nullable String destination) {
         this.destination = destination;
     }
 

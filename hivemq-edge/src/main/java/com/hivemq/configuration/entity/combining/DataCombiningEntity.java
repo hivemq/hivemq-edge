@@ -46,6 +46,7 @@ public class DataCombiningEntity {
     private @NotNull List<InstructionEntity> instructions;
 
     // no-arg for jaxb
+    @SuppressWarnings("NullAway.Init")
     public DataCombiningEntity() {}
 
     public DataCombiningEntity(
@@ -97,18 +98,14 @@ public class DataCombiningEntity {
     public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
         if (!(o instanceof DataCombiningEntity that)) return false;
-        return id.equals(that.id)
-                && sources.equals(that.sources)
-                && destination.equals(that.destination)
-                && instructions.equals(that.instructions);
+        return Objects.equals(id, that.id)
+                && Objects.equals(sources, that.sources)
+                && Objects.equals(destination, that.destination)
+                && Objects.equals(instructions, that.instructions);
     }
 
     @Override
     public int hashCode() {
-        int result = id.hashCode();
-        result = 31 * result + sources.hashCode();
-        result = 31 * result + destination.hashCode();
-        result = 31 * result + instructions.hashCode();
-        return result;
+        return Objects.hash(id, sources, destination, instructions);
     }
 }

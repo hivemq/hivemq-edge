@@ -19,6 +19,7 @@ import com.hivemq.api.model.ApiErrorMessage;
 import com.hivemq.api.model.ApiErrorMessages;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
@@ -31,8 +32,8 @@ public class ApiErrorUtils {
 
     public static void validateRequiredField(
             final ApiErrorMessages apiErrorMessages,
-            final String fieldName,
-            final String fieldValue,
+            final @Nullable String fieldName,
+            final @Nullable String fieldValue,
             final boolean allowEmpty) {
         if (Objects.isNull(fieldValue)) {
             apiErrorMessages.addError(
@@ -44,26 +45,30 @@ public class ApiErrorUtils {
     }
 
     public static void validateRequiredEntity(
-            final ApiErrorMessages apiErrorMessages, final String entityName, final Object entity) {
+            final ApiErrorMessages apiErrorMessages, final @Nullable String entityName, final @Nullable Object entity) {
         if (Objects.isNull(entity)) {
             apiErrorMessages.addError(new ApiErrorMessage(entityName, "Invalid user supplied data", null));
         }
     }
 
     public static void validateRequiredFieldRegex(
-            final ApiErrorMessages apiErrorMessages, final String fieldName, final String value, final String regex) {
+            final ApiErrorMessages apiErrorMessages,
+            final @Nullable String fieldName,
+            final @Nullable String value,
+            final @Nullable String regex) {
         if (value == null || value.isEmpty()) {
             apiErrorMessages.addError(new ApiErrorMessage(fieldName, "Required field was null or empty", null));
+            return;
         }
-        if (!value.matches(regex)) {
+        if (regex != null && !value.matches(regex)) {
             apiErrorMessages.addError(new ApiErrorMessage(fieldName, "Required field did not conform to regex", null));
         }
     }
 
     public static void validateFieldLengthBetweenIncl(
             final ApiErrorMessages apiErrorMessages,
-            final String fieldName,
-            final String value,
+            final @Nullable String fieldName,
+            final @Nullable String value,
             final int min,
             final int max) {
         if (value != null) {
@@ -93,7 +98,7 @@ public class ApiErrorUtils {
     }
 
     public static void addValidationError(
-            final ApiErrorMessages apiErrorMessages, final String fieldName, final String details) {
+            final ApiErrorMessages apiErrorMessages, final @Nullable String fieldName, final @Nullable String details) {
         apiErrorMessages.addError(new ApiErrorMessage(fieldName, "Invalid user supplied data", details));
     }
 

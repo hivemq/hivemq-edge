@@ -15,12 +15,17 @@
  */
 package com.hivemq.combining.model;
 
+import static java.util.Objects.requireNonNull;
+
 import com.hivemq.configuration.entity.combining.DataCombiningSourcesEntity;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public record DataCombiningSources(
-        DataIdentifierReference primaryReference, List<String> tags, List<String> topicFilters) {
+        @Nullable DataIdentifierReference primaryReference,
+        @NotNull List<String> tags,
+        @NotNull List<String> topicFilters) {
 
     public static @NotNull DataCombiningSources fromModel(
             final @NotNull com.hivemq.edge.api.model.DataCombiningSources model) {
@@ -30,7 +35,7 @@ public record DataCombiningSources(
 
     public @NotNull com.hivemq.edge.api.model.DataCombiningSources toModel() {
         return new com.hivemq.edge.api.model.DataCombiningSources()
-                .primary(primaryReference().to())
+                .primary(requireNonNull(primaryReference()).to())
                 .tags(tags)
                 .topicFilters(topicFilters);
     }
@@ -44,6 +49,7 @@ public record DataCombiningSources(
     }
 
     public @NotNull DataCombiningSourcesEntity toPersistence() {
-        return new DataCombiningSourcesEntity(primaryReference().toPersistence(), tags(), topicFilters());
+        return new DataCombiningSourcesEntity(
+                requireNonNull(primaryReference()).toPersistence(), tags(), topicFilters());
     }
 }

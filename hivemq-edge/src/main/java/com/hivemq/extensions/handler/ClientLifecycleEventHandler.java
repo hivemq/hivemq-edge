@@ -334,7 +334,7 @@ public class ClientLifecycleEventHandler extends SimpleChannelInboundHandler<CON
         if (clientConnection.getExtensionClientEventListeners() == null) {
             clientConnection.setExtensionClientEventListeners(new ClientEventListeners(hiveMQExtensions));
         }
-        return clientConnection.getExtensionClientEventListeners();
+        return java.util.Objects.requireNonNull(clientConnection.getExtensionClientEventListeners());
     }
 
     private static class ProviderInTaskContext extends PluginInTaskContext {

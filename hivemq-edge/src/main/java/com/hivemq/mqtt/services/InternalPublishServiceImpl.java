@@ -93,7 +93,8 @@ public class InternalPublishServiceImpl implements InternalPublishService {
 
             final SettableFuture<Void> persistSettableFuture = SettableFuture.create();
             final ListenableFuture<Void> persistFuture;
-            if (publish.getPayload().length > 0) {
+            final byte[] payload = publish.getPayload();
+            if (payload != null && payload.length > 0) {
                 // pass payloadId null here, because we don't know yet if the message must be stored in the payload
                 // persistence
                 final RetainedMessage retainedMessage =

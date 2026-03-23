@@ -54,7 +54,7 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
 
     private final @NotNull ListenerConfigurationService listenerConfigurationService;
     private final @NotNull SystemInformation systemInformation;
-    private volatile Listeners configEntity;
+    private volatile @Nullable Listeners configEntity;
     private volatile boolean initialized = false;
 
     private final @NotNull List<String> chosenNames;
@@ -85,11 +85,12 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
         this.configEntity = listeners;
         this.initialized = true;
 
-        final ImmutableList<Listener> convertedMqttListeners = convertListenerEntities(configEntity.mqttListeners);
+        final Listeners entity = Objects.requireNonNull(this.configEntity);
+        final ImmutableList<Listener> convertedMqttListeners = convertListenerEntities(entity.mqttListeners);
         for (final Listener listener : convertedMqttListeners) {
             listenerConfigurationService.addListener(listener);
         }
-        final ImmutableList<Listener> convertedMqttsnListeners = convertListenerEntities(configEntity.mqttsnListeners);
+        final ImmutableList<Listener> convertedMqttsnListeners = convertListenerEntities(entity.mqttsnListeners);
         for (final Listener listener : convertedMqttsnListeners) {
             listenerConfigurationService.addListener(listener);
         }
@@ -156,12 +157,16 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
                 .build();
     }
 
-    @NotNull
+    @Nullable
     MqttTlsTcpListener convertTlsTcpListener(final @NotNull TlsTCPListenerEntity entity) {
+        final TLSEntity tls = entity.getTls();
+        if (tls == null) {
+            return null;
+        }
         return new MqttTlsTcpListener(
                 entity.getPort(),
                 entity.getBindAddress(),
-                convertTls(entity.getTls()),
+                convertTls(tls),
                 getName(entity, "tls-tcp-listener-"),
                 entity.getExternalHostname());
     }
@@ -229,7 +234,8 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
         return new Tls.Builder()
                 .withKeystorePath(keystorePath)
                 .withKeystoreType(type)
-                .withKeystorePassword(entity.getKeystoreEntity().getPassword())
+                .withKeystorePassword(
+                        Objects.requireNonNull(entity.getKeystoreEntity()).getPassword())
                 .withPrivateKeyPassword(entity.getKeystoreEntity().getPrivateKeyPassword())
                 .withProtocols(entity.getProtocols())
                 .withTruststorePath(truststorePath)
@@ -258,7 +264,11 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
             if (file.isAbsolute()) {
                 return file.getAbsolutePath();
             } else {
-                return new File(systemInformation.getHiveMQHomeFolder(), path).getAbsolutePath();
+                final File homeFolder = systemInformation.getHiveMQHomeFolder();
+                if (homeFolder == null) {
+                    return file.getAbsolutePath();
+                }
+                return new File(homeFolder, path).getAbsolutePath();
             }
         }
     }
@@ -286,7 +296,7 @@ public class ListenerConfigurator implements Configurator<ListenerConfigurator.L
         }
 
         @Override
-        public boolean equals(final Object o) {
+        public boolean equals(final @Nullable Object o) {
             if (this == o) return true;
             if (!(o instanceof Listeners listeners)) return false;
             return Objects.equals(mqttListeners, listeners.mqttListeners)

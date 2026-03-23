@@ -19,7 +19,9 @@ import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.PersistenceEntity;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
 import com.hivemq.configuration.service.PersistenceMode;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Lukas Brandl
@@ -29,7 +31,7 @@ public class PersistenceConfigurator implements Configurator<PersistenceEntity> 
     @NotNull
     private final PersistenceConfigurationService persistenceConfigurationService;
 
-    private volatile PersistenceEntity configEntity;
+    private volatile @Nullable PersistenceEntity configEntity;
     private volatile boolean initialized = false;
 
     public PersistenceConfigurator(final @NotNull PersistenceConfigurationService persistenceConfigurationService) {
@@ -49,8 +51,8 @@ public class PersistenceConfigurator implements Configurator<PersistenceEntity> 
         this.configEntity = config.getPersistenceConfig();
         this.initialized = true;
 
-        persistenceConfigurationService.setMode(
-                PersistenceMode.valueOf(configEntity.getMode().name()));
+        persistenceConfigurationService.setMode(PersistenceMode.valueOf(
+                Objects.requireNonNull(this.configEntity).getMode().name()));
 
         return ConfigResult.SUCCESS;
     }

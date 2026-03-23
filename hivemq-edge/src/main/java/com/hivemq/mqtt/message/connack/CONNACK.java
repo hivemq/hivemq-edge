@@ -273,8 +273,8 @@ public class CONNACK extends MqttMessageWithReasonCode<Mqtt5ConnAckReasonCode> i
 
     public static class Mqtt5Builder {
 
-        private Mqtt5ConnAckReasonCode reasonCode;
-        private String reasonString;
+        private @Nullable Mqtt5ConnAckReasonCode reasonCode;
+        private @Nullable String reasonString;
         private Mqtt5UserProperties userProperties = Mqtt5UserProperties.NO_USER_PROPERTIES;
 
         private boolean sessionPresent;
@@ -282,25 +282,26 @@ public class CONNACK extends MqttMessageWithReasonCode<Mqtt5ConnAckReasonCode> i
         // Mqtt 5
         private long sessionExpiryInterval = SESSION_EXPIRY_NOT_SET;
         private int serverKeepAlive = KEEP_ALIVE_NOT_SET;
-        private String assignedClientIdentifier;
+        private @Nullable String assignedClientIdentifier;
 
         // Auth
-        private String authMethod;
-        private byte[] authData;
+        private @Nullable String authMethod;
+        private @Nullable byte[] authData;
 
         // Restrictions from Server
         private int receiveMaximum = DEFAULT_RECEIVE_MAXIMUM;
         private int topicAliasMaximum = DEFAULT_TOPIC_ALIAS_MAXIMUM;
         private int maximumPacketSize = DEFAULT_MAXIMUM_PACKET_SIZE_NO_LIMIT;
-        private QoS maximumQoS;
+        private @Nullable QoS maximumQoS;
         private boolean isRetainAvailable = DEFAULT_RETAIN_AVAILABLE;
         private boolean isWildcardSubscriptionAvailable = DEFAULT_WILDCARD_SUBSCRIPTION_AVAILABLE;
         private boolean isSubscriptionIdentifierAvailable = DEFAULT_SUBSCRIPTION_IDENTIFIER_AVAILABLE;
         private boolean isSharedSubscriptionAvailable = DEFAULT_SHARED_SUBSCRIPTION_AVAILABLE;
 
-        private String responseInformation;
-        private String serverReference;
+        private @Nullable String responseInformation;
+        private @Nullable String serverReference;
 
+        @SuppressWarnings("NullAway") // builder fields are set before build()
         public CONNACK build() {
             return new CONNACK(
                     reasonCode,
@@ -324,12 +325,12 @@ public class CONNACK extends MqttMessageWithReasonCode<Mqtt5ConnAckReasonCode> i
                     serverReference);
         }
 
-        public Mqtt5Builder withReasonCode(final Mqtt5ConnAckReasonCode reasonCode) {
+        public Mqtt5Builder withReasonCode(final @Nullable Mqtt5ConnAckReasonCode reasonCode) {
             this.reasonCode = reasonCode;
             return this;
         }
 
-        public Mqtt5Builder withReasonString(final String reasonString) {
+        public Mqtt5Builder withReasonString(final @Nullable String reasonString) {
             this.reasonString = reasonString;
             return this;
         }
@@ -354,17 +355,17 @@ public class CONNACK extends MqttMessageWithReasonCode<Mqtt5ConnAckReasonCode> i
             return this;
         }
 
-        public Mqtt5Builder withAssignedClientIdentifier(final String assignedClientIdentifier) {
+        public Mqtt5Builder withAssignedClientIdentifier(final @Nullable String assignedClientIdentifier) {
             this.assignedClientIdentifier = assignedClientIdentifier;
             return this;
         }
 
-        public Mqtt5Builder withAuthMethod(final String authMethod) {
+        public Mqtt5Builder withAuthMethod(final @Nullable String authMethod) {
             this.authMethod = authMethod;
             return this;
         }
 
-        public Mqtt5Builder withAuthData(final byte[] authData) {
+        public Mqtt5Builder withAuthData(final @Nullable byte[] authData) {
             this.authData = authData;
             return this;
         }
@@ -384,7 +385,7 @@ public class CONNACK extends MqttMessageWithReasonCode<Mqtt5ConnAckReasonCode> i
             return this;
         }
 
-        public Mqtt5Builder withMaximumQoS(final QoS maximumQoS) {
+        public Mqtt5Builder withMaximumQoS(final @Nullable QoS maximumQoS) {
             this.maximumQoS = maximumQoS;
             return this;
         }
@@ -409,12 +410,12 @@ public class CONNACK extends MqttMessageWithReasonCode<Mqtt5ConnAckReasonCode> i
             return this;
         }
 
-        public Mqtt5Builder withResponseInformation(final String responseInformation) {
+        public Mqtt5Builder withResponseInformation(final @Nullable String responseInformation) {
             this.responseInformation = responseInformation;
             return this;
         }
 
-        public Mqtt5Builder withServerReference(final String serverReference) {
+        public Mqtt5Builder withServerReference(final @Nullable String serverReference) {
             this.serverReference = serverReference;
             return this;
         }

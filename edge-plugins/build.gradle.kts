@@ -16,7 +16,6 @@ repositories {
 }
 
 dependencies {
-    implementation(libs.jackson.dataformat.xml)
     implementation("net.ltgt.gradle:gradle-errorprone-plugin:${libs.versions.plugin.errorprone.get()}")
     implementation("com.diffplug.spotless:spotless-plugin-gradle:7.0.2")
 }
@@ -26,10 +25,6 @@ gradlePlugin {
         create("edge-version-updater") {
             id = "$group.$name"
             implementationClass = "$group.versionupdater.VersionUpdaterPlugin"
-        }
-        create("third-party-license-generator") {
-            id = "$group.$name"
-            implementationClass = "$group.licensethirdparty.ThirdPartyLicenseGeneratorPlugin"
         }
         create("repository-convention") {
             id = "$group.$name"
@@ -42,6 +37,10 @@ gradlePlugin {
         create("errorprone-convention") {
             id = "$group.$name"
             implementationClass = "$group.errorprone.ErrorProneConventionPlugin"
+        }
+        create("nullaway-convention") {
+            id = "$group.$name"
+            implementationClass = "$group.nullaway.NullAwayConventionPlugin"
         }
         create("spotless-convention") {
             id = "$group.$name"

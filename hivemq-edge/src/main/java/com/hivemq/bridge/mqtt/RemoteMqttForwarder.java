@@ -224,13 +224,22 @@ public class RemoteMqttForwarder implements MqttForwarder {
 
             // run interceptors
             final long interceptorStartTime = log.isDebugEnabled() ? System.nanoTime() : 0;
+            final ExecutorService currentExecutorService = executorService;
+            if (currentExecutorService == null) {
+                finishProcessing(originalQoS, publish.getUniqueId(), queueId);
+                return;
+            }
             Futures.addCallback(
                     bridgeInterceptorHandler.interceptOrDelegateOutbound(
                             convertedPublish, MoreExecutors.newDirectExecutorService(), bridge),
                     new FutureCallback<>() {
                         @Override
-                        public void onSuccess(final @NotNull BridgeInterceptorHandler.InterceptorResult result) {
+                        public void onSuccess(final @Nullable BridgeInterceptorHandler.InterceptorResult result) {
                             try {
+                                if (result == null) {
+                                    finishProcessing(originalQoS, publish.getUniqueId(), queueId);
+                                    return;
+                                }
                                 if (log.isDebugEnabled()) {
                                     final long durationMicros = (System.nanoTime() - interceptorStartTime) / 1000;
                                     log.debug(
@@ -270,7 +279,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
                             finishProcessing(originalQoS, publish.getUniqueId(), queueId);
                         }
                     },
-                    executorService);
+                    currentExecutorService);
         } catch (final Exception e) {
             handlePublishError(publish, e);
             finishProcessing(originalQoS, publish.getUniqueId(), queueId);
@@ -505,7 +514,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
                 Mqtt5Publish.builder().topic(publish.getTopic());
         publishBuilder
                 .payload(publish.getPayload())
-                .qos(MqttQos.fromCode(publish.getQoS().getQosNumber()));
+                .qos(requireNonNullElse(MqttQos.fromCode(publish.getQoS().getQosNumber()), MqttQos.AT_MOST_ONCE));
 
         if (publish.getMessageExpiryInterval() <= PUBLISH.MESSAGE_EXPIRY_INTERVAL_MAX) {
             publishBuilder.messageExpiryInterval(publish.getMessageExpiryInterval());

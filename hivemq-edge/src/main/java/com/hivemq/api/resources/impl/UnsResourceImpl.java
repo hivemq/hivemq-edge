@@ -50,6 +50,9 @@ public class UnsResourceImpl extends AbstractApi implements UnsApi {
     @Override
     public @NotNull Response getIsa95() {
         final ISA95 isa95 = unifiedNamespaceService.getISA95();
+        if (isa95 == null) {
+            return Response.ok(new ISA95ApiBean()).build();
+        }
         final ISA95ApiBean isa95ApiBean = ISA95.convert(isa95);
         return Response.ok(isa95ApiBean).build();
     }

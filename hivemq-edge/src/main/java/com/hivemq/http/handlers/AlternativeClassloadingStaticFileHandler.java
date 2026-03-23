@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Allow static consribution of dynamic classloaders to the HTTPD engine,
@@ -52,7 +53,8 @@ public class AlternativeClassloadingStaticFileHandler extends StaticFileHandler 
     }
 
     @Override
-    protected InputStream loadClasspathResource(final String resource) {
+    @SuppressWarnings("NullAway") // Return type is @Nullable but superclass has no annotation; both can return null
+    protected @Nullable InputStream loadClasspathResource(final String resource) {
         InputStream inputStream = null;
         final Iterator<ClassLoader> loaderIterator = classLoaders.iterator();
         while (loaderIterator.hasNext() && inputStream == null) {
@@ -62,7 +64,8 @@ public class AlternativeClassloadingStaticFileHandler extends StaticFileHandler 
         return inputStream;
     }
 
-    protected static InputStream loadClasspathResourceInternal(final ClassLoader loader, final String resource) {
+    protected static @Nullable InputStream loadClasspathResourceInternal(
+            final ClassLoader loader, final String resource) {
         InputStream is = loader.getResourceAsStream(resource);
         if (is == null) {
             is = loader.getResourceAsStream("/" + resource);

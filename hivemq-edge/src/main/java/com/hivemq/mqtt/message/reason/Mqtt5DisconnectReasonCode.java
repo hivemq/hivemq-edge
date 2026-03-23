@@ -65,8 +65,12 @@ public enum Mqtt5DisconnectReasonCode implements Mqtt5ReasonCode {
 
     Mqtt5DisconnectReasonCode(final int code) {
         this.code = code;
-        disconnectReasonCode = DisconnectReasonCode.valueOf(name());
-        disconnectedReasonCode = DisconnectedReasonCode.valueOf(name());
+        @SuppressWarnings("NullAway") // enum valueOf() never returns null for matching names
+        final DisconnectReasonCode drc = DisconnectReasonCode.valueOf(name());
+        disconnectReasonCode = drc;
+        @SuppressWarnings("NullAway") // enum valueOf() never returns null for matching names
+        final DisconnectedReasonCode drdc = DisconnectedReasonCode.valueOf(name());
+        disconnectedReasonCode = drdc;
     }
 
     Mqtt5DisconnectReasonCode(final @NotNull MqttCommonReasonCode reasonCode) {
@@ -100,6 +104,11 @@ public enum Mqtt5DisconnectReasonCode implements Mqtt5ReasonCode {
             new Mqtt5DisconnectReasonCode[DisconnectedReasonCode.values().length];
 
     static {
+        initLookupArrays();
+    }
+
+    @SuppressWarnings("NullAway") // populating lookup arrays with non-null enum values
+    private static void initLookupArrays() {
         for (final Mqtt5DisconnectReasonCode reasonCode : values()) {
             if (reasonCode != NORMAL_DISCONNECTION && reasonCode != DISCONNECT_WITH_WILL_MESSAGE) {
                 ERROR_CODE_LOOKUP[reasonCode.code - ERROR_CODE_MIN] = reasonCode;
@@ -129,10 +138,13 @@ public enum Mqtt5DisconnectReasonCode implements Mqtt5ReasonCode {
         return ERROR_CODE_LOOKUP[code - ERROR_CODE_MIN];
     }
 
+    @SuppressWarnings("NullAway") // array is fully populated in static initializer
     public static @NotNull Mqtt5DisconnectReasonCode from(final @NotNull DisconnectReasonCode reasonCode) {
         return DISCONNECT_LOOKUP[reasonCode.ordinal()];
     }
 
+    @SuppressWarnings(
+            "NullAway") // array lookup is safe: DISCONNECTED_LOOKUP may have null slots, return type is @Nullable
     public static @Nullable Mqtt5DisconnectReasonCode from(final @NotNull DisconnectedReasonCode reasonCode) {
         return DISCONNECTED_LOOKUP[reasonCode.ordinal()];
     }

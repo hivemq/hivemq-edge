@@ -41,6 +41,7 @@ public class DataCombiningSourcesEntity {
     private @NotNull List<String> topicFilters = new ArrayList<>();
 
     // no-arg for jaxb
+    @SuppressWarnings("NullAway.Init")
     public DataCombiningSourcesEntity() {}
 
     public DataCombiningSourcesEntity(
@@ -75,16 +76,13 @@ public class DataCombiningSourcesEntity {
         if (!(o instanceof DataCombiningSourcesEntity that)) {
             return false;
         }
-        return primaryIdentifier.equals(that.primaryIdentifier)
+        return Objects.equals(primaryIdentifier, that.primaryIdentifier)
                 && tags.equals(that.tags)
                 && topicFilters.equals(that.topicFilters);
     }
 
     @Override
     public int hashCode() {
-        int result = primaryIdentifier.hashCode();
-        result = 31 * result + tags.hashCode();
-        result = 31 * result + topicFilters.hashCode();
-        return result;
+        return Objects.hash(primaryIdentifier, tags, topicFilters);
     }
 }

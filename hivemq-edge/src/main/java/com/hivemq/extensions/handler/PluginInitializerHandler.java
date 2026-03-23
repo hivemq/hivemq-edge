@@ -136,35 +136,45 @@ public class PluginInitializerHandler extends ChannelOutboundHandlerAdapter {
         }
 
         final String clientId = clientConnection.getClientId();
+        if (clientId == null) {
+            return;
+        }
 
         if (clientContext == null) {
             final ModifiableDefaultPermissions defaultPermissions = clientConnection.getAuthPermissions();
             assert defaultPermissions != null;
+            if (defaultPermissions == null) {
+                return;
+            }
             clientContext = new ClientContextImpl(hiveMQExtensions, defaultPermissions);
         }
+        final ClientContextImpl resolvedClientContext = clientContext;
 
         if (initializerInput == null) {
             initializerInput = new InitializerInputImpl(serverInformation, ctx.channel(), clientId);
         }
+        final InitializerInputImpl resolvedInitializerInput = initializerInput;
 
         final SettableFuture<Void> initializeFuture = SettableFuture.create();
         final MultiInitializerTaskContext taskContext = new MultiInitializerTaskContext(
-                clientId, ctx, initializeFuture, clientContext, pluginInitializerMap.size());
+                clientId, ctx, initializeFuture, resolvedClientContext, pluginInitializerMap.size());
 
         for (final Map.Entry<String, ClientInitializer> initializerEntry : pluginInitializerMap.entrySet()) {
 
             final ClientInitializer initializer = initializerEntry.getValue();
             final HiveMQExtension extension = hiveMQExtensions.getExtensionForClassloader(
                     initializer.getClass().getClassLoader());
-            if (extension == null || extension.getExtensionClassloader() == null) {
+            final ClassLoader extensionClassloader = extension == null ? null : extension.getExtensionClassloader();
+            if (extensionClassloader == null) {
                 taskContext.finishInitializer();
                 continue;
             }
 
+            final ClassLoader classloader = Objects.requireNonNull(extensionClassloader);
             pluginTaskExecutorService.handlePluginInOutTaskExecution(
                     taskContext,
-                    () -> initializerInput,
-                    () -> new ClientContextPluginImpl(extension.getExtensionClassloader(), clientContext),
+                    () -> resolvedInitializerInput,
+                    () -> new ClientContextPluginImpl(classloader, resolvedClientContext),
                     new InitializeTask(initializer, initializerEntry.getKey()));
         }
 

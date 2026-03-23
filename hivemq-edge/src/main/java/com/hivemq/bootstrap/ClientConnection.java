@@ -41,6 +41,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -114,7 +115,7 @@ public class ClientConnection {
         this.sendWill = true;
     }
 
-    public static @NotNull ClientConnection fromChannel(final @NotNull Channel channel) {
+    public static @Nullable ClientConnection fromChannel(final @NotNull Channel channel) {
         return channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
     }
 
@@ -127,11 +128,12 @@ public class ClientConnection {
     }
 
     public @NotNull ClientState getClientState() {
-        return clientState.get();
+        return Objects.requireNonNull(clientState.get());
     }
 
     public void proposeClientState(final @NotNull ClientState newState) {
-        if (!clientState.get().disconnected()) {
+        final ClientState current = clientState.get();
+        if (current != null && !current.disconnected()) {
             clientState.set(newState);
         }
     }

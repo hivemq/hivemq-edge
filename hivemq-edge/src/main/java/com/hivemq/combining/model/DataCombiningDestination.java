@@ -15,12 +15,15 @@
  */
 package com.hivemq.combining.model;
 
+import static java.util.Objects.requireNonNull;
+
 import com.hivemq.configuration.entity.combining.DataCombiningDestinationEntity;
 import java.util.Optional;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public record DataCombiningDestination(String assetId, String topic, String schema) {
+public record DataCombiningDestination(@Nullable String assetId, String topic, String schema) {
 
     public static DataCombiningDestination from(
             final @NotNull com.hivemq.edge.api.model.DataCombiningDestination destination) {
@@ -34,7 +37,8 @@ public record DataCombiningDestination(String assetId, String topic, String sche
     }
 
     public static DataCombiningDestination fromPersistence(final @NotNull DataCombiningDestinationEntity entity) {
-        return new DataCombiningDestination(entity.getAssetId(), entity.getTopic(), entity.getSchema());
+        return new DataCombiningDestination(
+                entity.getAssetId(), requireNonNull(entity.getTopic()), requireNonNull(entity.getSchema()));
     }
 
     public @NotNull com.hivemq.edge.api.model.DataCombiningDestination toModel() {

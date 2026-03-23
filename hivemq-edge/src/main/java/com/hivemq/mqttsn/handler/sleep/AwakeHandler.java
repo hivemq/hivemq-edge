@@ -55,7 +55,7 @@ public class AwakeHandler extends SimpleChannelInboundHandler<MqttsnPingreq> {
         // -- Marker on the Connection when its asleep
         final MqttsnClientConnection clientConnection = MqttsnConnectionHelper.getConnection(ctx);
         final String clientId = clientConnection.getClientId();
-        if (clientId.equals(msg.getClientId())) {
+        if (clientId != null && clientId.equals(msg.getClientId())) {
             clientConnection.setFlushCallback(() -> {
                 log.info("Awake flush is complete, sending PING-RESP {}", clientConnection);
                 clientConnection.proposeSleep();
@@ -65,11 +65,12 @@ public class AwakeHandler extends SimpleChannelInboundHandler<MqttsnPingreq> {
                                 .createPingresp());
             });
             clientConnection.proposeAwake();
+            // clientId is non-null here because of the null check in the if-condition above
+            final String nonNullClientId = clientId;
             clientConnection
                     .getChannel()
                     .eventLoop()
-                    .submit(() ->
-                            pollService.pollNewMessages(clientConnection.getClientId(), clientConnection.getChannel()));
+                    .submit(() -> pollService.pollNewMessages(nonNullClientId, clientConnection.getChannel()));
             log.info(
                     "Waking ping-req clientId matches session clientId on the same connection, allow to wake {}",
                     clientConnection);

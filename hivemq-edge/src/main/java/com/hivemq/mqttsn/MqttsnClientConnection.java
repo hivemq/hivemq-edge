@@ -55,7 +55,7 @@ public class MqttsnClientConnection extends ClientConnection {
         this.mqttsnClientState = mqttsnClientState;
     }
 
-    public MqttsnProtocolVersion getMqttsnProtocolVersion() {
+    public @Nullable MqttsnProtocolVersion getMqttsnProtocolVersion() {
         return mqttsnProtocolVersion;
     }
 
@@ -88,11 +88,13 @@ public class MqttsnClientConnection extends ClientConnection {
     }
 
     public void correlatePublishToTopicAlias(final @NotNull Integer msgId, final @NotNull Integer topicAliasId) {
-        publishMsgIdToTopicAliasId.put(msgId, topicAliasId);
+        if (publishMsgIdToTopicAliasId != null) {
+            publishMsgIdToTopicAliasId.put(msgId, topicAliasId);
+        }
     }
 
-    public Integer getOriginatingTopicAliasForMessageId(final @NotNull Integer msgId) {
-        return publishMsgIdToTopicAliasId.get(msgId);
+    public @Nullable Integer getOriginatingTopicAliasForMessageId(final @NotNull Integer msgId) {
+        return publishMsgIdToTopicAliasId != null ? publishMsgIdToTopicAliasId.get(msgId) : null;
     }
 
     @Override
@@ -103,14 +105,13 @@ public class MqttsnClientConnection extends ClientConnection {
         } finally {
             if (returnCount == 0 && awakeFlushCompleteCallback != null) {
                 synchronized (flushCallbackMutex) {
-                    if (awakeFlushCompleteCallback != null) {
-                        synchronized (flushCallbackMutex) {
-                            // -- This happens ONCE only
-                            getChannel().eventLoop().submit(() -> {
-                                awakeFlushCompleteCallback.flushComplete();
-                                awakeFlushCompleteCallback = null;
-                            });
-                        }
+                    final IAwakeFlushCompleteCallback localCallback = awakeFlushCompleteCallback;
+                    if (localCallback != null) {
+                        // -- This happens ONCE only
+                        getChannel().eventLoop().submit(() -> {
+                            localCallback.flushComplete();
+                            awakeFlushCompleteCallback = null;
+                        });
                     }
                 }
             }

@@ -22,6 +22,7 @@ import com.hivemq.configuration.entity.combining.DataCombinerEntity;
 import com.hivemq.configuration.entity.combining.DataCombiningDestinationEntity;
 import com.hivemq.configuration.entity.combining.DataCombiningEntity;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -61,7 +62,7 @@ public class AssetMappingExtractor
         final var updated = new AtomicBoolean(false);
         final var newConfigs = config.stream()
                 .map(oldInstance -> {
-                    if (oldInstance.getId().equals(dataCombiner.id())) {
+                    if (Objects.equals(oldInstance.getId(), dataCombiner.id())) {
                         updated.set(true);
                         return dataCombiner.toPersistence();
                     } else {
@@ -113,7 +114,7 @@ public class AssetMappingExtractor
 
     public @NotNull Optional<DataCombiner> getCombinerById(final @NotNull UUID id) {
         return config.stream()
-                .filter(oldInstance -> oldInstance.getId().equals(id))
+                .filter(oldInstance -> Objects.equals(oldInstance.getId(), id))
                 .findFirst()
                 .map(DataCombiner::fromPersistence);
     }
@@ -126,7 +127,7 @@ public class AssetMappingExtractor
         final var removed = new AtomicBoolean(false);
         final var newConfigs = config.stream()
                 .filter(combiner -> {
-                    if (combiner.getId().equals(dataCombinerId)) {
+                    if (Objects.equals(combiner.getId(), dataCombinerId)) {
                         removed.set(true);
                         return false;
                     }

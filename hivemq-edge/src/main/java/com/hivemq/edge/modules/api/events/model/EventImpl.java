@@ -37,10 +37,10 @@ public class EventImpl implements Event {
             final @NotNull TypeIdentifier identifier,
             final @NotNull SEVERITY severity,
             final @NotNull String message,
-            final @NotNull Payload payload,
-            final @NotNull Long timestamp,
-            final @NotNull TypeIdentifier associatedObject,
-            final @NotNull TypeIdentifier source) {
+            final @Nullable Payload payload,
+            final @Nullable Long timestamp,
+            final @Nullable TypeIdentifier associatedObject,
+            final @Nullable TypeIdentifier source) {
         this.identifier = identifier;
         this.severity = severity;
         this.message = message;
@@ -69,25 +69,25 @@ public class EventImpl implements Event {
 
     @JsonProperty("payload")
     @Schema(description = "Object to denote the payload of the event")
-    private final @NotNull Payload payload;
+    private final @Nullable Payload payload;
 
     @JsonProperty("created")
     @JsonSerialize(using = TimestampToDateConverter.Serializer.class)
     @JsonDeserialize(using = TimestampToDateConverter.Deserializer.class)
     @Schema(type = "string", format = "date-time", description = "Time the event was in date format", required = true)
-    private final @NotNull Long created;
+    private final @Nullable Long created;
 
     @JsonProperty("timestamp")
     @Schema(description = "Time the event was generated in epoch format", required = true)
-    private final @NotNull Long timestamp;
+    private final @Nullable Long timestamp;
 
     @JsonProperty("associatedObject")
     @Schema(description = "The type-identifier associated with the event")
-    private final @NotNull TypeIdentifier associatedObject;
+    private final @Nullable TypeIdentifier associatedObject;
 
     @JsonProperty("source")
     @Schema(description = "The type-identifier of the object who caused the event to be generated")
-    private final @NotNull TypeIdentifier source;
+    private final @Nullable TypeIdentifier source;
 
     @Override
     public @NotNull SEVERITY getSeverity() {
@@ -106,12 +106,18 @@ public class EventImpl implements Event {
 
     @Override
     public @NotNull Long getTimestamp() {
-        return timestamp;
+        // timestamp is nullable - suppress NullAway as interface requires @NotNull
+        @SuppressWarnings("NullAway")
+        final Long ts = timestamp;
+        return ts == null ? 0L : ts;
     }
 
     @Override
     public @NotNull Long getCreated() {
-        return created;
+        // created is nullable - suppress NullAway as interface requires @NotNull
+        @SuppressWarnings("NullAway")
+        final Long cr = created;
+        return cr == null ? 0L : cr;
     }
 
     @Override

@@ -39,16 +39,16 @@ public class SystemInformationImpl implements SystemInformation {
     private static final Logger log = LoggerFactory.getLogger(SystemInformationImpl.class);
     public static final String DEVELOPMENT_VERSION = "Development Snapshot";
 
-    private @NotNull File homeFolder;
-    private @NotNull File configFolder;
-    private @NotNull File secondaryConfigFolder;
-    private @NotNull File logFolder;
-    private @NotNull File licenseFolder;
-    private @NotNull File dataFolder;
-    private @NotNull File pluginFolder;
-    private @NotNull File modulesFolder;
-    private @NotNull File pulseTokenFolder;
-    private @NotNull String hivemqVersion;
+    private @Nullable File homeFolder;
+    private @Nullable File configFolder;
+    private @Nullable File secondaryConfigFolder;
+    private @Nullable File logFolder;
+    private @Nullable File licenseFolder;
+    private @Nullable File dataFolder;
+    private @Nullable File pluginFolder;
+    private @Nullable File modulesFolder;
+    private @Nullable File pulseTokenFolder;
+    private @Nullable String hivemqVersion;
 
     private final long runningSince;
     private final boolean embedded;
@@ -192,52 +192,52 @@ public class SystemInformationImpl implements SystemInformation {
     }
 
     @Override
-    public @NotNull String getHiveMQVersion() {
+    public @Nullable String getHiveMQVersion() {
         return hivemqVersion;
     }
 
     @Override
-    public @NotNull File getHiveMQHomeFolder() {
+    public @Nullable File getHiveMQHomeFolder() {
         return homeFolder;
     }
 
     @Override
-    public @NotNull File getConfigFolder() {
+    public @Nullable File getConfigFolder() {
         return configFolder;
     }
 
     @Override
-    public @NotNull File getSecondaryHiveMQHomeFolder() {
+    public @Nullable File getSecondaryHiveMQHomeFolder() {
         return secondaryConfigFolder;
     }
 
     @Override
-    public @NotNull File getLogFolder() {
+    public @Nullable File getLogFolder() {
         return logFolder;
     }
 
     @Override
-    public @NotNull File getDataFolder() {
+    public @Nullable File getDataFolder() {
         return dataFolder;
     }
 
     @Override
-    public @NotNull File getLicenseFolder() {
+    public @Nullable File getLicenseFolder() {
         return licenseFolder;
     }
 
     @Override
-    public @NotNull File getExtensionsFolder() {
+    public @Nullable File getExtensionsFolder() {
         return this.pluginFolder;
     }
 
     @Override
-    public @NotNull File getModulesFolder() {
+    public @Nullable File getModulesFolder() {
         return this.modulesFolder;
     }
 
     @Override
-    public @NotNull File getPulseTokenFolder() {
+    public @Nullable File getPulseTokenFolder() {
         return this.pulseTokenFolder;
     }
 

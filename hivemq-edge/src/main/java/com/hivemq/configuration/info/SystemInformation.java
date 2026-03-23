@@ -16,7 +16,7 @@
 package com.hivemq.configuration.info;
 
 import java.io.File;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Useful information about HiveMQ and the underlying system
@@ -34,19 +34,19 @@ public interface SystemInformation {
     /**
      * @return the version string of HiveMQ
      */
-    @NotNull
+    @Nullable
     String getHiveMQVersion();
 
     /**
      * @return the home folder of HiveMQ
      */
-    @NotNull
+    @Nullable
     File getHiveMQHomeFolder();
 
     /**
      * @return a secondary folder where additional configs like topic filters are stored
      */
-    @NotNull
+    @Nullable
     File getSecondaryHiveMQHomeFolder();
 
     /**
@@ -54,43 +54,43 @@ public interface SystemInformation {
      *
      * @return the config folder of HiveMQ
      */
-    @NotNull
+    @Nullable
     File getConfigFolder();
 
     /**
      * @return the log folder of HiveMQ
      */
-    @NotNull
+    @Nullable
     File getLogFolder();
 
     /**
      * @return the data folder of HiveMQ
      */
-    @NotNull
+    @Nullable
     File getDataFolder();
 
     /**
      * @return the config folder of HiveMQ
      */
-    @NotNull
+    @Nullable
     File getLicenseFolder();
 
     /**
      * @return the extensions folder of HiveMQ
      */
-    @NotNull
+    @Nullable
     File getExtensionsFolder();
 
     /**
      * @return the folder where HiveMQ stores pulse related data
      */
-    @NotNull
+    @Nullable
     File getPulseTokenFolder();
 
     /**
      * @return the modules folder of HiveMQ
      */
-    @NotNull
+    @Nullable
     File getModulesFolder();
 
     /**

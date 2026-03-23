@@ -123,17 +123,21 @@ public class Mqtt5PublishDecoder extends AbstractMqttPublishDecoder<Mqtt5PUBLISH
             return null;
         }
 
+        final QoS qoSLevel = QoS.valueOf(qos);
+        if (qoSLevel == null) {
+            return null;
+        }
         return publishBuilder
                 .withHivemqId(hiveMQId.get())
-                .withQoS(QoS.valueOf(qos))
-                .withOnwardQos(QoS.valueOf(qos))
+                .withQoS(qoSLevel)
+                .withOnwardQos(qoSLevel)
                 .withRetain(retain)
                 .withPacketIdentifier(packetIdentifier)
                 .withDuplicateDelivery(dup)
                 .build();
     }
 
-    private Mqtt5Builder readPublishPropertiesAndPayload(
+    private @Nullable Mqtt5Builder readPublishPropertiesAndPayload(
             final @NotNull ClientConnection clientConnection,
             final @NotNull ByteBuf buf,
             final @Nullable String topicName) {

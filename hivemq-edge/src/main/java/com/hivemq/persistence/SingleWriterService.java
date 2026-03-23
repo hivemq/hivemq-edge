@@ -16,6 +16,7 @@
 package com.hivemq.persistence;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public interface SingleWriterService {
 
@@ -39,7 +40,7 @@ public interface SingleWriterService {
     void stop();
 
     interface Task<R> {
-        @NotNull
+        @Nullable
         R doTask(int bucketIndex);
     }
 }

@@ -48,6 +48,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -141,8 +142,11 @@ public final class AssetMapperManager {
             toBeDeletedAssetMapperIdList.forEach(uuid -> {
                 try {
                     LOGGER.debug("Deleting asset mapper '{}'", uuid);
-                    final AssetMapperTask assetMapperTask = idToAssetMapperTaskMap.get(uuid);
+                    final @Nullable AssetMapperTask assetMapperTask = idToAssetMapperTaskMap.get(uuid);
                     internalDeleteDataCombiner(uuid);
+                    if (assetMapperTask == null) {
+                        return;
+                    }
                     eventService
                             .createCombinerEvent(assetMapperTask.dataCombiner().id())
                             .withSeverity(Event.SEVERITY.INFO)
@@ -158,7 +162,10 @@ public final class AssetMapperManager {
             toBeCreatedAssetMapperIdList.forEach(uuid -> {
                 try {
                     LOGGER.debug("Creating asset mapper '{}'", uuid);
-                    final DataCombiner dataCombiner = newAssetMapperMap.get(uuid);
+                    final @Nullable DataCombiner dataCombiner = newAssetMapperMap.get(uuid);
+                    if (dataCombiner == null) {
+                        return;
+                    }
                     internalCreateDataCombiner(dataCombiner);
                     eventService
                             .createCombinerEvent(dataCombiner.id())
@@ -176,7 +183,10 @@ public final class AssetMapperManager {
             toBeUpdatedAssetMapperIdList.forEach(uuid -> {
                 try {
                     LOGGER.debug("Updating asset mapper '{}'", uuid);
-                    final DataCombiner dataCombiner = newAssetMapperMap.get(uuid);
+                    final @Nullable DataCombiner dataCombiner = newAssetMapperMap.get(uuid);
+                    if (dataCombiner == null) {
+                        return;
+                    }
                     internalUpdateAssetMapper(dataCombiner);
                     eventService
                             .createCombinerEvent(dataCombiner.id())

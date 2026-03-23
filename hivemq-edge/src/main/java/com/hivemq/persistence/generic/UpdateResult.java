@@ -18,7 +18,8 @@ package com.hivemq.persistence.generic;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public record UpdateResult(UpdateStatus updateStatus, String errorMessage) {
+public record UpdateResult(
+        UpdateStatus updateStatus, @Nullable String errorMessage) {
 
     public static @NotNull UpdateResult success() {
         return new UpdateResult(UpdateStatus.SUCCESS, null);

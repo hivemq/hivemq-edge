@@ -15,6 +15,8 @@
  */
 package com.hivemq.combining.model;
 
+import static java.util.Objects.requireNonNull;
+
 import com.hivemq.configuration.entity.adapter.fieldmapping.InstructionEntity;
 import com.hivemq.configuration.entity.combining.DataCombiningEntity;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
@@ -30,18 +32,22 @@ public record DataCombining(
 
     public static @NotNull DataCombining fromModel(final @NotNull com.hivemq.edge.api.model.DataCombining model) {
         return new DataCombining(
-                model.getId(),
-                DataCombiningSources.fromModel(model.getSources()),
-                DataCombiningDestination.from(model.getDestination()),
-                model.getInstructions().stream().map(Instruction::from).toList());
+                requireNonNull(model.getId()),
+                DataCombiningSources.fromModel(requireNonNull(model.getSources())),
+                DataCombiningDestination.from(requireNonNull(model.getDestination())),
+                requireNonNull(model.getInstructions()).stream()
+                        .map(Instruction::from)
+                        .toList());
     }
 
     public static @NotNull DataCombining fromPersistence(final @NotNull DataCombiningEntity model) {
         return new DataCombining(
-                model.getId(),
-                DataCombiningSources.fromPersistence(model.getSources()),
-                DataCombiningDestination.fromPersistence(model.getDestination()),
-                model.getInstructions().stream().map(InstructionEntity::to).toList());
+                requireNonNull(model.getId()),
+                DataCombiningSources.fromPersistence(requireNonNull(model.getSources())),
+                DataCombiningDestination.fromPersistence(requireNonNull(model.getDestination())),
+                requireNonNull(model.getInstructions()).stream()
+                        .map(InstructionEntity::to)
+                        .toList());
     }
 
     public @NotNull com.hivemq.edge.api.model.DataCombining toModel() {

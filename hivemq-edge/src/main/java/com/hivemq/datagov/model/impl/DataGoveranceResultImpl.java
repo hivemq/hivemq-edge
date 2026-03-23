@@ -24,16 +24,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
  */
 public class DataGoveranceResultImpl implements DataGovernanceResult {
 
-    private List<DataGovernanceError> errors;
-    private String message;
-    private STATUS status;
-    private DataGovernanceData output;
+    private @Nullable List<DataGovernanceError> errors;
+    private @Nullable String message;
+    private @Nullable STATUS status;
+    private @Nullable DataGovernanceData output;
 
     public DataGoveranceResultImpl(final @NotNull DataGovernanceData output) {
         this.status = STATUS.PENDING;
@@ -67,6 +68,7 @@ public class DataGoveranceResultImpl implements DataGovernanceResult {
         this.message = message;
     }
 
+    @SuppressWarnings("NullAway") // status is always set before getStatus() is called
     @Override
     public STATUS getStatus() {
         return status;
@@ -77,6 +79,7 @@ public class DataGoveranceResultImpl implements DataGovernanceResult {
         this.status = status;
     }
 
+    @SuppressWarnings("NullAway") // output is always set in constructor
     @Override
     public DataGovernanceData getOutput() {
         return output;
@@ -84,6 +87,6 @@ public class DataGoveranceResultImpl implements DataGovernanceResult {
 
     @Override
     public boolean hasErrors() {
-        return !errors.isEmpty();
+        return errors != null && !errors.isEmpty();
     }
 }

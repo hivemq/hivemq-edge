@@ -29,33 +29,34 @@ public class ListenerConfiguratorTest extends AbstractConfigurationTest {
     @Test
     public void test_read_tls_listener() throws Exception {
 
-        final String contents = "" + "<hivemq>"
-                + "    <mqtt-listeners>"
-                + "        <tls-tcp-listener>"
-                + "            <port>8883</port>"
-                + "            <bind-address>0.0.0.0</bind-address>"
-                + "            <name>my-tls-tcp-listener</name>"
-                + "            <tls>"
-                + "               <cipher-suites>"
-                + "                   <cipher-suite>TLS_RSA_WITH_AES_128_CBC_SHA</cipher-suite>"
-                + "               </cipher-suites>"
-                + "                <protocols>"
-                + "                    <protocol>TLSv1.2</protocol>"
-                + "                </protocols>"
-                + "                <keystore>"
-                + "                    <path>/absolute/path.jks</path>"
-                + "                    <password>password-keystore</password>"
-                + "                    <private-key-password>password-key</private-key-password>"
-                + "                </keystore>"
-                + "                <truststore>"
-                + "                    <path>no_absolute_path.jks</path>"
-                + "                    <password>password-truststore</password>"
-                + "                </truststore>"
-                + "                <client-authentication-mode>NONE</client-authentication-mode>"
-                + "            </tls>"
-                + "        </tls-tcp-listener>"
-                + "    </mqtt-listeners>"
-                + "</hivemq>";
+        final String contents = """
+                <hivemq>\
+                    <mqtt-listeners>\
+                        <tls-tcp-listener>\
+                            <port>8883</port>\
+                            <bind-address>0.0.0.0</bind-address>\
+                            <name>my-tls-tcp-listener</name>\
+                            <tls>\
+                               <cipher-suites>\
+                                   <cipher-suite>TLS_RSA_WITH_AES_128_CBC_SHA</cipher-suite>\
+                               </cipher-suites>\
+                                <protocols>\
+                                    <protocol>TLSv1.2</protocol>\
+                                </protocols>\
+                                <keystore>\
+                                    <path>/absolute/path.jks</path>\
+                                    <password>password-keystore</password>\
+                                    <private-key-password>password-key</private-key-password>\
+                                </keystore>\
+                                <truststore>\
+                                    <path>no_absolute_path.jks</path>\
+                                    <password>password-truststore</password>\
+                                </truststore>\
+                                <client-authentication-mode>NONE</client-authentication-mode>\
+                            </tls>\
+                        </tls-tcp-listener>\
+                    </mqtt-listeners>\
+                </hivemq>""";
 
         Files.write(contents.getBytes(UTF_8), xmlFile);
 

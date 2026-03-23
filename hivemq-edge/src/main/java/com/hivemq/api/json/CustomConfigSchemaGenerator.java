@@ -129,24 +129,24 @@ public class CustomConfigSchemaGenerator {
             return fieldInfo != null && fieldInfo.readOnly();
         }
 
-        private Boolean arrayUniqueItems(final @NotNull MemberScope<?, ?> memberScope) {
+        private @Nullable Boolean arrayUniqueItems(final @NotNull MemberScope<?, ?> memberScope) {
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
             return (fieldInfo != null && fieldInfo.arrayUniqueItems()) ? true : null;
         }
 
-        private Integer arrayMinItems(final @NotNull MemberScope<?, ?> memberScope) {
+        private @Nullable Integer arrayMinItems(final @NotNull MemberScope<?, ?> memberScope) {
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
             return fieldInfo != null && fieldInfo.arrayMinItems() > 0 ? fieldInfo.arrayMinItems() : null;
         }
 
-        private Integer arrayMaxItems(final @NotNull MemberScope<?, ?> memberScope) {
+        private @Nullable Integer arrayMaxItems(final @NotNull MemberScope<?, ?> memberScope) {
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
             return fieldInfo != null && fieldInfo.arrayMaxItems() > 0 && fieldInfo.arrayMaxItems() < Integer.MAX_VALUE
                     ? fieldInfo.arrayMaxItems()
                     : null;
         }
 
-        private String title(final @NotNull MemberScope<?, ?> memberScope) {
+        private @Nullable String title(final @NotNull MemberScope<?, ?> memberScope) {
             // -- We should not allow duplication of titles for wrapped types
             if (memberScope.isFakeContainerItemScope()) return null;
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
@@ -157,7 +157,7 @@ public class CustomConfigSchemaGenerator {
                     : null;
         }
 
-        private String description(final @NotNull MemberScope<?, ?> memberScope) {
+        private @Nullable String description(final @NotNull MemberScope<?, ?> memberScope) {
             // -- We should not allow duplication of descriptions for wrapped types
             if (memberScope.isFakeContainerItemScope()) return null;
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
@@ -168,7 +168,7 @@ public class CustomConfigSchemaGenerator {
                     : null;
         }
 
-        private String stringFormat(final @NotNull MemberScope<?, ?> memberScope) {
+        private @Nullable String stringFormat(final @NotNull MemberScope<?, ?> memberScope) {
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
             return fieldInfo != null
                             && fieldInfo.format() != null
@@ -177,7 +177,7 @@ public class CustomConfigSchemaGenerator {
                     : null;
         }
 
-        private Object defaultValue(final @NotNull MemberScope<?, ?> memberScope) {
+        private @Nullable Object defaultValue(final @NotNull MemberScope<?, ?> memberScope) {
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
             String str = fieldInfo != null
                             && fieldInfo.defaultValue() != null
@@ -197,26 +197,26 @@ public class CustomConfigSchemaGenerator {
             return fieldInfo != null && fieldInfo.ignore();
         }
 
-        private BigDecimal numberInclusiveMin(final @NotNull MemberScope<?, ?> memberScope) {
+        private @Nullable BigDecimal numberInclusiveMin(final @NotNull MemberScope<?, ?> memberScope) {
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
             return fieldInfo != null && fieldInfo.numberMin() != Double.MIN_VALUE
                     ? BigDecimal.valueOf(fieldInfo.numberMin())
                     : null;
         }
 
-        private BigDecimal numberInclusiveMax(final @NotNull MemberScope<?, ?> memberScope) {
+        private @Nullable BigDecimal numberInclusiveMax(final @NotNull MemberScope<?, ?> memberScope) {
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
             return fieldInfo != null && fieldInfo.numberMax() < Double.MAX_VALUE
                     ? BigDecimal.valueOf(fieldInfo.numberMax())
                     : null;
         }
 
-        private Integer stringMinLength(final @NotNull MemberScope<?, ?> memberScope) {
+        private @Nullable Integer stringMinLength(final @NotNull MemberScope<?, ?> memberScope) {
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
             return fieldInfo != null && fieldInfo.stringMinLength() > 0 ? fieldInfo.stringMinLength() : null;
         }
 
-        private Integer stringMaxLength(final @NotNull MemberScope<?, ?> memberScope) {
+        private @Nullable Integer stringMaxLength(final @NotNull MemberScope<?, ?> memberScope) {
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
             return fieldInfo != null
                             && fieldInfo.stringMaxLength() > 0
@@ -225,7 +225,7 @@ public class CustomConfigSchemaGenerator {
                     : null;
         }
 
-        protected String stringPattern(final @NotNull MemberScope<?, ?> memberScope) {
+        protected @Nullable String stringPattern(final @NotNull MemberScope<?, ?> memberScope) {
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
             return fieldInfo != null
                             && fieldInfo.stringPattern() != null
@@ -269,7 +269,7 @@ public class CustomConfigSchemaGenerator {
     }
 
     @SuppressWarnings("EmptyCatch")
-    private static Object getNativeObject(final @NotNull String format) {
+    private static @Nullable Object getNativeObject(final @Nullable String format) {
         if (format != null) {
             if ("true".equalsIgnoreCase(format.trim()) || "false".equalsIgnoreCase(format.trim())) {
                 return Boolean.parseBoolean(format.trim());

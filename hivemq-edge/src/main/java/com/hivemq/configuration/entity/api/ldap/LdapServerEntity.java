@@ -20,6 +20,7 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @SuppressWarnings("NotNullFieldNotInitialized")
@@ -31,7 +32,7 @@ public class LdapServerEntity {
               </ldap-server>
     */
     @XmlElement(name = "host", required = true)
-    private @NotNull String host;
+    private @Nullable String host;
 
     @XmlElement(name = "port", defaultValue = "389")
     private int port = 389;
@@ -43,7 +44,7 @@ public class LdapServerEntity {
         this.port = port;
     }
 
-    public @NotNull String getHost() {
+    public @Nullable String getHost() {
         return host;
     }
 

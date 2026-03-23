@@ -25,7 +25,6 @@ import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlElement;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -39,16 +38,17 @@ public class SouthboundMappingEntity implements EntityValidatable {
     private final @NotNull String tagName;
 
     @XmlElement(name = "fieldMapping", required = true)
-    private final @Nullable FieldMappingEntity fieldMapping;
+    private final @NotNull FieldMappingEntity fieldMapping;
 
     @XmlElement(name = "fromNorthSchema", required = true)
     private final @NotNull String fromNorthSchema;
 
     // no-arg constructor for JaxB
+    @SuppressWarnings("NullAway.Init")
     public SouthboundMappingEntity() {
         topicFilter = "";
         tagName = "";
-        fieldMapping = null;
+        fieldMapping = new FieldMappingEntity();
         fromNorthSchema = "";
     }
 
@@ -80,32 +80,26 @@ public class SouthboundMappingEntity implements EntityValidatable {
         EntityValidatable.notEmpty(validationEvents, topicFilter, "topicFilter");
         EntityValidatable.notEmpty(validationEvents, tagName, "tagName");
         EntityValidatable.notEmpty(validationEvents, fromNorthSchema, "fromNorthSchema");
-        Optional.ofNullable(fieldMapping).ifPresent(entity -> entity.validate(validationEvents));
+        fieldMapping.validate(validationEvents);
     }
 
     public @NotNull SouthboundMapping toPersistence(final @NotNull ObjectMapper mapper) {
         return new SouthboundMapping(
-                this.getTagName(),
-                this.getTopicFilter(),
-                this.fieldMapping != null ? this.fieldMapping.to(mapper) : null,
-                this.fromNorthSchema);
+                this.getTagName(), this.getTopicFilter(), this.fieldMapping.to(mapper), this.fromNorthSchema);
     }
 
     public @NotNull com.hivemq.edge.api.model.SouthboundMapping toAPi() {
         return com.hivemq.edge.api.model.SouthboundMapping.builder()
                 .tagName(this.getTagName())
                 .topicFilter(this.getTopicFilter())
-                .fieldMapping(
-                        this.fieldMapping != null
-                                ? FieldMapping.builder()
-                                        .instructions(this.fieldMapping.getInstructions().stream()
-                                                .map(instruction -> (Instruction) Instruction.builder()
-                                                        .destination(instruction.getDestinationFieldName())
-                                                        .source(instruction.getSourceFieldName())
-                                                        .build())
-                                                .toList())
-                                        .build()
-                                : null)
+                .fieldMapping(FieldMapping.builder()
+                        .instructions(this.fieldMapping.getInstructions().stream()
+                                .map(instruction -> (Instruction) Instruction.builder()
+                                        .destination(instruction.getDestinationFieldName())
+                                        .source(instruction.getSourceFieldName())
+                                        .build())
+                                .toList())
+                        .build())
                 .build();
     }
 
@@ -113,7 +107,7 @@ public class SouthboundMappingEntity implements EntityValidatable {
         return new SouthboundMappingEntity(
                 southboundMapping.getTagName(),
                 southboundMapping.getTopicFilter(),
-                FieldMappingEntity.from(southboundMapping.getFieldMapping()),
+                Objects.requireNonNull(FieldMappingEntity.from(southboundMapping.getFieldMapping())),
                 southboundMapping.getSchema());
     }
 
@@ -123,14 +117,14 @@ public class SouthboundMappingEntity implements EntityValidatable {
         return new SouthboundMappingEntity(
                 southboundMapping.getTagName(),
                 southboundMapping.getTopicFilter(),
-                FieldMappingEntity.from(southboundMapping.getFieldMapping()),
+                Objects.requireNonNull(FieldMappingEntity.from(southboundMapping.getFieldMapping())),
                 schema);
     }
 
     @Override
     public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
-        if (!(o instanceof SouthboundMappingEntity that)) return false;
+        if (!(o instanceof final SouthboundMappingEntity that)) return false;
         return Objects.equals(getTopicFilter(), that.getTopicFilter())
                 && Objects.equals(getTagName(), that.getTagName())
                 && Objects.equals(fieldMapping, that.fieldMapping)

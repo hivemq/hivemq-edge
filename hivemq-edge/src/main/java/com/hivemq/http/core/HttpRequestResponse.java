@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Map;
+import org.jetbrains.annotations.Nullable;
 
 public abstract class HttpRequestResponse implements IHttpRequestResponse {
 
@@ -30,7 +31,7 @@ public abstract class HttpRequestResponse implements IHttpRequestResponse {
     public int responseCode;
     public int responseSize;
 
-    private Map<String, String> parameters;
+    private @Nullable Map<String, String> parameters;
 
     public HttpRequestResponse(HttpConstants.METHOD method, URI httpRequestUri, String contextPath) {
         this.method = method;
@@ -81,7 +82,8 @@ public abstract class HttpRequestResponse implements IHttpRequestResponse {
     }
 
     @Override
-    public synchronized String getParameter(String key) {
+    @SuppressWarnings("NullAway") // Return type is @Nullable but superclass IHttpRequestResponse has no annotation
+    public synchronized @Nullable String getParameter(String key) {
         if (parameters == null) {
             //            String query = httpRequestUri.getQuery();
             String query = httpRequestUri.getRawQuery();

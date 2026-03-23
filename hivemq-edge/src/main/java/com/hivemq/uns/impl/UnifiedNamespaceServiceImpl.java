@@ -55,7 +55,7 @@ public class UnifiedNamespaceServiceImpl implements UnifiedNamespaceService {
     }
 
     @Override
-    public ISA95 getISA95() {
+    public @Nullable ISA95 getISA95() {
         return config;
     }
 
@@ -83,6 +83,9 @@ public class UnifiedNamespaceServiceImpl implements UnifiedNamespaceService {
         Preconditions.checkNotNull(topic);
         ImmutableList.Builder<String> builder = ImmutableList.builder();
         ISA95 isa95 = getISA95();
+        if (isa95 == null) {
+            return topic;
+        }
         if (!Strings.isNullOrEmpty(isa95.getEnterprise())) {
             builder.add(isa95.getEnterprise());
         }

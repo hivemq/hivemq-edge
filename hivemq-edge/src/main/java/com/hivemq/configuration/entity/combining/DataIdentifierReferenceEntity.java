@@ -35,6 +35,7 @@ public class DataIdentifierReferenceEntity implements EntityValidatable {
     private @NotNull DataIdentifierReference.Type type;
 
     // no-arg for jaxb
+    @SuppressWarnings("NullAway.Init")
     public DataIdentifierReferenceEntity() {}
 
     public DataIdentifierReferenceEntity(@NotNull final String id, @NotNull final DataIdentifierReference.Type type) {

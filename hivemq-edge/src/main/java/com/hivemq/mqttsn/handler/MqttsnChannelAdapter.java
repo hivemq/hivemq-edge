@@ -43,10 +43,13 @@ public class MqttsnChannelAdapter extends ChannelInboundHandlerAdapter {
         final ClientConnection clientConnection =
                 ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         if (clientConnection != null) {
-            if (log.isTraceEnabled()) {
-                log.trace("Clearing session alias registry with clientId {}", clientConnection.getClientId());
+            final String clientId = clientConnection.getClientId();
+            if (clientId != null) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Clearing session alias registry with clientId {}", clientId);
+                }
+                channelDependencies.getMqttsnTopicRegistry().clearSessionAliases(clientId);
             }
-            channelDependencies.getMqttsnTopicRegistry().clearSessionAliases(clientConnection.getClientId());
         }
     }
 }

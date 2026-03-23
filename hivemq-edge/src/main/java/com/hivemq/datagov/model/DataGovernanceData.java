@@ -17,13 +17,14 @@ package com.hivemq.datagov.model;
 
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
  */
 public interface DataGovernanceData {
 
-    @NotNull
+    @Nullable
     String getClientId();
 
     @NotNull

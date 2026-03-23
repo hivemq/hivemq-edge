@@ -210,8 +210,12 @@ public class ProtocolAdapterManager {
                         if (log.isDebugEnabled()) {
                             log.debug("Creating adapter '{}'", name);
                         }
-                        startAsync(createAdapterInternal(
-                                        protocolAdapterConfigs.get(name), versionProvider.getVersion()))
+                        final ProtocolAdapterConfig adapterConfig = protocolAdapterConfigs.get(name);
+                        if (adapterConfig == null) {
+                            log.error("Config for adapter '{}' not found, skipping creation", name);
+                            return;
+                        }
+                        startAsync(createAdapterInternal(adapterConfig, versionProvider.getVersion()))
                                 .get();
                     } catch (final InterruptedException e) {
                         Thread.currentThread().interrupt();
@@ -231,7 +235,12 @@ public class ProtocolAdapterManager {
                                     "Existing adapters were modified while a refresh was ongoing, adapter with name '{}' was deleted and could not be updated",
                                     name);
                         }
-                        if (wrapper != null && !protocolAdapterConfigs.get(name).equals(wrapper.getConfig())) {
+                        final ProtocolAdapterConfig updatedConfig = protocolAdapterConfigs.get(name);
+                        if (updatedConfig == null) {
+                            log.error("Config for adapter '{}' not found, skipping update", name);
+                            return;
+                        }
+                        if (wrapper != null && !updatedConfig.equals(wrapper.getConfig())) {
                             if (log.isDebugEnabled()) {
                                 log.debug("Updating adapter '{}'", name);
                             }
@@ -240,8 +249,8 @@ public class ProtocolAdapterManager {
                                         deleteAdapterInternal(name);
                                         return null;
                                     })
-                                    .thenCompose(ignored -> startAsync(createAdapterInternal(
-                                            protocolAdapterConfigs.get(name), versionProvider.getVersion())))
+                                    .thenCompose(ignored -> startAsync(
+                                            createAdapterInternal(updatedConfig, versionProvider.getVersion())))
                                     .get();
                         } else {
                             if (log.isDebugEnabled()) {

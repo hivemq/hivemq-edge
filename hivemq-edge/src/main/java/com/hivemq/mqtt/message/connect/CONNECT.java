@@ -232,7 +232,7 @@ public class CONNECT extends MqttMessageWithUserProperties implements Mqtt5CONNE
             return this;
         }
 
-        public @NotNull Mqtt3Builder withClientIdentifier(final @NotNull String clientIdentifier) {
+        public @NotNull Mqtt3Builder withClientIdentifier(final @Nullable String clientIdentifier) {
             this.clientIdentifier = clientIdentifier;
             return this;
         }

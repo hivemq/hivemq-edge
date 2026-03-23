@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class HttpUtils {
 
@@ -45,7 +46,7 @@ public class HttpUtils {
         return resource.replaceAll("//+", "/");
     }
 
-    public static String getFileExtension(String requestUri) {
+    public static @Nullable String getFileExtension(String requestUri) {
         if (requestUri.contains(".")) {
             return requestUri.substring(requestUri.lastIndexOf(".") + 1);
         }

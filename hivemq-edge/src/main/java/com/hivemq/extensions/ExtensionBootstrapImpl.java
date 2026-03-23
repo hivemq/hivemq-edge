@@ -27,6 +27,7 @@ import com.hivemq.extensions.services.auth.Authenticators;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -71,7 +72,8 @@ public class ExtensionBootstrapImpl implements ExtensionBootstrap {
         log.info("Starting HiveMQ extension system.");
 
         shutdownHooks.add(new ExtensionSystemShutdownHook(this));
-        final Path extensionFolder = systemInformation.getExtensionsFolder().toPath();
+        final Path extensionFolder =
+                Objects.requireNonNull(systemInformation.getExtensionsFolder()).toPath();
 
         // load already installed extensions
         final ImmutableCollection<HiveMQExtensionEvent> hiveMQExtensionEvents =

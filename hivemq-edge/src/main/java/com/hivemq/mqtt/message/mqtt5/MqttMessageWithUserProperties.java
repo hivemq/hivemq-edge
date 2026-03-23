@@ -96,7 +96,7 @@ public abstract class MqttMessageWithUserProperties extends MessageWithID {
      */
     public abstract static class MqttMessageWithReasonString extends MqttMessageWithUserProperties {
 
-        private final String reasonString;
+        private final @Nullable String reasonString;
 
         protected MqttMessageWithReasonString(
                 final @Nullable String reasonString, final @NotNull Mqtt5UserProperties userProperties) {

@@ -48,7 +48,7 @@ public class ProtocolAdapter {
 
     @JsonProperty("url")
     @Schema(description = "The url of the adapter")
-    private final @NotNull String url;
+    private final @Nullable String url;
 
     @JsonProperty("version")
     @Schema(description = "The installed version of the adapter")
@@ -56,11 +56,11 @@ public class ProtocolAdapter {
 
     @JsonProperty("logoUrl")
     @Schema(description = "The logo of the adapter")
-    private final @NotNull String logoUrl;
+    private final @Nullable String logoUrl;
 
     @JsonProperty("provisioningUrl")
     @Schema(description = "The provisioning url of the adapter")
-    private final @NotNull String provisioningUrl;
+    private final @Nullable String provisioningUrl;
 
     @JsonProperty("author")
     @Schema(description = "The author of the adapter")
@@ -68,15 +68,15 @@ public class ProtocolAdapter {
 
     @JsonProperty("installed")
     @Schema(description = "Is the adapter installed?")
-    private final @NotNull Boolean installed;
+    private final @Nullable Boolean installed;
 
     @JsonProperty("category")
     @Schema(description = "The category of the adapter")
-    private final @NotNull ProtocolAdapterCategory category;
+    private final @Nullable ProtocolAdapterCategory category;
 
     @JsonProperty("tags")
     @Schema(description = "The search tags associated with this adapter")
-    private final @NotNull List<String> tags;
+    private final @Nullable List<String> tags;
 
     @JsonProperty("capabilities")
     @Schema(description = "The capabilities of this adapter")
@@ -86,30 +86,30 @@ public class ProtocolAdapter {
     @Schema(
             description =
                     "JSONSchema in the 'https://json-schema.org/draft/2020-12/schema' format, which describes the configuration requirements for the adapter.")
-    private final @NotNull JsonNode configSchema;
+    private final @Nullable JsonNode configSchema;
 
     @JsonProperty("uiSchema")
     @Schema(
             description =
                     "UISchema (see https://rjsf-team.github.io/react-jsonschema-form/docs/api-reference/uiSchema/), which describes the UI rendering of the configuration for the adapter.")
-    private final @NotNull JsonNode uiSchema;
+    private final @Nullable JsonNode uiSchema;
 
     public ProtocolAdapter(
             @JsonProperty("id") final @NotNull String id,
             @JsonProperty("protocol") final @NotNull String protocol,
             @JsonProperty("name") final @NotNull String name,
             @JsonProperty("description") final @NotNull String description,
-            @JsonProperty("url") final @NotNull String url,
+            @JsonProperty("url") final @Nullable String url,
             @JsonProperty("version") final @NotNull String version,
-            @JsonProperty("logoUrl") final @NotNull String logoUrl,
+            @JsonProperty("logoUrl") final @Nullable String logoUrl,
             @JsonProperty("provisioningUrl") final @Nullable String provisioningUrl,
             @JsonProperty("author") final @NotNull String author,
             @JsonProperty("installed") final @Nullable Boolean installed,
             @JsonProperty("capabilities") final @NotNull Set<Capability> capabilities,
             @JsonProperty("category") final @Nullable ProtocolAdapterCategory category,
             @JsonProperty("tags") final @Nullable List<String> tags,
-            @JsonProperty("configSchema") final @NotNull JsonNode configSchema,
-            @JsonProperty("uiSchema") final @NotNull JsonNode uiSchema) {
+            @JsonProperty("configSchema") final @Nullable JsonNode configSchema,
+            @JsonProperty("uiSchema") final @Nullable JsonNode uiSchema) {
         this.id = id;
         this.protocol = protocol;
         this.name = name;
@@ -143,7 +143,7 @@ public class ProtocolAdapter {
         return description;
     }
 
-    public @NotNull String getUrl() {
+    public @Nullable String getUrl() {
         return url;
     }
 
@@ -151,7 +151,7 @@ public class ProtocolAdapter {
         return version;
     }
 
-    public @NotNull String getLogoUrl() {
+    public @Nullable String getLogoUrl() {
         return logoUrl;
     }
 
@@ -163,7 +163,7 @@ public class ProtocolAdapter {
         return author;
     }
 
-    public @NotNull JsonNode getConfigSchema() {
+    public @Nullable JsonNode getConfigSchema() {
         return configSchema;
     }
 

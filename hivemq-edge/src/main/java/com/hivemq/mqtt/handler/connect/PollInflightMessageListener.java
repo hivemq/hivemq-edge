@@ -19,6 +19,7 @@ import com.hivemq.mqtt.services.PublishPollService;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Lukas Brandl
@@ -28,17 +29,19 @@ public class PollInflightMessageListener implements ChannelFutureListener {
     @NotNull
     private final PublishPollService publishPollService;
 
-    @NotNull
+    @Nullable
     private final String clientId;
 
     public PollInflightMessageListener(
-            final @NotNull PublishPollService publishPollService, final @NotNull String clientId) {
+            final @NotNull PublishPollService publishPollService, final @Nullable String clientId) {
         this.publishPollService = publishPollService;
         this.clientId = clientId;
     }
 
     @Override
-    public void operationComplete(final @NotNull ChannelFuture future) throws Exception {
-        publishPollService.pollInflightMessages(clientId, future.channel());
+    public void operationComplete(final @NotNull ChannelFuture future) {
+        if (clientId != null) {
+            publishPollService.pollInflightMessages(clientId, future.channel());
+        }
     }
 }

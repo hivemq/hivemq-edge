@@ -21,6 +21,7 @@ import com.hivemq.util.ThreadFactoryUtil;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -47,7 +48,7 @@ public class PersistenceExecutorProvider implements Provider<ListeningExecutorSe
         if (executorService == null) {
             createExecutor();
         }
-        return executorService;
+        return Objects.requireNonNull(executorService);
     }
 
     private void createExecutor() {

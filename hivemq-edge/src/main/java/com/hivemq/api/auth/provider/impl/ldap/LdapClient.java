@@ -31,6 +31,7 @@ import com.unboundid.ldap.sdk.StartTLSPostConnectProcessor;
 import java.security.GeneralSecurityException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
@@ -64,8 +65,8 @@ public class LdapClient {
 
     private final @NotNull LdapConnectionProperties connectionProperties;
     private final @NotNull SecurityLog securityLog;
-    private volatile UserDnResolver userDnResolver;
-    private volatile LDAPConnectionPool connectionPool;
+    private volatile @Nullable UserDnResolver userDnResolver;
+    private volatile @Nullable LDAPConnectionPool connectionPool;
     private volatile boolean started = false;
 
     /**
@@ -158,8 +159,9 @@ public class LdapClient {
                     connectionProperties.servers().ports()[0]);
         } catch (final Exception e) {
             // Close the connection if pool creation fails
-            if (connectionPool != null) {
-                connectionPool.close();
+            final var connectionPoolTmp = this.connectionPool;
+            if (connectionPoolTmp != null) {
+                connectionPoolTmp.close();
             }
             throw e;
         }
@@ -174,8 +176,9 @@ public class LdapClient {
     public synchronized void stop() {
         log.debug("Stopping LDAP client");
 
-        if (connectionPool != null) {
-            connectionPool.close();
+        final var connectionPoolTmp = this.connectionPool;
+        if (connectionPoolTmp != null) {
+            connectionPoolTmp.close();
             connectionPool = null;
         }
 
@@ -203,9 +206,10 @@ public class LdapClient {
 
         log.debug("Attempting to bind user: {}", userDn);
 
+        final var pool = Objects.requireNonNull(connectionPool);
         try {
             final var bindRequest = new SimpleBindRequest(userDn, password);
-            final var bindResult = connectionPool.bindAndRevertAuthentication(bindRequest);
+            final var bindResult = pool.bindAndRevertAuthentication(bindRequest);
 
             final boolean success = bindResult.getResultCode() == ResultCode.SUCCESS;
             if (success) {
@@ -241,8 +245,9 @@ public class LdapClient {
      */
     public boolean authenticateUser(final @NotNull String username, final byte @NotNull [] password)
             throws LDAPException {
+        final var resolver = Objects.requireNonNull(userDnResolver);
         try {
-            final var resolved = userDnResolver.resolveDn(username);
+            final var resolved = resolver.resolveDn(username);
             final var bindResult = bindUser(resolved, password);
             if (bindResult) {
                 securityLog.authenticationSucceeded("LDAP", username);
@@ -280,9 +285,11 @@ public class LdapClient {
         }
 
         // Resolve username to DN
+        final var resolver = Objects.requireNonNull(userDnResolver);
+        final var pool = Objects.requireNonNull(connectionPool);
         final String userDn;
         try {
-            userDn = userDnResolver.resolveDn(username);
+            userDn = resolver.resolveDn(username);
             log.debug("Resolved username '{}' to DN: {}", username, userDn);
         } catch (final SearchFilterDnResolver.DnResolutionException e) {
             log.error("Failed to resolve DN for user '{}': {}", username, e.getMessage());
@@ -295,7 +302,7 @@ public class LdapClient {
         for (final var userRole : userRoles) {
             final String role = userRole.getRole();
             final String queryTemplate = userRole.getQuery();
-            if (queryTemplate.isBlank()) {
+            if (queryTemplate == null || queryTemplate.isBlank()) {
                 continue;
             }
             try {
@@ -318,7 +325,7 @@ public class LdapClient {
                         "1.1" // Return no attributes, we only need to know if entries exist
                         );
 
-                final var searchResult = connectionPool.search(searchRequest);
+                final var searchResult = pool.search(searchRequest);
                 if (searchResult.getResultCode() == ResultCode.SUCCESS && searchResult.getEntryCount() > 0) {
                     log.debug(
                             "Role query for '{}' matched {} entries, adding role", role, searchResult.getEntryCount());

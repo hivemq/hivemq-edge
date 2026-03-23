@@ -159,10 +159,10 @@ public class DisconnectHandler extends SimpleChannelInboundHandler<DISCONNECT> {
             clientConnection.setSendWill(true);
         }
 
+        final Long sessionExpiryIntervalBoxed = clientConnection.getClientSessionExpiryInterval();
+        final long sessionExpiryInterval = sessionExpiryIntervalBoxed != null ? sessionExpiryIntervalBoxed : 0L;
         final ListenableFuture<Void> persistenceFuture = clientSessionPersistence.clientDisconnected(
-                clientConnection.getClientId(),
-                clientConnection.isSendWill(),
-                clientConnection.getClientSessionExpiryInterval());
+                clientConnection.getClientId(), clientConnection.isSendWill(), sessionExpiryInterval);
         Futures.addCallback(
                 persistenceFuture,
                 new FutureCallback<>() {
@@ -178,7 +178,7 @@ public class DisconnectHandler extends SimpleChannelInboundHandler<DISCONNECT> {
 
                     @Override
                     public void onFailure(final @NotNull Throwable throwable) {
-                        final boolean persistent = clientConnection.getClientSessionExpiryInterval() > 0;
+                        final boolean persistent = sessionExpiryInterval > 0;
                         Exceptions.rethrowError(
                                 "Unable to update client session data for disconnecting client "
                                         + clientConnection.getClientId() + " with clean session set to " + !persistent

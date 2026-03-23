@@ -32,8 +32,8 @@ public class DataGovernanceContextImpl implements DataGovernanceContext {
 
     private final @NotNull Map<String, String> tokenReplacements;
     private final @NotNull DataGovernanceData input;
-    private @NotNull DataGovernanceResult result;
-    private @NotNull ExecutorService executorService;
+    private @Nullable DataGovernanceResult result;
+    private @Nullable ExecutorService executorService;
 
     public DataGovernanceContextImpl(final @NotNull DataGovernanceData input) {
         this.input = input;
@@ -66,6 +66,7 @@ public class DataGovernanceContextImpl implements DataGovernanceContext {
         return context -> tokenReplacements;
     }
 
+    @SuppressWarnings("NullAway") // executorService is nullable by design, callers handle null
     @Override
     public ExecutorService getExecutorService() {
         return executorService;

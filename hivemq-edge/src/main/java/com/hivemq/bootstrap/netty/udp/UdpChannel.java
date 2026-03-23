@@ -23,6 +23,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Shevchik (https://github.com/Shevchik/UdpServerSocketChannel)
@@ -136,6 +137,7 @@ public class UdpChannel extends AbstractChannel {
     }
 
     @Override
+    @Nullable
     protected SocketAddress localAddress0() {
         return channel.localAddress0();
     }

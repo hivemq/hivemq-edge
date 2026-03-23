@@ -18,6 +18,7 @@ package com.hivemq.util;
 import com.google.common.base.Preconditions;
 import java.io.File;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
@@ -69,7 +70,7 @@ public class Files {
      * @param filePath - the file path e.g. /some/file/location.txt
      * @return fileName - the fileName e.g. txt
      */
-    public static String getFileExtension(final @NotNull String filePath) {
+    public static @Nullable String getFileExtension(final @NotNull String filePath) {
         Preconditions.checkNotNull(filePath);
         String name = getFileName(filePath);
         int idx = name.lastIndexOf(PERIOD);

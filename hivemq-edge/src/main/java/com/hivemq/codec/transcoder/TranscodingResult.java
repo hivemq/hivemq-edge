@@ -35,8 +35,8 @@ public class TranscodingResult<FromT, ToT> {
     private final ITranscodingContext context;
     private final FromT input;
     private Optional<ToT> output = Optional.empty();
-    private String reasonString;
-    private Throwable error;
+    private @Nullable String reasonString;
+    private @Nullable Throwable error;
 
     public TranscodingResult(@NotNull ITranscodingContext context, final @NotNull FromT input) {
         this.context = context;

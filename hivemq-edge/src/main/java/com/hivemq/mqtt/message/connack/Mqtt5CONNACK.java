@@ -89,6 +89,7 @@ public interface Mqtt5CONNACK extends Message {
     /**
      * @return the maximum QoS the server accepts from the client. The default is {@link #DEFAULT_MAXIMUM_QOS}.
      */
+    @Nullable
     QoS getMaximumQoS();
 
     /**

@@ -263,10 +263,10 @@ public abstract class AbstractMqttDecoder<T extends Message> extends MqttDecoder
      */
     protected boolean topicInvalid(
             final @NotNull ClientConnection clientConnection,
-            final @NotNull String topicName,
+            final @Nullable String topicName,
             final @NotNull MessageType messageType) {
 
-        if (Topics.containsWildcard(topicName)) {
+        if (topicName == null || Topics.containsWildcard(topicName)) {
             disconnector.disconnect(
                     clientConnection.getChannel(),
                     "A client (IP: {}) sent a " + messageType.name()

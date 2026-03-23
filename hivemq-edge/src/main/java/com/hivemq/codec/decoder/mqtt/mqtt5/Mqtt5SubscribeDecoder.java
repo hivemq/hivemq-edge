@@ -205,8 +205,12 @@ public class Mqtt5SubscribeDecoder extends AbstractMqttDecoder<SUBSCRIBE> {
         if (subscriptionIdentifier == -1) {
             subscriptionIdentifier = null;
         }
-        return topicBuilder.add(new Topic(
-                topicFilter, QoS.valueOf(qoS), noLocal, retainAsPublished, retainHandling, subscriptionIdentifier));
+        final QoS qoSLevel = QoS.valueOf(qoS);
+        if (qoSLevel == null) {
+            return null;
+        }
+        return topicBuilder.add(
+                new Topic(topicFilter, qoSLevel, noLocal, retainAsPublished, retainHandling, subscriptionIdentifier));
     }
 
     private int readSubscriptionIdentifier(
@@ -281,7 +285,7 @@ public class Mqtt5SubscribeDecoder extends AbstractMqttDecoder<SUBSCRIBE> {
         return qos;
     }
 
-    private Mqtt5RetainHandling decodeRetainHandling(
+    private @Nullable Mqtt5RetainHandling decodeRetainHandling(
             final @NotNull ClientConnection clientConnection, final byte flags) {
         final int code = (flags & 0b0011_0000) >> 4;
 

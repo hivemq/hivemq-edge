@@ -19,6 +19,7 @@ import com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl.Shared
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A Utility class for dealing with topics
@@ -207,7 +208,7 @@ public class Topics {
      * @param topic the topic to check.
      * @return the {@link SharedSubscription} for a given topic or <null> if it is none.
      */
-    public static SharedSubscription checkForSharedSubscription(final @NotNull String topic) {
+    public static @Nullable SharedSubscription checkForSharedSubscription(final @NotNull String topic) {
 
         final Matcher matcher = SHARED_SUBSCRIPTION_PATTERN.matcher(topic);
         if (matcher.matches()) {

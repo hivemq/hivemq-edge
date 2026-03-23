@@ -15,6 +15,8 @@
  */
 package com.hivemq.combining.model;
 
+import static java.util.Objects.requireNonNull;
+
 import com.hivemq.configuration.entity.combining.DataCombinerEntity;
 import com.hivemq.configuration.entity.combining.DataCombiningEntity;
 import com.hivemq.configuration.entity.combining.EntityReferenceEntity;
@@ -28,13 +30,14 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public record DataCombiner(
-        UUID id,
-        String name,
-        String description,
-        List<EntityReference> entityReferences,
-        List<DataCombining> dataCombinings) {
+        @NotNull UUID id,
+        @NotNull String name,
+        @Nullable String description,
+        @NotNull List<EntityReference> entityReferences,
+        @NotNull List<DataCombining> dataCombinings) {
 
     public static @NotNull DataCombiner fromModel(final @NotNull Combiner combiner) {
         final List<DataCombining> combining;
@@ -51,7 +54,11 @@ public record DataCombiner(
                 .map(EntityReference::fromModel)
                 .toList();
         return new DataCombiner(
-                combiner.getId(), combiner.getName(), combiner.getDescription(), referenceList, combining);
+                requireNonNull(combiner.getId()),
+                requireNonNull(combiner.getName()),
+                combiner.getDescription(),
+                referenceList,
+                combining);
     }
 
     public static @NotNull DataCombiner fromPersistence(final @NotNull DataCombinerEntity combiner) {
@@ -62,7 +69,11 @@ public record DataCombiner(
                 .map(EntityReference::fromPersistence)
                 .toList();
         return new DataCombiner(
-                combiner.getId(), combiner.getName(), combiner.getDescription(), referenceList, combining);
+                requireNonNull(combiner.getId()),
+                requireNonNull(combiner.getName()),
+                combiner.getDescription(),
+                referenceList,
+                combining);
     }
 
     public @NotNull Combiner toModel() {

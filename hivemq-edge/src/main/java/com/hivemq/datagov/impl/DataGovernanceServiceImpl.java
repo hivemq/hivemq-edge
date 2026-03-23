@@ -24,6 +24,7 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.hivemq.datagov.DataGovernanceContext;
 import com.hivemq.datagov.DataGovernanceService;
+import com.hivemq.datagov.model.DataGovernanceData;
 import com.hivemq.datagov.model.DataGovernancePolicy;
 import com.hivemq.datagov.model.DataGovernanceResult;
 import com.hivemq.datagov.model.impl.DataGoveranceResultImpl;
@@ -33,10 +34,12 @@ import com.hivemq.mqtt.services.PrePublishProcessorService;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,20 +95,20 @@ public class DataGovernanceServiceImpl implements DataGovernanceService {
 
     protected @NotNull ListenableFuture<PublishingResult> publish(final @NotNull DataGovernanceContext context) {
         Preconditions.checkNotNull(context);
-        Preconditions.checkNotNull(context.getResult(), "Data Governance Result Cannot Be <null>");
+        final DataGovernanceResult result = Objects.requireNonNull(context.getResult());
         Preconditions.checkArgument(
-                context.getResult().getStatus() == DataGovernanceResult.STATUS.SUCCESS,
+                result.getStatus() == DataGovernanceResult.STATUS.SUCCESS,
                 "Can Only Apply Publish On Successful Execution");
         try {
+            final DataGovernanceData output = Objects.requireNonNull(result.getOutput());
+            final byte[] payload = Objects.requireNonNull(output.getPublish().getPayload());
             log.trace(
                     "Data Governance Publishing {} Bytes To {} at QoS {}",
-                    context.getResult().getOutput().getPublish().getPayload().length,
-                    context.getResult().getOutput().getPublish().getTopic(),
-                    context.getResult().getOutput().getPublish().getQoS().getQosNumber());
+                    payload.length,
+                    output.getPublish().getTopic(),
+                    output.getPublish().getQoS().getQosNumber());
             return prePublishProcessorService.publish(
-                    context.getResult().getOutput().getPublish(),
-                    getExecutorForContext(context),
-                    context.getResult().getOutput().getClientId());
+                    output.getPublish(), getExecutorForContext(context), output.getClientId());
         } catch (final Exception e) {
             return Futures.immediateFailedFuture(e);
         }
@@ -129,7 +132,7 @@ public class DataGovernanceServiceImpl implements DataGovernanceService {
         }
 
         @Override
-        public DataGovernanceResult call() {
+        public @Nullable DataGovernanceResult call() {
             final DataGovernanceResult result = context.getResult();
             for (final DataGovernancePolicy policy : policies) {
                 //                log.trace("Data-Gov Executing '{}' with Id '{}'", policy.getName(), policy.getId());

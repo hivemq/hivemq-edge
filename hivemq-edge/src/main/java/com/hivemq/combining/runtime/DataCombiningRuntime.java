@@ -39,6 +39,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -94,7 +95,9 @@ public class DataCombiningRuntime {
                     return new InternalTagConsumer(
                             tag,
                             combining,
-                            TAG.equals(combining.sources().primaryReference().type())
+                            TAG.equals(Objects.requireNonNull(
+                                                    combining.sources().primaryReference())
+                                            .type())
                                     && tag.equals(combining
                                             .sources()
                                             .primaryReference()
@@ -110,7 +113,9 @@ public class DataCombiningRuntime {
             internalSubscriptions.add(subscribeTopicFilter(
                     combining,
                     topicFilter,
-                    TOPIC_FILTER.equals(combining.sources().primaryReference().type())
+                    TOPIC_FILTER.equals(
+                                    Objects.requireNonNull(combining.sources().primaryReference())
+                                            .type())
                             && topicFilter.equals(
                                     combining.sources().primaryReference().id())));
         });

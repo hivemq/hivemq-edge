@@ -172,6 +172,7 @@ public class SslContextStore {
         INSTANCE;
 
         @Override
+        @SuppressWarnings("NullAway") // Funnel interface has @Nullable first param, but Tls is always non-null here
         public void funnel(final @NotNull Tls tls, final @NotNull PrimitiveSink sink) {
             funnelFile(tls.getKeystorePath(), sink);
 

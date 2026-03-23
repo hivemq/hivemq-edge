@@ -68,6 +68,7 @@ public class MqttsnToMqtt5Transcoder implements ITranscoder<IMqttsnMessage, Mess
 
     @Override
     @Nullable
+    @SuppressWarnings("NullAway") // mqttsn clientId and topic lookups may return @Nullable in protocol context
     public TranscodingResult<IMqttsnMessage, Message> transcode(
             @NotNull ITranscodingContext context, @NotNull IMqttsnMessage messageIn) {
 
@@ -116,6 +117,8 @@ public class MqttsnToMqtt5Transcoder implements ITranscoder<IMqttsnMessage, Mess
                 }
                 case MqttsnConstants.PUBLISH, MqttsnConstants.PUBLISH_M1 -> {
                     MqttsnPublish mqttsnPublish = (MqttsnPublish) messageIn;
+                    // QoS is clamped to 0-2, so valueOf cannot return null here
+                    @SuppressWarnings("NullAway")
                     QoS qos = QoS.valueOf(Math.min(2, Math.max(mqttsnPublish.getQoS(), 0)));
                     if (mqttsnPublish.getId() > 0) {
                         connection.correlatePublishToTopicAlias(
@@ -191,8 +194,14 @@ public class MqttsnToMqtt5Transcoder implements ITranscoder<IMqttsnMessage, Mess
                                         mqttsnSubscribe.getTopicData(),
                                         true);
                     }
-                    final SUBSCRIBE subscribe = new SUBSCRIBE(
-                            mqttsnSubscribe.getId(), new Topic(topicName, QoS.valueOf(mqttsnSubscribe.getQoS())));
+                    if (topicName == null) {
+                        break;
+                    }
+                    // mqttsnSubscribe.getQoS() is expected to be valid (0-2)
+                    @SuppressWarnings("NullAway")
+                    final QoS subscribeQoS = QoS.valueOf(mqttsnSubscribe.getQoS());
+                    final SUBSCRIBE subscribe =
+                            new SUBSCRIBE(mqttsnSubscribe.getId(), new Topic(topicName, subscribeQoS));
                     out = subscribe;
                 }
                 case MqttsnConstants.UNSUBSCRIBE -> {

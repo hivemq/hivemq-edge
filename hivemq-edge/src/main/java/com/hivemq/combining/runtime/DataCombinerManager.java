@@ -37,6 +37,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -116,8 +117,12 @@ public class DataCombinerManager {
         combinersToBeDeleted.forEach(uuid -> {
             try {
                 log.debug("Deleting data combiner '{}'", uuid);
-                var dataCombiningInformation = idToDataCombiningInformation.get(uuid);
+                final @Nullable DataCombiningInformation dataCombiningInformation =
+                        idToDataCombiningInformation.get(uuid);
                 deleteDataCombinerInternal(uuid);
+                if (dataCombiningInformation == null) {
+                    return;
+                }
                 var dataCombinerName = dataCombiningInformation.dataCombiner().name();
                 var nameOrId = dataCombinerName != null && !dataCombinerName.isEmpty()
                         ? dataCombinerName
@@ -137,7 +142,10 @@ public class DataCombinerManager {
         combinersToBeCreated.forEach(uuid -> {
             try {
                 log.debug("Creating data combiner '{}'", uuid);
-                var dataCombiner = mapOfNewCombinersByUUID.get(uuid);
+                final @Nullable DataCombiner dataCombiner = mapOfNewCombinersByUUID.get(uuid);
+                if (dataCombiner == null) {
+                    return;
+                }
                 createDataCombinerInternal(dataCombiner);
                 var dataCombinerName = dataCombiner.name();
                 var nameOrId =
@@ -156,8 +164,11 @@ public class DataCombinerManager {
         combinersToBeUpdated.forEach(uuid -> {
             try {
                 log.debug("Updating data combiner '{}'", uuid);
-                var dataCombiner = mapOfNewCombinersByUUID.get(uuid);
-                internalUpdateDataCombiner(mapOfNewCombinersByUUID.get(uuid));
+                final @Nullable DataCombiner dataCombiner = mapOfNewCombinersByUUID.get(uuid);
+                if (dataCombiner == null) {
+                    return;
+                }
+                internalUpdateDataCombiner(dataCombiner);
                 var dataCombinerName = dataCombiner.name();
                 var nameOrId =
                         dataCombinerName != null && !dataCombinerName.isEmpty() ? dataCombinerName : dataCombiner.id();

@@ -53,14 +53,18 @@ public class Mqtt3PublishEncoder extends AbstractVariableHeaderLengthEncoder<Mqt
         if (qos > 0) {
             out.writeShort(msg.getPacketIdentifier());
         }
-        out.writeBytes(msg.getPayload());
+        final byte[] payload = msg.getPayload();
+        if (payload != null) {
+            out.writeBytes(payload);
+        }
     }
 
     @Override
     protected int remainingLength(final @NotNull Mqtt3PUBLISH msg) {
         int length = 0;
         length += Utf8Utils.encodedLength(msg.getTopic());
-        length += msg.getPayload().length;
+        final byte[] payload = msg.getPayload();
+        length += payload != null ? payload.length : 0;
         length += 2; // Topic length
         if (msg.getQoS().getQosNumber() > 0) {
             length += 2; // message ID

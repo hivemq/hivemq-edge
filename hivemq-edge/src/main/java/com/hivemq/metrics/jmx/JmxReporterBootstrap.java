@@ -23,6 +23,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +38,7 @@ public class JmxReporterBootstrap {
     private final MetricRegistry metricRegistry;
 
     @VisibleForTesting
+    @Nullable
     JmxReporter jmxReporter;
 
     @Inject

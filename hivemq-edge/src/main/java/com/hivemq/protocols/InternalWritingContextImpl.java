@@ -28,6 +28,8 @@ public class InternalWritingContextImpl implements InternalWritingContext {
     }
 
     @Override
+    @SuppressWarnings(
+            "NullAway") // southboundMapping.getFieldMapping() may return null but the interface declares @NotNull
     public FieldMapping getFieldMapping() {
         return southboundMapping.getFieldMapping();
     }

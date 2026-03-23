@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public class ApiSecurityContext implements SecurityContext {
 
-    private @NotNull ApiPrincipal principal;
+    private final @NotNull ApiPrincipal principal;
     private @Nullable String authenticationScheme;
     private final boolean isSecure;
 
@@ -45,7 +45,7 @@ public class ApiSecurityContext implements SecurityContext {
 
     @Override
     public boolean isUserInRole(final String role) {
-        return principal != null && principal.hasRole(role);
+        return principal.hasRole(role);
     }
 
     @Override
@@ -54,21 +54,23 @@ public class ApiSecurityContext implements SecurityContext {
     }
 
     @Override
-    public String getAuthenticationScheme() {
+    public @Nullable String getAuthenticationScheme() {
         return authenticationScheme;
     }
 
-    public void setAuthenticationScheme(final String authenticationScheme) {
+    public void setAuthenticationScheme(final @NotNull String authenticationScheme) {
         this.authenticationScheme = authenticationScheme;
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ApiSecurityContext{");
-        sb.append("principal=").append(principal);
-        sb.append(", authenticationScheme='").append(authenticationScheme).append('\'');
-        sb.append(", isSecure=").append(isSecure);
-        sb.append('}');
-        return sb.toString();
+        return "ApiSecurityContext{" + "principal="
+                + principal
+                + ", authenticationScheme='"
+                + authenticationScheme
+                + '\''
+                + ", isSecure="
+                + isSecure
+                + '}';
     }
 }

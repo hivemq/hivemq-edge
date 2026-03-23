@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jose4j.jwa.AlgorithmConstraints;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.jwk.RsaJwkGenerator;
@@ -58,7 +59,7 @@ public class JwtAuthenticationProvider implements ITokenGenerator, ITokenVerifie
     private static final String CLAIM_ROLES = "roles";
     private static final String KEY_ID = "00001";
     private final @NotNull ApiJwtConfiguration configuration;
-    private volatile RsaJsonWebKey jwtKey;
+    private volatile @Nullable RsaJsonWebKey jwtKey;
     private final Object intializationMonitor = new Object();
 
     @Inject

@@ -69,11 +69,11 @@ public class Notification {
         return title;
     }
 
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return description;
     }
 
-    public Link getLink() {
+    public @Nullable Link getLink() {
         return link;
     }
 }

@@ -84,7 +84,7 @@ public class Mqtt3PublishDecoder extends AbstractMqttPublishDecoder<Mqtt3PUBLISH
             topicName = Strings.getPrefixedString(buf, utf8StringLength);
         }
 
-        if (topicInvalid(clientConnection, topicName, MessageType.PUBLISH)) {
+        if (topicName == null || topicInvalid(clientConnection, topicName, MessageType.PUBLISH)) {
             return null;
         }
 
@@ -101,11 +101,15 @@ public class Mqtt3PublishDecoder extends AbstractMqttPublishDecoder<Mqtt3PUBLISH
         final byte[] payload = new byte[buf.readableBytes()];
         buf.readBytes(payload);
 
+        final QoS qoSLevel = QoS.valueOf(qos);
+        if (qoSLevel == null) {
+            return null;
+        }
         return new PUBLISHFactory.Mqtt3Builder()
                 .withHivemqId(hivemqId.get())
                 .withMessageExpiryInterval(maxMessageExpiryInterval)
-                .withQoS(QoS.valueOf(qos))
-                .withOnwardQos(QoS.valueOf(qos))
+                .withQoS(qoSLevel)
+                .withOnwardQos(qoSLevel)
                 .withTopic(topicName)
                 .withDuplicateDelivery(dup)
                 .withPacketIdentifier(packetIdentifier)

@@ -31,7 +31,6 @@ import com.hivemq.util.JsonUtils;
 import com.jayway.jsonpath.DocumentContext;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -51,8 +50,12 @@ public final class VanillaDataCombiningTransformationService implements DataComb
     @Override
     public @NotNull CompletableFuture<Void> applyMappings(
             final @NotNull PUBLISH mergedPublish, final @NotNull DataCombining dataCombining) {
-        final Optional<DocumentContext> optionalDocumentContext =
-                JsonUtils.toDocumentContext(mergedPublish.getPayload());
+        final byte[] payload = mergedPublish.getPayload();
+        if (payload == null) {
+            LOGGER.warn("Merged payload is null, cannot apply data combining {}", dataCombining.id());
+            return CompletableFuture.completedFuture(null);
+        }
+        final Optional<DocumentContext> optionalDocumentContext = JsonUtils.toDocumentContext(payload);
         if (optionalDocumentContext.isEmpty()) {
             LOGGER.warn("Merged payload is not valid JSON, cannot apply data combining {}", dataCombining.id());
             return CompletableFuture.completedFuture(null);
@@ -62,9 +65,8 @@ public final class VanillaDataCombiningTransformationService implements DataComb
         final ObjectNode destinationObjectNode = objectMapper.createObjectNode();
         dataCombining.instructions().stream()
                 // Should we skip instructions without a data identifier reference?
-                .filter(instruction -> Objects.nonNull(instruction.dataIdentifierReference()))
-                .filter(instruction ->
-                        Objects.nonNull(instruction.dataIdentifierReference().type()))
+                .filter(instruction -> instruction.dataIdentifierReference() != null
+                        && instruction.dataIdentifierReference().type() != null)
                 .forEach(instruction -> {
                     Object value = null;
                     switch (instruction.dataIdentifierReference().type()) {

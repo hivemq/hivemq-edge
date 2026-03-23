@@ -20,6 +20,7 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * This class represents the simple bind credentials for an LDAP connection.
@@ -29,10 +30,10 @@ import org.jetbrains.annotations.NotNull;
 public class LdapSimpleBindEntity {
 
     @XmlElement(name = "rdns", required = true)
-    private @NotNull String rdns;
+    private @Nullable String rdns;
 
     @XmlElement(name = "userPassword", required = true)
-    private @NotNull String userPassword;
+    private @Nullable String userPassword;
 
     public LdapSimpleBindEntity() {}
 
@@ -41,11 +42,11 @@ public class LdapSimpleBindEntity {
         this.userPassword = password;
     }
 
-    public @NotNull String getRdns() {
+    public @Nullable String getRdns() {
         return rdns;
     }
 
-    public @NotNull String getUserPassword() {
+    public @Nullable String getUserPassword() {
         return userPassword;
     }
 

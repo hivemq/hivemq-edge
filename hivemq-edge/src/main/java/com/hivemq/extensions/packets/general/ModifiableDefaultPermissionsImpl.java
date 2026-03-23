@@ -24,6 +24,7 @@ import com.hivemq.extension.sdk.api.services.exception.DoNotImplementException;
 import com.hivemq.extensions.auth.parameter.TopicPermissionImpl;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
@@ -105,7 +106,7 @@ public class ModifiableDefaultPermissionsImpl implements ModifiableDefaultPermis
 
     @Override
     public @NotNull DefaultAuthorizationBehaviour getDefaultBehaviour() {
-        return defaultAuthorizationBehaviour.get();
+        return Objects.requireNonNull(defaultAuthorizationBehaviour.get());
     }
 
     @Override

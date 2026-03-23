@@ -126,7 +126,7 @@ public class BridgeService {
         toUpdate.forEach(bridgeId -> {
             final var active = activeBridgeNamesToClient.get(bridgeId);
             final var newBridge = bridgeIdToConfig.get(bridgeId);
-            if (active != null) {
+            if (active != null && newBridge != null) {
                 if (active.bridge().equals(newBridge)) {
                     log.debug("Not restarting bridge {} because config is unchanged", bridgeId);
                 } else {
@@ -141,6 +141,10 @@ public class BridgeService {
 
         toAdd.forEach(bridgeId -> {
             final var newBridge = bridgeIdToConfig.get(bridgeId);
+            if (newBridge == null) {
+                log.warn("Bridge config for '{}' not found, skipping", bridgeId);
+                return;
+            }
             log.info("Adding bridge '{}' ({}:{})", bridgeId, newBridge.getHost(), newBridge.getPort());
             allKnownBridgeConfigs.put(bridgeId, newBridge);
             activeBridgeNamesToClient.put(bridgeId, new MqttBridgeAndClient(newBridge, internalStartBridge(newBridge)));
@@ -193,11 +197,9 @@ public class BridgeService {
         if (client != null) {
             log.info("Restarting bridge '{}'", bridgeId);
             stopBridge(bridgeId, true, newForwarderIds(newBridgeConfig));
+            final MqttBridge effectiveBridge = newBridgeConfig != null ? newBridgeConfig : client.bridge();
             activeBridgeNamesToClient.put(
-                    bridgeId,
-                    new MqttBridgeAndClient(
-                            newBridgeConfig,
-                            internalStartBridge(newBridgeConfig != null ? newBridgeConfig : client.bridge())));
+                    bridgeId, new MqttBridgeAndClient(effectiveBridge, internalStartBridge(effectiveBridge)));
             if (newBridgeConfig != null) {
                 allKnownBridgeConfigs.put(bridgeId, newBridgeConfig);
             }

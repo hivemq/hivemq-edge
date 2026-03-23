@@ -138,7 +138,7 @@ public class AsyncLocalChunkIterator<V> implements AsyncIterator<V> {
         }
 
         @Override
-        public void onSuccess(final ChunkResult<V> result) {
+        public void onSuccess(final @Nullable ChunkResult<V> result) {
 
             if (asyncLocalChunkIterator.aborted.get()) {
                 // the current iteration has been aborted, ignore results

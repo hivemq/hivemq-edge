@@ -97,7 +97,7 @@ public class Mqtt3SubscribeDecoder extends AbstractMqttDecoder<SUBSCRIBE> {
 
         while (buf.isReadable()) {
             final String topic = Strings.getPrefixedString(buf);
-            if (isInvalidTopic(clientConnection, topic)) {
+            if (topic == null || isInvalidTopic(clientConnection, topic)) {
                 disconnector.disconnect(
                         clientConnection.getChannel(),
                         null, // already logged
@@ -128,7 +128,11 @@ public class Mqtt3SubscribeDecoder extends AbstractMqttDecoder<SUBSCRIBE> {
                 buf.clear();
                 return null;
             }
-            topics.add(new Topic(topic, QoS.valueOf(qos)));
+            final QoS qoSLevel = QoS.valueOf(qos);
+            if (qoSLevel == null) {
+                return null;
+            }
+            topics.add(new Topic(topic, qoSLevel));
         }
         return new SUBSCRIBE(topics.build(), messageId);
     }

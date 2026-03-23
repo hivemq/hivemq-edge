@@ -90,16 +90,17 @@ public class Mqtt5ToMqttsnTranscoder implements ITranscoder<Message, List<IMqtts
                 }
                 case PUBLISH -> {
                     PUBLISH publish = (PUBLISH) messageIn;
-                    Optional<MqttsnTopicAlias> aliasOptional = pipelineContext
-                            .getTopicRegistry()
-                            .readTopicAlias(connection.getClientId(), publish.getTopic());
+                    final String clientId = connection.getClientId();
+                    if (clientId == null) {
+                        break;
+                    }
+                    Optional<MqttsnTopicAlias> aliasOptional =
+                            pipelineContext.getTopicRegistry().readTopicAlias(clientId, publish.getTopic());
                     MqttsnTopicAlias topicAlias = null;
 
                     if (!aliasOptional.isPresent()) {
                         log.info("alias not found for outbound PUBLISH, adding registration procedure");
-                        int topicAliasVal = pipelineContext
-                                .getTopicRegistry()
-                                .register(connection.getClientId(), publish.getTopic());
+                        int topicAliasVal = pipelineContext.getTopicRegistry().register(clientId, publish.getTopic());
                         IMqttsnMessage registerOut = factory.createRegister(topicAliasVal, publish.getTopic());
                         list.add(registerOut);
                     } else {
@@ -110,7 +111,7 @@ public class Mqtt5ToMqttsnTranscoder implements ITranscoder<Message, List<IMqtts
                     if (topicAlias == null) {
                         topicAlias = pipelineContext
                                 .getTopicRegistry()
-                                .readTopicAlias(connection.getClientId(), publish.getTopic())
+                                .readTopicAlias(clientId, publish.getTopic())
                                 .get();
                     }
 

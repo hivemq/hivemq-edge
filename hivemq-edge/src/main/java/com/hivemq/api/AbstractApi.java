@@ -25,6 +25,7 @@ import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 import java.net.http.HttpRequest;
 import java.security.Principal;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,25 +40,28 @@ public abstract class AbstractApi {
 
     // -- The Security Context associated with the HttpRequest
     @Context
-    protected SecurityContext securityContext;
+    protected @Nullable SecurityContext securityContext;
 
     // -- The Headers associated with the HttpRequest
     @Context
-    protected HttpHeaders headers;
+    protected @Nullable HttpHeaders headers;
 
     // -- The HttpRequest
     @Context
-    protected HttpRequest request;
+    protected @Nullable HttpRequest request;
 
     // -- The ResourceContext
     @Context
-    protected ResourceContext context;
+    protected @Nullable ResourceContext context;
 
     // -- The UriInfo associated with the HttpRequest
     @Context
-    protected UriInfo uriInfo;
+    protected @Nullable UriInfo uriInfo;
 
     protected ApiPrincipal getAuthenticatedPrincipalFromContext() throws ApiException {
+        if (securityContext == null) {
+            throw new ApiException("security context not available", HttpConstants.SC_UNAUTHORIZED);
+        }
         if (securityContext.isSecure() && securityContext.getUserPrincipal() == null) {
             throw new ApiException("secure principal not available on context", HttpConstants.SC_UNAUTHORIZED);
         }

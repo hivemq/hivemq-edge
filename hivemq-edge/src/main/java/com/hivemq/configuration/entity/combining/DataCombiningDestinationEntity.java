@@ -36,6 +36,7 @@ public class DataCombiningDestinationEntity {
     private @NotNull String schema;
 
     // no-arg for jaxb
+    @SuppressWarnings("NullAway.Init")
     public DataCombiningDestinationEntity() {}
 
     public DataCombiningDestinationEntity(

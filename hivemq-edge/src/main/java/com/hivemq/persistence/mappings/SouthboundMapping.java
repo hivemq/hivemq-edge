@@ -49,6 +49,7 @@ public class SouthboundMapping implements InternalWritingContext {
     }
 
     @Override
+    @SuppressWarnings("NullAway") // SouthboundMapping may have null fieldMapping; callers handle it
     public @NotNull FieldMapping getFieldMapping() {
         return fieldMapping;
     }

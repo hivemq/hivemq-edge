@@ -72,7 +72,7 @@ public class EipSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
             title = "Ethernet IP To MQTT Config",
             description = "The configuration for a data stream from Ethernet IP to MQTT",
             required = true)
-    private final @Nullable EipToMqttConfig eipToMqttConfig;
+    private final @NotNull EipToMqttConfig eipToMqttConfig;
 
     @JsonCreator
     public EipSpecificAdapterConfig(

@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -115,7 +116,7 @@ public class TopicFilterPersistenceImpl implements TopicFilterPersistence {
     }
 
     @Override
-    public @NotNull TopicFilterPojo getTopicFilter(final @NotNull String filter) {
+    public @Nullable TopicFilterPojo getTopicFilter(final @NotNull String filter) {
         return filterToTopicFilter.get(filter);
     }
 }

@@ -42,6 +42,7 @@ import com.hivemq.protocols.northbound.PerContextSampler;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -106,7 +107,8 @@ public class ProtocolAdapterWrapper {
 
     public @NotNull CompletableFuture<Void> startAsync(
             final boolean writingEnabled, final @NotNull ModuleServices moduleServices) {
-        final var existingStartFuture = getOngoingOperationIfPresent(operationState.get(), OperationState.STARTING);
+        final var existingStartFuture =
+                getOngoingOperationIfPresent(Objects.requireNonNull(operationState.get()), OperationState.STARTING);
         if (existingStartFuture != null) {
             return existingStartFuture;
         }
@@ -218,8 +220,7 @@ public class ProtocolAdapterWrapper {
                     thread.setDaemon(false);
                     return thread;
                 }));
-                schedulerFutureRef.set(schedulerRef
-                        .get()
+                schedulerFutureRef.set(Objects.requireNonNull(schedulerRef.get())
                         .schedule(
                                 () -> {
                                     if (futureCompleted.compareAndSet(false, true)) {
@@ -283,7 +284,8 @@ public class ProtocolAdapterWrapper {
     }
 
     public @NotNull CompletableFuture<Void> stopAsync(final boolean destroy) {
-        final var existingStopFuture = getOngoingOperationIfPresent(operationState.get(), OperationState.STOPPING);
+        final var existingStopFuture =
+                getOngoingOperationIfPresent(Objects.requireNonNull(operationState.get()), OperationState.STOPPING);
         if (existingStopFuture != null) {
             return existingStopFuture;
         }
@@ -494,7 +496,7 @@ public class ProtocolAdapterWrapper {
                                 false,
                                 List.of(),
                                 1,
-                                -1),
+                                -1L),
                         eventService,
                         tagManager);
                 protocolAdapterPollingService.schedulePolling(sampler);

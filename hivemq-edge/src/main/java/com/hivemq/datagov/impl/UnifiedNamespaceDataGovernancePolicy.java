@@ -27,6 +27,7 @@ import com.hivemq.uns.UnifiedNamespaceService;
 import com.hivemq.uns.config.ISA95;
 import jakarta.inject.Inject;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author Simon L Johnson
@@ -47,16 +48,14 @@ public class UnifiedNamespaceDataGovernancePolicy extends DataGovernancePolicyIm
     @Override
     public void execute(final DataGovernanceContext context, final DataGovernanceData input) {
 
-        ImmutableMap.Builder builder = ImmutableMap.<String, String>builder();
-        Map<String, String> tokens = context.getTokenProvider().getTokenReplacements(context);
-        if (tokens != null) {
-            builder.putAll(tokens);
-        }
+        final var builder = ImmutableMap.<String, String>builder();
+        final Map<String, String> tokens = context.getTokenProvider().getTokenReplacements(context);
+        builder.putAll(tokens);
 
         MqttTopic mqttTopic = MqttTopic.of(input.getPublish().getTopic());
         // -- Topic modifications
-        ISA95 isa95 = unifiedNamespaceService.getISA95();
-        if (isa95.isEnabled()) {
+        final ISA95 isa95 = unifiedNamespaceService.getISA95();
+        if (isa95 != null && isa95.isEnabled()) {
             builder.putAll(unifiedNamespaceService.getTopicReplacements(isa95));
             if (isa95.isPrefixAllTopics()) {
                 // -- Add a topic prefix regardless of the templates being used
@@ -69,10 +68,12 @@ public class UnifiedNamespaceDataGovernancePolicy extends DataGovernancePolicyIm
 
         // -- Update the Resulting Object If Aspects Have Changed
         if (!MqttTopic.of(input.getPublish().getTopic()).equals(mqttTopic)) {
-            context.getResult()
+            Objects.requireNonNull(context.getResult())
                     .getOutput()
                     .setPublish(new PUBLISHFactory.Mqtt5Builder()
-                            .fromPublish(context.getResult().getOutput().getPublish())
+                            .fromPublish(Objects.requireNonNull(context.getResult())
+                                    .getOutput()
+                                    .getPublish())
                             .withTopic(mqttTopic.toString())
                             .build());
         }
