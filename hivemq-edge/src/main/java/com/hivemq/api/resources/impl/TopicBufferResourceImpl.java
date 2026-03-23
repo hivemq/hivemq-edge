@@ -54,14 +54,6 @@ public class TopicBufferResourceImpl extends AbstractApi implements TopicBuffers
     }
 
     @Override
-    public @NotNull Response getTopicBufferSubscription(final @NotNull String topicFilter) {
-        return topicBufferExtractor
-                .getSubscription(topicFilter)
-                .map(sub -> Response.ok(toModel(sub)).build())
-                .orElseGet(() -> ErrorResponseUtil.errorResponse(new NotFoundError()));
-    }
-
-    @Override
     public @NotNull Response addTopicBufferSubscription(
             final @NotNull com.hivemq.edge.api.model.TopicBufferSubscription body) {
         if (!systemInformation.isConfigWriteable()) {

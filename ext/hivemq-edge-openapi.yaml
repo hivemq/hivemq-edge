@@ -4838,39 +4838,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Subscription already exists for this topic filter
-  /api/v1/management/topic-buffers/{topicFilter}:
-    get:
-      description: Get a topic buffer subscription by topic filter
-      summary: Get a topic buffer subscription
-      operationId: get-topic-buffer-subscription
-      x-roles-allowed:
-        - admin
-        - super
-        - user
-      tags:
-        - Topic Buffers
-      parameters:
-        - in: path
-          name: topicFilter
-          required: true
-          schema:
-            type: string
-          description: The URL-encoded topic filter (e.g. sensors%2F%23 for sensors/#)
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TopicBufferSubscription'
-          description: Success
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetails'
-          description: Not found
     put:
-      description: Update a topic buffer subscription
+      description: Update a topic buffer subscription identified by its topic filter query parameter.
       summary: Update a topic buffer subscription
       operationId: update-topic-buffer-subscription
       x-roles-allowed:
@@ -4878,12 +4847,12 @@ paths:
       tags:
         - Topic Buffers
       parameters:
-        - in: path
+        - in: query
           name: topicFilter
           required: true
           schema:
             type: string
-          description: The URL-encoded topic filter
+          description: The MQTT topic filter of the subscription to update.
       requestBody:
         content:
           application/json:
@@ -4900,7 +4869,7 @@ paths:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Not found
     delete:
-      description: Delete a topic buffer subscription
+      description: Delete the topic buffer subscription identified by its topic filter query parameter.
       summary: Delete a topic buffer subscription
       operationId: delete-topic-buffer-subscription
       x-roles-allowed:
@@ -4908,12 +4877,12 @@ paths:
       tags:
         - Topic Buffers
       parameters:
-        - in: path
+        - in: query
           name: topicFilter
           required: true
           schema:
             type: string
-          description: The URL-encoded topic filter
+          description: The MQTT topic filter of the subscription to delete.
       responses:
         '200':
           description: Success
@@ -4923,6 +4892,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
           description: Not found
+
   /api/v1/management/combiners:
     get:
       description: Get all combiners

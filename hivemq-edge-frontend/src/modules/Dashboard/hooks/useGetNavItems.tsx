@@ -6,6 +6,7 @@ import { PiBridgeThin, PiPlugsConnectedFill } from 'react-icons/pi'
 import { BsIntersect } from 'react-icons/bs'
 import { GoLinkExternal } from 'react-icons/go'
 import { MdOutlineEventNote, MdPolicy } from 'react-icons/md'
+import { LuDatabase } from 'react-icons/lu'
 
 import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.ts'
 
@@ -46,6 +47,11 @@ const useGetNavItems = (): { data: NavLinksBlockType[]; isSuccess: boolean } => 
           icon: <MdOutlineEventNote />,
           href: '/event-logs',
           label: t('translation:navigation.gateway.routes.eventLogs'),
+        },
+        {
+          icon: <LuDatabase />,
+          href: '/topic-buffers',
+          label: t('translation:navigation.gateway.routes.topicBuffers'),
         },
         {
           icon: <Icon as={MdPolicy} fontSize="16px" />,

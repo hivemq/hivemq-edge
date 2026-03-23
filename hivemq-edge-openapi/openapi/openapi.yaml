@@ -52,6 +52,8 @@ tags:
     name: Payload Sampling
   - description: Interact with topic filters.
     name: Topic Filters
+  - description: Manage topic buffer subscriptions.
+    name: Topic Buffers
   - description: Configure Unified Namespace.
     name: UNS
   - description: >-
@@ -290,6 +292,9 @@ paths:
     $ref: paths/api_v1_management_topic-filters_{filter}.yaml
   /api/v1/management/topic-filters/{filter}/schema:
     $ref: paths/api_v1_management_topic-filters_{filter}_schema.yaml
+  # Topic Buffer paths
+  /api/v1/management/topic-buffers:
+    $ref: paths/api_v1_management_topic-buffers.yaml
 
   # UNS paths
   /api/v1/management/uns/isa95:

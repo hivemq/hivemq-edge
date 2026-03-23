@@ -51,7 +51,8 @@
         "bridges": "MQTT Bridges",
         "protocolAdapters": "Protocol Adapters",
         "eventLogs": "Event Logs",
-        "assets": "Assets"
+        "assets": "Assets",
+        "topicBuffers": "Topic Buffers"
       }
     },
     "extensions": {
@@ -105,7 +106,7 @@
       "placeholder": "Enter password",
       "show": "Show password",
       "hide": "Hide password",
-      "support": "Please speak with your system administrator if you don’t know username and password.",
+      "support": "Please speak with your system administrator if you don\u2019t know username and password.",
       "error": {
         "required": "The password is required"
       }
@@ -418,7 +419,10 @@
     "websocket": {
       "label": "Websockets",
       "description": "Websocket configuration associated with the bridge",
-      "enabled": { "label": "Enabled", "helper": "If Websockets are used" },
+      "enabled": {
+        "label": "Enabled",
+        "helper": "If Websockets are used"
+      },
       "serverPath": {
         "label": "Server Path",
         "helper": "The server path used by the bridge client. This must be setup as path at the remote broker."
@@ -751,18 +755,14 @@
     "capability": {
       "title_DISCOVER": "DISCOVER",
       "description_DISCOVER": "The device supports data point discoverability",
-
       "title_WRITE": "SOUTHBOUND",
       "description_WRITE": "The device supports Southbound mapping (WRITE)",
-
       "title_READ": "NORTHBOUND",
       "description_READ": "The device supports Northbound mapping (READ)",
-
       "title_COMBINE": "COMBINE",
       "description_COMBINE": "The device supports Data combining (COMBINE)"
     }
   },
-
   "articles": {
     "title": "Articles",
     "description": "Some reading for your understanding of HiveMQ Edge",
@@ -1377,7 +1377,6 @@
           "EDGE_NODE": "Edge Broker",
           "COMBINER_NODE": "Combiners",
           "ASSETS_NODE": "Assets",
-
           "CLUSTER_NODE": "Groups"
         }
       },
@@ -2055,13 +2054,48 @@
         }
       }
     },
-
     "workspace": {
       "nodeClient": {
         "status_ACTIVATED": "Activated",
         "status_DEACTIVATED": "Not Activated",
         "title": "Pulse Agent"
       }
+    }
+  },
+  "topicBuffer": {
+    "title": "Topic Buffers",
+    "description": "Configure topic buffer subscriptions to buffer MQTT messages for specific topic filters.",
+    "action": {
+      "add": "Add subscription",
+      "edit": {
+        "ariaLabel": "Edit subscription"
+      },
+      "delete": {
+        "ariaLabel": "Delete subscription"
+      }
+    },
+    "table": {
+      "header": {
+        "topicFilter": "Topic Filter",
+        "maxMessages": "Max Messages",
+        "actions": "Actions"
+      }
+    },
+    "editor": {
+      "titleAdd": "Add Topic Buffer Subscription",
+      "titleEdit": "Edit Topic Buffer Subscription",
+      "field": {
+        "topicFilter": "Topic Filter",
+        "maxMessages": "Max Messages"
+      },
+      "validation": {
+        "topicFilterRequired": "Topic filter is required",
+        "maxMessagesRequired": "Max messages is required",
+        "maxMessagesMin": "Must be at least 1"
+      }
+    },
+    "error": {
+      "loading": "We cannot load the topic buffer subscriptions at this time. Please try again later."
     }
   }
 }

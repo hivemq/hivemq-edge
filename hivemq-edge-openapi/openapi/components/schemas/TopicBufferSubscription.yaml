@@ -1,0 +1,15 @@
+type: object
+description: A topic buffer subscription that buffers MQTT messages for a given topic filter.
+properties:
+  topicFilter:
+    type: string
+    format: mqtt-topic-filter
+    description: The MQTT topic filter for this buffer subscription.
+  maxMessages:
+    type: integer
+    format: int32
+    minimum: 1
+    description: The maximum number of messages to buffer for this topic filter.
+required:
+  - topicFilter
+  - maxMessages
