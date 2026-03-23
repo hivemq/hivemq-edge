@@ -16,13 +16,13 @@
 package com.hivemq.bootstrap.services;
 
 import com.hivemq.edge.ModulesAndExtensionsService;
-import com.hivemq.protocols.ProtocolAdapterManager2;
+import com.hivemq.protocols.ProtocolAdapterManager;
 import org.jetbrains.annotations.NotNull;
 
 public interface AfterHiveMQStartBootstrapService extends CompleteBootstrapService {
 
     @NotNull
-    ProtocolAdapterManager2 protocolAdapterManager();
+    ProtocolAdapterManager protocolAdapterManager();
 
     @NotNull
     ModulesAndExtensionsService modulesAndExtensionsService();

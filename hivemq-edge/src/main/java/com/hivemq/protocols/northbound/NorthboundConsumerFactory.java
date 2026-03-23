@@ -20,7 +20,7 @@ import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishServiceImpl;
-import com.hivemq.protocols.ProtocolAdapterWrapper2;
+import com.hivemq.protocols.ProtocolAdapterWrapper;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
@@ -46,7 +46,7 @@ public class NorthboundConsumerFactory {
     }
 
     public @NotNull NorthboundTagConsumer build(
-            final @NotNull ProtocolAdapterWrapper2 protocolAdapterWrapper,
+            final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper,
             final @NotNull PollingContext pollingContext,
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService) {
         return new NorthboundTagConsumer(

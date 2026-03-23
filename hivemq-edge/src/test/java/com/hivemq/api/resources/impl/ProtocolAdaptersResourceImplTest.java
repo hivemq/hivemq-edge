@@ -50,7 +50,7 @@ import com.hivemq.persistence.domain.DomainTag;
 import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.topicfilter.TopicFilterPersistence;
 import com.hivemq.protocols.InternalProtocolAdapterWritingService;
-import com.hivemq.protocols.ProtocolAdapterManager2;
+import com.hivemq.protocols.ProtocolAdapterManager;
 import jakarta.ws.rs.core.Response;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -68,7 +68,7 @@ class ProtocolAdaptersResourceImplTest {
 
     private final @NotNull HiveMQEdgeRemoteService remoteService = mock();
     private final @NotNull ConfigurationService configurationService = mock();
-    private final @NotNull ProtocolAdapterManager2 protocolAdapterManager = mock();
+    private final @NotNull ProtocolAdapterManager protocolAdapterManager = mock();
     private final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService = mock();
     private final @NotNull ObjectMapper objectMapper = new ObjectMapper();
     private final @NotNull VersionProvider versionProvider = mock();

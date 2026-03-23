@@ -52,7 +52,7 @@ import com.hivemq.mqttsn.ioc.MqttsnServiceModule;
 import com.hivemq.persistence.PersistenceStartup;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.persistence.ioc.PersistenceModule;
-import com.hivemq.protocols.ProtocolAdapterManager2;
+import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.security.ioc.SecurityModule;
 import com.hivemq.throttling.ioc.ThrottlingModule;
 import com.hivemq.uns.ioc.UnsServiceModule;
@@ -119,7 +119,7 @@ public interface Injector {
 
     AfterHiveMQStartBootstrapService afterHiveMQStartBootstrapService();
 
-    ProtocolAdapterManager2 protocolAdapterManager();
+    ProtocolAdapterManager protocolAdapterManager();
 
     TagManager tagManager();
 

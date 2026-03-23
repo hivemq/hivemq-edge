@@ -30,7 +30,7 @@ import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.extensions.core.RestComponentsService;
 import com.hivemq.mqtt.services.InternalPublishService;
 import com.hivemq.persistence.connection.ConnectionPersistence;
-import com.hivemq.protocols.ProtocolAdapterManager2;
+import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.pulse.asset.AssetProviderRegistry;
 import com.hivemq.pulse.status.StatusProviderRegistry;
 import jakarta.inject.Inject;
@@ -41,13 +41,13 @@ import org.jetbrains.annotations.NotNull;
 public class AfterHiveMQStartBootstrapServiceImpl implements AfterHiveMQStartBootstrapService {
 
     private final @NotNull CompleteBootstrapService delegate;
-    private final @NotNull ProtocolAdapterManager2 protocolAdapterManager;
+    private final @NotNull ProtocolAdapterManager protocolAdapterManager;
     private final @NotNull ModulesAndExtensionsService modulesAndExtensionsService;
 
     @Inject
     public AfterHiveMQStartBootstrapServiceImpl(
             final @NotNull CompleteBootstrapService delegate,
-            final @NotNull ProtocolAdapterManager2 protocolAdapterManager,
+            final @NotNull ProtocolAdapterManager protocolAdapterManager,
             final @NotNull ModulesAndExtensionsService modulesAndExtensionsService) {
         this.delegate = delegate;
         this.protocolAdapterManager = protocolAdapterManager;
@@ -135,7 +135,7 @@ public class AfterHiveMQStartBootstrapServiceImpl implements AfterHiveMQStartBoo
     }
 
     @Override
-    public @NotNull ProtocolAdapterManager2 protocolAdapterManager() {
+    public @NotNull ProtocolAdapterManager protocolAdapterManager() {
         return protocolAdapterManager;
     }
 
@@ -151,7 +151,7 @@ public class AfterHiveMQStartBootstrapServiceImpl implements AfterHiveMQStartBoo
 
     public static @NotNull AfterHiveMQStartBootstrapService decorate(
             final @NotNull CompleteBootstrapService completeBootstrapService,
-            final @NotNull ProtocolAdapterManager2 protocolAdapterManager,
+            final @NotNull ProtocolAdapterManager protocolAdapterManager,
             final @NotNull ModulesAndExtensionsService modulesAndExtensionsService) {
         return new AfterHiveMQStartBootstrapServiceImpl(
                 completeBootstrapService, protocolAdapterManager, modulesAndExtensionsService);
