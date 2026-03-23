@@ -109,7 +109,8 @@ public class ProtocolAdapterWrapper {
     }
 
     public @NotNull CompletableFuture<Void> startAsync(final boolean writingEnabled) {
-        final var existingStartFuture = getOngoingOperationIfPresent(operationState.get(), OperationState.STARTING);
+        final var existingStartFuture =
+                getOngoingOperationIfPresent(Objects.requireNonNull(operationState.get()), OperationState.STARTING);
         if (existingStartFuture != null) {
             return existingStartFuture;
         }
