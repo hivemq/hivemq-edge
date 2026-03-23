@@ -60,31 +60,154 @@ public class OpcUaToJsonConverter {
             builder.valueNull();
             return;
         }
-        final var objBuilder = builder.startObjectValue();
+        final var metadataBuilder = builder.startObjectMetadata();
         if (value instanceof final DataValue v) {
             if (v.getStatusCode().getValue() > 0) {
-                populateStatusCode(objBuilder.startObject("statusCode"), v.getStatusCode())
+                populateStatusCode(metadataBuilder.startObject("statusCode"), v.getStatusCode())
                         .endObject();
             }
             if (v.getSourceTime() != null) {
-                objBuilder.put(
+                metadataBuilder.put(
                         "sourceTimestamp",
                         DateTimeFormatter.ISO_INSTANT.format(v.getSourceTime().getJavaInstant()));
             }
             if (v.getSourcePicoseconds() != null) {
-                objBuilder.put("sourcePicoseconds", v.getSourcePicoseconds().intValue());
+                metadataBuilder.put("sourcePicoseconds", v.getSourcePicoseconds().intValue());
             }
             if (v.getServerTime() != null) {
-                objBuilder.put(
+                metadataBuilder.put(
                         "serverTimestamp",
                         DateTimeFormatter.ISO_INSTANT.format(v.getServerTime().getJavaInstant()));
             }
             if (v.getServerPicoseconds() != null) {
-                objBuilder.put("serverPicoseconds", v.getServerPicoseconds().intValue());
+                metadataBuilder.put("serverPicoseconds", v.getServerPicoseconds().intValue());
             }
         }
-        addValueToObject(objBuilder, "value", value, serializationContext);
-        objBuilder.endObject();
+        metadataBuilder.endObject();
+
+        addValue(builder, value, serializationContext);
+    }
+
+    private static void addValue(
+            final @NotNull DataPointBuilder<?> builder,
+            final @Nullable Object value,
+            final @NotNull EncodingContext ctx) {
+
+        // SIMPLE TYPES — use builder.value(...) directly
+        if (value == null) {
+            builder.valueNull();
+        } else if (value instanceof final Boolean b) {
+            builder.value(b);
+        } else if (value instanceof final Byte b) {
+            builder.value((int) b);
+        } else if (value instanceof final UByte ubyte) {
+            builder.value(ubyte.intValue());
+        } else if (value instanceof final Short s) {
+            builder.value(s);
+        } else if (value instanceof final UShort ushort) {
+            builder.value(ushort.intValue());
+        } else if (value instanceof final Integer i) {
+            builder.value(i);
+        } else if (value instanceof final UInteger uint) {
+            builder.value(uint.longValue());
+        } else if (value instanceof final Long l) {
+            builder.value(l);
+        } else if (value instanceof final ULong ulong) {
+            builder.value(ulong.toBigInteger());
+        } else if (value instanceof final Float f) {
+            builder.value(f);
+        } else if (value instanceof final Double d) {
+            builder.value(d);
+        } else if (value instanceof final String str) {
+            builder.value(str);
+        } else if (value instanceof final DateTime dt) {
+            builder.value(DateTimeFormatter.ISO_INSTANT.format(dt.getJavaInstant()));
+        } else if (value instanceof final UUID uuid) {
+            builder.value(uuid.toString());
+        } else if (value instanceof final ByteString bs) {
+            builder.value(BASE_64.encodeToString(bs.bytesOrEmpty()));
+        } else if (value instanceof final XmlElement xe) {
+            final String fragment = xe.getFragment();
+            if (fragment != null) {
+                builder.value(fragment);
+            } else {
+                builder.valueNull();
+            }
+        } else if (value instanceof final ExpandedNodeId enid) {
+            builder.value(enid.toParseableString());
+        } else if (value.getClass().isArray()) {
+            final Object[] values = (Object[]) value;
+            final var arr = builder.startArrayValue();
+            for (final Object elem : values) {
+                addValueToArray(arr, elem, ctx);
+            }
+            arr.endArray();
+        }
+
+        // COMPLEX TYPES — use builder.startObjectValue(), populate fields directly
+        else if (value instanceof final DataValue dv) {
+            final var obj = builder.startObjectValue();
+            addValueToObject(obj, "value", dv.getValue(), ctx);
+            obj.endObject();
+        } else if (value instanceof final NodeId nid) {
+            populateNodeId(builder.startObjectValue(), nid).endObject();
+        } else if (value instanceof final StatusCode sc) {
+            populateStatusCode(builder.startObjectValue(), sc).endObject();
+        } else if (value instanceof final QualifiedName qn) {
+            final var obj = builder.startObjectValue();
+            final String name = qn.getName();
+            if (name != null) {
+                obj.put("name", name);
+            }
+            final int nsIdx = qn.getNamespaceIndex().intValue();
+            if (nsIdx > 0) {
+                obj.put("namespaceIndex", nsIdx);
+            }
+            obj.endObject();
+        } else if (value instanceof final LocalizedText lt) {
+            final var obj = builder.startObjectValue();
+            final String locale = lt.getLocale();
+            if (locale != null) {
+                obj.put("locale", locale);
+            }
+            final String text = lt.getText();
+            if (text != null) {
+                obj.put("text", text);
+            }
+            obj.endObject();
+        } else if (value instanceof final ExtensionObject eo) {
+            try {
+                final Object decodedValue = eo.decode(ctx);
+                final var obj = builder.startObjectValue();
+                addValueToObject(obj, "value", decodedValue, ctx);
+                obj.endObject();
+            } catch (final Throwable t) {
+                log.debug("Not able to decode body of OPC UA ExtensionObject, using undecoded body value instead", t);
+                final var obj = builder.startObjectValue();
+                addValueToObject(obj, "value", eo.getBody(), ctx);
+                obj.endObject();
+            }
+        } else if (value instanceof final Variant variant) {
+            final Object variantValue = variant.getValue();
+            if (variantValue != null) {
+                final var obj = builder.startObjectValue();
+                addValueToObject(obj, "value", variantValue, ctx);
+                obj.endObject();
+            } else {
+                builder.valueNull();
+            }
+        } else if (value instanceof final DiagnosticInfo info) {
+            populateDiagnosticInfo(builder.startObjectValue(), info).endObject();
+        } else if (value instanceof final DynamicStructType struct) {
+            final var obj = builder.startObjectValue();
+            struct.getMembers().forEach((k, v) -> addValueToObject(obj, k, v, ctx));
+            obj.endObject();
+        } else {
+            log.warn(
+                    "No explicit converter for OPC UA type {} falling back to string representation",
+                    value.getClass().getSimpleName());
+            builder.value(value.toString());
+        }
     }
 
     private static void addValueToObject(
@@ -92,10 +215,10 @@ public class OpcUaToJsonConverter {
             final @NotNull String key,
             final @Nullable Object value,
             final @NotNull EncodingContext ctx) {
+
+        // SIMPLE TYPES
         if (value == null) {
             obj.putNull(key);
-        } else if (value instanceof final DataValue dv) {
-            addValueToObject(obj, key, dv.getValue(), ctx);
         } else if (value instanceof final Boolean b) {
             obj.put(key, b);
         } else if (value instanceof final Byte b) {
@@ -133,6 +256,18 @@ public class OpcUaToJsonConverter {
             } else {
                 obj.putNull(key);
             }
+        } else if (value.getClass().isArray()) {
+            final Object[] values = (Object[]) value;
+            final var arr = obj.startArray(key);
+            for (final Object elem : values) {
+                addValueToArray(arr, elem, ctx);
+            }
+            arr.endArray();
+        }
+
+        // COMPLEX TYPES
+        else if (value instanceof final DataValue dv) {
+            addValueToObject(obj, key, dv.getValue(), ctx);
         } else if (value instanceof final NodeId nid) {
             populateNodeId(obj.startObject(key), nid).endObject();
         } else if (value instanceof final ExpandedNodeId enid) {
@@ -182,13 +317,6 @@ public class OpcUaToJsonConverter {
             final var nested = obj.startObject(key);
             struct.getMembers().forEach((k, v) -> addValueToObject(nested, k, v, ctx));
             nested.endObject();
-        } else if (value.getClass().isArray()) {
-            final Object[] values = (Object[]) value;
-            final var arr = obj.startArray(key);
-            for (final Object elem : values) {
-                addValueToArray(arr, elem, ctx);
-            }
-            arr.endArray();
         } else {
             log.warn(
                     "No explicit converter for OPC UA type {} falling back to string representation",
