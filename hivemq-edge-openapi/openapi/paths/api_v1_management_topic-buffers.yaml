@@ -1,0 +1,107 @@
+get:
+  description: Get the list of all topic buffer subscriptions configured in this Edge instance.
+  operationId: get-topicBufferSubscriptions
+  x-roles-allowed:
+    - admin
+    - super
+    - user
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/TopicBufferSubscriptionList.yaml
+      description: Success
+  summary: Get all topic buffer subscriptions
+  tags:
+    - Topic Buffers
+post:
+  description: Add a new topic buffer subscription.
+  operationId: add-topicBufferSubscription
+  x-roles-allowed:
+    - admin
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/TopicBufferSubscription.yaml
+    description: The topic buffer subscription to add.
+    required: true
+  responses:
+    '200':
+      description: Success
+    '409':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Already Exists
+    '500':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Internal Server Error
+  summary: Add a new topic buffer subscription
+  tags:
+    - Topic Buffers
+put:
+  description: Update an existing topic buffer subscription identified by its topic filter.
+  operationId: update-topicBufferSubscription
+  x-roles-allowed:
+    - admin
+  parameters:
+    - name: topicFilter
+      in: query
+      required: true
+      schema:
+        type: string
+      description: The MQTT topic filter of the subscription to update.
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/TopicBufferSubscription.yaml
+    required: true
+  responses:
+    '200':
+      description: Success
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Not Found
+    '500':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Internal Server Error
+  summary: Update a topic buffer subscription
+  tags:
+    - Topic Buffers
+delete:
+  description: Delete the topic buffer subscription identified by its topic filter.
+  operationId: delete-topicBufferSubscription
+  x-roles-allowed:
+    - admin
+  parameters:
+    - name: topicFilter
+      in: query
+      required: true
+      schema:
+        type: string
+      description: The MQTT topic filter of the subscription to delete.
+  responses:
+    '200':
+      description: Success
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Not Found
+  summary: Delete a topic buffer subscription
+  tags:
+    - Topic Buffers

@@ -15,12 +15,16 @@
  */
 package com.hivemq.protocols;
 
+import com.codahale.metrics.MetricRegistry;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
 import com.hivemq.edge.modules.ModuleLoader;
+import com.hivemq.edge.modules.adapters.adaptermetrics.AdapterMetricsProtocolAdapterFactory;
+import com.hivemq.edge.modules.adapters.adaptermetrics.AdapterMetricsProtocolAdapterInformation;
 import com.hivemq.edge.modules.adapters.simulation.SimulationProtocolAdapterFactory;
+import com.hivemq.edge.modules.adapters.telemetry.EdgeTelemetryAdapterFactory;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.lang.reflect.Constructor;
@@ -43,15 +47,21 @@ public class ProtocolAdapterFactoryManager {
     private volatile @NotNull Map<String, ProtocolAdapterFactory<?>> factoryMap;
     private final @NotNull ModuleLoader moduleLoader;
     private final @NotNull EventService eventService;
+    private final @NotNull MetricRegistry metricRegistry;
 
     @Inject
     public ProtocolAdapterFactoryManager(
             final @NotNull ModuleLoader moduleLoader,
             final @NotNull EventService eventService,
+            final @NotNull MetricRegistry metricRegistry,
             final @NotNull InternalProtocolAdapterWritingService writingService) {
         this.moduleLoader = moduleLoader;
         this.eventService = eventService;
+        this.metricRegistry = metricRegistry;
         factoryMap = findAllAdapters(moduleLoader, eventService, writingService.writingEnabled());
+        factoryMap.put(
+                AdapterMetricsProtocolAdapterInformation.PROTOCOL_ID,
+                new AdapterMetricsProtocolAdapterFactory(metricRegistry));
     }
 
     public @NotNull Optional<ProtocolAdapterFactory<?>> get(final @NotNull String protocolAdapterType) {
@@ -72,6 +82,9 @@ public class ProtocolAdapterFactoryManager {
 
     public void writingEnabledChanged(final boolean writingEnabled) {
         factoryMap = findAllAdapters(moduleLoader, eventService, writingEnabled);
+        factoryMap.put(
+                AdapterMetricsProtocolAdapterInformation.PROTOCOL_ID,
+                new AdapterMetricsProtocolAdapterFactory(metricRegistry));
     }
 
     @SuppressWarnings("rawtypes")
@@ -84,6 +97,7 @@ public class ProtocolAdapterFactoryManager {
                 moduleLoader.findImplementations(ProtocolAdapterFactory.class);
 
         implementations.add(SimulationProtocolAdapterFactory.class);
+        implementations.add(EdgeTelemetryAdapterFactory.class);
 
         for (final Class<? extends ProtocolAdapterFactory> factoryClass : implementations) {
             try {

@@ -39,6 +39,7 @@ import com.hivemq.edge.api.MetricsApi;
 import com.hivemq.edge.api.PayloadSamplingApi;
 import com.hivemq.edge.api.ProtocolAdaptersApi;
 import com.hivemq.edge.api.PulseApi;
+import com.hivemq.edge.api.TopicBuffersApi;
 import com.hivemq.edge.api.TopicFiltersApi;
 import com.hivemq.edge.api.UnsApi;
 import com.hivemq.http.error.DefaultExceptionMapper;
@@ -88,6 +89,7 @@ public class ApiResourceRegistry extends ResourceConfig {
     private final @NotNull Lazy<TopicFiltersApi> topicFilterApiLazy;
     private final @NotNull Lazy<CombinersApi> combinersApiLazy;
     private final @NotNull Lazy<PulseApi> pulseApiLazy;
+    private final @NotNull Lazy<TopicBuffersApi> topicBuffersApiLazy;
     private final @NotNull Lazy<ApiConfigurationService> apiConfigurationService;
 
     @Inject
@@ -111,6 +113,7 @@ public class ApiResourceRegistry extends ResourceConfig {
             final @NotNull Lazy<TopicFiltersApi> topicFilterApiLazy,
             final @NotNull Lazy<CombinersApi> combinersApiLazy,
             final @NotNull Lazy<PulseApi> pulseApiLazy,
+            final @NotNull Lazy<TopicBuffersApi> topicBuffersApiLazy,
             final @NotNull Lazy<ApiConfigurationService> apiConfigurationService) {
         this.authenticationApi = authenticationApi;
         this.metricsApi = metricsApi;
@@ -131,6 +134,7 @@ public class ApiResourceRegistry extends ResourceConfig {
         this.topicFilterApiLazy = topicFilterApiLazy;
         this.combinersApiLazy = combinersApiLazy;
         this.pulseApiLazy = pulseApiLazy;
+        this.topicBuffersApiLazy = topicBuffersApiLazy;
         this.apiConfigurationService = apiConfigurationService;
     }
 
@@ -175,6 +179,8 @@ public class ApiResourceRegistry extends ResourceConfig {
         logger.trace("Initialized combiners API resources");
         register(pulseApiLazy.get());
         logger.trace("Initialized pulse API resources");
+        register(topicBuffersApiLazy.get());
+        logger.trace("Initialized topic buffers API resources");
     }
 
     protected void registerMappers() {

@@ -153,6 +153,7 @@ public class ConfigFileReaderWriter {
     private final @NotNull AssetMappingExtractor assetMappingExtractor;
     private final @NotNull PulseExtractor pulseExtractor;
     private final @NotNull UnsExtractor unsExtractor;
+    private final @NotNull TopicBufferExtractor topicBufferExtractor;
     private final @NotNull List<ReloadableExtractor<?, ?>> extractors;
     private final @NotNull SystemInformation sysInfo;
     private final @NotNull AtomicLong lastWrite;
@@ -174,13 +175,15 @@ public class ConfigFileReaderWriter {
         this.assetMappingExtractor = new AssetMappingExtractor(this);
         this.pulseExtractor = new PulseExtractor(this);
         this.unsExtractor = new UnsExtractor(this);
+        this.topicBufferExtractor = new TopicBufferExtractor(this);
         this.extractors = List.of(
                 this.bridgeExtractor,
                 this.protocolAdapterExtractor,
                 this.dataCombiningExtractor,
                 this.assetMappingExtractor,
                 this.pulseExtractor,
-                this.unsExtractor);
+                this.unsExtractor,
+                this.topicBufferExtractor);
         this.fragmentToModificationTime = new ConcurrentHashMap<>();
         this.configEntity = new AtomicReference<>();
         this.lastWrite = new AtomicLong();
@@ -294,6 +297,10 @@ public class ConfigFileReaderWriter {
 
     public @NotNull UnsExtractor getUnsExtractor() {
         return unsExtractor;
+    }
+
+    public @NotNull TopicBufferExtractor getTopicBufferExtractor() {
+        return topicBufferExtractor;
     }
 
     public void setDefaultBackupConfig(final boolean defaultBackupConfig) {

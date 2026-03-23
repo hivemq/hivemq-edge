@@ -20,6 +20,7 @@ import com.hivemq.configuration.reader.BridgeExtractor;
 import com.hivemq.configuration.reader.DataCombiningExtractor;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.configuration.reader.PulseExtractor;
+import com.hivemq.configuration.reader.TopicBufferExtractor;
 import com.hivemq.configuration.reader.UnsExtractor;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
@@ -111,6 +112,13 @@ public class ConfigurationModule {
     @Singleton
     static @NotNull PulseExtractor pulseExtractor(final @NotNull ConfigurationService configurationService) {
         return configurationService.pulseExtractor();
+    }
+
+    @Provides
+    @Singleton
+    static @NotNull TopicBufferExtractor topicBufferExtractor(
+            final @NotNull ConfigurationService configurationService) {
+        return configurationService.topicBufferExtractor();
     }
 
     @Provides

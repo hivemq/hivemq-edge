@@ -21,6 +21,7 @@ const EvenLogPage = lazy(() => import('@/modules/EventLog/EvenLogPage.tsx'))
 const AdapterSubscriptionManager = lazy(() => import('@/modules/Mappings/AdapterMappingManager.tsx'))
 const CombinerMappingManager = lazy(() => import('../Mappings/CombinerMappingManager.tsx'))
 const TopicFilterManager = lazy(() => import('@/modules/TopicFilters/TopicFilterManager.tsx'))
+const TopicBufferPage = lazy(() => import('@/modules/TopicBuffers/TopicBufferPage.tsx'))
 const ProtocolIntegrationStore = lazy(
   () => import('@/modules/ProtocolAdapters/components/panels/ProtocolIntegrationStore.tsx')
 )
@@ -165,6 +166,10 @@ export const routes = createBrowserRouter(
         {
           path: 'event-logs/',
           element: <EvenLogPage />,
+        },
+        {
+          path: 'topic-buffers/',
+          element: <TopicBufferPage />,
         },
         {
           path: 'namespace/',

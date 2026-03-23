@@ -21,6 +21,7 @@ import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.DataCombiningExtractor;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.configuration.reader.PulseExtractor;
+import com.hivemq.configuration.reader.TopicBufferExtractor;
 import com.hivemq.configuration.reader.UnsExtractor;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
 import java.io.Writer;
@@ -110,6 +111,9 @@ public interface ConfigurationService {
 
     @NotNull
     UnsExtractor unsExtractor();
+
+    @NotNull
+    TopicBufferExtractor topicBufferExtractor();
 
     void setConfigFileReaderWriter(@NotNull ConfigFileReaderWriter configFileReaderWriter);
 

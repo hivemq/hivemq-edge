@@ -1,0 +1,90 @@
+get:
+  description: Get the specified topic buffer subscription.
+  operationId: get-topicBufferSubscription
+  x-roles-allowed:
+    - admin
+    - super
+    - user
+  parameters:
+    - name: topicFilter
+      in: path
+      required: true
+      schema:
+        type: string
+      description: The MQTT topic filter of the subscription to retrieve.
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/TopicBufferSubscription.yaml
+      description: Success
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Not Found
+  summary: Get a topic buffer subscription
+  tags:
+    - Topic Buffers
+put:
+  description: Update an existing topic buffer subscription.
+  operationId: update-topicBufferSubscription
+  x-roles-allowed:
+    - admin
+  parameters:
+    - name: topicFilter
+      in: path
+      required: true
+      schema:
+        type: string
+      description: The MQTT topic filter of the subscription to update.
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/TopicBufferSubscription.yaml
+    required: true
+  responses:
+    '200':
+      description: Success
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Not Found
+    '500':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Internal Server Error
+  summary: Update a topic buffer subscription
+  tags:
+    - Topic Buffers
+delete:
+  description: Delete the specified topic buffer subscription.
+  operationId: delete-topicBufferSubscription
+  x-roles-allowed:
+    - admin
+  parameters:
+    - name: topicFilter
+      in: path
+      required: true
+      schema:
+        type: string
+      description: The MQTT topic filter of the subscription to delete.
+  responses:
+    '200':
+      description: Success
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Not Found
+  summary: Delete a topic buffer subscription
+  tags:
+    - Topic Buffers

@@ -1,0 +1,9 @@
+type: object
+properties:
+  items:
+    type: array
+    description: List of topic buffer subscriptions.
+    items:
+      $ref: ./TopicBufferSubscription.yaml
+required:
+  - items

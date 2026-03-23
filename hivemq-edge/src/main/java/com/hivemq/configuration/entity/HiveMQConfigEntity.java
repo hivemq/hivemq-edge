@@ -21,6 +21,7 @@ import com.hivemq.configuration.entity.bridge.MqttBridgeEntity;
 import com.hivemq.configuration.entity.combining.DataCombinerEntity;
 import com.hivemq.configuration.entity.listener.ListenerEntity;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
+import com.hivemq.configuration.entity.topicbuffer.TopicBufferSubscriptionEntity;
 import com.hivemq.configuration.entity.uns.UnsConfigEntity;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
 import jakarta.xml.bind.annotation.XmlAccessType;
@@ -107,6 +108,10 @@ public class HiveMQConfigEntity {
 
     @XmlElementRef(name = "pulse", required = false)
     private @NotNull PulseEntity pulseEntity = new PulseEntity();
+
+    @XmlElementWrapper(name = "topic-buffer-subscriptions")
+    @XmlElement(name = "topic-buffer-subscription")
+    private @NotNull List<TopicBufferSubscriptionEntity> topicBufferSubscriptions = new ArrayList<>();
 
     @XmlElement(name = "modules")
     @XmlJavaTypeAdapter(ArbitraryValuesMapAdapter.class)
@@ -225,6 +230,10 @@ public class HiveMQConfigEntity {
 
     public @NotNull PulseEntity getPulseEntity() {
         return pulseEntity;
+    }
+
+    public @NotNull List<TopicBufferSubscriptionEntity> getTopicBufferSubscriptions() {
+        return topicBufferSubscriptions;
     }
 
     public int getVersion() {

@@ -19,13 +19,13 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.impl.events.EventServiceDelegateImpl;
-import com.hivemq.edge.impl.events.InMemoryEventImpl;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishServiceImpl;
 import com.hivemq.edge.modules.adapters.impl.polling.ProtocolAdapterPollingServiceImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.edge.modules.api.events.EventListener;
 import com.hivemq.edge.modules.api.events.EventStore;
+import com.hivemq.topicbuffer.TopicBufferAwareEventStore;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
@@ -58,7 +58,7 @@ public abstract class ModulesModule {
 
     @Binds
     @Singleton
-    abstract @NotNull EventStore eventStore(@NotNull InMemoryEventImpl inMemoryEvent);
+    abstract @NotNull EventStore eventStore(@NotNull TopicBufferAwareEventStore topicBufferAwareEventStore);
 
     @Provides
     @ElementsIntoSet
