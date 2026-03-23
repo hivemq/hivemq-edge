@@ -17,17 +17,17 @@ package com.hivemq.persistence.mappings;
 
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.api.model.JavaScriptConstants;
 import com.hivemq.mqtt.message.QoS;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
 @SuppressWarnings("EnumOrdinal")
-public class NorthboundMapping implements PollingContext {
+public class NorthboundMapping {
 
     private static final int DEFAULT_QOS = QoS.EXACTLY_ONCE.ordinal();
     private static final @NotNull Long DEFAULT_MESSAGE_EXPIRY = JavaScriptConstants.JS_MAX_SAFE_INTEGER;
@@ -77,42 +77,34 @@ public class NorthboundMapping implements PollingContext {
                 model.getMessageExpiryInterval() != null ? model.getMessageExpiryInterval() : DEFAULT_MESSAGE_EXPIRY);
     }
 
-    @Override
     public @NotNull String getMqttTopic() {
         return topic;
     }
 
-    @Override
     public @NotNull String getTagName() {
         return tagName;
     }
 
-    @Override
     public int getMqttQos() {
         return maxQoS;
     }
 
-    @Override
     public @NotNull MessageHandlingOptions getMessageHandlingOptions() {
         return MessageHandlingOptions.MQTTMessagePerTag;
     }
 
-    @Override
     public @NotNull Boolean getIncludeTimestamp() {
         return includeTimestamp;
     }
 
-    @Override
     public @NotNull Boolean getIncludeTagNames() {
         return includeTagNames;
     }
 
-    @Override
     public @NotNull List<MqttUserProperty> getUserProperties() {
         return userProperties;
     }
 
-    @Override
     public @Nullable Long getMessageExpiryInterval() {
         return messageExpiryInterval;
     }
