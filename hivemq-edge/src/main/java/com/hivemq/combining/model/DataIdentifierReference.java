@@ -15,8 +15,6 @@
  */
 package com.hivemq.combining.model;
 
-import static java.util.Objects.requireNonNull;
-
 import com.hivemq.configuration.entity.combining.DataIdentifierReferenceEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

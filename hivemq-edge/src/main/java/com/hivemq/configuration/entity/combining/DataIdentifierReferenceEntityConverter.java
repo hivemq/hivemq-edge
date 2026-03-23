@@ -15,8 +15,6 @@
  */
 package com.hivemq.configuration.entity.combining;
 
-import static java.util.Objects.requireNonNull;
-
 import com.hivemq.configuration.entity.EntityConverter;
 import com.hivemq.edge.api.model.DataIdentifierReference;
 import org.jetbrains.annotations.NotNull;
