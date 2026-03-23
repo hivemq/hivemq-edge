@@ -17,13 +17,14 @@ package com.hivemq.protocols.fsm;
 
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public record ProtocolAdapterTransitionResponse(
         ProtocolAdapterRuntimeState fromState,
         ProtocolAdapterRuntimeState toState,
         ProtocolAdapterTransitionStatus status,
         String message,
-        Throwable error) {
+        @Nullable Throwable error) {
 
     public static final String FROM_STATE = "fromState";
     public static final String TO_STATE = "toState";

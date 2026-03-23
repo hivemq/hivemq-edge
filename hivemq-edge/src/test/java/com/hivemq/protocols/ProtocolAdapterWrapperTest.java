@@ -68,7 +68,7 @@ import org.mockito.quality.Strictness;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class ProtocolAdapterWrapper2Test {
+class ProtocolAdapterWrapperTest {
 
     @Mock
     private @NotNull ProtocolAdapter protocolAdapter;
@@ -106,7 +106,7 @@ class ProtocolAdapterWrapper2Test {
     @Mock
     private @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService;
 
-    private @NotNull ProtocolAdapterWrapper2 wrapper;
+    private @NotNull ProtocolAdapterWrapper wrapper;
 
     @BeforeEach
     void setUp() {
@@ -129,7 +129,7 @@ class ProtocolAdapterWrapper2Test {
                 })
                 .when(protocolAdapter)
                 .stop(any(), any(), any());
-        wrapper = new ProtocolAdapterWrapper2(
+        wrapper = new ProtocolAdapterWrapper(
                 protocolAdapter,
                 config,
                 adapterFactory,
@@ -562,7 +562,7 @@ class ProtocolAdapterWrapper2Test {
             writingStopped = false;
 
             wrapper =
-                    new ProtocolAdapterWrapper2(
+                    new ProtocolAdapterWrapper(
                             protocolAdapter,
                             config,
                             adapterFactory,
@@ -650,7 +650,7 @@ class ProtocolAdapterWrapper2Test {
             final List<String> callOrder = new ArrayList<>();
 
             wrapper =
-                    new ProtocolAdapterWrapper2(
+                    new ProtocolAdapterWrapper(
                             protocolAdapter,
                             config,
                             adapterFactory,
@@ -692,7 +692,7 @@ class ProtocolAdapterWrapper2Test {
             final List<String> callOrder = new ArrayList<>();
 
             wrapper =
-                    new ProtocolAdapterWrapper2(
+                    new ProtocolAdapterWrapper(
                             protocolAdapter,
                             config,
                             adapterFactory,
@@ -928,7 +928,7 @@ class ProtocolAdapterWrapper2Test {
                         })
                         .when(adapter)
                         .stop(any(), any(), any());
-                final ProtocolAdapterWrapper2 w = new ProtocolAdapterWrapper2(
+                final ProtocolAdapterWrapper w = new ProtocolAdapterWrapper(
                         adapter,
                         config,
                         adapterFactory,
@@ -1015,12 +1015,12 @@ class ProtocolAdapterWrapper2Test {
     class ShutdownRaceConditionPrevention {
 
         private @NotNull ProtocolAdapterStateImpl realAdapterState;
-        private @NotNull ProtocolAdapterWrapper2 wrapperWithRealState;
+        private @NotNull ProtocolAdapterWrapper wrapperWithRealState;
 
         @BeforeEach
         void setUp() {
             realAdapterState = new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol");
-            wrapperWithRealState = new ProtocolAdapterWrapper2(
+            wrapperWithRealState = new ProtocolAdapterWrapper(
                     protocolAdapter,
                     config,
                     adapterFactory,
@@ -1110,7 +1110,7 @@ class ProtocolAdapterWrapper2Test {
             for (int i = 0; i < numIterations; i++) {
                 final ProtocolAdapterStateImpl iterationState =
                         new ProtocolAdapterStateImpl(eventService, "test-adapter-" + i, "test-protocol");
-                final ProtocolAdapterWrapper2 iterationWrapper = new ProtocolAdapterWrapper2(
+                final ProtocolAdapterWrapper iterationWrapper = new ProtocolAdapterWrapper(
                         protocolAdapter,
                         config,
                         adapterFactory,
