@@ -175,7 +175,7 @@ public class ConfigFileReaderWriter {
         this.assetMappingExtractor = new AssetMappingExtractor(this);
         this.pulseExtractor = new PulseExtractor(this);
         this.unsExtractor = new UnsExtractor(this);
-        this.topicBufferExtractor = new TopicBufferExtractor();
+        this.topicBufferExtractor = new TopicBufferExtractor(this);
         this.extractors = List.of(
                 this.bridgeExtractor,
                 this.protocolAdapterExtractor,

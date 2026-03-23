@@ -36,6 +36,7 @@ import com.hivemq.api.resources.impl.HealthCheckResourceImpl;
 import com.hivemq.api.resources.impl.MetricsResourceImpl;
 import com.hivemq.api.resources.impl.ProtocolAdaptersResourceImpl;
 import com.hivemq.api.resources.impl.SamplingResourceImpl;
+import com.hivemq.api.resources.impl.TopicBufferResourceImpl;
 import com.hivemq.api.resources.impl.TopicFilterResourceImpl;
 import com.hivemq.api.resources.impl.UnsResourceImpl;
 import com.hivemq.common.shutdown.ShutdownHooks;
@@ -50,6 +51,7 @@ import com.hivemq.edge.api.HealthCheckEndpointApi;
 import com.hivemq.edge.api.MetricsApi;
 import com.hivemq.edge.api.PayloadSamplingApi;
 import com.hivemq.edge.api.ProtocolAdaptersApi;
+import com.hivemq.edge.api.TopicBuffersApi;
 import com.hivemq.edge.api.TopicFiltersApi;
 import com.hivemq.edge.api.UnsApi;
 import com.hivemq.http.JaxrsHttpServer;
@@ -114,6 +116,9 @@ public abstract class ApiModule {
 
     @Binds
     abstract @NotNull CombinersApi combinersApi(@NotNull CombinersResourceImpl bridgeResource);
+
+    @Binds
+    abstract @NotNull TopicBuffersApi topicBuffersApi(@NotNull TopicBufferResourceImpl topicBufferResource);
 
     @Provides
     @Singleton

@@ -100,6 +100,9 @@ tags:
   - description: |
       These endpoints can be used to manage Pulse and its assets.
     name: Pulse
+  - description: |
+      These endpoints can be used to manage topic buffer subscriptions.
+    name: Topic Buffers
 paths:
   /:
     get:
@@ -4788,6 +4791,138 @@ paths:
       tags:
         - Metrics
         - Metrics Endpoint
+  /api/v1/management/topic-buffers:
+    get:
+      description: Get all topic buffer subscriptions
+      summary: Get all topic buffer subscriptions
+      operationId: get-topic-buffer-subscriptions
+      x-roles-allowed:
+        - admin
+        - super
+        - user
+      tags:
+        - Topic Buffers
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicBufferSubscriptionList'
+          description: Success
+    post:
+      description: Add a new topic buffer subscription
+      summary: Add a topic buffer subscription
+      operationId: add-topic-buffer-subscription
+      x-roles-allowed:
+        - admin
+      tags:
+        - Topic Buffers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TopicBufferSubscription'
+        required: true
+      responses:
+        '200':
+          description: Success
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Invalid subscription
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Subscription already exists for this topic filter
+  /api/v1/management/topic-buffers/{topicFilter}:
+    get:
+      description: Get a topic buffer subscription by topic filter
+      summary: Get a topic buffer subscription
+      operationId: get-topic-buffer-subscription
+      x-roles-allowed:
+        - admin
+        - super
+        - user
+      tags:
+        - Topic Buffers
+      parameters:
+        - in: path
+          name: topicFilter
+          required: true
+          schema:
+            type: string
+          description: The URL-encoded topic filter (e.g. sensors%2F%23 for sensors/#)
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicBufferSubscription'
+          description: Success
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Not found
+    put:
+      description: Update a topic buffer subscription
+      summary: Update a topic buffer subscription
+      operationId: update-topic-buffer-subscription
+      x-roles-allowed:
+        - admin
+      tags:
+        - Topic Buffers
+      parameters:
+        - in: path
+          name: topicFilter
+          required: true
+          schema:
+            type: string
+          description: The URL-encoded topic filter
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TopicBufferSubscription'
+        required: true
+      responses:
+        '200':
+          description: Success
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Not found
+    delete:
+      description: Delete a topic buffer subscription
+      summary: Delete a topic buffer subscription
+      operationId: delete-topic-buffer-subscription
+      x-roles-allowed:
+        - admin
+      tags:
+        - Topic Buffers
+      parameters:
+        - in: path
+          name: topicFilter
+          required: true
+          schema:
+            type: string
+          description: The URL-encoded topic filter
+      responses:
+        '200':
+          description: Success
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Not found
   /api/v1/management/combiners:
     get:
       description: Get all combiners
@@ -8590,6 +8725,32 @@ components:
             $ref: '#/components/schemas/DataCombining'
       required:
         - items
+    TopicBufferSubscription:
+      type: object
+      description: A topic buffer subscription — buffers incoming MQTT messages matching the topic filter
+      required:
+        - topicFilter
+        - maxMessages
+      properties:
+        topicFilter:
+          type: string
+          description: The MQTT topic filter to buffer messages on (e.g. sensors/#)
+          example: sensors/#
+        maxMessages:
+          type: integer
+          description: Maximum number of messages to retain in the ring buffer
+          minimum: 1
+          example: 100
+    TopicBufferSubscriptionList:
+      type: object
+      description: A list of topic buffer subscriptions
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopicBufferSubscription'
     Combiner:
       type: object
       description: A data combiner, bringing tags (adapters) and topic filters (bridges) together for further northbound data mapping
