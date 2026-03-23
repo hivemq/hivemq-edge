@@ -42,6 +42,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,38 +87,47 @@ public class DataCombiningRuntime {
         log.debug("Starting data combining {}", combining.id());
         // prepare the script for the data combining
         dataCombiningTransformationService.addScriptForDataCombining(combining);
-        final DataIdentifierReference primaryRef = combining.sources().primaryReference();
-        final AtomicBoolean primaryProcessed = new AtomicBoolean();
-        combining.instructions().stream()
-                .map(Instruction::dataIdentifierReference)
-                .filter(Objects::nonNull)
-                .distinct()
-                .forEach(dataIdentifierReference -> {
-                    if (dataIdentifierReference.equals(primaryRef)) {
-                        primaryProcessed.set(true);
-                        subscribe(dataIdentifierReference, true, true);
-                    } else {
-                        subscribe(dataIdentifierReference, false, true);
-                    }
-                });
-        if (!primaryProcessed.get()) {
-            subscribe(primaryRef, true, false);
+        final DataIdentifierReference primaryReference = combining.sources().primaryReference();
+        if (primaryReference == null) {
+            log.warn("Primary reference of data combining {} is null", combining.id());
+        } else {
+            final AtomicBoolean primaryProcessed = new AtomicBoolean();
+            combining.instructions().stream()
+                    .map(Instruction::dataIdentifierReference)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .forEach(dataIdentifierReference -> {
+                        if (dataIdentifierReference.equals(primaryReference)) {
+                            primaryProcessed.set(true);
+                            subscribe(dataIdentifierReference, true, true);
+                        } else {
+                            subscribe(dataIdentifierReference, false, true);
+                        }
+                    });
+            if (!primaryProcessed.get()) {
+                subscribe(primaryReference, true, false);
+            }
         }
     }
 
     private void subscribe(
-            final @NotNull DataIdentifierReference ref, final boolean primary, final boolean storeDataPoints) {
+            final @NotNull DataIdentifierReference dataIdentifierReference,
+            final boolean primary,
+            final boolean storeDataPoints) {
         InternalConsumer consumer = null;
-        switch (ref.type()) {
+        switch (dataIdentifierReference.type()) {
             case TAG -> {
-                log.debug("Starting tag consumer for tag {} with scope {}", ref.id(), ref.scope());
-                consumer = new InternalTagConsumer(ref, primary, storeDataPoints);
+                log.debug(
+                        "Starting tag consumer for tag {} with scope {}",
+                        dataIdentifierReference.id(),
+                        dataIdentifierReference.scope());
+                consumer = new InternalTagConsumer(dataIdentifierReference, primary, storeDataPoints);
             }
             case TOPIC_FILTER -> {
-                log.debug("Starting mqtt consumer for filter {}", ref.id());
-                consumer = new InternalTopicFilterConsumer(ref, primary, storeDataPoints);
+                log.debug("Starting mqtt consumer for filter {}", dataIdentifierReference.id());
+                consumer = new InternalTopicFilterConsumer(dataIdentifierReference, primary, storeDataPoints);
             }
-            default -> log.warn("Unsupported data identifier reference type: {}", ref.type());
+            default -> log.warn("Unsupported data identifier reference type: {}", dataIdentifierReference.type());
         }
         if (consumer != null) {
             consumers.add(consumer);
@@ -246,7 +256,7 @@ public class DataCombiningRuntime {
         }
 
         @Override
-        public @NotNull String getScope() {
+        public @Nullable String getScope() {
             return dataIdentifierReference.scope();
         }
 

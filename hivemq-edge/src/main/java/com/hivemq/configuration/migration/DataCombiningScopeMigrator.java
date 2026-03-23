@@ -27,9 +27,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -160,7 +162,7 @@ public class DataCombiningScopeMigrator {
         // Migrate the primary reference
         final DataIdentifierReference primaryRef = dataCombining.sources().primaryReference();
         final DataIdentifierReference migratedPrimaryRef = migrateTagReference(combiner, primaryRef, tagToAdapters);
-        final boolean primaryChanged = !migratedPrimaryRef.equals(primaryRef);
+        final boolean primaryChanged = !Objects.equals(primaryRef, migratedPrimaryRef);
         if (primaryChanged) {
             anyChanges = true;
         }
@@ -197,13 +199,14 @@ public class DataCombiningScopeMigrator {
             final @NotNull Instruction instruction,
             final @NotNull Map<String, List<String>> tagToAdapters) {
 
-        final DataIdentifierReference ref = instruction.dataIdentifierReference();
-        if (ref == null) {
+        final DataIdentifierReference dataIdentifierReference = instruction.dataIdentifierReference();
+        if (dataIdentifierReference == null) {
             return instruction;
         }
 
-        final DataIdentifierReference migratedRef = migrateTagReference(combiner, ref, tagToAdapters);
-        if (migratedRef.equals(ref)) {
+        final DataIdentifierReference migratedRef =
+                migrateTagReference(combiner, dataIdentifierReference, tagToAdapters);
+        if (Objects.equals(dataIdentifierReference, migratedRef)) {
             return instruction;
         }
         return new Instruction(instruction.sourceFieldName(), instruction.destinationFieldName(), migratedRef);
@@ -213,18 +216,20 @@ public class DataCombiningScopeMigrator {
      * Migrates a single TAG reference by backfilling scope if it's missing.
      * Returns the original reference if no migration is needed.
      */
-    private @NotNull DataIdentifierReference migrateTagReference(
+    private @Nullable DataIdentifierReference migrateTagReference(
             final @NotNull DataCombiner combiner,
-            final @NotNull DataIdentifierReference ref,
+            final @Nullable DataIdentifierReference dataIdentifierReference,
             final @NotNull Map<String, List<String>> tagToAdapters) {
 
         // Skip if not a TAG type or already has scope
-        if (ref.type() != DataIdentifierReference.Type.TAG
-                || (ref.scope() != null && !ref.scope().isBlank())) {
-            return ref;
+        if (dataIdentifierReference == null
+                || dataIdentifierReference.type() != DataIdentifierReference.Type.TAG
+                || (dataIdentifierReference.scope() != null
+                        && !dataIdentifierReference.scope().isBlank())) {
+            return dataIdentifierReference;
         }
 
-        final String tagName = ref.id();
+        final String tagName = dataIdentifierReference.id();
         final List<String> adapters = tagToAdapters.get(tagName);
 
         if (adapters == null || adapters.isEmpty()) {
@@ -234,18 +239,18 @@ public class DataCombiningScopeMigrator {
                     combiner.name(),
                     combiner.id(),
                     tagName);
-            return ref;
+            return dataIdentifierReference;
         }
 
         if (adapters.size() == 1) {
-            final String adapterId = adapters.get(0);
+            final String adapterId = adapters.getFirst();
             log.info(
                     "Migrated TAG reference '{}' in combiner '{}' ({}) to scope '{}'.",
                     tagName,
                     combiner.name(),
                     combiner.id(),
                     adapterId);
-            return new DataIdentifierReference(ref.id(), ref.type(), adapterId);
+            return new DataIdentifierReference(dataIdentifierReference.id(), dataIdentifierReference.type(), adapterId);
         }
 
         log.warn(
@@ -256,6 +261,6 @@ public class DataCombiningScopeMigrator {
                 combiner.id(),
                 tagName,
                 adapters);
-        return ref;
+        return dataIdentifierReference;
     }
 }

@@ -47,6 +47,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -272,7 +273,7 @@ public class CombinersResourceImpl implements CombinersApi {
 
     private @NotNull Optional<Response> validateTagExists(
             final @NotNull DataIdentifierReference ref, final @NotNull Map<String, Set<String>> adapterToTags) {
-        final Set<String> tags = adapterToTags.get(ref.scope());
+        final Set<String> tags = adapterToTags.get(Objects.requireNonNull(ref.scope()));
         if (tags == null) {
             return Optional.of(ErrorResponseUtil.errorResponse(new InvalidScopeForTagError(ref.scope(), ref.id())));
         }
