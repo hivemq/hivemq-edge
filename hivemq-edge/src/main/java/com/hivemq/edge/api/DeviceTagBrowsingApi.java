@@ -15,11 +15,13 @@
  */
 package com.hivemq.edge.api;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
@@ -36,7 +38,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @Path("/api/v1/management/protocol-adapters/adapters/{adapterId}/device-tags")
-@Api(value = "the Device Tag Browsing API")
+@Tag(name = "Protocol Adapters")
 public interface DeviceTagBrowsingApi {
 
     @NotNull
@@ -45,69 +47,80 @@ public interface DeviceTagBrowsingApi {
     @NotNull
     String MEDIA_TYPE_YAML = "application/yaml";
 
-    /**
-     * Browse the device address space and return discovered nodes as a file.
-     *
-     * @param adapterId  the adapter ID
-     * @param rootNodeId optional root node ID (default: ObjectsFolder i=85)
-     * @param maxDepth   optional max depth (default: 0 = unlimited)
-     * @param accept     Accept header for content negotiation
-     * @return 200 with file body, 404/409/504 on error
-     */
     @POST
     @Path("/browse")
     @Produces({MEDIA_TYPE_CSV, MediaType.APPLICATION_JSON, MEDIA_TYPE_YAML})
     @RolesAllowed({"admin"})
-    @ApiOperation(
-            value = "Browse device tags",
-            notes = "Browse the device address space and return discovered nodes as a downloadable file.",
-            tags = {"Protocol Adapters"})
-    @ApiResponses(
-            value = {
-                @ApiResponse(code = 200, message = "Success"),
-                @ApiResponse(code = 404, message = "Adapter not found"),
-                @ApiResponse(code = 409, message = "Adapter does not support bulk tag browsing or browse failed"),
-                @ApiResponse(code = 504, message = "Browse timed out")
+    @Operation(
+            summary = "Browse device tags",
+            description = "Browse the device address space and return discovered nodes as a downloadable file.",
+            operationId = "browseDeviceTags",
+            responses = {
+                @ApiResponse(responseCode = "200", description = "Success"),
+                @ApiResponse(responseCode = "404", description = "Adapter not found"),
+                @ApiResponse(
+                        responseCode = "409",
+                        description = "Adapter does not support bulk tag browsing or browse failed"),
+                @ApiResponse(responseCode = "504", description = "Browse timed out")
             })
     @NotNull
     Response browse(
-            @PathParam("adapterId") @ApiParam("The adapter ID.") @NotNull String adapterId,
-            @QueryParam("rootNodeId") @ApiParam("Optional root node ID.") @Nullable String rootNodeId,
-            @QueryParam("maxDepth") @DefaultValue("0") @ApiParam("Max browse depth (0 = unlimited).") int maxDepth,
+            @PathParam("adapterId") @Parameter(description = "The adapter ID.") @NotNull String adapterId,
+            @QueryParam("rootNodeId") @Parameter(description = "Optional root node ID.") @Nullable String rootNodeId,
+            @QueryParam("maxDepth") @DefaultValue("0") @Parameter(description = "Max browse depth (0 = unlimited).")
+                    int maxDepth,
             @HeaderParam(HttpHeaders.ACCEPT) @NotNull String accept);
 
-    /**
-     * Import device tags and mappings from a file.
-     *
-     * @param adapterId     the adapter ID
-     * @param mode          import conflict-resolution mode (default: MERGE_SAFE)
-     * @param validateNodes whether to validate node existence (default: false)
-     * @param contentType   Content-Type header
-     * @param body          the file content
-     * @return 200 with ImportResult, 400 with errors, 404/409/415 on error
-     */
     @POST
     @Path("/import")
     @Consumes({MEDIA_TYPE_CSV, MediaType.APPLICATION_JSON, MEDIA_TYPE_YAML})
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({"admin"})
-    @ApiOperation(
-            value = "Import device tags",
-            notes = "Import device tags and mappings from a file.",
-            tags = {"Protocol Adapters"})
-    @ApiResponses(
-            value = {
-                @ApiResponse(code = 200, message = "Success"),
-                @ApiResponse(code = 400, message = "Invalid file or validation errors"),
-                @ApiResponse(code = 404, message = "Adapter not found"),
-                @ApiResponse(code = 415, message = "Unsupported media type")
+    @Operation(
+            summary = "Import device tags",
+            description = "Import device tags and mappings from a file.",
+            operationId = "importDeviceTags",
+            requestBody =
+                    @RequestBody(
+                            description = "The file content (CSV, JSON, or YAML).",
+                            required = true,
+                            content = {
+                                @Content(
+                                        mediaType = MEDIA_TYPE_CSV,
+                                        schema = @Schema(type = "string", format = "binary")),
+                                @Content(
+                                        mediaType = MediaType.APPLICATION_JSON,
+                                        schema = @Schema(type = "string", format = "binary")),
+                                @Content(
+                                        mediaType = MEDIA_TYPE_YAML,
+                                        schema = @Schema(type = "string", format = "binary"))
+                            }),
+            responses = {
+                @ApiResponse(responseCode = "200", description = "Success"),
+                @ApiResponse(responseCode = "400", description = "Invalid file or validation errors"),
+                @ApiResponse(responseCode = "404", description = "Adapter not found"),
+                @ApiResponse(responseCode = "415", description = "Unsupported media type")
             })
     @NotNull
     Response importTags(
-            @PathParam("adapterId") @ApiParam("The adapter ID.") @NotNull String adapterId,
-            @QueryParam("mode") @DefaultValue("MERGE_SAFE") @ApiParam("Import conflict-resolution mode.") @NotNull
+            @PathParam("adapterId") @Parameter(description = "The adapter ID.") @NotNull String adapterId,
+            @QueryParam("mode")
+                    @DefaultValue("MERGE_SAFE")
+                    @Parameter(
+                            description = "Import conflict-resolution mode.",
+                            schema =
+                                    @Schema(
+                                            allowableValues = {
+                                                "CREATE",
+                                                "DELETE",
+                                                "OVERWRITE",
+                                                "MERGE_SAFE",
+                                                "MERGE_OVERWRITE"
+                                            },
+                                            defaultValue = "MERGE_SAFE"))
+                    @NotNull
                     String mode,
-            @QueryParam("validateNodes") @DefaultValue("false") @ApiParam("Validate node existence.")
+            @QueryParam("validateNodes") @DefaultValue("false") @Parameter(description = "Validate node existence.")
                     boolean validateNodes,
             @HeaderParam(HttpHeaders.CONTENT_TYPE) @NotNull String contentType,
             byte @NotNull [] body);

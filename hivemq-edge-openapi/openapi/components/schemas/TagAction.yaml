@@ -1,0 +1,13 @@
+type: object
+description: Action performed on a single tag during import.
+properties:
+  name:
+    type: string
+    description: The tag name.
+  action:
+    type: string
+    description: The action performed.
+    enum:
+      - CREATED
+      - UPDATED
+      - DELETED
