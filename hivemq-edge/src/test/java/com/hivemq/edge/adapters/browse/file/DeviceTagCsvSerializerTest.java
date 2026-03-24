@@ -378,7 +378,14 @@ class DeviceTagCsvSerializerTest {
 
     @Test
     void streamingSerialize_producesIdenticalOutput() throws IOException {
+        // Rows are pre-sorted by nodePath since the streaming overload does not sort
         final List<DeviceTagRow> rows = List.of(
+                DeviceTagRow.builder()
+                        .nodePath("/Objects/Data/Double")
+                        .nodeId("ns=2;i=200")
+                        .dataType("Double")
+                        .tagName("dbl-tag")
+                        .build(),
                 DeviceTagRow.builder()
                         .nodePath("/Objects/Data/Int32")
                         .namespaceUri("urn:test")
@@ -392,12 +399,6 @@ class DeviceTagCsvSerializerTest {
                         .northboundTopicDefault("adapter/data/int32")
                         .maxQos(1)
                         .includeTimestamp(true)
-                        .build(),
-                DeviceTagRow.builder()
-                        .nodePath("/Objects/Data/Double")
-                        .nodeId("ns=2;i=200")
-                        .dataType("Double")
-                        .tagName("dbl-tag")
                         .build());
 
         final byte[] fromBytes = serializer.serialize(rows);

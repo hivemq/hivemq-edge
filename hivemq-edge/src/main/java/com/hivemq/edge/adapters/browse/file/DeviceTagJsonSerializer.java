@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.browse.file;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -68,7 +69,7 @@ public class DeviceTagJsonSerializer {
         return dto.rows.stream().map(DeviceTagJsonSerializer::fromRowDto).toList();
     }
 
-    private static @NotNull RowDto toRowDto(final @NotNull DeviceTagRow row) {
+    static @NotNull RowDto toRowDto(final @NotNull DeviceTagRow row) {
         final NodeDto node = new NodeDto();
         node.nodePath = row.getNodePath();
         node.namespaceUri = row.getNamespaceUri();
@@ -177,8 +178,18 @@ public class DeviceTagJsonSerializer {
         return mapper.writeValueAsBytes(toFileDto(rows));
     }
 
-    public void serialize(final @NotNull List<DeviceTagRow> rows, final @NotNull OutputStream out) throws IOException {
-        mapper.writeValue(out, toFileDto(rows));
+    public void serialize(final @NotNull Iterable<DeviceTagRow> rows, final @NotNull OutputStream out)
+            throws IOException {
+        try (final JsonGenerator gen = mapper.createGenerator(out)) {
+            gen.writeStartObject();
+            gen.writeFieldName("rows");
+            gen.writeStartArray();
+            for (final DeviceTagRow row : rows) {
+                mapper.writeValue(gen, toRowDto(row));
+            }
+            gen.writeEndArray();
+            gen.writeEndObject();
+        }
     }
 
     public @NotNull List<DeviceTagRow> deserialize(final byte @NotNull [] data) throws IOException {

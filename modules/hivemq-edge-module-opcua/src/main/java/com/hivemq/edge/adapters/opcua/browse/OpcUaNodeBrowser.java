@@ -21,6 +21,7 @@ import com.hivemq.adapter.sdk.api.discovery.BrowseException;
 import com.hivemq.adapter.sdk.api.discovery.BrowsedNode;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -251,6 +252,7 @@ public class OpcUaNodeBrowser {
             }
         }
 
+        result.sort(Comparator.comparing(BrowsedNode::nodePath));
         return result;
     }
 

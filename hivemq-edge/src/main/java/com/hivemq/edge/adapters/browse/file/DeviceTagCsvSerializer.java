@@ -212,16 +212,16 @@ public class DeviceTagCsvSerializer {
     }
 
     public byte @NotNull [] serialize(final @NotNull List<DeviceTagRow> rows) throws IOException {
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        serialize(rows, baos);
-        return baos.toByteArray();
-    }
-
-    public void serialize(final @NotNull List<DeviceTagRow> rows, final @NotNull OutputStream out) throws IOException {
         final List<DeviceTagRow> sorted = rows.stream()
                 .sorted(Comparator.comparing(r -> r.getNodePath() != null ? r.getNodePath() : "", String::compareTo))
                 .toList();
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        serialize(sorted, baos);
+        return baos.toByteArray();
+    }
 
+    public void serialize(final @NotNull Iterable<DeviceTagRow> rows, final @NotNull OutputStream out)
+            throws IOException {
         try (final OutputStreamWriter writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
                 final CSVPrinter printer = new CSVPrinter(
                         writer,
@@ -230,7 +230,7 @@ public class DeviceTagCsvSerializer {
                                 .setHeader(HEADER)
                                 .setRecordSeparator("\r\n")
                                 .build())) {
-            for (final DeviceTagRow row : sorted) {
+            for (final DeviceTagRow row : rows) {
                 printer.printRecord(
                         row.getTagName(),
                         row.getTagNameDefault(),

@@ -111,9 +111,10 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
             return errorResponse(Response.Status.CONFLICT, e.getMessage() != null ? e.getMessage() : "Browse failed");
         }
 
-        // Map to DeviceTagRow
-        final List<DeviceTagRow> rows =
-                nodes.stream().map(DeviceTagRow::fromBrowsedNode).toList();
+        // Lazy mapping: DeviceTagRow objects are created one-at-a-time during serialization,
+        // avoiding a second fully-materialized list alongside the BrowsedNode list.
+        final Iterable<DeviceTagRow> rows =
+                () -> nodes.stream().map(DeviceTagRow::fromBrowsedNode).iterator();
 
         // Determine output format and stream directly to the HTTP response
         final String format = resolveFormat(accept);
