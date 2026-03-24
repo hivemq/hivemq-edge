@@ -579,7 +579,7 @@ class DeviceTagValidatorTest {
     }
 
     @Test
-    void validate_tagConflict_mergeSafe_differentDefinition() {
+    void validate_tagConflict_mergeSafe_sameNodeId_differentDefinition() {
         final ProtocolAdapterEntity adapter = new ProtocolAdapterEntity(
                 "adapter1",
                 "opcua",
@@ -587,12 +587,16 @@ class DeviceTagValidatorTest {
                 Map.of(),
                 List.of(),
                 List.of(),
-                List.of(new TagEntity("my-tag", "desc", Map.of("node", "ns=2;i=99"))));
+                List.of(new TagEntity("my-tag", "old-desc", Map.of("node", "ns=2;i=1"))));
         when(adapterExtractor.getAdapterByAdapterId("adapter1")).thenReturn(Optional.of(adapter));
         when(adapterExtractor.getAllConfigs()).thenReturn(List.of(adapter));
 
-        final List<DeviceTagRow> rows = List.of(
-                DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("my-tag").build());
+        // Same nodeId, different description → inBoth with different definition
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .tagName("my-tag")
+                .tagDescription("new-desc")
+                .build());
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.MERGE_SAFE, "adapter1");
 
@@ -600,6 +604,107 @@ class DeviceTagValidatorTest {
             assertThat(e.code()).isEqualTo(ValidationError.Code.TAG_CONFLICT);
             assertThat(e.message()).contains("MERGE_OVERWRITE");
         });
+    }
+
+    @Test
+    void validate_tagConflict_mergeSafe_sameNodeId_rename() {
+        final ProtocolAdapterEntity adapter = new ProtocolAdapterEntity(
+                "adapter1",
+                "opcua",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of(new TagEntity("old-name", null, Map.of("node", "ns=2;i=1"))));
+        when(adapterExtractor.getAdapterByAdapterId("adapter1")).thenReturn(Optional.of(adapter));
+        when(adapterExtractor.getAllConfigs()).thenReturn(List.of(adapter));
+
+        // Same nodeId, different tagName → rename is a definition change
+        final List<DeviceTagRow> rows = List.of(
+                DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("new-name").build());
+
+        final List<ValidationError> errors = validator.validate(rows, ImportMode.MERGE_SAFE, "adapter1");
+
+        assertThat(errors).anySatisfy(e -> {
+            assertThat(e.code()).isEqualTo(ValidationError.Code.TAG_CONFLICT);
+            assertThat(e.message()).contains("MERGE_OVERWRITE");
+        });
+    }
+
+    @Test
+    void validate_tagNameCollision_mergeSafe_differentNodes_sameTagName() {
+        final ProtocolAdapterEntity adapter = new ProtocolAdapterEntity(
+                "adapter1",
+                "opcua",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of(new TagEntity("colliding-name", null, Map.of("node", "ns=2;i=99"))));
+        when(adapterExtractor.getAdapterByAdapterId("adapter1")).thenReturn(Optional.of(adapter));
+        when(adapterExtractor.getAllConfigs()).thenReturn(List.of(adapter));
+
+        // Different nodeId, same tagName → collision with surviving edge-only tag
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .tagName("colliding-name")
+                .build());
+
+        final List<ValidationError> errors = validator.validate(rows, ImportMode.MERGE_SAFE, "adapter1");
+
+        assertThat(errors).anySatisfy(e -> {
+            assertThat(e.code()).isEqualTo(ValidationError.Code.TAG_CONFLICT);
+            assertThat(e.message()).contains("collides");
+        });
+    }
+
+    @Test
+    void validate_tagNameCollision_mergeOverwrite_differentNodes_sameTagName() {
+        final ProtocolAdapterEntity adapter = new ProtocolAdapterEntity(
+                "adapter1",
+                "opcua",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of(new TagEntity("colliding-name", null, Map.of("node", "ns=2;i=99"))));
+        when(adapterExtractor.getAdapterByAdapterId("adapter1")).thenReturn(Optional.of(adapter));
+        when(adapterExtractor.getAllConfigs()).thenReturn(List.of(adapter));
+
+        // Different nodeId, same tagName → collision with surviving edge-only tag in MERGE_OVERWRITE too
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .tagName("colliding-name")
+                .build());
+
+        final List<ValidationError> errors = validator.validate(rows, ImportMode.MERGE_OVERWRITE, "adapter1");
+
+        assertThat(errors).anySatisfy(e -> {
+            assertThat(e.code()).isEqualTo(ValidationError.Code.TAG_CONFLICT);
+            assertThat(e.message()).contains("collides");
+        });
+    }
+
+    @Test
+    void validate_rename_mergeOverwrite_noConflict() {
+        final ProtocolAdapterEntity adapter = new ProtocolAdapterEntity(
+                "adapter1",
+                "opcua",
+                1,
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of(new TagEntity("old-name", null, Map.of("node", "ns=2;i=1"))));
+        when(adapterExtractor.getAdapterByAdapterId("adapter1")).thenReturn(Optional.of(adapter));
+        when(adapterExtractor.getAllConfigs()).thenReturn(List.of(adapter));
+
+        // Same nodeId, different tagName, no edge-only survivors to collide with
+        final List<DeviceTagRow> rows = List.of(
+                DeviceTagRow.builder().nodeId("ns=2;i=1").tagName("new-name").build());
+
+        final List<ValidationError> errors = validator.validate(rows, ImportMode.MERGE_OVERWRITE, "adapter1");
+
+        assertThat(errors).noneMatch(e -> e.code() == ValidationError.Code.TAG_CONFLICT);
     }
 
     @Test

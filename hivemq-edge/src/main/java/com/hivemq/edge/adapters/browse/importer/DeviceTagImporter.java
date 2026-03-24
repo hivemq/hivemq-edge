@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.browse.importer;
 import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.ADAPTER_NOT_FOUND;
 import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.UPDATE_FAILED;
 import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.WILDCARD_NO_DEFAULT;
+import static java.util.Objects.requireNonNull;
 
 import com.hivemq.configuration.entity.adapter.MqttUserPropertyEntity;
 import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
@@ -70,11 +71,12 @@ public class DeviceTagImporter {
 
     private static @NotNull TagEntity toTagEntity(final @NotNull DeviceTagRow row) {
         return new TagEntity(
-                Objects.requireNonNull(row.getTagName()), row.getTagDescription(), Map.of("node", row.getNodeId()));
+                requireNonNull(row.getTagName()), row.getTagDescription(), Map.of("node", row.getNodeId()));
     }
 
     private static @NotNull NorthboundMappingEntity toNorthboundMappingEntity(final @NotNull DeviceTagRow row) {
         final int qos = row.getMaxQos() != null ? row.getMaxQos() : QoS.AT_LEAST_ONCE.getQosNumber();
+
         final boolean includeTagNames = row.getIncludeTagNames() != null ? row.getIncludeTagNames() : false;
         final boolean includeTimestamp = row.getIncludeTimestamp() != null ? row.getIncludeTimestamp() : true;
         final Long expiry = row.getMessageExpiryInterval();
@@ -87,8 +89,8 @@ public class DeviceTagImporter {
             userProperties = List.of();
         }
         return new NorthboundMappingEntity(
-                Objects.requireNonNull(row.getTagName()),
-                Objects.requireNonNull(row.getNorthboundTopic()),
+                requireNonNull(row.getTagName()),
+                requireNonNull(row.getNorthboundTopic()),
                 qos,
                 null, // messageHandlingOptions — always MQTTMessagePerTag
                 includeTagNames,
@@ -109,17 +111,14 @@ public class DeviceTagImporter {
             instructions = List.of(new InstructionEntity("value", "value", null));
         }
         return new SouthboundMappingEntity(
-                Objects.requireNonNull(row.getTagName()),
-                Objects.requireNonNull(row.getSouthboundTopic()),
+                requireNonNull(row.getTagName()),
+                requireNonNull(row.getSouthboundTopic()),
                 new FieldMappingEntity(instructions),
                 ""); // fromNorthSchema — empty; populated after tag creation by the adapter
     }
 
     private static boolean tagDefinitionsMatch(final @NotNull DeviceTagRow row, final @NotNull TagEntity existing) {
-        final Map<String, Object> existingDef = existing.getDefinition();
-        final String existingNode =
-                existingDef.get("node") != null ? existingDef.get("node").toString() : null;
-        return Objects.equals(row.getNodeId(), existingNode)
+        return Objects.equals(row.getTagName(), existing.getName())
                 && Objects.equals(nullToEmpty(row.getTagDescription()), nullToEmpty(existing.getDescription()));
     }
 
@@ -242,31 +241,37 @@ public class DeviceTagImporter {
                 .orElseThrow(() -> new DeviceTagImporterException(List.of(new ValidationError(
                         null, null, adapterId, ADAPTER_NOT_FOUND, "Adapter '" + adapterId + "' not found"))));
 
-        // Build maps of current edge state
-        final Map<String, TagEntity> edgeTagsByName =
-                adapter.getTags().stream().collect(Collectors.toMap(TagEntity::getName, t -> t, (a, b) -> a));
+        // Build maps of current edge state (by tagName for mapping lookups)
         final Map<String, NorthboundMappingEntity> edgeNorthboundByTag = adapter.getNorthboundMappings().stream()
                 .collect(Collectors.toMap(NorthboundMappingEntity::getTagName, m -> m, (a, b) -> a));
         final Map<String, SouthboundMappingEntity> edgeSouthboundByTag = adapter.getSouthboundMappings().stream()
                 .collect(Collectors.toMap(SouthboundMappingEntity::getTagName, m -> m, (a, b) -> a));
 
-        // Build map of file rows (only those with tags)
-        final Map<String, DeviceTagRow> fileRowsByTag = new LinkedHashMap<>();
-        for (final DeviceTagRow row : resolved) {
-            if (row.hasTag()) {
-                fileRowsByTag.put(row.getTagName(), row);
+        // Build nodeId-keyed maps for classification
+        final Map<String, TagEntity> edgeTagsByNodeId = new LinkedHashMap<>();
+        for (final TagEntity tag : adapter.getTags()) {
+            final Object node = tag.getDefinition().get("node");
+            if (node != null) {
+                edgeTagsByNodeId.put(node.toString(), tag);
             }
         }
 
-        // Step 5: Classify tags
-        final Set<String> edgeOnlyTags = new HashSet<>(edgeTagsByName.keySet());
-        edgeOnlyTags.removeAll(fileRowsByTag.keySet());
+        final Map<String, DeviceTagRow> fileRowsByNodeId = new LinkedHashMap<>();
+        for (final DeviceTagRow row : resolved) {
+            if (row.hasTag() && row.getNodeId() != null) {
+                fileRowsByNodeId.put(row.getNodeId(), row);
+            }
+        }
 
-        final Set<String> fileOnlyTags = new HashSet<>(fileRowsByTag.keySet());
-        fileOnlyTags.removeAll(edgeTagsByName.keySet());
+        // Step 5: Classify by nodeId
+        final Set<String> edgeOnlyNodeIds = new HashSet<>(edgeTagsByNodeId.keySet());
+        edgeOnlyNodeIds.removeAll(fileRowsByNodeId.keySet());
 
-        final Set<String> inBothTags = new HashSet<>(fileRowsByTag.keySet());
-        inBothTags.retainAll(edgeTagsByName.keySet());
+        final Set<String> fileOnlyNodeIds = new HashSet<>(fileRowsByNodeId.keySet());
+        fileOnlyNodeIds.removeAll(edgeTagsByNodeId.keySet());
+
+        final Set<String> inBothNodeIds = new HashSet<>(fileRowsByNodeId.keySet());
+        inBothNodeIds.retainAll(edgeTagsByNodeId.keySet());
 
         // Step 6: Determine actions per mode
         final List<TagAction> tagActions = new ArrayList<>();
@@ -277,8 +282,10 @@ public class DeviceTagImporter {
         int tagsCreated = 0, tagsUpdated = 0, tagsDeleted = 0;
         int nbCreated = 0, nbDeleted = 0, sbCreated = 0, sbDeleted = 0;
 
-        // Process edge-only tags
-        for (final String tagName : edgeOnlyTags) {
+        // Process edge-only nodes
+        for (final String nodeId : edgeOnlyNodeIds) {
+            final TagEntity edgeTag = requireNonNull(edgeTagsByNodeId.get(nodeId));
+            final String tagName = edgeTag.getName();
             switch (mode) {
                 case DELETE, OVERWRITE -> {
                     tagActions.add(new TagAction(tagName, TagAction.Action.DELETED));
@@ -292,7 +299,7 @@ public class DeviceTagImporter {
                 }
                 case MERGE_SAFE, MERGE_OVERWRITE -> {
                     // KEEP — add to final lists
-                    finalTags.add(edgeTagsByName.get(tagName));
+                    finalTags.add(edgeTag);
                     if (edgeNorthboundByTag.containsKey(tagName)) {
                         finalNorthbound.add(edgeNorthboundByTag.get(tagName));
                     }
@@ -301,19 +308,20 @@ public class DeviceTagImporter {
                     }
                 }
                 case CREATE -> {
-                    // CREATE mode: edge-only tags are rejected by validation.
+                    // CREATE mode: edge-only nodes are rejected by validation.
                     // This branch should never execute if validation passed.
                 }
             }
         }
 
-        // Process file-only tags (DELETE mode: file-only should have been caught by validation)
-        for (final String tagName : fileOnlyTags) {
+        // Process file-only nodes (DELETE mode: file-only should have been caught by validation)
+        for (final String nodeId : fileOnlyNodeIds) {
             if (mode == ImportMode.DELETE) {
-                // DELETE mode does not create tags — file-only tags are rejected by validation
+                // DELETE mode does not create tags — file-only nodes are rejected by validation
                 continue;
             }
-            final DeviceTagRow row = Objects.requireNonNull(fileRowsByTag.get(tagName));
+            final DeviceTagRow row = requireNonNull(fileRowsByNodeId.get(nodeId));
+            final String tagName = requireNonNull(row.getTagName());
             finalTags.add(toTagEntity(row));
             tagActions.add(new TagAction(tagName, TagAction.Action.CREATED));
             tagsCreated++;
@@ -328,36 +336,37 @@ public class DeviceTagImporter {
             }
         }
 
-        // Process in-both tags
-        for (final String tagName : inBothTags) {
-            final DeviceTagRow row = Objects.requireNonNull(fileRowsByTag.get(tagName));
-            final TagEntity existing = Objects.requireNonNull(edgeTagsByName.get(tagName));
+        // Process in-both nodes (same nodeId on edge and in file)
+        for (final String nodeId : inBothNodeIds) {
+            final DeviceTagRow row = requireNonNull(fileRowsByNodeId.get(nodeId));
+            final TagEntity existing = requireNonNull(edgeTagsByNodeId.get(nodeId));
+            final String oldTagName = existing.getName();
 
             final boolean identical = tagDefinitionsMatch(row, existing)
-                    && mappingsMatch(row, edgeNorthboundByTag.get(tagName), edgeSouthboundByTag.get(tagName));
+                    && mappingsMatch(row, edgeNorthboundByTag.get(oldTagName), edgeSouthboundByTag.get(oldTagName));
 
             if (identical) {
                 // No-op — keep existing
                 finalTags.add(existing);
-                if (edgeNorthboundByTag.containsKey(tagName)) {
-                    finalNorthbound.add(edgeNorthboundByTag.get(tagName));
+                if (edgeNorthboundByTag.containsKey(oldTagName)) {
+                    finalNorthbound.add(edgeNorthboundByTag.get(oldTagName));
                 }
-                if (edgeSouthboundByTag.containsKey(tagName)) {
-                    finalSouthbound.add(edgeSouthboundByTag.get(tagName));
+                if (edgeSouthboundByTag.containsKey(oldTagName)) {
+                    finalSouthbound.add(edgeSouthboundByTag.get(oldTagName));
                 }
             } else {
-                // Differ
+                // Differ (description change, rename, or mapping change)
                 switch (mode) {
                     case OVERWRITE, MERGE_OVERWRITE -> {
                         finalTags.add(toTagEntity(row));
-                        tagActions.add(new TagAction(tagName, TagAction.Action.UPDATED));
+                        tagActions.add(new TagAction(requireNonNull(row.getTagName()), TagAction.Action.UPDATED));
                         tagsUpdated++;
 
-                        // Replace mappings
-                        if (edgeNorthboundByTag.containsKey(tagName)) {
+                        // Replace mappings (delete old by oldTagName, create new)
+                        if (edgeNorthboundByTag.containsKey(oldTagName)) {
                             nbDeleted++;
                         }
-                        if (edgeSouthboundByTag.containsKey(tagName)) {
+                        if (edgeSouthboundByTag.containsKey(oldTagName)) {
                             sbDeleted++;
                         }
                         if (row.hasNorthboundMapping()) {
@@ -372,11 +381,11 @@ public class DeviceTagImporter {
                     default -> {
                         // CREATE, DELETE, MERGE_SAFE: conflict should have been caught by validation
                         finalTags.add(existing);
-                        if (edgeNorthboundByTag.containsKey(tagName)) {
-                            finalNorthbound.add(edgeNorthboundByTag.get(tagName));
+                        if (edgeNorthboundByTag.containsKey(oldTagName)) {
+                            finalNorthbound.add(edgeNorthboundByTag.get(oldTagName));
                         }
-                        if (edgeSouthboundByTag.containsKey(tagName)) {
-                            finalSouthbound.add(edgeSouthboundByTag.get(tagName));
+                        if (edgeSouthboundByTag.containsKey(oldTagName)) {
+                            finalSouthbound.add(edgeSouthboundByTag.get(oldTagName));
                         }
                     }
                 }

@@ -336,6 +336,70 @@ class DeviceTagImporterTest {
         verify(adapterExtractor, never()).updateAdapter(any());
     }
 
+    // --- Rename via nodeId correlation ---
+
+    @Test
+    void rename_mergeOverwrite_sameNodeId_differentTagName() throws DeviceTagImporterException {
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(new TagEntity("old-name", "desc", Map.of("node", "ns=2;i=1"))),
+                List.of(new NorthboundMappingEntity("old-name", "topic/1", 1, null, false, true, List.of(), null)),
+                List.of());
+        setupAdapter(adapter);
+
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .tagName("new-name")
+                .nodeId("ns=2;i=1")
+                .tagDescription("desc")
+                .northboundTopic("topic/1")
+                .build());
+
+        final ImportResult result = importer.doImport(rows, ImportMode.MERGE_OVERWRITE, ADAPTER_ID);
+
+        assertThat(result.tagsUpdated()).isEqualTo(1);
+        assertThat(result.tagsCreated()).isEqualTo(0);
+        assertThat(result.tagsDeleted()).isEqualTo(0);
+        assertThat(result.tagActions()).anySatisfy(a -> {
+            assertThat(a.name()).isEqualTo("new-name");
+            assertThat(a.action()).isEqualTo(TagAction.Action.UPDATED);
+        });
+
+        final ArgumentCaptor<ProtocolAdapterEntity> captor = ArgumentCaptor.forClass(ProtocolAdapterEntity.class);
+        verify(adapterExtractor).updateAdapter(captor.capture());
+        final ProtocolAdapterEntity updated = captor.getValue();
+        assertThat(updated.getTags()).hasSize(1);
+        assertThat(updated.getTags().getFirst().getName()).isEqualTo("new-name");
+        assertThat(updated.getNorthboundMappings().getFirst().getTagName()).isEqualTo("new-name");
+    }
+
+    @Test
+    void rename_mergeSafe_sameNodeId_differentTagName_fails() {
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(new TagEntity("old-name", null, Map.of("node", "ns=2;i=1"))), List.of(), List.of());
+        setupAdapter(adapter);
+
+        final List<DeviceTagRow> rows = List.of(tagRow("new-name", "ns=2;i=1"));
+
+        assertThatThrownBy(() -> importer.doImport(rows, ImportMode.MERGE_SAFE, ADAPTER_ID))
+                .isInstanceOf(DeviceTagImporterException.class);
+
+        verify(adapterExtractor, never()).updateAdapter(any());
+    }
+
+    @Test
+    void rename_overwrite_sameNodeId_differentTagName() throws DeviceTagImporterException {
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(new TagEntity("old-name", null, Map.of("node", "ns=2;i=1"))), List.of(), List.of());
+        setupAdapter(adapter);
+
+        final List<DeviceTagRow> rows = List.of(tagRow("new-name", "ns=2;i=1"));
+
+        final ImportResult result = importer.doImport(rows, ImportMode.OVERWRITE, ADAPTER_ID);
+
+        assertThat(result.tagsUpdated()).isEqualTo(1);
+        assertThat(result.tagsCreated()).isEqualTo(0);
+        assertThat(result.tagsDeleted()).isEqualTo(0);
+    }
+
     // --- Wildcard resolution ---
 
     @Test

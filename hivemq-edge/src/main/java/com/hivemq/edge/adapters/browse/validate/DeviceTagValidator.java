@@ -28,6 +28,7 @@ import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.INVA
 import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.MAPPING_WITHOUT_TAG;
 import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.TAG_CONFLICT;
 import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.TAG_IN_USE_BY_COMBINER;
+import static java.util.Objects.requireNonNull;
 
 import com.hivemq.combining.model.DataCombiner;
 import com.hivemq.combining.model.DataCombining;
@@ -42,13 +43,13 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -219,10 +220,9 @@ public class DeviceTagValidator {
     }
 
     private static boolean tagDefinitionsMatch(final @NotNull DeviceTagRow row, final @NotNull TagEntity existing) {
-        final Map<String, Object> existingDef = existing.getDefinition();
-        final String existingNode =
-                existingDef.get("node") != null ? existingDef.get("node").toString() : null;
-        return Objects.equals(row.getNodeId(), existingNode);
+        final String rowDesc = row.getTagDescription() != null ? row.getTagDescription() : "";
+        final String existingDesc = existing.getDescription() != null ? existing.getDescription() : "";
+        return Objects.equals(row.getTagName(), existing.getName()) && Objects.equals(rowDesc, existingDesc);
     }
 
     private static void validateTagName(
@@ -334,47 +334,56 @@ public class DeviceTagValidator {
             final @NotNull ProtocolAdapterEntity adapter,
             final @NotNull String adapterId,
             final @NotNull List<ValidationError> errors) {
-        final Set<String> fileTagNames = rows.stream()
-                .filter(DeviceTagRow::hasTag)
-                .map(DeviceTagRow::getTagName)
-                .collect(Collectors.toSet());
-        final Map<String, TagEntity> edgeTagsByName =
-                adapter.getTags().stream().collect(Collectors.toMap(TagEntity::getName, t -> t));
 
-        // Check if tags to be deleted are in use by combiners
+        // Build nodeId-keyed maps for classification
+        final Map<String, DeviceTagRow> fileRowsByNodeId = new LinkedHashMap<>();
+        for (final DeviceTagRow row : rows) {
+            if (row.hasTag() && row.getNodeId() != null && !row.getNodeId().isEmpty()) {
+                fileRowsByNodeId.put(row.getNodeId(), row);
+            }
+        }
+
+        final Map<String, TagEntity> edgeTagsByNodeId = new LinkedHashMap<>();
+        for (final TagEntity tag : adapter.getTags()) {
+            final Object node = tag.getDefinition().get("node");
+            if (node != null) {
+                edgeTagsByNodeId.put(node.toString(), tag);
+            }
+        }
+
+        // Classify by nodeId
+        final Set<String> edgeOnlyNodeIds = new HashSet<>(edgeTagsByNodeId.keySet());
+        edgeOnlyNodeIds.removeAll(fileRowsByNodeId.keySet());
+
+        final Set<String> fileOnlyNodeIds = new HashSet<>(fileRowsByNodeId.keySet());
+        fileOnlyNodeIds.removeAll(edgeTagsByNodeId.keySet());
+
+        final Set<String> inBothNodeIds = new HashSet<>(fileRowsByNodeId.keySet());
+        inBothNodeIds.retainAll(edgeTagsByNodeId.keySet());
+
+        // Combiner check: tags to be deleted must not be in use by combiners
         if (mode == ImportMode.DELETE || mode == ImportMode.OVERWRITE) {
-            final Set<String> tagsToDelete = new HashSet<>(edgeTagsByName.keySet());
-            if (mode == ImportMode.DELETE) {
-                // DELETE mode: all edge-only tags are deleted
-                tagsToDelete.removeAll(fileTagNames);
-            }
-            // OVERWRITE: tags not in file are deleted
-            if (mode == ImportMode.OVERWRITE) {
-                tagsToDelete.removeAll(fileTagNames);
-            }
-
             final Set<String> combinerTags = collectCombinerTags();
-
-            for (final String tagToDelete : tagsToDelete) {
-                if (combinerTags.contains(tagToDelete)) {
+            for (final String nodeId : edgeOnlyNodeIds) {
+                final String tagName =
+                        requireNonNull(edgeTagsByNodeId.get(nodeId)).getName();
+                if (combinerTags.contains(tagName)) {
                     errors.add(new ValidationError(
                             null,
                             "tag_name",
-                            tagToDelete,
+                            tagName,
                             TAG_IN_USE_BY_COMBINER,
-                            "Tag '" + tagToDelete + "' is in use by a combiner and cannot be deleted"));
+                            "Tag '" + tagName + "' is in use by a combiner and cannot be deleted"));
                 }
             }
         }
 
-        // Check for tag name conflicts with other adapters
+        // Cross-adapter tagName conflict check (still by tagName — unchanged)
         for (final DeviceTagRow row : rows) {
             if (!row.hasTag()) {
                 continue;
             }
             final String tagName = row.getTagName();
-
-            // Check against all other adapters' tags
             for (final ProtocolAdapterEntity otherAdapter : adapterExtractor.getAllConfigs()) {
                 if (otherAdapter.getAdapterId().equals(adapterId)) {
                     continue;
@@ -395,81 +404,121 @@ public class DeviceTagValidator {
             }
         }
 
-        // Mode-specific conflict checks
+        // Mode-specific conflict checks (by nodeId)
         if (mode == ImportMode.CREATE) {
-            // Edge-only tags are an error in CREATE mode
-            final Set<String> edgeOnlyTags = new HashSet<>(edgeTagsByName.keySet());
-            edgeOnlyTags.removeAll(fileTagNames);
-            for (final String edgeOnly : edgeOnlyTags) {
+            // Edge-only nodeIds are an error in CREATE mode
+            for (final String nodeId : edgeOnlyNodeIds) {
+                final TagEntity edgeTag = requireNonNull(edgeTagsByNodeId.get(nodeId));
                 errors.add(
                         new ValidationError(
                                 null,
                                 "tag_name",
-                                edgeOnly,
+                                edgeTag.getName(),
                                 TAG_CONFLICT,
-                                "Tag '" + edgeOnly
-                                        + "' exists on adapter but not in file. CREATE requires an empty adapter or use OVERWRITE mode."));
+                                "Tag '"
+                                        + edgeTag.getName()
+                                        + "' (node "
+                                        + nodeId
+                                        + ") exists on adapter but not in file. CREATE requires an empty adapter or use OVERWRITE mode."));
             }
-            // Both-exist with different definition is an error
-            for (final DeviceTagRow row : rows) {
-                if (!row.hasTag()) {
-                    continue;
-                }
-                final TagEntity existing = edgeTagsByName.get(row.getTagName());
-                if (existing != null && !tagDefinitionsMatch(row, existing)) {
+            // inBoth with different definition is an error
+            for (final String nodeId : inBothNodeIds) {
+                final DeviceTagRow row = requireNonNull(fileRowsByNodeId.get(nodeId));
+                final TagEntity existing = requireNonNull(edgeTagsByNodeId.get(nodeId));
+                if (!tagDefinitionsMatch(row, existing)) {
                     errors.add(new ValidationError(
                             null,
                             "tag_name",
                             row.getTagName(),
                             TAG_CONFLICT,
-                            "Tag '" + row.getTagName() + "' exists with different definition. Use OVERWRITE mode."));
+                            "Tag for node '" + nodeId + "' exists with different definition. Use OVERWRITE mode."));
                 }
             }
-            // Both-exist with identical definition is a noop — no error
         } else if (mode == ImportMode.DELETE) {
-            // File-only tags are an error in DELETE mode
-            final Set<String> fileOnlyTags = new HashSet<>(fileTagNames);
-            fileOnlyTags.removeAll(edgeTagsByName.keySet());
-            for (final String fileOnly : fileOnlyTags) {
+            // File-only nodeIds are an error in DELETE mode
+            for (final String nodeId : fileOnlyNodeIds) {
+                final DeviceTagRow row = requireNonNull(fileRowsByNodeId.get(nodeId));
                 errors.add(new ValidationError(
                         null,
                         "tag_name",
-                        fileOnly,
+                        row.getTagName(),
                         TAG_CONFLICT,
-                        "Tag '" + fileOnly
-                                + "' is in the file but does not exist on the adapter. DELETE cannot create tags."));
+                        "Tag '"
+                                + row.getTagName()
+                                + "' (node "
+                                + nodeId
+                                + ") is in the file but does not exist on the adapter. DELETE cannot create tags."));
             }
-            // Both-exist with different definition is an error
-            for (final DeviceTagRow row : rows) {
-                if (!row.hasTag()) {
-                    continue;
-                }
-                final TagEntity existing = edgeTagsByName.get(row.getTagName());
-                if (existing != null && !tagDefinitionsMatch(row, existing)) {
+            // inBoth with different definition is an error
+            for (final String nodeId : inBothNodeIds) {
+                final DeviceTagRow row = requireNonNull(fileRowsByNodeId.get(nodeId));
+                final TagEntity existing = requireNonNull(edgeTagsByNodeId.get(nodeId));
+                if (!tagDefinitionsMatch(row, existing)) {
                     errors.add(new ValidationError(
                             null,
                             "tag_name",
                             row.getTagName(),
                             TAG_CONFLICT,
-                            "Tag '" + row.getTagName()
+                            "Tag for node '"
+                                    + nodeId
                                     + "' exists with different definition. DELETE cannot modify tags."));
                 }
             }
         } else if (mode == ImportMode.MERGE_SAFE) {
-            // MERGE_SAFE: fail if same tag exists with different properties
-            for (final DeviceTagRow row : rows) {
-                if (!row.hasTag()) {
-                    continue;
-                }
-                final TagEntity existing = edgeTagsByName.get(row.getTagName());
-                if (existing != null && !tagDefinitionsMatch(row, existing)) {
+            // inBoth with different definition (tagName or description change)
+            for (final String nodeId : inBothNodeIds) {
+                final DeviceTagRow row = requireNonNull(fileRowsByNodeId.get(nodeId));
+                final TagEntity existing = requireNonNull(edgeTagsByNodeId.get(nodeId));
+                if (!tagDefinitionsMatch(row, existing)) {
                     errors.add(new ValidationError(
                             null,
                             "tag_name",
                             row.getTagName(),
                             TAG_CONFLICT,
-                            "Tag '" + row.getTagName()
+                            "Tag for node '"
+                                    + nodeId
                                     + "' exists with different definition. Use MERGE_OVERWRITE mode."));
+                }
+            }
+        }
+
+        // TagName collision: file tags must not reuse a tagName that belongs to a surviving edge-only tag
+        if (mode == ImportMode.MERGE_SAFE || mode == ImportMode.MERGE_OVERWRITE) {
+            final Set<String> survivingEdgeTagNames = new HashSet<>();
+            for (final String nodeId : edgeOnlyNodeIds) {
+                survivingEdgeTagNames.add(
+                        requireNonNull(edgeTagsByNodeId.get(nodeId)).getName());
+            }
+
+            for (final String nodeId : fileOnlyNodeIds) {
+                final DeviceTagRow row = requireNonNull(fileRowsByNodeId.get(nodeId));
+                if (survivingEdgeTagNames.contains(row.getTagName())) {
+                    errors.add(
+                            new ValidationError(
+                                    null,
+                                    "tag_name",
+                                    row.getTagName(),
+                                    TAG_CONFLICT,
+                                    "Tag name '"
+                                            + row.getTagName()
+                                            + "' collides with an existing tag on a different device node. Use OVERWRITE mode or choose a different tag name."));
+                }
+            }
+
+            for (final String nodeId : inBothNodeIds) {
+                final DeviceTagRow row = requireNonNull(fileRowsByNodeId.get(nodeId));
+                final TagEntity existing = requireNonNull(edgeTagsByNodeId.get(nodeId));
+                if (!requireNonNull(row.getTagName()).equals(existing.getName())
+                        && survivingEdgeTagNames.contains(row.getTagName())) {
+                    errors.add(
+                            new ValidationError(
+                                    null,
+                                    "tag_name",
+                                    row.getTagName(),
+                                    TAG_CONFLICT,
+                                    "Renamed tag '"
+                                            + row.getTagName()
+                                            + "' collides with an existing tag on a different device node. Choose a different tag name."));
                 }
             }
         }
