@@ -9,6 +9,10 @@ properties:
     type: boolean
     description: Should the timestamp be included when sent out.
     default: false
+  includeMetadata:
+    type: boolean
+    description: Should tag metadata entries be included when sent out.
+    default: false
   maxQoS:
     $ref: ./QoS.yaml
   messageExpiryInterval:

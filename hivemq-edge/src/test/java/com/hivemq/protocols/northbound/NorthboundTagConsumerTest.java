@@ -320,6 +320,78 @@ class NorthboundTagConsumerTest {
         verify(publishService, never()).createPublish();
     }
 
+    @Test
+    void accept_withDataPointWithMetadata_includeMetadataTrue_includesMetadataInJson() throws Exception {
+        setupPollingContext("test/topic", 0);
+        when(pollingContext.getIncludeMetadata()).thenReturn(true);
+        setupPublishBuilder();
+        setupEventBuilder();
+
+        final ObjectNode root = JsonNodeFactory.instance.objectNode();
+        root.put("tagName", "meta-tag");
+        root.put("value", 42);
+        root.put("timestamp", 1000L);
+        final ObjectNode metadata = root.putObject("metadata");
+        metadata.put("sourceTimestamp", "2024-01-01T00:00:00Z");
+        final DataPointWithMetadata dpMeta = new DataPointWithMetadata(root);
+
+        consumer.accept(dpMeta);
+
+        final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(publishBuilder).withPayload(payloadCaptor.capture());
+
+        final JsonNode json = objectMapper.readTree(payloadCaptor.getValue());
+        assertThat(json.has("metadata")).isTrue();
+        assertThat(json.get("metadata").get("sourceTimestamp").asText()).isEqualTo("2024-01-01T00:00:00Z");
+    }
+
+    @Test
+    void accept_withDataPointWithMetadata_includeMetadataFalse_excludesMetadataFromJson() throws Exception {
+        setupPollingContext("test/topic", 0);
+        when(pollingContext.getIncludeMetadata()).thenReturn(false);
+        setupPublishBuilder();
+        setupEventBuilder();
+
+        final ObjectNode root = JsonNodeFactory.instance.objectNode();
+        root.put("tagName", "meta-tag");
+        root.put("value", 42);
+        root.put("timestamp", 1000L);
+        root.putObject("metadata").put("sourceTimestamp", "2024-01-01T00:00:00Z");
+        final DataPointWithMetadata dpMeta = new DataPointWithMetadata(root);
+
+        consumer.accept(dpMeta);
+
+        final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(publishBuilder).withPayload(payloadCaptor.capture());
+
+        final JsonNode json = objectMapper.readTree(payloadCaptor.getValue());
+        assertThat(json.has("metadata")).isFalse();
+    }
+
+    @Test
+    void accept_withDataPointWithMetadata_includeMetadataTrue_noMetadataPresent_includesNullMetadata() throws Exception {
+        setupPollingContext("test/topic", 0);
+        when(pollingContext.getIncludeMetadata()).thenReturn(true);
+        setupPublishBuilder();
+        setupEventBuilder();
+
+        final ObjectNode root = JsonNodeFactory.instance.objectNode();
+        root.put("tagName", "no-meta-tag");
+        root.put("value", 7);
+        root.put("timestamp", 2000L);
+        // no metadata set
+        final DataPointWithMetadata dpMeta = new DataPointWithMetadata(root);
+
+        consumer.accept(dpMeta);
+
+        final ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(publishBuilder).withPayload(payloadCaptor.capture());
+
+        final JsonNode json = objectMapper.readTree(payloadCaptor.getValue());
+        assertThat(json.has("metadata")).isTrue();
+        assertThat(json.get("metadata").isNull()).isTrue();
+    }
+
     private static DataPoint createDataPoint(final String tagName, final Object tagValue) {
         return new DataPoint() {
             @Override

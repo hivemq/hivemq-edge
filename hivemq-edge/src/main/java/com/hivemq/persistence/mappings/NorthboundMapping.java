@@ -55,7 +55,7 @@ public class NorthboundMapping {
         this.maxQoS = maxQoS;
         this.includeTagNames = includeTagNames != null && includeTagNames;
         this.includeTimestamp = includeTimestamp == null || includeTimestamp; // default is true
-        this.includeMetadata = includeTagNames != null && includeTagNames;
+        this.includeMetadata = includeMetadata != null && includeMetadata;
         this.userProperties = userProperties != null ? userProperties : new ArrayList<>();
         this.messageExpiryInterval = messageExpiryInterval != null ? messageExpiryInterval : DEFAULT_MESSAGE_EXPIRY;
     }
