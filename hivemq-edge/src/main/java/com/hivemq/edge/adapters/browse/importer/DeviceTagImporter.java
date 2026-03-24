@@ -140,12 +140,42 @@ public class DeviceTagImporter {
             if (row.getMaxQos() != null && row.getMaxQos() != existingNb.getMaxQoS()) {
                 return false;
             }
+            if (row.getIncludeTagNames() != null && !row.getIncludeTagNames().equals(existingNb.isIncludeTagNames())) {
+                return false;
+            }
+            if (row.getIncludeTimestamp() != null
+                    && !row.getIncludeTimestamp().equals(existingNb.isIncludeTimestamp())) {
+                return false;
+            }
+            if (row.getMessageExpiryInterval() != null
+                    && row.getMessageExpiryInterval() != existingNb.getMessageExpiryInterval()) {
+                return false;
+            }
+            if (!userPropertiesMatch(row.getMqttUserProperties(), existingNb.getUserProperties())) {
+                return false;
+            }
         }
         if (row.hasSouthboundMapping()) {
             if (existingSb == null) {
                 return false;
             }
             return Objects.equals(row.getSouthboundTopic(), existingSb.getTopicFilter());
+        }
+        return true;
+    }
+
+    private static boolean userPropertiesMatch(
+            final @Nullable Map<String, String> rowProps, final @NotNull List<MqttUserPropertyEntity> existingProps) {
+        if (rowProps == null) {
+            return true;
+        }
+        if (rowProps.size() != existingProps.size()) {
+            return false;
+        }
+        for (final MqttUserPropertyEntity prop : existingProps) {
+            if (!Objects.equals(rowProps.get(prop.getName()), prop.getValue())) {
+                return false;
+            }
         }
         return true;
     }

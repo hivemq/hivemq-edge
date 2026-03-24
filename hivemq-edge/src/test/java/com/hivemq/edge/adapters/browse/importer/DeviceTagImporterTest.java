@@ -23,6 +23,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.hivemq.configuration.entity.adapter.MqttUserPropertyEntity;
 import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.adapter.SouthboundMappingEntity;
@@ -215,6 +216,125 @@ class DeviceTagImporterTest {
         assertThat(result.tagsCreated()).isEqualTo(0);
         assertThat(result.tagsUpdated()).isEqualTo(0);
         assertThat(result.tagsDeleted()).isEqualTo(0);
+    }
+
+    // --- Mapping field comparison (EDG-360) ---
+
+    @Test
+    void overwrite_includeTagNames_differs_updated() throws DeviceTagImporterException {
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(new TagEntity("tag1", null, Map.of("node", "ns=2;i=1"))),
+                List.of(new NorthboundMappingEntity("tag1", "topic/1", 1, null, false, true, List.of(), null)),
+                List.of());
+        setupAdapter(adapter);
+
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .tagName("tag1")
+                .nodeId("ns=2;i=1")
+                .northboundTopic("topic/1")
+                .maxQos(1)
+                .includeTagNames(true)
+                .build());
+
+        final ImportResult result = importer.doImport(rows, ImportMode.OVERWRITE, ADAPTER_ID);
+
+        assertThat(result.tagsUpdated()).isEqualTo(1);
+    }
+
+    @Test
+    void overwrite_includeTimestamp_differs_updated() throws DeviceTagImporterException {
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(new TagEntity("tag1", null, Map.of("node", "ns=2;i=1"))),
+                List.of(new NorthboundMappingEntity("tag1", "topic/1", 1, null, false, true, List.of(), null)),
+                List.of());
+        setupAdapter(adapter);
+
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .tagName("tag1")
+                .nodeId("ns=2;i=1")
+                .northboundTopic("topic/1")
+                .maxQos(1)
+                .includeTimestamp(false)
+                .build());
+
+        final ImportResult result = importer.doImport(rows, ImportMode.OVERWRITE, ADAPTER_ID);
+
+        assertThat(result.tagsUpdated()).isEqualTo(1);
+    }
+
+    @Test
+    void overwrite_messageExpiry_differs_updated() throws DeviceTagImporterException {
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(new TagEntity("tag1", null, Map.of("node", "ns=2;i=1"))),
+                List.of(new NorthboundMappingEntity("tag1", "topic/1", 1, null, false, true, List.of(), 3600L)),
+                List.of());
+        setupAdapter(adapter);
+
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .tagName("tag1")
+                .nodeId("ns=2;i=1")
+                .northboundTopic("topic/1")
+                .maxQos(1)
+                .messageExpiryInterval(7200L)
+                .build());
+
+        final ImportResult result = importer.doImport(rows, ImportMode.OVERWRITE, ADAPTER_ID);
+
+        assertThat(result.tagsUpdated()).isEqualTo(1);
+    }
+
+    @Test
+    void overwrite_userProperties_differ_updated() throws DeviceTagImporterException {
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(new TagEntity("tag1", null, Map.of("node", "ns=2;i=1"))),
+                List.of(new NorthboundMappingEntity(
+                        "tag1",
+                        "topic/1",
+                        1,
+                        null,
+                        false,
+                        true,
+                        List.of(new MqttUserPropertyEntity("key1", "val1")),
+                        null)),
+                List.of());
+        setupAdapter(adapter);
+
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .tagName("tag1")
+                .nodeId("ns=2;i=1")
+                .northboundTopic("topic/1")
+                .maxQos(1)
+                .mqttUserProperties(Map.of("key1", "val2"))
+                .build());
+
+        final ImportResult result = importer.doImport(rows, ImportMode.OVERWRITE, ADAPTER_ID);
+
+        assertThat(result.tagsUpdated()).isEqualTo(1);
+    }
+
+    @Test
+    void overwrite_allNorthboundFieldsMatch_noOp() throws DeviceTagImporterException {
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(new TagEntity("tag1", null, Map.of("node", "ns=2;i=1"))),
+                List.of(new NorthboundMappingEntity(
+                        "tag1", "topic/1", 1, null, true, false, List.of(new MqttUserPropertyEntity("k", "v")), 3600L)),
+                List.of());
+        setupAdapter(adapter);
+
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .tagName("tag1")
+                .nodeId("ns=2;i=1")
+                .northboundTopic("topic/1")
+                .maxQos(1)
+                .includeTagNames(true)
+                .includeTimestamp(false)
+                .mqttUserProperties(Map.of("k", "v"))
+                .messageExpiryInterval(3600L)
+                .build());
+
+        final ImportResult result = importer.doImport(rows, ImportMode.OVERWRITE, ADAPTER_ID);
+
+        assertThat(result.tagsUpdated()).isEqualTo(0);
     }
 
     // --- MERGE_SAFE mode ---
