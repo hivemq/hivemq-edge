@@ -29,6 +29,7 @@ describe('useListDomainNorthboundMappings', () => {
           adapterId: 'test-adapter',
           includeTagNames: true,
           includeTimestamp: true,
+          includeMetadata: false,
           maxQoS: QoS.AT_MOST_ONCE,
           messageExpiryInterval: -1000,
           tagName: 'my/tag',

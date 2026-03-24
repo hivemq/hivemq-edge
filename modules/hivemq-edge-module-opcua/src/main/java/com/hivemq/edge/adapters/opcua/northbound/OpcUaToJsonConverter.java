@@ -58,34 +58,31 @@ public class OpcUaToJsonConverter {
         final Object value = dataValue.getValue().getValue();
         if (value == null) {
             builder.valueNull();
-            return;
+        } else {
+            addValue(builder, value, serializationContext);
         }
         final var metadataBuilder = builder.startObjectMetadata();
-        if (value instanceof final DataValue v) {
-            if (v.getStatusCode().getValue() > 0) {
-                populateStatusCode(metadataBuilder.startObject("statusCode"), v.getStatusCode())
-                        .endObject();
-            }
-            if (v.getSourceTime() != null) {
-                metadataBuilder.put(
-                        "sourceTimestamp",
-                        DateTimeFormatter.ISO_INSTANT.format(v.getSourceTime().getJavaInstant()));
-            }
-            if (v.getSourcePicoseconds() != null) {
-                metadataBuilder.put("sourcePicoseconds", v.getSourcePicoseconds().intValue());
-            }
-            if (v.getServerTime() != null) {
-                metadataBuilder.put(
-                        "serverTimestamp",
-                        DateTimeFormatter.ISO_INSTANT.format(v.getServerTime().getJavaInstant()));
-            }
-            if (v.getServerPicoseconds() != null) {
-                metadataBuilder.put("serverPicoseconds", v.getServerPicoseconds().intValue());
-            }
+        if (dataValue.getStatusCode().getValue() >= 0) {
+            populateStatusCode(metadataBuilder.startObject("statusCode"), dataValue.getStatusCode())
+                    .endObject();
+        }
+        if (dataValue.getSourceTime() != null) {
+            metadataBuilder.put(
+                    "sourceTimestamp",
+                    DateTimeFormatter.ISO_INSTANT.format(dataValue.getSourceTime().getJavaInstant()));
+        }
+        if (dataValue.getSourcePicoseconds() != null) {
+            metadataBuilder.put("sourcePicoseconds", dataValue.getSourcePicoseconds().intValue());
+        }
+        if (dataValue.getServerTime() != null) {
+            metadataBuilder.put(
+                    "serverTimestamp",
+                    DateTimeFormatter.ISO_INSTANT.format(dataValue.getServerTime().getJavaInstant()));
+        }
+        if (dataValue.getServerPicoseconds() != null) {
+            metadataBuilder.put("serverPicoseconds", dataValue.getServerPicoseconds().intValue());
         }
         metadataBuilder.endObject();
-
-        addValue(builder, value, serializationContext);
     }
 
     private static void addValue(
