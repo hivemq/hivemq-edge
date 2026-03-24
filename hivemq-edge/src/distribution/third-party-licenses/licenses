@@ -71,7 +71,7 @@ HiveMQ Edge uses the following third party libraries:
  jakarta.xml.bind:jakarta.xml.bind-api                                      | 4.0.5                                     | BSD-3-Clause  | https://spdx.org/licenses/BSD-3-Clause.html
  javax.inject:javax.inject                                                  | 1                                         | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  javax.validation:validation-api                                            | 1.1.0.Final                               | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- javax.ws.rs:jsr311-api                                                     | 1.1.1                                     | CDDL-1.0      | https://spdx.org/licenses/CDDL-1.0.html
+ javax.ws.rs:jsr311-api                                                     | 1.1.1                                     | CDDL-1.1      | https://spdx.org/licenses/CDDL-1.1.html
  net.javacrumbs.future-converter:future-converter-common                    | 1.2.0                                     | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  net.javacrumbs.future-converter:future-converter-guava-common              | 1.2.0                                     | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  net.javacrumbs.future-converter:future-converter-java8-common              | 1.2.0                                     | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html

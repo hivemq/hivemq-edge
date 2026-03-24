@@ -10,7 +10,7 @@ plugins {
     java
     alias(libs.plugins.defaults)
     alias(libs.plugins.shadow)
-    // No hivemq-license plugin: module has no runtime dependencies (all provided by Edge runtime)
+    alias(libs.plugins.hivemq.license)
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.repository-convention")
     id("com.hivemq.jacoco-convention")
@@ -73,11 +73,6 @@ val releaseBinary: Configuration by configurations.creating {
     }
 }
 
-// No hivemq-license plugin (module has no runtime dependencies), but the composite build
-// expects every module to publish a "third-party-licenses" variant.
-// Publish an empty directory so variant resolution succeeds.
-val thirdPartyLicensesDir = layout.buildDirectory.dir("third-party-licenses")
-
 val thirdPartyLicenses: Configuration by configurations.creating {
     isCanBeConsumed = true
     isCanBeResolved = false
@@ -88,11 +83,12 @@ val thirdPartyLicenses: Configuration by configurations.creating {
 
 artifacts {
     add(releaseBinary.name, tasks.shadowJar)
-    add(thirdPartyLicenses.name, thirdPartyLicensesDir) {
-        builtBy(
-            tasks.register(
-                "createEmptyThirdPartyLicensesDir"
-            ) { doLast { thirdPartyLicensesDir.get().asFile.mkdirs() } }
-        )
-    }
+    add(thirdPartyLicenses.name, tasks.updateThirdPartyLicenses.flatMap { it.outputDirectory })
+}
+
+// ******************** compliance ********************
+
+hivemqLicense {
+    projectName.set(project.name)
+    thirdPartyLicenseDirectory.set(layout.projectDirectory.dir("src/distribution/third-party-licenses"))
 }
