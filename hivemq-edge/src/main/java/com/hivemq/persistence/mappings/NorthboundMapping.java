@@ -37,6 +37,7 @@ public class NorthboundMapping {
     private final int maxQoS;
     private final @NotNull Boolean includeTagNames;
     private final @NotNull Boolean includeTimestamp;
+    private final @NotNull Boolean includeMetadata;
     private final @NotNull List<MqttUserProperty> userProperties;
     private final @Nullable Long messageExpiryInterval;
 
@@ -46,6 +47,7 @@ public class NorthboundMapping {
             final int maxQoS,
             final @Nullable Boolean includeTagNames,
             final @Nullable Boolean includeTimestamp,
+            final @Nullable Boolean includeMetadata,
             final @Nullable List<MqttUserProperty> userProperties,
             final @Nullable Long messageExpiryInterval) {
         this.tagName = tagName;
@@ -53,6 +55,7 @@ public class NorthboundMapping {
         this.maxQoS = maxQoS;
         this.includeTagNames = includeTagNames != null && includeTagNames;
         this.includeTimestamp = includeTimestamp == null || includeTimestamp; // default is true
+        this.includeMetadata = includeTagNames != null && includeTagNames;
         this.userProperties = userProperties != null ? userProperties : new ArrayList<>();
         this.messageExpiryInterval = messageExpiryInterval != null ? messageExpiryInterval : DEFAULT_MESSAGE_EXPIRY;
     }
@@ -69,6 +72,7 @@ public class NorthboundMapping {
                 model.getMaxQoS() == null ? DEFAULT_QOS : model.getMaxQoS().ordinal(),
                 model.getIncludeTagNames() != null && model.getIncludeTagNames(),
                 model.getIncludeTimestamp() == null || model.getIncludeTimestamp(),
+                model.getIncludeMetadata() != null && model.getIncludeMetadata(),
                 model.getUserProperties() != null
                         ? model.getUserProperties().stream()
                                 .map(NorthboundMapping::userProp)
@@ -101,6 +105,10 @@ public class NorthboundMapping {
         return includeTagNames;
     }
 
+    public @NotNull Boolean getIncludeMetadata() {
+        return includeMetadata;
+    }
+
     public @NotNull List<MqttUserProperty> getUserProperties() {
         return userProperties;
     }
@@ -117,6 +125,7 @@ public class NorthboundMapping {
                     && maxQoS == that.maxQoS
                     && Objects.equals(includeTagNames, that.includeTagNames)
                     && Objects.equals(includeTimestamp, that.includeTimestamp)
+                    && Objects.equals(includeMetadata, that.includeMetadata)
                     && Objects.equals(userProperties, that.userProperties)
                     && Objects.equals(messageExpiryInterval, that.messageExpiryInterval);
         }
@@ -140,6 +149,8 @@ public class NorthboundMapping {
                 + includeTagNames
                 + ", includeTimestamp="
                 + includeTimestamp
+                + ", includeMetadata="
+                + includeMetadata
                 + ", userProperties="
                 + userProperties
                 + ", maxQoS="

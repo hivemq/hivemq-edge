@@ -243,6 +243,7 @@
                     <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
                     <includeTagNames>false</includeTagNames>
                     <includeTimestamp>true</includeTimestamp>
+                    <includeMetadata>false</includeMetadata>
                     <mqttUserProperties/>
                     <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
                 </northboundMapping>
@@ -279,6 +280,7 @@
                     <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
                     <includeTagNames>false</includeTagNames>
                     <includeTimestamp>true</includeTimestamp>
+                    <includeMetadata>false</includeMetadata>
                     <mqttUserProperties/>
                     <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
                 </northboundMapping>
@@ -322,6 +324,7 @@
                     <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
                     <includeTagNames>false</includeTagNames>
                     <includeTimestamp>true</includeTimestamp>
+                    <includeMetadata>false</includeMetadata>
                     <mqttUserProperties/>
                     <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
                 </northboundMapping>
@@ -332,6 +335,7 @@
                     <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
                     <includeTagNames>false</includeTagNames>
                     <includeTimestamp>true</includeTimestamp>
+                    <includeMetadata>false</includeMetadata>
                     <mqttUserProperties/>
                     <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
                 </northboundMapping>
@@ -342,6 +346,7 @@
                     <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
                     <includeTagNames>false</includeTagNames>
                     <includeTimestamp>true</includeTimestamp>
+                    <includeMetadata>false</includeMetadata>
                     <mqttUserProperties/>
                     <messageExpiryInterval>9223372036854775807</messageExpiryInterval>
                 </northboundMapping>

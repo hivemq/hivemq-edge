@@ -49,6 +49,10 @@ public class NorthboundMappingModel {
     @Schema(description = "Should the timestamp be included when sent out.")
     private final boolean includeTimestamp;
 
+    @JsonProperty(value = "includeMetadata", required = true)
+    @Schema(description = "Should the tag metadata be included when sent out.")
+    private final boolean includeMetadata;
+
     @JsonProperty(value = "userProperties")
     @Schema(description = "User properties to be added to each outgoing mqtt message.")
     private final @NotNull List<MqttUserPropertyModel> userProperties;
@@ -67,6 +71,7 @@ public class NorthboundMappingModel {
             @JsonProperty(value = "topic", required = true) final @NotNull String topic,
             @JsonProperty(value = "includeTagNames") final @Nullable Boolean includeTagNames,
             @JsonProperty(value = "includeTimestamp") final @Nullable Boolean includeTimestamp,
+            @JsonProperty(value = "includeMetadata") final @Nullable Boolean includeMetadata,
             @JsonProperty(value = "userProperties") final @Nullable List<MqttUserPropertyModel> userProperties,
             @JsonProperty(value = "maxQoS") final @Nullable QoSModel maxQoS,
             @JsonProperty(value = "messageExpiryInterval") final @Nullable Long messageExpiryInterval) {
@@ -74,6 +79,7 @@ public class NorthboundMappingModel {
         this.topic = topic;
         this.includeTagNames = requireNonNullElse(includeTagNames, false);
         this.includeTimestamp = requireNonNullElse(includeTimestamp, false);
+        this.includeMetadata = requireNonNullElse(includeMetadata, false);
         this.userProperties = requireNonNullElse(userProperties, List.of());
         this.maxQoS = requireNonNullElse(maxQoS, QoSModel.AT_LEAST_ONCE);
         // we must set a upper limit for the expiry interval as JS otherwise will wrongly
@@ -88,6 +94,7 @@ public class NorthboundMappingModel {
                 mapping.getMqttTopic(),
                 mapping.getIncludeTagNames(),
                 mapping.getIncludeTimestamp(),
+                mapping.getIncludeMetadata(),
                 mapping.getUserProperties().stream()
                         .map(NorthboundMappingModel::userProp)
                         .toList(),
@@ -101,6 +108,7 @@ public class NorthboundMappingModel {
                 northboundMapping.getTopic(),
                 northboundMapping.isIncludeTagNames(),
                 northboundMapping.isIncludeTimestamp(),
+                northboundMapping.isIncludeMetadata(),
                 northboundMapping.getUserProperties().stream()
                         .map(NorthboundMappingModel::userProp)
                         .toList(),
@@ -128,6 +136,7 @@ public class NorthboundMappingModel {
                 maxQoS.getQosNumber(),
                 includeTagNames,
                 includeTimestamp,
+                includeMetadata,
                 userProperties.stream().map(NorthboundMappingModel::userProp).toList(),
                 messageExpiryInterval == JS_MAX_SAFE_INTEGER ? Long.MAX_VALUE : messageExpiryInterval);
     }
@@ -146,6 +155,10 @@ public class NorthboundMappingModel {
 
     public boolean isIncludeTimestamp() {
         return includeTimestamp;
+    }
+
+    public boolean isIncludeMetadata() {
+        return includeMetadata;
     }
 
     public @NotNull List<MqttUserPropertyModel> getUserProperties() {

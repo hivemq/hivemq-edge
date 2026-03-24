@@ -23,13 +23,14 @@ import com.hivemq.persistence.mappings.NorthboundMapping;
 import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 public class NorthboundMappingEntity implements EntityValidatable {
 
@@ -55,6 +56,9 @@ public class NorthboundMappingEntity implements EntityValidatable {
     @XmlElement(name = "includeTimestamp", required = true)
     private final @NotNull Boolean includeTimestamp;
 
+    @XmlElement(name = "includeMetadata", required = true)
+    private final @NotNull Boolean includeMetadata;
+
     @XmlElementWrapper(name = "mqttUserProperties", required = true)
     @XmlElement(name = "mqttUserProperty")
     private final @NotNull List<MqttUserPropertyEntity> userProperties;
@@ -70,6 +74,7 @@ public class NorthboundMappingEntity implements EntityValidatable {
         maxQoS = QoS.AT_LEAST_ONCE.getQosNumber();
         includeTagNames = false;
         includeTimestamp = true;
+        includeMetadata = false;
         userProperties = new ArrayList<>();
         messageExpiryInterval = Long.MAX_VALUE;
         messageHandlingOptions = NORTHBOUND_OPTS;
@@ -82,6 +87,7 @@ public class NorthboundMappingEntity implements EntityValidatable {
             final @Nullable MessageHandlingOptions ignore,
             final boolean includeTagNames,
             final boolean includeTimestamp,
+            final boolean includeMetadata,
             final @NotNull List<MqttUserPropertyEntity> userProperties,
             final @Nullable Long messageExpiryInterval) {
         this.tagName = tagName;
@@ -92,6 +98,7 @@ public class NorthboundMappingEntity implements EntityValidatable {
         this.messageHandlingOptions = null;
         this.includeTagNames = includeTagNames;
         this.includeTimestamp = includeTimestamp;
+        this.includeMetadata = includeMetadata;
         this.userProperties = userProperties;
         this.messageExpiryInterval = messageExpiryInterval != null ? messageExpiryInterval : Long.MAX_VALUE;
     }
@@ -104,6 +111,7 @@ public class NorthboundMappingEntity implements EntityValidatable {
                 NORTHBOUND_OPTS,
                 mapping.getIncludeTagNames(),
                 mapping.getIncludeTimestamp(),
+                mapping.getIncludeMetadata(),
                 mapping.getUserProperties().stream()
                         .map(NorthboundMappingEntity::userProp)
                         .toList(),
@@ -132,6 +140,7 @@ public class NorthboundMappingEntity implements EntityValidatable {
                 NORTHBOUND_OPTS,
                 mapping.getIncludeTagNames(),
                 mapping.getIncludeTimestamp(),
+                mapping.getIncludeMetadata(),
                 mapping.getUserProperties().stream()
                         .map(NorthboundMappingEntity::userProp)
                         .toList(),
@@ -156,6 +165,9 @@ public class NorthboundMappingEntity implements EntityValidatable {
 
     public boolean isIncludeTimestamp() {
         return includeTimestamp == null || includeTimestamp; // default is true
+    }
+    public boolean isIncludeMetadata() {
+        return includeMetadata == null || includeMetadata; // default is false
     }
 
     public @NotNull List<MqttUserPropertyEntity> getUserProperties() {
@@ -194,6 +206,7 @@ public class NorthboundMappingEntity implements EntityValidatable {
                 maxQoS,
                 includeTagNames,
                 includeTimestamp,
+                includeMetadata,
                 userProperties.stream()
                         .map(p -> new MqttUserProperty(p.getName(), p.getValue()))
                         .toList(),
