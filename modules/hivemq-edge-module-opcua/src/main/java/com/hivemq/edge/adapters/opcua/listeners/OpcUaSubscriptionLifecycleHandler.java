@@ -87,8 +87,17 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
         this.tagToFirstSeen = new ConcurrentHashMap<>();
         this.lastKeepAliveTimestamp = System.currentTimeMillis();
         this.nodeIdToTag = tags.stream()
-                .collect(
-                        Collectors.toMap(tag -> NodeId.parse(tag.getDefinition().getNode()), Function.identity()));
+                .collect(Collectors.toMap(
+                        tag -> NodeId.parse(tag.getDefinition().getNode()), Function.identity(), (first, second) -> {
+                            log.warn(
+                                    "Adapter '{}': duplicate node ID '{}' — tags '{}' and '{}' reference the same OPC UA node. Only '{}' will receive data.",
+                                    adapterId,
+                                    first.getDefinition().getNode(),
+                                    first.getName(),
+                                    second.getName(),
+                                    first.getName());
+                            return first;
+                        }));
     }
 
     /**
@@ -166,8 +175,10 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             final @NotNull OpcUaSpecificAdapterConfig config) {
 
         final var nodeIdToTag = tags.stream()
-                .collect(
-                        Collectors.toMap(tag -> NodeId.parse(tag.getDefinition().getNode()), Function.identity()));
+                .collect(Collectors.toMap(
+                        tag -> NodeId.parse(tag.getDefinition().getNode()),
+                        Function.identity(),
+                        (first, second) -> first));
         final var nodeIdToMonitoredItem = subscription.getMonitoredItems().stream()
                 .collect(Collectors.toMap(
                         monitoredItem -> monitoredItem.getReadValueId().getNodeId(), Function.identity()));
