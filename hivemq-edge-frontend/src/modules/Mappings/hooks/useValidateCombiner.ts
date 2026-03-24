@@ -207,7 +207,7 @@ export const useValidateCombiner = (
         primary.type === DataIdentifierReference.type.TOPIC_FILTER ||
         primary.type === DataIdentifierReference.type.PULSE_ASSET
       ) {
-        if (primary.scope !== null) {
+        if (primary.scope !== null && primary.scope !== undefined) {
           errors.sources?.primary?.addError(
             t('combiner.error.validation.unexpectedScopeForNonTag', {
               type: primary.type,
@@ -239,7 +239,7 @@ export const useValidateCombiner = (
           sourceRef.type === DataIdentifierReference.type.TOPIC_FILTER ||
           sourceRef.type === DataIdentifierReference.type.PULSE_ASSET
         ) {
-          if (sourceRef.scope !== null) {
+          if (sourceRef.scope !== null && sourceRef.scope !== undefined) {
             errors.instructions?.[index]?.addError(
               t('combiner.error.validation.unexpectedScopeForNonTag', {
                 type: sourceRef.type,

@@ -797,6 +797,45 @@ describe('useValidateCombiner', () => {
 
       expect(errors).toStrictEqual([])
     })
+
+    it('should validate when TOPIC_FILTER scope is undefined (backend omits null fields)', async () => {
+      const result = await loadingEntities(sources)
+
+      const errors = await renderValidateHook(
+        getFormData([
+          {
+            id: uuidv4(),
+            sources: {
+              topicFilters: ['a/topic/+/filter'],
+              primary: {
+                id: 'a/topic/+/filter',
+                type: DataIdentifierReference.type.TOPIC_FILTER,
+                // scope intentionally omitted (undefined) to simulate backend NON_NULL serialization
+              },
+            },
+            destination: {
+              topic: 'test/topic',
+              schema: MOCK_SIMPLE_SCHEMA_URI,
+            },
+            instructions: [
+              {
+                source: 'description',
+                destination: 'value',
+                sourceRef: {
+                  id: 'a/topic/+/filter',
+                  type: DataIdentifierReference.type.TOPIC_FILTER,
+                  // scope intentionally omitted (undefined)
+                },
+              },
+            ],
+          },
+        ]),
+        result.current,
+        sources
+      )
+
+      expect(errors).toStrictEqual([])
+    })
   })
 
   describe('validateInstructions', () => {
