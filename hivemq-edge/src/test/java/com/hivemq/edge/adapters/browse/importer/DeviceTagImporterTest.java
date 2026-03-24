@@ -98,6 +98,71 @@ class DeviceTagImporterTest {
                 .build();
     }
 
+    // --- Multi-row (multiple northbound mappings per tag, EDG-362) ---
+
+    @Test
+    void create_multipleNorthboundMappings_sameTag() throws DeviceTagImporterException {
+        setupAdapter(emptyAdapter());
+
+        final List<DeviceTagRow> rows = List.of(
+                tagRowWithMappings("tag1", "ns=2;i=1", "topic/a", null),
+                tagRowWithMappings("tag1", "ns=2;i=1", "topic/b", null));
+
+        final ImportResult result = importer.doImport(rows, ImportMode.CREATE, ADAPTER_ID);
+
+        assertThat(result.tagsCreated()).isEqualTo(1);
+        assertThat(result.northboundMappingsCreated()).isEqualTo(2);
+
+        final ArgumentCaptor<ProtocolAdapterEntity> captor = ArgumentCaptor.forClass(ProtocolAdapterEntity.class);
+        verify(adapterExtractor).updateAdapter(captor.capture());
+        assertThat(captor.getValue().getTags()).hasSize(1);
+        assertThat(captor.getValue().getNorthboundMappings()).hasSize(2);
+    }
+
+    @Test
+    void overwrite_multipleNorthbound_replacesSingle() throws DeviceTagImporterException {
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(new TagEntity("tag1", null, Map.of("node", "ns=2;i=1"))),
+                List.of(new NorthboundMappingEntity("tag1", "old/topic", 1, null, false, true, List.of(), null)),
+                List.of());
+        setupAdapter(adapter);
+
+        // Import 2 NB mappings for the same tag
+        final List<DeviceTagRow> rows = List.of(
+                tagRowWithMappings("tag1", "ns=2;i=1", "new/topic1", null),
+                tagRowWithMappings("tag1", "ns=2;i=1", "new/topic2", null));
+
+        final ImportResult result = importer.doImport(rows, ImportMode.OVERWRITE, ADAPTER_ID);
+
+        assertThat(result.tagsUpdated()).isEqualTo(1);
+        assertThat(result.northboundMappingsCreated()).isEqualTo(2);
+        assertThat(result.northboundMappingsDeleted()).isEqualTo(1);
+
+        final ArgumentCaptor<ProtocolAdapterEntity> captor = ArgumentCaptor.forClass(ProtocolAdapterEntity.class);
+        verify(adapterExtractor).updateAdapter(captor.capture());
+        assertThat(captor.getValue().getNorthboundMappings()).hasSize(2);
+    }
+
+    @Test
+    void multiRow_identicalMappings_noOp() throws DeviceTagImporterException {
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(new TagEntity("tag1", null, Map.of("node", "ns=2;i=1"))),
+                List.of(
+                        new NorthboundMappingEntity("tag1", "topic/a", 1, null, false, true, List.of(), null),
+                        new NorthboundMappingEntity("tag1", "topic/b", 1, null, false, true, List.of(), null)),
+                List.of());
+        setupAdapter(adapter);
+
+        final List<DeviceTagRow> rows = List.of(
+                tagRowWithMappings("tag1", "ns=2;i=1", "topic/a", null),
+                tagRowWithMappings("tag1", "ns=2;i=1", "topic/b", null));
+
+        final ImportResult result = importer.doImport(rows, ImportMode.OVERWRITE, ADAPTER_ID);
+
+        assertThat(result.tagsUpdated()).isEqualTo(0);
+        assertThat(result.tagsCreated()).isEqualTo(0);
+    }
+
     // --- CREATE mode ---
 
     @Test

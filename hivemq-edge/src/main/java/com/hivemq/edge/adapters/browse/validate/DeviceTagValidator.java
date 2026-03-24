@@ -286,7 +286,7 @@ public class DeviceTagValidator {
 
         // Cross-reference validations
         if (adapter != null) {
-            validateCrossReferences(rows, mode, adapter, adapterId, errors);
+            validateCrossReferences(rows, mode, adapter, errors);
         }
 
         return errors;
@@ -294,34 +294,42 @@ public class DeviceTagValidator {
 
     private void validateFileLevelDuplicates(
             final @NotNull List<DeviceTagRow> rows, final @NotNull List<ValidationError> errors) {
-        // Check duplicate node IDs
-        final Set<String> seenNodeIds = new HashSet<>();
+        // Duplicate nodeId: allowed only if all rows with the same nodeId share the same tagName
+        final Map<String, DeviceTagRow> firstByNodeId = new LinkedHashMap<>();
         for (int i = 0; i < rows.size(); i++) {
             final DeviceTagRow row = rows.get(i);
-            if (row.getNodeId() != null && !row.getNodeId().isEmpty()) {
-                if (!seenNodeIds.add(row.getNodeId())) {
-                    errors.add(new ValidationError(
-                            i + 1,
-                            "node_id",
-                            row.getNodeId(),
-                            DUPLICATE_NODE,
-                            "Duplicate node ID '" + row.getNodeId() + "' in file"));
-                }
+            if (row.getNodeId() == null || row.getNodeId().isEmpty()) {
+                continue;
+            }
+            final DeviceTagRow first = firstByNodeId.putIfAbsent(row.getNodeId(), row);
+            if (first != null && !Objects.equals(first.getTagName(), row.getTagName())) {
+                errors.add(new ValidationError(
+                        i + 1,
+                        "node_id",
+                        row.getNodeId(),
+                        DUPLICATE_NODE,
+                        "Duplicate node ID '" + row.getNodeId() + "' with different tag name in file"));
             }
         }
 
-        // Check duplicate tag names
-        final Set<String> seenTagNames = new HashSet<>();
+        // Duplicate tagName: allowed if nodeId and description are identical (multi-mapping rows).
+        // Rows that share a tagName but differ in nodeId or description are rejected.
+        final Map<String, DeviceTagRow> firstByTagName = new LinkedHashMap<>();
         for (int i = 0; i < rows.size(); i++) {
             final DeviceTagRow row = rows.get(i);
-            if (row.getTagName() != null && !row.getTagName().isEmpty()) {
-                if (!seenTagNames.add(row.getTagName())) {
+            if (row.getTagName() == null || row.getTagName().isEmpty()) {
+                continue;
+            }
+            final DeviceTagRow first = firstByTagName.putIfAbsent(row.getTagName(), row);
+            if (first != null) {
+                if (!Objects.equals(first.getNodeId(), row.getNodeId())
+                        || !Objects.equals(first.getTagDescription(), row.getTagDescription())) {
                     errors.add(new ValidationError(
                             i + 1,
                             "tag_name",
                             row.getTagName(),
                             DUPLICATE_TAG_NAME,
-                            "Duplicate tag name '" + row.getTagName() + "' in file"));
+                            "Duplicate tag name '" + row.getTagName() + "' with different definition in file"));
                 }
             }
         }
@@ -331,7 +339,6 @@ public class DeviceTagValidator {
             final @NotNull List<DeviceTagRow> rows,
             final @NotNull ImportMode mode,
             final @NotNull ProtocolAdapterEntity adapter,
-            final @NotNull String adapterId,
             final @NotNull List<ValidationError> errors) {
 
         // Build nodeId-keyed maps for classification

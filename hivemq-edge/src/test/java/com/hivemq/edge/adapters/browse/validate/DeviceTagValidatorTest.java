@@ -86,6 +86,46 @@ class DeviceTagValidatorTest {
         });
     }
 
+    @Test
+    void validate_duplicateTagName_sameDefinition_allowed() {
+        // Multiple rows with same tagName, same nodeId, same description → multi-mapping, allowed
+        final List<DeviceTagRow> rows = List.of(
+                DeviceTagRow.builder()
+                        .nodeId("ns=2;i=1")
+                        .tagName("same-tag")
+                        .northboundTopic("topic/a")
+                        .build(),
+                DeviceTagRow.builder()
+                        .nodeId("ns=2;i=1")
+                        .tagName("same-tag")
+                        .northboundTopic("topic/b")
+                        .build());
+
+        final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
+
+        assertThat(errors).noneMatch(e -> e.code() == ValidationError.Code.DUPLICATE_TAG_NAME);
+        assertThat(errors).noneMatch(e -> e.code() == ValidationError.Code.DUPLICATE_NODE);
+    }
+
+    @Test
+    void validate_duplicateTagName_differentDescription_rejected() {
+        final List<DeviceTagRow> rows = List.of(
+                DeviceTagRow.builder()
+                        .nodeId("ns=2;i=1")
+                        .tagName("same-tag")
+                        .tagDescription("desc-a")
+                        .build(),
+                DeviceTagRow.builder()
+                        .nodeId("ns=2;i=1")
+                        .tagName("same-tag")
+                        .tagDescription("desc-b")
+                        .build());
+
+        final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
+
+        assertThat(errors).anySatisfy(e -> assertThat(e.code()).isEqualTo(ValidationError.Code.DUPLICATE_TAG_NAME));
+    }
+
     // --- Tag name validation ---
 
     @Test
