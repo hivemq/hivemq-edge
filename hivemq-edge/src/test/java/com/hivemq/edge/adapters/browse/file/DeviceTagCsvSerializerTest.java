@@ -394,6 +394,6 @@ class DeviceTagCsvSerializerTest {
         final byte[] csv = serializer.serialize(
                 List.of(DeviceTagRow.builder().nodeId("ns=0;i=1").build()));
         final String csvStr = new String(csv, StandardCharsets.UTF_8);
-        assertThat(csvStr).startsWith("node_path,namespace_uri,namespace_index,node_id");
+        assertThat(csvStr).startsWith("tag_name,tag_name_default,tag_description,northbound_topic");
     }
 }

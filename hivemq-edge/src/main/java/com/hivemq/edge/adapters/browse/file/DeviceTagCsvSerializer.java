@@ -47,14 +47,7 @@ import org.jetbrains.annotations.Nullable;
 @Singleton
 public class DeviceTagCsvSerializer {
 
-    // Column names in canonical order
-    static final String COL_NODE_PATH = "node_path";
-    static final String COL_NAMESPACE_URI = "namespace_uri";
-    static final String COL_NAMESPACE_INDEX = "namespace_index";
-    static final String COL_NODE_ID = "node_id";
-    static final String COL_DATA_TYPE = "data_type";
-    static final String COL_ACCESS_LEVEL = "access_level";
-    static final String COL_NODE_DESCRIPTION = "node_description";
+    // Column names — user-editable fields first, protocol-specific informational fields last
     static final String COL_TAG_NAME = "tag_name";
     static final String COL_TAG_NAME_DEFAULT = "tag_name_default";
     static final String COL_TAG_DESCRIPTION = "tag_description";
@@ -69,14 +62,14 @@ public class DeviceTagCsvSerializer {
     static final String COL_INCLUDE_TAG_NAMES = "include_tag_names";
     static final String COL_INCLUDE_METADATA = "include_metadata";
     static final String COL_MQTT_USER_PROPERTIES = "mqtt_user_properties";
+    static final String COL_NODE_PATH = "node_path";
+    static final String COL_NAMESPACE_URI = "namespace_uri";
+    static final String COL_NAMESPACE_INDEX = "namespace_index";
+    static final String COL_NODE_ID = "node_id";
+    static final String COL_DATA_TYPE = "data_type";
+    static final String COL_ACCESS_LEVEL = "access_level";
+    static final String COL_NODE_DESCRIPTION = "node_description";
     private static final String[] HEADER = {
-        COL_NODE_PATH,
-        COL_NAMESPACE_URI,
-        COL_NAMESPACE_INDEX,
-        COL_NODE_ID,
-        COL_DATA_TYPE,
-        COL_ACCESS_LEVEL,
-        COL_NODE_DESCRIPTION,
         COL_TAG_NAME,
         COL_TAG_NAME_DEFAULT,
         COL_TAG_DESCRIPTION,
@@ -90,7 +83,14 @@ public class DeviceTagCsvSerializer {
         COL_INCLUDE_TIMESTAMP,
         COL_INCLUDE_TAG_NAMES,
         COL_INCLUDE_METADATA,
-        COL_MQTT_USER_PROPERTIES
+        COL_MQTT_USER_PROPERTIES,
+        COL_NODE_PATH,
+        COL_NAMESPACE_URI,
+        COL_NAMESPACE_INDEX,
+        COL_NODE_ID,
+        COL_DATA_TYPE,
+        COL_ACCESS_LEVEL,
+        COL_NODE_DESCRIPTION
     };
     private static final CSVFormat CSV_FORMAT = CSVFormat.RFC4180
             .builder()
@@ -226,13 +226,6 @@ public class DeviceTagCsvSerializer {
                                 .build())) {
             for (final DeviceTagRow row : sorted) {
                 printer.printRecord(
-                        row.getNodePath(),
-                        row.getNamespaceUri(),
-                        row.getNamespaceIndex(),
-                        row.getNodeId(),
-                        row.getDataType(),
-                        row.getAccessLevel(),
-                        row.getNodeDescription(),
                         row.getTagName(),
                         row.getTagNameDefault(),
                         row.getTagDescription(),
@@ -246,7 +239,14 @@ public class DeviceTagCsvSerializer {
                         row.getIncludeTimestamp(),
                         row.getIncludeTagNames(),
                         row.getIncludeMetadata(),
-                        encodeUserProperties(row.getMqttUserProperties()));
+                        encodeUserProperties(row.getMqttUserProperties()),
+                        row.getNodePath(),
+                        row.getNamespaceUri(),
+                        row.getNamespaceIndex(),
+                        row.getNodeId(),
+                        row.getDataType(),
+                        row.getAccessLevel(),
+                        row.getNodeDescription());
             }
         }
         return baos.toByteArray();
