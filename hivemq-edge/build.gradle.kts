@@ -416,7 +416,7 @@ tasks.javadoc {
     val javadocCleanerResult =
         providers
             .javaexec {
-                classpath(layout.projectDirectory.file("gradle/tools/javadoc-cleaner-1.0.jar"))
+                classpath(layout.projectDirectory.file("../gradle/tools/javadoc-cleaner-1.0.jar"))
             }.result
     doLast {
         javadocCleanerResult.get()
