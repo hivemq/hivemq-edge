@@ -23,6 +23,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -211,12 +212,17 @@ public class DeviceTagCsvSerializer {
     }
 
     public byte @NotNull [] serialize(final @NotNull List<DeviceTagRow> rows) throws IOException {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        serialize(rows, baos);
+        return baos.toByteArray();
+    }
+
+    public void serialize(final @NotNull List<DeviceTagRow> rows, final @NotNull OutputStream out) throws IOException {
         final List<DeviceTagRow> sorted = rows.stream()
                 .sorted(Comparator.comparing(r -> r.getNodePath() != null ? r.getNodePath() : "", String::compareTo))
                 .toList();
 
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (final OutputStreamWriter writer = new OutputStreamWriter(baos, StandardCharsets.UTF_8);
+        try (final OutputStreamWriter writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
                 final CSVPrinter printer = new CSVPrinter(
                         writer,
                         CSVFormat.RFC4180
@@ -249,7 +255,6 @@ public class DeviceTagCsvSerializer {
                         row.getNodeDescription());
             }
         }
-        return baos.toByteArray();
     }
 
     public @NotNull List<DeviceTagRow> deserialize(final byte @NotNull [] csvData) throws IOException {

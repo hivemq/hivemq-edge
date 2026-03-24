@@ -25,6 +25,7 @@ import com.hivemq.edge.adapters.browse.model.FieldMappingInstruction;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -174,6 +175,10 @@ public class DeviceTagJsonSerializer {
 
     public byte @NotNull [] serialize(final @NotNull List<DeviceTagRow> rows) throws IOException {
         return mapper.writeValueAsBytes(toFileDto(rows));
+    }
+
+    public void serialize(final @NotNull List<DeviceTagRow> rows, final @NotNull OutputStream out) throws IOException {
+        mapper.writeValue(out, toFileDto(rows));
     }
 
     public @NotNull List<DeviceTagRow> deserialize(final byte @NotNull [] data) throws IOException {

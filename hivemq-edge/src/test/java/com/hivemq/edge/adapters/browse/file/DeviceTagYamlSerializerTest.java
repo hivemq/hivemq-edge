@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.hivemq.edge.adapters.browse.model.DeviceTagRow;
 import com.hivemq.edge.adapters.browse.model.FieldMappingInstruction;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -128,6 +129,63 @@ class DeviceTagYamlSerializerTest {
         final byte[] yaml = serializer.serialize(List.of(row));
         final String yamlStr = new String(yaml, StandardCharsets.UTF_8);
         assertThat(yamlStr).doesNotStartWith("---");
+    }
+
+    // --- Streaming serialize ---
+
+    @Test
+    void streamingSerialize_producesIdenticalOutput() throws IOException {
+        final List<DeviceTagRow> rows = List.of(
+                DeviceTagRow.builder()
+                        .nodePath("/Objects/Data/Double")
+                        .namespaceUri("urn:test")
+                        .namespaceIndex(2)
+                        .nodeId("ns=2;i=200")
+                        .dataType("Double")
+                        .tagName("dbl-tag")
+                        .northboundTopic("adapter/data/double")
+                        .maxQos(2)
+                        .build(),
+                DeviceTagRow.builder().nodeId("ns=0;i=1").build());
+
+        final byte[] fromBytes = serializer.serialize(rows);
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        serializer.serialize(rows, baos);
+
+        assertThat(baos.toByteArray()).isEqualTo(fromBytes);
+    }
+
+    @Test
+    void streamingSerialize_emptyList() throws IOException {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        serializer.serialize(List.of(), baos);
+        final List<DeviceTagRow> result = serializer.deserialize(baos.toByteArray());
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void streamingSerialize_roundTrip() throws IOException {
+        final DeviceTagRow row = DeviceTagRow.builder()
+                .nodePath("/Objects/Data/Double")
+                .nodeId("ns=2;i=200")
+                .dataType("Double")
+                .tagName("dbl-tag")
+                .tagNameDefault("adapter-double")
+                .northboundTopic("adapter/data/double")
+                .southboundTopic("adapter/write/data/double")
+                .southboundFieldMapping(List.of(new FieldMappingInstruction("val", "val")))
+                .mqttUserProperties(Map.of("env", "prod"))
+                .build();
+
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        serializer.serialize(List.of(row), baos);
+        final List<DeviceTagRow> result = serializer.deserialize(baos.toByteArray());
+
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().getNodeId()).isEqualTo("ns=2;i=200");
+        assertThat(result.getFirst().getTagName()).isEqualTo("dbl-tag");
+        assertThat(result.getFirst().getSouthboundFieldMapping()).hasSize(1);
+        assertThat(result.getFirst().getMqttUserProperties()).containsEntry("env", "prod");
     }
 
     // --- Large payload ---

@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.hivemq.edge.adapters.browse.model.DeviceTagRow;
 import com.hivemq.edge.adapters.browse.model.FieldMappingInstruction;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -371,6 +372,75 @@ class DeviceTagCsvSerializerTest {
             executor.shutdown();
         }
         assertThat(errors.get()).isZero();
+    }
+
+    // --- Streaming serialize ---
+
+    @Test
+    void streamingSerialize_producesIdenticalOutput() throws IOException {
+        final List<DeviceTagRow> rows = List.of(
+                DeviceTagRow.builder()
+                        .nodePath("/Objects/Data/Int32")
+                        .namespaceUri("urn:test")
+                        .namespaceIndex(2)
+                        .nodeId("ns=2;i=100")
+                        .dataType("Int32")
+                        .accessLevel("READ_WRITE")
+                        .tagName("my-tag")
+                        .tagNameDefault("adapter-int32")
+                        .northboundTopic("adapter/data/int32")
+                        .northboundTopicDefault("adapter/data/int32")
+                        .maxQos(1)
+                        .includeTimestamp(true)
+                        .build(),
+                DeviceTagRow.builder()
+                        .nodePath("/Objects/Data/Double")
+                        .nodeId("ns=2;i=200")
+                        .dataType("Double")
+                        .tagName("dbl-tag")
+                        .build());
+
+        final byte[] fromBytes = serializer.serialize(rows);
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        serializer.serialize(rows, baos);
+
+        assertThat(baos.toByteArray()).isEqualTo(fromBytes);
+    }
+
+    @Test
+    void streamingSerialize_emptyList() throws IOException {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        serializer.serialize(List.of(), baos);
+        final List<DeviceTagRow> result = serializer.deserialize(baos.toByteArray());
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void streamingSerialize_roundTrip() throws IOException {
+        final DeviceTagRow row = DeviceTagRow.builder()
+                .nodePath("/Objects/Data/String")
+                .nodeId("ns=2;i=300")
+                .dataType("String")
+                .accessLevel("READ")
+                .tagName("str-tag")
+                .tagNameDefault("default-str")
+                .northboundTopic("adapter/data/string")
+                .northboundTopicDefault("adapter/data/string")
+                .southboundTopic("adapter/write/data/string")
+                .southboundTopicDefault("adapter/write/data/string")
+                .southboundFieldMapping(List.of(new FieldMappingInstruction("src", "dst")))
+                .mqttUserProperties(Map.of("env", "test"))
+                .build();
+
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        serializer.serialize(List.of(row), baos);
+        final List<DeviceTagRow> result = serializer.deserialize(baos.toByteArray());
+
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().getNodeId()).isEqualTo("ns=2;i=300");
+        assertThat(result.getFirst().getTagName()).isEqualTo("str-tag");
+        assertThat(result.getFirst().getSouthboundFieldMapping()).hasSize(1);
+        assertThat(result.getFirst().getMqttUserProperties()).containsEntry("env", "test");
     }
 
     // --- CSV format specifics ---

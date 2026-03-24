@@ -38,7 +38,7 @@ import com.hivemq.protocols.ProtocolAdapterWrapper;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
-import java.io.IOException;
+import jakarta.ws.rs.core.StreamingOutput;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -115,34 +115,29 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         final List<DeviceTagRow> rows =
                 nodes.stream().map(DeviceTagRow::fromBrowsedNode).toList();
 
-        // Determine output format
+        // Determine output format and stream directly to the HTTP response
         final String format = resolveFormat(accept);
         final String extension;
         final String mediaType;
-        final byte[] data;
-        try {
-            switch (format) {
-                case APPLICATION_JSON -> {
-                    data = jsonSerializer.serialize(rows);
-                    extension = "json";
-                    mediaType = APPLICATION_JSON;
-                }
-                case MEDIA_TYPE_YAML -> {
-                    data = yamlSerializer.serialize(rows);
-                    extension = "yaml";
-                    mediaType = MEDIA_TYPE_YAML;
-                }
-                default -> {
-                    data = csvSerializer.serialize(rows);
-                    extension = "csv";
-                    mediaType = MEDIA_TYPE_CSV;
-                }
+        final StreamingOutput stream;
+        switch (format) {
+            case APPLICATION_JSON -> {
+                stream = output -> jsonSerializer.serialize(rows, output);
+                extension = "json";
+                mediaType = APPLICATION_JSON;
             }
-        } catch (final IOException e) {
-            logger.error("Failed to serialize browse results for adapter '{}'", adapterId, e);
-            return errorResponse(Response.Status.INTERNAL_SERVER_ERROR, "Serialization failed: " + e.getMessage());
+            case MEDIA_TYPE_YAML -> {
+                stream = output -> yamlSerializer.serialize(rows, output);
+                extension = "yaml";
+                mediaType = MEDIA_TYPE_YAML;
+            }
+            default -> {
+                stream = output -> csvSerializer.serialize(rows, output);
+                extension = "csv";
+                mediaType = MEDIA_TYPE_CSV;
+            }
         }
-        return Response.ok(data, mediaType)
+        return Response.ok(stream, mediaType)
                 .header(
                         "Content-Disposition",
                         "attachment; filename=\"" + adapterId + "-device-tags." + extension + "\"")
