@@ -141,6 +141,10 @@ val hivemqEdgeZip by tasks.registering(Zip::class) {
             from(moduleReleaseBinaries.elements)
         }
     }
+
+    filesMatching(listOf("**/bin/run.sh", "**/bin/init-script/hivemq")) {
+        permissions { unix("rwxr-xr-x") }
+    }
 }
 
 val edgeProjectsToUpdate = setOf(
