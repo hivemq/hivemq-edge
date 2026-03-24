@@ -39,7 +39,6 @@ public record ValidationError(
         ADAPTER_NOT_FOUND,
         DUPLICATE_NODE,
         DUPLICATE_TAG_NAME,
-        EDGE_TAG_CONFLICT,
         INVALID_EXPIRY,
         INVALID_FIELD_MAPPING,
         INVALID_NODE_ID,

@@ -729,7 +729,7 @@ class DeviceTagValidatorTest {
     }
 
     @Test
-    void validate_edgeTagConflict_otherAdapter() {
+    void validate_sameTagNameOnOtherAdapter_allowed() {
         final ProtocolAdapterEntity myAdapter =
                 new ProtocolAdapterEntity("adapter1", "opcua", 1, Map.of(), List.of(), List.of(), List.of());
         final ProtocolAdapterEntity otherAdapter = new ProtocolAdapterEntity(
@@ -749,10 +749,8 @@ class DeviceTagValidatorTest {
 
         final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
 
-        assertThat(errors).anySatisfy(e -> {
-            assertThat(e.code()).isEqualTo(ValidationError.Code.EDGE_TAG_CONFLICT);
-            assertThat(e.message()).contains("adapter2");
-        });
+        // Tag names are scoped to their adapter — same name on another adapter is not a conflict
+        assertThat(errors).noneMatch(e -> e.value() != null && e.value().equals("shared-tag"));
     }
 
     // --- Row numbers are 1-indexed ---

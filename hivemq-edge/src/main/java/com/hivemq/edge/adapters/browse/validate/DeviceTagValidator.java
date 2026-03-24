@@ -17,7 +17,6 @@ package com.hivemq.edge.adapters.browse.validate;
 
 import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.DUPLICATE_NODE;
 import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.DUPLICATE_TAG_NAME;
-import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.EDGE_TAG_CONFLICT;
 import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.INVALID_EXPIRY;
 import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.INVALID_FIELD_MAPPING;
 import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.INVALID_NODE_ID;
@@ -374,32 +373,6 @@ public class DeviceTagValidator {
                             tagName,
                             TAG_IN_USE_BY_COMBINER,
                             "Tag '" + tagName + "' is in use by a combiner and cannot be deleted"));
-                }
-            }
-        }
-
-        // Cross-adapter tagName conflict check (still by tagName — unchanged)
-        for (final DeviceTagRow row : rows) {
-            if (!row.hasTag()) {
-                continue;
-            }
-            final String tagName = row.getTagName();
-            for (final ProtocolAdapterEntity otherAdapter : adapterExtractor.getAllConfigs()) {
-                if (otherAdapter.getAdapterId().equals(adapterId)) {
-                    continue;
-                }
-                for (final TagEntity otherTag : otherAdapter.getTags()) {
-                    if (otherTag.getName().equals(tagName)) {
-                        errors.add(new ValidationError(
-                                null,
-                                "tag_name",
-                                tagName,
-                                EDGE_TAG_CONFLICT,
-                                "Tag name '" + tagName
-                                        + "' is already used by adapter '"
-                                        + otherAdapter.getAdapterId()
-                                        + "'"));
-                    }
                 }
             }
         }
