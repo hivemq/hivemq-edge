@@ -8053,6 +8053,10 @@ components:
           type: boolean
           description: Should tag names be included when sent out.
           default: false
+        includeMetadata:
+          type: boolean
+          description: Should tag metadata entries be included when sent out.
+          default: false
         includeTimestamp:
           type: boolean
           description: Should the timestamp be included when sent out.

@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Payload;
@@ -129,6 +128,13 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
         if (dataPoint instanceof final DataPointWithMetadata dpMeta) {
             node.set("value", dpMeta.getTagValue());
             node.set("timestamp", JsonNodeFactory.instance.numberNode(dpMeta.getTimestamp()));
+            if (northboundMapping.getIncludeMetadata()) {
+                dpMeta.getMetadata()
+                        .ifPresentOrElse(
+                                metadata -> node.set("metadata", objectMapper.convertValue(metadata, JsonNode.class)),
+                                () -> node.set("metadata", JsonNodeFactory.instance.nullNode())
+                        );
+            }
         } else {
             if (dataPoint.treatTagValueAsJson()) {
                 final JsonNode jsonValue = objectMapper.readTree((String) dataPoint.getTagValue());

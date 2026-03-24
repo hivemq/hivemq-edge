@@ -254,6 +254,7 @@ class ProtocolAdaptersResourceImplTest {
                                                 null,
                                                 false,
                                                 true,
+                                                false,
                                                 List.of(),
                                                 1234L + i),
                                         new NorthboundMappingEntity(
@@ -263,6 +264,7 @@ class ProtocolAdaptersResourceImplTest {
                                                 null,
                                                 false,
                                                 true,
+                                                false,
                                                 List.of(),
                                                 1234L + i)),
                                 List.of(),
@@ -352,7 +354,7 @@ class ProtocolAdaptersResourceImplTest {
 
         final com.hivemq.configuration.entity.adapter.NorthboundMappingEntity northboundMapping =
                 new com.hivemq.configuration.entity.adapter.NorthboundMappingEntity(
-                        tagName, "test/topic", 1, null, false, true, List.of(), null);
+                        tagName, "test/topic", 1, null, false, true, false, List.of(), null);
 
         final com.hivemq.configuration.entity.adapter.TagEntity tagEntity =
                 new com.hivemq.configuration.entity.adapter.TagEntity(
@@ -402,7 +404,7 @@ class ProtocolAdaptersResourceImplTest {
 
         final com.hivemq.configuration.entity.adapter.NorthboundMappingEntity northboundMapping =
                 new com.hivemq.configuration.entity.adapter.NorthboundMappingEntity(
-                        tagName, "sensors/data", 1, null, false, true, List.of(), null);
+                        tagName, "sensors/data", 1, null, false, true, false, List.of(), null);
 
         final com.hivemq.configuration.entity.adapter.SouthboundMappingEntity southboundMapping =
                 new com.hivemq.configuration.entity.adapter.SouthboundMappingEntity(
@@ -460,7 +462,7 @@ class ProtocolAdaptersResourceImplTest {
 
         final com.hivemq.configuration.entity.adapter.NorthboundMappingEntity northboundMapping =
                 new com.hivemq.configuration.entity.adapter.NorthboundMappingEntity(
-                        oldTagName, "test/topic", 1, null, false, true, List.of(), null);
+                        oldTagName, "test/topic", 1, null, false, true, false, List.of(), null);
 
         final com.hivemq.configuration.entity.adapter.TagEntity tagEntity =
                 new com.hivemq.configuration.entity.adapter.TagEntity(
@@ -518,7 +520,7 @@ class ProtocolAdaptersResourceImplTest {
 
         final com.hivemq.configuration.entity.adapter.NorthboundMappingEntity northboundMapping =
                 new com.hivemq.configuration.entity.adapter.NorthboundMappingEntity(
-                        tagName, "test/topic", 1, null, false, true, List.of(), null);
+                        tagName, "test/topic", 1, null, false, true, false, List.of(), null);
 
         final com.hivemq.configuration.entity.adapter.TagEntity tagEntity =
                 new com.hivemq.configuration.entity.adapter.TagEntity(
@@ -550,7 +552,7 @@ class ProtocolAdaptersResourceImplTest {
 
         final com.hivemq.configuration.entity.adapter.NorthboundMappingEntity northboundMapping =
                 new com.hivemq.configuration.entity.adapter.NorthboundMappingEntity(
-                        tag1Name, "test/topic", 1, null, false, true, List.of(), null);
+                        tag1Name, "test/topic", 1, null, false, true, false, List.of(), null);
 
         final com.hivemq.configuration.entity.adapter.TagEntity tag1Entity =
                 new com.hivemq.configuration.entity.adapter.TagEntity(
