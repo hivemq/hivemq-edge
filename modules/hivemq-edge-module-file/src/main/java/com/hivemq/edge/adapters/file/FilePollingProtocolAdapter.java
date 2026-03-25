@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.file;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -27,14 +28,14 @@ import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.file.config.FileSpecificAdapterConfig;
 import com.hivemq.edge.adapters.file.convertion.MappingException;
-import com.hivemq.edge.adapters.file.payload.FileDataPoint;
 import com.hivemq.edge.adapters.file.tag.FileTag;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.LoggerFactory;
 
 public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
 
@@ -88,6 +89,7 @@ public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
 
     @Override
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
+        final var dataPointsPublisher = pollingOutput.dataPointsPublisher();
         String absolutePathToFle = "";
         try {
             for (final FileTag fileTag : tags) {
@@ -106,8 +108,15 @@ public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
                     pollingOutput.fail("Failed to map file content to a value for tag '" + fileTag.getName() + "'.");
                     return;
                 }
-                pollingOutput.addDataPoint(new FileDataPoint(fileTag, value));
+                var dataPoint = dataPointsPublisher.addDataPoint(fileTag);
+                switch (value) {
+                    case final JsonNode jsonNode -> dataPoint.value(jsonNode);
+                    case final String str -> dataPoint.value(str);
+                    case final byte[] bytes -> dataPoint.value(bytes);
+                    default -> dataPoint.value(value.toString());
+                }
             }
+            dataPointsPublisher.publish();
         } catch (final IOException e) {
             LOG.warn("An exception occurred while reading the file '{}'.", absolutePathToFle, e);
             pollingOutput.fail(e, "An exception occurred while reading the file '" + absolutePathToFle + "'.");
@@ -118,7 +127,6 @@ public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
                     e.getMessage());
             pollingOutput.fail(e, "An exception occurred while reading the file '" + absolutePathToFle + "'.");
         }
-        pollingOutput.finish();
     }
 
     @Override
