@@ -16,6 +16,7 @@
 package com.hivemq.protocols;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
@@ -568,7 +569,7 @@ public class ProtocolAdapterWrapper {
      * @return {@code true} if the southbound connection was established or not needed
      */
     protected boolean startSouthbound() {
-        if (!adapter.supportsSouthbound()) {
+        if (!adapter.getProtocolAdapterInformation().getCapabilities().contains(ProtocolAdapterCapability.WRITE)) {
             LOGGER.debug("Adapter '{}' does not support southbound, skipping.", getAdapterId());
             return true;
         }
@@ -642,7 +643,7 @@ public class ProtocolAdapterWrapper {
      * @return {@code true} if the southbound connection was disconnected or not needed
      */
     protected boolean stopSouthbound() {
-        if (!adapter.supportsSouthbound()) {
+        if (!adapter.getProtocolAdapterInformation().getCapabilities().contains(ProtocolAdapterCapability.WRITE)) {
             return true;
         }
 

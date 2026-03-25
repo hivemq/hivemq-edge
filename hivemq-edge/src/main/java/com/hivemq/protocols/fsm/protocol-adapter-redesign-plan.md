@@ -25,6 +25,7 @@ This section is the authoritative implementation delta for the latest review pas
 | 10. Old tests are `@Disabled` (FQN form) | ✅ Verified | `ProtocolAdapterManagerTest` and `ProtocolAdapterWrapperShutdownRaceConditionTest` use `@org.junit.jupiter.api.Disabled` (FQN). They are disabled and safe to delete. |
 | 11. Phase 7 Step 3/4 ordering conflict | ✅ Plan updated | Steps reordered: delete old files first (Step 3), then rename `*2` files (Step 4). This avoids duplicate class names in `com.hivemq.protocols`. |
 | 12. Phase 7 Steps 3-5 executed | ✅ Complete | Old files deleted, `*2` classes renamed (via `git mv`), all references updated across hivemq-edge, commercial-modules, and hivemq-edge-test. `grep` confirms zero `*2` references remain. Compilation passes (only pre-existing NullAway errors). |
+| 13. `supportsSouthbound()` removed from SDK | ✅ Complete | Removed `default boolean supportsSouthbound()` from `ProtocolAdapter` interface. Callers (`ProtocolAdapterWrapper`) now use `adapter.getProtocolAdapterInformation().getCapabilities().contains(ProtocolAdapterCapability.WRITE)` directly. All tests updated. |
 
 **Working-log note (2026-03-20)**: Sections 3.1, 3.2 (code examples), 4.1, 4.3 contain the
 **original reference design** that used a separate `ProtocolAdapter2` interface with
@@ -131,14 +132,14 @@ cause unpredictable behavior.
 - The `southboundConnectionState` remains `Disconnected` (never transitions)
 - `startSouthbound()` returns `true` immediately (no-op)
 - `stopSouthbound()` returns `true` immediately (no-op)
-- The adapter's `supportsSouthbound()` method returns `false`
+- The adapter's capabilities do not include `ProtocolAdapterCapability.WRITE`
 - When checking "both connections Disconnected", we treat non-existent southbound as Disconnected
 
 ```java
 // Example: Checking if adapter can transition to Idle
 boolean canTransitionToIdle() {
     boolean northboundReady = northboundState.isDisconnected();
-    boolean southboundReady = !supportsSouthbound() || southboundState.isDisconnected();
+    boolean southboundReady = !capabilities.contains(ProtocolAdapterCapability.WRITE) || southboundState.isDisconnected();
     return northboundReady && southboundReady;
 }
 ```
@@ -556,9 +557,12 @@ public class ProtocolAdapterWrapper2 {
 
     /**
      * Check if adapter supports southbound communication.
+     * NOTE: supportsSouthbound() was removed from the SDK interface.
+     * Callers now check capabilities directly.
      */
     private boolean supportsSouthbound() {
-        return adapter.supportsSouthbound();
+        return adapter.getProtocolAdapterInformation().getCapabilities()
+                .contains(ProtocolAdapterCapability.WRITE);
     }
 
     /**
@@ -961,7 +965,7 @@ support the plugin architecture where adapter modules only see the SDK.
 - [x] Implement basic `ProtocolAdapterWrapper2.stop()` (state transitions and connection teardown)
 - [x] Add adapter precheck calls (`adapter.precheck()`) during start
 - [x] Implement connection error handling (try/catch around adapter connect/disconnect calls)
-- [x] Add southbound capability check (`supportsSouthbound()`)
+- [x] Add southbound capability check (via `ProtocolAdapterCapability.WRITE`)
 - [x] Add cleanup on partial start failure (disconnect northbound if southbound fails)
 - [x] Add `destroy` flag support in `stop(boolean destroy)`
 - [x] Add `Error` as valid transition from `Stopping` state
@@ -1045,7 +1049,7 @@ That intermediate design was later merged back into `ProtocolAdapter` (see Phase
 - [x] Delete SDK `ProtocolAdapter2Bridge.java`
 - [x] Update core imports in `ProtocolAdapterWrapper2`, `ProtocolAdapterManager2`, and their tests
 - [x] Create per-module `*ProtocolAdapter2` subclasses (10 modules):
-  - [x] OPC UA (`OpcUaProtocolAdapter2` — `supportsSouthbound() → true`)
+  - [x] OPC UA (`OpcUaProtocolAdapter2` — capabilities include `WRITE`)
   - [x] Modbus (`ModbusProtocolAdapter2`)
   - [x] HTTP (`HttpProtocolAdapter2`)
   - [x] File (`FileProtocolAdapter2`)
@@ -1160,7 +1164,7 @@ implementations. All renamed classes stay in the `fsm` package (or the adapter S
 | `ProtocolAdapterDefaultMethodsTest` (fsm test) | Keep | _(covers default-method compatibility path after bridge removal)_ |
 | `ProtocolAdapterManager2Test` (`com.hivemq.protocols` test) | Rename | `ProtocolAdapterManagerTest` (`com.hivemq.protocols`) |
 | 10× per-module `*ProtocolAdapter2` | Delete | _(bridge subclasses; no longer needed)_ |
-| 10× per-module `*ProtocolAdapter2Test` | Rename (drop `2`) | Same package, test factory wiring + `supportsSouthbound()` |
+| 10× per-module `*ProtocolAdapter2Test` | Rename (drop `2`) | Same package, test factory wiring + capabilities |
 
 **Old code to delete**:
 
@@ -1221,13 +1225,11 @@ default void stop(
 // Validate configuration before starting. Default is no-op.
 default void precheck() throws ProtocolAdapterException {}
 
-// Whether this adapter supports southbound (MQTT → device).
-// Default checks capabilities for WRITE.
-default boolean supportsSouthbound() {
-    return getProtocolAdapterInformation().getCapabilities()
-            .contains(ProtocolAdapterCapability.WRITE);
-}
 ```
+
+**Note**: `supportsSouthbound()` was removed from the SDK interface. Southbound capability is
+determined by checking `adapter.getProtocolAdapterInformation().getCapabilities().contains(ProtocolAdapterCapability.WRITE)`
+directly in `ProtocolAdapterWrapper`.
 
 **Delegation pattern**: The 3-arg `start(direction, input, output)` default delegates DOWN to the
 2-arg `start(input, output)`. The 2-arg default is the base case (`output.startedSuccessfully()`).
@@ -1236,8 +1238,8 @@ delegates to their override. Adapters needing direction-awareness (OPC UA) overr
 version directly. Same pattern for `stop`.
 
 **Tasks**:
-- [x] Add `start(direction, input, output)`, `stop(direction, input, output)`, `precheck()`,
-      `supportsSouthbound()` to `ProtocolAdapter` with default implementations
+- [x] Add `start(direction, input, output)`, `stop(direction, input, output)`, `precheck()`
+      to `ProtocolAdapter` with default implementations (~~`supportsSouthbound()`~~ removed — capability check moved to wrapper)
 - [x] Add backward-compatible 2-arg `start(input, output)` and `stop(input, output)` base-case
       overloads (the 3-arg versions delegate DOWN to these; 2-arg defaults signal success)
 - [x] Update adapter implementations:
@@ -1259,16 +1261,17 @@ version directly. Same pattern for `stop`.
 
 #### Step 2: Remove per-module `*ProtocolAdapter2` classes, rename tests (10 modules)
 
-The per-module bridge subclasses are no longer needed — `ProtocolAdapter` has a default
-`supportsSouthbound()` that checks capabilities, so no per-module override is required.
+The per-module bridge subclasses are no longer needed — southbound capability is determined
+by `ProtocolAdapterCapability.WRITE` in the adapter's capabilities, so no per-module override
+is required.
 
 The per-module tests are kept — they validate that each factory creates an adapter with the
-correct `supportsSouthbound()` behavior and other factory wiring. They are renamed to drop the
-`2` suffix.
+correct capability declarations and other factory wiring. They are renamed to drop the `2`
+suffix.
 
 - [x] Delete all 10 per-module `*ProtocolAdapter2.java` source files
 - [x] Rename all 10 per-module `*ProtocolAdapter2Test.java` → drop the `2` suffix
-- [x] Update renamed tests to call `factory.createAdapter()` and assert `supportsSouthbound()`,
+- [x] Update renamed tests to call `factory.createAdapter()` and assert capabilities,
       `start()`, `stop()` behavior directly on the returned `ProtocolAdapter`
 
 Source files deleted:
@@ -1422,7 +1425,7 @@ The existing tests define the correct behavior contract.
 4. Error recovery works correctly
 5. No performance regression (< 5% slower startup)
 6. Code complexity reduced (fewer callbacks, no nested futures)
-7. Single `ProtocolAdapter` interface with `start(direction)`/`stop(direction)` — no `ProtocolAdapter2`, no bridge classes
+7. Single `ProtocolAdapter` interface with `start(direction)`/`stop(direction)` — no `ProtocolAdapter2`, no bridge classes, no `supportsSouthbound()` (capability check moved to wrapper)
 8. No old dead code remaining (`ProtocolAdapterWrapper`, `ProtocolAdapterManager` in `com.hivemq.protocols`)
 9. No `*2` suffixed class names remain anywhere in the codebase
 
@@ -1437,8 +1440,10 @@ The existing tests define the correct behavior contract.
 
    **Decision**: (C) — direct modification. `ProtocolAdapter2` and `ProtocolAdapter2Bridge` were
    eliminated. The existing `ProtocolAdapter` interface gained `start(direction, input, output)` /
-   `stop(direction, input, output)` / `precheck()` / `supportsSouthbound()`. All adapters were
-   updated in-place. No bridge subclasses remain.
+   `stop(direction, input, output)` / `precheck()`. `supportsSouthbound()` was initially added
+   as a default method but later removed — southbound capability is now determined by checking
+   `ProtocolAdapterCapability.WRITE` directly in the wrapper. All adapters were updated in-place.
+   No bridge subclasses remain.
 
 2. **Connection Timeout Configuration**: Should timeout be:
    - (A) Configured per-adapter in adapter config?
