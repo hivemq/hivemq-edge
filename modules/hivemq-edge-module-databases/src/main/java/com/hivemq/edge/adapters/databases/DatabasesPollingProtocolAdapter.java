@@ -18,10 +18,10 @@ package com.hivemq.edge.adapters.databases;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
-import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
+import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -59,7 +59,6 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
     private final @NotNull String adapterId;
     private final @NotNull List<Tag> tags;
     private final @NotNull DatabaseConnection databaseConnection;
-    private final @NotNull AdapterFactories adapterFactories;
 
     public DatabasesPollingProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -69,7 +68,6 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.tags = input.getTags();
-        this.adapterFactories = input.adapterFactories();
 
         log.debug("Building connection string");
 
@@ -165,13 +163,17 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         /* Connect to the database and execute the query */
         log.debug("Handling tags for the adapter");
-        tags.forEach(tag -> loadDataFromDB(pollingOutput, (DatabasesAdapterTag) tag));
+        final var dataPointsPublisher = pollingOutput.dataPointsPublisher();
+        tags.forEach(tag -> loadDataFromDB(pollingOutput, dataPointsPublisher, (DatabasesAdapterTag) tag));
 
         protocolAdapterState.setConnectionStatus(STATELESS);
-        pollingOutput.finish();
+        dataPointsPublisher.publish();
     }
 
-    private void loadDataFromDB(final @NotNull BatchPollingOutput output, final @NotNull DatabasesAdapterTag tag) {
+    private void loadDataFromDB(
+            final @NotNull BatchPollingOutput output,
+            final @NotNull DataPointListBuilder dataPointsPublisher,
+            final @NotNull DatabasesAdapterTag tag) {
         // ARM to ensure the connection is closed afterward
         try (final Connection connection = databaseConnection.getConnection()) {
             log.debug("Getting tag definition");
@@ -184,7 +186,6 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
             assert result != null;
             final ArrayList<ObjectNode> resultObject = new ArrayList<>();
             final ResultSetMetaData resultSetMD = result.getMetaData();
-            final DataPointFactory dataPointFactory = adapterFactories.dataPointFactory();
             while (result.next()) {
                 final int numColumns = resultSetMD.getColumnCount();
                 final ObjectNode node = OBJECT_MAPPER.createObjectNode();
@@ -196,7 +197,7 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
                 if (definition.getSpiltLinesInIndividualMessages()) {
                     log.debug("Creating unique message");
                     log.debug("Value : {}", node);
-                    output.addDataPoint(dataPointFactory.create(tag.getName(), node));
+                    dataPointsPublisher.addDataPoint(tag).value(node);
                 } else {
                     resultObject.add(node);
                 }
@@ -206,7 +207,9 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
             if (!definition.getSpiltLinesInIndividualMessages()) {
                 log.debug("Publishing all lines in a single message");
                 log.debug("Value : {}", resultObject);
-                output.addDataPoint(dataPointFactory.create(tag.getName(), resultObject));
+                final ArrayNode arrayNode = OBJECT_MAPPER.createArrayNode();
+                arrayNode.addAll(resultObject);
+                dataPointsPublisher.addDataPoint(tag).value(arrayNode);
             }
         } catch (final Exception e) {
             output.fail(e, null);
