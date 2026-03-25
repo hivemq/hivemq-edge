@@ -26,11 +26,10 @@ import com.hivemq.edge.modules.adapters.data.ProtocolAdapterPublisherJsonPayload
 import com.hivemq.edge.modules.adapters.data.TagSample;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @Singleton
 @Deprecated // Should be removed in one of the next releases. All logic for this is in the NorthboundTagConsumer

@@ -69,18 +69,22 @@ public class OpcUaToJsonConverter {
         if (dataValue.getSourceTime() != null) {
             metadataBuilder.put(
                     "sourceTimestamp",
-                    DateTimeFormatter.ISO_INSTANT.format(dataValue.getSourceTime().getJavaInstant()));
+                    DateTimeFormatter.ISO_INSTANT.format(
+                            dataValue.getSourceTime().getJavaInstant()));
         }
         if (dataValue.getSourcePicoseconds() != null) {
-            metadataBuilder.put("sourcePicoseconds", dataValue.getSourcePicoseconds().intValue());
+            metadataBuilder.put(
+                    "sourcePicoseconds", dataValue.getSourcePicoseconds().intValue());
         }
         if (dataValue.getServerTime() != null) {
             metadataBuilder.put(
                     "serverTimestamp",
-                    DateTimeFormatter.ISO_INSTANT.format(dataValue.getServerTime().getJavaInstant()));
+                    DateTimeFormatter.ISO_INSTANT.format(
+                            dataValue.getServerTime().getJavaInstant()));
         }
         if (dataValue.getServerPicoseconds() != null) {
-            metadataBuilder.put("serverPicoseconds", dataValue.getServerPicoseconds().intValue());
+            metadataBuilder.put(
+                    "serverPicoseconds", dataValue.getServerPicoseconds().intValue());
         }
         metadataBuilder.endObject();
     }

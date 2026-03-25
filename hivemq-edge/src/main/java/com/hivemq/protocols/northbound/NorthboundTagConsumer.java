@@ -132,8 +132,7 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
                 dpMeta.getMetadata()
                         .ifPresentOrElse(
                                 metadata -> node.set("metadata", objectMapper.convertValue(metadata, JsonNode.class)),
-                                () -> node.set("metadata", JsonNodeFactory.instance.nullNode())
-                        );
+                                () -> node.set("metadata", JsonNodeFactory.instance.nullNode()));
             }
         } else {
             if (dataPoint.treatTagValueAsJson()) {
