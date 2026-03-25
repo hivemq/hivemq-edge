@@ -71,7 +71,7 @@ public class ProtocolAdapterDataSampleImpl implements ProtocolAdapterDataSample 
     }
 
     @Override
-    public @NotNull List<DataPoint> getDataPointsList() {
+    public @NotNull List<DataPoint> getDataPointList() {
         return List.copyOf(dataPoints);
     }
 }

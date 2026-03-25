@@ -163,7 +163,7 @@ public class DatabasesPollingProtocolAdapter implements BatchPollingProtocolAdap
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         /* Connect to the database and execute the query */
         log.debug("Handling tags for the adapter");
-        final var dataPointsPublisher = pollingOutput.dataPointsPublisher();
+        final var dataPointsPublisher = pollingOutput.dataPointListPublisher();
         tags.forEach(tag -> loadDataFromDB(pollingOutput, dataPointsPublisher, (DatabasesAdapterTag) tag));
 
         protocolAdapterState.setConnectionStatus(STATELESS);

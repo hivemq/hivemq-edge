@@ -98,7 +98,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     @Override
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         final Plc4xConnection<T> tempConnection = connection;
-        final var dataPointsPublisher = pollingOutput.dataPointsPublisher();
+        final var dataPointsPublisher = pollingOutput.dataPointListPublisher();
         if (tempConnection != null && tempConnection.isConnected()) {
             if (!tags.isEmpty()) {
                 @SuppressWarnings("unused")

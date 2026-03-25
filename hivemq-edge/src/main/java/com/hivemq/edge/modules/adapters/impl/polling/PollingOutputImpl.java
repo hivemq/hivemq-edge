@@ -43,7 +43,7 @@ public class PollingOutputImpl implements PollingOutput, BatchPollingOutput {
     }
 
     @Override
-    public @NotNull DataPointListBuilder dataPointsPublisher() {
+    public @NotNull DataPointListBuilder dataPointListPublisher() {
         return new DataPointListBuilderImpl(
                 toEnrich -> {
                     toEnrich.startObjectContext().put("key", "value").endObject();
@@ -66,7 +66,7 @@ public class PollingOutputImpl implements PollingOutput, BatchPollingOutput {
 
     @Override
     public void finish() {
-        if (dataSample.getDataPointsList().isEmpty()) {
+        if (dataSample.getDataPointList().isEmpty()) {
             outputFuture.complete(PollingResult.NO_DATA);
         } else {
             outputFuture.complete(PollingResult.SUCCESS);

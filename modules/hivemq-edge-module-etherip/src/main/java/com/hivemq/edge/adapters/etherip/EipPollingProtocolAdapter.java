@@ -117,7 +117,7 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
             return;
         }
 
-        final var dataPointsPublisher = pollingOutput.dataPointsPublisher();
+        final var dataPointsPublisher = pollingOutput.dataPointListPublisher();
         final var tagAddresses =
                 tags.values().stream().map(v -> v.getDefinition().getAddress()).toArray(String[]::new);
         final boolean publishChangedDataOnly =
