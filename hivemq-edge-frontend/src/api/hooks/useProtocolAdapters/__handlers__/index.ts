@@ -47,7 +47,7 @@ export const mockUISchema: UiSchema = {
     simulationToMqttMappings: {
       'ui:batchMode': true,
       items: {
-        'ui:order': ['mqttTopic', 'mqttQos', 'mqttUserProperties', 'includeTimestamp', 'includeTagNames', 'includeMEtadata', '*'],
+        'ui:order': ['mqttTopic', 'mqttQos', 'mqttUserProperties', 'includeTimestamp', 'includeTagNames', 'includeMetadata', '*'],
         'ui:collapsable': {
           titleKey: 'mqttTopic',
         },
