@@ -102,19 +102,17 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
             if (!tags.isEmpty()) {
                 final var dataPointsPublisher = pollingOutput.dataPointsPublisher();
                 @SuppressWarnings("unused")
-                final var unused = tempConnection
-                        .read(tags)
-                        .whenComplete((response, t) -> {
-                            if (t != null) {
-                                pollingOutput.fail(t, null);
-                            } else {
-                                final var mqttConfig = adapterConfig.getPlc4xToMqttConfig();
-                                final boolean publishChangedDataOnly =
-                                        mqttConfig != null && mqttConfig.getPublishChangedDataOnly();
-                                processReadResponse(tags, response, dataPointsPublisher, publishChangedDataOnly);
-                                dataPointsPublisher.publish();
-                            }
-                        });
+                final var unused = tempConnection.read(tags).whenComplete((response, t) -> {
+                    if (t != null) {
+                        pollingOutput.fail(t, null);
+                    } else {
+                        final var mqttConfig = adapterConfig.getPlc4xToMqttConfig();
+                        final boolean publishChangedDataOnly =
+                                mqttConfig != null && mqttConfig.getPublishChangedDataOnly();
+                        processReadResponse(tags, response, dataPointsPublisher, publishChangedDataOnly);
+                        dataPointsPublisher.publish();
+                    }
+                });
             } else {
                 // When no tags are present we keep the connection and just check it
                 tempConnection.lazyConnectionCheck();

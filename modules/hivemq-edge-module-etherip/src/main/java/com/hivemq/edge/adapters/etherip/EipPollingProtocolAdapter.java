@@ -120,7 +120,8 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
         final var dataPointsPublisher = pollingOutput.dataPointsPublisher();
         final var tagAddresses =
                 tags.values().stream().map(v -> v.getDefinition().getAddress()).toArray(String[]::new);
-        final boolean publishChangedDataOnly = adapterConfig.getEipToMqttConfig().getPublishChangedDataOnly();
+        final boolean publishChangedDataOnly =
+                adapterConfig.getEipToMqttConfig().getPublishChangedDataOnly();
         try {
             final var readCipData = client.readTags(tagAddresses);
             for (int i = 0; i < readCipData.length; i++) {
@@ -130,8 +131,7 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
                         .ifPresent(etherIpValue -> {
                             final var tag = Objects.requireNonNull(tags.get(tagAddress));
                             final var value = etherIpValue.getValue();
-                            if (!publishChangedDataOnly
-                                    || lastSamples.replaceIfValueIsNew(tag.getName(), value)) {
+                            if (!publishChangedDataOnly || lastSamples.replaceIfValueIsNew(tag.getName(), value)) {
                                 final var builder = dataPointsPublisher.addDataPoint(tag);
                                 switch (value) {
                                     case final Boolean val -> builder.value(val);
