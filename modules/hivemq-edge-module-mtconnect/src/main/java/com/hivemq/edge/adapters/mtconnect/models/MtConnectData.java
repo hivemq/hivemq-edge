@@ -16,24 +16,34 @@
 package com.hivemq.edge.adapters.mtconnect.models;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class MtConnectData {
     private final @NotNull String url;
     private final @NotNull String tagName;
+    private final @NotNull Tag tag;
     private boolean successful;
     private @Nullable JsonNode jsonNode;
     private @Nullable String errorMessage;
     private @Nullable Throwable cause;
 
-    public MtConnectData(@NotNull final String url, final boolean successful, final @NotNull String tagName) {
+    public MtConnectData(
+            @NotNull final String url,
+            final boolean successful,
+            final @NotNull Tag tag) {
         this.url = url;
         this.successful = successful;
-        this.tagName = tagName;
+        this.tag = tag;
+        this.tagName = tag.getName();
         jsonNode = null;
         errorMessage = null;
         cause = null;
+    }
+
+    public @NotNull Tag getTag() {
+        return tag;
     }
 
     public @NotNull String getTagName() {

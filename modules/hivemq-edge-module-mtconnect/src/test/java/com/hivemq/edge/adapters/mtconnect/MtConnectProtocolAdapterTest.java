@@ -30,7 +30,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
+import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -44,6 +45,7 @@ import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterConfig;
 import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterHttpHeader;
 import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTag;
 import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTagDefinition;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
 import com.hivemq.mtconnect.protocol.schemas.MtConnectSchema;
 import jakarta.xml.bind.JAXBException;
@@ -147,7 +149,13 @@ public class MtConnectProtocolAdapterTest {
                                 List.of(new MtConnectAdapterHttpHeader("name", "value"))))));
         final ArgumentCaptor<ProtocolAdapterState.ConnectionStatus> argumentCaptorConnectionStatus =
                 ArgumentCaptor.forClass(ProtocolAdapterState.ConnectionStatus.class);
-        final ArgumentCaptor<DataPoint> argumentCaptorDataPoint = ArgumentCaptor.forClass(DataPoint.class);
+        final ArgumentCaptor<JsonNode> argumentCaptorJsonNode = ArgumentCaptor.forClass(JsonNode.class);
+        @SuppressWarnings("unchecked")
+        final DataPointBuilder<DataPointListBuilder> dataPointBuilder = mock(DataPointBuilder.class);
+        final DataPointListBuilder dataPointsPublisher = mock(DataPointListBuilder.class);
+        when(pollingOutput.dataPointsPublisher()).thenReturn(dataPointsPublisher);
+        when(dataPointsPublisher.addDataPoint(any())).thenReturn(dataPointBuilder);
+        when(dataPointBuilder.value(any(JsonNode.class))).thenReturn(dataPointBuilder);
         final HttpResponse<String> httpResponse = (HttpResponse<String>) mock(HttpResponse.class);
         when(httpResponse.statusCode()).thenReturn(200);
         when(httpResponse.body())
@@ -169,18 +177,17 @@ public class MtConnectProtocolAdapterTest {
         assertThat(adapter.getId()).as("ID should be 'test'").isEqualTo("streams");
         adapter.start(startInput, startOutput);
         adapter.poll(pollingInput, pollingOutput);
-        verify(pollingOutput).finish();
+        verify(dataPointsPublisher).publish();
         verify(state, times(2)).setConnectionStatus(argumentCaptorConnectionStatus.capture());
         assertThat(argumentCaptorConnectionStatus.getAllValues())
                 .isEqualTo(List.of(
                         ProtocolAdapterState.ConnectionStatus.STATELESS,
                         ProtocolAdapterState.ConnectionStatus.STATELESS));
-        verify(pollingOutput).addDataPoint(argumentCaptorDataPoint.capture());
+        verify(dataPointBuilder).value(argumentCaptorJsonNode.capture());
         final HttpHeaders httpHeaders = argumentCaptorHttpRequest.getValue().headers();
         assertThat(httpHeaders.firstValue("name").orElse("")).isEqualTo("value");
         assertThat(httpHeaders.firstValue("User-Agent").orElse("")).startsWith("HiveMQ-Edge");
-        assertThat(argumentCaptorDataPoint.getValue().getTagName()).isEqualTo("tagName");
-        final JsonNode jsonNode = (JsonNode) argumentCaptorDataPoint.getValue().getTagValue();
+        final JsonNode jsonNode = argumentCaptorJsonNode.getValue();
         assertThat(jsonNode).isNotNull();
         assertThat(jsonNode.get(MtConnectProtocolAdapter.NODE_SCHEMA_LOCATION).asText())
                 .isEqualTo("urn:nist.gov:NistStreams:1.3 /schemas/NistStreams_1.3.xsd");
