@@ -167,7 +167,7 @@ public class NorthboundMappingEntity implements EntityValidatable {
     }
 
     public boolean isIncludeMetadata() {
-        return includeMetadata == null || includeMetadata; // default is false
+        return includeMetadata != null && includeMetadata; // default is false
     }
 
     public @NotNull List<MqttUserPropertyEntity> getUserProperties() {
