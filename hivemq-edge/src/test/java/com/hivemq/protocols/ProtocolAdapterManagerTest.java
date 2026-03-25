@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.events.EventService;
@@ -52,6 +53,7 @@ import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.persistence.mappings.SouthboundMapping;
 import com.hivemq.protocols.fsm.ProtocolAdapterManagerState;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -147,7 +149,7 @@ class ProtocolAdapterManagerTest {
         when(adapter.getId()).thenReturn(adapterId);
         when(adapter.getProtocolAdapterInformation()).thenReturn(info);
         when(info.getProtocolId()).thenReturn("test-protocol");
-        when(adapter.supportsSouthbound()).thenReturn(false);
+        when(info.getCapabilities()).thenReturn(EnumSet.of(ProtocolAdapterCapability.READ));
         doAnswer(invocation -> {
                     final ProtocolAdapterStartOutput output = invocation.getArgument(2);
                     output.startedSuccessfully();

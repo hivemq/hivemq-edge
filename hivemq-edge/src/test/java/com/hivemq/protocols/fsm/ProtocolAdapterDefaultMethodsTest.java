@@ -68,17 +68,6 @@ public class ProtocolAdapterDefaultMethodsTest {
     }
 
     @Test
-    void supportsSouthbound_defaultChecksWriteCapability() {
-        final ProtocolAdapter adapterWithWrite = new MinimalAdapter(
-                "adapter-write", mockInfo(Set.of(ProtocolAdapterCapability.READ, ProtocolAdapterCapability.WRITE)));
-        final ProtocolAdapter adapterWithoutWrite =
-                new MinimalAdapter("adapter-read", mockInfo(Set.of(ProtocolAdapterCapability.READ)));
-
-        assertThat(adapterWithWrite.supportsSouthbound()).isTrue();
-        assertThat(adapterWithoutWrite.supportsSouthbound()).isFalse();
-    }
-
-    @Test
     void precheck_defaultIsNoOp() {
         final ProtocolAdapter adapter =
                 new MinimalAdapter("adapter-1", mockInfo(Set.of(ProtocolAdapterCapability.READ)));

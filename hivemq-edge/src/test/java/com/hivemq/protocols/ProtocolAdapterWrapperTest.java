@@ -27,6 +27,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterConnectionDirection;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.events.EventService;
@@ -47,6 +48,7 @@ import com.hivemq.protocols.fsm.ProtocolAdapterStateChangeListener;
 import com.hivemq.protocols.fsm.ProtocolAdapterTransitionResponse;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -111,8 +113,8 @@ class ProtocolAdapterWrapperTest {
     @BeforeEach
     void setUp() {
         when(protocolAdapter.getId()).thenReturn("test-adapter");
-        when(protocolAdapter.supportsSouthbound()).thenReturn(false);
         when(protocolAdapter.getProtocolAdapterInformation()).thenReturn(adapterInformation);
+        when(adapterInformation.getCapabilities()).thenReturn(EnumSet.of(ProtocolAdapterCapability.READ));
         // Default: connect calls output.startedSuccessfully()
         doAnswer(invocation -> {
                     final ProtocolAdapterStartOutput output = invocation.getArgument(2);
@@ -205,7 +207,8 @@ class ProtocolAdapterWrapperTest {
 
         @BeforeEach
         void setUp() {
-            when(protocolAdapter.supportsSouthbound()).thenReturn(true);
+            when(adapterInformation.getCapabilities())
+                    .thenReturn(EnumSet.of(ProtocolAdapterCapability.READ, ProtocolAdapterCapability.WRITE));
         }
 
         @Test
@@ -271,7 +274,8 @@ class ProtocolAdapterWrapperTest {
 
         @BeforeEach
         void setUp() {
-            when(protocolAdapter.supportsSouthbound()).thenReturn(true);
+            when(adapterInformation.getCapabilities())
+                    .thenReturn(EnumSet.of(ProtocolAdapterCapability.READ, ProtocolAdapterCapability.WRITE));
         }
 
         @Test
@@ -398,7 +402,8 @@ class ProtocolAdapterWrapperTest {
         @Test
         void stop_fromErrorState_withConnectedNorthbound_disconnects() throws ProtocolAdapterException {
             // Get into Error state after northbound connected but southbound failed
-            when(protocolAdapter.supportsSouthbound()).thenReturn(true);
+            when(adapterInformation.getCapabilities())
+                    .thenReturn(EnumSet.of(ProtocolAdapterCapability.READ, ProtocolAdapterCapability.WRITE));
             // Northbound succeeds (default doAnswer already set up)
             doAnswer(invocation -> {
                         final ProtocolAdapterStartOutput output = invocation.getArgument(2);
@@ -753,7 +758,8 @@ class ProtocolAdapterWrapperTest {
 
         @BeforeEach
         void setUp() {
-            when(protocolAdapter.supportsSouthbound()).thenReturn(true);
+            when(adapterInformation.getCapabilities())
+                    .thenReturn(EnumSet.of(ProtocolAdapterCapability.READ, ProtocolAdapterCapability.WRITE));
         }
 
         @Test
@@ -912,7 +918,6 @@ class ProtocolAdapterWrapperTest {
             for (int i = 0; i < numIterations; i++) {
                 final ProtocolAdapter adapter = Mockito.mock(ProtocolAdapter.class);
                 when(adapter.getId()).thenReturn("adapter-" + i);
-                when(adapter.supportsSouthbound()).thenReturn(false);
                 when(adapter.getProtocolAdapterInformation()).thenReturn(adapterInformation);
                 doAnswer(inv -> {
                             final ProtocolAdapterStartOutput out = inv.getArgument(2);
