@@ -58,9 +58,13 @@ public class ProtocolAdapterDataSampleImpl implements ProtocolAdapterDataSample 
     @Override
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public @NotNull Map<String, List<DataPoint>> getDataPoints() {
-        final var firstTag = dataPoints.getFirst();
-        if (firstTag != null) {
-            return Map.of(firstTag.getTagName(), dataPoints);
+        if(!dataPoints.isEmpty()) {
+            final var firstTag = dataPoints.getFirst();
+            if (firstTag != null) {
+                return Map.of(firstTag.getTagName(), dataPoints);
+            } else {
+                return Collections.emptyMap();
+            }
         } else {
             return Collections.emptyMap();
         }
