@@ -354,7 +354,7 @@ public class ProtocolAdapterManager {
                         protocolAdapterWritingService,
                         new ProtocolAdapterTagStreamingServiceImpl(tagManager, enrich -> {
                             //TODO provide adapterId in here!!!
-                            enrich.startObjectContext().put("key", "value").endObject();
+                            // No-op enricher by default: do not add any additional
                         }));
 
                 final ProtocolAdapter protocolAdapter = factory.createAdapter(
