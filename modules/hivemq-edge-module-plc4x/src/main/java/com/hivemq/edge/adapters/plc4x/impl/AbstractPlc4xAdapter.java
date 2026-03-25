@@ -20,8 +20,7 @@ import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionSt
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -36,12 +35,14 @@ import com.hivemq.edge.adapters.plc4x.PublishChangedDataOnlyHandler;
 import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
+import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.plc4x.java.api.PlcDriverManager;
@@ -67,7 +68,6 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
 
     protected final @NotNull T adapterConfig;
     protected final @NotNull List<Plc4xTag> tags;
-    protected final @NotNull AdapterFactories adapterFactories;
     private final @NotNull Logger log;
     private final @NotNull Object lock;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
@@ -85,7 +85,6 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
-        this.adapterFactories = input.adapterFactories();
         this.tags = input.getTags().stream().map(tag -> (Plc4xTag) tag).toList();
         this.log = LoggerFactory.getLogger(getClass());
         this.lock = new Object();
@@ -101,40 +100,28 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
         final Plc4xConnection<T> tempConnection = connection;
         if (tempConnection != null && tempConnection.isConnected()) {
             if (!tags.isEmpty()) {
+                final var dataPointsPublisher = pollingOutput.dataPointsPublisher();
                 @SuppressWarnings("unused")
                 final var unused = tempConnection
                         .read(tags)
-                        .thenApply(response -> processReadResponse(tags, response))
-                        .whenComplete((sample, t) -> {
+                        .whenComplete((response, t) -> {
                             if (t != null) {
                                 pollingOutput.fail(t, null);
                             } else {
                                 final var mqttConfig = adapterConfig.getPlc4xToMqttConfig();
-                                if (mqttConfig != null && mqttConfig.getPublishChangedDataOnly()) {
-                                    sample.getDataPoints().stream()
-                                            .collect(Collectors.groupingBy(DataPoint::getTagName))
-                                            .forEach((tagName, tagValues) -> {
-                                                if (lastSamples.checkIfValuesHaveChangedSinceLastInvocation(
-                                                        tagName, tagValues)) {
-                                                    tagValues.forEach(pollingOutput::addDataPoint);
-                                                }
-                                            });
-                                } else {
-                                    sample.getDataPoints().forEach(pollingOutput::addDataPoint);
-                                }
-                                pollingOutput.finish();
+                                final boolean publishChangedDataOnly =
+                                        mqttConfig != null && mqttConfig.getPublishChangedDataOnly();
+                                processReadResponse(tags, response, dataPointsPublisher, publishChangedDataOnly);
+                                dataPointsPublisher.publish();
                             }
                         });
             } else {
                 // When no tags are present we keep the connection and just check it
                 tempConnection.lazyConnectionCheck();
-                pollingOutput.finish();
             }
         } else {
             if (!connecting.get()) {
                 pollingOutput.fail("Polling failed for adapter '" + adapterId + "' because the connection was null.");
-            } else {
-                pollingOutput.finish();
             }
         }
     }
@@ -284,8 +271,11 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
         return Plc4xDataUtils.convertObject(plcValue);
     }
 
-    protected @NotNull Plc4xDataSample processReadResponse(
-            final @NotNull List<Plc4xTag> tags, final @NotNull PlcReadResponse readEvent) {
+    protected void processReadResponse(
+            final @NotNull List<Plc4xTag> tags,
+            final @NotNull PlcReadResponse readEvent,
+            final @NotNull DataPointListBuilder dataPointsPublisher,
+            final boolean publishChangedDataOnly) {
         // it is possible that the read response does not contain any values at all, leading to unexpected error states
         if (readEvent instanceof final DefaultPlcReadResponse event) {
             if (tags.stream().allMatch(tag -> event.getResponseCode(tag.getName()) == PlcResponseCode.OK)) {
@@ -293,7 +283,13 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                     // Error was transient
                     protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
                 }
-                return processPlcFieldData(Plc4xDataUtils.readDataFromReadResponse(event));
+                final Map<String, Plc4xTag> tagsByName =
+                        tags.stream().collect(Collectors.toMap(Plc4xTag::getName, Function.identity()));
+                processPlcFieldData(
+                        Plc4xDataUtils.readDataFromReadResponse(event),
+                        dataPointsPublisher,
+                        tagsByName,
+                        publishChangedDataOnly);
             } else {
                 tags.stream()
                         .filter(tag -> event.getResponseCode(tag.getName()) != PlcResponseCode.OK)
@@ -301,24 +297,40 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                                 "Unable to read tag {}. Error Code: {}",
                                 tag.getName(),
                                 event.getResponseCode(tag.getName())));
-                ;
             }
         }
-        return new Plc4xDataSample(adapterFactories.dataPointFactory());
     }
 
-    protected @NotNull Plc4xDataSample processPlcFieldData(final @NotNull List<Pair<String, PlcValue>> l) {
-        final Plc4xDataSample data = new Plc4xDataSample(adapterFactories.dataPointFactory());
-        // -- For every tag value associated with the sample, write a data point to be published
-        if (!l.isEmpty()) {
-            l.forEach(pair -> {
-                final Object value = convertTagValue(pair.getValue());
-                if (value != null) {
-                    data.addDataPoint(pair.getLeft(), value);
+    protected void processPlcFieldData(
+            final @NotNull List<Pair<String, PlcValue>> l,
+            final @NotNull DataPointListBuilder dataPointsPublisher,
+            final @NotNull Map<String, Plc4xTag> tagsByName,
+            final boolean publishChangedDataOnly) {
+        for (final Pair<String, PlcValue> pair : l) {
+            final Object value = convertTagValue(pair.getValue());
+            if (value != null) {
+                final var tag = tagsByName.get(pair.getLeft());
+                if (tag == null) {
+                    log.error("No tag found for name '{}', skipping", pair.getLeft());
+                    continue;
                 }
-            });
+                if (!publishChangedDataOnly || lastSamples.replaceIfValueIsNew(tag.getName(), value)) {
+                    final var builder = dataPointsPublisher.addDataPoint(tag);
+                    switch (value) {
+                        case final Boolean val -> builder.value(val);
+                        case final Short val -> builder.value(val);
+                        case final Integer val -> builder.value(val);
+                        case final Long val -> builder.value(val);
+                        case final Float val -> builder.value(val);
+                        case final Double val -> builder.value(val);
+                        case final BigInteger val -> builder.value(val);
+                        case final String val -> builder.value(val);
+                        case final byte[] val -> builder.value(val);
+                        default -> builder.value(value.toString());
+                    }
+                }
+            }
         }
-        return data;
     }
 
     @Override
