@@ -353,12 +353,11 @@ public class ProtocolAdapterWrapper {
      * @return a future that completes when the adapter is started
      */
     public @NotNull CompletableFuture<Void> startAsync() {
-        return CompletableFuture.supplyAsync(() -> {
+        return CompletableFuture.runAsync(() -> {
             final boolean success = start();
             if (!success) {
                 throw new RuntimeException("Failed to start adapter: " + getAdapterId());
             }
-            return null;
         });
     }
 
@@ -369,10 +368,7 @@ public class ProtocolAdapterWrapper {
      * @return a future that completes when the adapter is stopped
      */
     public @NotNull CompletableFuture<Void> stopAsync(final boolean destroy) {
-        return CompletableFuture.supplyAsync(() -> {
-            stop(destroy);
-            return null;
-        });
+        return CompletableFuture.runAsync(() -> stop(destroy));
     }
 
     // ===== Listener Management =====
