@@ -157,7 +157,7 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
                         pollingOutput.fail(throwable, "Error while polling tags.");
                     } else {
                         try {
-                            final var dataPointsPublisher = pollingOutput.dataPointsPublisher();
+                            final var dataPointsPublisher = pollingOutput.dataPointListPublisher();
                             for (final CompletableFuture<HttpData> future : pollingFutures) {
                                 final var data = future.get();
                                 if (data.isSuccessStatusCode()) {

@@ -178,7 +178,7 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         if (startRequested.get() && !stopRequested.get() && client.isConnected()) {
 
-            final var dataPointsPublisher = pollingOutput.dataPointsPublisher();
+            final var dataPointsPublisher = pollingOutput.dataPointListPublisher();
 
             final int limit = tags.size();
             final CompletableFuture<ResulTuple>[] readRegisterFutures = new CompletableFuture[limit];

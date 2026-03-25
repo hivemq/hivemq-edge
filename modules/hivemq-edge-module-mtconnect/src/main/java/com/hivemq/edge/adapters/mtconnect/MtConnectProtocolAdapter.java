@@ -192,7 +192,7 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
                                             }
                                         },
                                         () -> {
-                                            final var dataPointsPublisher = pollingOutput.dataPointsPublisher();
+                                            final var dataPointsPublisher = pollingOutput.dataPointListPublisher();
                                             dataList.forEach(data -> dataPointsPublisher
                                                     .addDataPoint(data.getTag())
                                                     .value(Objects.requireNonNull(data.getJsonNode())));

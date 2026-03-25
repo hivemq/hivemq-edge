@@ -152,7 +152,7 @@ public class MtConnectProtocolAdapterTest {
         @SuppressWarnings("unchecked")
         final DataPointBuilder<DataPointListBuilder> dataPointBuilder = mock(DataPointBuilder.class);
         final DataPointListBuilder dataPointsPublisher = mock(DataPointListBuilder.class);
-        when(pollingOutput.dataPointsPublisher()).thenReturn(dataPointsPublisher);
+        when(pollingOutput.dataPointListPublisher()).thenReturn(dataPointsPublisher);
         when(dataPointsPublisher.addDataPoint(any())).thenReturn(dataPointBuilder);
         when(dataPointBuilder.value(any(JsonNode.class))).thenReturn(dataPointBuilder);
         final HttpResponse<String> httpResponse = (HttpResponse<String>) mock(HttpResponse.class);

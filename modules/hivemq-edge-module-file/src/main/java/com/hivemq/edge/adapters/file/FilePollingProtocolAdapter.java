@@ -88,7 +88,7 @@ public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
 
     @Override
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
-        final var dataPointsPublisher = pollingOutput.dataPointsPublisher();
+        final var dataPointsPublisher = pollingOutput.dataPointListPublisher();
         String absolutePathToFle = "";
         try {
             for (final FileTag fileTag : tags) {
