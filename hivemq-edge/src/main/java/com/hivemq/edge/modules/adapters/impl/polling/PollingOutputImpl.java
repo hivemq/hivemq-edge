@@ -66,7 +66,7 @@ public class PollingOutputImpl implements PollingOutput, BatchPollingOutput {
 
     @Override
     public void finish() {
-        if (dataSample.getDataPoints().isEmpty()) {
+        if (dataSample.getDataPointsList().isEmpty()) {
             outputFuture.complete(PollingResult.NO_DATA);
         } else {
             outputFuture.complete(PollingResult.SUCCESS);
