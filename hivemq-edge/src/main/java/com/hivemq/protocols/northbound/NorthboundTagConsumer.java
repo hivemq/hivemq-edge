@@ -127,7 +127,9 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
         final ObjectNode node = JsonNodeFactory.instance.objectNode();
         if (dataPoint instanceof final DataPointWithMetadata dpMeta) {
             node.set("value", dpMeta.getTagValue());
-            node.set("timestamp", JsonNodeFactory.instance.numberNode(dpMeta.getTimestamp()));
+            if(northboundMapping.getIncludeTimestamp()) {
+                node.set("timestamp", JsonNodeFactory.instance.numberNode(dpMeta.getTimestamp()));
+            }
             if (northboundMapping.getIncludeMetadata()) {
                 dpMeta.getMetadata()
                         .ifPresentOrElse(
@@ -135,6 +137,9 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
                                 () -> node.set("metadata", JsonNodeFactory.instance.nullNode()));
             }
         } else {
+            if(northboundMapping.getIncludeTimestamp()) {
+                node.set("timestamp", JsonNodeFactory.instance.numberNode(System.currentTimeMillis()));
+            }
             if (dataPoint.treatTagValueAsJson()) {
                 final JsonNode jsonValue = objectMapper.readTree((String) dataPoint.getTagValue());
                 if (jsonValue != null) {

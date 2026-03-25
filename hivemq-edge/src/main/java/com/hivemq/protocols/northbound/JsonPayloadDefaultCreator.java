@@ -28,11 +28,17 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @Singleton
-@Deprecated // Should be removed in one of the next releases. All logic for this is in the NorthboundTagConsumer
+/*
+  @deprecated no longer needed. To be removed in 2026.10
+ */
+@ApiStatus.ScheduledForRemoval(inVersion = "2026.10")
+@Deprecated
 public class JsonPayloadDefaultCreator implements JsonPayloadCreator {
 
     @Inject
