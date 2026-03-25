@@ -29,13 +29,12 @@ import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.file.config.FileSpecificAdapterConfig;
 import com.hivemq.edge.adapters.file.convertion.MappingException;
 import com.hivemq.edge.adapters.file.tag.FileTag;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.LoggerFactory;
 
 public class FilePollingProtocolAdapter implements BatchPollingProtocolAdapter {
 

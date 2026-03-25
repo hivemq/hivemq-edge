@@ -192,8 +192,7 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
                                             }
                                         },
                                         () -> {
-                                            final var dataPointsPublisher =
-                                                    pollingOutput.dataPointsPublisher();
+                                            final var dataPointsPublisher = pollingOutput.dataPointsPublisher();
                                             dataList.forEach(data -> dataPointsPublisher
                                                     .addDataPoint(data.getTag())
                                                     .value(Objects.requireNonNull(data.getJsonNode())));
@@ -228,8 +227,8 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
     protected @NotNull MtConnectData processHttpResponse(
             final @NotNull HttpResponse<String> httpResponse, final @NotNull Tag tag) {
         final MtConnectAdapterTagDefinition definition = (MtConnectAdapterTagDefinition) tag.getDefinition();
-        final MtConnectData mtConnectData = new MtConnectData(
-                definition.getUrl(), isStatusCodeSuccessful(httpResponse.statusCode()), tag);
+        final MtConnectData mtConnectData =
+                new MtConnectData(definition.getUrl(), isStatusCodeSuccessful(httpResponse.statusCode()), tag);
         if (mtConnectData.isSuccessful()) {
             // Let's make sure the response body is XML.
             final Optional<String> optionalContentType = httpResponse.headers().firstValue(HEADER_CONTENT_TYPE);

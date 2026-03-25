@@ -29,10 +29,7 @@ public class MtConnectData {
     private @Nullable String errorMessage;
     private @Nullable Throwable cause;
 
-    public MtConnectData(
-            @NotNull final String url,
-            final boolean successful,
-            final @NotNull Tag tag) {
+    public MtConnectData(@NotNull final String url, final boolean successful, final @NotNull Tag tag) {
         this.url = url;
         this.successful = successful;
         this.tag = tag;

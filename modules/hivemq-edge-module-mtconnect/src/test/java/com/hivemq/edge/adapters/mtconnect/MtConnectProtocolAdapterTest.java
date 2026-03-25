@@ -45,7 +45,6 @@ import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterConfig;
 import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterHttpHeader;
 import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTag;
 import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTagDefinition;
-import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
 import com.hivemq.mtconnect.protocol.schemas.MtConnectSchema;
 import jakarta.xml.bind.JAXBException;
