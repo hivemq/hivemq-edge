@@ -99,8 +99,8 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         final Plc4xConnection<T> tempConnection = connection;
         if (tempConnection != null && tempConnection.isConnected()) {
+            final var dataPointsPublisher = pollingOutput.dataPointsPublisher();
             if (!tags.isEmpty()) {
-                final var dataPointsPublisher = pollingOutput.dataPointsPublisher();
                 @SuppressWarnings("unused")
                 final var unused = tempConnection.read(tags).whenComplete((response, t) -> {
                     if (t != null) {
@@ -116,6 +116,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
             } else {
                 // When no tags are present we keep the connection and just check it
                 tempConnection.lazyConnectionCheck();
+                dataPointsPublisher.publish();
             }
         } else {
             if (!connecting.get()) {
