@@ -251,7 +251,7 @@ public class ProtocolAdapterWrapper {
                                         .get()) {
                                     log.info("Successfully started adapter with id {}", adapter.getId());
                                 } else {
-                                    log.error(
+                                    log.warn(
                                             "Protocol adapter with id {} start writing failed as data hub is not available.",
                                             adapter.getId());
                                 }
