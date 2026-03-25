@@ -451,6 +451,7 @@ public class ProtocolAdapterWrapper {
         if (!northboundSuccess || !southboundSuccess) {
             // Cleanup on failure: disconnect any connection that was started
             if (northboundSuccess) {
+                LOGGER.warn("Stopping adapter '{}' after a failed start.", getAdapterId());
                 stopNorthbound();
             }
             transitionTo(ProtocolAdapterRuntimeState.Error);
@@ -459,9 +460,24 @@ public class ProtocolAdapterWrapper {
         }
 
         // Step 6: Start services
-        createAndSubscribeTagConsumers();
-        startPolling();
-        startWriting();
+        try {
+            createAndSubscribeTagConsumers();
+            startPolling();
+        } catch (final Exception e) {
+            LOGGER.error("Protocol adapter '{}' failed to be started.", getAdapterId(), e);
+            stopSouthbound();
+            stopNorthbound();
+            transitionTo(ProtocolAdapterRuntimeState.Error);
+            protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
+            return false;
+        }
+        final boolean writingSuccess = startWriting();
+
+        if (writingSuccess) {
+            LOGGER.debug("Successfully started adapter '{}'.", getAdapterId());
+        } else {
+            LOGGER.debug("Partially started adapter '{}'.", getAdapterId());
+        }
 
         return true;
     }
@@ -512,9 +528,16 @@ public class ProtocolAdapterWrapper {
                 transitionTo(ProtocolAdapterRuntimeState.Idle).status().isSuccess();
         protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
         if (destroy) {
+            LOGGER.info("Destroying adapter '{}'.", getAdapterId());
             adapter.destroy();
         }
-        return stateTransitionSuccess && southboundSuccess && northboundSuccess;
+        final boolean success = stateTransitionSuccess && southboundSuccess && northboundSuccess;
+        if (success) {
+            LOGGER.info("Stopped adapter '{}'.", getAdapterId());
+        } else {
+            LOGGER.error("Error stopping adapter '{}'.", getAdapterId());
+        }
+        return success;
     }
 
     // ===== Connection Management =====
@@ -719,24 +742,31 @@ public class ProtocolAdapterWrapper {
     /**
      * Start writing for this adapter.
      * Called after all connections are established during {@link #start()}.
+     *
+     * @return {@code true} if writing was started or not needed, {@code false} if writing setup failed
      */
-    protected void startWriting() {
+    protected boolean startWriting() {
         if (!protocolAdapterWritingService.writingEnabled()) {
-            return;
+            return true;
         }
         if (!(getAdapter() instanceof WritingProtocolAdapter writingAdapter)) {
-            return;
+            return true;
         }
         LOGGER.debug("Start writing for protocol adapter with id '{}'", getId());
         final var writingContexts = getSouthboundMappings().stream()
                 .map(InternalWritingContextImpl::new)
                 .collect(Collectors.<InternalWritingContext>toList());
         try {
-            protocolAdapterWritingService
+            final boolean success = protocolAdapterWritingService
                     .startWritingAsync(writingAdapter, metricsService, writingContexts)
                     .get();
+            if (!success) {
+                LOGGER.debug("Protocol adapter '{}' start writing failed as data hub is not available.", getId());
+            }
+            return success;
         } catch (final Exception e) {
             LOGGER.error("Failed to start writing for adapter with id '{}'.", getId(), e);
+            return false;
         }
     }
 

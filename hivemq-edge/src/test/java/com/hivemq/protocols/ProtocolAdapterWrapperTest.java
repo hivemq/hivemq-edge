@@ -591,8 +591,9 @@ class ProtocolAdapterWrapperTest {
                         }
 
                         @Override
-                        protected void startWriting() {
+                        protected boolean startWriting() {
                             writingStarted = true;
+                            return true;
                         }
 
                         @Override
@@ -716,8 +717,9 @@ class ProtocolAdapterWrapperTest {
                         }
 
                         @Override
-                        protected void startWriting() {
+                        protected boolean startWriting() {
                             callOrder.add("startWriting");
+                            return true;
                         }
 
                         @Override
