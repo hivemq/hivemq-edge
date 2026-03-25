@@ -46,6 +46,7 @@ import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.protocols.fsm.I18nProtocolAdapterMessage;
 import com.hivemq.protocols.fsm.ProtocolAdapterManagerState;
 import com.hivemq.protocols.northbound.NorthboundConsumerFactory;
+import com.hivemq.util.ThreadFactoryUtil;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
@@ -67,7 +68,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import com.hivemq.util.ThreadFactoryUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
@@ -431,13 +431,15 @@ public class ProtocolAdapterManager {
             return CompletableFuture.failedFuture(
                     new ProtocolAdapterException("Adapter not found: " + protocolAdapterId));
         }
-        return CompletableFuture.runAsync(() -> {
-            try {
-                start(protocolAdapterId);
-            } catch (final ProtocolAdapterException e) {
-                throw new RuntimeException(e);
-            }
-        }, lifecycleExecutor);
+        return CompletableFuture.runAsync(
+                () -> {
+                    try {
+                        start(protocolAdapterId);
+                    } catch (final ProtocolAdapterException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                lifecycleExecutor);
     }
 
     /**
@@ -445,13 +447,15 @@ public class ProtocolAdapterManager {
      */
     public @NotNull CompletableFuture<Void> stopAsync(final @NotNull String protocolAdapterId, final boolean destroy) {
         Preconditions.checkNotNull(protocolAdapterId);
-        return CompletableFuture.runAsync(() -> {
-            try {
-                stop(protocolAdapterId, destroy);
-            } catch (final ProtocolAdapterException e) {
-                throw new RuntimeException(e);
-            }
-        }, lifecycleExecutor);
+        return CompletableFuture.runAsync(
+                () -> {
+                    try {
+                        stop(protocolAdapterId, destroy);
+                    } catch (final ProtocolAdapterException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                lifecycleExecutor);
     }
 
     // ===== Adapter Creation/Deletion =====
