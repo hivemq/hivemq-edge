@@ -59,11 +59,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import com.hivemq.util.ThreadFactoryUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
@@ -109,6 +113,7 @@ public class ProtocolAdapterManager {
     private final @NotNull TagManager tagManager;
     private final @NotNull ProtocolAdapterExtractor protocolAdapterConfig;
     private final @NotNull ExecutorService executorService;
+    private final @NotNull ExecutorService lifecycleExecutor;
     private final @NotNull AtomicInteger refreshTasksInProgress = new AtomicInteger(0);
     private final @NotNull AtomicReference<ProtocolAdapterManagerState> managerState =
             new AtomicReference<>(ProtocolAdapterManagerState.Idle);
@@ -142,7 +147,18 @@ public class ProtocolAdapterManager {
         this.tagManager = tagManager;
         this.protocolAdapterConfig = protocolAdapterConfig;
         this.executorService = Executors.newSingleThreadExecutor();
-        Runtime.getRuntime().addShutdownHook(new Thread(executorService::shutdown));
+        this.lifecycleExecutor = new ThreadPoolExecutor(
+                2,
+                4,
+                60L,
+                TimeUnit.SECONDS,
+                new SynchronousQueue<>(),
+                ThreadFactoryUtil.create("protocol-adapter-lifecycle-%d"),
+                new ThreadPoolExecutor.CallerRunsPolicy());
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            executorService.shutdown();
+            lifecycleExecutor.shutdown();
+        }));
         protocolAdapterWritingService.addWritingChangedCallback(() ->
                 protocolAdapterFactoryManager.writingEnabledChanged(protocolAdapterWritingService.writingEnabled()));
     }
@@ -421,7 +437,7 @@ public class ProtocolAdapterManager {
             } catch (final ProtocolAdapterException e) {
                 throw new RuntimeException(e);
             }
-        });
+        }, lifecycleExecutor);
     }
 
     /**
@@ -435,7 +451,7 @@ public class ProtocolAdapterManager {
             } catch (final ProtocolAdapterException e) {
                 throw new RuntimeException(e);
             }
-        });
+        }, lifecycleExecutor);
     }
 
     // ===== Adapter Creation/Deletion =====
