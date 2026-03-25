@@ -43,6 +43,11 @@ public class PollingOutputImpl implements PollingOutput, BatchPollingOutput {
     }
 
     @Override
+    public @NotNull DataPointListBuilder dataPointsPublisher() {
+        return dataPointListPublisher();
+    }
+
+    @Override
     public @NotNull DataPointListBuilder dataPointListPublisher() {
         return new DataPointListBuilderImpl(
                 toEnrich -> {

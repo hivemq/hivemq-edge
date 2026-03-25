@@ -94,6 +94,12 @@ class NorthboundTagConsumerTest {
         when(pollingContext.getMqttQos()).thenReturn(qos);
     }
 
+    private void setupPollingContextWithTagNamesAndTimestamp(final String topic, final int qos) {
+        setupPollingContext(topic, qos);
+        when(pollingContext.getIncludeTagNames()).thenReturn(true);
+        when(pollingContext.getIncludeTimestamp()).thenReturn(true);
+    }
+
     private void setupPublishBuilder() {
         when(publishService.createPublish()).thenReturn(publishBuilder);
         when(publishBuilder.withTopic(anyString())).thenReturn(publishBuilder);
@@ -125,7 +131,7 @@ class NorthboundTagConsumerTest {
 
     @Test
     void accept_withSimpleDataPoint_publishesJsonWithValueAndTagName() throws Exception {
-        setupPollingContext("test/topic", 1);
+        setupPollingContextWithTagNamesAndTimestamp("test/topic", 1);
         setupPublishBuilder();
         setupEventBuilder();
 
@@ -146,7 +152,7 @@ class NorthboundTagConsumerTest {
 
     @Test
     void accept_withStringValue_publishesStringValue() throws Exception {
-        setupPollingContext("test/topic", 0);
+        setupPollingContextWithTagNamesAndTimestamp("test/topic", 0);
         setupPublishBuilder();
         setupEventBuilder();
 
@@ -164,7 +170,7 @@ class NorthboundTagConsumerTest {
 
     @Test
     void accept_withDataPointWithMetadata_usesJsonNodeValueAndTimestamp() throws Exception {
-        setupPollingContext("test/topic", 0);
+        setupPollingContextWithTagNamesAndTimestamp("test/topic", 0);
         setupPublishBuilder();
         setupEventBuilder();
 
@@ -187,7 +193,7 @@ class NorthboundTagConsumerTest {
 
     @Test
     void accept_withJsonEncodedValue_parsesJsonString() throws Exception {
-        setupPollingContext("test/topic", 0);
+        setupPollingContextWithTagNamesAndTimestamp("test/topic", 0);
         setupPublishBuilder();
         setupEventBuilder();
 
