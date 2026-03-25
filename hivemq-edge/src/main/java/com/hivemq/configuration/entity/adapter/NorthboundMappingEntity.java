@@ -23,14 +23,13 @@ import com.hivemq.persistence.mappings.NorthboundMapping;
 import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 
 public class NorthboundMappingEntity implements EntityValidatable {
 
@@ -166,6 +165,7 @@ public class NorthboundMappingEntity implements EntityValidatable {
     public boolean isIncludeTimestamp() {
         return includeTimestamp == null || includeTimestamp; // default is true
     }
+
     public boolean isIncludeMetadata() {
         return includeMetadata == null || includeMetadata; // default is false
     }

@@ -15,6 +15,15 @@
  */
 package com.hivemq.protocols.northbound;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -32,23 +41,13 @@ import com.hivemq.datapoint.DataPointWithMetadata;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishServiceImpl;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
+import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.concurrent.CompletableFuture;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class NorthboundTagConsumerTest {
@@ -57,20 +56,28 @@ class NorthboundTagConsumerTest {
 
     @Mock
     private NorthboundMapping pollingContext;
+
     @Mock
     private ProtocolAdapterWrapper protocolAdapter;
+
     @Mock
     private ProtocolAdapterPublishServiceImpl publishService;
+
     @Mock
     private ProtocolAdapterMetricsService metricsService;
+
     @Mock
     private EventService eventService;
+
     @Mock
     private ProtocolAdapterPublishBuilder publishBuilder;
+
     @Mock
     private ProtocolAdapter adapter;
+
     @Mock
     private ProtocolAdapterInformation adapterInformation;
+
     @Mock
     private EventBuilder eventBuilder;
 
@@ -79,12 +86,7 @@ class NorthboundTagConsumerTest {
     @BeforeEach
     void setUp() {
         consumer = new NorthboundTagConsumer(
-                pollingContext,
-                protocolAdapter,
-                objectMapper,
-                publishService,
-                metricsService,
-                eventService);
+                pollingContext, protocolAdapter, objectMapper, publishService, metricsService, eventService);
     }
 
     private void setupPollingContext(final String topic, final int qos) {
@@ -110,7 +112,8 @@ class NorthboundTagConsumerTest {
         when(eventBuilder.withSeverity(any())).thenReturn(eventBuilder);
         when(eventBuilder.withTimestamp(any())).thenReturn(eventBuilder);
         when(eventBuilder.withMessage(anyString())).thenReturn(eventBuilder);
-        when(eventBuilder.withPayload(any(Payload.ContentType.class), anyString())).thenReturn(eventBuilder);
+        when(eventBuilder.withPayload(any(Payload.ContentType.class), anyString()))
+                .thenReturn(eventBuilder);
     }
 
     @Test
@@ -369,7 +372,8 @@ class NorthboundTagConsumerTest {
     }
 
     @Test
-    void accept_withDataPointWithMetadata_includeMetadataTrue_noMetadataPresent_includesNullMetadata() throws Exception {
+    void accept_withDataPointWithMetadata_includeMetadataTrue_noMetadataPresent_includesNullMetadata()
+            throws Exception {
         setupPollingContext("test/topic", 0);
         when(pollingContext.getIncludeMetadata()).thenReturn(true);
         setupPublishBuilder();

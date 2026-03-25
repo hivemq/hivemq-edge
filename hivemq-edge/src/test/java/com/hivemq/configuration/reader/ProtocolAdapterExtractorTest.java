@@ -494,7 +494,15 @@ public class ProtocolAdapterExtractorTest {
         final HiveMQConfigEntity entity = configFileReader.applyConfig();
         assertThat(entity).isNotNull();
         final NorthboundMappingEntity northboundMappingEntity = new NorthboundMappingEntity(
-                "tagName", "topic", 1, MessageHandlingOptions.MQTTMessagePerSubscription, false, true, false, List.of(), 100L);
+                "tagName",
+                "topic",
+                1,
+                MessageHandlingOptions.MQTTMessagePerSubscription,
+                false,
+                true,
+                false,
+                List.of(),
+                100L);
         final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity(
                 "adapterId",
                 "protocolId",
@@ -515,7 +523,15 @@ public class ProtocolAdapterExtractorTest {
         final HiveMQConfigEntity entity = configFileReader.applyConfig();
         assertThat(entity).isNotNull();
         final NorthboundMappingEntity northboundMappingEntity = new NorthboundMappingEntity(
-                tagName, topic, 1, MessageHandlingOptions.MQTTMessagePerSubscription, false, true, false, List.of(), 100L);
+                tagName,
+                topic,
+                1,
+                MessageHandlingOptions.MQTTMessagePerSubscription,
+                false,
+                true,
+                false,
+                List.of(),
+                100L);
         final ProtocolAdapterEntity protocolAdapterEntity = new ProtocolAdapterEntity(
                 "adapterId", "protocolId", 1, Map.of(), List.of(northboundMappingEntity), List.of(), List.of());
         entity.getProtocolAdapterConfig().add(protocolAdapterEntity);
