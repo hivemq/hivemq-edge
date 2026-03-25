@@ -98,8 +98,8 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
     @Override
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         final Plc4xConnection<T> tempConnection = connection;
+        final var dataPointsPublisher = pollingOutput.dataPointsPublisher();
         if (tempConnection != null && tempConnection.isConnected()) {
-            final var dataPointsPublisher = pollingOutput.dataPointsPublisher();
             if (!tags.isEmpty()) {
                 @SuppressWarnings("unused")
                 final var unused = tempConnection.read(tags).whenComplete((response, t) -> {
@@ -121,6 +121,8 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
         } else {
             if (!connecting.get()) {
                 pollingOutput.fail("Polling failed for adapter '" + adapterId + "' because the connection was null.");
+            } else {
+                dataPointsPublisher.publish();
             }
         }
     }
