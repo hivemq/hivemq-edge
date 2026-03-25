@@ -40,6 +40,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -168,5 +169,10 @@ public class NorthboundTagConsumer implements TagConsumer {
     @Override
     public @NotNull String getTagName() {
         return pollingContext.getTagName();
+    }
+
+    @Override
+    public @Nullable String getScope() {
+        return protocolAdapter.getId();
     }
 }

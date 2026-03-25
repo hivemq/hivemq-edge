@@ -28,6 +28,7 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterInformation;
 import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
@@ -73,7 +74,19 @@ abstract class AbstractOpcUaPayloadConverterTest {
                 .thenReturn(mock(ProtocolAdapterMetricsService.class));
         when(eventService.createAdapterEvent(any(), any())).thenReturn(new EventBuilderImpl(event -> {}));
         when(moduleServices.eventService()).thenReturn(eventService);
-        when(moduleServices.protocolAdapterTagStreamingService()).thenReturn(receivedDataPoints::put);
+        when(moduleServices.protocolAdapterTagStreamingService()).thenReturn(new ProtocolAdapterTagStreamingService() {
+            @Override
+            public void feed(final @NotNull List<DataPoint> dataPoints) {
+                if (!dataPoints.isEmpty()) {
+                    receivedDataPoints.put(dataPoints.getFirst().getTagName(), dataPoints);
+                }
+            }
+
+            @Override
+            public void feed(final @NotNull String tag, final @NotNull List<DataPoint> dataPoints) {
+                receivedDataPoints.put(tag, dataPoints);
+            }
+        });
         final AdapterFactories adapterFactories = mock(AdapterFactoriesImpl.class);
         when(adapterFactories.dataPointFactory()).thenReturn(new DataPointFactory() {
             @Override

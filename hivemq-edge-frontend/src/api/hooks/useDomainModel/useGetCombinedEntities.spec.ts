@@ -41,8 +41,10 @@ describe('useGetCombinedEntities', () => {
       expect(result.current).not.toBeUndefined()
       expect(result.current.every((e) => e.isLoading)).toBeFalsy()
     })
-    expect(result.current.length).toEqual(2)
+    // Should return 3 results to match entities.length (prevents undefined query access)
+    expect(result.current.length).toEqual(3)
 
+    // First result: ADAPTER tags
     expect(result.current[0].data).toStrictEqual<DomainTagList>({
       items: [
         {
@@ -61,6 +63,7 @@ describe('useGetCombinedEntities', () => {
       ],
     })
 
+    // Second result: BRIDGE/EDGE_BROKER topic filters
     expect(result.current[1].data).toStrictEqual<TopicFilterList>({
       items: [
         {
@@ -69,6 +72,11 @@ describe('useGetCombinedEntities', () => {
           topicFilter: 'a/topic/+/filter',
         },
       ],
+    })
+
+    // Third result: PULSE_AGENT (empty, but present to maintain array length)
+    expect(result.current[2].data).toStrictEqual<DomainTagList>({
+      items: [],
     })
   })
 })

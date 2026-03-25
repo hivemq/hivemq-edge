@@ -47,9 +47,14 @@ export const getDeviceTagNames = (adapterConfig?: AdapterConfig): Set<string> =>
  *
  * @param combiner - The combiner node data
  * @param deviceTags - Set of tag names available in the device
+ * @param adapterId - the id of the owning adapter
  * @returns true if combiner has mappings using at least one device tag
  */
-export const combinerHasValidAdapterTagMappings = (combiner: Combiner, deviceTags: Set<string>): boolean => {
+export const combinerHasValidAdapterTagMappings = (
+  combiner: Combiner,
+  deviceTags: Set<string>,
+  adapterId: string
+): boolean => {
   if (!combiner.mappings?.items || combiner.mappings.items.length === 0) {
     return false
   }
@@ -62,20 +67,22 @@ export const combinerHasValidAdapterTagMappings = (combiner: Combiner, deviceTag
 
   // Check if at least one mapping uses a TAG from the device
   return combiner.mappings.items.some((mapping) => {
-    // Check primary source
+    // Check primary source - must match both tag name AND scope
     if (
       mapping.sources.primary.type === DataIdentifierReference.type.TAG &&
+      mapping.sources.primary.scope === adapterId &&
       deviceTags.has(mapping.sources.primary.id)
     ) {
       return true
     }
 
-    // Check additional tags array if present
-    if (mapping.sources.tags) {
-      return mapping.sources.tags.some((tagName) => deviceTags.has(tagName))
-    }
-
-    return false
+    // Check instruction sourceRefs for TAG references from this adapter
+    return (mapping.instructions ?? []).some(
+      (inst) =>
+        inst.sourceRef?.type === DataIdentifierReference.type.TAG &&
+        inst.sourceRef.scope === adapterId &&
+        deviceTags.has(inst.sourceRef.id)
+    )
   })
 }
 
@@ -125,7 +132,7 @@ export const computeAdapterToCombinerOperationalStatus = (
   }
 
   // Check if the combiner has valid tag mappings
-  const hasValidMappings = combinerHasValidAdapterTagMappings(combinerData, deviceTags)
+  const hasValidMappings = combinerHasValidAdapterTagMappings(combinerData, deviceTags, sourceAdapterNode.id)
 
   return hasValidMappings ? OperationalStatus.ACTIVE : OperationalStatus.INACTIVE
 }

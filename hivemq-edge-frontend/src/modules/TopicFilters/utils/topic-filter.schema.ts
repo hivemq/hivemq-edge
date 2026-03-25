@@ -5,6 +5,7 @@ import type { JSONSchema7 } from 'json-schema'
 import type { AlertStatus } from '@chakra-ui/react'
 
 import i18n from '@/config/i18n.config.ts'
+import { cleanSchemaForValidation } from '@/components/rjsf/Form/validation.utils.ts'
 
 import { DataIdentifierReference } from '@/api/__generated__'
 import type { SelectEntityType } from '@/components/MQTT/types'
@@ -44,7 +45,11 @@ export const decodeDataUriJsonSchema = (dataUrl: string) => {
     const json: RJSFSchema = JSON.parse(decoded)
 
     // This will take care of some of the basic json error but not of a valid JSONSchema
-    validator.ajv.compile(json)
+    // $id and $schema are stripped to prevent AJV from caching by $id key;
+    // removeSchema() is called immediately after to prevent cache accumulation by object reference
+    const jsonSchemaWithoutId = cleanSchemaForValidation(json)
+    validator.ajv.compile(jsonSchemaWithoutId)
+    validator.ajv.removeSchema(jsonSchemaWithoutId)
 
     // TODO[NVL] We need to decide what we want to require on the schema
     const { properties } = json

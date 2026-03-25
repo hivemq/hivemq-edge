@@ -72,6 +72,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -79,6 +80,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javax.xml.XMLConstants;
 import javax.xml.transform.stream.StreamSource;
@@ -154,6 +156,7 @@ public class ConfigFileReaderWriter {
     private final @NotNull PulseExtractor pulseExtractor;
     private final @NotNull UnsExtractor unsExtractor;
     private final @NotNull List<ReloadableExtractor<?, ?>> extractors;
+    private final @NotNull List<Consumer<ConfigFileReaderWriter>> postApplyCallbacks;
     private final @NotNull SystemInformation sysInfo;
     private final @NotNull AtomicLong lastWrite;
     private final @NotNull AtomicReference<HiveMQConfigEntity> configEntity;
@@ -181,6 +184,7 @@ public class ConfigFileReaderWriter {
                 this.assetMappingExtractor,
                 this.pulseExtractor,
                 this.unsExtractor);
+        this.postApplyCallbacks = new CopyOnWriteArrayList<>();
         this.fragmentToModificationTime = new ConcurrentHashMap<>();
         this.configEntity = new AtomicReference<>();
         this.lastWrite = new AtomicLong();
@@ -294,6 +298,10 @@ public class ConfigFileReaderWriter {
 
     public @NotNull UnsExtractor getUnsExtractor() {
         return unsExtractor;
+    }
+
+    public void registerPostApplyCallback(final @NotNull Consumer<ConfigFileReaderWriter> callback) {
+        postApplyCallbacks.add(callback);
     }
 
     public void setDefaultBackupConfig(final boolean defaultBackupConfig) {
@@ -531,6 +539,7 @@ public class ConfigFileReaderWriter {
                     default -> {}
                 }
             }
+            postApplyCallbacks.forEach(callback -> callback.accept(this));
             return true;
         } catch (final Throwable t) {
             log.error("An error occurred while applying the configuration.", t);

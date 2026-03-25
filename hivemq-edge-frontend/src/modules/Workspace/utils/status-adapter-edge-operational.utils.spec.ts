@@ -100,7 +100,7 @@ describe('adapter-edge-operational-status.utils', () => {
         },
         mappings: { items: [] },
       }
-      expect(combinerHasValidAdapterTagMappings(combiner, deviceTags)).toBe(false)
+      expect(combinerHasValidAdapterTagMappings(combiner, deviceTags, 'adapter-1')).toBe(false)
     })
 
     it('should return false if combiner has no adapter source', () => {
@@ -123,7 +123,7 @@ describe('adapter-edge-operational-status.utils', () => {
           ],
         },
       }
-      expect(combinerHasValidAdapterTagMappings(combiner, deviceTags)).toBe(false)
+      expect(combinerHasValidAdapterTagMappings(combiner, deviceTags, 'adapter-1')).toBe(false)
     })
 
     it('should return true if mapping uses device tag in primary source', () => {
@@ -138,7 +138,7 @@ describe('adapter-edge-operational-status.utils', () => {
             {
               id: 'mapping-1',
               sources: {
-                primary: { id: 'temperature', type: DataIdentifierReference.type.TAG },
+                primary: { id: 'temperature', type: DataIdentifierReference.type.TAG, scope: 'adapter-1' },
               },
               destination: { topic: 'test/topic' },
               instructions: [],
@@ -146,7 +146,7 @@ describe('adapter-edge-operational-status.utils', () => {
           ],
         },
       }
-      expect(combinerHasValidAdapterTagMappings(combiner, deviceTags)).toBe(true)
+      expect(combinerHasValidAdapterTagMappings(combiner, deviceTags, 'adapter-1')).toBe(true)
     })
 
     it('should return false if mapping uses non-existent tag', () => {
@@ -161,7 +161,7 @@ describe('adapter-edge-operational-status.utils', () => {
             {
               id: 'mapping-1',
               sources: {
-                primary: { id: 'non-existent-tag', type: DataIdentifierReference.type.TAG },
+                primary: { id: 'non-existent-tag', type: DataIdentifierReference.type.TAG, scope: 'adapter-1' },
               },
               destination: { topic: 'test/topic' },
               instructions: [],
@@ -169,10 +169,10 @@ describe('adapter-edge-operational-status.utils', () => {
           ],
         },
       }
-      expect(combinerHasValidAdapterTagMappings(combiner, deviceTags)).toBe(false)
+      expect(combinerHasValidAdapterTagMappings(combiner, deviceTags, 'adapter-1')).toBe(false)
     })
 
-    it('should return true if mapping uses device tag in tags array', () => {
+    it('should return true if mapping uses device tag in instruction sourceRefs', () => {
       const combiner: Combiner = {
         id: 'combiner-1',
         name: 'Test Combiner',
@@ -185,15 +185,49 @@ describe('adapter-edge-operational-status.utils', () => {
               id: 'mapping-1',
               sources: {
                 primary: { id: 'other-source', type: DataIdentifierReference.type.TOPIC_FILTER },
-                tags: ['temperature', 'humidity'],
               },
               destination: { topic: 'test/topic' },
-              instructions: [],
+              instructions: [
+                {
+                  sourceRef: { id: 'temperature', type: DataIdentifierReference.type.TAG, scope: 'adapter-1' },
+                  source: '$.value',
+                  destination: '$.temp',
+                },
+              ],
             },
           ],
         },
       }
-      expect(combinerHasValidAdapterTagMappings(combiner, deviceTags)).toBe(true)
+      expect(combinerHasValidAdapterTagMappings(combiner, deviceTags, 'adapter-1')).toBe(true)
+    })
+
+    it('should return false if instruction sourceRef scope does not match the adapter', () => {
+      const combiner: Combiner = {
+        id: 'combiner-1',
+        name: 'Test Combiner',
+        sources: {
+          items: [{ id: 'adapter-1', type: EntityType.ADAPTER }],
+        },
+        mappings: {
+          items: [
+            {
+              id: 'mapping-1',
+              sources: {
+                primary: { id: 'other-source', type: DataIdentifierReference.type.TOPIC_FILTER },
+              },
+              destination: { topic: 'test/topic' },
+              instructions: [
+                {
+                  sourceRef: { id: 'temperature', type: DataIdentifierReference.type.TAG, scope: 'other-adapter' },
+                  source: '$.value',
+                  destination: '$.temp',
+                },
+              ],
+            },
+          ],
+        },
+      }
+      expect(combinerHasValidAdapterTagMappings(combiner, deviceTags, 'adapter-1')).toBe(false)
     })
 
     it('should return true if at least one mapping is valid (mixed scenario)', () => {
@@ -208,7 +242,7 @@ describe('adapter-edge-operational-status.utils', () => {
             {
               id: 'mapping-1',
               sources: {
-                primary: { id: 'non-existent', type: DataIdentifierReference.type.TAG },
+                primary: { id: 'non-existent', type: DataIdentifierReference.type.TAG, scope: 'adapter-1' },
               },
               destination: { topic: 'test/topic1' },
               instructions: [],
@@ -216,7 +250,7 @@ describe('adapter-edge-operational-status.utils', () => {
             {
               id: 'mapping-2',
               sources: {
-                primary: { id: 'pressure', type: DataIdentifierReference.type.TAG },
+                primary: { id: 'pressure', type: DataIdentifierReference.type.TAG, scope: 'adapter-1' },
               },
               destination: { topic: 'test/topic2' },
               instructions: [],
@@ -224,7 +258,7 @@ describe('adapter-edge-operational-status.utils', () => {
           ],
         },
       }
-      expect(combinerHasValidAdapterTagMappings(combiner, deviceTags)).toBe(true)
+      expect(combinerHasValidAdapterTagMappings(combiner, deviceTags, 'adapter-1')).toBe(true)
     })
 
     it('should return false if primary is not a TAG type', () => {
@@ -247,7 +281,7 @@ describe('adapter-edge-operational-status.utils', () => {
           ],
         },
       }
-      expect(combinerHasValidAdapterTagMappings(combiner, deviceTags)).toBe(false)
+      expect(combinerHasValidAdapterTagMappings(combiner, deviceTags, 'adapter-1')).toBe(false)
     })
   })
 
@@ -404,7 +438,7 @@ describe('adapter-edge-operational-status.utils', () => {
                 {
                   id: 'mapping-1',
                   sources: {
-                    primary: { id: 'temperature', type: DataIdentifierReference.type.TAG },
+                    primary: { id: 'temperature', type: DataIdentifierReference.type.TAG, scope: 'adapter-1' },
                   },
                   destination: { topic: 'test/topic' },
                   instructions: [],

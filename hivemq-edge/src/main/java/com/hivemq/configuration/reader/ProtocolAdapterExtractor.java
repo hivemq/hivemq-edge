@@ -18,8 +18,10 @@ package com.hivemq.configuration.reader;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
+import com.hivemq.configuration.entity.adapter.AdapterTag;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.adapter.TagEntity;
+import com.hivemq.util.ObjectMapperUtil;
 import jakarta.xml.bind.ValidationEvent;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -32,10 +34,11 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 public class ProtocolAdapterExtractor
         implements ReloadableExtractor<List<@NotNull ProtocolAdapterEntity>, List<@NotNull ProtocolAdapterEntity>> {
-    private final @NotNull Set<String> tagNames = new CopyOnWriteArraySet<>();
+    private final @NotNull Set<AdapterTag> adapterTagSet = new CopyOnWriteArraySet<>();
     private final @NotNull ConfigFileReaderWriter configFileReaderWriter;
     private volatile @NotNull List<ProtocolAdapterEntity> allConfigs = List.of();
     private volatile @Nullable Consumer<List<@NotNull ProtocolAdapterEntity>> consumer =
@@ -49,14 +52,14 @@ public class ProtocolAdapterExtractor
         return allConfigs;
     }
 
-    public @NotNull Optional<ProtocolAdapterEntity> getAdapterByAdapterId(String adapterId) {
+    public @NotNull Optional<ProtocolAdapterEntity> getAdapterByAdapterId(final @NotNull String adapterId) {
         return allConfigs.stream()
                 .filter(adapter -> adapter.getAdapterId().equals(adapterId))
                 .findFirst();
     }
 
     @Override
-    public synchronized Configurator.@NotNull ConfigResult updateConfig(final HiveMQConfigEntity config) {
+    public synchronized @NotNull Configurator.ConfigResult updateConfig(final HiveMQConfigEntity config) {
         final List<ValidationEvent> validationEvents = new ArrayList<>();
         final var newConfigs = List.copyOf(config.getProtocolAdapterConfig());
         newConfigs.forEach(entity -> entity.validate(validationEvents));
@@ -78,7 +81,7 @@ public class ProtocolAdapterExtractor
                 });
     }
 
-    public synchronized Configurator.ConfigResult updateAllAdapters(
+    public synchronized @NotNull Configurator.ConfigResult updateAllAdapters(
             final @NotNull List<ProtocolAdapterEntity> adapterConfigs) {
         final var newConfigs = List.copyOf(adapterConfigs);
         return updateTagNames(newConfigs)
@@ -89,7 +92,7 @@ public class ProtocolAdapterExtractor
                 });
     }
 
-    private void replaceConfigsAndTriggerWrite(List<@NotNull ProtocolAdapterEntity> newConfigs) {
+    private void replaceConfigsAndTriggerWrite(final @NotNull List<ProtocolAdapterEntity> newConfigs) {
         allConfigs = newConfigs;
         notifyConsumer();
         configFileReaderWriter.writeConfigWithSync();
@@ -100,9 +103,9 @@ public class ProtocolAdapterExtractor
         if (allConfigsTemp.stream()
                 .anyMatch(cfg -> protocolAdapterConfig.getAdapterId().equals(cfg.getAdapterId()))) {
             throw new IllegalArgumentException(
-                    "adapter already exists by id '" + protocolAdapterConfig.getProtocolId() + "'");
+                    "adapter already exists by id '" + protocolAdapterConfig.getAdapterId() + "'");
         }
-        return addTagNamesIfNoDuplicates(protocolAdapterConfig.getTags())
+        return addTagNamesIfNoDuplicates(protocolAdapterConfig.getAdapterId(), protocolAdapterConfig.getTags())
                 .map(dupes -> {
                     log.error("Found duplicated tag names: {}", dupes);
                     return false;
@@ -118,14 +121,17 @@ public class ProtocolAdapterExtractor
     }
 
     public synchronized boolean updateAdapter(final @NotNull ProtocolAdapterEntity protocolAdapterConfig) {
-        final var duplicateTags = new HashSet<String>();
+        final var duplicatedAdapterTags = new HashSet<AdapterTag>();
         final var updated = new AtomicBoolean(false);
         final var newConfigs = allConfigs.stream()
                 .map(oldInstance -> {
                     if (oldInstance.getAdapterId().equals(protocolAdapterConfig.getAdapterId())) {
-                        return replaceTagNamesIfNoDuplicates(oldInstance.getTags(), protocolAdapterConfig.getTags())
+                        return replaceTagNamesIfNoDuplicates(
+                                        protocolAdapterConfig.getAdapterId(),
+                                        oldInstance.getTags(),
+                                        protocolAdapterConfig.getTags())
                                 .map(dupes -> {
-                                    duplicateTags.addAll(dupes);
+                                    duplicatedAdapterTags.addAll(dupes);
                                     return oldInstance;
                                 })
                                 .orElseGet(() -> {
@@ -138,8 +144,17 @@ public class ProtocolAdapterExtractor
                 })
                 .toList();
         if (updated.get()) {
-            if (!duplicateTags.isEmpty()) {
-                log.error("Found duplicated tag names: {}", duplicateTags);
+            if (!duplicatedAdapterTags.isEmpty()) {
+                if (log.isErrorEnabled()) {
+                    String tagsAsString;
+                    try {
+                        tagsAsString = ObjectMapperUtil.NO_PRETTY_PRINT_WITH_JAVA_TIME.writeValueAsString(
+                                duplicatedAdapterTags);
+                    } catch (final Exception e) {
+                        tagsAsString = e.getMessage();
+                    }
+                    log.error("Duplicate tags detected while updating: {}", tagsAsString);
+                }
                 return false;
             } else {
                 replaceConfigsAndTriggerWrite(newConfigs);
@@ -156,8 +171,9 @@ public class ProtocolAdapterExtractor
                 .findFirst()
                 .map(found -> {
                     newConfigs.remove(found);
-                    tagNames.removeAll(
-                            found.getTags().stream().map(TagEntity::getName).toList());
+                    found.getTags().stream()
+                            .map(tag -> new AdapterTag(adapterId, tag.getName()))
+                            .forEach(adapterTagSet::remove);
                     return true;
                 })
                 .orElse(false);
@@ -176,76 +192,92 @@ public class ProtocolAdapterExtractor
         }
     }
 
-    private Optional<Set<String>> updateTagNames(List<ProtocolAdapterEntity> entities) {
-        final var newTagNames = new HashSet<String>();
-        final var duplicates = new HashSet<String>();
-        entities.stream().flatMap(cfg -> cfg.getTags().stream()).forEach(tag -> {
-            if (newTagNames.contains(tag.getName())) {
-                duplicates.add(tag.getName());
-            } else {
-                newTagNames.add(tag.getName());
-            }
-        });
-
-        if (!duplicates.isEmpty()) {
-            log.error("Duplicate tags detected while updating: {}", duplicates);
-            return Optional.of(duplicates);
+    private @NonNull Optional<Set<AdapterTag>> updateTagNames(final List<ProtocolAdapterEntity> entities) {
+        final var newAdapterTagSet = new HashSet<AdapterTag>();
+        final var duplicatedAdapterTagSet = new HashSet<AdapterTag>();
+        entities.forEach(entity -> entity.getTags().stream()
+                .map(tag -> new AdapterTag(entity.getAdapterId(), tag.getName()))
+                .forEach(adapterTag -> {
+                    if (newAdapterTagSet.contains(adapterTag)) {
+                        duplicatedAdapterTagSet.add(adapterTag);
+                    } else {
+                        newAdapterTagSet.add(adapterTag);
+                    }
+                }));
+        if (!duplicatedAdapterTagSet.isEmpty()) {
+            log.error("Duplicate tags detected while updating: {}", duplicatedAdapterTagSet);
+            return Optional.of(duplicatedAdapterTagSet);
         }
-        tagNames.clear();
-        tagNames.addAll(newTagNames);
+        adapterTagSet.clear();
+        adapterTagSet.addAll(newAdapterTagSet);
         return Optional.empty();
     }
 
-    private Optional<Set<String>> addTagNamesIfNoDuplicates(List<TagEntity> newTags) {
-        final var newTagNames = new HashSet<String>();
-        final var duplicates = new HashSet<String>();
+    private @NonNull Optional<Set<AdapterTag>> addTagNamesIfNoDuplicates(
+            final @NonNull String adapterId, final List<TagEntity> newTags) {
+        final var newAdapterTagSet = new HashSet<AdapterTag>();
+        final var duplicatedAdapterTagSet = new HashSet<AdapterTag>();
         newTags.forEach(tag -> {
-            if (tagNames.contains(tag.getName())) {
-                duplicates.add(tag.getName());
+            final AdapterTag adapterTag = new AdapterTag(adapterId, tag.getName());
+            if (adapterTagSet.contains(adapterTag) || newAdapterTagSet.contains(adapterTag)) {
+                duplicatedAdapterTagSet.add(adapterTag);
             } else {
-                newTagNames.add(tag.getName());
+                newAdapterTagSet.add(adapterTag);
             }
         });
-
-        if (!duplicates.isEmpty()) {
-            log.error("Duplicate tags detected while adding: {}", duplicates);
-            return Optional.of(duplicates);
+        if (!duplicatedAdapterTagSet.isEmpty()) {
+            log.error("Duplicate tags detected while adding: {}", duplicatedAdapterTagSet);
+            return Optional.of(duplicatedAdapterTagSet);
         }
-        tagNames.addAll(newTagNames);
+        adapterTagSet.addAll(newAdapterTagSet);
         return Optional.empty();
     }
 
-    private @NotNull Optional<Set<String>> replaceTagNamesIfNoDuplicates(
-            final @NotNull List<TagEntity> oldTags, final @NotNull List<TagEntity> newTags) {
-        final Set<String> oldTagNameSet =
-                oldTags.stream().map(TagEntity::getName).collect(Collectors.toSet());
-        final Set<String> newTagNameSet =
-                newTags.stream().map(TagEntity::getName).collect(Collectors.toSet());
-        final Set<String> remainingTagNameSet = Sets.intersection(oldTagNameSet, newTagNameSet);
-        final Set<String> toBeRemovedTagNameSet = Sets.difference(oldTagNameSet, remainingTagNameSet);
-        final Set<String> toBeAddedTagNameSet = Sets.difference(newTagNameSet, remainingTagNameSet);
+    private @NotNull Optional<Set<AdapterTag>> replaceTagNamesIfNoDuplicates(
+            final @NotNull String adapterId,
+            final @NotNull List<TagEntity> oldTags,
+            final @NotNull List<TagEntity> newTags) {
+        final Set<AdapterTag> oldTagNameSet = oldTags.stream()
+                .map(tag -> new AdapterTag(adapterId, tag.getName()))
+                .collect(Collectors.toSet());
+        final Set<AdapterTag> newTagNameSet = new HashSet<>();
+        final Set<AdapterTag> duplicateTagNameSet = new HashSet<>();
+        newTags.stream().map(tag -> new AdapterTag(adapterId, tag.getName())).forEach(adapterTag -> {
+            if (newTagNameSet.contains(adapterTag)) {
+                duplicateTagNameSet.add(adapterTag);
+            } else {
+                newTagNameSet.add(adapterTag);
+            }
+        });
+        if (!duplicateTagNameSet.isEmpty()) {
+            log.error("Duplicate tags detected while replacing: {}", duplicateTagNameSet);
+            return Optional.of(duplicateTagNameSet);
+        }
+        final Set<AdapterTag> remainingTagNameSet = Sets.intersection(oldTagNameSet, newTagNameSet);
+        final Set<AdapterTag> toBeRemovedTagNameSet = Sets.difference(oldTagNameSet, remainingTagNameSet);
+        final Set<AdapterTag> toBeAddedTagNameSet = Sets.difference(newTagNameSet, remainingTagNameSet);
 
-        final Set<String> currentTagNameSet = new HashSet<>(tagNames);
+        final Set<AdapterTag> currentTagNameSet = new HashSet<>(adapterTagSet);
         currentTagNameSet.removeAll(toBeRemovedTagNameSet);
-        final Set<String> duplicateTagNameSet = Sets.intersection(currentTagNameSet, toBeAddedTagNameSet);
+        duplicateTagNameSet.addAll(Sets.intersection(currentTagNameSet, toBeAddedTagNameSet));
         if (!duplicateTagNameSet.isEmpty()) {
             log.error("Duplicate tags detected while replacing: {}", duplicateTagNameSet);
             return Optional.of(duplicateTagNameSet);
         }
         currentTagNameSet.addAll(toBeAddedTagNameSet);
-        tagNames.clear();
-        tagNames.addAll(currentTagNameSet);
+        adapterTagSet.clear();
+        adapterTagSet.addAll(currentTagNameSet);
         return Optional.empty();
     }
 
     @Override
-    public synchronized void registerConsumer(final Consumer<List<@NotNull ProtocolAdapterEntity>> consumer) {
+    public synchronized void registerConsumer(final @NotNull Consumer<List<@NotNull ProtocolAdapterEntity>> consumer) {
         this.consumer = consumer;
         notifyConsumer();
     }
 
     @Override
-    public boolean needsRestartWithConfig(final HiveMQConfigEntity config) {
+    public boolean needsRestartWithConfig(final @NotNull HiveMQConfigEntity config) {
         return false;
     }
 
