@@ -15,38 +15,27 @@
  */
 package com.hivemq.edge.adapters.http.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import com.hivemq.edge.adapters.http.tag.HttpTag;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-/**
- * @author HiveMQ Adapter Generator
- */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class HttpData {
 
     private final @NotNull String requestUrl;
     private final @NotNull String contentType;
     private final int httpStatusCode;
-    private final @NotNull DataPointFactory dataPointFactory;
-
-    // -- Handle multiple tags in the same sample
-    protected @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
-    private final @NotNull Long timestamp = System.currentTimeMillis();
+    private final @NotNull HttpTag tag;
+    private @Nullable Object payloadData;
 
     public HttpData(
             final @NotNull String requestUrl,
             final int httpStatusCode,
             final @NotNull String contentType,
-            final @NotNull DataPointFactory dataPointFactory) {
+            final @NotNull HttpTag tag) {
         this.requestUrl = requestUrl;
         this.contentType = contentType;
         this.httpStatusCode = httpStatusCode;
-        this.dataPointFactory = dataPointFactory;
+        this.tag = tag;
     }
 
     public @NotNull String getRequestUrl() {
@@ -61,17 +50,15 @@ public class HttpData {
         return httpStatusCode >= 200 && httpStatusCode <= 299;
     }
 
-    @JsonIgnore
-    public @NotNull Long getTimestamp() {
-        return timestamp;
+    public @NotNull HttpTag getTag() {
+        return tag;
     }
 
-    public void addDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {
-        dataPoints.add(dataPointFactory.create(tagName, tagValue));
+    public @Nullable Object getPayloadData() {
+        return payloadData;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public @NotNull List<DataPoint> getDataPoints() {
-        return dataPoints;
+    public void setPayloadData(final @NotNull Object payloadData) {
+        this.payloadData = payloadData;
     }
 }
