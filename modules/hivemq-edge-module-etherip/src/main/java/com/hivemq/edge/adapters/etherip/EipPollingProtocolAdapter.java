@@ -16,8 +16,6 @@
 package com.hivemq.edge.adapters.etherip;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
-import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -33,7 +31,6 @@ import com.hivemq.edge.adapters.etherip.model.EtherIpValueFactory;
 import etherip.EtherNetIP;
 import etherip.data.CipException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -48,11 +45,9 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
     private final @NotNull EipSpecificAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
-    protected final @NotNull AdapterFactories adapterFactories;
     private final @NotNull String adapterId;
     private volatile @Nullable EtherNetIP etherNetIP;
     private final @NotNull PublishChangedDataOnlyHandler lastSamples = new PublishChangedDataOnlyHandler();
-    private final @NotNull DataPointFactory dataPointFactory;
 
     private final @NotNull Map<String, EipTag> tags;
 
@@ -62,12 +57,10 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
         this.adapterId = input.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
-        this.dataPointFactory = input.adapterFactories().dataPointFactory();
         this.tags = input.getTags().stream()
                 .map(tag -> (EipTag) tag)
                 .collect(Collectors.toMap(tag -> tag.getDefinition().getAddress(), tag -> tag));
         this.protocolAdapterState = input.getProtocolAdapterState();
-        this.adapterFactories = input.adapterFactories();
     }
 
     @Override
@@ -124,27 +117,34 @@ public class EipPollingProtocolAdapter implements BatchPollingProtocolAdapter {
             return;
         }
 
+        final var dataPointsPublisher = pollingOutput.dataPointsPublisher();
         final var tagAddresses =
                 tags.values().stream().map(v -> v.getDefinition().getAddress()).toArray(String[]::new);
+        final boolean publishChangedDataOnly = adapterConfig.getEipToMqttConfig().getPublishChangedDataOnly();
         try {
             final var readCipData = client.readTags(tagAddresses);
             for (int i = 0; i < readCipData.length; i++) {
                 final var cipData = readCipData[i];
                 final var tagAddress = tagAddresses[i];
                 EtherIpValueFactory.fromTagAddressAndCipData(tagAddress, cipData)
-                        .map(it -> dataPointFactory.create(
-                                Objects.requireNonNull(tags.get(tagAddress)).getName(), it.getValue()))
-                        .ifPresent(dataPoint -> {
-                            if (adapterConfig.getEipToMqttConfig().getPublishChangedDataOnly()) {
-                                if (lastSamples.replaceIfValueIsNew(dataPoint.getTagName(), List.of(dataPoint))) {
-                                    pollingOutput.addDataPoint(dataPoint);
+                        .ifPresent(etherIpValue -> {
+                            final var tag = Objects.requireNonNull(tags.get(tagAddress));
+                            final var value = etherIpValue.getValue();
+                            if (!publishChangedDataOnly
+                                    || lastSamples.replaceIfValueIsNew(tag.getName(), value)) {
+                                final var builder = dataPointsPublisher.addDataPoint(tag);
+                                switch (value) {
+                                    case final Boolean val -> builder.value(val);
+                                    case final Integer val -> builder.value(val);
+                                    case final Long val -> builder.value(val);
+                                    case final Double val -> builder.value(val);
+                                    case final String val -> builder.value(val);
+                                    default -> builder.value(value.toString());
                                 }
-                            } else {
-                                pollingOutput.addDataPoint(dataPoint);
                             }
                         });
             }
-            pollingOutput.finish();
+            dataPointsPublisher.publish();
         } catch (final CipException e) {
             if (e.getStatusCode() == 0x04) {
                 log.warn("A Tag doesn't exist on device.", e);

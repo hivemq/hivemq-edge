@@ -38,7 +38,7 @@ public class EtherIpValueFactory {
                 if (cipData.getElementCount() > 1) {
                     log.warn("More than one element returned, only the first one will be used");
                 }
-                Number number = cipData.getNumber(0);
+                final var number = cipData.getNumber(0);
                 log.debug("Got value {} for type {} for tag address {}", number, dataType, tagAddress);
                 switch (dataType) {
                     case BOOL -> {
