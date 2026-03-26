@@ -29,16 +29,20 @@ public class ProtocolAdapterTagStreamingServiceImpl implements ProtocolAdapterTa
 
     private final @NotNull TagManager tagManager;
     private final @NotNull Consumer<DataPointBuilder<?>> enricher;
+    private final @NotNull String adapterId;
 
     public ProtocolAdapterTagStreamingServiceImpl(
-            @NotNull final TagManager tagManager, @NotNull final Consumer<DataPointBuilder<?>> enricher) {
+            @NotNull final TagManager tagManager,
+            @NotNull final Consumer<DataPointBuilder<?>> enricher,
+            final @NotNull String adapterId) {
         this.tagManager = tagManager;
         this.enricher = enricher;
+        this.adapterId = adapterId;
     }
 
     @Override
     public @NotNull DataPointListBuilder dataPointsPublisher() {
-        return new DataPointListBuilderImpl(enricher, tagManager::feed);
+        return new DataPointListBuilderImpl(adapterId, enricher, tagManager::feed);
     }
 
     @Override

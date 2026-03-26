@@ -27,20 +27,31 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Function;
+
+import com.hivemq.edge.modules.adapters.data.TagManager;
 import org.jetbrains.annotations.NotNull;
 
 public class DataPointWithMetadata implements DataPoint {
     private final @NotNull ObjectNode jsonNode;
+    private final @NotNull String adapterID;
 
-    public DataPointWithMetadata(final @NotNull ObjectNode jsonNode) {
+    public DataPointWithMetadata(final @NotNull ObjectNode jsonNode, final @NotNull String adapterID) {
         this.jsonNode = jsonNode;
+        this.adapterID = adapterID;
     }
 
     public static <R> @NotNull DataPointBuilder<R> builder(
-            final @NotNull Tag tag, final @NotNull Function<DataPointBuilder<R>, R> completer) {
+            final @NotNull String adapterID,
+            final @NotNull Tag tag,
+            final @NotNull Function<DataPointBuilder<R>, R> completer) {
         final ObjectNode root = JsonNodeFactory.instance.objectNode();
         root.put("tagName", tag.getName());
-        return new DataPointBuilderImpl<>(root, completer);
+        return new DataPointBuilderImpl<>(adapterID, root, completer);
+    }
+
+    @Override
+    public @NotNull String getAdapterId() {
+        return adapterID;
     }
 
     @Override
@@ -74,11 +85,15 @@ public class DataPointWithMetadata implements DataPoint {
     public static final class DataPointBuilderImpl<R> implements DataPointBuilder<R> {
         private final @NotNull ObjectNode root;
         private final @NotNull Function<DataPointBuilder<R>, R> completer;
+        private final @NotNull String adapterId;
 
         DataPointBuilderImpl(
-                final @NotNull ObjectNode root, final @NotNull Function<DataPointBuilder<R>, R> completer) {
+                final @NotNull String adapterId,
+                final @NotNull ObjectNode root,
+                final @NotNull Function<DataPointBuilder<R>, R> completer) {
             this.root = root;
             this.completer = completer;
+            this.adapterId = adapterId;
         }
 
         @Override
@@ -204,11 +219,11 @@ public class DataPointWithMetadata implements DataPoint {
             return completer.apply(this);
         }
 
-        public @NotNull DataPointWithMetadata build() {
+        public @NotNull DataPointWithMetadata build(String adapterId) {
             if (!root.has("timestamp")) {
                 root.put("timestamp", System.currentTimeMillis());
             }
-            return new DataPointWithMetadata(root);
+            return new DataPointWithMetadata(root, adapterId);
         }
     }
 

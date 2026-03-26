@@ -26,22 +26,26 @@ import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 
 public final class DataPointListBuilderImpl implements DataPointListBuilder {
+    private final @NotNull String adapterId;
     private final @NotNull Consumer<DataPointBuilder<?>> enricher;
     private final @NotNull Consumer<List<DataPoint>> receiver;
     private final @NotNull List<DataPointWithMetadata.DataPointBuilderImpl<DataPointListBuilder>> builders =
             new ArrayList<>();
 
     public DataPointListBuilderImpl(
-            @NotNull final Consumer<DataPointBuilder<?>> enricher, @NotNull final Consumer<List<DataPoint>> receiver) {
+            @NotNull final String adapterId,
+            @NotNull final Consumer<DataPointBuilder<?>> enricher,
+            @NotNull final Consumer<List<DataPoint>> receiver) {
         this.enricher = enricher;
         this.receiver = receiver;
+        this.adapterId = adapterId;
     }
 
     @Override
     public @NotNull DataPointBuilder<DataPointListBuilder> addDataPoint(final @NotNull Tag tag) {
         final Function<DataPointBuilder<DataPointListBuilder>, DataPointListBuilder> completer = dp -> this;
         final var builderImpl = (DataPointWithMetadata.DataPointBuilderImpl<DataPointListBuilder>)
-                DataPointWithMetadata.builder(tag, completer);
+                DataPointWithMetadata.builder(adapterId, tag, completer);
         builders.add(builderImpl);
         return builderImpl;
     }
@@ -51,7 +55,7 @@ public final class DataPointListBuilderImpl implements DataPointListBuilder {
         final var converted = builders.stream()
                 .<DataPoint>map(builder -> {
                     enricher.accept(builder);
-                    return builder.build();
+                    return builder.build(adapterId);
                 })
                 .toList();
         receiver.accept(converted);

@@ -23,9 +23,10 @@ import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.datapoint.DataPointListBuilderImpl;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.exceptions.StackLessProtocolAdapterException;
-import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.concurrent.CompletableFuture;
 
 public class PollingOutputImpl implements PollingOutput, BatchPollingOutput {
 
@@ -47,9 +48,8 @@ public class PollingOutputImpl implements PollingOutput, BatchPollingOutput {
     @Override
     public @NotNull DataPointListBuilder dataPointListPublisher() {
         return new DataPointListBuilderImpl(
-                toEnrich -> {
-                    toEnrich.startObjectContext().put("key", "value").endObject();
-                },
+                adapterId,
+                toEnrich -> toEnrich.startObjectContext().put("key", "value").endObject(),
                 dataPoints -> {
                     dataPoints.forEach(dataSample::addDataPoint);
                     finish();
