@@ -22,13 +22,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
 import com.hivemq.adapter.sdk.api.tag.Tag;
-import org.jetbrains.annotations.NotNull;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Function;
+import org.jetbrains.annotations.NotNull;
 
 public class DataPointWithMetadata implements DataPoint {
     private final @NotNull ObjectNode jsonNode;
@@ -40,8 +39,7 @@ public class DataPointWithMetadata implements DataPoint {
     }
 
     public static <R> @NotNull DataPointBuilder<R> builder(
-            final @NotNull Tag tag,
-            final @NotNull Function<DataPointBuilder<R>, R> completer) {
+            final @NotNull Tag tag, final @NotNull Function<DataPointBuilder<R>, R> completer) {
         final ObjectNode root = JsonNodeFactory.instance.objectNode();
         root.put("tagName", tag.getName());
         return new DataPointBuilderImpl<>(root, completer);
@@ -85,8 +83,7 @@ public class DataPointWithMetadata implements DataPoint {
         private final @NotNull Function<DataPointBuilder<R>, R> completer;
 
         DataPointBuilderImpl(
-                final @NotNull ObjectNode root,
-                final @NotNull Function<DataPointBuilder<R>, R> completer) {
+                final @NotNull ObjectNode root, final @NotNull Function<DataPointBuilder<R>, R> completer) {
             this.root = root;
             this.completer = completer;
         }

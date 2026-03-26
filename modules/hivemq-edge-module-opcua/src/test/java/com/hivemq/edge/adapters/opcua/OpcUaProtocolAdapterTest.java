@@ -15,6 +15,12 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
@@ -32,6 +38,9 @@ import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
@@ -43,16 +52,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import util.EmbeddedOpcUaServerExtension;
-
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.awaitility.Awaitility.await;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Integration test for OpcUaProtocolAdapter with embedded OPC UA server.

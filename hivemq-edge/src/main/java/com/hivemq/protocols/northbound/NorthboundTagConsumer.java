@@ -32,14 +32,13 @@ import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishServiceImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.nio.charset.StandardCharsets;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class NorthboundTagConsumer implements SingleTagConsumer {
 
@@ -155,7 +154,9 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
             node.set("tagName", JsonNodeFactory.instance.textNode(dataPoint.getTagName()));
         }
         if (!northboundMapping.getUserProperties().isEmpty()) {
-            node.set("mqttUserProperties", objectMapper.convertValue(northboundMapping.getUserProperties(), JsonNode.class));
+            node.set(
+                    "mqttUserProperties",
+                    objectMapper.convertValue(northboundMapping.getUserProperties(), JsonNode.class));
         }
         return objectMapper.writeValueAsBytes(node);
     }

@@ -15,6 +15,11 @@
  */
 package com.hivemq.edge.adapters.opcua.northbound;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
@@ -33,24 +38,18 @@ import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterTagStreamingServiceImpl;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
-import org.awaitility.Awaitility;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.RegisterExtension;
-import util.EmbeddedOpcUaServerExtension;
-
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.awaitility.Awaitility;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import util.EmbeddedOpcUaServerExtension;
 
 abstract class AbstractOpcUaPayloadConverterTest {
 

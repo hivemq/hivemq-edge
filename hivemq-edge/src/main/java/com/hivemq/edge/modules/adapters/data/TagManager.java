@@ -16,8 +16,8 @@
 package com.hivemq.edge.modules.adapters.data;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.protocols.northbound.SingleTagConsumer;
 import com.hivemq.configuration.entity.adapter.AdapterTag;
+import com.hivemq.protocols.northbound.SingleTagConsumer;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
