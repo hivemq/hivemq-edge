@@ -491,11 +491,13 @@ public class ProtocolAdapterManager {
                         new ProtocolAdapterMetricsServiceImpl(configProtocolId, config.getAdapterId(), metricRegistry);
                 final ProtocolAdapterStateImpl state = new ProtocolAdapterStateImpl(
                         moduleServices.eventService(), config.getAdapterId(), configProtocolId);
+                final var streamingService =
+                        new ProtocolAdapterTagStreamingServiceImpl(config.getAdapterId(), tagManager);
                 final ModuleServicesPerModuleImpl perModule = new ModuleServicesPerModuleImpl(
                         moduleServices.adapterPublishService(),
                         eventService,
                         protocolAdapterWritingService,
-                        tagManager);
+                        streamingService);
                 final ProtocolAdapter protocolAdapter = factory.createAdapter(
                         factory.getInformation(),
                         new ProtocolAdapterInputImpl(
