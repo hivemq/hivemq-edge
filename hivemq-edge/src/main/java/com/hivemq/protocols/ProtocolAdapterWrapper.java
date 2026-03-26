@@ -365,10 +365,15 @@ public class ProtocolAdapterWrapper {
      * Async wrapper for {@link #stop(boolean)} that matches the old API signature.
      *
      * @param destroy whether to destroy the adapter after stopping
-     * @return a future that completes when the adapter is stopped
+     * @return a future that completes when the adapter is stopped, or completes exceptionally if stop fails
      */
     public @NotNull CompletableFuture<Void> stopAsync(final boolean destroy) {
-        return CompletableFuture.runAsync(() -> stop(destroy));
+        return CompletableFuture.runAsync(() -> {
+            final boolean success = stop(destroy);
+            if (!success) {
+                throw new RuntimeException("Failed to stop adapter: " + getAdapterId());
+            }
+        });
     }
 
     // ===== Listener Management =====
@@ -451,7 +456,9 @@ public class ProtocolAdapterWrapper {
         if (!northboundSuccess || !southboundSuccess) {
             // Cleanup on failure: disconnect any connection that was started
             if (northboundSuccess) {
-                LOGGER.warn("Stopping adapter '{}' after a failed start.", getAdapterId());
+                LOGGER.warn("Stopping adapter with id {} after a failed start", getAdapterId());
+                stopNorthbound();
+            } else if (!northboundConnectionState.isDisconnected()) {
                 stopNorthbound();
             }
             transitionTo(ProtocolAdapterRuntimeState.Error);
@@ -464,7 +471,7 @@ public class ProtocolAdapterWrapper {
             createAndSubscribeTagConsumers();
             startPolling();
         } catch (final Exception e) {
-            LOGGER.error("Protocol adapter '{}' failed to be started.", getAdapterId(), e);
+            LOGGER.error("Protocol adapter with id {} failed to be started.", getAdapterId(), e);
             stopSouthbound();
             stopNorthbound();
             transitionTo(ProtocolAdapterRuntimeState.Error);
@@ -474,9 +481,9 @@ public class ProtocolAdapterWrapper {
         final boolean writingSuccess = startWriting();
 
         if (writingSuccess) {
-            LOGGER.debug("Successfully started adapter '{}'.", getAdapterId());
+            LOGGER.debug("Successfully started adapter with id {}", getAdapterId());
         } else {
-            LOGGER.debug("Partially started adapter '{}'.", getAdapterId());
+            LOGGER.debug("Partially started adapter with id {}", getAdapterId());
         }
 
         return true;
@@ -528,14 +535,14 @@ public class ProtocolAdapterWrapper {
                 transitionTo(ProtocolAdapterRuntimeState.Idle).status().isSuccess();
         protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
         if (destroy) {
-            LOGGER.info("Destroying adapter '{}'.", getAdapterId());
+            LOGGER.info("Destroying adapter with id '{}'", getAdapterId());
             adapter.destroy();
         }
         final boolean success = stateTransitionSuccess && southboundSuccess && northboundSuccess;
         if (success) {
-            LOGGER.info("Stopped adapter '{}'.", getAdapterId());
+            LOGGER.info("Stopped adapter with id {}", getAdapterId());
         } else {
-            LOGGER.error("Error stopping adapter '{}'.", getAdapterId());
+            LOGGER.error("Error stopping adapter with id {}", getAdapterId());
         }
         return success;
     }
@@ -589,7 +596,7 @@ public class ProtocolAdapterWrapper {
      */
     protected boolean startSouthbound() {
         if (!adapter.getProtocolAdapterInformation().getCapabilities().contains(ProtocolAdapterCapability.WRITE)) {
-            LOGGER.debug("Adapter '{}' does not support southbound, skipping.", getAdapterId());
+            LOGGER.debug("Protocol adapter with id {} does not support Southbound.", getAdapterId());
             return true;
         }
 
@@ -739,13 +746,17 @@ public class ProtocolAdapterWrapper {
         }
     }
 
-    private @Nullable WritingProtocolAdapter getWritingAdapter() {
+    private @Nullable WritingProtocolAdapter getWritingAdapterForStart() {
         if (!protocolAdapterWritingService.writingEnabled()) {
             return null;
         }
         if (!adapter.getProtocolAdapterInformation().getCapabilities().contains(ProtocolAdapterCapability.WRITE)) {
             return null;
         }
+        return getWritingAdapterForStop();
+    }
+
+    private @Nullable WritingProtocolAdapter getWritingAdapterForStop() {
         if (!(getAdapter() instanceof final WritingProtocolAdapter writingAdapter)) {
             return null;
         }
@@ -759,7 +770,7 @@ public class ProtocolAdapterWrapper {
      * @return {@code true} if writing was started or not needed, {@code false} if writing setup failed
      */
     protected boolean startWriting() {
-        final WritingProtocolAdapter writingAdapter = getWritingAdapter();
+        final WritingProtocolAdapter writingAdapter = getWritingAdapterForStart();
         if (writingAdapter == null) {
             return true;
         }
@@ -772,11 +783,11 @@ public class ProtocolAdapterWrapper {
                     .startWritingAsync(writingAdapter, metricsService, writingContexts)
                     .get();
             if (!success) {
-                LOGGER.debug("Protocol adapter '{}' start writing failed as data hub is not available.", getId());
+                LOGGER.error("Protocol adapter with id {} start writing failed as data hub is not available.", getId());
             }
             return success;
         } catch (final Exception e) {
-            LOGGER.error("Failed to start writing for adapter with id '{}'.", getId(), e);
+            LOGGER.error("Failed to start writing for adapter with id {}.", getId(), e);
             return false;
         }
     }
@@ -784,9 +795,13 @@ public class ProtocolAdapterWrapper {
     /**
      * Stop writing for this adapter.
      * Called before disconnecting connections during {@link #stop(boolean)}.
+     * <p>
+     * This intentionally does not check whether writing is currently enabled in the license/service. If an
+     * adapter started writing before a license/config change disabled writing, stop still needs to tear down
+     * any existing writing pipeline.
      */
     protected void stopWriting() {
-        final WritingProtocolAdapter writingAdapter = getWritingAdapter();
+        final WritingProtocolAdapter writingAdapter = getWritingAdapterForStop();
         if (writingAdapter == null) {
             return;
         }

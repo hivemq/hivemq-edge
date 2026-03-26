@@ -16,6 +16,7 @@
 package com.hivemq.protocols;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -38,6 +39,7 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
@@ -264,7 +266,7 @@ class ProtocolAdapterWrapperTest {
 
             assertThat(wrapper.start()).isFalse();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Error);
-            assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Error);
+            assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
             assertThat(wrapper.getSouthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
         }
     }
@@ -848,6 +850,67 @@ class ProtocolAdapterWrapperTest {
             assertThat(wrapper.stop(false)).isTrue();
             verify(protocolAdapter, times(1)).stop(eq(ProtocolAdapterConnectionDirection.Northbound), any(), any());
             assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
+        }
+    }
+
+    @Nested
+    class AsyncCompatibility {
+
+        @Test
+        void stopAsync_whenStopFails_completesExceptionally() {
+            assertThatThrownBy(() -> wrapper.stopAsync(false).get(2, TimeUnit.SECONDS))
+                    .isInstanceOf(java.util.concurrent.ExecutionException.class)
+                    .hasCauseInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Failed to stop adapter: test-adapter");
+        }
+    }
+
+    @Nested
+    class WritingTeardownParity {
+
+        @Test
+        void stop_stopsWritingEvenWhenWritingIsDisabled() {
+            final WritingProtocolAdapter writingAdapter = Mockito.mock(WritingProtocolAdapter.class);
+            when(writingAdapter.getId()).thenReturn("writer-adapter");
+            when(writingAdapter.getProtocolAdapterInformation()).thenReturn(adapterInformation);
+            when(adapterInformation.getCapabilities())
+                    .thenReturn(EnumSet.of(ProtocolAdapterCapability.READ, ProtocolAdapterCapability.WRITE));
+            when(protocolAdapterWritingService.writingEnabled()).thenReturn(false);
+
+            doAnswer(invocation -> {
+                        final ProtocolAdapterStartOutput output = invocation.getArgument(2);
+                        output.startedSuccessfully();
+                        return null;
+                    })
+                    .when(writingAdapter)
+                    .start(any(), any(), any());
+            doAnswer(invocation -> {
+                        final ProtocolAdapterStopOutput output = invocation.getArgument(2);
+                        output.stoppedSuccessfully();
+                        return null;
+                    })
+                    .when(writingAdapter)
+                    .stop(any(), any(), any());
+
+            final ProtocolAdapterWrapper writingWrapper = new ProtocolAdapterWrapper(
+                    writingAdapter,
+                    config,
+                    adapterFactory,
+                    adapterInformation,
+                    metricsService,
+                    protocolAdapterState,
+                    protocolAdapterPollingService,
+                    eventService,
+                    moduleServices,
+                    tagManager,
+                    northboundConsumerFactory,
+                    protocolAdapterWritingService);
+
+            assertThat(writingWrapper.start()).isTrue();
+            assertThat(writingWrapper.stop(false)).isTrue();
+
+            verify(protocolAdapterWritingService, never()).startWritingAsync(any(), any(), any());
+            verify(protocolAdapterWritingService, times(1)).stopWriting(eq(writingAdapter), any());
         }
     }
 

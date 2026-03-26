@@ -28,7 +28,10 @@ This section is the authoritative implementation delta for the latest review pas
 | 13. `supportsSouthbound()` removed from SDK | ✅ Complete | Removed `default boolean supportsSouthbound()` from `ProtocolAdapter` interface. Callers (`ProtocolAdapterWrapper`) now use `adapter.getProtocolAdapterInformation().getCapabilities().contains(ProtocolAdapterCapability.WRITE)` directly. All tests updated. |
 | 14. `supplyAsync` → `runAsync` in wrapper | ✅ Complete | `startAsync()` and `stopAsync()` in `ProtocolAdapterWrapper` replaced `CompletableFuture.supplyAsync(() -> { ...; return null; })` with `CompletableFuture.runAsync(...)` since both return `CompletableFuture<Void>` with no meaningful return value. |
 | 15. Dedicated `ThreadPoolExecutor` for manager async ops | ✅ Complete | `ProtocolAdapterManager.startAsync()`/`stopAsync()` now use a dedicated `adapterLifecycleExecutor` (core=4, max=10, keepAlive=60s, bounded queue, `CallerRunsPolicy`) instead of `ForkJoinPool.commonPool()`. Prevents blocking I/O (adapter connect/disconnect) from starving the common pool on resource-constrained edge hardware. |
-| 16. Missing logging calls migrated | ✅ Complete | Eight logs from legacy `ProtocolAdapterWrapper` were missing: (1) `"Destroying adapter '{}'"` info log before `adapter.destroy()`, (2) `"Stopping adapter '{}' after a failed start"` warn log before cleanup, (3) `"Successfully started adapter '{}'"` debug log after all services started, (4) `"Partially started adapter '{}'"` debug log when writing fails, (5) `"Protocol adapter '{}' failed to be started"` error log with try-catch around consumer/polling setup in Step 6, (6) `"...start writing failed as data hub is not available"` error log — `startWritingAsync` boolean return value was being ignored, (7) `"Stopped adapter '{}'"` info log on stop success, (8) `"Error stopping adapter '{}'"` error log on stop failure. `startWriting()` return type changed from `void` to `boolean`. |
+| 16. Missing logging calls migrated | ✅ Complete | Eight legacy wrapper logs were restored in the synchronous lifecycle path (`destroying`, failed-start cleanup, start success/partial success, start failure in service setup, writing start failure handling, stop success/failure). `startWriting()` return type changed from `void` to `boolean`. Note: `"...start writing failed as data hub is not available"` is currently `DEBUG` in code (not `ERROR`). |
+| 17. Wrapper async stop failure propagation | ✅ Fixed | `ProtocolAdapterWrapper.stopAsync(boolean)` now completes exceptionally when synchronous `stop(...)` returns `false` (parity with legacy async semantics where stop conflicts/failures surfaced as failed futures). |
+| 18. Writing teardown parity on stop | ✅ Fixed | `ProtocolAdapterWrapper.stopWriting()` now stops writing adapters even when writing is currently disabled, preserving legacy cleanup behavior (e.g., license/config changed after writing had already started). |
+| 19. Manager shutdown timeout parity | ✅ Fixed | `ProtocolAdapterManager.shutdown()` now uses `wrapper.stopAsync(true).get(5s)` with interruption/timeout handling, restoring bounded shutdown behavior from legacy manager. |
 
 **Working-log note (2026-03-20)**: Sections 3.1, 3.2 (code examples), 4.1, 4.3 contain the
 **original reference design** that used a separate `ProtocolAdapter2` interface with
@@ -695,7 +698,8 @@ public class ProtocolAdapterWrapper2 {
 > (`ADAPTER_STARTED`/`ADAPTER_ERROR` with `adapterType` user data) via `remoteService.fireUsageEvent()`,
 > metrics integration, ClassLoader management (`runWithContextLoader(...)` helper), I18n error messages, consumer
 > registration with `ProtocolAdapterExtractor`, and `ConcurrentHashMap` for thread-safe adapter storage.
-> Log messages match the old `ProtocolAdapterManager` exactly. `start()` throws `ProtocolAdapterException`
+> Legacy manager business logs were retained for start/stop/refresh flows; additional lifecycle/FSM observability logs
+> are intentionally present, so logging is not a strict 1:1 line-for-line parity set. `start()` throws `ProtocolAdapterException`
 > on failure; `stop()` emits a CRITICAL event on failure but does not throw. The code below shows the reference design.
 
 ```java

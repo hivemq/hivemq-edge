@@ -228,6 +228,21 @@ class ProtocolAdapterManagerTest {
         }
     }
 
+    private void addWrapperToManager(
+            final @NotNull ProtocolAdapterManager managerUnderTest,
+            final @NotNull String adapterId,
+            final @NotNull ProtocolAdapterWrapper wrapper) {
+        try {
+            final var field = ProtocolAdapterManager.class.getDeclaredField("protocolAdapterMap");
+            field.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            final var map = (Map<String, ProtocolAdapterWrapper>) field.get(managerUnderTest);
+            map.put(adapterId, wrapper);
+        } catch (final Exception e) {
+            throw new RuntimeException("Failed to add adapter wrapper to manager", e);
+        }
+    }
+
     private void waitUntilNotBusy(final @NotNull ProtocolAdapterManager managerUnderTest) throws InterruptedException {
         final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
         while (managerUnderTest.isBusy() && System.nanoTime() < deadline) {
@@ -547,6 +562,22 @@ class ProtocolAdapterManagerTest {
         @Test
         void startAsync_adapterNotFound_throwsException() {
             assertThat(manager.startAsync("nonexistent")).isCompletedExceptionally();
+        }
+    }
+
+    @Nested
+    class ShutdownBehaviorTests {
+
+        @Test
+        void shutdown_usesAsyncStopPathWithTimeoutGuard() {
+            final ProtocolAdapterWrapper wrapper = mock(ProtocolAdapterWrapper.class);
+            when(wrapper.stopAsync(true)).thenReturn(CompletableFuture.completedFuture(null));
+            addWrapperToManager(manager, "adapter-1", wrapper);
+
+            manager.shutdown();
+
+            verify(wrapper).stopAsync(true);
+            verify(wrapper, org.mockito.Mockito.never()).stop(true);
         }
     }
 
