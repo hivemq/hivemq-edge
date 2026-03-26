@@ -17,6 +17,8 @@ package com.hivemq.protocols.fsm;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -86,8 +88,8 @@ public class ProtocolAdapterDefaultMethodsTest {
                 ProtocolAdapterConnectionDirection.Northbound, mock(ProtocolAdapterStartInput.class), startOutput);
         adapter.stop(ProtocolAdapterConnectionDirection.Northbound, mock(ProtocolAdapterStopInput.class), stopOutput);
 
-        verify(startOutput).startedSuccessfully();
-        verify(stopOutput).stoppedSuccessfully();
+        verify(startOutput).failStart(any(RuntimeException.class), anyString());
+        verify(stopOutput).failStop(any(RuntimeException.class), anyString());
     }
 
     private static @NotNull ProtocolAdapterInformation mockInfo(final @NotNull Set<ProtocolAdapterCapability> caps) {
