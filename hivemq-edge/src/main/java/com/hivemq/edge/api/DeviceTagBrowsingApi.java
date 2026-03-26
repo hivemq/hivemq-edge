@@ -66,7 +66,8 @@ public interface DeviceTagBrowsingApi {
     @NotNull
     Response browse(
             @PathParam("adapterId") @Parameter(description = "The adapter ID.") @NotNull String adapterId,
-            @QueryParam("rootNodeId") @Parameter(description = "Optional root node ID.") @Nullable String rootNodeId,
+            @QueryParam("rootId") @Parameter(description = "Optional device-specific root identifier.") @Nullable
+                    String rootId,
             @QueryParam("maxDepth") @DefaultValue("0") @Parameter(description = "Max browse depth (0 = unlimited).")
                     int maxDepth,
             @HeaderParam(HttpHeaders.ACCEPT) @NotNull String accept);

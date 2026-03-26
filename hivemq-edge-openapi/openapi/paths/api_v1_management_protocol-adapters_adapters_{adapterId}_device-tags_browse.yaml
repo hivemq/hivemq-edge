@@ -14,9 +14,9 @@ post:
       required: true
       schema:
         type: string
-    - description: Optional root node ID to start browsing from.
+    - description: Optional device-specific root identifier to start browsing from.
       in: query
-      name: rootNodeId
+      name: rootId
       required: false
       schema:
         type: string

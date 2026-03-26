@@ -80,20 +80,19 @@ public class OpcUaNodeBrowser {
     /**
      * Browse the OPC-UA address space starting from the given root node.
      *
-     * @param rootNodeId the OPC-UA node ID to start from, or null for ObjectsFolder (i=85)
+     * @param rootId the OPC-UA node ID to start from, or null for ObjectsFolder (i=85)
      * @param maxDepth   maximum depth (0 = unlimited)
      * @return list of discovered variable nodes
      * @throws BrowseException if the operation fails
      */
-    public @NotNull List<BrowsedNode> browse(final @Nullable String rootNodeId, final int maxDepth)
-            throws BrowseException {
+    public @NotNull List<BrowsedNode> browse(final @Nullable String rootId, final int maxDepth) throws BrowseException {
         final NodeId browseRoot;
-        if (rootNodeId == null || rootNodeId.isBlank()) {
+        if (rootId == null || rootId.isBlank()) {
             browseRoot = NodeIds.ObjectsFolder;
         } else {
-            final Optional<NodeId> parsed = NodeId.parseSafe(rootNodeId);
+            final Optional<NodeId> parsed = NodeId.parseSafe(rootId);
             if (parsed.isEmpty()) {
-                throw new BrowseException("Invalid OPC-UA node ID: '" + rootNodeId + "'");
+                throw new BrowseException("Invalid OPC-UA node ID: '" + rootId + "'");
             }
             browseRoot = parsed.get();
         }

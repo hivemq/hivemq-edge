@@ -84,7 +84,7 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
     @Override
     public @NotNull Response browse(
             final @NotNull String adapterId,
-            final @Nullable String rootNodeId,
+            final @Nullable String rootId,
             final int maxDepth,
             final @NotNull String accept) {
         // Lookup adapter
@@ -102,7 +102,7 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         // Browse
         final List<BrowsedNode> nodes;
         try {
-            nodes = browser.browse(rootNodeId, maxDepth);
+            nodes = browser.browse(rootId, maxDepth);
         } catch (final BrowseException e) {
             logger.error("Browse failed for adapter '{}'", adapterId, e);
             if (e.getMessage() != null && e.getMessage().contains("timed out")) {

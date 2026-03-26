@@ -529,8 +529,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     }
 
     @Override
-    public @NotNull List<BrowsedNode> browse(final @Nullable String rootNodeId, final int maxDepth)
-            throws BrowseException {
+    public @NotNull List<BrowsedNode> browse(final @Nullable String rootId, final int maxDepth) throws BrowseException {
         if (stopped) {
             throw new BrowseException("Browse failed: Adapter has been stopped");
         }
@@ -542,7 +541,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         if (clientOpt.isEmpty()) {
             throw new BrowseException("Browse failed: Client not connected");
         }
-        return new OpcUaNodeBrowser(clientOpt.get(), adapterId).browse(rootNodeId, maxDepth);
+        return new OpcUaNodeBrowser(clientOpt.get(), adapterId).browse(rootId, maxDepth);
     }
 
     @Override
