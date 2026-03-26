@@ -17,20 +17,24 @@ package com.hivemq.edge.adapters.opcua.browse;
 
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
-import com.hivemq.adapter.sdk.api.discovery.BrowseException;
-import com.hivemq.adapter.sdk.api.discovery.BrowsedNode;
+import com.hivemq.edge.adapters.browse.BrowseException;
+import com.hivemq.edge.adapters.browse.BrowsedNode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Spliterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.core.typetree.DataType;
 import org.eclipse.milo.opcua.sdk.core.typetree.DataTypeTree;
@@ -80,12 +84,19 @@ public class OpcUaNodeBrowser {
     /**
      * Browse the OPC-UA address space starting from the given root node.
      *
+     * <p>Phase 1 collects all variable node references via async recursive traversal.
+     * The discovered variables are then sorted by path so that the returned stream
+     * is ordered without requiring the final {@link BrowsedNode} list to be materialized.
+     * Phase 2 lazily batch-reads attributes (DataType, AccessLevel, Description) as the
+     * stream is consumed, keeping only one batch of {@link BrowsedNode} objects alive at a time.
+     *
      * @param rootId the OPC-UA node ID to start from, or null for ObjectsFolder (i=85)
      * @param maxDepth   maximum depth (0 = unlimited)
-     * @return list of discovered variable nodes
-     * @throws BrowseException if the operation fails
+     * @return a stream of discovered variable nodes, ordered by node path
+     * @throws BrowseException if the browse phase fails
      */
-    public @NotNull List<BrowsedNode> browse(final @Nullable String rootId, final int maxDepth) throws BrowseException {
+    public @NotNull Stream<BrowsedNode> browse(final @Nullable String rootId, final int maxDepth)
+            throws BrowseException {
         final NodeId browseRoot;
         if (rootId == null || rootId.isBlank()) {
             browseRoot = NodeIds.ObjectsFolder;
@@ -106,11 +117,16 @@ public class OpcUaNodeBrowser {
                     .get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
             if (variables.isEmpty()) {
-                return List.of();
+                return Stream.empty();
             }
 
-            // Phase 2: Batch-read attributes (DataType, AccessLevel, Description)
-            return readAttributesAndBuild(variables);
+            // Sort by path early (DiscoveredVariable is small) so the output stream is ordered
+            // without needing to materialize the full List<BrowsedNode>.
+            variables.sort(Comparator.comparing(DiscoveredVariable::path));
+
+            // Phase 2: Return a stream that lazily batch-reads attributes as it is consumed.
+            final DataTypeTree dataTypeTree = getDataTypeTree();
+            return StreamSupport.stream(new BatchAttributeSpliterator(variables, client, dataTypeTree, this), false);
         } catch (final ExecutionException e) {
             throw new BrowseException("Browse operation failed", e.getCause());
         } catch (final TimeoutException e) {
@@ -200,59 +216,131 @@ public class OpcUaNodeBrowser {
         return CompletableFuture.allOf(childFutures.toArray(CompletableFuture[]::new));
     }
 
-    private @NotNull List<BrowsedNode> readAttributesAndBuild(final @NotNull List<DiscoveredVariable> variables)
-            throws BrowseException {
-        final DataTypeTree dataTypeTree = getDataTypeTree();
-        final List<BrowsedNode> result = new ArrayList<>();
+    /**
+     * Spliterator that lazily batch-reads OPC-UA attributes and produces {@link BrowsedNode} records.
+     * Each {@link #tryAdvance} call reads one batch of up to {@link #READ_BATCH_SIZE} nodes from the
+     * OPC-UA server, resolves attributes, and emits the resulting {@link BrowsedNode} records one at
+     * a time. This keeps at most one batch of {@code BrowsedNode} objects alive at any point.
+     */
+    private static final class BatchAttributeSpliterator implements Spliterator<BrowsedNode> {
 
-        for (int offset = 0; offset < variables.size(); offset += READ_BATCH_SIZE) {
-            final int end = Math.min(offset + READ_BATCH_SIZE, variables.size());
-            final List<DiscoveredVariable> batch = variables.subList(offset, end);
+        private final @NotNull List<DiscoveredVariable> variables;
+        private final @NotNull OpcUaClient client;
+        private final @Nullable DataTypeTree dataTypeTree;
+        private final @NotNull OpcUaNodeBrowser browser;
 
-            // 3 attributes per node: DataType, AccessLevel, Description
-            final List<ReadValueId> readValueIds = new ArrayList<>();
+        private int globalOffset;
+        private @Nullable List<BrowsedNode> currentBatch;
+        private int batchIndex;
+
+        BatchAttributeSpliterator(
+                final @NotNull List<DiscoveredVariable> variables,
+                final @NotNull OpcUaClient client,
+                final @Nullable DataTypeTree dataTypeTree,
+                final @NotNull OpcUaNodeBrowser browser) {
+            this.variables = variables;
+            this.client = client;
+            this.dataTypeTree = dataTypeTree;
+            this.browser = browser;
+            this.globalOffset = 0;
+            this.currentBatch = null;
+            this.batchIndex = 0;
+        }
+
+        @Override
+        public boolean tryAdvance(final @NotNull Consumer<? super BrowsedNode> action) {
+            // Serve from current batch if available
+            if (currentBatch != null && batchIndex < currentBatch.size()) {
+                action.accept(currentBatch.get(batchIndex++));
+                return true;
+            }
+            // Load next batch if variables remain
+            if (globalOffset >= variables.size()) {
+                return false;
+            }
+            currentBatch = readNextBatch();
+            batchIndex = 0;
+            if (currentBatch.isEmpty()) {
+                return false;
+            }
+            action.accept(currentBatch.get(batchIndex++));
+            return true;
+        }
+
+        private @NotNull List<BrowsedNode> readNextBatch() {
+            final int end = Math.min(globalOffset + READ_BATCH_SIZE, variables.size());
+            final List<DiscoveredVariable> batch = variables.subList(globalOffset, end);
+            globalOffset = end;
+
+            final List<ReadValueId> readValueIds = new ArrayList<>(batch.size() * 3);
             for (final DiscoveredVariable var : batch) {
                 readValueIds.add(new ReadValueId(var.nodeId, AttributeId.DataType.uid(), null, null));
                 readValueIds.add(new ReadValueId(var.nodeId, AttributeId.AccessLevel.uid(), null, null));
                 readValueIds.add(new ReadValueId(var.nodeId, AttributeId.Description.uid(), null, null));
             }
 
+            final DataValue[] values;
             try {
-                final DataValue[] values = client.readAsync(0.0, TimestampsToReturn.Neither, readValueIds)
+                values = client.readAsync(0.0, TimestampsToReturn.Neither, readValueIds)
                         .get(TIMEOUT_SECONDS, TimeUnit.SECONDS)
                         .getResults();
-                assert values != null;
-                for (int i = 0; i < batch.size(); i++) {
-                    final DiscoveredVariable var = batch.get(i);
-                    final String dataType = resolveDataTypeName(values[i * 3], dataTypeTree);
-                    final String accessLevel = resolveAccessLevel(values[i * 3 + 1]);
-                    final String description = resolveDescription(values[i * 3 + 2]);
-
-                    result.add(new BrowsedNode(
-                            var.path,
-                            var.namespaceUri,
-                            var.namespaceIndex,
-                            var.nodeId.toParseableString(),
-                            dataType,
-                            accessLevel,
-                            description,
-                            generateTagNameDefault(var.browseName),
-                            description,
-                            generateNorthboundTopicDefault(var.path),
-                            generateSouthboundTopicDefault(var.path)));
-                }
             } catch (final ExecutionException e) {
-                throw new BrowseException("Failed to read node attributes", e.getCause());
+                throw new UncheckedBrowseException("Failed to read node attributes", e.getCause());
             } catch (final TimeoutException e) {
-                throw new BrowseException("Attribute read timed out after " + TIMEOUT_SECONDS + " seconds", e);
+                throw new UncheckedBrowseException("Attribute read timed out after " + TIMEOUT_SECONDS + " seconds", e);
             } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw new BrowseException("Attribute read interrupted", e);
+                throw new UncheckedBrowseException("Attribute read interrupted", e);
             }
+            assert values != null;
+
+            final List<BrowsedNode> result = new ArrayList<>(batch.size());
+            for (int i = 0; i < batch.size(); i++) {
+                final DiscoveredVariable var = batch.get(i);
+                final String dataType = browser.resolveDataTypeName(values[i * 3], dataTypeTree);
+                final String accessLevel = browser.resolveAccessLevel(values[i * 3 + 1]);
+                final String description = browser.resolveDescription(values[i * 3 + 2]);
+
+                result.add(new BrowsedNode(
+                        var.path,
+                        var.namespaceUri,
+                        var.namespaceIndex,
+                        var.nodeId.toParseableString(),
+                        dataType,
+                        accessLevel,
+                        description,
+                        browser.generateTagNameDefault(var.browseName),
+                        description,
+                        browser.generateNorthboundTopicDefault(var.path),
+                        browser.generateSouthboundTopicDefault(var.path)));
+            }
+            return result;
         }
 
-        result.sort(Comparator.comparing(BrowsedNode::nodePath));
-        return result;
+        @Override
+        public @Nullable Spliterator<BrowsedNode> trySplit() {
+            return null; // sequential only
+        }
+
+        @Override
+        public long estimateSize() {
+            return variables.size() - globalOffset + (currentBatch != null ? currentBatch.size() - batchIndex : 0);
+        }
+
+        @Override
+        public int characteristics() {
+            return ORDERED | SIZED | NONNULL;
+        }
+    }
+
+    /**
+     * Unchecked wrapper for {@link BrowseException} thrown from within a {@link Spliterator}.
+     * Stream consumers should catch this when consuming the browse stream.
+     */
+    static final class UncheckedBrowseException extends RuntimeException {
+        UncheckedBrowseException(final @NotNull String message, final @Nullable Throwable cause) {
+            super(message, cause);
+        }
     }
 
     private @Nullable DataTypeTree getDataTypeTree() {

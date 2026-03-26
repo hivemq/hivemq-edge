@@ -19,10 +19,10 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
-import com.hivemq.adapter.sdk.api.discovery.BrowseException;
-import com.hivemq.adapter.sdk.api.discovery.BrowsedNode;
-import com.hivemq.adapter.sdk.api.discovery.BulkTagBrowser;
 import com.hivemq.api.AbstractApi;
+import com.hivemq.edge.adapters.browse.BrowseException;
+import com.hivemq.edge.adapters.browse.BrowsedNode;
+import com.hivemq.edge.adapters.browse.BulkTagBrowser;
 import com.hivemq.edge.adapters.browse.file.DeviceTagCsvSerializer;
 import com.hivemq.edge.adapters.browse.file.DeviceTagJsonSerializer;
 import com.hivemq.edge.adapters.browse.file.DeviceTagYamlSerializer;
@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -105,7 +106,7 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
 
         // Browse
         final int depth = maxDepth != null ? maxDepth : 0;
-        final List<BrowsedNode> nodes;
+        final Stream<BrowsedNode> nodes;
         try {
             nodes = browser.browse(rootId, depth);
         } catch (final BrowseException e) {
@@ -119,26 +120,28 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         // Lazy mapping: DeviceTagRow objects are created one-at-a-time during serialization,
         // avoiding a second fully-materialized list alongside the BrowsedNode list.
         final Iterable<DeviceTagRow> rows =
-                () -> nodes.stream().map(DeviceTagRow::fromBrowsedNode).iterator();
+                () -> nodes.map(DeviceTagRow::fromBrowsedNode).iterator();
 
-        // Determine output format and stream directly to the HTTP response
+        // Determine output format and stream directly to the HTTP response.
+        // Attribute reads happen lazily as the stream is consumed during serialization.
+        // UncheckedBrowseException may be thrown if a batch read fails mid-stream.
         final String format = resolveFormat();
         final String extension;
         final String mediaType;
         final StreamingOutput stream;
         switch (format) {
             case APPLICATION_JSON -> {
-                stream = output -> jsonSerializer.serialize(rows, output);
+                stream = output -> serializeSafely(() -> jsonSerializer.serialize(rows, output), adapterId);
                 extension = "json";
                 mediaType = APPLICATION_JSON;
             }
             case MEDIA_TYPE_YAML -> {
-                stream = output -> yamlSerializer.serialize(rows, output);
+                stream = output -> serializeSafely(() -> yamlSerializer.serialize(rows, output), adapterId);
                 extension = "yaml";
                 mediaType = MEDIA_TYPE_YAML;
             }
             default -> {
-                stream = output -> csvSerializer.serialize(rows, output);
+                stream = output -> serializeSafely(() -> csvSerializer.serialize(rows, output), adapterId);
                 extension = "csv";
                 mediaType = MEDIA_TYPE_CSV;
             }
@@ -244,6 +247,30 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
                     .type(APPLICATION_JSON)
                     .build();
         }
+    }
+
+    /**
+     * Runs a serialization action, translating any {@code UncheckedBrowseException} (thrown by the
+     * lazy batch-reading spliterator) into an {@link IOException} so the JAX-RS container can handle it.
+     */
+    private void serializeSafely(final @NotNull IORunnable action, final @NotNull String adapterId) throws IOException {
+        try {
+            action.run();
+        } catch (final RuntimeException e) {
+            // UncheckedBrowseException is thrown by the lazy attribute-reading spliterator when
+            // an OPC-UA batch read fails mid-stream.  We check by class name to avoid a compile-time
+            // dependency on the OPC UA module for this single exception type.
+            if ("UncheckedBrowseException".equals(e.getClass().getSimpleName())) {
+                logger.error("Attribute read failed during browse serialization for adapter '{}'", adapterId, e);
+                throw new IOException("Browse serialization failed: " + e.getMessage(), e);
+            }
+            throw e;
+        }
+    }
+
+    @FunctionalInterface
+    private interface IORunnable {
+        void run() throws IOException;
     }
 
     private @NotNull String errorBody(final @NotNull String title, final @NotNull String detail) {

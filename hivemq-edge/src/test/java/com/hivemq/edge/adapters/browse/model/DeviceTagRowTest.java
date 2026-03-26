@@ -17,7 +17,7 @@ package com.hivemq.edge.adapters.browse.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.hivemq.adapter.sdk.api.discovery.BrowsedNode;
+import com.hivemq.edge.adapters.browse.BrowsedNode;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;

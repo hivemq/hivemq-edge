@@ -267,6 +267,7 @@ configurations.all {
 dependencies {
     testAnnotationProcessor(libs.dagger.compiler)
 
+    testImplementation("com.hivemq:hivemq-edge-module-opcua")
     testImplementation(platform(libs.junit.bom))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
