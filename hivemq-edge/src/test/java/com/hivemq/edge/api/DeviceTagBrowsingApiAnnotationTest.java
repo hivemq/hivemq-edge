@@ -17,40 +17,45 @@ package com.hivemq.edge.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponses;
 import jakarta.ws.rs.Path;
+import java.io.File;
 import java.lang.reflect.Method;
 import org.junit.jupiter.api.Test;
 
 class DeviceTagBrowsingApiAnnotationTest {
 
     @Test
-    void classHasPathAndTag() {
+    void classHasPathAndApi() {
         assertThat(DeviceTagBrowsingApi.class.getAnnotation(Path.class)).isNotNull();
         assertThat(DeviceTagBrowsingApi.class.getAnnotation(Path.class).value()).contains("device-tags");
 
-        assertThat(DeviceTagBrowsingApi.class.getAnnotation(Tag.class)).isNotNull();
-        assertThat(DeviceTagBrowsingApi.class.getAnnotation(Tag.class).name()).isEqualTo("Protocol Adapters");
+        assertThat(DeviceTagBrowsingApi.class.getAnnotation(Api.class)).isNotNull();
     }
 
     @Test
     void browseHasOperationAnnotation() throws NoSuchMethodException {
         final Method browse =
-                DeviceTagBrowsingApi.class.getMethod("browse", String.class, String.class, int.class, String.class);
-        final Operation op = browse.getAnnotation(Operation.class);
+                DeviceTagBrowsingApi.class.getMethod("browseDeviceTags", String.class, String.class, Integer.class);
+        final ApiOperation op = browse.getAnnotation(ApiOperation.class);
         assertThat(op).isNotNull();
-        assertThat(op.operationId()).isEqualTo("browseDeviceTags");
-        assertThat(op.responses()).hasSizeGreaterThanOrEqualTo(3);
+        assertThat(op.value()).isNotEmpty();
+        final ApiResponses responses = browse.getAnnotation(ApiResponses.class);
+        assertThat(responses).isNotNull();
+        assertThat(responses.value()).hasSizeGreaterThanOrEqualTo(3);
     }
 
     @Test
     void importTagsHasOperationAnnotation() throws NoSuchMethodException {
         final Method importTags = DeviceTagBrowsingApi.class.getMethod(
-                "importTags", String.class, String.class, boolean.class, String.class, byte[].class);
-        final Operation op = importTags.getAnnotation(Operation.class);
+                "importDeviceTags", String.class, File.class, String.class, Boolean.class);
+        final ApiOperation op = importTags.getAnnotation(ApiOperation.class);
         assertThat(op).isNotNull();
-        assertThat(op.operationId()).isEqualTo("importDeviceTags");
-        assertThat(op.responses()).hasSizeGreaterThanOrEqualTo(3);
+        assertThat(op.value()).isNotEmpty();
+        final ApiResponses responses = importTags.getAnnotation(ApiResponses.class);
+        assertThat(responses).isNotNull();
+        assertThat(responses.value()).hasSizeGreaterThanOrEqualTo(3);
     }
 }
