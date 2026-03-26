@@ -41,7 +41,7 @@ class ModbusProtocolAdapterTest {
                 AdapterDataUtils.mergeChangedSamples(data1.getDataPoints(), data2.getDataPoints())
                         .size(),
                 "There should be no deltas");
-        data2.getDataPoints().set(5, new DataPointImpl("register-5", 777));
+        data2.getDataPoints().set(5, new DataPointImpl("register-5", 777, "adapter-1"));
 
         assertEquals(
                 1,
@@ -54,7 +54,7 @@ class ModbusProtocolAdapterTest {
     void test_mergedSamples() {
         final ModBusData data1 = createSampleData();
         final ModBusData data2 = createSampleData();
-        data2.getDataPoints().set(5, new DataPointImpl("register-5", 777));
+        data2.getDataPoints().set(5, new DataPointImpl("register-5", 777, "adapter-1"));
 
         final List<DataPoint> dataPoints =
                 AdapterDataUtils.mergeChangedSamples(data1.getDataPoints(), data2.getDataPoints());
@@ -69,7 +69,7 @@ class ModbusProtocolAdapterTest {
         final ModbusToMqttMapping pollingContext = new ModbusToMqttMapping(
                 "topic", 2, "tag1", MessageHandlingOptions.MQTTMessagePerSubscription, true, false, List.of());
         final ModBusData data = new ModBusData(pollingContext);
-        IntStream.range(0, 10).forEach(i -> data.addDataPoint(new DataPointImpl("register-" + i, i)));
+        IntStream.range(0, 10).forEach(i -> data.addDataPoint(new DataPointImpl("register-" + i, i, "adapter-1")));
         return data;
     }
 }
