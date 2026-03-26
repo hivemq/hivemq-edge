@@ -739,6 +739,19 @@ public class ProtocolAdapterWrapper {
         }
     }
 
+    private @Nullable WritingProtocolAdapter getWritingAdapter() {
+        if (!protocolAdapterWritingService.writingEnabled()) {
+            return null;
+        }
+        if (!adapter.getProtocolAdapterInformation().getCapabilities().contains(ProtocolAdapterCapability.WRITE)) {
+            return null;
+        }
+        if (!(getAdapter() instanceof final WritingProtocolAdapter writingAdapter)) {
+            return null;
+        }
+        return writingAdapter;
+    }
+
     /**
      * Start writing for this adapter.
      * Called after all connections are established during {@link #start()}.
@@ -746,10 +759,8 @@ public class ProtocolAdapterWrapper {
      * @return {@code true} if writing was started or not needed, {@code false} if writing setup failed
      */
     protected boolean startWriting() {
-        if (!protocolAdapterWritingService.writingEnabled()) {
-            return true;
-        }
-        if (!(getAdapter() instanceof WritingProtocolAdapter writingAdapter)) {
+        final WritingProtocolAdapter writingAdapter = getWritingAdapter();
+        if (writingAdapter == null) {
             return true;
         }
         LOGGER.debug("Start writing for protocol adapter with id '{}'", getId());
@@ -775,7 +786,8 @@ public class ProtocolAdapterWrapper {
      * Called before disconnecting connections during {@link #stop(boolean)}.
      */
     protected void stopWriting() {
-        if (!(getAdapter() instanceof WritingProtocolAdapter writingAdapter)) {
+        final WritingProtocolAdapter writingAdapter = getWritingAdapter();
+        if (writingAdapter == null) {
             return;
         }
         LOGGER.debug("Stopping writing for protocol adapter with id '{}'", getId());
