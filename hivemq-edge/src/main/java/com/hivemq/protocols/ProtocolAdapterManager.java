@@ -60,7 +60,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -97,6 +97,9 @@ import org.slf4j.LoggerFactory;
 public class ProtocolAdapterManager {
     private static final String ADAPTER_ID = "adapterId";
     private static final Logger LOGGER = LoggerFactory.getLogger(ProtocolAdapterManager.class);
+    private static final int ADAPTER_LIFECYCLE_CORE_POOL_SIZE = 4;
+    private static final int ADAPTER_LIFECYCLE_MAX_POOL_SIZE = 10;
+    private static final int ADAPTER_LIFECYCLE_QUEUE_CAPACITY = 20;
     // ConcurrentHashMap provides thread-safe access without explicit locking
     private final @NotNull Map<String, ProtocolAdapterWrapper> protocolAdapterMap = new ConcurrentHashMap<>();
     private final @NotNull MetricRegistry metricRegistry;
@@ -113,7 +116,7 @@ public class ProtocolAdapterManager {
     private final @NotNull TagManager tagManager;
     private final @NotNull ProtocolAdapterExtractor protocolAdapterConfig;
     private final @NotNull ExecutorService executorService;
-    private final @NotNull ExecutorService lifecycleExecutor;
+    private final @NotNull ExecutorService adapterLifecycleExecutor;
     private final @NotNull AtomicInteger refreshTasksInProgress = new AtomicInteger(0);
     private final @NotNull AtomicReference<ProtocolAdapterManagerState> managerState =
             new AtomicReference<>(ProtocolAdapterManagerState.Idle);
@@ -147,17 +150,17 @@ public class ProtocolAdapterManager {
         this.tagManager = tagManager;
         this.protocolAdapterConfig = protocolAdapterConfig;
         this.executorService = Executors.newSingleThreadExecutor();
-        this.lifecycleExecutor = new ThreadPoolExecutor(
-                2,
-                4,
+        this.adapterLifecycleExecutor = new ThreadPoolExecutor(
+                ADAPTER_LIFECYCLE_CORE_POOL_SIZE,
+                ADAPTER_LIFECYCLE_MAX_POOL_SIZE,
                 60L,
                 TimeUnit.SECONDS,
-                new SynchronousQueue<>(),
+                new LinkedBlockingQueue<>(ADAPTER_LIFECYCLE_QUEUE_CAPACITY),
                 ThreadFactoryUtil.create("protocol-adapter-lifecycle-%d"),
                 new ThreadPoolExecutor.CallerRunsPolicy());
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             executorService.shutdown();
-            lifecycleExecutor.shutdown();
+            adapterLifecycleExecutor.shutdown();
         }));
         protocolAdapterWritingService.addWritingChangedCallback(() ->
                 protocolAdapterFactoryManager.writingEnabledChanged(protocolAdapterWritingService.writingEnabled()));
@@ -439,7 +442,7 @@ public class ProtocolAdapterManager {
                         throw new RuntimeException(e);
                     }
                 },
-                lifecycleExecutor);
+                adapterLifecycleExecutor);
     }
 
     /**
@@ -455,7 +458,7 @@ public class ProtocolAdapterManager {
                         throw new RuntimeException(e);
                     }
                 },
-                lifecycleExecutor);
+                adapterLifecycleExecutor);
     }
 
     // ===== Adapter Creation/Deletion =====
