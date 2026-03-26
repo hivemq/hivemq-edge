@@ -178,7 +178,7 @@ class NorthboundTagConsumerTest {
         root.put("tagName", "rich-tag");
         root.put("value", 99.9);
         root.put("timestamp", 1234567890L);
-        final DataPointWithMetadata dpMeta = new DataPointWithMetadata(root);
+        final DataPointWithMetadata dpMeta = new DataPointWithMetadata(root, "ADAPTER");
 
         consumer.accept(dpMeta);
 
@@ -342,7 +342,7 @@ class NorthboundTagConsumerTest {
         root.put("timestamp", 1000L);
         final ObjectNode metadata = root.putObject("metadata");
         metadata.put("sourceTimestamp", "2024-01-01T00:00:00Z");
-        final DataPointWithMetadata dpMeta = new DataPointWithMetadata(root);
+        final DataPointWithMetadata dpMeta = new DataPointWithMetadata(root, "ADAPTER");
 
         consumer.accept(dpMeta);
 
@@ -366,7 +366,7 @@ class NorthboundTagConsumerTest {
         root.put("value", 42);
         root.put("timestamp", 1000L);
         root.putObject("metadata").put("sourceTimestamp", "2024-01-01T00:00:00Z");
-        final DataPointWithMetadata dpMeta = new DataPointWithMetadata(root);
+        final DataPointWithMetadata dpMeta = new DataPointWithMetadata(root, "ADAPTER");
 
         consumer.accept(dpMeta);
 
@@ -390,7 +390,7 @@ class NorthboundTagConsumerTest {
         root.put("value", 7);
         root.put("timestamp", 2000L);
         // no metadata set
-        final DataPointWithMetadata dpMeta = new DataPointWithMetadata(root);
+        final DataPointWithMetadata dpMeta = new DataPointWithMetadata(root, "ADAPTER");
 
         consumer.accept(dpMeta);
 

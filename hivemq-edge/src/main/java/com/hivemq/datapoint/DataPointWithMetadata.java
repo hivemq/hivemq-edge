@@ -22,14 +22,13 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
 import com.hivemq.adapter.sdk.api.tag.Tag;
+import org.jetbrains.annotations.NotNull;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Function;
-
-import com.hivemq.edge.modules.adapters.data.TagManager;
-import org.jetbrains.annotations.NotNull;
 
 public class DataPointWithMetadata implements DataPoint {
     private final @NotNull ObjectNode jsonNode;
@@ -41,12 +40,11 @@ public class DataPointWithMetadata implements DataPoint {
     }
 
     public static <R> @NotNull DataPointBuilder<R> builder(
-            final @NotNull String adapterID,
             final @NotNull Tag tag,
             final @NotNull Function<DataPointBuilder<R>, R> completer) {
         final ObjectNode root = JsonNodeFactory.instance.objectNode();
         root.put("tagName", tag.getName());
-        return new DataPointBuilderImpl<>(adapterID, root, completer);
+        return new DataPointBuilderImpl<>(root, completer);
     }
 
     @Override
@@ -85,15 +83,12 @@ public class DataPointWithMetadata implements DataPoint {
     public static final class DataPointBuilderImpl<R> implements DataPointBuilder<R> {
         private final @NotNull ObjectNode root;
         private final @NotNull Function<DataPointBuilder<R>, R> completer;
-        private final @NotNull String adapterId;
 
         DataPointBuilderImpl(
-                final @NotNull String adapterId,
                 final @NotNull ObjectNode root,
                 final @NotNull Function<DataPointBuilder<R>, R> completer) {
             this.root = root;
             this.completer = completer;
-            this.adapterId = adapterId;
         }
 
         @Override

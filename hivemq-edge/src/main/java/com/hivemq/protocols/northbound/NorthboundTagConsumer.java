@@ -154,6 +154,9 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
         if (northboundMapping.getIncludeTagNames()) {
             node.set("tagName", JsonNodeFactory.instance.textNode(dataPoint.getTagName()));
         }
+        if (!northboundMapping.getUserProperties().isEmpty()) {
+            node.set("mqttUserProperties", objectMapper.convertValue(northboundMapping.getUserProperties(), JsonNode.class));
+        }
         return objectMapper.writeValueAsBytes(node);
     }
 

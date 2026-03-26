@@ -179,14 +179,10 @@ public class OpcUaToJsonConverter {
         } else if (value instanceof final ExtensionObject eo) {
             try {
                 final Object decodedValue = eo.decode(ctx);
-                final var obj = builder.startObjectValue();
-                addValueToObject(obj, "value", decodedValue, ctx);
-                obj.endObject();
+                addValue(builder, decodedValue, ctx);
             } catch (final Throwable t) {
                 log.debug("Not able to decode body of OPC UA ExtensionObject, using undecoded body value instead", t);
-                final var obj = builder.startObjectValue();
-                addValueToObject(obj, "value", eo.getBody(), ctx);
-                obj.endObject();
+                addValue(builder, eo.getBody(), ctx);
             }
         } else if (value instanceof final Variant variant) {
             final Object variantValue = variant.getValue();
