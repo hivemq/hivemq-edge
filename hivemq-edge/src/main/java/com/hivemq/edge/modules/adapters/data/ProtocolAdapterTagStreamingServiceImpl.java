@@ -16,31 +16,36 @@
 package com.hivemq.edge.modules.adapters.data;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
 import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
-import java.util.List;
-
 import com.hivemq.datapoint.DataPointListBuilderImpl;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+import java.util.function.Consumer;
 
 public class ProtocolAdapterTagStreamingServiceImpl implements ProtocolAdapterTagStreamingService {
 
     private final @NotNull String adapterId;
     private final @NotNull TagManager tagManager;
+    private final @NotNull Consumer<DataPointBuilder<?>> enricher;
 
     public ProtocolAdapterTagStreamingServiceImpl(
-            final @NotNull String adapterId, final @NotNull TagManager tagManager) {
+            final @NotNull String adapterId,
+            final @NotNull TagManager tagManager,
+            final @NotNull Consumer<DataPointBuilder<?>> enricher) {
         this.adapterId = adapterId;
         this.tagManager = tagManager;
+        this.enricher = enricher;
     }
 
     @Override
     public @NotNull DataPointListBuilder dataPointsPublisher() {
-        return new DataPointListBuilderImpl(builder -> {
-           //TODO enrich with adapterId
-        }, dataPoints -> {
-            tagManager.feed(adapterId, dataPoints);
-        });
+        return new DataPointListBuilderImpl(
+                adapterId,
+                enricher,
+                tagManager::feed);
     }
 
     @Override

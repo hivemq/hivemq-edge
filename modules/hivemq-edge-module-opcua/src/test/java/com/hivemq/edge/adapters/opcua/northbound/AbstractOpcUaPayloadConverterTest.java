@@ -17,7 +17,6 @@ package com.hivemq.edge.adapters.opcua.northbound;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.EventService;
-import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -60,7 +59,6 @@ abstract class AbstractOpcUaPayloadConverterTest {
 
     private final @NotNull ModuleServices moduleServices = mock();
     private final @NotNull ProtocolAdapterInput<OpcUaSpecificAdapterConfig> protocolAdapterInput = mock();
-    private final @NotNull AdapterFactories adapterFactories = mock();
     private final @NotNull EventService eventService = mock();
     private final @NotNull Map<String, DataPointWithMetadata> receivedDataPoints = new ConcurrentHashMap<>();
 
@@ -70,7 +68,6 @@ abstract class AbstractOpcUaPayloadConverterTest {
         when(protocolAdapterInput.getProtocolAdapterState())
                 .thenReturn(new ProtocolAdapterStateImpl(mock(), "id", "protocolId"));
         when(protocolAdapterInput.moduleServices()).thenReturn(moduleServices);
-        when(protocolAdapterInput.adapterFactories()).thenReturn(adapterFactories);
         when(protocolAdapterInput.getProtocolAdapterMetricsHelper())
                 .thenReturn(mock(ProtocolAdapterMetricsService.class));
         when(eventService.createAdapterEvent(any(), any())).thenReturn(new EventBuilderImpl(event -> {}));
@@ -87,9 +84,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
                 .feed(any());
 
         when(moduleServices.protocolAdapterTagStreamingService())
-                .thenReturn(new ProtocolAdapterTagStreamingServiceImpl(tagManager, enrich -> {}));
-
-        when(protocolAdapterInput.adapterFactories()).thenReturn(adapterFactories);
+                .thenReturn(new ProtocolAdapterTagStreamingServiceImpl(tagManager, enrich -> {}, "CONVERSIONADAPTER"));
     }
 
     @NotNull
