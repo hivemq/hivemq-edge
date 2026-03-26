@@ -647,7 +647,7 @@ public class ProtocolAdapterWrapper {
         try {
             invokeStop(ProtocolAdapterConnectionDirection.Northbound);
         } catch (final Exception e) {
-            LOGGER.warn("Error during northbound disconnect for adapter '{}'.", getAdapterId(), e);
+            LOGGER.error("Error stopping adapter with id {}", getAdapterId(), e);
             // Continue anyway — we want to reach Disconnected state
             disconnectSuccess = false;
         }
@@ -690,7 +690,7 @@ public class ProtocolAdapterWrapper {
         try {
             invokeStop(ProtocolAdapterConnectionDirection.Southbound);
         } catch (final Exception e) {
-            LOGGER.warn("Error during southbound disconnect for adapter '{}'.", getAdapterId(), e);
+            LOGGER.error("Error stopping adapter with id {}", getAdapterId(), e);
             // Continue anyway — we want to reach Disconnected state
             disconnectSuccess = false;
         }
