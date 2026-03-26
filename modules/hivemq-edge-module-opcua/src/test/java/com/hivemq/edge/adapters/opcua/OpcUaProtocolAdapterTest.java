@@ -15,17 +15,9 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.awaitility.Awaitility.await;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
-import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -39,11 +31,7 @@ import com.hivemq.edge.adapters.opcua.config.OpcUaSpecificAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
-import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
@@ -55,6 +43,16 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import util.EmbeddedOpcUaServerExtension;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Integration test for OpcUaProtocolAdapter with embedded OPC UA server.
@@ -315,22 +313,7 @@ public class OpcUaProtocolAdapterTest {
         final List<Tag> genericTags = new ArrayList<>(tags);
         when(input.getTags()).thenReturn(genericTags);
 
-        // Data point factory
-        final DataPointFactory dataPointFactory = new DataPointFactory() {
-            @Override
-            public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
-                return new DataPointImpl(tagName, tagValue);
-            }
-
-            @Override
-            public @NotNull DataPoint createJsonDataPoint(
-                    final @NotNull String tagName, final @NotNull Object tagValue) {
-                return new DataPointImpl(tagName, tagValue, true);
-            }
-        };
-
         final AdapterFactories adapterFactories = mock(AdapterFactories.class);
-        when(adapterFactories.dataPointFactory()).thenReturn(dataPointFactory);
         when(input.adapterFactories()).thenReturn(adapterFactories);
 
         // Metrics service

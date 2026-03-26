@@ -34,8 +34,8 @@ import org.jetbrains.annotations.Nullable;
 
 @Singleton
 /*
- @deprecated no longer needed. To be removed in 2026.10
-*/
+ * @deprecated no longer needed. To be removed in 2026.10
+ */
 @ApiStatus.ScheduledForRemoval(inVersion = "2026.10")
 @Deprecated
 public class JsonPayloadDefaultCreator implements JsonPayloadCreator {

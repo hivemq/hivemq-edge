@@ -45,7 +45,6 @@ import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterConfig;
 import com.hivemq.edge.adapters.mtconnect.config.MtConnectAdapterHttpHeader;
 import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTag;
 import com.hivemq.edge.adapters.mtconnect.config.tag.MtConnectAdapterTagDefinition;
-import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
 import com.hivemq.mtconnect.protocol.schemas.MtConnectSchema;
 import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
@@ -134,7 +133,6 @@ public class MtConnectProtocolAdapterTest {
         when(config.getHttpConnectTimeoutSeconds()).thenReturn(5);
         when(adapterInput.getAdapterId()).thenReturn("streams");
         when(adapterInput.getProtocolAdapterState()).thenReturn(state);
-        when(adapterInput.adapterFactories()).thenReturn(new AdapterFactoriesImpl());
         when(adapterInput.getConfig()).thenReturn(config);
         when(adapterInput.getTags())
                 .thenReturn(List.of(new MtConnectAdapterTag(
@@ -204,7 +202,6 @@ public class MtConnectProtocolAdapterTest {
         when(config.getHttpConnectTimeoutSeconds()).thenReturn(5);
         when(adapterInput.getAdapterId()).thenReturn("streams");
         when(adapterInput.getProtocolAdapterState()).thenReturn(state);
-        when(adapterInput.adapterFactories()).thenReturn(new AdapterFactoriesImpl());
         when(adapterInput.getConfig()).thenReturn(config);
         when(adapterInput.getTags())
                 .thenReturn(List.of(new MtConnectAdapterTag(
@@ -249,7 +246,6 @@ public class MtConnectProtocolAdapterTest {
     @Test
     public void whenSchemaValidationIsDisabled_thenCustomSchemaShouldPass()
             throws IOException, XMLParseException, JAXBException {
-        when(adapterInput.adapterFactories()).thenReturn(new AdapterFactoriesImpl());
         final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
         final JsonNode jsonNode = adapter.processXml(
                 IOUtils.resourceToString("/streams/streams-1-3-smstestbed-time-series.xml", StandardCharsets.UTF_8),
@@ -263,7 +259,6 @@ public class MtConnectProtocolAdapterTest {
     @CsvSource({"true,true", "true,false", "false,true", "false,false"})
     public void whenSchemaValidationIsEnabledOrDisabled_thenStandardSchemaShouldPass(
             boolean enableSchemaValidation, boolean includeNull) throws IOException, XMLParseException, JAXBException {
-        when(adapterInput.adapterFactories()).thenReturn(new AdapterFactoriesImpl());
         final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
         final JsonNode jsonNode = adapter.processXml(
                 IOUtils.resourceToString("/devices/devices-1-3-smstestbed.xml", StandardCharsets.UTF_8),
@@ -291,7 +286,6 @@ public class MtConnectProtocolAdapterTest {
 
     @Test
     public void whenSchemaValidationIsEnabled_thenCustomSchemaShouldFail() {
-        when(adapterInput.adapterFactories()).thenReturn(new AdapterFactoriesImpl());
         final MtConnectProtocolAdapter adapter = new MtConnectProtocolAdapter(information, adapterInput);
         assertThatThrownBy(() -> adapter.processXml(
                         IOUtils.resourceToString("/streams/streams-1-3-smstestbed-current.xml", StandardCharsets.UTF_8),

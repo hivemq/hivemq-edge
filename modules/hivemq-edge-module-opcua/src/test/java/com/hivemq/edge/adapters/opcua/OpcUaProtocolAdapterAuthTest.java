@@ -15,14 +15,6 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
-import static org.awaitility.Awaitility.await;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
-import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -39,10 +31,7 @@ import com.hivemq.edge.adapters.opcua.config.Tls;
 import com.hivemq.edge.adapters.opcua.config.TlsChecks;
 import com.hivemq.edge.adapters.opcua.config.X509Auth;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
-import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
-import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
-import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,6 +39,13 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import util.EmbeddedOpcUaServerExtension;
 import util.KeyChain;
+
+import java.util.List;
+
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
+import static org.awaitility.Awaitility.await;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class OpcUaProtocolAdapterAuthTest {
 
@@ -72,21 +68,6 @@ class OpcUaProtocolAdapterAuthTest {
         final var metricsService = mock(ProtocolAdapterMetricsService.class);
         when(protocolAdapterInput.getProtocolAdapterMetricsHelper()).thenReturn(metricsService);
         when(protocolAdapterInput.getAdapterId()).thenReturn("id");
-
-        final AdapterFactories adapterFactories = mock(AdapterFactoriesImpl.class);
-        when(adapterFactories.dataPointFactory()).thenReturn(new DataPointFactory() {
-            @Override
-            public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
-                return new DataPointImpl(tagName, tagValue);
-            }
-
-            @Override
-            public @NotNull DataPoint createJsonDataPoint(
-                    final @NotNull String tagName, final @NotNull Object tagValue) {
-                return new DataPointImpl(tagName, tagValue, true);
-            }
-        });
-        when(protocolAdapterInput.adapterFactories()).thenReturn(adapterFactories);
     }
 
     @Test

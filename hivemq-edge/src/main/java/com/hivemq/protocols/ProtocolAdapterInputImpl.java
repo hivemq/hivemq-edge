@@ -18,19 +18,25 @@ package com.hivemq.protocols;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
-import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
 public class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig> implements ProtocolAdapterInput<T> {
-    public static final AdapterFactoriesImpl ADAPTER_FACTORIES = new AdapterFactoriesImpl();
+    public static final AdapterFactories ADAPTER_FACTORIES = new AdapterFactories() {
+        @Override
+        public @NotNull DataPointFactory dataPointFactory() {
+            //TODO:
+            throw new UnsupportedOperationException("AAAARGH");
+        }
+    };
     private final @NotNull String adapterId;
     private final @NotNull T configObject;
     private final @NotNull String version;
