@@ -57,11 +57,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -99,6 +101,7 @@ public class ProtocolAdapterManager {
     private static final int ADAPTER_LIFECYCLE_CORE_POOL_SIZE = 4;
     private static final int ADAPTER_LIFECYCLE_MAX_POOL_SIZE = 10;
     private static final int ADAPTER_LIFECYCLE_QUEUE_CAPACITY = 20;
+    private static final int SHUTDOWN_STOP_TIMEOUT_SECONDS = 5;
     // ConcurrentHashMap provides thread-safe access without explicit locking
     private final @NotNull Map<String, ProtocolAdapterWrapper> protocolAdapterMap = new ConcurrentHashMap<>();
     private final @NotNull MetricRegistry metricRegistry;
@@ -203,9 +206,14 @@ public class ProtocolAdapterManager {
     public void shutdown() {
         protocolAdapterMap.values().forEach(wrapper -> {
             try {
-                wrapper.stop(true);
-            } catch (final Exception e) {
-                LOGGER.error("Exception happened while shutting down adapter '{}': ", wrapper.getAdapterId(), e);
+                wrapper.stopAsync(true).get(SHUTDOWN_STOP_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            } catch (final InterruptedException | ExecutionException | TimeoutException e) {
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+                if (!wrapper.getState().isIdle()) {
+                    LOGGER.error("Exception happened while shutting down adapter: ", e);
+                }
             }
         });
     }
@@ -650,7 +658,7 @@ public class ProtocolAdapterManager {
                 start(adapterId);
             } catch (final Exception e) {
                 failedAdapterSet.add(adapterId);
-                LOGGER.error("Failed creating adapter {}", adapterId, e);
+                LOGGER.error("Failed adding adapter {}", adapterId, e);
             }
         }
     }
@@ -665,7 +673,7 @@ public class ProtocolAdapterManager {
                 if (wrapper == null) {
                     failedAdapterSet.add(adapterId);
                     LOGGER.error(
-                            "Existing adapters were modified while a refresh was ongoing, adapter '{}' was deleted and could not be updated",
+                            "Existing adapters were modified while a refresh was ongoing, adapter with name '{}' was deleted and could not be updated",
                             adapterId);
                     continue;
                 }
