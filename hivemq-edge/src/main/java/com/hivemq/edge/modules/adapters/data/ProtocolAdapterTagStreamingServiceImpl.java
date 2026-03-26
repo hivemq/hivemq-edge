@@ -20,10 +20,9 @@ import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
 import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import com.hivemq.datapoint.DataPointListBuilderImpl;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
 import java.util.function.Consumer;
+import org.jetbrains.annotations.NotNull;
 
 public class ProtocolAdapterTagStreamingServiceImpl implements ProtocolAdapterTagStreamingService {
 
@@ -42,10 +41,7 @@ public class ProtocolAdapterTagStreamingServiceImpl implements ProtocolAdapterTa
 
     @Override
     public @NotNull DataPointListBuilder dataPointsPublisher() {
-        return new DataPointListBuilderImpl(
-                adapterId,
-                enricher,
-                tagManager::feed);
+        return new DataPointListBuilderImpl(adapterId, enricher, tagManager::feed);
     }
 
     @Override

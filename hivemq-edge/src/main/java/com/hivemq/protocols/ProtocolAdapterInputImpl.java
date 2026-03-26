@@ -27,10 +27,9 @@ import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.persistence.mappings.NorthboundMapping;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 
 public class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig> implements ProtocolAdapterInput<T> {
     private final AdapterFactories adapterFactories = new AdapterFactories() {
@@ -44,8 +43,7 @@ public class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig> i
 
                 @Override
                 public @NotNull DataPoint createJsonDataPoint(
-                        final @NotNull String tagName,
-                        final @NotNull Object tagValue) {
+                        final @NotNull String tagName, final @NotNull Object tagValue) {
                     return new DataPointImpl(tagName, tagValue, adapterId);
                 }
             };

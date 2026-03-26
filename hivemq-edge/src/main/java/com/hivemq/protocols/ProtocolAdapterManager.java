@@ -352,7 +352,8 @@ public class ProtocolAdapterManager {
                         adapterPublishService,
                         eventService,
                         protocolAdapterWritingService,
-                        new ProtocolAdapterTagStreamingServiceImpl(config.getAdapterId(), tagManager, dataPointBuilder -> {}));
+                        new ProtocolAdapterTagStreamingServiceImpl(
+                                config.getAdapterId(), tagManager, dataPointBuilder -> {}));
 
                 final ProtocolAdapter protocolAdapter = factory.createAdapter(
                         factory.getInformation(),
