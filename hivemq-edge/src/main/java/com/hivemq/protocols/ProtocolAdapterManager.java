@@ -61,6 +61,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -339,7 +340,13 @@ public class ProtocolAdapterManager {
         try {
             start(config.getAdapterId());
         } catch (final ProtocolAdapterException e) {
-            LOGGER.error("Failed to start adapter '{}' after update", config.getAdapterId(), e);
+            final Throwable cause = e.getCause();
+            if (cause instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+                LOGGER.error("Interrupted while async execution: ", cause);
+            } else {
+                LOGGER.error("Exception happened while async execution: ", cause == null ? e : cause);
+            }
         }
     }
 
@@ -619,6 +626,16 @@ public class ProtocolAdapterManager {
                     }
                 }
             });
+        } catch (final RejectedExecutionException e) {
+            final int remainingTasks = refreshTasksInProgress.decrementAndGet();
+            if (remainingTasks == 0) {
+                managerState.set(ProtocolAdapterManagerState.Idle);
+            }
+            if (executorService.isShutdown()) {
+                LOGGER.debug("Adapter refresh task submission rejected, executor is shutting down.");
+            } else {
+                throw e;
+            }
         } catch (final RuntimeException e) {
             final int remainingTasks = refreshTasksInProgress.decrementAndGet();
             if (remainingTasks == 0) {
@@ -639,7 +656,12 @@ public class ProtocolAdapterManager {
                 deleteProtocolAdapterByAdapterId(adapterId);
             } catch (final Exception e) {
                 failedAdapterSet.add(adapterId);
-                LOGGER.error("Failed deleting adapter {}", adapterId, e);
+                if (e.getCause() instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                    LOGGER.error("Interrupted while deleting adapter {}", adapterId, e);
+                } else {
+                    LOGGER.error("Failed deleting adapter {}", adapterId, e);
+                }
             }
         }
     }
@@ -653,12 +675,21 @@ public class ProtocolAdapterManager {
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Creating adapter '{}'", adapterId);
                 }
-                createProtocolAdapter(
-                        Objects.requireNonNull(protocolAdapterConfigs.get(adapterId)), versionProvider.getVersion());
+                final ProtocolAdapterConfig protocolAdapterConfig = protocolAdapterConfigs.get(adapterId);
+                if (protocolAdapterConfig == null) {
+                    LOGGER.error("Config for adapter '{}' not found, skipping creation", adapterId);
+                    continue;
+                }
+                createProtocolAdapter(protocolAdapterConfig, versionProvider.getVersion());
                 start(adapterId);
             } catch (final Exception e) {
                 failedAdapterSet.add(adapterId);
-                LOGGER.error("Failed adding adapter {}", adapterId, e);
+                if (e.getCause() instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                    LOGGER.error("Interrupted while adding adapter {}", adapterId, e);
+                } else {
+                    LOGGER.error("Failed adding adapter {}", adapterId, e);
+                }
             }
         }
     }
@@ -677,8 +708,12 @@ public class ProtocolAdapterManager {
                             adapterId);
                     continue;
                 }
-                if (Objects.requireNonNull(protocolAdapterConfigs.get(adapterId))
-                        .equals(wrapper.getConfig())) {
+                final ProtocolAdapterConfig protocolAdapterConfig = protocolAdapterConfigs.get(adapterId);
+                if (protocolAdapterConfig == null) {
+                    LOGGER.error("Config for adapter '{}' not found, skipping update", adapterId);
+                    continue;
+                }
+                if (protocolAdapterConfig.equals(wrapper.getConfig())) {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug("Not-updating adapter '{}' since the config is unchanged", adapterId);
                     }
@@ -689,11 +724,16 @@ public class ProtocolAdapterManager {
                 }
                 stop(adapterId, true);
                 deleteProtocolAdapterByAdapterId(adapterId);
-                createProtocolAdapter(protocolAdapterConfigs.get(adapterId), versionProvider.getVersion());
+                createProtocolAdapter(protocolAdapterConfig, versionProvider.getVersion());
                 start(adapterId);
             } catch (final Exception e) {
                 failedAdapterSet.add(adapterId);
-                LOGGER.error("Failed updating adapter {}", adapterId, e);
+                if (e.getCause() instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                    LOGGER.error("Interrupted while updating adapter {}", adapterId, e);
+                } else {
+                    LOGGER.error("Failed updating adapter {}", adapterId, e);
+                }
             }
         }
     }
