@@ -211,9 +211,13 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
             return errorResponse(Response.Status.BAD_REQUEST, "Failed to parse file: " + e.getMessage());
         }
 
+        // Obtain BulkTagBrowser for namespace resolution (if adapter supports it)
+        final ProtocolAdapter adapter = wrapperOpt.get().getAdapter();
+        final BulkTagBrowser browser = adapter instanceof BulkTagBrowser b ? b : null;
+
         // Perform import
         try {
-            final ImportResult result = importer.doImport(rows, importMode, adapterId);
+            final ImportResult result = importer.doImport(rows, importMode, adapterId, browser);
             return Response.ok(objectMapper.writeValueAsString(result), APPLICATION_JSON)
                     .build();
         } catch (final DeviceTagImporterException e) {

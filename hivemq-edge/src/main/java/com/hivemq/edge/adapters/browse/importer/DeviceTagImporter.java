@@ -28,6 +28,8 @@ import com.hivemq.configuration.entity.adapter.TagEntity;
 import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
 import com.hivemq.configuration.entity.adapter.fieldmapping.InstructionEntity;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
+import com.hivemq.edge.adapters.browse.BrowseException;
+import com.hivemq.edge.adapters.browse.BulkTagBrowser;
 import com.hivemq.edge.adapters.browse.model.DeviceTagRow;
 import com.hivemq.edge.adapters.browse.model.ImportMode;
 import com.hivemq.edge.adapters.browse.model.ImportResult;
@@ -68,6 +70,26 @@ public class DeviceTagImporter {
 
     private static @Nullable String resolveWildcard(final @Nullable String value, final @Nullable String defaultValue) {
         return "*".equals(value) ? defaultValue : value;
+    }
+
+    /**
+     * Resolves a node ID against the device's current namespace table using the stable namespace URI.
+     * If the adapter supports namespace resolution and the URI is present, the returned node ID will
+     * contain the updated namespace index. Otherwise the original nodeId is returned unchanged.
+     */
+    private static @Nullable String resolveNodeIdIfNeeded(
+            final @Nullable BulkTagBrowser browser,
+            final @Nullable String nodeId,
+            final @Nullable String namespaceUri) {
+        if (browser == null || nodeId == null || namespaceUri == null || namespaceUri.isEmpty()) {
+            return nodeId;
+        }
+        try {
+            return browser.resolveNodeId(nodeId, namespaceUri);
+        } catch (final BrowseException e) {
+            log.warn("Failed to resolve namespace URI '{}' for nodeId '{}': {}", namespaceUri, nodeId, e.getMessage());
+            return nodeId;
+        }
     }
 
     private static @NotNull TagEntity toTagEntity(final @NotNull DeviceTagRow row) {
@@ -199,15 +221,26 @@ public class DeviceTagImporter {
     public @NotNull ImportResult doImport(
             final @NotNull List<DeviceTagRow> rows, final @NotNull ImportMode mode, final @NotNull String adapterId)
             throws DeviceTagImporterException {
+        return doImport(rows, mode, adapterId, null);
+    }
 
-        // Step 1: Resolve wildcards
+    public @NotNull ImportResult doImport(
+            final @NotNull List<DeviceTagRow> rows,
+            final @NotNull ImportMode mode,
+            final @NotNull String adapterId,
+            final @Nullable BulkTagBrowser browser)
+            throws DeviceTagImporterException {
+
+        // Step 1: Resolve wildcards and namespace URIs
         final List<DeviceTagRow> resolved = new ArrayList<>();
         for (final DeviceTagRow row : rows) {
+            // Resolve namespace URI to current index if adapter supports it
+            final String resolvedNodeId = resolveNodeIdIfNeeded(browser, row.getNodeId(), row.getNamespaceUri());
             final DeviceTagRow.Builder builder = DeviceTagRow.builder()
                     .nodePath(row.getNodePath())
                     .namespaceUri(row.getNamespaceUri())
                     .namespaceIndex(row.getNamespaceIndex())
-                    .nodeId(row.getNodeId())
+                    .nodeId(resolvedNodeId)
                     .dataType(row.getDataType())
                     .accessLevel(row.getAccessLevel())
                     .nodeDescription(row.getNodeDescription())

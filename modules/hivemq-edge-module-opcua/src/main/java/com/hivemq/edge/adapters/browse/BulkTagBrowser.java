@@ -37,4 +37,23 @@ public interface BulkTagBrowser {
      */
     @NotNull
     Stream<BrowsedNode> browse(@Nullable String rootId, int maxDepth) throws BrowseException;
+
+    /**
+     * Resolve a node ID against the device's current namespace table using the stable namespace URI.
+     * If the device's namespace index for the given URI has changed since the file was exported,
+     * the returned node ID will contain the updated index.
+     *
+     * <p>Protocols that do not have namespace concepts (Modbus, EtherNet/IP, etc.) should return
+     * the {@code nodeId} unchanged.
+     *
+     * @param nodeId       the node identifier from the import file (e.g. {@code ns=2;s=Temperature})
+     * @param namespaceUri the stable namespace URI from the import file (e.g. {@code urn:milo:hello-world})
+     * @return the node ID with the namespace index resolved against the live device, or the original
+     *         nodeId if resolution is not applicable or namespaceUri is null/empty
+     * @throws BrowseException if the namespace URI cannot be resolved (e.g. unknown URI)
+     */
+    default @NotNull String resolveNodeId(final @NotNull String nodeId, final @Nullable String namespaceUri)
+            throws BrowseException {
+        return nodeId;
+    }
 }

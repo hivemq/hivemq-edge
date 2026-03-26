@@ -547,6 +547,26 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     }
 
     @Override
+    public @NotNull String resolveNodeId(final @NotNull String nodeId, final @Nullable String namespaceUri) {
+        if (namespaceUri == null || namespaceUri.isEmpty()) {
+            return nodeId;
+        }
+        final OpcUaClientConnection conn = opcUaClientConnection.get();
+        if (conn == null) {
+            return nodeId;
+        }
+        final var clientOpt = conn.client();
+        if (clientOpt.isEmpty()) {
+            return nodeId;
+        }
+        final NodeId parsed = NodeId.parseOrNull(nodeId);
+        return parsed != null
+                ? parsed.reindex(clientOpt.get().getNamespaceTable(), namespaceUri)
+                        .toParseableString()
+                : nodeId;
+    }
+
+    @Override
     public void write(final @NotNull WritingInput input, final @NotNull WritingOutput output) {
         if (stopped) {
             log.debug("Write operation skipped for adapter '{}' - adapter has been stopped", adapterId);
