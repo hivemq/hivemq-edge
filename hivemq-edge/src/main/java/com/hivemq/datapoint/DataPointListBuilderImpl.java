@@ -19,11 +19,12 @@ import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
 import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
 import com.hivemq.adapter.sdk.api.tag.Tag;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import org.jetbrains.annotations.NotNull;
 
 public final class DataPointListBuilderImpl implements DataPointListBuilder {
     private final @NotNull String adapterId;
@@ -45,7 +46,7 @@ public final class DataPointListBuilderImpl implements DataPointListBuilder {
     public @NotNull DataPointBuilder<DataPointListBuilder> addDataPoint(final @NotNull Tag tag) {
         final Function<DataPointBuilder<DataPointListBuilder>, DataPointListBuilder> completer = dp -> this;
         final var builderImpl = (DataPointWithMetadata.DataPointBuilderImpl<DataPointListBuilder>)
-                DataPointWithMetadata.builder(adapterId, tag, completer);
+                DataPointWithMetadata.builder(tag, completer);
         builders.add(builderImpl);
         return builderImpl;
     }

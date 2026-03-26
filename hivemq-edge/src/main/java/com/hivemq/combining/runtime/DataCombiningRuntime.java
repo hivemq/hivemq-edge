@@ -18,11 +18,13 @@ package com.hivemq.combining.runtime;
 import static com.hivemq.combining.model.DataIdentifierReference.Type.TOPIC_FILTER;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.combining.mapping.DataCombiningTransformationService;
 import com.hivemq.combining.model.DataCombining;
 import com.hivemq.combining.model.DataIdentifierReference;
+import com.hivemq.datapoint.DataPointWithMetadata;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
@@ -158,13 +160,19 @@ public class DataCombiningRuntime {
         });
 
         tagsToDataPoints.forEach((tagRef, dataPoint) -> {
-            try {
-                rootNode.set(
-                        tagRef.toFullyQualifiedName(),
-                        mapper.readTree(dataPoint.getTagValue().toString()));
-            } catch (final IOException e) {
-                log.warn("Exception during json parsing of datapoint '{}'", dataPoint.getTagValue());
-                throw new RuntimeException(e);
+            if (dataPoint instanceof DataPointWithMetadata dpMeta) {
+                final ObjectNode wrapper = mapper.createObjectNode();
+                wrapper.set("value", dpMeta.getTagValue());
+                rootNode.set(tagRef.toFullyQualifiedName(), wrapper);
+            } else {
+                try {
+                    rootNode.set(
+                            tagRef.toFullyQualifiedName(),
+                            mapper.readTree(dataPoint.getTagValue().toString()));
+                } catch (final IOException e) {
+                    log.warn("Exception during json parsing of datapoint '{}'", dataPoint.getTagValue());
+                    throw new RuntimeException(e);
+                }
             }
         });
 
