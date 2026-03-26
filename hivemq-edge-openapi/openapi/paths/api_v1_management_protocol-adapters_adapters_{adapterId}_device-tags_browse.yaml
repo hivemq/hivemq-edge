@@ -63,4 +63,4 @@ post:
       description: Browse timed out
   summary: Browse device tags
   tags:
-    - Protocol Adapters
+    - Device Tag Browsing

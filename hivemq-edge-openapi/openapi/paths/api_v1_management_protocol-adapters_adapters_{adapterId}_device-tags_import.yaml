@@ -77,4 +77,4 @@ post:
       description: Unsupported media type
   summary: Import device tags
   tags:
-    - Protocol Adapters
+    - Device Tag Browsing

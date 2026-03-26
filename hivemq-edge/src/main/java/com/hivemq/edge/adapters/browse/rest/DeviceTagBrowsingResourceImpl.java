@@ -39,6 +39,9 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -49,6 +52,9 @@ import org.jetbrains.annotations.Nullable;
 
 @Singleton
 public class DeviceTagBrowsingResourceImpl extends AbstractApi implements DeviceTagBrowsingApi {
+
+    private static final @NotNull String MEDIA_TYPE_CSV = "text/csv";
+    private static final @NotNull String MEDIA_TYPE_YAML = "application/yaml";
 
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
     private final @NotNull DeviceTagCsvSerializer csvSerializer;
@@ -73,7 +79,8 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         this.objectMapper = objectMapper;
     }
 
-    private static @NotNull String resolveFormat(final @Nullable String accept) {
+    private @NotNull String resolveFormat() {
+        final String accept = headers != null ? headers.getHeaderString("Accept") : null;
         if (accept == null || accept.isEmpty() || accept.contains("*/*")) {
             return MEDIA_TYPE_CSV;
         }
@@ -82,11 +89,8 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
     }
 
     @Override
-    public @NotNull Response browse(
-            final @NotNull String adapterId,
-            final @Nullable String rootId,
-            final int maxDepth,
-            final @NotNull String accept) {
+    public @NotNull Response browseDeviceTags(
+            final @NotNull String adapterId, final @Nullable String rootId, final @Nullable Integer maxDepth) {
         // Lookup adapter
         final Optional<ProtocolAdapterWrapper> wrapperOpt =
                 protocolAdapterManager.getProtocolAdapterWrapperByAdapterId(adapterId);
@@ -100,9 +104,10 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         }
 
         // Browse
+        final int depth = maxDepth != null ? maxDepth : 0;
         final List<BrowsedNode> nodes;
         try {
-            nodes = browser.browse(rootId, maxDepth);
+            nodes = browser.browse(rootId, depth);
         } catch (final BrowseException e) {
             logger.error("Browse failed for adapter '{}'", adapterId, e);
             if (e.getMessage() != null && e.getMessage().contains("timed out")) {
@@ -117,7 +122,7 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
                 () -> nodes.stream().map(DeviceTagRow::fromBrowsedNode).iterator();
 
         // Determine output format and stream directly to the HTTP response
-        final String format = resolveFormat(accept);
+        final String format = resolveFormat();
         final String extension;
         final String mediaType;
         final StreamingOutput stream;
@@ -146,12 +151,11 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
     }
 
     @Override
-    public @NotNull Response importTags(
+    public @NotNull Response importDeviceTags(
             final @NotNull String adapterId,
-            final @NotNull String mode,
-            final boolean validateNodes,
-            final @Nullable String contentType,
-            final byte @NotNull [] body) {
+            final @NotNull File body,
+            final @Nullable String mode,
+            final @Nullable Boolean validateNodes) {
         // Lookup adapter
         final Optional<ProtocolAdapterWrapper> wrapperOpt =
                 protocolAdapterManager.getProtocolAdapterWrapperByAdapterId(adapterId);
@@ -160,26 +164,37 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         }
 
         // Parse mode
+        final String modeStr = mode != null ? mode : "MERGE_SAFE";
         final ImportMode importMode;
         try {
-            importMode = ImportMode.valueOf(mode);
+            importMode = ImportMode.valueOf(modeStr);
         } catch (final IllegalArgumentException e) {
             return errorResponse(
                     Response.Status.BAD_REQUEST,
-                    "Invalid import mode '" + mode
+                    "Invalid import mode '" + modeStr
                             + "'. Valid values: CREATE, DELETE, OVERWRITE, MERGE_SAFE, MERGE_OVERWRITE");
         }
 
+        // Read body bytes from the File provided by JAX-RS
+        final byte[] bodyBytes;
+        try {
+            bodyBytes = Files.readAllBytes(body.toPath());
+        } catch (final IOException e) {
+            logger.warn("Failed to read import file for adapter '{}'", adapterId, e);
+            return errorResponse(Response.Status.BAD_REQUEST, "Failed to read file: " + e.getMessage());
+        }
+
         // Deserialize body based on Content-Type
+        final String contentType = headers != null ? headers.getHeaderString("Content-Type") : "";
         final List<DeviceTagRow> rows;
         try {
             final String ct = contentType != null ? contentType.toLowerCase(Locale.ROOT) : "";
             if (ct.contains("json")) {
-                rows = jsonSerializer.deserialize(body);
+                rows = jsonSerializer.deserialize(bodyBytes);
             } else if (ct.contains("yaml")) {
-                rows = yamlSerializer.deserialize(body);
+                rows = yamlSerializer.deserialize(bodyBytes);
             } else if (ct.contains("csv") || ct.contains("text")) {
-                rows = csvSerializer.deserialize(body);
+                rows = csvSerializer.deserialize(bodyBytes);
             } else {
                 return Response.status(Response.Status.UNSUPPORTED_MEDIA_TYPE)
                         .entity(errorBody(
