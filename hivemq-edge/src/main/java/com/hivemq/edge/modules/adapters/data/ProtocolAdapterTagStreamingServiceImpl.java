@@ -16,8 +16,11 @@
 package com.hivemq.edge.modules.adapters.data;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
 import java.util.List;
+
+import com.hivemq.datapoint.DataPointListBuilderImpl;
 import org.jetbrains.annotations.NotNull;
 
 public class ProtocolAdapterTagStreamingServiceImpl implements ProtocolAdapterTagStreamingService {
@@ -32,8 +35,12 @@ public class ProtocolAdapterTagStreamingServiceImpl implements ProtocolAdapterTa
     }
 
     @Override
-    public void feed(final @NotNull List<DataPoint> dataPoints) {
-        tagManager.feed(adapterId, dataPoints);
+    public @NotNull DataPointListBuilder dataPointsPublisher() {
+        return new DataPointListBuilderImpl(builder -> {
+           //TODO enrich with adapterId
+        }, dataPoints -> {
+            tagManager.feed(adapterId, dataPoints);
+        });
     }
 
     @Override

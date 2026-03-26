@@ -34,9 +34,12 @@ import org.jetbrains.annotations.NotNull;
 public class ProtocolAdapterDataSampleImpl implements ProtocolAdapterDataSample {
 
     private final @NotNull Long timestamp = System.currentTimeMillis();
-    final @NotNull List<DataPoint> dataPoints = Collections.synchronizedList(new ArrayList<>());
+    private final @NotNull List<DataPoint> dataPoints = Collections.synchronizedList(new ArrayList<>());
+    private final @NotNull String adapterid;
 
-    public ProtocolAdapterDataSampleImpl() {}
+    public ProtocolAdapterDataSampleImpl(final @NotNull String adapterid) {
+        this.adapterid = adapterid;
+    }
 
     @Override
     @JsonIgnore
@@ -46,7 +49,7 @@ public class ProtocolAdapterDataSampleImpl implements ProtocolAdapterDataSample 
 
     @Override
     public void addDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {
-        final DataPointImpl dataPoint = new DataPointImpl(tagName, tagValue);
+        final DataPointImpl dataPoint = new DataPointImpl(tagName, tagValue, adapterid);
         addDataPoint(dataPoint);
     }
 

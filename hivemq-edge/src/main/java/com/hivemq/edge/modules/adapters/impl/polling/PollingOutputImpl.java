@@ -37,9 +37,11 @@ public class PollingOutputImpl implements PollingOutput, BatchPollingOutput {
     private final @NotNull ProtocolAdapterDataSample dataSample;
     final @NotNull CompletableFuture<PollingResult> outputFuture = new CompletableFuture<>();
     private @Nullable String errorMessage = null;
+    private final String adapterId;
 
-    public PollingOutputImpl(final @NotNull ProtocolAdapterDataSample dataSample) {
+    public PollingOutputImpl(final @NotNull ProtocolAdapterDataSample dataSample, final @NotNull String adapterId) {
         this.dataSample = dataSample;
+        this.adapterId = adapterId;
     }
 
     @Override
@@ -56,7 +58,7 @@ public class PollingOutputImpl implements PollingOutput, BatchPollingOutput {
 
     @Override
     public void addDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {
-        dataSample.addDataPoint(new DataPointImpl(tagName, tagValue));
+        dataSample.addDataPoint(new DataPointImpl(tagName, tagValue, adapterId));
     }
 
     @Override

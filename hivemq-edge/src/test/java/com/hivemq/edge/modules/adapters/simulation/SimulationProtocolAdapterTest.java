@@ -48,7 +48,7 @@ class SimulationProtocolAdapterTest {
     private final @NotNull SimulationSpecificAdapterConfig protocolAdapterConfig = mock();
     private @NotNull SimulationProtocolAdapter simulationProtocolAdapter;
     private final @NotNull BatchPollingInputImpl pollingInput = new BatchPollingInputImpl();
-    private final @NotNull PollingOutputImpl pollingOutput = new PollingOutputImpl(new ProtocolAdapterDataSampleImpl());
+    private final @NotNull PollingOutputImpl pollingOutput = new PollingOutputImpl(new ProtocolAdapterDataSampleImpl("adapter1"), "adapter1");
     private final @NotNull TimeWaiter timeWaiter = mock();
 
     @BeforeEach

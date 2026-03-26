@@ -352,10 +352,7 @@ public class ProtocolAdapterManager {
                         adapterPublishService,
                         eventService,
                         protocolAdapterWritingService,
-                        new ProtocolAdapterTagStreamingServiceImpl(tagManager, enrich -> {
-                            //TODO provide adapterId in here!!!
-                            // No-op enricher by default: do not add any additional
-                        }));
+                        new ProtocolAdapterTagStreamingServiceImpl(config.getAdapterId(), tagManager));
 
                 final ProtocolAdapter protocolAdapter = factory.createAdapter(
                         factory.getInformation(),
@@ -410,7 +407,7 @@ public class ProtocolAdapterManager {
         Preconditions.checkNotNull(wrapper);
         final String wid = wrapper.getId();
         log.info("Starting protocol-adapter '{}'.", wid);
-        return wrapper.startAsync(writingEnabled(), wrapper.getPerModule()).whenComplete((result, throwable) -> {
+        return wrapper.startAsync(writingEnabled()).whenComplete((result, throwable) -> {
             if (throwable == null) {
                 log.info("Protocol-adapter '{}' started successfully.", wid);
                 fireEvent(

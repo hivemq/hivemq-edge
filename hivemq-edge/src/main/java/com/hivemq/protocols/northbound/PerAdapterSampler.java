@@ -55,7 +55,7 @@ public class PerAdapterSampler extends AbstractSubscriptionSampler {
         if (Thread.currentThread().isInterrupted()) {
             return CompletableFuture.failedFuture(new InterruptedException());
         }
-        final PollingOutputImpl pollingOutput = new PollingOutputImpl(new ProtocolAdapterDataSampleImpl());
+        final PollingOutputImpl pollingOutput = new PollingOutputImpl(new ProtocolAdapterDataSampleImpl(getAdapterId()), getAdapterId());
         try {
             pollingProtocolAdapter.poll(new BatchPollingInputImpl(), pollingOutput);
         } catch (final Throwable t) {

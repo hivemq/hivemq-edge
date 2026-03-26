@@ -59,7 +59,7 @@ public class PerContextSampler extends AbstractSubscriptionSampler {
         if (Thread.currentThread().isInterrupted()) {
             return CompletableFuture.failedFuture(new InterruptedException());
         }
-        final PollingOutputImpl pollingOutput = new PollingOutputImpl(new ProtocolAdapterDataSampleImpl());
+        final PollingOutputImpl pollingOutput = new PollingOutputImpl(new ProtocolAdapterDataSampleImpl(getAdapterId()), getAdapterId());
         try {
             pollingProtocolAdapter.poll(new PollingInputImpl(List.of(pollingContext)), pollingOutput);
         } catch (final Throwable t) {
