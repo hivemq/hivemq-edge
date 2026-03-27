@@ -15,6 +15,4 @@
  */
 package com.hivemq.configuration.entity.adapter;
 
-import org.jetbrains.annotations.NotNull;
-
 public record AdapterTag(String adapterId, String tagName) {}
