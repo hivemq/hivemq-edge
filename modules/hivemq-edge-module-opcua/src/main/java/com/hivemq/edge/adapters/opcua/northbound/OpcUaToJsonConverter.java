@@ -414,12 +414,13 @@ public class OpcUaToJsonConverter {
         } else if (value instanceof final DiagnosticInfo info) {
             populateDiagnosticInfo(arr.startObject(), info).endObject();
         } else if (value instanceof final DynamicEnumType enumValue) {
-            final JsonObject enumRoot = new JsonObject();
+            final var nested = arr.startObject();
             final String name = enumValue.getName();
             if (name != null) {
-                enumRoot.add("name", new JsonPrimitive(name));
+                nested.put("name", name);
             }
-            enumRoot.add("value", new JsonPrimitive(enumValue.getValue()));
+            nested.put("value", enumValue.getValue());
+            nested.endObject();
         } else if (value instanceof final DynamicStructType struct) {
             final var nested = arr.startObject();
             struct.getMembers().forEach((k, v) -> addValueToObject(nested, k, v, ctx));
