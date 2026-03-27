@@ -195,9 +195,6 @@ public class DeviceTagCsvSerializer {
 
     private static @Nullable Integer getIntegerOrNull(final @NotNull CSVRecord record, final @NotNull String column) {
         final String value = getOptional(record, column);
-        if (value == null) {
-            return null;
-        }
         return value != null ? Integer.parseInt(value) : null;
     }
 

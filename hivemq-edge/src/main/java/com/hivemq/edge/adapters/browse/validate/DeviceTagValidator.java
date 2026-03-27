@@ -81,8 +81,7 @@ public class DeviceTagValidator {
         if (topic.isEmpty() || topic.contains("\0")) {
             errors.add(new ValidationError(
                     rowNum, "northbound_topic", topic, INVALID_TOPIC, "Northbound topic contains invalid characters"));
-        }
-        if (topic.contains("+") || topic.contains("#")) {
+        } else if (topic.contains("+") || topic.contains("#")) {
             errors.add(new ValidationError(
                     rowNum,
                     "northbound_topic",

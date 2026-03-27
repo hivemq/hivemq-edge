@@ -69,13 +69,14 @@ public final class DeviceTagRow {
         this.northboundTopicDefault = builder.northboundTopicDefault;
         this.southboundTopic = builder.southboundTopic;
         this.southboundTopicDefault = builder.southboundTopicDefault;
-        this.southboundFieldMapping = builder.southboundFieldMapping;
+        this.southboundFieldMapping =
+                builder.southboundFieldMapping != null ? List.copyOf(builder.southboundFieldMapping) : null;
         this.maxQos = builder.maxQos;
         this.messageExpiryInterval = builder.messageExpiryInterval;
         this.includeTimestamp = builder.includeTimestamp;
         this.includeTagNames = builder.includeTagNames;
         this.includeMetadata = builder.includeMetadata;
-        this.mqttUserProperties = builder.mqttUserProperties;
+        this.mqttUserProperties = builder.mqttUserProperties != null ? Map.copyOf(builder.mqttUserProperties) : null;
     }
 
     /**

@@ -173,8 +173,10 @@ public class OpcUaNodeBrowser {
 
         for (final ReferenceDescription rd : references) {
             final String browseName =
-                    rd.getBrowseName() != null ? rd.getBrowseName().getName() : "";
-            final String childPath = currentPath + "/" + (browseName != null ? browseName : "");
+                    rd.getBrowseName() != null && rd.getBrowseName().getName() != null
+                            ? rd.getBrowseName().getName()
+                            : "";
+            final String childPath = currentPath + "/" + browseName;
 
             final Optional<NodeId> resolvedNodeId = rd.getNodeId().toNodeId(nsTable);
             if (resolvedNodeId.isEmpty()) {
@@ -186,8 +188,8 @@ public class OpcUaNodeBrowser {
                 final int nsIndex = nodeId.getNamespaceIndex().intValue();
                 final String nsUri =
                         nsIndex < nsTable.toArray().length ? nsTable.get(nsIndex) : String.valueOf(nsIndex);
-                variables.add(new DiscoveredVariable(
-                        nodeId, childPath, nsUri != null ? nsUri : "", nsIndex, browseName != null ? browseName : ""));
+                variables.add(
+                        new DiscoveredVariable(nodeId, childPath, nsUri != null ? nsUri : "", nsIndex, browseName));
             }
 
             if (remainingDepth > 1) {

@@ -281,7 +281,7 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         try {
             return objectMapper.writeValueAsString(Map.of("title", title, "detail", detail));
         } catch (final Exception e) {
-            return "{\"title\":\"" + title + "\",\"detail\":\"" + detail + "\"}";
+            return "{\"title\":\"Error\",\"detail\":\"Internal error generating response\"}";
         }
     }
 }

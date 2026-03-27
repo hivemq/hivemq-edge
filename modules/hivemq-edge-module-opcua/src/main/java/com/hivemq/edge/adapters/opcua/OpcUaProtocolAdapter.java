@@ -560,10 +560,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             return nodeId;
         }
         final NodeId parsed = NodeId.parseOrNull(nodeId);
-        return parsed != null
-                ? parsed.reindex(clientOpt.get().getNamespaceTable(), namespaceUri)
-                        .toParseableString()
-                : nodeId;
+        if (parsed == null) {
+            return nodeId;
+        }
+        try {
+            return parsed.reindex(clientOpt.get().getNamespaceTable(), namespaceUri)
+                    .toParseableString();
+        } catch (final Exception e) {
+            log.debug("Could not resolve namespace URI '{}' for nodeId '{}': {}", namespaceUri, nodeId, e.getMessage());
+            return nodeId;
+        }
     }
 
     @Override

@@ -94,7 +94,9 @@ public class DeviceTagImporter {
 
     private static @NotNull TagEntity toTagEntity(final @NotNull DeviceTagRow row) {
         return new TagEntity(
-                requireNonNull(row.getTagName()), row.getTagDescription(), Map.of("node", row.getNodeId()));
+                requireNonNull(row.getTagName()),
+                row.getTagDescription(),
+                Map.of("node", requireNonNull(row.getNodeId())));
     }
 
     private static @NotNull NorthboundMappingEntity toNorthboundMappingEntity(final @NotNull DeviceTagRow row) {
