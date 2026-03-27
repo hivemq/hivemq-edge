@@ -35,12 +35,14 @@ jobs:
           ref: ${{ steps.select_github_ref.outputs.selected_github_ref }}
           token: ${{ secrets.JENKINS_GITHUB_TOKEN }}
 
-      - name: Materialize gradle-wrapper.jar
+      - name: Materialize gradle wrapper files
         run: |
           git -C hivemq-edge/hivemq-edge fetch origin HEAD
           mkdir -p hivemq-edge/hivemq-edge/gradle/wrapper
           git -C hivemq-edge/hivemq-edge cat-file blob HEAD:gradle/wrapper/gradle-wrapper.jar \
             > hivemq-edge/hivemq-edge/gradle/wrapper/gradle-wrapper.jar
+          git -C hivemq-edge/hivemq-edge cat-file blob HEAD:gradle/wrapper/gradle-wrapper.properties \
+            > hivemq-edge/hivemq-edge/gradle/wrapper/gradle-wrapper.properties
 
       - name: Setup Snyk
         uses: snyk/actions/setup@master
