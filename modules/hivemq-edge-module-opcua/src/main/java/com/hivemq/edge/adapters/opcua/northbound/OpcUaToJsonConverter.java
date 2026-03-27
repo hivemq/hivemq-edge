@@ -19,6 +19,7 @@ import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.UUID;
+import org.eclipse.milo.opcua.sdk.core.types.DynamicEnumType;
 import org.eclipse.milo.opcua.sdk.core.types.DynamicStructType;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
@@ -412,6 +413,13 @@ public class OpcUaToJsonConverter {
             }
         } else if (value instanceof final DiagnosticInfo info) {
             populateDiagnosticInfo(arr.startObject(), info).endObject();
+        } else if (value instanceof final DynamicEnumType enumValue) {
+            final JsonObject enumRoot = new JsonObject();
+            final String name = enumValue.getName();
+            if (name != null) {
+                enumRoot.add("name", new JsonPrimitive(name));
+            }
+            enumRoot.add("value", new JsonPrimitive(enumValue.getValue()));
         } else if (value instanceof final DynamicStructType struct) {
             final var nested = arr.startObject();
             struct.getMembers().forEach((k, v) -> addValueToObject(nested, k, v, ctx));

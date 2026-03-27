@@ -232,6 +232,20 @@ public class DeviceTagImporter {
             final @NotNull String adapterId,
             final @Nullable BulkTagBrowser browser)
             throws DeviceTagImporterException {
+        // Synchronize the entire read-compute-write cycle on the same intrinsic lock used by
+        // ProtocolAdapterExtractor's synchronized methods to prevent TOCTOU races between
+        // concurrent imports (e.g., two OVERWRITE operations reading the same stale state).
+        synchronized (adapterExtractor) {
+            return doImportLocked(rows, mode, adapterId, browser);
+        }
+    }
+
+    private @NotNull ImportResult doImportLocked(
+            final @NotNull List<DeviceTagRow> rows,
+            final @NotNull ImportMode mode,
+            final @NotNull String adapterId,
+            final @Nullable BulkTagBrowser browser)
+            throws DeviceTagImporterException {
 
         // Step 1: Resolve wildcards and namespace URIs
         final List<DeviceTagRow> resolved = new ArrayList<>();

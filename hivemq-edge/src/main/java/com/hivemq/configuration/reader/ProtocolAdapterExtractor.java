@@ -29,7 +29,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
@@ -38,8 +43,17 @@ import org.jspecify.annotations.NonNull;
 
 public class ProtocolAdapterExtractor
         implements ReloadableExtractor<List<@NotNull ProtocolAdapterEntity>, List<@NotNull ProtocolAdapterEntity>> {
+    private static final long DEBOUNCE_DELAY_MS = 500;
+
     private final @NotNull Set<AdapterTag> adapterTagSet = new CopyOnWriteArraySet<>();
     private final @NotNull ConfigFileReaderWriter configFileReaderWriter;
+    private final @NotNull ScheduledExecutorService debounceScheduler =
+            Executors.newSingleThreadScheduledExecutor(r -> {
+                final Thread t = new Thread(r, "adapter-config-debounce");
+                t.setDaemon(true);
+                return t;
+            });
+    private final @NotNull AtomicReference<ScheduledFuture<?>> pendingNotification = new AtomicReference<>();
     private volatile @NotNull List<ProtocolAdapterEntity> allConfigs = List.of();
     private volatile @Nullable Consumer<List<@NotNull ProtocolAdapterEntity>> consumer =
             cfg -> log.debug("No consumer registered yet");
@@ -187,9 +201,19 @@ public class ProtocolAdapterExtractor
 
     private void notifyConsumer() {
         final var consumer = this.consumer;
-        if (consumer != null) {
-            consumer.accept(allConfigs);
+        if (consumer == null) {
+            return;
         }
+        // Cancel any pending debounced notification
+        final ScheduledFuture<?> prev = pendingNotification.getAndSet(null);
+        if (prev != null && !prev.isDone()) {
+            prev.cancel(false);
+        }
+        // Capture snapshot under the caller's synchronized lock for consistency
+        final var snapshot = allConfigs;
+        // Schedule notification after debounce delay — rapid config changes coalesce into one restart
+        pendingNotification.set(
+                debounceScheduler.schedule(() -> consumer.accept(snapshot), DEBOUNCE_DELAY_MS, TimeUnit.MILLISECONDS));
     }
 
     private @NonNull Optional<Set<AdapterTag>> updateTagNames(final List<ProtocolAdapterEntity> entities) {

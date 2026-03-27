@@ -229,31 +229,55 @@ public class OpcUaSubscriptionLifecycleHandler implements OpcUaSubscription.Subs
             log.info("All monitored items synchronized successfully");
             return true;
         } catch (final MonitoredItemSynchronizationException e) {
-            final List<MonitoredItemServiceOperationResult> results = new ArrayList<>();
-            results.addAll(e.getCreateResults());
-            results.addAll(e.getModifyResults());
-            results.addAll(e.getDeleteResults());
-            final String message = "Failed to synchronize monitored items: " + e.getStatusCode()
-                    + " "
-                    + e.getMessage()
-                    + ". Samples: "
-                    + results.stream()
-                            .map(MonitoredItemServiceOperationResult::monitoredItem)
-                            .filter(Objects::nonNull)
-                            .map(OpcUaMonitoredItem::getReadValueId)
-                            .filter(Objects::nonNull)
-                            .map(ReadValueId::getNodeId)
-                            .filter(Objects::nonNull)
-                            .map(NodeId::toString)
-                            .limit(MAX_MONITORED_ITEM_COUNT)
-                            .collect(Collectors.joining(", "));
-            log.error(message, e);
-            eventService
-                    .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
-                    .withMessage(message)
-                    .withSeverity(Event.SEVERITY.ERROR)
-                    .fire();
-            return false;
+            final List<MonitoredItemServiceOperationResult> allResults = new ArrayList<>();
+            allResults.addAll(e.getCreateResults());
+            allResults.addAll(e.getModifyResults());
+            allResults.addAll(e.getDeleteResults());
+
+            final long successCount = allResults.stream()
+                    .filter(MonitoredItemServiceOperationResult::isGood)
+                    .count();
+            final long failCount = allResults.stream().filter(r -> !r.isGood()).count();
+
+            final String failedSample = allResults.stream()
+                    .filter(r -> !r.isGood())
+                    .map(MonitoredItemServiceOperationResult::monitoredItem)
+                    .filter(Objects::nonNull)
+                    .map(OpcUaMonitoredItem::getReadValueId)
+                    .filter(Objects::nonNull)
+                    .map(ReadValueId::getNodeId)
+                    .filter(Objects::nonNull)
+                    .map(NodeId::toString)
+                    .limit(MAX_MONITORED_ITEM_COUNT)
+                    .collect(Collectors.joining(", "));
+
+            if (successCount > 0) {
+                // Partial failure — continue with healthy items
+                log.warn(
+                        "Partial monitored item sync for adapter '{}': {} ok, {} failed. Samples: {}",
+                        adapterId,
+                        successCount,
+                        failCount,
+                        failedSample);
+                eventService
+                        .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                        .withMessage("Partial subscription: " + successCount + " active, " + failCount
+                                + " failed. Samples: " + failedSample)
+                        .withSeverity(Event.SEVERITY.WARN)
+                        .fire();
+                return true;
+            } else {
+                // Total failure — no items succeeded
+                final String message = "Failed to synchronize monitored items: " + e.getStatusCode() + " "
+                        + e.getMessage() + ". Samples: " + failedSample;
+                log.error(message, e);
+                eventService
+                        .createAdapterEvent(adapterId, PROTOCOL_ID_OPCUA)
+                        .withMessage(message)
+                        .withSeverity(Event.SEVERITY.ERROR)
+                        .fire();
+                return false;
+            }
         }
     }
 

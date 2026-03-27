@@ -25,8 +25,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
@@ -111,9 +113,17 @@ public class OpcUaNodeBrowser {
         try {
             // Phase 1: Browse and collect variable node references with their paths.
             // CopyOnWriteArrayList is safe for concurrent adds from async browse callbacks.
+            // The visited set deduplicates nodes reachable via multiple paths in the OPC UA graph.
             final List<DiscoveredVariable> variables = new CopyOnWriteArrayList<>();
+            final Set<NodeId> visited = ConcurrentHashMap.newKeySet();
             final Semaphore concurrency = new Semaphore(MAX_CONCURRENT_BROWSES);
-            browseRecursive(browseRoot, "", maxDepth == 0 ? Integer.MAX_VALUE : maxDepth, variables, concurrency)
+            browseRecursive(
+                            browseRoot,
+                            "",
+                            maxDepth == 0 ? Integer.MAX_VALUE : maxDepth,
+                            variables,
+                            visited,
+                            concurrency)
                     .get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
             if (variables.isEmpty()) {
@@ -142,7 +152,12 @@ public class OpcUaNodeBrowser {
             final @NotNull String currentPath,
             final int remainingDepth,
             final @NotNull List<DiscoveredVariable> variables,
+            final @NotNull Set<NodeId> visited,
             final @NotNull Semaphore concurrency) {
+        // Skip already-visited nodes to deduplicate and prevent cycles in the OPC UA graph.
+        if (!visited.add(browseRoot)) {
+            return CompletableFuture.completedFuture(null);
+        }
         return CompletableFuture.runAsync(concurrency::acquireUninterruptibly)
                 .thenCompose(ignored -> client.browseAsync(new BrowseDescription(
                         browseRoot,
@@ -153,7 +168,7 @@ public class OpcUaNodeBrowser {
                         uint(BrowseResultMask.All.getValue()))))
                 .whenComplete((result, error) -> concurrency.release())
                 .thenCompose(browseResult ->
-                        handleBrowseResult(browseResult, currentPath, remainingDepth, variables, concurrency));
+                        handleBrowseResult(browseResult, currentPath, remainingDepth, variables, visited, concurrency));
     }
 
     private @NotNull CompletableFuture<Void> handleBrowseResult(
@@ -161,6 +176,7 @@ public class OpcUaNodeBrowser {
             final @NotNull String currentPath,
             final int remainingDepth,
             final @NotNull List<DiscoveredVariable> variables,
+            final @NotNull Set<NodeId> visited,
             final @NotNull Semaphore concurrency) {
         final var childFutures = new ArrayList<CompletableFuture<Void>>();
         final var references = new ArrayList<ReferenceDescription>();
@@ -185,15 +201,20 @@ public class OpcUaNodeBrowser {
             final NodeId nodeId = resolvedNodeId.get();
 
             if (rd.getNodeClass() == NodeClass.Variable) {
-                final int nsIndex = nodeId.getNamespaceIndex().intValue();
-                final String nsUri =
-                        nsIndex < nsTable.toArray().length ? nsTable.get(nsIndex) : String.valueOf(nsIndex);
-                variables.add(
-                        new DiscoveredVariable(nodeId, childPath, nsUri != null ? nsUri : "", nsIndex, browseName));
+                // Deduplicate variable nodes reachable via multiple paths.
+                // visited.add() returns false if this nodeId was already seen.
+                if (visited.add(nodeId)) {
+                    final int nsIndex = nodeId.getNamespaceIndex().intValue();
+                    final String nsUri =
+                            nsIndex < nsTable.toArray().length ? nsTable.get(nsIndex) : String.valueOf(nsIndex);
+                    variables.add(
+                            new DiscoveredVariable(nodeId, childPath, nsUri != null ? nsUri : "", nsIndex, browseName));
+                }
             }
 
             if (remainingDepth > 1) {
-                childFutures.add(browseRecursive(nodeId, childPath, remainingDepth - 1, variables, concurrency));
+                childFutures.add(
+                        browseRecursive(nodeId, childPath, remainingDepth - 1, variables, visited, concurrency));
             }
         }
 
@@ -207,7 +228,7 @@ public class OpcUaNodeBrowser {
                             for (final BrowseResult result : nextResult.getResults()) {
                                 if (result != null) {
                                     continuationFutures.add(handleBrowseResult(
-                                            result, currentPath, remainingDepth, variables, concurrency));
+                                            result, currentPath, remainingDepth, variables, visited, concurrency));
                                 }
                             }
                         }

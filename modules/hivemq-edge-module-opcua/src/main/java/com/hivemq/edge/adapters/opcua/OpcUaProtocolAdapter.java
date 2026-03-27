@@ -65,6 +65,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
@@ -103,6 +104,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     // Stored for reconnection - set during start()
     private volatile @Nullable ParsedConfig parsedConfig;
     private volatile @Nullable ModuleServices moduleServices;
+
+    // Last-known-good client reference for browse operations during adapter restarts.
+    // Set when a connection succeeds, cleared only on explicit stop (not during reconnect).
+    private final @NotNull AtomicReference<OpcUaClient> browseClient = new AtomicReference<>();
 
     // Flag to prevent scheduling after stop
     private volatile boolean stopped = false;
@@ -239,6 +244,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             // Clear stored configuration to prevent reconnection after stop
             this.parsedConfig = null;
             this.moduleServices = null;
+            // Clear browse client on explicit stop
+            this.browseClient.set(null);
 
             final OpcUaClientConnection conn = opcUaClientConnection.getAndSet(null);
             if (conn != null) {
@@ -535,15 +542,20 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         if (stopped) {
             throw new BrowseException("Browse failed: Adapter has been stopped");
         }
+        // Try primary connection first, fall back to last-known-good browse client snapshot.
+        // This allows browse to work during adapter restarts triggered by tag imports.
+        OpcUaClient client = null;
         final OpcUaClientConnection conn = opcUaClientConnection.get();
-        if (conn == null) {
-            throw new BrowseException("Browse failed: Client connection not initialized");
+        if (conn != null) {
+            client = conn.client().orElse(null);
         }
-        final var clientOpt = conn.client();
-        if (clientOpt.isEmpty()) {
+        if (client == null) {
+            client = browseClient.get();
+        }
+        if (client == null) {
             throw new BrowseException("Browse failed: Client not connected");
         }
-        return new OpcUaNodeBrowser(clientOpt.get(), adapterId).browse(rootId, maxDepth);
+        return new OpcUaNodeBrowser(client, adapterId).browse(rootId, maxDepth);
     }
 
     @Override
@@ -551,12 +563,16 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         if (namespaceUri == null || namespaceUri.isEmpty()) {
             return nodeId;
         }
+        // Try primary connection, fall back to browse client snapshot
+        OpcUaClient client = null;
         final OpcUaClientConnection conn = opcUaClientConnection.get();
-        if (conn == null) {
-            return nodeId;
+        if (conn != null) {
+            client = conn.client().orElse(null);
         }
-        final var clientOpt = conn.client();
-        if (clientOpt.isEmpty()) {
+        if (client == null) {
+            client = browseClient.get();
+        }
+        if (client == null) {
             return nodeId;
         }
         final NodeId parsed = NodeId.parseOrNull(nodeId);
@@ -564,8 +580,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             return nodeId;
         }
         try {
-            return parsed.reindex(clientOpt.get().getNamespaceTable(), namespaceUri)
-                    .toParseableString();
+            return parsed.reindex(client.getNamespaceTable(), namespaceUri).toParseableString();
         } catch (final Exception e) {
             log.debug("Could not resolve namespace URI '{}' for nodeId '{}': {}", namespaceUri, nodeId, e.getMessage());
             return nodeId;
@@ -720,6 +735,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                     lastReconnectTimestamp.set(System.currentTimeMillis());
                     if (success && throwable == null) {
                         reconnectAttempts.set(0);
+                        // Update browse client snapshot so browse works during future restarts
+                        conn.client().ifPresent(browseClient::set);
                         // Connection succeeded - cancel any pending retries and start health check
                         cancelRetry();
                         scheduleHealthCheck();
