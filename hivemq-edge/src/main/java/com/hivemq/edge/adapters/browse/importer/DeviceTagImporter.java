@@ -104,6 +104,7 @@ public class DeviceTagImporter {
 
         final boolean includeTagNames = row.getIncludeTagNames() != null ? row.getIncludeTagNames() : false;
         final boolean includeTimestamp = row.getIncludeTimestamp() != null ? row.getIncludeTimestamp() : true;
+        final boolean includeMetadata = row.getIncludeMetadata() != null ? row.getIncludeMetadata() : false;
         final Long expiry = row.getMessageExpiryInterval();
         final List<MqttUserPropertyEntity> userProperties;
         if (row.getMqttUserProperties() != null) {
@@ -120,6 +121,7 @@ public class DeviceTagImporter {
                 null, // messageHandlingOptions — always MQTTMessagePerTag
                 includeTagNames,
                 includeTimestamp,
+                includeMetadata,
                 userProperties,
                 expiry);
     }
