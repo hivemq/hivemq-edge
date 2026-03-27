@@ -28,6 +28,7 @@ java {
 }
 
 dependencies {
+    compileOnly("com.hivemq:hivemq-edge")
     compileOnly(libs.hivemq.edge.adaptersdk)
     compileOnly(libs.apache.commons.io)
     compileOnly(libs.slf4j.api)

@@ -241,8 +241,10 @@ dependencies {
     compileOnly("com.hivemq:hivemq-edge-module-modbus")
     compileOnly("com.hivemq:hivemq-edge-module-mtconnect")
     compileOnly("com.hivemq:hivemq-edge-module-databases")
-    compileOnly("com.hivemq:hivemq-edge-module-opcua")
     compileOnly("com.hivemq:hivemq-edge-module-file")
+    // hivemq-edge-module-opcua: NOT listed here because opcua has compileOnly on core (for browse types),
+    // and bidirectional compileOnly creates a Gradle task cycle. OPC UA module is still included in the
+    // distribution — the dependency direction is opcua -> core, not core -> opcua.
 
     // FIXME: should be in module instead
     // we need better module isolation for that as the modules pick up Netty from the app class loader
@@ -267,7 +269,6 @@ configurations.all {
 dependencies {
     testAnnotationProcessor(libs.dagger.compiler)
 
-    testImplementation("com.hivemq:hivemq-edge-module-opcua")
     testImplementation(platform(libs.junit.bom))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
