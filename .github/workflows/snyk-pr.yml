@@ -30,6 +30,12 @@ jobs:
           ref: ${{ steps.select_github_ref.outputs.selected_github_ref }}
           token: ${{ secrets.JENKINS_GITHUB_TOKEN }}
 
+      - name: Materialize gradle-wrapper.jar
+        run: |
+          git -C hivemq-edge/hivemq-edge fetch origin HEAD
+          git -C hivemq-edge/hivemq-edge cat-file blob HEAD:gradle/wrapper/gradle-wrapper.jar \
+            > hivemq-edge/hivemq-edge/gradle/wrapper/gradle-wrapper.jar
+
       - name: Check for new issues
         uses: hivemq/hivemq-snyk-composite-action@1c18f39e10e7b1d35fa121b91b99c0445b7a4a56 # v2.3.6
         with:
