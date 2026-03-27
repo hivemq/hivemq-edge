@@ -37,6 +37,8 @@ import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
+
+import java.math.BigInteger;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -215,6 +217,7 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                                 case final Float val -> dataPointBuilder.value(val);
                                 case final Double val -> dataPointBuilder.value(val);
                                 case final Short val -> dataPointBuilder.value(val);
+                                case final Boolean val -> dataPointBuilder.value(val);
                                 case final String val -> dataPointBuilder.value(val);
                                 default ->
                                     log.error(
