@@ -233,7 +233,8 @@ class DeviceTagImporterTest {
     void overwrite_edgeOnly_deleted_fileOnly_created() throws DeviceTagImporterException {
         final ProtocolAdapterEntity adapter = adapterWithTags(
                 List.of(new TagEntity("edge-only", null, Map.of("node", "ns=2;i=99"))),
-                List.of(new NorthboundMappingEntity("edge-only", "old/topic", 1, null, false, true, false, List.of(), null)),
+                List.of(new NorthboundMappingEntity(
+                        "edge-only", "old/topic", 1, null, false, true, false, List.of(), null)),
                 List.of());
         setupAdapter(adapter);
 
@@ -383,7 +384,15 @@ class DeviceTagImporterTest {
         final ProtocolAdapterEntity adapter = adapterWithTags(
                 List.of(new TagEntity("tag1", null, Map.of("node", "ns=2;i=1"))),
                 List.of(new NorthboundMappingEntity(
-                        "tag1", "topic/1", 1, null, true, false, false, List.of(new MqttUserPropertyEntity("k", "v")), 3600L)),
+                        "tag1",
+                        "topic/1",
+                        1,
+                        null,
+                        true,
+                        false,
+                        false,
+                        List.of(new MqttUserPropertyEntity("k", "v")),
+                        3600L)),
                 List.of());
         setupAdapter(adapter);
 
@@ -528,7 +537,8 @@ class DeviceTagImporterTest {
     void rename_mergeOverwrite_sameNodeId_differentTagName() throws DeviceTagImporterException {
         final ProtocolAdapterEntity adapter = adapterWithTags(
                 List.of(new TagEntity("old-name", "desc", Map.of("node", "ns=2;i=1"))),
-                List.of(new NorthboundMappingEntity("old-name", "topic/1", 1, null, false, true, false, List.of(), null)),
+                List.of(new NorthboundMappingEntity(
+                        "old-name", "topic/1", 1, null, false, true, false, List.of(), null)),
                 List.of());
         setupAdapter(adapter);
 
@@ -811,7 +821,8 @@ class DeviceTagImporterTest {
     void importResult_countsMatchActions() throws DeviceTagImporterException {
         final ProtocolAdapterEntity adapter = adapterWithTags(
                 List.of(new TagEntity("delete-me", null, Map.of("node", "ns=2;i=99"))),
-                List.of(new NorthboundMappingEntity("delete-me", "old/topic", 1, null, false, true, false, List.of(), null)),
+                List.of(new NorthboundMappingEntity(
+                        "delete-me", "old/topic", 1, null, false, true, false, List.of(), null)),
                 List.of());
         setupAdapter(adapter);
 
