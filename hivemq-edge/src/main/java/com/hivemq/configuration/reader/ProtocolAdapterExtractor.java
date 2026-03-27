@@ -171,7 +171,11 @@ public class ProtocolAdapterExtractor
                 }
                 return false;
             } else {
-                replaceConfigsAndTriggerWrite(newConfigs);
+                // Use debounced notification for updateAdapter (the import path) to prevent
+                // adapter restart storms from rapid concurrent tag imports.
+                allConfigs = newConfigs;
+                notifyConsumerDebounced();
+                configFileReaderWriter.writeConfigWithSync();
                 return true;
             }
         }
@@ -200,6 +204,19 @@ public class ProtocolAdapterExtractor
     }
 
     private void notifyConsumer() {
+        final var consumer = this.consumer;
+        if (consumer != null) {
+            consumer.accept(allConfigs);
+        }
+    }
+
+    /**
+     * Debounced variant of {@link #notifyConsumer()} — schedules the consumer notification after
+     * a delay, cancelling any pending notification. Rapid calls coalesce into a single consumer
+     * invocation with the latest config snapshot. Used only by {@link #updateAdapter} (the import
+     * path) to prevent adapter restart storms from concurrent tag imports.
+     */
+    private void notifyConsumerDebounced() {
         final var consumer = this.consumer;
         if (consumer == null) {
             return;
