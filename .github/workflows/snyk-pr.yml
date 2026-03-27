@@ -33,6 +33,7 @@ jobs:
       - name: Materialize gradle-wrapper.jar
         run: |
           git -C hivemq-edge/hivemq-edge fetch origin HEAD
+          mkdir -p hivemq-edge/hivemq-edge/gradle/wrapper
           git -C hivemq-edge/hivemq-edge cat-file blob HEAD:gradle/wrapper/gradle-wrapper.jar \
             > hivemq-edge/hivemq-edge/gradle/wrapper/gradle-wrapper.jar
 
