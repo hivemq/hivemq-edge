@@ -45,18 +45,18 @@ HiveMQ Edge uses the following third party libraries:
  io.dropwizard.metrics:metrics-jmx                                          | 4.2.38                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  io.dropwizard.metrics:metrics-jvm                                          | 4.2.38                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  io.dropwizard.metrics:metrics-logback                                      | 4.2.38                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- io.netty:netty-buffer                                                      | 4.2.10.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- io.netty:netty-codec                                                       | 4.2.10.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- io.netty:netty-codec-base                                                  | 4.2.10.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- io.netty:netty-codec-compression                                           | 4.2.10.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- io.netty:netty-codec-http                                                  | 4.2.10.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- io.netty:netty-codec-marshalling                                           | 4.2.10.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- io.netty:netty-codec-protobuf                                              | 4.2.10.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- io.netty:netty-common                                                      | 4.2.10.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- io.netty:netty-handler                                                     | 4.2.10.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- io.netty:netty-resolver                                                    | 4.2.10.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- io.netty:netty-transport                                                   | 4.2.10.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- io.netty:netty-transport-native-unix-common                                | 4.2.10.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ io.netty:netty-buffer                                                      | 4.2.12.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ io.netty:netty-codec                                                       | 4.2.12.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ io.netty:netty-codec-base                                                  | 4.2.12.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ io.netty:netty-codec-compression                                           | 4.2.12.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ io.netty:netty-codec-http                                                  | 4.2.12.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ io.netty:netty-codec-marshalling                                           | 4.2.12.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ io.netty:netty-codec-protobuf                                              | 4.2.12.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ io.netty:netty-common                                                      | 4.2.12.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ io.netty:netty-handler                                                     | 4.2.12.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ io.netty:netty-resolver                                                    | 4.2.12.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ io.netty:netty-transport                                                   | 4.2.12.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ io.netty:netty-transport-native-unix-common                                | 4.2.12.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  io.reactivex.rxjava2:rxjava                                                | 2.2.21                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  io.swagger.core.v3:swagger-annotations                                     | 2.2.43                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  io.swagger:swagger-annotations                                             | 1.6.16                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
