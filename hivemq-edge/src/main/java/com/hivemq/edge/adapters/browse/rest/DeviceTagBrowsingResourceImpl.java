@@ -116,13 +116,17 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         }
 
         // Browse
+        if (maxDepth != null && maxDepth < 0) {
+            return errorResponse(Response.Status.BAD_REQUEST, "maxDepth must be >= 0 (0 = unlimited)");
+        }
         final int depth = maxDepth != null ? maxDepth : 0;
         final Stream<BrowsedNode> nodes;
         try {
             nodes = browser.browse(rootId, depth);
         } catch (final BrowseException e) {
             logger.warn("Browse failed for adapter '{}': {}", adapterId, e.getMessage());
-            if (e.getMessage() != null && e.getMessage().contains("timed out")) {
+            if (e.getMessage() != null
+                    && e.getMessage().toLowerCase(Locale.ROOT).contains("timed out")) {
                 return errorResponse(Response.Status.GATEWAY_TIMEOUT, e.getMessage());
             }
             return errorResponse(Response.Status.CONFLICT, e.getMessage() != null ? e.getMessage() : "Browse failed");
@@ -203,6 +207,12 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         final List<DeviceTagRow> rows;
         try {
             final String ct = contentType != null ? contentType.toLowerCase(Locale.ROOT) : "";
+            // Reject explicitly declared non-UTF-8 charsets to prevent silent mojibake
+            if (ct.contains("charset=") && !ct.contains("charset=utf-8")) {
+                return errorResponse(
+                        Response.Status.UNSUPPORTED_MEDIA_TYPE,
+                        "Only UTF-8 encoding is supported. Remove the charset parameter or use charset=utf-8.");
+            }
             if (ct.contains("json")) {
                 rows = jsonSerializer.deserialize(bodyBytes);
             } else if (ct.contains("yaml")) {

@@ -467,4 +467,98 @@ class DeviceTagCsvSerializerTest {
         final String csvStr = new String(csv, StandardCharsets.UTF_8);
         assertThat(csvStr).startsWith("tag_name,tag_name_default,tag_description,northbound_topic");
     }
+
+    // --- UTF-8 BOM handling ---
+
+    @Test
+    void deserialize_utf8Bom_strippedCorrectly() throws IOException {
+        final String csv = "node_id,tag_name\r\nns=0;i=1,bom-tag\r\n";
+        final byte[] csvBytes = csv.getBytes(StandardCharsets.UTF_8);
+        // Prepend BOM
+        final byte[] withBom = new byte[3 + csvBytes.length];
+        withBom[0] = (byte) 0xEF;
+        withBom[1] = (byte) 0xBB;
+        withBom[2] = (byte) 0xBF;
+        System.arraycopy(csvBytes, 0, withBom, 3, csvBytes.length);
+
+        final List<DeviceTagRow> result = serializer.deserialize(withBom);
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().getNodeId()).isEqualTo("ns=0;i=1");
+        assertThat(result.getFirst().getTagName()).isEqualTo("bom-tag");
+    }
+
+    @Test
+    void deserialize_noBom_worksNormally() throws IOException {
+        final String csv = "node_id,tag_name\r\nns=0;i=1,no-bom\r\n";
+        final List<DeviceTagRow> result = serializer.deserialize(csv.getBytes(StandardCharsets.UTF_8));
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().getTagName()).isEqualTo("no-bom");
+    }
+
+    // --- URL-encoding for compact CSV encodings ---
+
+    @Test
+    void fieldMapping_roundTrip_specialChars_semicolonInSource() {
+        final List<FieldMappingInstruction> original = List.of(new FieldMappingInstruction("src;with;semi", "dst"));
+        final String encoded = DeviceTagCsvSerializer.encodeFieldMapping(original);
+        final List<FieldMappingInstruction> decoded = DeviceTagCsvSerializer.decodeFieldMapping(encoded);
+        assertThat(decoded).hasSize(1);
+        assertThat(decoded.getFirst().source()).isEqualTo("src;with;semi");
+        assertThat(decoded.getFirst().destination()).isEqualTo("dst");
+    }
+
+    @Test
+    void fieldMapping_roundTrip_specialChars_arrowInSource() {
+        final List<FieldMappingInstruction> original = List.of(new FieldMappingInstruction("a->b", "dst"));
+        final String encoded = DeviceTagCsvSerializer.encodeFieldMapping(original);
+        final List<FieldMappingInstruction> decoded = DeviceTagCsvSerializer.decodeFieldMapping(encoded);
+        assertThat(decoded).hasSize(1);
+        assertThat(decoded.getFirst().source()).isEqualTo("a->b");
+    }
+
+    @Test
+    void fieldMapping_roundTrip_specialChars_percentInSource() {
+        final List<FieldMappingInstruction> original = List.of(new FieldMappingInstruction("100%done", "dst"));
+        final String encoded = DeviceTagCsvSerializer.encodeFieldMapping(original);
+        final List<FieldMappingInstruction> decoded = DeviceTagCsvSerializer.decodeFieldMapping(encoded);
+        assertThat(decoded).hasSize(1);
+        assertThat(decoded.getFirst().source()).isEqualTo("100%done");
+    }
+
+    @Test
+    void userProperties_roundTrip_specialChars_equalsInKey() {
+        final Map<String, String> original = Map.of("my=key", "my=value");
+        final String encoded = DeviceTagCsvSerializer.encodeUserProperties(original);
+        final Map<String, String> decoded = DeviceTagCsvSerializer.decodeUserProperties(encoded);
+        assertThat(decoded).containsEntry("my=key", "my=value");
+    }
+
+    @Test
+    void userProperties_roundTrip_specialChars_semicolonInValue() {
+        final Map<String, String> original = Map.of("key", "val;ue");
+        final String encoded = DeviceTagCsvSerializer.encodeUserProperties(original);
+        final Map<String, String> decoded = DeviceTagCsvSerializer.decodeUserProperties(encoded);
+        assertThat(decoded).containsEntry("key", "val;ue");
+    }
+
+    @Test
+    void fullCsvRoundTrip_specialCharsInFieldMappingAndUserProperties() throws IOException {
+        final DeviceTagRow row = DeviceTagRow.builder()
+                .nodeId("ns=0;i=1")
+                .tagName("special-tag")
+                .southboundFieldMapping(List.of(new FieldMappingInstruction("a->b", "c;d")))
+                .mqttUserProperties(Map.of("k=1", "v;2"))
+                .build();
+
+        final byte[] csv = serializer.serialize(List.of(row));
+        final List<DeviceTagRow> result = serializer.deserialize(csv);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().getSouthboundFieldMapping()).hasSize(1);
+        assertThat(result.getFirst().getSouthboundFieldMapping().getFirst().source())
+                .isEqualTo("a->b");
+        assertThat(result.getFirst().getSouthboundFieldMapping().getFirst().destination())
+                .isEqualTo("c;d");
+        assertThat(result.getFirst().getMqttUserProperties()).containsEntry("k=1", "v;2");
+    }
 }

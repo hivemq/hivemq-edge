@@ -185,6 +185,22 @@ class DeviceTagBrowsingResourceImplTest {
         assertThat(response.getMediaType().toString()).contains(expectedMediaType);
     }
 
+    // -- Negative maxDepth ---
+
+    @Test
+    void browse_negativeMaxDepth_returns400() {
+        when(httpHeaders.getHeaderString("Accept")).thenReturn("application/json");
+        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, -1);
+        assertThat(response.getStatus()).isEqualTo(400);
+    }
+
+    @Test
+    void browse_zeroMaxDepth_succeeds() {
+        when(httpHeaders.getHeaderString("Accept")).thenReturn("application/json");
+        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, 0);
+        assertThat(response.getStatus()).isEqualTo(200);
+    }
+
     // -- Helpers --
 
     private static @NotNull BrowsedNode testNode() {

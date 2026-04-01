@@ -825,4 +825,137 @@ class DeviceTagValidatorTest {
         assertThat(errors).noneMatch(e -> e.code().equals("INVALID_TAG_NAME"));
         assertThat(errors).noneMatch(e -> e.code().equals("INVALID_NODE_ID"));
     }
+
+    // --- Expiry upper bound (MQTT uint32 max) ---
+
+    @Test
+    void validate_expiryInterval_atMqttMax_valid() {
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .tagName("tag1")
+                .messageExpiryInterval(4_294_967_295L)
+                .build());
+
+        final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
+
+        assertThat(errors).noneMatch(e -> e.code() == ValidationError.Code.INVALID_EXPIRY);
+    }
+
+    @Test
+    void validate_expiryInterval_exceedsMqttMax_rejected() {
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .tagName("tag1")
+                .messageExpiryInterval(4_294_967_296L)
+                .build());
+
+        final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
+
+        assertThat(errors).anySatisfy(e -> {
+            assertThat(e.code()).isEqualTo(ValidationError.Code.INVALID_EXPIRY);
+            assertThat(e.message()).contains("4294967295");
+        });
+    }
+
+    // --- Topic length limits ---
+
+    @Test
+    void validate_northboundTopic_exceedsMaxLength_rejected() {
+        final String longTopic = "a/".repeat(32768);
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .tagName("tag1")
+                .northboundTopic(longTopic)
+                .build());
+
+        final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
+
+        assertThat(errors).anySatisfy(e -> {
+            assertThat(e.code()).isEqualTo(ValidationError.Code.INVALID_TOPIC);
+            assertThat(e.message()).contains("maximum length");
+        });
+    }
+
+    @Test
+    void validate_southboundTopic_exceedsMaxLength_rejected() {
+        final String longTopic = "a/".repeat(32768);
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .tagName("tag1")
+                .southboundTopic(longTopic)
+                .build());
+
+        final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
+
+        assertThat(errors).anySatisfy(e -> {
+            assertThat(e.code()).isEqualTo(ValidationError.Code.INVALID_TOPIC);
+            assertThat(e.message()).contains("maximum length");
+        });
+    }
+
+    // --- Tag description length limit ---
+
+    @Test
+    void validate_tagDescription_exceedsMaxLength_rejected() {
+        final String longDesc = "x".repeat(1025);
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .tagName("tag1")
+                .tagDescription(longDesc)
+                .build());
+
+        final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
+
+        assertThat(errors).anySatisfy(e -> assertThat(e.message()).contains("maximum length"));
+    }
+
+    @Test
+    void validate_tagDescription_atMaxLength_valid() {
+        final String desc = "x".repeat(1024);
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .tagName("tag1")
+                .tagDescription(desc)
+                .build());
+
+        final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
+
+        assertThat(errors).noneMatch(e -> e.message() != null && e.message().contains("description"));
+    }
+
+    // --- User property length limits ---
+
+    @Test
+    void validate_userPropertyKey_exceedsMaxLength_rejected() {
+        final String longKey = "k".repeat(257);
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .tagName("tag1")
+                .mqttUserProperties(Map.of(longKey, "value"))
+                .build());
+
+        final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
+
+        assertThat(errors).anySatisfy(e -> {
+            assertThat(e.code()).isEqualTo(ValidationError.Code.INVALID_USER_PROPERTIES);
+            assertThat(e.message()).contains("key");
+        });
+    }
+
+    @Test
+    void validate_userPropertyValue_exceedsMaxLength_rejected() {
+        final String longValue = "v".repeat(257);
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .nodeId("ns=2;i=1")
+                .tagName("tag1")
+                .mqttUserProperties(Map.of("key", longValue))
+                .build());
+
+        final List<ValidationError> errors = validator.validate(rows, ImportMode.CREATE, "adapter1");
+
+        assertThat(errors).anySatisfy(e -> {
+            assertThat(e.code()).isEqualTo(ValidationError.Code.INVALID_USER_PROPERTIES);
+            assertThat(e.message()).contains("value");
+        });
+    }
 }

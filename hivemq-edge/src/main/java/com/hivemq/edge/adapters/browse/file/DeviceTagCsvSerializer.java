@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -113,9 +114,9 @@ public class DeviceTagCsvSerializer {
             if (i > 0) {
                 sb.append(';');
             }
-            sb.append(mappings.get(i).source())
+            sb.append(encodeComponent(mappings.get(i).source()))
                     .append("->")
-                    .append(mappings.get(i).destination());
+                    .append(encodeComponent(mappings.get(i).destination()));
         }
         return sb.toString();
     }
@@ -136,8 +137,8 @@ public class DeviceTagCsvSerializer {
                         "Invalid field mapping format: '" + trimmed + "'. Expected 'source->destination'.");
             }
             result.add(new FieldMappingInstruction(
-                    trimmed.substring(0, arrowIdx).trim(),
-                    trimmed.substring(arrowIdx + 2).trim()));
+                    decodeComponent(trimmed.substring(0, arrowIdx).trim()),
+                    decodeComponent(trimmed.substring(arrowIdx + 2).trim())));
         }
         return result.isEmpty() ? null : result;
     }
@@ -152,7 +153,7 @@ public class DeviceTagCsvSerializer {
             if (!first) {
                 sb.append(';');
             }
-            sb.append(entry.getKey()).append('=').append(entry.getValue());
+            sb.append(encodeComponent(entry.getKey())).append('=').append(encodeComponent(entry.getValue()));
             first = false;
         }
         return sb.toString();
@@ -174,10 +175,25 @@ public class DeviceTagCsvSerializer {
                         "Invalid user property format: '" + trimmed + "'. Expected 'key=value'.");
             }
             result.put(
-                    trimmed.substring(0, eqIdx).trim(),
-                    trimmed.substring(eqIdx + 1).trim());
+                    decodeComponent(trimmed.substring(0, eqIdx).trim()),
+                    decodeComponent(trimmed.substring(eqIdx + 1).trim()));
         }
         return result.isEmpty() ? null : result;
+    }
+
+    /**
+     * URL-encodes the CSV compact-encoding delimiters ({@code ;}, {@code ->}, {@code =})
+     * so they don't corrupt the field mapping and user property encodings on round-trip.
+     */
+    private static @NotNull String encodeComponent(final @NotNull String value) {
+        return value.replace("%", "%25")
+                .replace(";", "%3B")
+                .replace("->", "%2D%3E")
+                .replace("=", "%3D");
+    }
+
+    private static @NotNull String decodeComponent(final @NotNull String value) {
+        return URLDecoder.decode(value, StandardCharsets.UTF_8);
     }
 
     private static @Nullable String getOptional(final @NotNull CSVRecord record, final @NotNull String column) {
@@ -255,9 +271,10 @@ public class DeviceTagCsvSerializer {
     }
 
     public @NotNull List<DeviceTagRow> deserialize(final byte @NotNull [] csvData) throws IOException {
+        final byte[] data = stripBom(csvData);
         final List<DeviceTagRow> rows = new ArrayList<>();
         try (final InputStreamReader reader =
-                        new InputStreamReader(new ByteArrayInputStream(csvData), StandardCharsets.UTF_8);
+                        new InputStreamReader(new ByteArrayInputStream(data), StandardCharsets.UTF_8);
                 final CSVParser parser = CSV_FORMAT.parse(reader)) {
             if (parser.getHeaderMap() == null || parser.getHeaderMap().isEmpty()) {
                 throw new IOException("CSV file is missing header row");
@@ -289,5 +306,19 @@ public class DeviceTagCsvSerializer {
             }
         }
         return rows;
+    }
+
+    /**
+     * Strips the UTF-8 BOM (byte order mark, {@code 0xEF 0xBB 0xBF}) if present at the start of
+     * the data. Excel on Windows prepends this when saving CSV files as UTF-8, and it corrupts the
+     * first header name if not removed.
+     */
+    private static byte @NotNull [] stripBom(final byte @NotNull [] data) {
+        if (data.length >= 3 && (data[0] & 0xFF) == 0xEF && (data[1] & 0xFF) == 0xBB && (data[2] & 0xFF) == 0xBF) {
+            final byte[] stripped = new byte[data.length - 3];
+            System.arraycopy(data, 3, stripped, 0, stripped.length);
+            return stripped;
+        }
+        return data;
     }
 }

@@ -60,6 +60,10 @@ public class DeviceTagValidator {
 
     private static final @NotNull Pattern TAG_NAME_PATTERN = Pattern.compile("\\S+");
     private static final int MAX_TAG_NAME_LENGTH = 256;
+    private static final int MAX_TOPIC_LENGTH = 65535; // MQTT spec limit
+    private static final int MAX_DESCRIPTION_LENGTH = 1024;
+    private static final int MAX_USER_PROPERTY_LENGTH = 256;
+    private static final long MAX_MESSAGE_EXPIRY_INTERVAL = 4_294_967_295L; // MQTT uint32 max
 
     private final @NotNull ProtocolAdapterExtractor adapterExtractor;
     private final @NotNull DataCombiningExtractor combiningExtractor;
@@ -81,6 +85,13 @@ public class DeviceTagValidator {
         if (topic.isEmpty() || topic.contains("\0")) {
             errors.add(new ValidationError(
                     rowNum, "northbound_topic", topic, INVALID_TOPIC, "Northbound topic contains invalid characters"));
+        } else if (topic.length() > MAX_TOPIC_LENGTH) {
+            errors.add(new ValidationError(
+                    rowNum,
+                    "northbound_topic",
+                    topic.substring(0, 50) + "...",
+                    INVALID_TOPIC,
+                    "Northbound topic exceeds maximum length of " + MAX_TOPIC_LENGTH));
         } else if (topic.contains("+") || topic.contains("#")) {
             errors.add(new ValidationError(
                     rowNum,
@@ -106,6 +117,26 @@ public class DeviceTagValidator {
                     topic,
                     INVALID_TOPIC,
                     "Southbound topic filter contains invalid characters"));
+        } else if (topic.length() > MAX_TOPIC_LENGTH) {
+            errors.add(new ValidationError(
+                    rowNum,
+                    "southbound_topic",
+                    topic.substring(0, 50) + "...",
+                    INVALID_TOPIC,
+                    "Southbound topic filter exceeds maximum length of " + MAX_TOPIC_LENGTH));
+        }
+    }
+
+    private static void validateTagDescription(
+            final @NotNull DeviceTagRow row, final int rowNum, final @NotNull List<ValidationError> errors) {
+        final String desc = row.getTagDescription();
+        if (desc != null && desc.length() > MAX_DESCRIPTION_LENGTH) {
+            errors.add(new ValidationError(
+                    rowNum,
+                    "tag_description",
+                    desc.substring(0, 50) + "...",
+                    INVALID_TAG_NAME,
+                    "Tag description exceeds maximum length of " + MAX_DESCRIPTION_LENGTH));
         }
     }
 
@@ -129,13 +160,13 @@ public class DeviceTagValidator {
         if (expiry == null) {
             return;
         }
-        if (expiry <= 0) {
+        if (expiry <= 0 || expiry > MAX_MESSAGE_EXPIRY_INTERVAL) {
             errors.add(new ValidationError(
                     rowNum,
                     "message_expiry_interval",
                     String.valueOf(expiry),
                     INVALID_EXPIRY,
-                    "Message expiry interval must be greater than 0"));
+                    "Message expiry interval must be between 1 and " + MAX_MESSAGE_EXPIRY_INTERVAL + " seconds"));
         }
     }
 
@@ -179,6 +210,21 @@ public class DeviceTagValidator {
                         null,
                         INVALID_USER_PROPERTIES,
                         "User property key must not be empty"));
+            } else if (entry.getKey().length() > MAX_USER_PROPERTY_LENGTH) {
+                errors.add(new ValidationError(
+                        rowNum,
+                        "mqtt_user_properties",
+                        entry.getKey().substring(0, 50) + "...",
+                        INVALID_USER_PROPERTIES,
+                        "User property key exceeds maximum length of " + MAX_USER_PROPERTY_LENGTH));
+            }
+            if (entry.getValue() != null && entry.getValue().length() > MAX_USER_PROPERTY_LENGTH) {
+                errors.add(new ValidationError(
+                        rowNum,
+                        "mqtt_user_properties",
+                        entry.getKey(),
+                        INVALID_USER_PROPERTIES,
+                        "User property value exceeds maximum length of " + MAX_USER_PROPERTY_LENGTH));
             }
         }
     }
@@ -274,6 +320,7 @@ public class DeviceTagValidator {
             }
 
             validateTagName(row, rowNum, errors);
+            validateTagDescription(row, rowNum, errors);
             validateNorthboundTopic(row, rowNum, errors);
             validateSouthboundTopic(row, rowNum, errors);
             validateQos(row, rowNum, errors);
