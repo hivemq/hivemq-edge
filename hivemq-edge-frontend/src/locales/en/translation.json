@@ -670,7 +670,8 @@
         "header_COMBINING": "Manage Data combining mappings"
       },
       "actions": {
-        "submit": "Submit"
+        "submit": "Submit",
+        "enableAllMetadata": "Enable All Metadata"
       },
       "toast": {
         "description_loading": "Processing the request",
