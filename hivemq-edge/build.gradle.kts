@@ -406,6 +406,10 @@ val hivemqZip by tasks.registering(Zip::class) {
     from("src/main/resources/config.xml") { into("conf") }
     from(tasks.shadowJar) { into("bin").rename { "hivemq.jar" } }
     into(name)
+
+    filesMatching(listOf("**/bin/run.sh", "**/bin/init-script/hivemq")) {
+        permissions { unix("rwxr-xr-x") }
+    }
 }
 
 tasks.javadoc {
