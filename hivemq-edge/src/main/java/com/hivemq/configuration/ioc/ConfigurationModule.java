@@ -17,6 +17,7 @@ package com.hivemq.configuration.ioc;
 
 import com.hivemq.configuration.reader.AssetMappingExtractor;
 import com.hivemq.configuration.reader.BridgeExtractor;
+import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.DataCombiningExtractor;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.configuration.reader.PulseExtractor;
@@ -31,6 +32,12 @@ import com.hivemq.configuration.service.PersistenceConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
+import com.hivemq.edge.compiler.lib.serialization.CompiledConfigSerializer;
+import com.hivemq.edge.knappogue.CompiledConfigApplier;
+import com.hivemq.edge.knappogue.CompiledConfigSubscriber;
+import com.hivemq.mqtt.topic.tree.LocalTopicTree;
+import com.hivemq.persistence.SingleWriterService;
+import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import dagger.Module;
 import dagger.Provides;
 import jakarta.inject.Singleton;
@@ -139,5 +146,30 @@ public class ConfigurationModule {
     static @NotNull InternalConfigurationService internalConfigurationService(
             final @NotNull ConfigurationService configurationService) {
         return configurationService.internalConfigurationService();
+    }
+
+    @Provides
+    @Singleton
+    static @NotNull ConfigFileReaderWriter configFileReaderWriter(
+            final @NotNull ConfigurationService configurationService) {
+        return configurationService.getConfigFileReaderWriter();
+    }
+
+    @Provides
+    @Singleton
+    static @NotNull CompiledConfigApplier compiledConfigApplier(
+            final @NotNull ConfigFileReaderWriter configFileReaderWriter) {
+        return new CompiledConfigApplier(configFileReaderWriter);
+    }
+
+    @Provides
+    @Singleton
+    static @NotNull CompiledConfigSubscriber compiledConfigSubscriber(
+            final @NotNull CompiledConfigApplier applier,
+            final @NotNull LocalTopicTree localTopicTree,
+            final @NotNull ClientQueuePersistence clientQueuePersistence,
+            final @NotNull SingleWriterService singleWriterService) {
+        return new CompiledConfigSubscriber(
+                applier, new CompiledConfigSerializer(), localTopicTree, clientQueuePersistence, singleWriterService);
     }
 }

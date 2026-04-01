@@ -1,0 +1,7 @@
+type: opcua
+id: extruder-01
+name: Extruder 01
+connection:
+  host: 192.168.1.10
+  port: 4840
+  securityPolicy: None

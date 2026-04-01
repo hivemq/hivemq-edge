@@ -232,6 +232,7 @@ dependencies {
 
     // Edge compiler (bundled for 'edge --compile' seam)
     implementation("com.hivemq:hivemq-edge-compiler")
+    implementation("com.hivemq:hivemq-edge-compiler-lib")
 
     // Edge modules
     compileOnly("com.hivemq:hivemq-edge-module-etherip")

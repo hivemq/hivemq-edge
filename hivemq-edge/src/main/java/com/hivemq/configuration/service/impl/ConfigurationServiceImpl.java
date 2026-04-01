@@ -161,6 +161,12 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     }
 
     @Override
+    public @NotNull ConfigFileReaderWriter getConfigFileReaderWriter() {
+        Preconditions.checkNotNull(configFileReaderWriter, "configFileReaderWriter must not be null");
+        return configFileReaderWriter;
+    }
+
+    @Override
     public @NotNull ProtocolAdapterExtractor protocolAdapterExtractor() {
         Preconditions.checkNotNull(configFileReaderWriter, "configFileReaderWriter must not be null");
         return configFileReaderWriter.getProtocolAdapterExtractor();

@@ -113,6 +113,9 @@ public interface ConfigurationService {
 
     void setConfigFileReaderWriter(@NotNull ConfigFileReaderWriter configFileReaderWriter);
 
+    @NotNull
+    ConfigFileReaderWriter getConfigFileReaderWriter();
+
     void writeConfiguration(final @NotNull Writer writer);
 
     @NotNull

@@ -19,6 +19,7 @@ import com.hivemq.bootstrap.HiveMQEdgeNettyBootstrap;
 import com.hivemq.bootstrap.ListenerStartupInformation;
 import com.hivemq.bootstrap.StartupListenerVerifier;
 import com.hivemq.combining.runtime.DataCombinerManager;
+import com.hivemq.edge.knappogue.CompiledConfigSubscriber;
 import com.hivemq.embedded.EmbeddedExtension;
 import com.hivemq.exceptions.HiveMQEdgeStartupException;
 import com.hivemq.extension.sdk.api.services.admin.AdminService;
@@ -40,6 +41,7 @@ public class HiveMQEdgeGateway {
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
     private final @NotNull DataCombinerManager dataCombinerManager;
     private final @NotNull AssetMapperManager assetMapperManager;
+    private final @NotNull CompiledConfigSubscriber compiledConfigSubscriber;
 
     @Inject
     public HiveMQEdgeGateway(
@@ -48,13 +50,15 @@ public class HiveMQEdgeGateway {
             final @NotNull AdminService adminService,
             final @NotNull ProtocolAdapterManager protocolAdapterManager,
             final @NotNull DataCombinerManager dataCombinerManager,
-            final @NotNull AssetMapperManager assetMapperManager) {
+            final @NotNull AssetMapperManager assetMapperManager,
+            final @NotNull CompiledConfigSubscriber compiledConfigSubscriber) {
         this.nettyBootstrap = nettyBootstrap;
         this.extensionBootstrap = extensionBootstrap;
         this.adminService = adminService;
         this.protocolAdapterManager = protocolAdapterManager;
         this.dataCombinerManager = dataCombinerManager;
         this.assetMapperManager = assetMapperManager;
+        this.compiledConfigSubscriber = compiledConfigSubscriber;
     }
 
     public void start(final @Nullable EmbeddedExtension embeddedExtension) throws HiveMQEdgeStartupException {
@@ -63,6 +67,7 @@ public class HiveMQEdgeGateway {
             protocolAdapterManager.start();
             dataCombinerManager.start();
             assetMapperManager.start();
+            compiledConfigSubscriber.start();
 
             final List<ListenerStartupInformation> startupInformation =
                     nettyBootstrap.bootstrapServer().get();

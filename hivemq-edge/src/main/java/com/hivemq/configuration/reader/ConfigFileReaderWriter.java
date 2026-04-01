@@ -355,6 +355,24 @@ public class ConfigFileReaderWriter {
         return lastWrite.get();
     }
 
+    public @NotNull HiveMQConfigEntity getCurrentConfigEntity() {
+        final HiveMQConfigEntity entity = configEntity.get();
+        if (entity == null) {
+            throw new IllegalStateException("Config not yet loaded");
+        }
+        return entity;
+    }
+
+    public boolean applyCompiledConfig(final @NotNull HiveMQConfigEntity entity) {
+        lock.lock();
+        try {
+            configEntity.set(entity);
+            return internalApplyConfig(entity);
+        } finally {
+            lock.unlock();
+        }
+    }
+
     public void writeConfigToXML(final @NotNull Writer writer) {
         lock.lock();
         try {
