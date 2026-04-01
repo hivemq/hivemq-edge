@@ -85,8 +85,19 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         if (accept == null || accept.isEmpty() || accept.contains("*/*")) {
             return MEDIA_TYPE_CSV;
         }
-        final String type = accept.toLowerCase(Locale.ROOT);
-        return type.contains("json") ? APPLICATION_JSON : type.contains("yaml") ? MEDIA_TYPE_YAML : MEDIA_TYPE_CSV;
+        // Parse comma-separated Accept header and pick the first recognized type.
+        // This respects client preference order per HTTP content negotiation.
+        for (final String part : accept.split(",")) {
+            final String trimmed = part.strip().toLowerCase(Locale.ROOT);
+            if (trimmed.contains("json")) {
+                return APPLICATION_JSON;
+            } else if (trimmed.contains("yaml")) {
+                return MEDIA_TYPE_YAML;
+            } else if (trimmed.contains("csv") || trimmed.contains("text")) {
+                return MEDIA_TYPE_CSV;
+            }
+        }
+        return MEDIA_TYPE_CSV;
     }
 
     @Override

@@ -531,6 +531,172 @@ class DeviceTagImporterTest {
         verify(adapterExtractor, never()).updateAdapter(any());
     }
 
+    // --- DELETE mode: null tag_name rows establish nodeId presence (EDG-393 Finding 2) ---
+
+    @Test
+    void delete_nullTagNameRows_preservesMatchingTags() throws DeviceTagImporterException {
+        // Adapter has two tags
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(
+                        new TagEntity("tag-a", null, Map.of("node", "ns=2;i=1")),
+                        new TagEntity("tag-b", null, Map.of("node", "ns=2;i=2"))),
+                List.of(),
+                List.of());
+        setupAdapter(adapter);
+
+        // File has both nodeIds but no tag_name (unedited browse output)
+        final List<DeviceTagRow> rows = List.of(
+                DeviceTagRow.builder().nodeId("ns=2;i=1").build(),
+                DeviceTagRow.builder().nodeId("ns=2;i=2").build());
+
+        final ImportResult result = importer.doImport(rows, ImportMode.DELETE, ADAPTER_ID);
+
+        // Both tags should be preserved — null tag_name rows establish nodeId presence
+        assertThat(result.tagsDeleted()).isEqualTo(0);
+        assertThat(result.tagsCreated()).isEqualTo(0);
+
+        final ArgumentCaptor<ProtocolAdapterEntity> captor = ArgumentCaptor.forClass(ProtocolAdapterEntity.class);
+        verify(adapterExtractor).updateAdapter(captor.capture());
+        assertThat(captor.getValue().getTags()).hasSize(2);
+    }
+
+    @Test
+    void delete_nullTagNameRows_deletesUnmatchedTags() throws DeviceTagImporterException {
+        // Adapter has two tags: A and B
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(
+                        new TagEntity("tag-a", null, Map.of("node", "ns=2;i=1")),
+                        new TagEntity("tag-b", null, Map.of("node", "ns=2;i=2"))),
+                List.of(),
+                List.of());
+        setupAdapter(adapter);
+
+        // File only has nodeId for A — B should be deleted (edge-only)
+        final List<DeviceTagRow> rows =
+                List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").build());
+
+        final ImportResult result = importer.doImport(rows, ImportMode.DELETE, ADAPTER_ID);
+
+        assertThat(result.tagsDeleted()).isEqualTo(1);
+        assertThat(result.tagActions()).anySatisfy(a -> {
+            assertThat(a.name()).isEqualTo("tag-b");
+            assertThat(a.action()).isEqualTo(TagAction.Action.DELETED);
+        });
+
+        final ArgumentCaptor<ProtocolAdapterEntity> captor = ArgumentCaptor.forClass(ProtocolAdapterEntity.class);
+        verify(adapterExtractor).updateAdapter(captor.capture());
+        assertThat(captor.getValue().getTags()).hasSize(1);
+        assertThat(captor.getValue().getTags().getFirst().getName()).isEqualTo("tag-a");
+    }
+
+    @Test
+    void delete_emptyFile_deletesAllTags() throws DeviceTagImporterException {
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(
+                        new TagEntity("tag-a", null, Map.of("node", "ns=2;i=1")),
+                        new TagEntity("tag-b", null, Map.of("node", "ns=2;i=2"))),
+                List.of(),
+                List.of());
+        setupAdapter(adapter);
+
+        // Empty file → all tags are edge-only → all deleted
+        final ImportResult result = importer.doImport(List.of(), ImportMode.DELETE, ADAPTER_ID);
+
+        assertThat(result.tagsDeleted()).isEqualTo(2);
+    }
+
+    @Test
+    void delete_mixedTaggedAndUntaggedRows_correctClassification() throws DeviceTagImporterException {
+        // Adapter has tags A, B, C
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(
+                        new TagEntity("tag-a", null, Map.of("node", "ns=2;i=1")),
+                        new TagEntity("tag-b", null, Map.of("node", "ns=2;i=2")),
+                        new TagEntity("tag-c", null, Map.of("node", "ns=2;i=3"))),
+                List.of(),
+                List.of());
+        setupAdapter(adapter);
+
+        // File: A with tag_name (tagged, in-both identical), B without tag_name (untagged, in-both keep), C absent
+        final List<DeviceTagRow> rows = List.of(
+                tagRow("tag-a", "ns=2;i=1"), // tagged row → in-both identical → keep
+                DeviceTagRow.builder().nodeId("ns=2;i=2").build()); // untagged → in-both keep
+
+        final ImportResult result = importer.doImport(rows, ImportMode.DELETE, ADAPTER_ID);
+
+        // Only C should be deleted (edge-only). A and B preserved.
+        assertThat(result.tagsDeleted()).isEqualTo(1);
+        assertThat(result.tagActions()).anySatisfy(a -> {
+            assertThat(a.name()).isEqualTo("tag-c");
+            assertThat(a.action()).isEqualTo(TagAction.Action.DELETED);
+        });
+
+        final ArgumentCaptor<ProtocolAdapterEntity> captor = ArgumentCaptor.forClass(ProtocolAdapterEntity.class);
+        verify(adapterExtractor).updateAdapter(captor.capture());
+        assertThat(captor.getValue().getTags()).hasSize(2);
+    }
+
+    @Test
+    void overwrite_nullTagNameRows_preservesMatchingTags() throws DeviceTagImporterException {
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(
+                        new TagEntity("tag-a", null, Map.of("node", "ns=2;i=1")),
+                        new TagEntity("tag-b", null, Map.of("node", "ns=2;i=2"))),
+                List.of(new NorthboundMappingEntity("tag-a", "topic/a", 1, null, false, true, false, List.of(), null)),
+                List.of());
+        setupAdapter(adapter);
+
+        // File has both nodeIds but no tag_name
+        final List<DeviceTagRow> rows = List.of(
+                DeviceTagRow.builder().nodeId("ns=2;i=1").build(),
+                DeviceTagRow.builder().nodeId("ns=2;i=2").build());
+
+        final ImportResult result = importer.doImport(rows, ImportMode.OVERWRITE, ADAPTER_ID);
+
+        assertThat(result.tagsDeleted()).isEqualTo(0);
+        assertThat(result.tagsCreated()).isEqualTo(0);
+
+        final ArgumentCaptor<ProtocolAdapterEntity> captor = ArgumentCaptor.forClass(ProtocolAdapterEntity.class);
+        verify(adapterExtractor).updateAdapter(captor.capture());
+        assertThat(captor.getValue().getTags()).hasSize(2);
+        assertThat(captor.getValue().getNorthboundMappings()).hasSize(1);
+    }
+
+    @Test
+    void mergeSafe_nullTagNameRows_keepsExistingTags() throws DeviceTagImporterException {
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(new TagEntity("tag-a", null, Map.of("node", "ns=2;i=1"))), List.of(), List.of());
+        setupAdapter(adapter);
+
+        final List<DeviceTagRow> rows =
+                List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").build());
+
+        final ImportResult result = importer.doImport(rows, ImportMode.MERGE_SAFE, ADAPTER_ID);
+
+        assertThat(result.tagsDeleted()).isEqualTo(0);
+        assertThat(result.tagsCreated()).isEqualTo(0);
+
+        final ArgumentCaptor<ProtocolAdapterEntity> captor = ArgumentCaptor.forClass(ProtocolAdapterEntity.class);
+        verify(adapterExtractor).updateAdapter(captor.capture());
+        assertThat(captor.getValue().getTags()).hasSize(1);
+    }
+
+    @Test
+    void create_nullTagNameRows_keepsExistingTags() throws DeviceTagImporterException {
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(new TagEntity("tag-a", null, Map.of("node", "ns=2;i=1"))), List.of(), List.of());
+        setupAdapter(adapter);
+
+        // Untagged row for a nodeId that exists on adapter — should not trigger CREATE edge-only error
+        final List<DeviceTagRow> rows =
+                List.of(DeviceTagRow.builder().nodeId("ns=2;i=1").build());
+
+        final ImportResult result = importer.doImport(rows, ImportMode.CREATE, ADAPTER_ID);
+
+        assertThat(result.tagsCreated()).isEqualTo(0);
+        assertThat(result.tagsDeleted()).isEqualTo(0);
+    }
+
     // --- Rename via nodeId correlation ---
 
     @Test

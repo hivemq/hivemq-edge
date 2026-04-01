@@ -314,24 +314,30 @@ public class DeviceTagImporter {
             }
         }
 
-        // Group file rows by nodeId (multiple rows per nodeId = multiple northbound mappings)
+        // Group file rows by nodeId (multiple rows per nodeId = multiple northbound mappings).
+        // fileNodeIds includes ALL rows with a valid nodeId (even those without tag_name) so that
+        // rows from unedited browse output establish "this node is in the file" for classification.
+        final Set<String> fileNodeIds = new HashSet<>();
         final Map<String, List<DeviceTagRow>> fileRowGroupsByNodeId = new LinkedHashMap<>();
         for (final DeviceTagRow row : resolved) {
-            if (row.hasTag() && row.getNodeId() != null) {
-                fileRowGroupsByNodeId
-                        .computeIfAbsent(row.getNodeId(), k -> new ArrayList<>())
-                        .add(row);
+            if (row.getNodeId() != null && !row.getNodeId().isEmpty()) {
+                fileNodeIds.add(row.getNodeId());
+                if (row.hasTag()) {
+                    fileRowGroupsByNodeId
+                            .computeIfAbsent(row.getNodeId(), k -> new ArrayList<>())
+                            .add(row);
+                }
             }
         }
 
-        // Step 5: Classify by nodeId
+        // Step 5: Classify by nodeId — uses fileNodeIds so untagged rows prevent edge-only classification
         final Set<String> edgeOnlyNodeIds = new HashSet<>(edgeTagsByNodeId.keySet());
-        edgeOnlyNodeIds.removeAll(fileRowGroupsByNodeId.keySet());
+        edgeOnlyNodeIds.removeAll(fileNodeIds);
 
-        final Set<String> fileOnlyNodeIds = new HashSet<>(fileRowGroupsByNodeId.keySet());
+        final Set<String> fileOnlyNodeIds = new HashSet<>(fileNodeIds);
         fileOnlyNodeIds.removeAll(edgeTagsByNodeId.keySet());
 
-        final Set<String> inBothNodeIds = new HashSet<>(fileRowGroupsByNodeId.keySet());
+        final Set<String> inBothNodeIds = new HashSet<>(fileNodeIds);
         inBothNodeIds.retainAll(edgeTagsByNodeId.keySet());
 
         // Step 6: Determine actions per mode
@@ -375,7 +381,10 @@ public class DeviceTagImporter {
                 // DELETE mode does not create tags — file-only nodes are rejected by validation
                 continue;
             }
-            final List<DeviceTagRow> group = requireNonNull(fileRowGroupsByNodeId.get(nodeId));
+            final List<DeviceTagRow> group = fileRowGroupsByNodeId.get(nodeId);
+            if (group == null) {
+                continue; // nodeId present but no tag defined — informational only
+            }
             final DeviceTagRow first = group.getFirst();
             final String tagName = requireNonNull(first.getTagName());
             finalTags.add(toTagEntity(first));
@@ -387,8 +396,6 @@ public class DeviceTagImporter {
                     finalNorthbound.add(toNorthboundMappingEntity(row));
                     nbCreated++;
                 }
-            }
-            for (final DeviceTagRow row : group) {
                 if (row.hasSouthboundMapping()) {
                     finalSouthbound.add(toSouthboundMappingEntity(row));
                     sbCreated++;
@@ -399,9 +406,17 @@ public class DeviceTagImporter {
 
         // Process in-both nodes (same nodeId on edge and in file)
         for (final String nodeId : inBothNodeIds) {
-            final List<DeviceTagRow> group = requireNonNull(fileRowGroupsByNodeId.get(nodeId));
-            final DeviceTagRow first = group.getFirst();
             final TagEntity existing = requireNonNull(edgeTagsByNodeId.get(nodeId));
+            final List<DeviceTagRow> group = fileRowGroupsByNodeId.get(nodeId);
+            if (group == null) {
+                // nodeId present but no tag defined — keep existing tag unchanged
+                final String keepTagName = existing.getName();
+                finalTags.add(existing);
+                finalNorthbound.addAll(edgeNorthboundByTag.getOrDefault(keepTagName, List.of()));
+                finalSouthbound.addAll(edgeSouthboundByTag.getOrDefault(keepTagName, List.of()));
+                continue;
+            }
+            final DeviceTagRow first = group.getFirst();
             final String oldTagName = existing.getName();
             final List<NorthboundMappingEntity> existingNb = edgeNorthboundByTag.getOrDefault(oldTagName, List.of());
             final List<SouthboundMappingEntity> existingSb = edgeSouthboundByTag.getOrDefault(oldTagName, List.of());
@@ -430,8 +445,6 @@ public class DeviceTagImporter {
                                 finalNorthbound.add(toNorthboundMappingEntity(row));
                                 nbCreated++;
                             }
-                        }
-                        for (final DeviceTagRow row : group) {
                             if (row.hasSouthboundMapping()) {
                                 finalSouthbound.add(toSouthboundMappingEntity(row));
                                 sbCreated++;

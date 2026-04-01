@@ -92,13 +92,70 @@ class OpcUaNodeBrowserTest {
         assertThat(OpcUaNodeBrowser.sanitizePath("/Objects")).isEqualTo("objects");
     }
 
+    // --- extractParentSegment() ---
+
+    @ParameterizedTest
+    @CsvSource({
+        "'/S7-1500/DataBlocksGlobal/Icon',    DataBlocksGlobal",
+        "'/S7-1500/DataBlocksInstance/Icon',   DataBlocksInstance",
+        "'/Data/Static/Int32',                 Static",
+        "'/Objects/Variable',                  Objects",
+    })
+    void extractParentSegment_multipleSegments(final String path, final String expected) {
+        assertThat(OpcUaNodeBrowser.extractParentSegment(path)).isEqualTo(expected);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "'/Variable',  ''",
+        "'Variable',   ''",
+        "'',           ''",
+    })
+    void extractParentSegment_noParent(final String path, final String expected) {
+        assertThat(OpcUaNodeBrowser.extractParentSegment(path)).isEqualTo(expected);
+    }
+
     // --- Default generation ---
 
     @ParameterizedTest
-    @CsvSource({"my-opcua, Int32Node, int32node", "adapter1, CamelCase, camelcase", "opc, My Node, my-node"})
-    void generateTagNameDefault(final String adapterId, final String browseName, final String expected) {
+    @CsvSource({
+        "my-opcua, /Data/Static/Int32Node,                   static-int32node",
+        "adapter1, /S7-1500/DataBlocksGlobal/Icon,           datablocksglobal-icon",
+        "adapter1, /S7-1500/DataBlocksInstance/Icon,         datablocksinstance-icon",
+        "opc,      /Objects/My Node,                          objects-my-node",
+    })
+    void generateTagNameDefault_withParent(final String adapterId, final String path, final String expected) {
         final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(null, adapterId);
-        assertThat(browser.generateTagNameDefault(browseName)).isEqualTo(expected);
+        final String browseName = path.substring(path.lastIndexOf('/') + 1);
+        assertThat(browser.generateTagNameDefault(path, browseName)).isEqualTo(expected);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "my-opcua, /Int32Node,    int32node",
+        "opc,      /Variable,     variable",
+    })
+    void generateTagNameDefault_rootLevel_noPrefixAdded(
+            final String adapterId, final String path, final String expected) {
+        final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(null, adapterId);
+        final String browseName = path.substring(path.lastIndexOf('/') + 1);
+        assertThat(browser.generateTagNameDefault(path, browseName)).isEqualTo(expected);
+    }
+
+    @Test
+    void generateTagNameDefault_duplicateDisplayNames_disambiguated() {
+        final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(null, "s7");
+        // Same display name "Icon" in different folders → different tag_name_default
+        assertThat(browser.generateTagNameDefault("/S7-1500/DataBlocksGlobal/Icon", "Icon"))
+                .isEqualTo("datablocksglobal-icon");
+        assertThat(browser.generateTagNameDefault("/S7-1500/DataBlocksInstance/Icon", "Icon"))
+                .isEqualTo("datablocksinstance-icon");
+        assertThat(browser.generateTagNameDefault("/S7-1500/TechnologicalObjects/Icon", "Icon"))
+                .isEqualTo("technologicalobjects-icon");
+
+        // All three are unique
+        assertThat(browser.generateTagNameDefault("/S7-1500/DataBlocksGlobal/Icon", "Icon"))
+                .isNotEqualTo(browser.generateTagNameDefault("/S7-1500/DataBlocksInstance/Icon", "Icon"));
     }
 
     @ParameterizedTest

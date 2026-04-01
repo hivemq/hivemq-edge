@@ -340,11 +340,18 @@ public class DeviceTagValidator {
             final @NotNull ProtocolAdapterEntity adapter,
             final @NotNull List<ValidationError> errors) {
 
-        // Build nodeId-keyed maps for classification
+        // Build nodeId-keyed maps for classification.
+        // fileNodeIds includes ALL rows with a valid nodeId (even those without tag_name) so that
+        // rows from unedited browse output establish "this node is in the file" for classification.
+        // fileRowsByNodeId only includes rows with a tag definition (hasTag) for conflict checks.
+        final Set<String> fileNodeIds = new HashSet<>();
         final Map<String, DeviceTagRow> fileRowsByNodeId = new LinkedHashMap<>();
         for (final DeviceTagRow row : rows) {
-            if (row.hasTag() && row.getNodeId() != null && !row.getNodeId().isEmpty()) {
-                fileRowsByNodeId.put(row.getNodeId(), row);
+            if (row.getNodeId() != null && !row.getNodeId().isEmpty()) {
+                fileNodeIds.add(row.getNodeId());
+                if (row.hasTag()) {
+                    fileRowsByNodeId.put(row.getNodeId(), row);
+                }
             }
         }
 
@@ -356,14 +363,14 @@ public class DeviceTagValidator {
             }
         }
 
-        // Classify by nodeId
+        // Classify by nodeId — uses fileNodeIds so untagged rows prevent edge-only classification
         final Set<String> edgeOnlyNodeIds = new HashSet<>(edgeTagsByNodeId.keySet());
-        edgeOnlyNodeIds.removeAll(fileRowsByNodeId.keySet());
+        edgeOnlyNodeIds.removeAll(fileNodeIds);
 
-        final Set<String> fileOnlyNodeIds = new HashSet<>(fileRowsByNodeId.keySet());
+        final Set<String> fileOnlyNodeIds = new HashSet<>(fileNodeIds);
         fileOnlyNodeIds.removeAll(edgeTagsByNodeId.keySet());
 
-        final Set<String> inBothNodeIds = new HashSet<>(fileRowsByNodeId.keySet());
+        final Set<String> inBothNodeIds = new HashSet<>(fileNodeIds);
         inBothNodeIds.retainAll(edgeTagsByNodeId.keySet());
 
         // Combiner check: tags to be deleted must not be in use by combiners
@@ -383,7 +390,9 @@ public class DeviceTagValidator {
             }
         }
 
-        // Mode-specific conflict checks (by nodeId)
+        // Mode-specific conflict checks (by nodeId).
+        // Rows without tag_name (untagged) establish nodeId presence but don't define a tag —
+        // skip them in definition-match checks (they implicitly mean "keep existing tag as-is").
         if (mode == ImportMode.CREATE) {
             // Edge-only nodeIds are an error in CREATE mode
             for (final String nodeId : edgeOnlyNodeIds) {
@@ -400,9 +409,12 @@ public class DeviceTagValidator {
                                         + nodeId
                                         + ") exists on adapter but not in file. CREATE requires an empty adapter or use OVERWRITE mode."));
             }
-            // inBoth with different definition is an error
+            // inBoth with different definition is an error (skip untagged rows)
             for (final String nodeId : inBothNodeIds) {
-                final DeviceTagRow row = requireNonNull(fileRowsByNodeId.get(nodeId));
+                final DeviceTagRow row = fileRowsByNodeId.get(nodeId);
+                if (row == null) {
+                    continue;
+                }
                 final TagEntity existing = requireNonNull(edgeTagsByNodeId.get(nodeId));
                 if (!tagDefinitionsMatch(row, existing)) {
                     errors.add(new ValidationError(
@@ -414,9 +426,12 @@ public class DeviceTagValidator {
                 }
             }
         } else if (mode == ImportMode.DELETE) {
-            // File-only nodeIds are an error in DELETE mode
+            // File-only nodeIds with a tag definition are an error (skip untagged rows)
             for (final String nodeId : fileOnlyNodeIds) {
-                final DeviceTagRow row = requireNonNull(fileRowsByNodeId.get(nodeId));
+                final DeviceTagRow row = fileRowsByNodeId.get(nodeId);
+                if (row == null) {
+                    continue;
+                }
                 errors.add(new ValidationError(
                         null,
                         "tag_name",
@@ -428,9 +443,12 @@ public class DeviceTagValidator {
                                 + nodeId
                                 + ") is in the file but does not exist on the adapter. DELETE cannot create tags."));
             }
-            // inBoth with different definition is an error
+            // inBoth with different definition is an error (skip untagged rows)
             for (final String nodeId : inBothNodeIds) {
-                final DeviceTagRow row = requireNonNull(fileRowsByNodeId.get(nodeId));
+                final DeviceTagRow row = fileRowsByNodeId.get(nodeId);
+                if (row == null) {
+                    continue;
+                }
                 final TagEntity existing = requireNonNull(edgeTagsByNodeId.get(nodeId));
                 if (!tagDefinitionsMatch(row, existing)) {
                     errors.add(new ValidationError(
@@ -444,9 +462,12 @@ public class DeviceTagValidator {
                 }
             }
         } else if (mode == ImportMode.MERGE_SAFE) {
-            // inBoth with different definition (tagName or description change)
+            // inBoth with different definition (skip untagged rows)
             for (final String nodeId : inBothNodeIds) {
-                final DeviceTagRow row = requireNonNull(fileRowsByNodeId.get(nodeId));
+                final DeviceTagRow row = fileRowsByNodeId.get(nodeId);
+                if (row == null) {
+                    continue;
+                }
                 final TagEntity existing = requireNonNull(edgeTagsByNodeId.get(nodeId));
                 if (!tagDefinitionsMatch(row, existing)) {
                     errors.add(new ValidationError(
@@ -470,7 +491,10 @@ public class DeviceTagValidator {
             }
 
             for (final String nodeId : fileOnlyNodeIds) {
-                final DeviceTagRow row = requireNonNull(fileRowsByNodeId.get(nodeId));
+                final DeviceTagRow row = fileRowsByNodeId.get(nodeId);
+                if (row == null) {
+                    continue;
+                }
                 if (survivingEdgeTagNames.contains(row.getTagName())) {
                     errors.add(
                             new ValidationError(
@@ -485,7 +509,10 @@ public class DeviceTagValidator {
             }
 
             for (final String nodeId : inBothNodeIds) {
-                final DeviceTagRow row = requireNonNull(fileRowsByNodeId.get(nodeId));
+                final DeviceTagRow row = fileRowsByNodeId.get(nodeId);
+                if (row == null) {
+                    continue;
+                }
                 final TagEntity existing = requireNonNull(edgeTagsByNodeId.get(nodeId));
                 if (!requireNonNull(row.getTagName()).equals(existing.getName())
                         && survivingEdgeTagNames.contains(row.getTagName())) {

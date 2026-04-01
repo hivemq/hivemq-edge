@@ -332,7 +332,7 @@ public class OpcUaNodeBrowser {
                         dataType,
                         accessLevel,
                         description,
-                        browser.generateTagNameDefault(var.browseName),
+                        browser.generateTagNameDefault(var.path, var.browseName),
                         description,
                         browser.generateNorthboundTopicDefault(var.path),
                         browser.generateSouthboundTopicDefault(var.path)));
@@ -421,8 +421,22 @@ public class OpcUaNodeBrowser {
     // --- Default generation ---
 
     @NotNull
-    String generateTagNameDefault(final @NotNull String browseName) {
-        return sanitize(browseName);
+    String generateTagNameDefault(final @NotNull String path, final @NotNull String browseName) {
+        final String parentSegment = extractParentSegment(path);
+        if (parentSegment.isEmpty()) {
+            return sanitize(browseName);
+        }
+        return sanitize(parentSegment) + "-" + sanitize(browseName);
+    }
+
+    static @NotNull String extractParentSegment(final @NotNull String path) {
+        // Path is e.g. "/S7-1500/DataBlocksGlobal/Icon" — extract "DataBlocksGlobal"
+        final int lastSlash = path.lastIndexOf('/');
+        if (lastSlash <= 0) {
+            return "";
+        }
+        final int secondLastSlash = path.lastIndexOf('/', lastSlash - 1);
+        return path.substring(secondLastSlash + 1, lastSlash);
     }
 
     @NotNull
