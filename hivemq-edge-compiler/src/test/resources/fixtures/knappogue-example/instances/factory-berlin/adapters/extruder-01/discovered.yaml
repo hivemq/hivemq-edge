@@ -1,0 +1,7 @@
+deviceTags:
+  - id: "ns=2;s=Extruder.Zone1.Speed"
+    dataType: Float
+    description: Extruder screw speed in RPM
+  - id: "ns=2;s=Extruder.Gearbox.OilTemp"
+    dataType: Float
+    description: Gearbox oil temperature in °C

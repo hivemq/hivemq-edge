@@ -1,0 +1,6 @@
+tags:
+  - name: BarrelTemp
+    deviceTag:
+      id: "ns=2;s=Extruder.Zone1.BarrelTemp"
+      dataType: Float
+      description: Barrel temperature in °C

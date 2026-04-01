@@ -1,0 +1,21 @@
+dataCombiners:
+  - name: ExtruderStatus
+    mappings:
+      - trigger:
+          tag: extruder-01::NozzlePressure
+        output:
+          topic: factory/berlin/assets/extruder-status
+          qos: 1
+        instructions:
+          - source:
+              tag: extruder-01::NozzlePressure
+            sourceField: "$.value"
+            destinationField: "$.pressure"
+          - source:
+              tag: extruder-01::BarrelTemp
+            sourceField: "$.value"
+            destinationField: "$.temperature"
+          - source:
+              topicFilter: "sensors/hvac/zone/+"
+            sourceField: "$.zoneTemp"
+            destinationField: "$.ambientTemp"

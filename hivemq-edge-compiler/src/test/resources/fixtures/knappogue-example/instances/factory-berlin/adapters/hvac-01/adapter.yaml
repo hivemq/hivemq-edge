@@ -1,0 +1,6 @@
+type: bacnetip
+id: hvac-01
+name: HVAC Controller 01
+connection:
+  host: 192.168.1.20
+  port: 47808

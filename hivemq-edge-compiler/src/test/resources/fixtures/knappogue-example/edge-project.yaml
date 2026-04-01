@@ -1,0 +1,5 @@
+edgeVersion: "2.5"
+sources:
+  - instances/
+output: build/
+preprocessing: []

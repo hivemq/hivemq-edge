@@ -8,6 +8,8 @@ pluginManagement {
 
 includeBuild("./hivemq-edge")
 includeBuild("./hivemq-edge-frontend")
+includeBuild("./hivemq-edge-compiler-lib")
+includeBuild("./hivemq-edge-compiler")
 
 // ** module-deps ** //
 

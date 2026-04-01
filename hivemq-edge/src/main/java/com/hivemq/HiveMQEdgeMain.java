@@ -191,6 +191,14 @@ public class HiveMQEdgeMain {
     }
 
     public static void main(final String @NotNull [] args) throws Exception {
+        // Early check: if the first argument is "--compile", delegate to the compiler and exit.
+        // No DI context, no Netty, no adapters — the compiler runs standalone.
+        if (args.length >= 1 && "--compile".equals(args[0])) {
+            final String[] compilerArgs = java.util.Arrays.copyOfRange(args, 1, args.length);
+            final int exitCode = com.hivemq.edge.compiler.CompilerMain.run(compilerArgs);
+            System.exit(exitCode);
+        }
+
         log.info("Starting HiveMQ Edge...");
         final long startTime = System.nanoTime();
         final SystemInformationImpl systemInformation = new SystemInformationImpl(true);

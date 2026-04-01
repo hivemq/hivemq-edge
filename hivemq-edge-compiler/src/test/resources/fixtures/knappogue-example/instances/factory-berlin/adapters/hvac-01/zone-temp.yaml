@@ -1,0 +1,11 @@
+tags:
+  - name: ZoneTemp
+    deviceTag:
+      id: "1::0/analog-input/present-value"
+      dataType: Float
+      description: Production zone temperature in °C
+
+northbound:
+  - tagName: ZoneTemp
+    topic: factory/berlin/hvac-01/zone-temp
+    qos: 1

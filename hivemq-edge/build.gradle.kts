@@ -230,6 +230,9 @@ dependencies {
     // i18n
     implementation(libs.freemarker)
 
+    // Edge compiler (bundled for 'edge --compile' seam)
+    implementation("com.hivemq:hivemq-edge-compiler")
+
     // Edge modules
     compileOnly("com.hivemq:hivemq-edge-module-etherip")
     compileOnly("com.hivemq:hivemq-edge-module-plc4x")
@@ -454,6 +457,7 @@ tasks.forbiddenApisMain {
     exclude("**/BatchedException.class")
     exclude("**/LoggingBootstrap.class")
     exclude("**/CreateAdapterBlueprint.class")
+    exclude("**/HiveMQEdgeMain.class")
 }
 
 tasks.forbiddenApisTest { enabled = false }
