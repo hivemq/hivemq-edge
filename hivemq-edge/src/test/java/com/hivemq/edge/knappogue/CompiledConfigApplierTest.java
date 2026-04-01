@@ -69,7 +69,11 @@ class CompiledConfigApplierTest {
 
         final ProtocolAdapterEntity extruder = adapterById("extruder-01");
         assertThat(extruder.getProtocolId()).isEqualTo("opcua");
-        assertThat(extruder.getConfig()).containsEntry("host", "192.168.1.10");
+        assertThat(extruder.getConfig())
+                .containsEntry("uri", "opc.tcp://192.168.1.10:4840")
+                .doesNotContainKey("host")
+                .doesNotContainKey("port")
+                .doesNotContainKey("protocol");
         assertThat(extruder.getTags()).hasSize(2);
         final var nozzle = extruder.getTags().stream()
                 .filter(t -> t.getName().equals("NozzlePressure"))

@@ -26,6 +26,10 @@ import org.jetbrains.annotations.NotNull;
  * Adapter type descriptor for OPC-UA.
  *
  * <p>DEVICE-TAG {@code id} maps to {@code definition.node} — matching {@code OpcuaTagDefinition.node}.
+ *
+ * <p>The connection block must declare {@code host} and {@code port}. An optional {@code protocol} field sets the
+ * URI scheme (default: {@code opc.tcp}). The full {@code uri} is synthesized by the applier from these fields —
+ * declaring {@code uri} directly in the connection block is an error.
  */
 public class OpcUaTypeDescriptor implements AdapterTypeDescriptor {
 
@@ -62,6 +66,15 @@ public class OpcUaTypeDescriptor implements AdapterTypeDescriptor {
                     "OPC-UA adapter '" + manifest.id + "' is missing required connection field 'port'",
                     manifest.path,
                     Map.of("adapterId", manifest.id != null ? manifest.id : "", "field", "port")));
+        }
+        if (connection.containsKey("uri")) {
+            errors.add(Diagnostic.error(
+                    "ADAPTER_INVALID_CONNECTION_FIELD",
+                    "OPC-UA adapter '"
+                            + manifest.id
+                            + "' must not declare 'uri' — the URI is synthesized from 'host' and 'port'",
+                    manifest.path,
+                    Map.of("adapterId", manifest.id != null ? manifest.id : "", "field", "uri")));
         }
     }
 }

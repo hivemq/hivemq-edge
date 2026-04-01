@@ -23,6 +23,7 @@ import com.hivemq.edge.compiler.source.model.SourceNorthboundMapping;
 import com.hivemq.edge.compiler.source.model.SourceTag;
 import com.hivemq.edge.compiler.source.resolution.AdapterScopeResolver;
 import com.hivemq.edge.compiler.source.resolution.GlobalResolver;
+import com.hivemq.edge.compiler.source.translation.OpcUaTypeDescriptor;
 import com.hivemq.edge.compiler.source.validation.DiagnosticCollector;
 import java.nio.file.Path;
 import java.util.List;
@@ -154,6 +155,24 @@ class ValidationTest {
 
         assertThat(errors.errors()).as("should report TAG_AMBIGUOUS_DEVICE_TAG").anyMatch(d -> d.code()
                 .equals("TAG_AMBIGUOUS_DEVICE_TAG"));
+    }
+
+    @Test
+    void opcUaConnectionWithUriIsAnError() {
+        final SourceFile manifest = new SourceFile();
+        manifest.id = "extruder-01";
+        manifest.path = Path.of("adapters/extruder-01/adapter.yaml");
+
+        final DiagnosticCollector errors = new DiagnosticCollector();
+        new OpcUaTypeDescriptor()
+                .validateConnectionConfig(
+                        java.util.Map.of("host", "localhost", "port", 4840, "uri", "opc.tcp://localhost:4840"),
+                        manifest,
+                        errors);
+
+        assertThat(errors.errors())
+                .as("should report ADAPTER_INVALID_CONNECTION_FIELD for uri")
+                .anyMatch(d -> d.code().equals("ADAPTER_INVALID_CONNECTION_FIELD"));
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

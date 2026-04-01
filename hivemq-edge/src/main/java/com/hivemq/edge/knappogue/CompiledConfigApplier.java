@@ -25,6 +25,7 @@ import com.hivemq.edge.compiler.lib.model.CompiledAdapterConfig;
 import com.hivemq.edge.compiler.lib.model.CompiledConfig;
 import com.hivemq.edge.compiler.lib.model.CompiledNorthboundMapping;
 import com.hivemq.edge.compiler.lib.model.CompiledTag;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -100,7 +101,7 @@ public class CompiledConfigApplier {
                 src.adapterId(),
                 src.protocolId(),
                 1, // configVersion default — compiler omits this field
-                src.config(),
+                expandAdapterConfig(src.config(), src.protocolId()),
                 northbound,
                 List.of(), // southboundMappings — empty for POC
                 tags);
@@ -108,6 +109,35 @@ public class CompiledConfigApplier {
 
     private @NotNull TagEntity translateTag(final @NotNull CompiledTag src, final @NotNull String protocolId) {
         return new TagEntity(src.name(), src.description(), expandDefinition(src.definition(), protocolId));
+    }
+
+    /**
+     * Expands a compiled adapter config into the runtime format expected by the adapter.
+     *
+     * <p>OPC-UA: synthesizes the {@code uri} field from {@code protocol} (default {@code opc.tcp}), {@code host}, and
+     * {@code port}, then removes those three source-only fields so the runtime config matches the XML format exactly.
+     */
+    private @NotNull Map<String, Object> expandAdapterConfig(
+            final @NotNull Map<String, Object> config, final @NotNull String protocolId) {
+        return switch (protocolId.toLowerCase(Locale.ROOT)) {
+            case "opcua" -> expandOpcUaConfig(config);
+            default -> config;
+        };
+    }
+
+    private @NotNull Map<String, Object> expandOpcUaConfig(final @NotNull Map<String, Object> config) {
+        final Map<String, Object> result = new LinkedHashMap<>(config);
+        final Object host = result.remove("host");
+        final Object port = result.remove("port");
+        final Object protocol = result.remove("protocol");
+        if (host instanceof String hostStr && port != null) {
+            final String scheme = (protocol instanceof String s && !s.isBlank()) ? s : "opc.tcp";
+            result.put("uri", scheme + "://" + hostStr + ":" + port);
+        } else {
+            log.warn(
+                    "OPC-UA adapter config is missing 'host' or 'port' — cannot synthesize URI; adapter may not connect.");
+        }
+        return result;
     }
 
     /**
