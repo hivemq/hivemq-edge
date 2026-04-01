@@ -90,7 +90,13 @@ class CompiledConfigApplierTest {
         final ProtocolAdapterEntity hvac = adapterById("hvac-01");
         assertThat(hvac.getProtocolId()).isEqualTo("bacnetip");
         assertThat(hvac.getTags()).hasSize(1);
-        assertThat(hvac.getTags().get(0).getDefinition()).containsEntry("address", "1::0/analog-input/present-value");
+        final var zoneTemp = hvac.getTags().get(0);
+        assertThat(zoneTemp.getDefinition())
+                .containsEntry("deviceInstanceNumber", 1)
+                .containsEntry("objectInstanceNumber", 0)
+                .containsEntry("objectType", "ANALOG_INPUT")
+                .containsEntry("propertyType", "PRESENT_VALUE")
+                .doesNotContainKey("address");
     }
 
     @Test

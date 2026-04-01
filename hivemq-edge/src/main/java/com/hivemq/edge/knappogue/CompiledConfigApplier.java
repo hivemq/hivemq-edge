@@ -26,6 +26,8 @@ import com.hivemq.edge.compiler.lib.model.CompiledConfig;
 import com.hivemq.edge.compiler.lib.model.CompiledNorthboundMapping;
 import com.hivemq.edge.compiler.lib.model.CompiledTag;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,7 +89,9 @@ public class CompiledConfigApplier {
     }
 
     private @NotNull ProtocolAdapterEntity translateAdapter(final @NotNull CompiledAdapterConfig src) {
-        final List<TagEntity> tags = src.tags().stream().map(this::translateTag).toList();
+        final List<TagEntity> tags = src.tags().stream()
+                .map(tag -> translateTag(tag, src.protocolId()))
+                .toList();
         final List<NorthboundMappingEntity> northbound = src.northboundMappings().stream()
                 .map(this::translateNorthboundMapping)
                 .toList();
@@ -102,8 +106,64 @@ public class CompiledConfigApplier {
                 tags);
     }
 
-    private @NotNull TagEntity translateTag(final @NotNull CompiledTag src) {
-        return new TagEntity(src.name(), src.description(), src.definition());
+    private @NotNull TagEntity translateTag(final @NotNull CompiledTag src, final @NotNull String protocolId) {
+        return new TagEntity(src.name(), src.description(), expandDefinition(src.definition(), protocolId));
+    }
+
+    /**
+     * Expands a compiled tag definition into the runtime format expected by the adapter.
+     *
+     * <p>OPC-UA: the compiled {@code {node: "..."}} definition is already in the correct runtime format — pass through.
+     * <p>BACnet/IP: the compiled {@code {address: "device::object/type/property"}} string is expanded into the
+     * structured fields ({@code deviceInstanceNumber}, {@code objectInstanceNumber}, {@code objectType},
+     * {@code propertyType}) that the BACnet runtime adapter expects.
+     */
+    private @NotNull Map<String, Object> expandDefinition(
+            final @NotNull Map<String, Object> compiled, final @NotNull String protocolId) {
+        return switch (protocolId.toLowerCase(Locale.ROOT)) {
+            case "bacnetip" -> expandBacNetIpDefinition(compiled);
+            default -> compiled;
+        };
+    }
+
+    /**
+     * Parses a BACnet address string of the form {@code deviceNumber::objectNumber/type/property} into the structured
+     * definition map used by the BACnet runtime adapter.
+     *
+     * <p>Example: {@code "1234::0/analog-input/present-value"} →
+     * {@code {deviceInstanceNumber: 1234, objectInstanceNumber: 0, objectType: "ANALOG_INPUT",
+     * propertyType: "PRESENT_VALUE"}}.
+     */
+    private @NotNull Map<String, Object> expandBacNetIpDefinition(final @NotNull Map<String, Object> compiled) {
+        final Object rawAddress = compiled.get("address");
+        if (!(rawAddress instanceof String address)) {
+            log.warn("BACnet tag definition has no 'address' field — passing definition through as-is.");
+            return compiled;
+        }
+        final int sepIndex = address.indexOf("::");
+        if (sepIndex < 0) {
+            log.warn("BACnet address '{}' is missing '::' separator — passing through as-is.", address);
+            return compiled;
+        }
+        final String[] remainder = address.substring(sepIndex + 2).split("/", 3);
+        if (remainder.length != 3) {
+            log.warn(
+                    "BACnet address '{}' does not match expected 'device::object/type/property' format — passing through as-is.",
+                    address);
+            return compiled;
+        }
+        try {
+            return Map.of(
+                    "deviceInstanceNumber", Integer.parseInt(address.substring(0, sepIndex)),
+                    "objectInstanceNumber", Integer.parseInt(remainder[0]),
+                    "objectType", remainder[1].replace("-", "_").toUpperCase(Locale.ROOT),
+                    "propertyType", remainder[2].replace("-", "_").toUpperCase(Locale.ROOT));
+        } catch (final NumberFormatException e) {
+            log.warn(
+                    "BACnet address '{}' contains a non-integer device or object number — passing through as-is.",
+                    address);
+            return compiled;
+        }
     }
 
     private @NotNull NorthboundMappingEntity translateNorthboundMapping(final @NotNull CompiledNorthboundMapping src) {
