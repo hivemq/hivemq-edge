@@ -22,8 +22,10 @@ import com.hivemq.edge.adapters.browse.BrowsedNode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
@@ -136,9 +138,14 @@ public class OpcUaNodeBrowser {
             // without needing to materialize the full List<BrowsedNode>.
             variables.sort(Comparator.comparing(DiscoveredVariable::path));
 
+            // Pre-compute unique tag name defaults. Multiple nodes can share the same browse
+            // path (e.g. Prosys simulation instances), so we append a numeric suffix on collision.
+            final List<String> tagNameDefaults = deduplicateTagNameDefaults(variables);
+
             // Phase 2: Return a stream that lazily batch-reads attributes as it is consumed.
             final DataTypeTree dataTypeTree = getDataTypeTree();
-            return StreamSupport.stream(new BatchAttributeSpliterator(variables, client, dataTypeTree, this), false);
+            return StreamSupport.stream(
+                    new BatchAttributeSpliterator(variables, tagNameDefaults, client, dataTypeTree, this), false);
         } catch (final ExecutionException e) {
             throw new BrowseException("Browse operation failed", e.getCause());
         } catch (final TimeoutException e) {
@@ -270,12 +277,16 @@ public class OpcUaNodeBrowser {
         private @Nullable List<BrowsedNode> currentBatch;
         private int batchIndex;
 
+        private final @NotNull List<String> tagNameDefaults;
+
         BatchAttributeSpliterator(
                 final @NotNull List<DiscoveredVariable> variables,
+                final @NotNull List<String> tagNameDefaults,
                 final @NotNull OpcUaClient client,
                 final @Nullable DataTypeTree dataTypeTree,
                 final @NotNull OpcUaNodeBrowser browser) {
             this.variables = variables;
+            this.tagNameDefaults = tagNameDefaults;
             this.client = client;
             this.dataTypeTree = dataTypeTree;
             this.browser = browser;
@@ -305,6 +316,7 @@ public class OpcUaNodeBrowser {
         }
 
         private @NotNull List<BrowsedNode> readNextBatch() {
+            final int batchStart = globalOffset;
             final int end = Math.min(globalOffset + READ_BATCH_SIZE, variables.size());
             final List<DiscoveredVariable> batch = variables.subList(globalOffset, end);
             globalOffset = end;
@@ -346,7 +358,7 @@ public class OpcUaNodeBrowser {
                         dataType,
                         accessLevel,
                         description,
-                        browser.generateTagNameDefault(var.path),
+                        tagNameDefaults.get(batchStart + i),
                         description,
                         browser.generateNorthboundTopicDefault(var.path),
                         browser.generateSouthboundTopicDefault(var.path)));
@@ -433,6 +445,28 @@ public class OpcUaNodeBrowser {
     }
 
     // --- Default generation ---
+
+    /**
+     * Builds a list of unique tag name defaults from base defaults. When duplicates are detected,
+     * a numeric suffix is appended: {@code name}, {@code name-2}, {@code name-3}, etc.
+     */
+    static @NotNull List<String> deduplicateDefaults(final @NotNull List<String> baseDefaults) {
+        final List<String> result = new ArrayList<>(baseDefaults.size());
+        final Map<String, Integer> seen = new HashMap<>();
+        for (final String base : baseDefaults) {
+            final int count = seen.merge(base, 1, Integer::sum);
+            result.add(count == 1 ? base : base + "-" + count);
+        }
+        return result;
+    }
+
+    private @NotNull List<String> deduplicateTagNameDefaults(final @NotNull List<DiscoveredVariable> variables) {
+        final List<String> baseDefaults = new ArrayList<>(variables.size());
+        for (final DiscoveredVariable var : variables) {
+            baseDefaults.add(generateTagNameDefault(var.path));
+        }
+        return deduplicateDefaults(baseDefaults);
+    }
 
     @NotNull
     String generateTagNameDefault(final @NotNull String path) {

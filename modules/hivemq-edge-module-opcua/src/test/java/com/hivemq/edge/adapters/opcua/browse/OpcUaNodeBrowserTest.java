@@ -22,6 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.hivemq.edge.adapters.browse.BrowseException;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
@@ -201,6 +202,58 @@ class OpcUaNodeBrowserTest {
         assertThat(browser.generateTagNameDefault("/My Folder/Sub.Folder/Node Name!"))
                 .isEqualTo("my-folder-sub-folder-node-name");
     }
+
+    // --- deduplicateDefaults ---
+
+    @Test
+    void deduplicateDefaults_noDuplicates_unchanged() {
+        final List<String> input = List.of("alpha", "beta", "gamma");
+        assertThat(OpcUaNodeBrowser.deduplicateDefaults(input)).containsExactly("alpha", "beta", "gamma");
+    }
+
+    @Test
+    void deduplicateDefaults_allDuplicates_appendsSuffix() {
+        final List<String> input = List.of("tag", "tag", "tag");
+        assertThat(OpcUaNodeBrowser.deduplicateDefaults(input)).containsExactly("tag", "tag-2", "tag-3");
+    }
+
+    @Test
+    void deduplicateDefaults_mixedDuplicates() {
+        final List<String> input = List.of("alpha", "beta", "alpha", "gamma", "beta", "alpha");
+        assertThat(OpcUaNodeBrowser.deduplicateDefaults(input))
+                .containsExactly("alpha", "beta", "alpha-2", "gamma", "beta-2", "alpha-3");
+    }
+
+    @Test
+    void deduplicateDefaults_emptyList() {
+        assertThat(OpcUaNodeBrowser.deduplicateDefaults(List.of())).isEmpty();
+    }
+
+    @Test
+    void deduplicateDefaults_singleElement() {
+        assertThat(OpcUaNodeBrowser.deduplicateDefaults(List.of("only"))).containsExactly("only");
+    }
+
+    @Test
+    void deduplicateDefaults_prosysSimulationScenario() {
+        // Simulates the real-world case: 6 simulation instances with same path produce same default
+        final List<String> input = List.of(
+                "server-valuesimulations-valuesimulation-max-value",
+                "server-valuesimulations-valuesimulation-max-value",
+                "server-valuesimulations-valuesimulation-max-value",
+                "server-valuesimulations-valuesimulation-max-value",
+                "server-valuesimulations-valuesimulation-max-value",
+                "server-valuesimulations-valuesimulation-max-value");
+        final List<String> result = OpcUaNodeBrowser.deduplicateDefaults(input);
+        assertThat(result).hasSize(6);
+        assertThat(result.get(0)).isEqualTo("server-valuesimulations-valuesimulation-max-value");
+        assertThat(result.get(1)).isEqualTo("server-valuesimulations-valuesimulation-max-value-2");
+        assertThat(result.get(5)).isEqualTo("server-valuesimulations-valuesimulation-max-value-6");
+        // All unique
+        assertThat(result).doesNotHaveDuplicates();
+    }
+
+    // --- generateNorthboundTopicDefault / generateSouthboundTopicDefault ---
 
     @ParameterizedTest
     @CsvSource({"my-opcua, /Data/Static/Int32, my-opcua/data/static/int32", "adapter1, /Objects, adapter1/objects"})
