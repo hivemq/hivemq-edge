@@ -138,70 +138,68 @@ class OpcUaNodeBrowserTest {
         assertThat(OpcUaNodeBrowser.sanitizePath("/Objects")).isEqualTo("objects");
     }
 
-    // --- extractParentSegment() ---
+    // --- generateTagNameDefault (full path) ---
 
     @ParameterizedTest
     @CsvSource({
-        "'/S7-1500/DataBlocksGlobal/Icon',    DataBlocksGlobal",
-        "'/S7-1500/DataBlocksInstance/Icon',   DataBlocksInstance",
-        "'/Data/Static/Int32',                 Static",
-        "'/Objects/Variable',                  Objects",
+        "/Data/Static/Int32Node,                                  data-static-int32node",
+        "/S7-1500/DataBlocksGlobal/Icon,                          s7-1500-datablocksglobal-icon",
+        "/S7-1500/DataBlocksInstance/Icon,                        s7-1500-datablocksinstance-icon",
+        "/Objects/My Node,                                        objects-my-node",
+        "/Aliases/FindAlias/InputArguments,                       aliases-findalias-inputarguments",
+        "/Aliases/TagVariables/FindAlias/InputArguments,          aliases-tagvariables-findalias-inputarguments",
     })
-    void extractParentSegment_multipleSegments(final String path, final String expected) {
-        assertThat(OpcUaNodeBrowser.extractParentSegment(path)).isEqualTo(expected);
+    void generateTagNameDefault_usesFullPath(final String path, final String expected) {
+        final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(null, "any");
+        assertThat(browser.generateTagNameDefault(path)).isEqualTo(expected);
     }
 
     @ParameterizedTest
     @CsvSource({
-        "'/Variable',  ''",
-        "'Variable',   ''",
-        "'',           ''",
+        "/Int32Node,    int32node",
+        "/Variable,     variable",
     })
-    void extractParentSegment_noParent(final String path, final String expected) {
-        assertThat(OpcUaNodeBrowser.extractParentSegment(path)).isEqualTo(expected);
+    void generateTagNameDefault_singleSegment(final String path, final String expected) {
+        final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(null, "any");
+        assertThat(browser.generateTagNameDefault(path)).isEqualTo(expected);
     }
 
-    // --- Default generation ---
-
-    @ParameterizedTest
-    @CsvSource({
-        "my-opcua, /Data/Static/Int32Node,                   static-int32node",
-        "adapter1, /S7-1500/DataBlocksGlobal/Icon,           datablocksglobal-icon",
-        "adapter1, /S7-1500/DataBlocksInstance/Icon,         datablocksinstance-icon",
-        "opc,      /Objects/My Node,                          objects-my-node",
-    })
-    void generateTagNameDefault_withParent(final String adapterId, final String path, final String expected) {
-        final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(null, adapterId);
-        final String browseName = path.substring(path.lastIndexOf('/') + 1);
-        assertThat(browser.generateTagNameDefault(path, browseName)).isEqualTo(expected);
-    }
-
-    @ParameterizedTest
-    @CsvSource({
-        "my-opcua, /Int32Node,    int32node",
-        "opc,      /Variable,     variable",
-    })
-    void generateTagNameDefault_rootLevel_noPrefixAdded(
-            final String adapterId, final String path, final String expected) {
-        final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(null, adapterId);
-        final String browseName = path.substring(path.lastIndexOf('/') + 1);
-        assertThat(browser.generateTagNameDefault(path, browseName)).isEqualTo(expected);
+    @Test
+    void generateTagNameDefault_emptyPath() {
+        final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(null, "any");
+        assertThat(browser.generateTagNameDefault("")).isEqualTo("");
+        assertThat(browser.generateTagNameDefault("/")).isEqualTo("");
     }
 
     @Test
     void generateTagNameDefault_duplicateDisplayNames_disambiguated() {
         final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(null, "s7");
         // Same display name "Icon" in different folders → different tag_name_default
-        assertThat(browser.generateTagNameDefault("/S7-1500/DataBlocksGlobal/Icon", "Icon"))
-                .isEqualTo("datablocksglobal-icon");
-        assertThat(browser.generateTagNameDefault("/S7-1500/DataBlocksInstance/Icon", "Icon"))
-                .isEqualTo("datablocksinstance-icon");
-        assertThat(browser.generateTagNameDefault("/S7-1500/TechnologicalObjects/Icon", "Icon"))
-                .isEqualTo("technologicalobjects-icon");
+        assertThat(browser.generateTagNameDefault("/S7-1500/DataBlocksGlobal/Icon"))
+                .isEqualTo("s7-1500-datablocksglobal-icon");
+        assertThat(browser.generateTagNameDefault("/S7-1500/DataBlocksInstance/Icon"))
+                .isEqualTo("s7-1500-datablocksinstance-icon");
+        assertThat(browser.generateTagNameDefault("/S7-1500/TechnologicalObjects/Icon"))
+                .isEqualTo("s7-1500-technologicalobjects-icon");
 
         // All three are unique
-        assertThat(browser.generateTagNameDefault("/S7-1500/DataBlocksGlobal/Icon", "Icon"))
-                .isNotEqualTo(browser.generateTagNameDefault("/S7-1500/DataBlocksInstance/Icon", "Icon"));
+        assertThat(browser.generateTagNameDefault("/S7-1500/DataBlocksGlobal/Icon"))
+                .isNotEqualTo(browser.generateTagNameDefault("/S7-1500/DataBlocksInstance/Icon"));
+    }
+
+    @Test
+    void generateTagNameDefault_deepNesting_disambiguated() {
+        final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(null, "opc");
+        // Same parent folder + same name, but different ancestors → unique
+        assertThat(browser.generateTagNameDefault("/Aliases/FindAlias/InputArguments"))
+                .isNotEqualTo(browser.generateTagNameDefault("/Aliases/TagVariables/FindAlias/InputArguments"));
+    }
+
+    @Test
+    void generateTagNameDefault_specialCharsInSegments() {
+        final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(null, "opc");
+        assertThat(browser.generateTagNameDefault("/My Folder/Sub.Folder/Node Name!"))
+                .isEqualTo("my-folder-sub-folder-node-name");
     }
 
     @ParameterizedTest
