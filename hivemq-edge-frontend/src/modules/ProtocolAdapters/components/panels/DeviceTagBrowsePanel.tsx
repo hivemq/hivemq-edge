@@ -1,17 +1,7 @@
 import type { ChangeEvent, FC } from 'react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  Button,
-  Divider,
-  Flex,
-  FormControl,
-  FormLabel,
-  Input,
-  Select,
-  Spinner,
-  Text,
-} from '@chakra-ui/react'
+import { Button, Divider, Flex, FormControl, FormLabel, Input, Select, Spinner, Text } from '@chakra-ui/react'
 
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 import type { BrowseFormat } from '@/api/hooks/useProtocolAdapters/useBrowseDeviceTags.ts'

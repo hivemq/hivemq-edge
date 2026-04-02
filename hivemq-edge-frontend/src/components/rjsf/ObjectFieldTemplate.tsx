@@ -27,7 +27,8 @@ export const ObjectFieldTemplate = <
     uiOptions
   )
   const { tabIndex, setTabIndex } = useFormControlStore()
-  const { extraTabs } = (formContext as { extraTabs?: import('@/modules/ProtocolAdapters/types.ts').ExtraTab[] } | undefined) ?? {}
+  const { extraTabs } =
+    (formContext as { extraTabs?: import('@/modules/ProtocolAdapters/types.ts').ExtraTab[] } | undefined) ?? {}
 
   const { tabs } = uiOptions as UIOptionsType & { tabs?: UITab[] }
   if (!tabs) {
@@ -79,7 +80,9 @@ export const ObjectFieldTemplate = <
           )
         })}
         {extraTabs?.map((tab) => (
-          <Tab fontSize="md" key={tab.id}>{tab.title}</Tab>
+          <Tab fontSize="md" key={tab.id}>
+            {tab.title}
+          </Tab>
         ))}
       </TabList>
 

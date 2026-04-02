@@ -80,9 +80,10 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
     if (data.formData) onSubmit(data.formData)
   }
 
-  const extraTabs: ExtraTab[] = isBrowsable && !isNewAdapter && adapterId
-    ? [{ id: 'device-tags', title: 'Device Tags', content: <DeviceTagBrowsePanel adapterId={adapterId} /> }]
-    : []
+  const extraTabs: ExtraTab[] =
+    isBrowsable && !isNewAdapter && adapterId
+      ? [{ id: 'device-tags', title: 'Device Tags', content: <DeviceTagBrowsePanel adapterId={adapterId} /> }]
+      : []
 
   const context: AdapterContext = {
     isEditAdapter: !isNewAdapter,
@@ -121,7 +122,6 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
                   customValidate={customUniqueAdapterValidate(schema, allAdapters)}
                 />
               )}
-
             </DrawerBody>
 
             <DrawerFooter borderTopWidth="1px">
