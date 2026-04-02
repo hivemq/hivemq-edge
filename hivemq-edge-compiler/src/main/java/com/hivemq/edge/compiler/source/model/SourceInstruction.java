@@ -22,6 +22,5 @@ import org.jetbrains.annotations.Nullable;
 public class SourceInstruction {
 
     public @Nullable SourceInstructionSource source;
-    public @Nullable String sourceField;
-    public @Nullable String destinationField;
+    public @Nullable SourceInstructionDestination destination;
 }

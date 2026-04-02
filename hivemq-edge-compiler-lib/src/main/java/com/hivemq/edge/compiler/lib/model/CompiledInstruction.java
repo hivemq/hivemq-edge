@@ -21,16 +21,13 @@ import org.jetbrains.annotations.NotNull;
 
 public record CompiledInstruction(
         @JsonProperty("source") @NotNull CompiledInstructionSource source,
-        @JsonProperty("sourceField") @NotNull String sourceField,
-        @JsonProperty("destinationField") @NotNull String destinationField) {
+        @JsonProperty("destination") @NotNull CompiledInstructionDestination destination) {
 
     @JsonCreator
     public CompiledInstruction(
             @JsonProperty("source") final @NotNull CompiledInstructionSource source,
-            @JsonProperty("sourceField") final @NotNull String sourceField,
-            @JsonProperty("destinationField") final @NotNull String destinationField) {
+            @JsonProperty("destination") final @NotNull CompiledInstructionDestination destination) {
         this.source = source;
-        this.sourceField = sourceField;
-        this.destinationField = destinationField;
+        this.destination = destination;
     }
 }

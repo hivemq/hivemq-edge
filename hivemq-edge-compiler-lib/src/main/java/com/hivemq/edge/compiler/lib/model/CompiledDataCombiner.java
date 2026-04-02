@@ -19,16 +19,23 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public record CompiledDataCombiner(
+        @JsonProperty("id") @NotNull String id,
         @JsonProperty("name") @NotNull String name,
+        @JsonProperty("description") @Nullable String description,
         @JsonProperty("mappings") @NotNull List<CompiledCombinerMapping> mappings) {
 
     @JsonCreator
     public CompiledDataCombiner(
+            @JsonProperty("id") final @NotNull String id,
             @JsonProperty("name") final @NotNull String name,
+            @JsonProperty("description") final @Nullable String description,
             @JsonProperty("mappings") final @NotNull List<CompiledCombinerMapping> mappings) {
+        this.id = id;
         this.name = name;
+        this.description = description;
         this.mappings = mappings;
     }
 }

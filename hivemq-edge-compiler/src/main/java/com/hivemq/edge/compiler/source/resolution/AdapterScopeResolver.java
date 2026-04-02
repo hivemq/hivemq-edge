@@ -20,6 +20,7 @@ import com.hivemq.edge.compiler.source.model.SourceFile;
 import com.hivemq.edge.compiler.source.model.SourceNorthboundMapping;
 import com.hivemq.edge.compiler.source.model.SourceTag;
 import com.hivemq.edge.compiler.source.validation.Diagnostic;
+import com.hivemq.edge.compiler.source.validation.Diagnostic.DiagnosticRange;
 import com.hivemq.edge.compiler.source.validation.DiagnosticCollector;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -56,7 +57,8 @@ public class AdapterScopeResolver {
                     errors.add(Diagnostic.error(
                             "DEVICE_TAG_MISSING_ID",
                             "DEVICE-TAG in adapter '" + adapterId + "' has no 'id' field",
-                            file.path));
+                            file.path,
+                            DiagnosticRange.ofNullable(dt.line, dt.character)));
                     continue;
                 }
                 if (deviceTagPool.containsKey(dt.id)) {
@@ -64,6 +66,7 @@ public class AdapterScopeResolver {
                             "DUPLICATE_DEVICE_TAG_ID",
                             "DEVICE-TAG id '" + dt.id + "' is defined more than once in adapter '" + adapterId + "'",
                             file.path,
+                            DiagnosticRange.ofNullable(dt.line, dt.character),
                             Map.of("adapterId", adapterId, "deviceTagId", dt.id)));
                 } else {
                     deviceTagPool.put(dt.id, dt);
@@ -102,7 +105,10 @@ public class AdapterScopeResolver {
 
         if (sourceTag.name == null || sourceTag.name.isBlank()) {
             errors.add(Diagnostic.error(
-                    "TAG_MISSING_NAME", "A TAG in adapter '" + adapterId + "' has no 'name' field", filePath));
+                    "TAG_MISSING_NAME",
+                    "A TAG in adapter '" + adapterId + "' has no 'name' field",
+                    filePath,
+                    DiagnosticRange.ofNullable(sourceTag.line, sourceTag.character)));
             return;
         }
 
@@ -112,6 +118,7 @@ public class AdapterScopeResolver {
                     "TAG '" + sourceTag.name + "' in adapter '" + adapterId
                             + "' has both 'deviceTag' and 'deviceTagId' — only one is allowed",
                     filePath,
+                    DiagnosticRange.ofNullable(sourceTag.line, sourceTag.character),
                     Map.of("adapterId", adapterId, "tagName", sourceTag.name)));
             return;
         }
@@ -121,6 +128,7 @@ public class AdapterScopeResolver {
                     "DUPLICATE_TAG_NAME",
                     "TAG '" + sourceTag.name + "' is defined more than once in adapter '" + adapterId + "'",
                     filePath,
+                    DiagnosticRange.ofNullable(sourceTag.line, sourceTag.character),
                     Map.of("adapterId", adapterId, "tagName", sourceTag.name)));
             return;
         }
@@ -141,13 +149,11 @@ public class AdapterScopeResolver {
                         "TAG '" + sourceTag.name + "' in adapter '" + adapterId + "' references DEVICE-TAG id '"
                                 + sourceTag.deviceTagId + "' which does not exist",
                         filePath,
+                        DiagnosticRange.ofNullable(sourceTag.line, sourceTag.character),
                         Map.of(
-                                "adapterId",
-                                adapterId,
-                                "tagName",
-                                sourceTag.name,
-                                "deviceTagId",
-                                sourceTag.deviceTagId)));
+                                "adapterId", adapterId,
+                                "tagName", sourceTag.name,
+                                "deviceTagId", sourceTag.deviceTagId)));
                 return;
             }
         } else {
@@ -173,6 +179,7 @@ public class AdapterScopeResolver {
                     "A northbound mapping in adapter '" + adapterId
                             + "' has both 'tagName' and 'tag' — only one is allowed",
                     filePath,
+                    DiagnosticRange.ofNullable(mapping.line, mapping.character),
                     Map.of("adapterId", adapterId)));
             return;
         }
@@ -182,6 +189,7 @@ public class AdapterScopeResolver {
                     "MAPPING_MISSING_TOPIC",
                     "A northbound mapping in adapter '" + adapterId + "' has no 'topic' field",
                     filePath,
+                    DiagnosticRange.ofNullable(mapping.line, mapping.character),
                     Map.of("adapterId", adapterId)));
             return;
         }
@@ -191,6 +199,7 @@ public class AdapterScopeResolver {
                     "MAPPING_INVALID_QOS",
                     "A northbound mapping in adapter '" + adapterId + "' has invalid qos: " + mapping.qos,
                     filePath,
+                    DiagnosticRange.ofNullable(mapping.line, mapping.character),
                     Map.of("adapterId", adapterId, "qos", mapping.qos)));
             return;
         }
@@ -212,6 +221,7 @@ public class AdapterScopeResolver {
                         "Northbound mapping in adapter '" + adapterId + "' references tag '" + mapping.tagName
                                 + "' which does not exist",
                         filePath,
+                        DiagnosticRange.ofNullable(mapping.line, mapping.character),
                         Map.of("adapterId", adapterId, "tagName", mapping.tagName)));
                 return;
             }
@@ -222,6 +232,7 @@ public class AdapterScopeResolver {
                     "A northbound mapping in adapter '" + adapterId
                             + "' has neither 'tagName' nor 'tag' — one is required",
                     filePath,
+                    DiagnosticRange.ofNullable(mapping.line, mapping.character),
                     Map.of("adapterId", adapterId)));
             return;
         }

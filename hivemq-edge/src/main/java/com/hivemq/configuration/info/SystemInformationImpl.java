@@ -15,13 +15,13 @@
  */
 package com.hivemq.configuration.info;
 
-import com.google.common.io.Files;
 import com.hivemq.HiveMQEdgeGateway;
 import com.hivemq.HiveMQEdgeMain;
 import com.hivemq.configuration.EnvironmentVariables;
 import com.hivemq.configuration.SystemProperties;
 import com.hivemq.util.ManifestUtils;
 import java.io.File;
+import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -325,7 +325,12 @@ public class SystemInformationImpl implements SystemInformation {
     }
 
     private void useTemporaryHomeFolder() {
-        final File tempDir = Files.createTempDir();
+        final File tempDir;
+        try {
+            tempDir = java.nio.file.Files.createTempDirectory("hivemq").toFile();
+        } catch (final IOException e) {
+            throw new RuntimeException("Failed to create temporary home directory", e);
+        }
         tempDir.deleteOnExit();
         log.warn(
                 "No {} property or {} environment variable was set. Using a temporary directory ({}) HiveMQ will behave unexpectedly!",

@@ -94,7 +94,7 @@ public class NorthboundMappingEntity implements EntityValidatable {
         this.maxQoS = maxQoS;
         log.warn(
                 "The 'messageHandlingOptions' property in the 'northboundMapping' configuration is ignored. Always using 'MQTTMessagePerTag' handling.");
-        this.messageHandlingOptions = null;
+        this.messageHandlingOptions = NORTHBOUND_OPTS;
         this.includeTagNames = includeTagNames;
         this.includeTimestamp = includeTimestamp;
         this.includeMetadata = includeMetadata;

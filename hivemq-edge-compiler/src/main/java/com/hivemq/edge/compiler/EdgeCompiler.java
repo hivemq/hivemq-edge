@@ -49,15 +49,34 @@ public class EdgeCompiler {
     }
 
     /**
-     * Compiles the project at {@code projectRoot}.
+     * Compiles the project at {@code projectRoot}, loading all sources declared in
+     * {@code edge-project.yaml}.
      *
      * @param projectRoot directory containing {@code edge-project.yaml} (or defaults if absent)
      * @return a result with diagnostics; the compiled config is present only when there are no errors
      */
     public @NotNull Result compile(final @NotNull Path projectRoot) throws IOException {
+        return compileLoaded(projectLoader.load(projectRoot));
+    }
+
+    /**
+     * Compiles a single instance from a multi-instance project.
+     *
+     * <p>Only files under {@code projectRoot/instances/<instanceId>/} are loaded. Other instances
+     * are ignored.
+     *
+     * @param projectRoot directory containing {@code edge-project.yaml}
+     * @param instanceId  name of the instance subdirectory under {@code instances/}
+     * @return a result with diagnostics; the compiled config is present only when there are no errors
+     */
+    public @NotNull Result compile(final @NotNull Path projectRoot, final @NotNull String instanceId)
+            throws IOException {
+        return compileLoaded(projectLoader.loadInstance(projectRoot, instanceId));
+    }
+
+    private @NotNull Result compileLoaded(final @NotNull ProjectLoader.LoadedProject loaded) {
         final DiagnosticCollector errors = new DiagnosticCollector();
 
-        final ProjectLoader.LoadedProject loaded = projectLoader.load(projectRoot);
         final GlobalResolver.ResolvedProject resolved = globalResolver.resolve(loaded.sourceFiles(), errors);
 
         if (errors.hasErrors()) {

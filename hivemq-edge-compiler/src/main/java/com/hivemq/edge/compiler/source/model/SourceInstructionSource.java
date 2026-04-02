@@ -18,12 +18,16 @@ package com.hivemq.edge.compiler.source.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.jetbrains.annotations.Nullable;
 
-/** Source for a combiner instruction. Exactly one of {@code tag} or {@code topicFilter} must be set. */
+/** Source for a combiner instruction. Exactly one of {@code tag} or {@code topic} must be set. */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SourceInstructionSource {
 
     /** Cross-adapter tag reference in the form {@code adapterId::tagName}. */
     public @Nullable String tag;
 
-    public @Nullable String topicFilter;
+    /** Raw MQTT topic filter. */
+    public @Nullable String topic;
+
+    /** JSONPath expression selecting the source field in the incoming document. */
+    public @Nullable String field;
 }

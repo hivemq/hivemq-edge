@@ -23,7 +23,23 @@ import org.jetbrains.annotations.Nullable;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SourceCombinerMapping {
 
+    /** Optional UUID. If absent the compiler derives one from {@code combinerName::name}. */
+    public @Nullable String id;
+
+    /** Optional name; used for ID derivation if {@code id} is absent. */
+    public @Nullable String name;
+
+    /** Optional description — passed through but not used by the runtime. */
+    public @Nullable String description;
+
     public @Nullable SourceTrigger trigger;
     public @Nullable SourceCombinerOutput output;
     public @NotNull List<SourceInstruction> instructions = List.of();
+
+    /** Source position — set by {@code YamlFileParser} after parsing; -1 means unknown. 0-based (LSP convention). */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public int line = -1;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public int character = -1;
 }

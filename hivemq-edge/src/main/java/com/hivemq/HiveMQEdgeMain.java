@@ -191,10 +191,21 @@ public class HiveMQEdgeMain {
     }
 
     public static void main(final String @NotNull [] args) throws Exception {
-        // Early check: if the first argument is "--compile", delegate to the compiler and exit.
-        // No DI context, no Netty, no adapters — the compiler runs standalone.
+        // Early-exit seams: compiler commands run without starting the Edge runtime.
+        // These must be checked before any DI context, Netty, or adapter initialisation.
         if (args.length >= 1 && "--compile".equals(args[0])) {
-            final String[] compilerArgs = java.util.Arrays.copyOfRange(args, 1, args.length);
+            // Compile (and optionally push via MQTT). Push logic lives here in the Edge runtime
+            // so that the compiler module remains MQTT-free and lightweight.
+            final String[] compileArgs = java.util.Arrays.copyOfRange(args, 1, args.length);
+            final int exitCode = com.hivemq.edge.knappogue.EdgeCompileCommand.run(compileArgs);
+            System.exit(exitCode);
+        }
+        if (args.length >= 1 && "--new".equals(args[0])) {
+            // Scaffold a new Edge config project (delegates to edge-compiler new <name> [--type <t>]).
+            final String[] restArgs = java.util.Arrays.copyOfRange(args, 1, args.length);
+            final String[] compilerArgs = new String[restArgs.length + 1];
+            compilerArgs[0] = "new";
+            System.arraycopy(restArgs, 0, compilerArgs, 1, restArgs.length);
             final int exitCode = com.hivemq.edge.compiler.CompilerMain.run(compilerArgs);
             System.exit(exitCode);
         }

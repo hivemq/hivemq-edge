@@ -18,12 +18,13 @@ package com.hivemq.edge.compiler.source.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.jetbrains.annotations.Nullable;
 
-/** Trigger for a combiner mapping. Exactly one of {@code tag} or {@code topicFilter} must be set. */
+/** Trigger for a combiner mapping. Exactly one of {@code tag} or {@code topic} must be set. */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SourceTrigger {
 
     /** Cross-adapter tag reference in the form {@code adapterId::tagName}. */
     public @Nullable String tag;
 
-    public @Nullable String topicFilter;
+    /** Raw MQTT topic filter. */
+    public @Nullable String topic;
 }

@@ -20,8 +20,10 @@ import com.hivemq.edge.compiler.source.model.SourceFile;
 import com.hivemq.edge.compiler.source.validation.Diagnostic;
 import com.hivemq.edge.compiler.source.validation.DiagnosticCollector;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Adapter type descriptor for BACnet/IP.
@@ -51,6 +53,35 @@ public class BacNetIpTypeDescriptor implements AdapterTypeDescriptor {
         return definition;
     }
 
+    /**
+     * Expands the BACnet/IP connection config with all documented defaults so the compiled JSON is fully explicit.
+     *
+     * <p>The {@code id} field is populated from the adapter id. {@code deviceId} defaults to {@code 0} (Edge assigns a
+     * random device ID). {@code subnetBroadcastAddress} defaults to {@code 255.255.255.255}. {@code
+     * discoveryIntervalMillis} defaults to {@code 5000}. All {@code bacnetipToMqtt} sub-fields are expanded.
+     */
+    @Override
+    public @NotNull Map<String, Object> buildConnectionConfig(
+            final @NotNull Map<String, Object> source, final @Nullable String adapterId) {
+        final Map<String, Object> result = new LinkedHashMap<>();
+
+        result.put("id", adapterId != null ? adapterId : "");
+        result.put("host", source.get("host"));
+        result.put("port", source.get("port"));
+        result.put("deviceId", source.getOrDefault("deviceId", 0));
+        result.put("subnetBroadcastAddress", source.getOrDefault("subnetBroadcastAddress", "255.255.255.255"));
+        result.put("discoveryIntervalMillis", source.getOrDefault("discoveryIntervalMillis", 5000));
+
+        final Map<String, Object> srcToMqtt = nested(source, "bacnetipToMqtt");
+        final Map<String, Object> toMqtt = new LinkedHashMap<>();
+        toMqtt.put("pollingIntervalMillis", srcToMqtt.getOrDefault("pollingIntervalMillis", 1000));
+        toMqtt.put("maxPollingErrorsBeforeRemoval", srcToMqtt.getOrDefault("maxPollingErrorsBeforeRemoval", 10));
+        toMqtt.put("publishChangedDataOnly", srcToMqtt.getOrDefault("publishChangedDataOnly", true));
+        result.put("bacnetipToMqtt", toMqtt);
+
+        return result;
+    }
+
     @Override
     public void validateConnectionConfig(
             final @NotNull Map<String, Object> connection,
@@ -70,5 +101,12 @@ public class BacNetIpTypeDescriptor implements AdapterTypeDescriptor {
                     manifest.path,
                     Map.of("adapterId", manifest.id != null ? manifest.id : "", "field", "port")));
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static @NotNull Map<String, Object> nested(
+            final @NotNull Map<String, Object> parent, final @NotNull String key) {
+        final Object v = parent.get(key);
+        return v instanceof Map<?, ?> ? (Map<String, Object>) v : Map.of();
     }
 }

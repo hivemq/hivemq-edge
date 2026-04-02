@@ -44,4 +44,12 @@ public class DiagnosticCollector {
     public int errorCount() {
         return (int) diagnostics.stream().filter(Diagnostic::isError).count();
     }
+
+    public @NotNull List<Diagnostic> warnings() {
+        return diagnostics.stream().filter(Diagnostic::isWarning).toList();
+    }
+
+    public int warningCount() {
+        return (int) diagnostics.stream().filter(Diagnostic::isWarning).count();
+    }
 }

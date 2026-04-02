@@ -107,7 +107,7 @@ if hash java 2>/dev/null; then
                 # Run HiveMQ
                 JAR_PATH="$HIVEMQ_FOLDER/bin/hivemq.jar"
                 MODULES_PATH="$HIVEMQ_FOLDER/modules/*"
-                exec "java" "${HOME_OPT}" "${HEAPDUMP_PATH_OPT}" "${ERROR_FILE_PATH_OPT}" ${JAVA_OPTS} -jar "${JAR_PATH}"
+                exec "java" "${HOME_OPT}" "${HEAPDUMP_PATH_OPT}" "${ERROR_FILE_PATH_OPT}" ${JAVA_OPTS} -jar "${JAR_PATH}" "$@"
             fi
         fi
     fi

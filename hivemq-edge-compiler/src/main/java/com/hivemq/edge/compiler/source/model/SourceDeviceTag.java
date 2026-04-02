@@ -45,4 +45,11 @@ public class SourceDeviceTag {
     public void setExtra(final @NotNull String key, final @Nullable Object value) {
         extra.put(key, value);
     }
+
+    /** Source position — set by {@code YamlFileParser} after parsing; -1 means unknown. 0-based (LSP convention). */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public int line = -1;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public int character = -1;
 }

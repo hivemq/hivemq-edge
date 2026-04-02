@@ -22,5 +22,11 @@ import org.jetbrains.annotations.Nullable;
 public class SourceCombinerOutput {
 
     public @Nullable String topic;
-    public int qos = 1;
+
+    /**
+     * QoS for the combiner output topic. Parsed but not used by the runtime — the Edge combiner model has no
+     * per-output QoS. Declared as {@code @Nullable Integer} so the compiler can detect when the user explicitly
+     * specifies it (non-null → emit {@code COMBINER_OUTPUT_QOS_IGNORED} warning); {@code null} means not specified.
+     */
+    public @Nullable Integer qos;
 }

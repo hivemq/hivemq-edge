@@ -15,21 +15,37 @@
  */
 package com.hivemq.edge.knappogue;
 
+import com.hivemq.combining.model.DataIdentifierReference;
+import com.hivemq.combining.model.EntityType;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.entity.adapter.MqttUserPropertyEntity;
 import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.entity.adapter.TagEntity;
+import com.hivemq.configuration.entity.adapter.fieldmapping.InstructionEntity;
+import com.hivemq.configuration.entity.combining.DataCombinerEntity;
+import com.hivemq.configuration.entity.combining.DataCombiningDestinationEntity;
+import com.hivemq.configuration.entity.combining.DataCombiningEntity;
+import com.hivemq.configuration.entity.combining.DataCombiningSourcesEntity;
+import com.hivemq.configuration.entity.combining.DataIdentifierReferenceEntity;
+import com.hivemq.configuration.entity.combining.EntityReferenceEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.edge.compiler.lib.model.CompiledAdapterConfig;
+import com.hivemq.edge.compiler.lib.model.CompiledCombinerMapping;
 import com.hivemq.edge.compiler.lib.model.CompiledConfig;
+import com.hivemq.edge.compiler.lib.model.CompiledDataCombiner;
+import com.hivemq.edge.compiler.lib.model.CompiledInstruction;
 import com.hivemq.edge.compiler.lib.model.CompiledNorthboundMapping;
 import com.hivemq.edge.compiler.lib.model.CompiledTag;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,21 +82,22 @@ public class CompiledConfigApplier {
                 .map(this::translateAdapter)
                 .toList();
 
-        if (!compiledConfig.dataCombiners().isEmpty()) {
-            log.warn(
-                    "Compiled config contains {} data combiner(s) — data combiner translation is not yet implemented and will be skipped.",
-                    compiledConfig.dataCombiners().size());
-        }
+        final List<DataCombinerEntity> translatedCombiners = compiledConfig.dataCombiners().stream()
+                .map(this::translateCombiner)
+                .toList();
 
         final HiveMQConfigEntity currentEntity = configFileReaderWriter.getCurrentConfigEntity();
         currentEntity.getProtocolAdapterConfig().clear();
         currentEntity.getProtocolAdapterConfig().addAll(translatedAdapters);
+        currentEntity.getDataCombinerEntities().clear();
+        currentEntity.getDataCombinerEntities().addAll(translatedCombiners);
 
         final boolean success = configFileReaderWriter.applyCompiledConfig(currentEntity);
         if (success) {
             log.info(
-                    "Applied compiled config: {} adapter(s) from edge version '{}'.",
+                    "Applied compiled config: {} adapter(s), {} combiner(s) from edge version '{}'.",
                     translatedAdapters.size(),
+                    translatedCombiners.size(),
                     compiledConfig.edgeVersion());
             configFileReaderWriter.writeConfigWithSync();
         } else {
@@ -114,7 +131,7 @@ public class CompiledConfigApplier {
     /**
      * Expands a compiled adapter config into the runtime format expected by the adapter.
      *
-     * <p>OPC-UA: synthesizes the {@code uri} field from {@code protocol} (default {@code opc.tcp}), {@code host}, and
+     * <p>OPC-UA: synthesizes the {@code uri} field from {@code protocolId} (default {@code opc.tcp}), {@code host}, and
      * {@code port}, then removes those three source-only fields so the runtime config matches the XML format exactly.
      */
     private @NotNull Map<String, Object> expandAdapterConfig(
@@ -194,6 +211,90 @@ public class CompiledConfigApplier {
                     address);
             return compiled;
         }
+    }
+
+    private @NotNull DataCombinerEntity translateCombiner(final @NotNull CompiledDataCombiner src) {
+        final List<DataCombiningEntity> combinings =
+                src.mappings().stream().map(this::translateMapping).toList();
+
+        final List<EntityReferenceEntity> entityReferences = deriveEntityReferences(src);
+
+        return new DataCombinerEntity(
+                UUID.fromString(src.id()), src.name(), src.description(), entityReferences, combinings);
+    }
+
+    private @NotNull DataCombiningEntity translateMapping(final @NotNull CompiledCombinerMapping src) {
+        final DataIdentifierReferenceEntity primaryReference = translateTriggerToReference(src);
+        final DataCombiningSourcesEntity sources =
+                new DataCombiningSourcesEntity(primaryReference, List.of(), List.of());
+        final DataCombiningDestinationEntity destination =
+                new DataCombiningDestinationEntity(null, src.output().topic(), "");
+        final List<InstructionEntity> instructions =
+                src.instructions().stream().map(this::translateInstruction).toList();
+
+        return new DataCombiningEntity(UUID.fromString(src.id()), sources, destination, instructions);
+    }
+
+    private @NotNull DataIdentifierReferenceEntity translateTriggerToReference(
+            final @NotNull CompiledCombinerMapping src) {
+        if (src.trigger().tag() != null) {
+            return tagRefToEntity(src.trigger().tag());
+        }
+        if (src.trigger().topic() != null) {
+            return new DataIdentifierReferenceEntity(src.trigger().topic(), DataIdentifierReference.Type.TOPIC_FILTER);
+        }
+        log.warn("Combiner mapping '{}' has no trigger tag or topic — using empty reference.", src.id());
+        return new DataIdentifierReferenceEntity("", DataIdentifierReference.Type.TOPIC_FILTER);
+    }
+
+    private @NotNull InstructionEntity translateInstruction(final @NotNull CompiledInstruction src) {
+        final @Nullable DataIdentifierReferenceEntity origin;
+        if (src.source().tag() != null) {
+            origin = tagRefToEntity(src.source().tag());
+        } else if (src.source().topic() != null) {
+            origin = new DataIdentifierReferenceEntity(src.source().topic(), DataIdentifierReference.Type.TOPIC_FILTER);
+        } else {
+            origin = null;
+        }
+        return new InstructionEntity(src.source().field(), src.destination().field(), origin);
+    }
+
+    /** Splits {@code adapterId::tagName} and builds a TAG-type reference. */
+    private @NotNull DataIdentifierReferenceEntity tagRefToEntity(final @NotNull String tagRef) {
+        final int sep = tagRef.indexOf("::");
+        if (sep >= 0) {
+            final String adapterId = tagRef.substring(0, sep);
+            final String tagName = tagRef.substring(sep + 2);
+            return new DataIdentifierReferenceEntity(tagName, DataIdentifierReference.Type.TAG, adapterId);
+        }
+        // no scope separator — treat the whole string as the tag id
+        return new DataIdentifierReferenceEntity(tagRef, DataIdentifierReference.Type.TAG);
+    }
+
+    /**
+     * Derives {@code entityReferences} from all unique adapter IDs referenced in the combiner's trigger and
+     * instruction sources.
+     */
+    private @NotNull List<EntityReferenceEntity> deriveEntityReferences(final @NotNull CompiledDataCombiner src) {
+        final Set<String> adapterIds = new LinkedHashSet<>();
+        for (final CompiledCombinerMapping mapping : src.mappings()) {
+            if (mapping.trigger().tag() != null) {
+                extractAdapterId(mapping.trigger().tag()).ifPresent(adapterIds::add);
+            }
+            for (final CompiledInstruction instr : mapping.instructions()) {
+                if (instr.source().tag() != null) {
+                    extractAdapterId(instr.source().tag()).ifPresent(adapterIds::add);
+                }
+            }
+        }
+        return adapterIds.stream()
+                .map(id -> new EntityReferenceEntity(EntityType.ADAPTER, id))
+                .toList();
+    }
+
+    private @NotNull java.util.Optional<String> extractAdapterId(final @NotNull String tagRef) {
+        final int sep = tagRef.indexOf("::");
+        return sep >= 0 ? java.util.Optional.of(tagRef.substring(0, sep)) : java.util.Optional.empty();
     }
 
     private @NotNull NorthboundMappingEntity translateNorthboundMapping(final @NotNull CompiledNorthboundMapping src) {

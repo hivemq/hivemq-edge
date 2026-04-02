@@ -17,17 +17,14 @@ package com.hivemq.edge.compiler.lib.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
-/** Trigger for a combiner mapping — either a tag reference or a topic filter. Exactly one must be non-null. */
-public record CompiledCombinerTrigger(
-        @JsonProperty("tag") @Nullable String tag,
-        @JsonProperty("topic") @Nullable String topic) {
+/** Destination for a combiner instruction — the JSONPath expression for the output document field. */
+public record CompiledInstructionDestination(
+        @JsonProperty("field") @NotNull String field) {
 
     @JsonCreator
-    public CompiledCombinerTrigger(
-            @JsonProperty("tag") final @Nullable String tag, @JsonProperty("topic") final @Nullable String topic) {
-        this.tag = tag;
-        this.topic = topic;
+    public CompiledInstructionDestination(@JsonProperty("field") final @NotNull String field) {
+        this.field = field;
     }
 }

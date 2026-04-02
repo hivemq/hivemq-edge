@@ -58,4 +58,11 @@ public class SourceNorthboundMapping {
     public @Nullable Boolean includeTimestamp; // default: true
     public @Nullable Boolean includeMetadata; // default: false
     public @Nullable Long messageExpiryInterval; // default: Long.MAX_VALUE
+
+    /** Source position — set by {@code YamlFileParser} after parsing; -1 means unknown. 0-based (LSP convention). */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public int line = -1;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public int character = -1;
 }

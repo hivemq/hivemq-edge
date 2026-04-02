@@ -1,7 +1,10 @@
 dataCombiners:
   - name: ExtruderStatus
+    description: "Combines extruder sensor readings into a unified status payload"
     mappings:
-      - trigger:
+      - name: NozzleTrigger
+        description: "Triggered by nozzle pressure; merges barrel temp and ambient temp"
+        trigger:
           tag: extruder-01::NozzlePressure
         output:
           topic: factory/berlin/assets/extruder-status
@@ -9,13 +12,16 @@ dataCombiners:
         instructions:
           - source:
               tag: extruder-01::NozzlePressure
-            sourceField: "$.value"
-            destinationField: "$.pressure"
+              field: "$.value"
+            destination:
+              field: "$.pressure"
           - source:
               tag: extruder-01::BarrelTemp
-            sourceField: "$.value"
-            destinationField: "$.temperature"
+              field: "$.value"
+            destination:
+              field: "$.temperature"
           - source:
-              topicFilter: "sensors/hvac/zone/+"
-            sourceField: "$.zoneTemp"
-            destinationField: "$.ambientTemp"
+              topic: "sensors/hvac/zone/+"
+              field: "$.zoneTemp"
+            destination:
+              field: "$.ambientTemp"

@@ -20,6 +20,7 @@ import com.hivemq.edge.compiler.source.model.SourceFile;
 import com.hivemq.edge.compiler.source.validation.DiagnosticCollector;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Per-adapter-type knowledge needed by the compiler: how to map YAML source fields to the compiled output model.
@@ -51,4 +52,22 @@ public interface AdapterTypeDescriptor {
      */
     void validateConnectionConfig(
             @NotNull Map<String, Object> connection, @NotNull SourceFile manifest, @NotNull DiagnosticCollector errors);
+
+    /**
+     * Builds the complete connection config map for the compiled output by merging the source fields with
+     * adapter-type-specific defaults.
+     *
+     * <p>The compiled config is fully explicit — all optional fields are expanded to their documented defaults so that
+     * neither the applier nor Edge itself needs to apply any defaults.
+     *
+     * <p>The default implementation returns the source map unchanged. Type descriptors that know their adapter's full
+     * schema override this to produce a complete map.
+     *
+     * @param source the {@code connection:} map from the adapter manifest (validated, non-null)
+     * @param adapterId the adapter's id — used to populate the {@code id} field that Edge requires internally
+     */
+    default @NotNull Map<String, Object> buildConnectionConfig(
+            @NotNull Map<String, Object> source, @Nullable String adapterId) {
+        return source;
+    }
 }

@@ -22,6 +22,7 @@ import com.hivemq.edge.compiler.lib.model.CompiledCombinerTrigger;
 import com.hivemq.edge.compiler.lib.model.CompiledConfig;
 import com.hivemq.edge.compiler.lib.model.CompiledDataCombiner;
 import com.hivemq.edge.compiler.lib.model.CompiledInstruction;
+import com.hivemq.edge.compiler.lib.model.CompiledInstructionDestination;
 import com.hivemq.edge.compiler.lib.model.CompiledInstructionSource;
 import com.hivemq.edge.compiler.lib.model.CompiledNorthboundMapping;
 import com.hivemq.edge.compiler.lib.model.CompiledTag;
@@ -34,9 +35,11 @@ import com.hivemq.edge.compiler.source.resolution.ResolvedNorthboundMapping;
 import com.hivemq.edge.compiler.source.resolution.ResolvedTag;
 import com.hivemq.edge.compiler.source.validation.Diagnostic;
 import com.hivemq.edge.compiler.source.validation.DiagnosticCollector;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
@@ -71,8 +74,10 @@ public class AdapterTranslator {
             }
         }
 
-        final List<CompiledDataCombiner> compiledCombiners =
-                project.dataCombiners().stream().map(this::translateCombiner).toList();
+        final List<CompiledDataCombiner> compiledCombiners = new ArrayList<>();
+        for (final SourceDataCombiner combiner : project.dataCombiners()) {
+            compiledCombiners.add(translateCombiner(combiner, errors));
+        }
 
         return new CompiledConfig(
                 CompiledConfig.NOTICE,
@@ -118,8 +123,14 @@ public class AdapterTranslator {
                 .map(m -> translateNorthboundMapping(m))
                 .toList();
 
+        final Map<String, Object> builtConnection = descriptor.buildConnectionConfig(connection, adapter.adapterId());
         return new CompiledAdapterConfig(
-                adapter.adapterId(), descriptor.protocolId(), connection, compiledTags, compiledMappings, List.of());
+                adapter.adapterId(),
+                descriptor.protocolId(),
+                builtConnection,
+                compiledTags,
+                compiledMappings,
+                List.of());
     }
 
     private @NotNull CompiledTag translateTag(
@@ -144,25 +155,64 @@ public class AdapterTranslator {
                 src.messageExpiryInterval != null ? src.messageExpiryInterval : DEFAULT_MESSAGE_EXPIRY_INTERVAL);
     }
 
-    private @NotNull CompiledDataCombiner translateCombiner(final @NotNull SourceDataCombiner combiner) {
-        final List<CompiledCombinerMapping> mappings = combiner.mappings.stream()
-                .map(m -> new CompiledCombinerMapping(
-                        m.trigger != null
-                                ? new CompiledCombinerTrigger(m.trigger.tag, m.trigger.topicFilter)
-                                : new CompiledCombinerTrigger(null, null),
-                        m.output != null
-                                ? new CompiledCombinerOutput(m.output.topic != null ? m.output.topic : "", m.output.qos)
-                                : new CompiledCombinerOutput("", 1),
-                        m.instructions.stream()
-                                .map(i -> new CompiledInstruction(
-                                        i.source != null
-                                                ? new CompiledInstructionSource(i.source.tag, i.source.topicFilter)
-                                                : new CompiledInstructionSource(null, null),
-                                        i.sourceField != null ? i.sourceField : "",
-                                        i.destinationField != null ? i.destinationField : ""))
-                                .toList()))
-                .toList();
+    private @NotNull CompiledDataCombiner translateCombiner(
+            final @NotNull SourceDataCombiner combiner, final @NotNull DiagnosticCollector errors) {
+        final String combinerName = combiner.name != null ? combiner.name : "";
+        final String combinerId = combiner.id != null
+                ? combiner.id
+                : UUID.nameUUIDFromBytes(combinerName.getBytes(StandardCharsets.UTF_8))
+                        .toString();
 
-        return new CompiledDataCombiner(combiner.name != null ? combiner.name : "", mappings);
+        final List<CompiledCombinerMapping> mappings = new ArrayList<>();
+        for (int i = 0; i < combiner.mappings.size(); i++) {
+            final var m = combiner.mappings.get(i);
+            final String mappingName = m.name != null ? m.name : "mapping-" + i;
+            final String mappingId = m.id != null
+                    ? m.id
+                    : UUID.nameUUIDFromBytes((combinerName + "::" + mappingName).getBytes(StandardCharsets.UTF_8))
+                            .toString();
+
+            final CompiledCombinerTrigger trigger = m.trigger != null
+                    ? new CompiledCombinerTrigger(m.trigger.tag, m.trigger.topic)
+                    : new CompiledCombinerTrigger(null, null);
+
+            final CompiledCombinerOutput output;
+            if (m.output != null) {
+                if (m.output.qos != null) {
+                    errors.add(Diagnostic.warning(
+                            "COMBINER_OUTPUT_QOS_IGNORED",
+                            "Combiner mapping '" + mappingName + "' specifies output qos: " + m.output.qos
+                                    + " — the runtime model has no per-output QoS for data combiners; this value is ignored",
+                            combiner.sourcePath,
+                            Diagnostic.DiagnosticRange.ofNullable(m.line, m.character),
+                            Map.of("combinerName", combinerName, "mappingName", mappingName, "qos", m.output.qos)));
+                }
+                output = new CompiledCombinerOutput(
+                        m.output.topic != null ? m.output.topic : "", m.output.qos != null ? m.output.qos : 1);
+            } else {
+                output = new CompiledCombinerOutput("", 1);
+            }
+
+            final List<CompiledInstruction> instructions = m.instructions.stream()
+                    .map(instr -> {
+                        final CompiledInstructionSource src = instr.source != null
+                                ? new CompiledInstructionSource(
+                                        instr.source.tag,
+                                        instr.source.topic,
+                                        instr.source.field != null ? instr.source.field : "")
+                                : new CompiledInstructionSource(null, null, "");
+                        final CompiledInstructionDestination dst = instr.destination != null
+                                ? new CompiledInstructionDestination(
+                                        instr.destination.field != null ? instr.destination.field : "")
+                                : new CompiledInstructionDestination("");
+                        return new CompiledInstruction(src, dst);
+                    })
+                    .toList();
+
+            mappings.add(
+                    new CompiledCombinerMapping(mappingId, mappingName, m.description, trigger, output, instructions));
+        }
+
+        return new CompiledDataCombiner(combinerId, combinerName, combiner.description, mappings);
     }
 }

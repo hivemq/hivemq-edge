@@ -17,18 +17,25 @@ package com.hivemq.edge.compiler.lib.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** Source for a combiner instruction — either a tag reference or a topic filter. Exactly one must be non-null. */
+/**
+ * Source for a combiner instruction — either a tag reference or a topic filter, plus the JSONPath expression
+ * selecting the field in the incoming document. Exactly one of {@code tag} or {@code topic} must be non-null.
+ */
 public record CompiledInstructionSource(
         @JsonProperty("tag") @Nullable String tag,
-        @JsonProperty("topicFilter") @Nullable String topicFilter) {
+        @JsonProperty("topic") @Nullable String topic,
+        @JsonProperty("field") @NotNull String field) {
 
     @JsonCreator
     public CompiledInstructionSource(
             @JsonProperty("tag") final @Nullable String tag,
-            @JsonProperty("topicFilter") final @Nullable String topicFilter) {
+            @JsonProperty("topic") final @Nullable String topic,
+            @JsonProperty("field") final @NotNull String field) {
         this.tag = tag;
-        this.topicFilter = topicFilter;
+        this.topic = topic;
+        this.field = field;
     }
 }

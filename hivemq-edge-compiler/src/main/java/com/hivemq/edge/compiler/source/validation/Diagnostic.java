@@ -24,15 +24,21 @@ import org.jetbrains.annotations.Nullable;
 /**
  * A single validation diagnostic in LSP Diagnostic format.
  *
+ * <p>Machine-readable JSON output (stdout):
+ *
  * <pre>{@code
  * {
  *   "severity": 1,
  *   "message": "Tag 'NozzlePressure' referenced in northbound mapping does not exist",
  *   "source": "edge-compiler",
  *   "code": "UNRESOLVED_TAG_REFERENCE",
+ *   "file": "/abs/path/to/nozzle-pressure.yaml",
+ *   "range": { "start": { "line": 5, "character": 2 } },
  *   "data": { "adapterId": "extruder-01", "tagName": "NozzlePressure" }
  * }
  * }</pre>
+ *
+ * <p>Line and character numbers are 0-based (LSP convention).
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record Diagnostic(
@@ -41,6 +47,7 @@ public record Diagnostic(
         @NotNull String source,
         @NotNull String code,
         @Nullable Path file,
+        @Nullable DiagnosticRange range,
         @Nullable Map<String, Object> data) {
 
     /** LSP severity: Error */
@@ -51,24 +58,99 @@ public record Diagnostic(
 
     private static final String SOURCE = "edge-compiler";
 
+    // ── Inner types ───────────────────────────────────────────────────────────
+
+    /** LSP Position — line and character are 0-based. */
+    public record DiagnosticPosition(int line, int character) {}
+
+    /**
+     * LSP Range — {@code start} is required; {@code end} is optional (omitted when only a point is known).
+     *
+     * <p>Use {@link #of(int, int)} to create a point range from source model position fields.
+     * If the source model has no position ({@code line == -1}), use {@link #ofNullable(int, int)} which returns null.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record DiagnosticRange(
+            @NotNull DiagnosticPosition start, @Nullable DiagnosticPosition end) {
+
+        /** Creates a point range (no end position). */
+        public static @NotNull DiagnosticRange of(final int line, final int character) {
+            return new DiagnosticRange(new DiagnosticPosition(line, character), null);
+        }
+
+        /**
+         * Creates a point range if {@code line >= 0}, or returns {@code null} if the position is unknown
+         * ({@code line == -1}).
+         */
+        public static @Nullable DiagnosticRange ofNullable(final int line, final int character) {
+            return line >= 0 ? of(line, character) : null;
+        }
+    }
+
+    // ── Error factories ───────────────────────────────────────────────────────
+
+    public static @NotNull Diagnostic error(final @NotNull String code, final @NotNull String message) {
+        return new Diagnostic(SEVERITY_ERROR, message, SOURCE, code, null, null, null);
+    }
+
+    public static @NotNull Diagnostic error(
+            final @NotNull String code, final @NotNull String message, final @Nullable Path file) {
+        return new Diagnostic(SEVERITY_ERROR, message, SOURCE, code, file, null, null);
+    }
+
     public static @NotNull Diagnostic error(
             final @NotNull String code,
             final @NotNull String message,
             final @Nullable Path file,
             final @Nullable Map<String, Object> data) {
-        return new Diagnostic(SEVERITY_ERROR, message, SOURCE, code, file, data);
+        return new Diagnostic(SEVERITY_ERROR, message, SOURCE, code, file, null, data);
     }
 
     public static @NotNull Diagnostic error(
-            final @NotNull String code, final @NotNull String message, final @Nullable Path file) {
-        return error(code, message, file, null);
+            final @NotNull String code,
+            final @NotNull String message,
+            final @Nullable Path file,
+            final @Nullable DiagnosticRange range) {
+        return new Diagnostic(SEVERITY_ERROR, message, SOURCE, code, file, range, null);
     }
 
-    public static @NotNull Diagnostic error(final @NotNull String code, final @NotNull String message) {
-        return error(code, message, null, null);
+    public static @NotNull Diagnostic error(
+            final @NotNull String code,
+            final @NotNull String message,
+            final @Nullable Path file,
+            final @Nullable DiagnosticRange range,
+            final @Nullable Map<String, Object> data) {
+        return new Diagnostic(SEVERITY_ERROR, message, SOURCE, code, file, range, data);
     }
 
+    // ── Warning factories ─────────────────────────────────────────────────────
+
+    public static @NotNull Diagnostic warning(
+            final @NotNull String code,
+            final @NotNull String message,
+            final @Nullable Path file,
+            final @Nullable DiagnosticRange range) {
+        return new Diagnostic(SEVERITY_WARNING, message, SOURCE, code, file, range, null);
+    }
+
+    public static @NotNull Diagnostic warning(
+            final @NotNull String code,
+            final @NotNull String message,
+            final @Nullable Path file,
+            final @Nullable DiagnosticRange range,
+            final @Nullable Map<String, Object> data) {
+        return new Diagnostic(SEVERITY_WARNING, message, SOURCE, code, file, range, data);
+    }
+
+    // ── Predicates ────────────────────────────────────────────────────────────
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public boolean isError() {
         return severity == SEVERITY_ERROR;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public boolean isWarning() {
+        return severity == SEVERITY_WARNING;
     }
 }

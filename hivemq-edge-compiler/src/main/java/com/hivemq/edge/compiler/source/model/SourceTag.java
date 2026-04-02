@@ -48,4 +48,11 @@ public class SourceTag {
 
     /** Reference to a DEVICE-TAG defined elsewhere in the same adapter directory. */
     public @Nullable String deviceTagId;
+
+    /** Source position — set by {@code YamlFileParser} after parsing; -1 means unknown. 0-based (LSP convention). */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public int line = -1;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public int character = -1;
 }

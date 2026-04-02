@@ -13,21 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.compiler.lib.model;
+package com.hivemq.edge.compiler.source.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.jetbrains.annotations.Nullable;
 
-/** Trigger for a combiner mapping — either a tag reference or a topic filter. Exactly one must be non-null. */
-public record CompiledCombinerTrigger(
-        @JsonProperty("tag") @Nullable String tag,
-        @JsonProperty("topic") @Nullable String topic) {
+/** Destination for a combiner instruction. */
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class SourceInstructionDestination {
 
-    @JsonCreator
-    public CompiledCombinerTrigger(
-            @JsonProperty("tag") final @Nullable String tag, @JsonProperty("topic") final @Nullable String topic) {
-        this.tag = tag;
-        this.topic = topic;
-    }
+    /** JSONPath expression selecting the destination field in the output document. */
+    public @Nullable String field;
 }

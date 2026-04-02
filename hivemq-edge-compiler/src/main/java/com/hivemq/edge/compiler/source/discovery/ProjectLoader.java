@@ -53,7 +53,8 @@ public class ProjectLoader {
     }
 
     /**
-     * Loads the project from the given root directory.
+     * Loads the project from the given root directory, discovering all source files declared in
+     * {@code edge-project.yaml}.
      *
      * @param projectRoot directory containing {@code edge-project.yaml}
      * @return a {@link LoadedProject} with the descriptor and all discovered source files
@@ -83,6 +84,44 @@ public class ProjectLoader {
         }
 
         log.debug("Discovered {} source files", sourceFiles.size());
+        return new LoadedProject(projectRoot, descriptor, sourceFiles);
+    }
+
+    /**
+     * Loads a single instance from a multi-instance project.
+     *
+     * <p>Reads {@code edge-project.yaml} from {@code projectRoot} for metadata (e.g.
+     * {@code edgeVersion}), but discovers source files only under
+     * {@code projectRoot/instances/<instanceId>/}.
+     *
+     * @param projectRoot directory containing {@code edge-project.yaml}
+     * @param instanceId  name of the instance subdirectory under {@code instances/}
+     * @return a {@link LoadedProject} scoped to the given instance
+     * @throws IOException if the instance directory does not exist
+     */
+    public @NotNull LoadedProject loadInstance(final @NotNull Path projectRoot, final @NotNull String instanceId)
+            throws IOException {
+        final Path descriptorPath = projectRoot.resolve(PROJECT_FILE);
+        final EdgeProjectDescriptor descriptor;
+        if (Files.exists(descriptorPath)) {
+            descriptor = parser.parseProjectDescriptor(descriptorPath);
+            log.debug("Loaded project descriptor from {}", descriptorPath);
+        } else {
+            descriptor = new EdgeProjectDescriptor();
+            log.debug("No {} found in {}; using defaults", PROJECT_FILE, projectRoot);
+        }
+
+        final Path instanceRoot = projectRoot.resolve("instances").resolve(instanceId);
+        if (!Files.isDirectory(instanceRoot)) {
+            throw new IOException("Instance directory does not exist: " + instanceRoot);
+        }
+
+        final Path outputDir =
+                projectRoot.resolve(descriptor.output).toAbsolutePath().normalize();
+        final List<SourceFile> sourceFiles = new ArrayList<>();
+        discoverYamlFiles(instanceRoot, outputDir, projectRoot, sourceFiles);
+
+        log.debug("Discovered {} source files for instance '{}'", sourceFiles.size(), instanceId);
         return new LoadedProject(projectRoot, descriptor, sourceFiles);
     }
 

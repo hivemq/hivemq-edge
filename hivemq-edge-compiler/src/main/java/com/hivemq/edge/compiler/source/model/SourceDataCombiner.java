@@ -15,7 +15,9 @@
  */
 package com.hivemq.edge.compiler.source.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.nio.file.Path;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,6 +25,21 @@ import org.jetbrains.annotations.Nullable;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SourceDataCombiner {
 
+    /** Optional UUID. If absent the compiler derives one from {@code name}. */
+    public @Nullable String id;
+
     public @Nullable String name;
+    public @Nullable String description;
     public @NotNull List<SourceCombinerMapping> mappings = List.of();
+
+    /** Set by {@code GlobalResolver} when collecting combiners from files. Used for diagnostic file references. */
+    @JsonIgnore
+    public @Nullable Path sourcePath;
+
+    /** Source position — set by {@code YamlFileParser} after parsing; -1 means unknown. 0-based (LSP convention). */
+    @JsonIgnore
+    public int line = -1;
+
+    @JsonIgnore
+    public int character = -1;
 }

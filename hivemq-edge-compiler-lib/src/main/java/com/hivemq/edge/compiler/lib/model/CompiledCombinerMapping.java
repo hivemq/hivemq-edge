@@ -19,17 +19,27 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public record CompiledCombinerMapping(
+        @JsonProperty("id") @NotNull String id,
+        @JsonProperty("name") @Nullable String name,
+        @JsonProperty("description") @Nullable String description,
         @JsonProperty("trigger") @NotNull CompiledCombinerTrigger trigger,
         @JsonProperty("output") @NotNull CompiledCombinerOutput output,
         @JsonProperty("instructions") @NotNull List<CompiledInstruction> instructions) {
 
     @JsonCreator
     public CompiledCombinerMapping(
+            @JsonProperty("id") final @NotNull String id,
+            @JsonProperty("name") final @Nullable String name,
+            @JsonProperty("description") final @Nullable String description,
             @JsonProperty("trigger") final @NotNull CompiledCombinerTrigger trigger,
             @JsonProperty("output") final @NotNull CompiledCombinerOutput output,
             @JsonProperty("instructions") final @NotNull List<CompiledInstruction> instructions) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
         this.trigger = trigger;
         this.output = output;
         this.instructions = instructions;

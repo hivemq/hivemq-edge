@@ -30,11 +30,15 @@ public class DataCombiningSourcesEntity {
     @XmlElement(name = "primary-reference")
     private @NotNull DataIdentifierReferenceEntity primaryIdentifier;
 
+    /** @deprecated No longer used. The runtime derives all sources from {@code primaryReference} and the instructions. */
+    @Deprecated
     @JsonProperty("tags")
     @XmlElementWrapper(name = "tags")
     @XmlElement(name = "tag")
     private @NotNull List<String> tags = new ArrayList<>();
 
+    /** @deprecated No longer used. The runtime derives all sources from {@code primaryReference} and the instructions. */
+    @Deprecated
     @JsonProperty("topicFilters")
     @XmlElementWrapper(name = "topic-filters")
     @XmlElement(name = "topic-filter")

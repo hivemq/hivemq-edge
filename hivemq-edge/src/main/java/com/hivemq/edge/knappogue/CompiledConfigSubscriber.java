@@ -35,16 +35,15 @@ import org.slf4j.LoggerFactory;
 /**
  * Subscribes to the Edge configuration MQTT topic and applies received compiled configs.
  *
- * <p>The topic is configurable via the {@code HIVEMQ_COMPILED_CONFIG_TOPIC} environment variable.
- * Default: {@code $EDGE-CONFIGURATION/-/-/apply} where the two {@code -} segments are placeholders for a future
- * fleet ID and edge ID.
+ * <p>Topic resolution is delegated to {@link KnappogueTopic}. Set {@code HIVEMQ_FLEET_ID} and
+ * {@code HIVEMQ_EDGE_INSTANCE_ID} on each Edge instance so it subscribes only to its own config
+ * topic (e.g. {@code HIVEMQ/acme/EDGE/wolery/CONFIG/apply}).
+ *
+ * @see KnappogueTopic
  */
 public class CompiledConfigSubscriber {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(CompiledConfigSubscriber.class);
-
-    static final @NotNull String DEFAULT_TOPIC = "$EDGE-CONFIGURATION/-/-/apply";
-    static final @NotNull String ENV_VAR = "HIVEMQ_COMPILED_CONFIG_TOPIC";
 
     private static final @NotNull String SUBSCRIBER_ID = "edge-compiled-config-subscriber";
     private static final @NotNull String QUEUE_ID = "edge-compiled-config-queue";
@@ -84,7 +83,7 @@ public class CompiledConfigSubscriber {
         localTopicTree.addTopic(
                 SUBSCRIBER_ID, new Topic(topic, QoS.AT_LEAST_ONCE, false, true), DEFAULT_FLAGS, QUEUE_ID);
 
-        new QueueConsumer(clientQueuePersistence, QUEUE_ID, singleWriterService) {
+        new QueueConsumer(clientQueuePersistence, QUEUE_ID + "/" + topic, singleWriterService) {
             @Override
             public void process(final @NotNull PUBLISH publish) {
                 handlePayload(publish.getPayload());
@@ -110,7 +109,6 @@ public class CompiledConfigSubscriber {
     }
 
     static @NotNull String resolvedTopic() {
-        final String envValue = System.getenv(ENV_VAR);
-        return (envValue != null && !envValue.isBlank()) ? envValue : DEFAULT_TOPIC;
+        return KnappogueTopic.resolveForSubscriber();
     }
 }

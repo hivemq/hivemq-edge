@@ -16,11 +16,13 @@
 package com.hivemq.edge.compiler;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.hivemq.edge.compiler.lib.model.CompiledAdapterConfig;
 import com.hivemq.edge.compiler.lib.model.CompiledConfig;
 import com.hivemq.edge.compiler.lib.model.CompiledTag;
 import com.hivemq.edge.compiler.lib.serialization.CompiledConfigSerializer;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -127,6 +129,36 @@ class CompileHappyPathTest {
         assertThat(mapping.includeTimestamp()).isTrue();
         assertThat(mapping.includeMetadata()).isFalse();
         assertThat(mapping.messageExpiryInterval()).isEqualTo(Long.MAX_VALUE);
+    }
+
+    // ── Per-instance compilation ──────────────────────────────────────────────
+
+    @Test
+    void compileWithExplicitInstanceIdProducesSameOutputAsFlatCompile() throws Exception {
+        final Path fixtureDir = fixtureDir("fixtures/knappogue-example");
+        final EdgeCompiler compiler = new EdgeCompiler();
+
+        final EdgeCompiler.Result flatResult = compiler.compile(fixtureDir);
+        final EdgeCompiler.Result instanceResult = compiler.compile(fixtureDir, "factory-berlin");
+
+        assertThat(instanceResult.diagnostics().errors())
+                .as("per-instance compile errors")
+                .isEmpty();
+        assertThat(instanceResult.compiledConfig()).isNotNull();
+        assertThat(instanceResult.compiledConfig().protocolAdapters())
+                .hasSize(flatResult.compiledConfig().protocolAdapters().size());
+        assertThat(instanceResult.compiledConfig().dataCombiners())
+                .hasSize(flatResult.compiledConfig().dataCombiners().size());
+    }
+
+    @Test
+    void compileWithNonExistentInstanceThrowsIoException() throws Exception {
+        final Path fixtureDir = fixtureDir("fixtures/knappogue-example");
+        final EdgeCompiler compiler = new EdgeCompiler();
+
+        assertThatThrownBy(() -> compiler.compile(fixtureDir, "no-such-instance"))
+                .isInstanceOf(IOException.class)
+                .hasMessageContaining("no-such-instance");
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
