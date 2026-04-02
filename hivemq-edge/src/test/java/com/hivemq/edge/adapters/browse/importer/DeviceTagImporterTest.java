@@ -163,6 +163,143 @@ class DeviceTagImporterTest {
         assertThat(result.tagsCreated()).isEqualTo(0);
     }
 
+    // --- Multi-mapping: NB rows after SB row preserved ---
+
+    @Test
+    void create_multiMapping_northboundAfterSouthbound_allPreserved() throws DeviceTagImporterException {
+        setupAdapter(emptyAdapter());
+
+        // Row order: NB-only, NB+SB, NB-only — the third row's NB must not be dropped
+        final List<DeviceTagRow> rows = List.of(
+                tagRowWithMappings("tag1", "ns=2;i=1", "topic/a", null),
+                tagRowWithMappings("tag1", "ns=2;i=1", "topic/b", "write/1"),
+                tagRowWithMappings("tag1", "ns=2;i=1", "topic/c", null));
+
+        final ImportResult result = importer.doImport(rows, ImportMode.CREATE, ADAPTER_ID);
+
+        assertThat(result.tagsCreated()).isEqualTo(1);
+        assertThat(result.northboundMappingsCreated()).isEqualTo(3);
+        assertThat(result.southboundMappingsCreated()).isEqualTo(1);
+
+        final ArgumentCaptor<ProtocolAdapterEntity> captor = ArgumentCaptor.forClass(ProtocolAdapterEntity.class);
+        verify(adapterExtractor).updateAdapter(captor.capture());
+        assertThat(captor.getValue().getNorthboundMappings()).hasSize(3);
+        assertThat(captor.getValue().getSouthboundMappings()).hasSize(1);
+    }
+
+    @Test
+    void overwrite_multiMapping_northboundAfterSouthbound_allPreserved() throws DeviceTagImporterException {
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(new TagEntity("tag1", null, Map.of("node", "ns=2;i=1"))),
+                List.of(new NorthboundMappingEntity("tag1", "old/topic", 1, null, false, true, false, List.of(), null)),
+                List.of());
+        setupAdapter(adapter);
+
+        // NB-only, SB+NB, NB-only — all 3 NB must survive the update
+        final List<DeviceTagRow> rows = List.of(
+                tagRowWithMappings("tag1", "ns=2;i=1", "new/a", null),
+                tagRowWithMappings("tag1", "ns=2;i=1", "new/b", "write/1"),
+                tagRowWithMappings("tag1", "ns=2;i=1", "new/c", null));
+
+        final ImportResult result = importer.doImport(rows, ImportMode.OVERWRITE, ADAPTER_ID);
+
+        assertThat(result.tagsUpdated()).isEqualTo(1);
+        assertThat(result.northboundMappingsCreated()).isEqualTo(3);
+
+        final ArgumentCaptor<ProtocolAdapterEntity> captor = ArgumentCaptor.forClass(ProtocolAdapterEntity.class);
+        verify(adapterExtractor).updateAdapter(captor.capture());
+        assertThat(captor.getValue().getNorthboundMappings()).hasSize(3);
+        assertThat(captor.getValue().getSouthboundMappings()).hasSize(1);
+    }
+
+    @Test
+    void create_multiMapping_multipleSouthboundRows_onlyFirstTaken() throws DeviceTagImporterException {
+        setupAdapter(emptyAdapter());
+
+        // Two rows both have SB topics — only the first SB should be taken
+        final List<DeviceTagRow> rows = List.of(
+                tagRowWithMappings("tag1", "ns=2;i=1", "topic/a", "write/first"),
+                tagRowWithMappings("tag1", "ns=2;i=1", "topic/b", "write/second"));
+
+        final ImportResult result = importer.doImport(rows, ImportMode.CREATE, ADAPTER_ID);
+
+        assertThat(result.southboundMappingsCreated()).isEqualTo(1);
+        assertThat(result.northboundMappingsCreated()).isEqualTo(2);
+
+        final ArgumentCaptor<ProtocolAdapterEntity> captor = ArgumentCaptor.forClass(ProtocolAdapterEntity.class);
+        verify(adapterExtractor).updateAdapter(captor.capture());
+        assertThat(captor.getValue().getSouthboundMappings()).hasSize(1);
+        assertThat(captor.getValue().getSouthboundMappings().getFirst().getTopicFilter())
+                .isEqualTo("write/first");
+    }
+
+    // --- Southbound field mapping change detection ---
+
+    @Test
+    void overwrite_southboundFieldMappingChanged_detected() throws DeviceTagImporterException {
+        final var oldInstructions = List.of(
+                new com.hivemq.configuration.entity.adapter.fieldmapping.InstructionEntity("value", "value", null));
+        final ProtocolAdapterEntity adapter = adapterWithTags(
+                List.of(new TagEntity("tag1", null, Map.of("node", "ns=2;i=1"))),
+                List.of(),
+                List.of(new SouthboundMappingEntity(
+                        "tag1",
+                        "write/1",
+                        new com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity(oldInstructions),
+                        "")));
+        setupAdapter(adapter);
+
+        // Same topic, but different field mapping
+        final List<DeviceTagRow> rows = List.of(DeviceTagRow.builder()
+                .tagName("tag1")
+                .nodeId("ns=2;i=1")
+                .southboundTopic("write/1")
+                .southboundFieldMapping(List.of(new FieldMappingInstruction("temperature", "set_point")))
+                .build());
+
+        final ImportResult result = importer.doImport(rows, ImportMode.OVERWRITE, ADAPTER_ID);
+
+        // Should detect the field mapping change and update
+        assertThat(result.tagsUpdated()).isEqualTo(1);
+    }
+
+    // --- Concurrent imports on shared extractor ---
+
+    @Test
+    void concurrentImports_sameAdapter_serialized() throws Exception {
+        final int threadCount = 10;
+        final CountDownLatch startLatch = new CountDownLatch(1);
+        final CountDownLatch doneLatch = new CountDownLatch(threadCount);
+        final AtomicInteger successCount = new AtomicInteger(0);
+
+        // All threads share the same adapterExtractor (production scenario)
+        setupAdapter(emptyAdapter());
+
+        for (int t = 0; t < threadCount; t++) {
+            final int threadIdx = t;
+            Thread.ofVirtual().start(() -> {
+                try {
+                    startLatch.await();
+                    // Each thread imports one tag; all use MERGE_SAFE which should not conflict
+                    final List<DeviceTagRow> rows = List.of(tagRow("tag-" + threadIdx, "ns=2;i=" + threadIdx));
+                    importer.doImport(rows, ImportMode.MERGE_SAFE, ADAPTER_ID);
+                    successCount.incrementAndGet();
+                } catch (final Exception e) {
+                    // Validation may fail due to mock returning stale state under concurrency.
+                    // The test verifies no crash/deadlock, not functional correctness of mocks.
+                } finally {
+                    doneLatch.countDown();
+                }
+            });
+        }
+
+        startLatch.countDown();
+        doneLatch.await();
+
+        // At least one should succeed; the key assertion is no deadlock (test completes)
+        assertThat(successCount.get()).isGreaterThanOrEqualTo(1);
+    }
+
     // --- CREATE mode ---
 
     @Test

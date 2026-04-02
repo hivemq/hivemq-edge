@@ -187,6 +187,7 @@ public class DeviceTagCsvSerializer {
      */
     private static @NotNull String encodeComponent(final @NotNull String value) {
         return value.replace("%", "%25")
+                .replace("+", "%2B")
                 .replace(";", "%3B")
                 .replace("->", "%2D%3E")
                 .replace("=", "%3D");

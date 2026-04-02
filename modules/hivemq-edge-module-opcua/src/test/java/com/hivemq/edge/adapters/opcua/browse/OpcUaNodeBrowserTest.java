@@ -16,12 +16,58 @@
 package com.hivemq.edge.adapters.opcua.browse;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.hivemq.edge.adapters.browse.BrowseException;
+import java.util.concurrent.CompletableFuture;
+import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.stack.core.StatusCodes;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
+import org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;
+import org.eclipse.milo.opcua.stack.core.types.structured.BrowseResult;
+import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 class OpcUaNodeBrowserTest {
+
+    // --- Browse with non-Good status code ---
+
+    @Test
+    void browse_nonGoodStatusCode_throwsBrowseException() {
+        final OpcUaClient client = mock(OpcUaClient.class);
+        // Server returns BadTooManyOperations (simulates server-side throttling under concurrent browse load)
+        final BrowseResult badResult = new BrowseResult(
+                new StatusCode(StatusCodes.Bad_TooManyOperations), ByteString.NULL_VALUE, new ReferenceDescription[0]);
+        when(client.browseAsync(any(BrowseDescription.class))).thenReturn(CompletableFuture.completedFuture(badResult));
+
+        final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(client, "test-adapter");
+
+        assertThatThrownBy(() -> browser.browse(null, 0))
+                .isInstanceOf(BrowseException.class)
+                .cause()
+                .hasMessageContaining("non-Good status")
+                .hasMessageContaining("Bad_TooManyOperations");
+    }
+
+    @Test
+    void browse_goodStatusCode_emptyResult_succeeds() throws BrowseException {
+        final OpcUaClient client = mock(OpcUaClient.class);
+        // Good status but no references (empty node)
+        final BrowseResult goodResult =
+                new BrowseResult(StatusCode.GOOD, ByteString.NULL_VALUE, new ReferenceDescription[0]);
+        when(client.browseAsync(any(BrowseDescription.class)))
+                .thenReturn(CompletableFuture.completedFuture(goodResult));
+
+        final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(client, "test-adapter");
+
+        assertThat(browser.browse(null, 0).count()).isEqualTo(0);
+    }
 
     // --- sanitize() ---
 

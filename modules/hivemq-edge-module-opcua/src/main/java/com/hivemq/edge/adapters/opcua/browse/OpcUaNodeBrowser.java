@@ -73,7 +73,9 @@ public class OpcUaNodeBrowser {
 
     private static final long TIMEOUT_SECONDS = 120;
     private static final int READ_BATCH_SIZE = 100;
-    private static final int MAX_CONCURRENT_BROWSES = 32;
+    // Keep this low to avoid server-side throttling (BadTooManyOperations) which causes
+    // the server to return non-Good status codes with no references, silently dropping subtrees.
+    private static final int MAX_CONCURRENT_BROWSES = 4;
 
     private final @NotNull OpcUaClient client;
     private final @NotNull String adapterId;
@@ -178,6 +180,17 @@ public class OpcUaNodeBrowser {
             final @NotNull List<DiscoveredVariable> variables,
             final @NotNull Set<NodeId> visited,
             final @NotNull Semaphore concurrency) {
+        // Fail loudly on non-Good status. Under high concurrency the server may throttle
+        // individual browse operations (e.g. BadTooManyOperations), returning no references
+        // and no continuation point. Without this check, the entire subtree under the
+        // throttled node is silently missing from the results.
+        if (browseResult.getStatusCode() != null
+                && !browseResult.getStatusCode().isGood()) {
+            throw new UncheckedBrowseException(
+                    "Browse at path '" + currentPath + "' returned non-Good status: " + browseResult.getStatusCode(),
+                    null);
+        }
+
         final var childFutures = new ArrayList<CompletableFuture<Void>>();
         final var references = new ArrayList<ReferenceDescription>();
 
@@ -218,9 +231,10 @@ public class OpcUaNodeBrowser {
             }
         }
 
-        // Handle continuation points
+        // Handle continuation points (drain all pages from the server)
         if (browseResult.getContinuationPoint() != null
-                && browseResult.getContinuationPoint().bytes() != null) {
+                && browseResult.getContinuationPoint().bytes() != null
+                && browseResult.getContinuationPoint().bytes().length > 0) {
             childFutures.add(client.browseNextAsync(false, List.of(browseResult.getContinuationPoint()))
                     .thenCompose(nextResult -> {
                         final var continuationFutures = new ArrayList<CompletableFuture<Void>>();

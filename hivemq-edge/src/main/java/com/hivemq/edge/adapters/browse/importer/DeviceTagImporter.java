@@ -169,15 +169,14 @@ public class DeviceTagImporter {
             return false;
         }
 
-        // Compare southbound mapping (at most one per tag)
+        // Compare southbound mapping (at most one per tag): build entity from file row, compare
         final Optional<DeviceTagRow> fileSb =
                 group.stream().filter(DeviceTagRow::hasSouthboundMapping).findFirst();
         if (fileSb.isPresent()) {
             if (existingSb.isEmpty()) {
                 return false;
             }
-            return Objects.equals(
-                    fileSb.get().getSouthboundTopic(), existingSb.getFirst().getTopicFilter());
+            return Objects.equals(toSouthboundMappingEntity(fileSb.get()), existingSb.getFirst());
         } else {
             return existingSb.isEmpty();
         }
@@ -391,15 +390,16 @@ public class DeviceTagImporter {
             tagActions.add(new TagAction(tagName, TagAction.Action.CREATED));
             tagsCreated++;
 
+            boolean sbAdded = false;
             for (final DeviceTagRow row : group) {
                 if (row.hasNorthboundMapping()) {
                     finalNorthbound.add(toNorthboundMappingEntity(row));
                     nbCreated++;
                 }
-                if (row.hasSouthboundMapping()) {
+                if (!sbAdded && row.hasSouthboundMapping()) {
                     finalSouthbound.add(toSouthboundMappingEntity(row));
                     sbCreated++;
-                    break; // at most one southbound mapping per tag
+                    sbAdded = true;
                 }
             }
         }
@@ -440,15 +440,16 @@ public class DeviceTagImporter {
                         // Replace mappings (delete old, create new from all rows in group)
                         nbDeleted += existingNb.size();
                         sbDeleted += existingSb.size();
+                        boolean sbAddedForUpdate = false;
                         for (final DeviceTagRow row : group) {
                             if (row.hasNorthboundMapping()) {
                                 finalNorthbound.add(toNorthboundMappingEntity(row));
                                 nbCreated++;
                             }
-                            if (row.hasSouthboundMapping()) {
+                            if (!sbAddedForUpdate && row.hasSouthboundMapping()) {
                                 finalSouthbound.add(toSouthboundMappingEntity(row));
                                 sbCreated++;
-                                break; // at most one southbound mapping per tag
+                                sbAddedForUpdate = true;
                             }
                         }
                     }

@@ -542,6 +542,44 @@ class DeviceTagCsvSerializerTest {
     }
 
     @Test
+    void fieldMapping_roundTrip_plusInSource() {
+        final List<FieldMappingInstruction> original = List.of(new FieldMappingInstruction("a+b", "c+d"));
+        final String encoded = DeviceTagCsvSerializer.encodeFieldMapping(original);
+        final List<FieldMappingInstruction> decoded = DeviceTagCsvSerializer.decodeFieldMapping(encoded);
+        assertThat(decoded).hasSize(1);
+        assertThat(decoded.getFirst().source()).isEqualTo("a+b");
+        assertThat(decoded.getFirst().destination()).isEqualTo("c+d");
+    }
+
+    @Test
+    void userProperties_roundTrip_plusInKeyAndValue() {
+        final Map<String, String> original = Map.of("key+1", "val+2");
+        final String encoded = DeviceTagCsvSerializer.encodeUserProperties(original);
+        final Map<String, String> decoded = DeviceTagCsvSerializer.decodeUserProperties(encoded);
+        assertThat(decoded).containsEntry("key+1", "val+2");
+    }
+
+    @Test
+    void fullCsvRoundTrip_plusInFieldMappingAndUserProperties() throws IOException {
+        final DeviceTagRow row = DeviceTagRow.builder()
+                .nodeId("ns=0;i=1")
+                .tagName("plus-tag")
+                .southboundFieldMapping(List.of(new FieldMappingInstruction("a+b", "c+d")))
+                .mqttUserProperties(Map.of("key+1", "val+2"))
+                .build();
+
+        final byte[] csv = serializer.serialize(List.of(row));
+        final List<DeviceTagRow> result = serializer.deserialize(csv);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().getSouthboundFieldMapping().getFirst().source())
+                .isEqualTo("a+b");
+        assertThat(result.getFirst().getSouthboundFieldMapping().getFirst().destination())
+                .isEqualTo("c+d");
+        assertThat(result.getFirst().getMqttUserProperties()).containsEntry("key+1", "val+2");
+    }
+
+    @Test
     void fullCsvRoundTrip_specialCharsInFieldMappingAndUserProperties() throws IOException {
         final DeviceTagRow row = DeviceTagRow.builder()
                 .nodeId("ns=0;i=1")
