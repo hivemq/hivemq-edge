@@ -61,9 +61,13 @@ public class CompiledConfigApplier {
     private static final @NotNull Logger log = LoggerFactory.getLogger(CompiledConfigApplier.class);
 
     private final @NotNull ConfigFileReaderWriter configFileReaderWriter;
+    private final @NotNull WorkspaceHolder workspaceHolder;
 
-    public CompiledConfigApplier(final @NotNull ConfigFileReaderWriter configFileReaderWriter) {
+    public CompiledConfigApplier(
+            final @NotNull ConfigFileReaderWriter configFileReaderWriter,
+            final @NotNull WorkspaceHolder workspaceHolder) {
         this.configFileReaderWriter = configFileReaderWriter;
+        this.workspaceHolder = workspaceHolder;
     }
 
     /**
@@ -100,6 +104,7 @@ public class CompiledConfigApplier {
                     translatedCombiners.size(),
                     compiledConfig.edgeVersion());
             configFileReaderWriter.writeConfigWithSync();
+            workspaceHolder.setWorkspace(compiledConfig.workspace());
         } else {
             log.error("Failed to apply compiled config — see above for details.");
         }

@@ -27,6 +27,7 @@ import com.hivemq.api.error.CustomJsonParseExceptionMapper;
 import com.hivemq.api.filter.JWTReissuanceFilterImpl;
 import com.hivemq.api.resources.GenericAPIHolder;
 import com.hivemq.api.resources.impl.RootResource;
+import com.hivemq.api.resources.impl.WorkspaceResource;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.edge.api.AuthenticationApi;
 import com.hivemq.edge.api.BridgesApi;
@@ -88,6 +89,7 @@ public class ApiResourceRegistry extends ResourceConfig {
     private final @NotNull Lazy<TopicFiltersApi> topicFilterApiLazy;
     private final @NotNull Lazy<CombinersApi> combinersApiLazy;
     private final @NotNull Lazy<PulseApi> pulseApiLazy;
+    private final @NotNull Lazy<WorkspaceResource> workspaceResourceLazy;
     private final @NotNull Lazy<ApiConfigurationService> apiConfigurationService;
 
     @Inject
@@ -111,6 +113,7 @@ public class ApiResourceRegistry extends ResourceConfig {
             final @NotNull Lazy<TopicFiltersApi> topicFilterApiLazy,
             final @NotNull Lazy<CombinersApi> combinersApiLazy,
             final @NotNull Lazy<PulseApi> pulseApiLazy,
+            final @NotNull Lazy<WorkspaceResource> workspaceResourceLazy,
             final @NotNull Lazy<ApiConfigurationService> apiConfigurationService) {
         this.authenticationApi = authenticationApi;
         this.metricsApi = metricsApi;
@@ -131,6 +134,7 @@ public class ApiResourceRegistry extends ResourceConfig {
         this.topicFilterApiLazy = topicFilterApiLazy;
         this.combinersApiLazy = combinersApiLazy;
         this.pulseApiLazy = pulseApiLazy;
+        this.workspaceResourceLazy = workspaceResourceLazy;
         this.apiConfigurationService = apiConfigurationService;
     }
 
@@ -175,6 +179,8 @@ public class ApiResourceRegistry extends ResourceConfig {
         logger.trace("Initialized combiners API resources");
         register(pulseApiLazy.get());
         logger.trace("Initialized pulse API resources");
+        register(workspaceResourceLazy.get());
+        logger.trace("Initialized workspace API resources");
     }
 
     protected void registerMappers() {

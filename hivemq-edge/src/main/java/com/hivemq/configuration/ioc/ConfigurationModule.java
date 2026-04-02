@@ -35,6 +35,7 @@ import com.hivemq.configuration.service.impl.listener.ListenerConfigurationServi
 import com.hivemq.edge.compiler.lib.serialization.CompiledConfigSerializer;
 import com.hivemq.edge.knappogue.CompiledConfigApplier;
 import com.hivemq.edge.knappogue.CompiledConfigSubscriber;
+import com.hivemq.edge.knappogue.WorkspaceHolder;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
@@ -158,8 +159,9 @@ public class ConfigurationModule {
     @Provides
     @Singleton
     static @NotNull CompiledConfigApplier compiledConfigApplier(
-            final @NotNull ConfigFileReaderWriter configFileReaderWriter) {
-        return new CompiledConfigApplier(configFileReaderWriter);
+            final @NotNull ConfigFileReaderWriter configFileReaderWriter,
+            final @NotNull WorkspaceHolder workspaceHolder) {
+        return new CompiledConfigApplier(configFileReaderWriter, workspaceHolder);
     }
 
     @Provides

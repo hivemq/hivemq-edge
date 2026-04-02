@@ -57,7 +57,7 @@ class CompiledConfigApplierTest {
         when(configFileReaderWriter.getCurrentConfigEntity()).thenReturn(configEntity);
         when(configFileReaderWriter.applyCompiledConfig(any())).thenReturn(true);
 
-        applier = new CompiledConfigApplier(configFileReaderWriter);
+        applier = new CompiledConfigApplier(configFileReaderWriter, new WorkspaceHolder());
     }
 
     @Test
