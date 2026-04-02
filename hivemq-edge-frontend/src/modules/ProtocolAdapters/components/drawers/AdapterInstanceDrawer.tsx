@@ -25,9 +25,10 @@ import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useList
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { customUniqueAdapterValidate } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
 import { getRequiredUiSchema } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
-import type { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
+import type { AdapterContext, ExtraTab } from '@/modules/ProtocolAdapters/types.ts'
 
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm.tsx'
+import DeviceTagBrowsePanel from '@/modules/ProtocolAdapters/components/panels/DeviceTagBrowsePanel.tsx'
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 
@@ -54,12 +55,13 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
   const { data: allAdapters } = useListProtocolAdapters()
   const { adapterId } = useParams()
 
-  const { schema, uiSchema, name, logo, isDiscoverable } = useMemo(() => {
+  const { schema, uiSchema, name, logo, isDiscoverable, isBrowsable } = useMemo(() => {
     const adapter: ProtocolAdapter | undefined = data?.items?.find((e) => e.id === adapterType)
     const { configSchema, uiSchema, capabilities } = adapter || {}
 
     return {
       isDiscoverable: Boolean(capabilities?.includes('DISCOVER')),
+      isBrowsable: adapterType === 'opcua',
       schema: configSchema,
       name: adapter?.name,
       logo: adapter?.logoUrl,
@@ -78,9 +80,15 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
     if (data.formData) onSubmit(data.formData)
   }
 
+  const extraTabs: ExtraTab[] = isBrowsable && !isNewAdapter && adapterId
+    ? [{ id: 'device-tags', title: 'Device Tags', content: <DeviceTagBrowsePanel adapterId={adapterId} /> }]
+    : []
+
   const context: AdapterContext = {
     isEditAdapter: !isNewAdapter,
     isDiscoverable: isDiscoverable,
+    isBrowsable: isBrowsable,
+    extraTabs,
     adapterType: adapterType,
     adapterId: adapterId,
   }
@@ -113,6 +121,7 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
                   customValidate={customUniqueAdapterValidate(schema, allAdapters)}
                 />
               )}
+
             </DrawerBody>
 
             <DrawerFooter borderTopWidth="1px">
