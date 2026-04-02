@@ -80,13 +80,21 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         this.objectMapper = objectMapper;
     }
 
-    private @NotNull String resolveFormat() {
+    private @NotNull String resolveFormat(final @Nullable String formatParam) {
+        // Explicit query parameter takes precedence — generated clients send a multi-value
+        // Accept header listing every supported type, making Accept unreliable for format selection.
+        if (formatParam != null && !formatParam.isEmpty()) {
+            return switch (formatParam.strip().toLowerCase(Locale.ROOT)) {
+                case "json" -> APPLICATION_JSON;
+                case "yaml" -> MEDIA_TYPE_YAML;
+                default -> MEDIA_TYPE_CSV;
+            };
+        }
         final String accept = headers != null ? headers.getHeaderString("Accept") : null;
         if (accept == null || accept.isEmpty() || accept.contains("*/*")) {
             return MEDIA_TYPE_CSV;
         }
         // Parse comma-separated Accept header and pick the first recognized type.
-        // This respects client preference order per HTTP content negotiation.
         for (final String part : accept.split(",")) {
             final String trimmed = part.strip().toLowerCase(Locale.ROOT);
             if (trimmed.contains("json")) {
@@ -102,7 +110,10 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
 
     @Override
     public @NotNull Response browseDeviceTags(
-            final @NotNull String adapterId, final @Nullable String rootId, final @Nullable Integer maxDepth) {
+            final @NotNull String adapterId,
+            final @Nullable String rootId,
+            final @Nullable Integer maxDepth,
+            final @Nullable String format) {
         // Lookup adapter
         final Optional<ProtocolAdapterWrapper> wrapperOpt =
                 protocolAdapterManager.getProtocolAdapterWrapperByAdapterId(adapterId);
@@ -140,11 +151,11 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         // Determine output format and stream directly to the HTTP response.
         // Attribute reads happen lazily as the stream is consumed during serialization.
         // UncheckedBrowseException may be thrown if a batch read fails mid-stream.
-        final String format = resolveFormat();
+        final String resolvedFormat = resolveFormat(format);
         final String extension;
         final String mediaType;
         final StreamingOutput stream;
-        switch (format) {
+        switch (resolvedFormat) {
             case APPLICATION_JSON -> {
                 stream = output -> serializeSafely(() -> jsonSerializer.serialize(rows, output), adapterId);
                 extension = "json";

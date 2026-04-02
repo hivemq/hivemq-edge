@@ -14,7 +14,7 @@ info:
     ## OpenAPI
     HiveMQ's REST API provides an OpenAPI 3.0 schema definition that can imported into popular API tooling (e.g. Postman) or can be used to generate client-code for multiple programming languages.
   title: HiveMQ Edge REST API
-  version: 2026.7-SNAPSHOT
+  version: PLACEHOLDER_HIVEMQ_VERSION
   x-logo:
     url: https://www.hivemq.com/img/svg/hivemq-bee.svg
 tags:
@@ -4080,6 +4080,16 @@ paths:
           schema:
             type: integer
             default: 0
+        - description: Desired response format. When provided, this takes precedence over the Accept header — useful for generated clients that send a multi-value Accept header listing all supported types.
+          in: query
+          name: format
+          required: false
+          schema:
+            type: string
+            enum:
+              - csv
+              - json
+              - yaml
       responses:
         '200':
           description: Success

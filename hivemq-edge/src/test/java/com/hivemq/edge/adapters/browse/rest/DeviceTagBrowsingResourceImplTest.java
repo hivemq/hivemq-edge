@@ -90,21 +90,21 @@ class DeviceTagBrowsingResourceImplTest {
     @Test
     void browse_acceptCsv_returnsCsv() {
         when(httpHeaders.getHeaderString("Accept")).thenReturn("text/csv");
-        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null);
+        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null, null);
         assertThat(response.getMediaType().toString()).contains("text/csv");
     }
 
     @Test
     void browse_acceptJson_returnsJson() {
         when(httpHeaders.getHeaderString("Accept")).thenReturn("application/json");
-        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null);
+        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null, null);
         assertThat(response.getMediaType().toString()).contains("application/json");
     }
 
     @Test
     void browse_acceptYaml_returnsYaml() {
         when(httpHeaders.getHeaderString("Accept")).thenReturn("application/yaml");
-        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null);
+        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null, null);
         assertThat(response.getMediaType().toString()).contains("application/yaml");
     }
 
@@ -113,29 +113,66 @@ class DeviceTagBrowsingResourceImplTest {
     @Test
     void browse_acceptCsvFirst_commaJoined_returnsCsv() {
         when(httpHeaders.getHeaderString("Accept")).thenReturn("text/csv, application/json, application/yaml");
-        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null);
+        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null, null);
         assertThat(response.getMediaType().toString()).contains("text/csv");
     }
 
     @Test
     void browse_acceptCsvFirst_noSpaces_returnsCsv() {
         when(httpHeaders.getHeaderString("Accept")).thenReturn("text/csv,application/json,application/yaml");
-        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null);
+        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null, null);
         assertThat(response.getMediaType().toString()).contains("text/csv");
     }
 
     @Test
     void browse_acceptYamlFirst_commaJoined_returnsYaml() {
         when(httpHeaders.getHeaderString("Accept")).thenReturn("application/yaml, text/csv, application/json");
-        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null);
+        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null, null);
         assertThat(response.getMediaType().toString()).contains("application/yaml");
     }
 
     @Test
     void browse_acceptJsonFirst_commaJoined_returnsJson() {
         when(httpHeaders.getHeaderString("Accept")).thenReturn("application/json, text/csv, application/yaml");
-        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null);
+        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null, null);
         assertThat(response.getMediaType().toString()).contains("application/json");
+    }
+
+    // -- Format query parameter (overrides Accept header) --
+
+    @Test
+    void browse_formatParamJson_returnsJson_ignoringAcceptHeader() {
+        when(httpHeaders.getHeaderString("Accept")).thenReturn("text/csv, application/json, application/yaml");
+        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null, "json");
+        assertThat(response.getMediaType().toString()).contains("application/json");
+    }
+
+    @Test
+    void browse_formatParamYaml_returnsYaml_ignoringAcceptHeader() {
+        when(httpHeaders.getHeaderString("Accept")).thenReturn("text/csv, application/json, application/yaml");
+        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null, "yaml");
+        assertThat(response.getMediaType().toString()).contains("application/yaml");
+    }
+
+    @Test
+    void browse_formatParamCsv_returnsCsv() {
+        when(httpHeaders.getHeaderString("Accept")).thenReturn("application/json");
+        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null, "csv");
+        assertThat(response.getMediaType().toString()).contains("text/csv");
+    }
+
+    @Test
+    void browse_formatParamCaseInsensitive_returnsJson() {
+        when(httpHeaders.getHeaderString("Accept")).thenReturn("text/csv");
+        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null, "JSON");
+        assertThat(response.getMediaType().toString()).contains("application/json");
+    }
+
+    @Test
+    void browse_formatParamNull_fallsBackToAcceptHeader() {
+        when(httpHeaders.getHeaderString("Accept")).thenReturn("application/yaml");
+        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null, null);
+        assertThat(response.getMediaType().toString()).contains("application/yaml");
     }
 
     // -- Defaults and edge cases --
@@ -143,28 +180,28 @@ class DeviceTagBrowsingResourceImplTest {
     @Test
     void browse_noAcceptHeader_defaultsToCsv() {
         when(httpHeaders.getHeaderString("Accept")).thenReturn(null);
-        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null);
+        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null, null);
         assertThat(response.getMediaType().toString()).contains("text/csv");
     }
 
     @Test
     void browse_emptyAcceptHeader_defaultsToCsv() {
         when(httpHeaders.getHeaderString("Accept")).thenReturn("");
-        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null);
+        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null, null);
         assertThat(response.getMediaType().toString()).contains("text/csv");
     }
 
     @Test
     void browse_wildcardAccept_defaultsToCsv() {
         when(httpHeaders.getHeaderString("Accept")).thenReturn("*/*");
-        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null);
+        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null, null);
         assertThat(response.getMediaType().toString()).contains("text/csv");
     }
 
     @Test
     void browse_nullHeaders_defaultsToCsv() {
         setHeaders(resource, null);
-        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null);
+        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null, null);
         assertThat(response.getMediaType().toString()).contains("text/csv");
     }
 
@@ -181,7 +218,7 @@ class DeviceTagBrowsingResourceImplTest {
     void browse_parameterized_acceptHeaderContentNegotiation(
             final @NotNull String acceptHeader, final @NotNull String expectedMediaType) {
         when(httpHeaders.getHeaderString("Accept")).thenReturn(acceptHeader);
-        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null);
+        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, null, null);
         assertThat(response.getMediaType().toString()).contains(expectedMediaType);
     }
 
@@ -190,14 +227,14 @@ class DeviceTagBrowsingResourceImplTest {
     @Test
     void browse_negativeMaxDepth_returns400() {
         when(httpHeaders.getHeaderString("Accept")).thenReturn("application/json");
-        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, -1);
+        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, -1, null);
         assertThat(response.getStatus()).isEqualTo(400);
     }
 
     @Test
     void browse_zeroMaxDepth_succeeds() {
         when(httpHeaders.getHeaderString("Accept")).thenReturn("application/json");
-        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, 0);
+        final Response response = resource.browseDeviceTags(ADAPTER_ID, null, 0, null);
         assertThat(response.getStatus()).isEqualTo(200);
     }
 
