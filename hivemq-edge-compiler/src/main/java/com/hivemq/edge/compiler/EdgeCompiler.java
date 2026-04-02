@@ -15,12 +15,15 @@
  */
 package com.hivemq.edge.compiler;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.edge.compiler.lib.model.CompiledConfig;
 import com.hivemq.edge.compiler.source.discovery.ProjectLoader;
 import com.hivemq.edge.compiler.source.resolution.GlobalResolver;
 import com.hivemq.edge.compiler.source.translation.AdapterTranslator;
 import com.hivemq.edge.compiler.source.validation.DiagnosticCollector;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import org.jetbrains.annotations.NotNull;
 
@@ -30,6 +33,8 @@ import org.jetbrains.annotations.NotNull;
  * <p>Callers check {@link Result#hasErrors()} before using the compiled config.
  */
 public class EdgeCompiler {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final @NotNull ProjectLoader projectLoader;
     private final @NotNull GlobalResolver globalResolver;
@@ -50,20 +55,19 @@ public class EdgeCompiler {
 
     /**
      * Compiles the project at {@code projectRoot}, loading all sources declared in
-     * {@code edge-project.yaml}.
+     * {@code edge-project.yaml}. Embeds {@code workspace.json} from the project root if present.
      *
      * @param projectRoot directory containing {@code edge-project.yaml} (or defaults if absent)
      * @return a result with diagnostics; the compiled config is present only when there are no errors
      */
     public @NotNull Result compile(final @NotNull Path projectRoot) throws IOException {
-        return compileLoaded(projectLoader.load(projectRoot));
+        final Result result = compileLoaded(projectLoader.load(projectRoot));
+        return withWorkspace(result, projectRoot.resolve("workspace.json"));
     }
 
     /**
-     * Compiles a single instance from a multi-instance project.
-     *
-     * <p>Only files under {@code projectRoot/instances/<instanceId>/} are loaded. Other instances
-     * are ignored.
+     * Compiles a single instance from a multi-instance project. Embeds
+     * {@code instances/<instanceId>/workspace.json} if present.
      *
      * @param projectRoot directory containing {@code edge-project.yaml}
      * @param instanceId  name of the instance subdirectory under {@code instances/}
@@ -71,7 +75,9 @@ public class EdgeCompiler {
      */
     public @NotNull Result compile(final @NotNull Path projectRoot, final @NotNull String instanceId)
             throws IOException {
-        return compileLoaded(projectLoader.loadInstance(projectRoot, instanceId));
+        final Result result = compileLoaded(projectLoader.loadInstance(projectRoot, instanceId));
+        return withWorkspace(
+                result, projectRoot.resolve("instances").resolve(instanceId).resolve("workspace.json"));
     }
 
     private @NotNull Result compileLoaded(final @NotNull ProjectLoader.LoadedProject loaded) {
@@ -92,6 +98,28 @@ public class EdgeCompiler {
         }
 
         return new Result(errors, compiled);
+    }
+
+    private @NotNull Result withWorkspace(final @NotNull Result result, final @NotNull Path workspaceFile) {
+        if (result.compiledConfig() == null || !Files.exists(workspaceFile)) {
+            return result;
+        }
+        try {
+            final JsonNode workspace = OBJECT_MAPPER.readTree(workspaceFile.toFile());
+            final CompiledConfig base = result.compiledConfig();
+            final CompiledConfig withWorkspace = new CompiledConfig(
+                    base.notice(),
+                    base.signature(),
+                    base.formatVersion(),
+                    base.edgeVersion(),
+                    base.protocolAdapters(),
+                    base.dataCombiners(),
+                    workspace);
+            return new Result(result.diagnostics(), withWorkspace);
+        } catch (final IOException e) {
+            // workspace.json is non-functional — skip silently if unreadable
+            return result;
+        }
     }
 
     public record Result(

@@ -16,9 +16,12 @@
 package com.hivemq.edge.compiler.lib.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** Top-level compiled configuration artifact. */
 public record CompiledConfig(
@@ -27,7 +30,10 @@ public record CompiledConfig(
         @JsonProperty("_formatVersion") @NotNull String formatVersion,
         @JsonProperty("_edgeVersion") @NotNull String edgeVersion,
         @JsonProperty("protocolAdapters") @NotNull List<CompiledAdapterConfig> protocolAdapters,
-        @JsonProperty("dataCombiners") @NotNull List<CompiledDataCombiner> dataCombiners) {
+        @JsonProperty("dataCombiners") @NotNull List<CompiledDataCombiner> dataCombiners,
+
+        @JsonProperty("_workspace") @JsonInclude(JsonInclude.Include.NON_NULL) @Nullable
+        JsonNode workspace) {
 
     public static final String NOTICE = "COMPILED CONFIGURATION. DO NOT EDIT.";
     public static final String SIGNATURE_UNSIGNED = "UNSIGNED-POC-BUILD";
@@ -40,12 +46,25 @@ public record CompiledConfig(
             @JsonProperty("_formatVersion") final @NotNull String formatVersion,
             @JsonProperty("_edgeVersion") final @NotNull String edgeVersion,
             @JsonProperty("protocolAdapters") final @NotNull List<CompiledAdapterConfig> protocolAdapters,
-            @JsonProperty("dataCombiners") final @NotNull List<CompiledDataCombiner> dataCombiners) {
+            @JsonProperty("dataCombiners") final @NotNull List<CompiledDataCombiner> dataCombiners,
+            @JsonProperty("_workspace") final @Nullable JsonNode workspace) {
         this.notice = notice;
         this.signature = signature;
         this.formatVersion = formatVersion;
         this.edgeVersion = edgeVersion;
         this.protocolAdapters = protocolAdapters;
         this.dataCombiners = dataCombiners;
+        this.workspace = workspace;
+    }
+
+    /** Convenience constructor for configs without a workspace layout. */
+    public CompiledConfig(
+            final @NotNull String notice,
+            final @NotNull String signature,
+            final @NotNull String formatVersion,
+            final @NotNull String edgeVersion,
+            final @NotNull List<CompiledAdapterConfig> protocolAdapters,
+            final @NotNull List<CompiledDataCombiner> dataCombiners) {
+        this(notice, signature, formatVersion, edgeVersion, protocolAdapters, dataCombiners, null);
     }
 }
