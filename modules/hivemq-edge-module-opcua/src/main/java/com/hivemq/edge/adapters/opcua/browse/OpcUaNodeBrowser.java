@@ -75,9 +75,11 @@ public class OpcUaNodeBrowser {
 
     private static final long TIMEOUT_SECONDS = 120;
     private static final int READ_BATCH_SIZE = 100;
-    // Keep this low to avoid server-side throttling (BadTooManyOperations) which causes
-    // the server to return non-Good status codes with no references, silently dropping subtrees.
-    private static final int MAX_CONCURRENT_BROWSES = 4;
+    // Serialise all browse operations (including continuation-point requests) to avoid
+    // server-side throttling on resource-constrained PLCs (e.g. S7-1500). Even at
+    // concurrency 4 the S7-1500 produced non-deterministic results because browseNext
+    // requests bypassed the semaphore and overlapped with new browseAsync calls.
+    private static final int MAX_CONCURRENT_BROWSES = 1;
 
     private final @NotNull OpcUaClient client;
     private final @NotNull String adapterId;
@@ -238,11 +240,14 @@ public class OpcUaNodeBrowser {
             }
         }
 
-        // Handle continuation points (drain all pages from the server)
+        // Handle continuation points (drain all pages from the server).
+        // Route through the semaphore so browseNext doesn't overlap with browseAsync.
         if (browseResult.getContinuationPoint() != null
                 && browseResult.getContinuationPoint().bytes() != null
                 && browseResult.getContinuationPoint().bytes().length > 0) {
-            childFutures.add(client.browseNextAsync(false, List.of(browseResult.getContinuationPoint()))
+            childFutures.add(CompletableFuture.runAsync(concurrency::acquireUninterruptibly)
+                    .thenCompose(ignored -> client.browseNextAsync(false, List.of(browseResult.getContinuationPoint())))
+                    .whenComplete((result, error) -> concurrency.release())
                     .thenCompose(nextResult -> {
                         final var continuationFutures = new ArrayList<CompletableFuture<Void>>();
                         if (nextResult.getResults() != null) {
