@@ -34,6 +34,7 @@ import com.hivemq.configuration.service.SecurityConfigurationService;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
 import com.hivemq.edge.compiler.lib.serialization.CompiledConfigSerializer;
 import com.hivemq.edge.knappogue.CompiledConfigApplier;
+import com.hivemq.edge.knappogue.CompiledConfigFileWatcher;
 import com.hivemq.edge.knappogue.CompiledConfigSubscriber;
 import com.hivemq.edge.knappogue.WorkspaceHolder;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
@@ -173,5 +174,11 @@ public class ConfigurationModule {
             final @NotNull SingleWriterService singleWriterService) {
         return new CompiledConfigSubscriber(
                 applier, new CompiledConfigSerializer(), localTopicTree, clientQueuePersistence, singleWriterService);
+    }
+
+    @Provides
+    @Singleton
+    static @NotNull CompiledConfigFileWatcher compiledConfigFileWatcher(final @NotNull CompiledConfigApplier applier) {
+        return new CompiledConfigFileWatcher(applier, new CompiledConfigSerializer());
     }
 }

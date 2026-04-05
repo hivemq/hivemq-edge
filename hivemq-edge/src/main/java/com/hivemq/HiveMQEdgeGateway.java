@@ -19,6 +19,7 @@ import com.hivemq.bootstrap.HiveMQEdgeNettyBootstrap;
 import com.hivemq.bootstrap.ListenerStartupInformation;
 import com.hivemq.bootstrap.StartupListenerVerifier;
 import com.hivemq.combining.runtime.DataCombinerManager;
+import com.hivemq.edge.knappogue.CompiledConfigFileWatcher;
 import com.hivemq.edge.knappogue.CompiledConfigSubscriber;
 import com.hivemq.embedded.EmbeddedExtension;
 import com.hivemq.exceptions.HiveMQEdgeStartupException;
@@ -42,6 +43,7 @@ public class HiveMQEdgeGateway {
     private final @NotNull DataCombinerManager dataCombinerManager;
     private final @NotNull AssetMapperManager assetMapperManager;
     private final @NotNull CompiledConfigSubscriber compiledConfigSubscriber;
+    private final @NotNull CompiledConfigFileWatcher compiledConfigFileWatcher;
 
     @Inject
     public HiveMQEdgeGateway(
@@ -51,7 +53,8 @@ public class HiveMQEdgeGateway {
             final @NotNull ProtocolAdapterManager protocolAdapterManager,
             final @NotNull DataCombinerManager dataCombinerManager,
             final @NotNull AssetMapperManager assetMapperManager,
-            final @NotNull CompiledConfigSubscriber compiledConfigSubscriber) {
+            final @NotNull CompiledConfigSubscriber compiledConfigSubscriber,
+            final @NotNull CompiledConfigFileWatcher compiledConfigFileWatcher) {
         this.nettyBootstrap = nettyBootstrap;
         this.extensionBootstrap = extensionBootstrap;
         this.adminService = adminService;
@@ -59,6 +62,7 @@ public class HiveMQEdgeGateway {
         this.dataCombinerManager = dataCombinerManager;
         this.assetMapperManager = assetMapperManager;
         this.compiledConfigSubscriber = compiledConfigSubscriber;
+        this.compiledConfigFileWatcher = compiledConfigFileWatcher;
     }
 
     public void start(final @Nullable EmbeddedExtension embeddedExtension) throws HiveMQEdgeStartupException {
@@ -68,6 +72,7 @@ public class HiveMQEdgeGateway {
             dataCombinerManager.start();
             assetMapperManager.start();
             compiledConfigSubscriber.start();
+            compiledConfigFileWatcher.start();
 
             final List<ListenerStartupInformation> startupInformation =
                     nettyBootstrap.bootstrapServer().get();

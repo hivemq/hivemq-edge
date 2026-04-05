@@ -81,4 +81,13 @@ public class EnvironmentVariables {
      * Name of the environment variable for configuring the modules folder.
      */
     public static final String MODULES_FOLDER = "HIVEMQ_MODULES_FOLDER";
+
+    /**
+     * Name of the environment variable pointing to the compiled config JSON file produced by the Knappogue compiler.
+     * When set, Edge watches this file and applies it via {@link com.hivemq.edge.knappogue.CompiledConfigFileWatcher}
+     * whenever the file changes (e.g. when a Kubernetes ConfigMap is updated and remounted).
+     * <p>
+     * Example: {@code /compiled-config/compiled-config.json}
+     */
+    public static final String COMPILED_CONFIG_PATH = "HIVEMQ_COMPILED_CONFIG_PATH";
 }
