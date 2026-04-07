@@ -30,14 +30,14 @@ class NorthboundMappingModelTest {
         assertEquals(
                 JavaScriptConstants.JS_MAX_SAFE_INTEGER,
                 new NorthboundMappingModel(
-                                "tag", "topic", false, false, List.of(), QoSModel.EXACTLY_ONCE, Long.MAX_VALUE)
+                                "tag", "topic", false, false, false, List.of(), QoSModel.EXACTLY_ONCE, Long.MAX_VALUE)
                         .getMessageExpiryInterval());
     }
 
     @Test
     void test_to_whenMessageExpiryMaxSafeValue_thenParsedValueIsMaxLong() {
         final NorthboundMappingModel northboundMappingModel = new NorthboundMappingModel(
-                "tag", "topic", false, false, List.of(), QoSModel.EXACTLY_ONCE, Long.MAX_VALUE);
+                "tag", "topic", false, false, false, List.of(), QoSModel.EXACTLY_ONCE, Long.MAX_VALUE);
 
         assertEquals(JavaScriptConstants.JS_MAX_SAFE_INTEGER, northboundMappingModel.getMessageExpiryInterval());
 

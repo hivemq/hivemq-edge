@@ -27,6 +27,7 @@ import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
@@ -34,8 +35,8 @@ import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
 import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterTagStreamingServiceImpl;
 import com.hivemq.edge.modules.adapters.data.TagManager;
-import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesPerModuleImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
@@ -73,7 +74,6 @@ public class ProtocolAdapterManager {
 
     private final @NotNull Map<String, ProtocolAdapterWrapper> protocolAdapters;
     private final @NotNull MetricRegistry metricRegistry;
-    private final @NotNull ModuleServicesImpl moduleServices;
     private final @NotNull HiveMQEdgeRemoteService remoteService;
     private final @NotNull EventService eventService;
     private final @NotNull ProtocolAdapterConfigConverter configConverter;
@@ -86,11 +86,11 @@ public class ProtocolAdapterManager {
     private final @NotNull TagManager tagManager;
     private final @NotNull ProtocolAdapterExtractor protocolAdapterConfig;
     private final @NotNull ExecutorService executorService;
+    private final @NotNull ProtocolAdapterPublishService adapterPublishService;
 
     @Inject
     public ProtocolAdapterManager(
             final @NotNull MetricRegistry metricRegistry,
-            final @NotNull ModuleServicesImpl moduleServices,
             final @NotNull HiveMQEdgeRemoteService remoteService,
             final @NotNull EventService eventService,
             final @NotNull ProtocolAdapterConfigConverter configConverter,
@@ -101,9 +101,9 @@ public class ProtocolAdapterManager {
             final @NotNull ProtocolAdapterFactoryManager protocolAdapterFactoryManager,
             final @NotNull NorthboundConsumerFactory northboundConsumerFactory,
             final @NotNull TagManager tagManager,
-            final @NotNull ProtocolAdapterExtractor protocolAdapterConfig) {
+            final @NotNull ProtocolAdapterExtractor protocolAdapterConfig,
+            final @NotNull ProtocolAdapterPublishService adapterPublishService) {
         this.metricRegistry = metricRegistry;
-        this.moduleServices = moduleServices;
         this.remoteService = remoteService;
         this.eventService = eventService;
         this.configConverter = configConverter;
@@ -117,6 +117,7 @@ public class ProtocolAdapterManager {
         this.protocolAdapterConfig = protocolAdapterConfig;
         this.protocolAdapters = new ConcurrentHashMap<>();
         this.executorService = Executors.newSingleThreadExecutor();
+        this.adapterPublishService = adapterPublishService;
         Runtime.getRuntime().addShutdownHook(new Thread(executorService::shutdown));
         protocolAdapterWritingService.addWritingChangedCallback(() ->
                 protocolAdapterFactoryManager.writingEnabledChanged(protocolAdapterWritingService.writingEnabled()));
@@ -344,14 +345,15 @@ public class ProtocolAdapterManager {
                 final ProtocolAdapterMetricsService metricsService =
                         new ProtocolAdapterMetricsServiceImpl(configProtocolId, config.getAdapterId(), metricRegistry);
 
-                final ProtocolAdapterStateImpl state = new ProtocolAdapterStateImpl(
-                        moduleServices.eventService(), config.getAdapterId(), configProtocolId);
+                final ProtocolAdapterStateImpl state =
+                        new ProtocolAdapterStateImpl(eventService, config.getAdapterId(), configProtocolId);
 
                 final ModuleServicesPerModuleImpl perModule = new ModuleServicesPerModuleImpl(
-                        moduleServices.adapterPublishService(),
+                        adapterPublishService,
                         eventService,
                         protocolAdapterWritingService,
-                        tagManager);
+                        new ProtocolAdapterTagStreamingServiceImpl(
+                                config.getAdapterId(), tagManager, dataPointBuilder -> {}));
 
                 final ProtocolAdapter protocolAdapter = factory.createAdapter(
                         factory.getInformation(),
@@ -378,7 +380,8 @@ public class ProtocolAdapterManager {
                         factory.getInformation(),
                         state,
                         northboundConsumerFactory,
-                        tagManager);
+                        tagManager,
+                        perModule);
             });
         });
     }
@@ -405,7 +408,7 @@ public class ProtocolAdapterManager {
         Preconditions.checkNotNull(wrapper);
         final String wid = wrapper.getId();
         log.info("Starting protocol-adapter '{}'.", wid);
-        return wrapper.startAsync(writingEnabled(), moduleServices).whenComplete((result, throwable) -> {
+        return wrapper.startAsync(writingEnabled()).whenComplete((result, throwable) -> {
             if (throwable == null) {
                 log.info("Protocol-adapter '{}' started successfully.", wid);
                 fireEvent(
@@ -568,5 +571,10 @@ public class ProtocolAdapterManager {
                         tag.getDescription(),
                         configConverter.convertTagDefinitionToJsonNode(tag.getDefinition())))
                 .toList());
+    }
+
+    @VisibleForTesting
+    public @NotNull TagManager getTagManager() {
+        return tagManager;
     }
 }

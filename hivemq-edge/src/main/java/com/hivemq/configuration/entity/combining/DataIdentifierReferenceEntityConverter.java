@@ -15,8 +15,6 @@
  */
 package com.hivemq.configuration.entity.combining;
 
-import static java.util.Objects.requireNonNull;
-
 import com.hivemq.configuration.entity.EntityConverter;
 import com.hivemq.edge.api.model.DataIdentifierReference;
 import org.jetbrains.annotations.NotNull;
@@ -31,14 +29,16 @@ public final class DataIdentifierReferenceEntityConverter
     public @NotNull DataIdentifierReferenceEntity toInternalEntity(final @NotNull DataIdentifierReference entity) {
         return new DataIdentifierReferenceEntity(
                 entity.getId(),
-                DataIdentifierReferenceTypeConverter.INSTANCE.toInternalEntity(requireNonNull(entity.getType())));
+                DataIdentifierReferenceTypeConverter.INSTANCE.toInternalEntity(entity.getType()),
+                entity.getScope());
     }
 
     @Override
     public @NotNull DataIdentifierReference toRestEntity(final @NotNull DataIdentifierReferenceEntity entity) {
         return DataIdentifierReference.builder()
                 .id(entity.getId())
-                .type(DataIdentifierReferenceTypeConverter.INSTANCE.toRestEntity(requireNonNull(entity.getType())))
+                .type(DataIdentifierReferenceTypeConverter.INSTANCE.toRestEntity(entity.getType()))
+                .scope(entity.getScope())
                 .build();
     }
 }

@@ -33,6 +33,7 @@ export const createSchema = (items: RJSFSchema) => {
     'serverQueueSize',
     'includeTagNames',
     'includeTimestamp',
+    'includeMetadata',
     'mqttUserProperties'
   )
   if (!Object.keys(sourceProperties).length) throw new Error(i18n.t('device.errors.noFormSchema'))

@@ -20,16 +20,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
-import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
-import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
-import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,22 +39,7 @@ public class S7ProtocolAdapterTest {
 
     @BeforeEach
     void setUp() {
-
-        var adapterFactories = mock(AdapterFactories.class);
-        when(adapterFactories.dataPointFactory()).thenReturn(new DataPointFactory() {
-            @Override
-            public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
-                return new DataPointImpl(tagName, tagValue);
-            }
-
-            @Override
-            public @NotNull DataPoint createJsonDataPoint(
-                    final @NotNull String tagName, final @NotNull Object tagValue) {
-                return new DataPointImpl(tagName, tagValue);
-            }
-        });
         when(protocolAdapterInput.moduleServices()).thenReturn(moduleServices);
-        when(protocolAdapterInput.adapterFactories()).thenReturn(adapterFactories);
         adapter = new TestS7ProtocolAdapter(protocolAdapterInput);
     }
 

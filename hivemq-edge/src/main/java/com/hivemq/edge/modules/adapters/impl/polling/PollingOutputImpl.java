@@ -17,8 +17,10 @@ package com.hivemq.edge.modules.adapters.impl.polling;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
+import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
+import com.hivemq.datapoint.DataPointListBuilderImpl;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.exceptions.StackLessProtocolAdapterException;
 import java.util.concurrent.CompletableFuture;
@@ -35,14 +37,27 @@ public class PollingOutputImpl implements PollingOutput, BatchPollingOutput {
     private final @NotNull ProtocolAdapterDataSample dataSample;
     final @NotNull CompletableFuture<PollingResult> outputFuture = new CompletableFuture<>();
     private @Nullable String errorMessage = null;
+    private final String adapterId;
 
-    public PollingOutputImpl(final @NotNull ProtocolAdapterDataSample dataSample) {
+    public PollingOutputImpl(final @NotNull ProtocolAdapterDataSample dataSample, final @NotNull String adapterId) {
         this.dataSample = dataSample;
+        this.adapterId = adapterId;
+    }
+
+    @Override
+    public @NotNull DataPointListBuilder dataPointListPublisher() {
+        return new DataPointListBuilderImpl(
+                adapterId,
+                toEnrich -> toEnrich.startObjectContext().put("key", "value").endObject(),
+                dataPoints -> {
+                    dataPoints.forEach(dataSample::addDataPoint);
+                    finish();
+                });
     }
 
     @Override
     public void addDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {
-        dataSample.addDataPoint(new DataPointImpl(tagName, tagValue));
+        dataSample.addDataPoint(new DataPointImpl(tagName, tagValue, adapterId));
     }
 
     @Override
@@ -52,7 +67,7 @@ public class PollingOutputImpl implements PollingOutput, BatchPollingOutput {
 
     @Override
     public void finish() {
-        if (dataSample.getDataPoints().isEmpty()) {
+        if (dataSample.getDataPointList().isEmpty()) {
             outputFuture.complete(PollingResult.NO_DATA);
         } else {
             outputFuture.complete(PollingResult.SUCCESS);

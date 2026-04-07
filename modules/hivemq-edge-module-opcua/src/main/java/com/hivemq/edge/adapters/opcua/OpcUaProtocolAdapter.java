@@ -19,7 +19,6 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.discovery.NodeTree;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
-import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -81,7 +80,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     private final @NotNull List<OpcuaTag> tagList;
     private final @NotNull AtomicReference<OpcUaClientConnection> opcUaClientConnection;
 
-    private final @NotNull DataPointFactory dataPointFactory;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull OpcUaSpecificAdapterConfig config;
     private final @NotNull AtomicReference<ScheduledFuture<?>> retryFuture = new AtomicReference<>();
@@ -112,7 +110,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.tagList = input.getTags().stream().map(tag -> (OpcuaTag) tag).toList();
         this.tagNameToTag = tagList.stream().collect(Collectors.toMap(OpcuaTag::getName, Function.identity()));
-        this.dataPointFactory = input.adapterFactories().dataPointFactory();
         this.protocolAdapterMetricsService = input.getProtocolAdapterMetricsHelper();
         this.config = input.getConfig();
         this.opcUaClientConnection = new AtomicReference<>();
@@ -194,7 +191,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                 tagList,
                 protocolAdapterState,
                 input.moduleServices().protocolAdapterTagStreamingService(),
-                dataPointFactory,
                 input.moduleServices().eventService(),
                 protocolAdapterMetricsService,
                 config,
@@ -320,7 +316,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                     tagList,
                     protocolAdapterState,
                     moduleServices.protocolAdapterTagStreamingService(),
-                    dataPointFactory,
                     moduleServices.eventService(),
                     protocolAdapterMetricsService,
                     config,
@@ -762,7 +757,6 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                                 tagList,
                                 protocolAdapterState,
                                 this.moduleServices.protocolAdapterTagStreamingService(),
-                                dataPointFactory,
                                 this.moduleServices.eventService(),
                                 protocolAdapterMetricsService,
                                 config,

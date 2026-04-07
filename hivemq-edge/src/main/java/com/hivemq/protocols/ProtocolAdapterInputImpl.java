@@ -17,20 +17,39 @@ package com.hivemq.protocols;
 
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
+import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
-import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
+import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.persistence.mappings.NorthboundMapping;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
 public class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig> implements ProtocolAdapterInput<T> {
-    public static final AdapterFactoriesImpl ADAPTER_FACTORIES = new AdapterFactoriesImpl();
+    private final AdapterFactories adapterFactories = new AdapterFactories() {
+        @Override
+        public @NotNull DataPointFactory dataPointFactory() {
+            return new DataPointFactory() {
+                @Override
+                public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
+                    return new DataPointImpl(tagName, tagValue, adapterId);
+                }
+
+                @Override
+                public @NotNull DataPoint createJsonDataPoint(
+                        final @NotNull String tagName, final @NotNull Object tagValue) {
+                    return new DataPointImpl(tagName, tagValue, adapterId);
+                }
+            };
+        }
+    };
+
     private final @NotNull String adapterId;
     private final @NotNull T configObject;
     private final @NotNull String version;
@@ -87,7 +106,7 @@ public class ProtocolAdapterInputImpl<T extends ProtocolSpecificAdapterConfig> i
 
     @Override
     public @NotNull AdapterFactories adapterFactories() {
-        return ADAPTER_FACTORIES;
+        return adapterFactories;
     }
 
     @Override

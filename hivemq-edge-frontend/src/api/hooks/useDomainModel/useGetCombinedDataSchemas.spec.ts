@@ -15,12 +15,13 @@ import { handlers } from '../useTopicFilters/__handlers__'
 const mockDataReferences: DataReference[] = [
   {
     id: 'my-tag',
-    adapterId: 'string',
+    scope: 'string',
     type: DataIdentifierReference.type.TAG,
   },
   {
     id: 'a/topic/+/filter',
     type: DataIdentifierReference.type.TOPIC_FILTER,
+    scope: null,
   },
 ]
 

@@ -19,8 +19,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
 
-import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
@@ -32,11 +30,9 @@ import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.adapters.opcua.listeners.OpcUaServiceFaultListener;
-import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
@@ -59,14 +55,12 @@ public class OpcUaClientConnectionTest {
     private @NotNull ProtocolAdapterState protocolAdapterState;
     private @NotNull FakeEventService eventService;
     private @NotNull ProtocolAdapterMetricsService metricsService;
-    private @NotNull AtomicInteger keepAliveCount;
 
     @BeforeEach
     void setUp() {
         protocolAdapterState = new ProtocolAdapterStateImpl(mock(), "test-adapter-id", "opcua");
         eventService = new FakeEventService();
         metricsService = mock(ProtocolAdapterMetricsService.class);
-        keepAliveCount = new AtomicInteger(0);
     }
 
     @AfterEach
@@ -99,19 +93,6 @@ public class OpcUaClientConnectionTest {
                         "ns=" + opcUaServerExtension.getTestNamespace().getNamespaceIndex()
                                 + ";i=10")); // Int32 node from TestNamespace
 
-        final DataPointFactory dataPointFactory = new DataPointFactory() {
-            @Override
-            public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
-                return new DataPointImpl(tagName, tagValue);
-            }
-
-            @Override
-            public @NotNull DataPoint createJsonDataPoint(
-                    final @NotNull String tagName, final @NotNull Object tagValue) {
-                return new DataPointImpl(tagName, tagValue, true);
-            }
-        };
-
         final ProtocolAdapterTagStreamingService streamingService = mock(ProtocolAdapterTagStreamingService.class);
 
         final AtomicBoolean reconnectionCallbackInvoked = new AtomicBoolean(false);
@@ -121,7 +102,6 @@ public class OpcUaClientConnectionTest {
                 List.of(tag),
                 protocolAdapterState,
                 streamingService,
-                dataPointFactory,
                 eventService,
                 metricsService,
                 config,
@@ -202,19 +182,6 @@ public class OpcUaClientConnectionTest {
                         new OpcuaTagDefinition(
                                 "ns=" + opcUaServerExtension.getTestNamespace().getNamespaceIndex() + ";i=13")));
 
-        final DataPointFactory dataPointFactory = new DataPointFactory() {
-            @Override
-            public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
-                return new DataPointImpl(tagName, tagValue);
-            }
-
-            @Override
-            public @NotNull DataPoint createJsonDataPoint(
-                    final @NotNull String tagName, final @NotNull Object tagValue) {
-                return new DataPointImpl(tagName, tagValue, true);
-            }
-        };
-
         final ProtocolAdapterTagStreamingService streamingService = mock(ProtocolAdapterTagStreamingService.class);
 
         opcUaClientConnection = new OpcUaClientConnection(
@@ -222,7 +189,6 @@ public class OpcUaClientConnectionTest {
                 tags,
                 protocolAdapterState,
                 streamingService,
-                dataPointFactory,
                 eventService,
                 metricsService,
                 config,
@@ -266,19 +232,6 @@ public class OpcUaClientConnectionTest {
                 null,
                 null);
 
-        final DataPointFactory dataPointFactory = new DataPointFactory() {
-            @Override
-            public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
-                return new DataPointImpl(tagName, tagValue);
-            }
-
-            @Override
-            public @NotNull DataPoint createJsonDataPoint(
-                    final @NotNull String tagName, final @NotNull Object tagValue) {
-                return new DataPointImpl(tagName, tagValue, true);
-            }
-        };
-
         final ProtocolAdapterTagStreamingService streamingService = mock(ProtocolAdapterTagStreamingService.class);
 
         opcUaClientConnection = new OpcUaClientConnection(
@@ -287,7 +240,6 @@ public class OpcUaClientConnectionTest {
                 // Empty tags
                 protocolAdapterState,
                 streamingService,
-                dataPointFactory,
                 eventService,
                 metricsService,
                 config,
@@ -322,19 +274,6 @@ public class OpcUaClientConnectionTest {
                 new OpcuaTagDefinition(
                         "ns=" + opcUaServerExtension.getTestNamespace().getNamespaceIndex() + ";i=10"));
 
-        final DataPointFactory dataPointFactory = new DataPointFactory() {
-            @Override
-            public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
-                return new DataPointImpl(tagName, tagValue);
-            }
-
-            @Override
-            public @NotNull DataPoint createJsonDataPoint(
-                    final @NotNull String tagName, final @NotNull Object tagValue) {
-                return new DataPointImpl(tagName, tagValue, true);
-            }
-        };
-
         final ProtocolAdapterTagStreamingService streamingService = mock(ProtocolAdapterTagStreamingService.class);
 
         opcUaClientConnection = new OpcUaClientConnection(
@@ -342,7 +281,6 @@ public class OpcUaClientConnectionTest {
                 List.of(tag),
                 protocolAdapterState,
                 streamingService,
-                dataPointFactory,
                 eventService,
                 metricsService,
                 config,

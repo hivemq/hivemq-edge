@@ -1,4 +1,7 @@
+import debug from 'debug'
 import type { UseQueryResult } from '@tanstack/react-query'
+
+const log = debug('Mappings:combining:utils')
 
 import {
   DataIdentifierReference,
@@ -24,6 +27,40 @@ export const STUB_TOPIC_FILTER_PROPERTY = 'tf'
 // TODO[NVL] wrong data structure; simplify
 /* istanbul ignore next -- @preserve */
 export const getDataReference = (formContext?: CombinerContext): DataReference[] => {
+  if (!formContext) return []
+
+  // Use new entityQueries structure
+  if (formContext.entityQueries) {
+    return formContext.entityQueries.reduce<DataReference[]>((acc, entityQuery) => {
+      const { entity, query } = entityQuery
+      const items = query.data?.items || []
+      if (!items.length) return acc
+
+      const firstItem = items[0]
+
+      if ((firstItem as DomainTag).name) {
+        // For tags, use entity.id as scope (only for ADAPTER/EDGE_BROKER types)
+        const scope = entity.type === EntityType.ADAPTER || entity.type === EntityType.EDGE_BROKER ? entity.id : null
+        const tagDataReferences = (items as DomainTag[]).map<DataReference>((tag) => ({
+          id: tag.name,
+          type: DataIdentifierReference.type.TAG,
+          scope,
+        }))
+        acc.push(...tagDataReferences)
+      } else if ((firstItem as TopicFilter).topicFilter) {
+        const topicFilterDataReferences = (items as TopicFilter[]).map<DataReference>((topicFilter) => ({
+          id: topicFilter.topicFilter,
+          type: DataIdentifierReference.type.TOPIC_FILTER,
+          scope: null,
+        }))
+        acc.push(...topicFilterDataReferences)
+      }
+
+      return acc
+    }, [])
+  }
+
+  // Backward compatibility: fall back to old structure during migration
   const tagsAndTopicFilters =
     formContext?.queries?.reduce<(DomainTag[] | TopicFilter[])[]>((acc, cur) => {
       const firstItem = cur.data?.items?.[0]
@@ -50,7 +87,7 @@ export const getCombinedDataEntityReference = (
         return {
           id: tag.name,
           type: DataIdentifierReference.type.TAG,
-          adapterId: dataSources?.[currentIndex]?.id,
+          scope: dataSources?.[currentIndex]?.id,
         }
       })
       acc.push(...tagDataReferences)
@@ -59,7 +96,7 @@ export const getCombinedDataEntityReference = (
       const topicFilterDataReferences = (cur as TopicFilter[]).map<DataReference>((topicFilter) => ({
         id: topicFilter.topicFilter,
         type: DataIdentifierReference.type.TOPIC_FILTER,
-        adapterId: undefined,
+        scope: null,
       }))
       acc.push(...topicFilterDataReferences)
     }
@@ -68,21 +105,27 @@ export const getCombinedDataEntityReference = (
   }, [])
 }
 
-export const getFilteredDataReferences = (formData?: DataCombining, formContext?: CombinerContext) => {
-  const tags = formData?.sources?.tags || []
-  const topicFilters = formData?.sources?.topicFilters || []
-  const indexes = [...tags, ...topicFilters]
+export const getFilteredDataReferences = (_formData?: DataCombining, formContext?: CombinerContext) => {
+  // Use selectedSources from context if available (Phase 2+)
+  // This provides full ownership information without reconstruction
+  if (formContext?.selectedSources) {
+    const { tags, topicFilters } = formContext.selectedSources
+    const allReferences = [...tags, ...topicFilters]
 
-  const allDataReferences = getDataReference(formContext)
+    // Deduplicate by id + type + scope
+    // This allows tags with same name from different adapters to load separate schemas
+    return allReferences.reduce<DataReference[]>((acc, current) => {
+      const isAlreadyIn = acc.find(
+        (item) => item.id === current.id && item.type === current.type && item.scope === current.scope
+      )
+      if (!isAlreadyIn) {
+        return acc.concat([current])
+      }
+      return acc
+    }, [])
+  }
 
-  const selectedReferences = allDataReferences?.filter((dataReference) => indexes.includes(dataReference.id)) || []
-  return selectedReferences.reduce<DataReference[]>((acc, current) => {
-    const isAlreadyIn = acc.find((item) => item.id === current.id && item.type === current.type)
-    if (!isAlreadyIn) {
-      return acc.concat([current])
-    }
-    return acc
-  }, [])
+  return []
 }
 
 export const getSchemasFromReferences = (
@@ -140,4 +183,100 @@ export const findBestMatch = (
 
   if (minDistance === null) return smallestValue
   return smallestValue.distance <= minDistance ? smallestValue : undefined
+}
+
+/**
+ * Extracts the adapterId (scope) for a given tag from context.
+ * Used for looking up scope when only tag name is available.
+ *
+ * @param tagId - The tag identifier
+ * @param formContext - The combiner context with entityQueries
+ * @returns The adapterId (scope) or undefined if not found
+ */
+export const getAdapterIdForTag = (tagId: string, formContext?: CombinerContext): string | undefined => {
+  if (!formContext) return undefined
+
+  // Use new entityQueries structure
+  if (formContext.entityQueries) {
+    for (const { entity, query } of formContext.entityQueries) {
+      if (entity.type !== EntityType.ADAPTER) continue
+
+      const items = query.data?.items || []
+      if (items.length > 0 && (items[0] as DomainTag).name) {
+        const tags = items as DomainTag[]
+        const found = tags.find((tag) => tag.name === tagId)
+        if (found) {
+          return entity.id // ✅ Direct access, no index needed
+        }
+      }
+    }
+    return undefined
+  }
+
+  // Backward compatibility: fall back to old structure during migration
+  if (!formContext.queries || !formContext.entities) return undefined
+
+  const adapterEntities = formContext.entities.filter((e) => e.type === EntityType.ADAPTER)
+
+  for (let i = 0; i < formContext.queries.length; i++) {
+    const query = formContext.queries[i]
+    const items = query.data?.items || []
+
+    if (items.length > 0 && (items[0] as DomainTag).name) {
+      const tags = items as DomainTag[]
+      const found = tags.find((tag) => tag.name === tagId)
+      if (found && adapterEntities[i]) {
+        return adapterEntities[i].id
+      }
+    }
+  }
+
+  return undefined
+}
+
+/**
+ * Reconstructs selectedSources from existing combiner data.
+ * Used when loading an existing combiner to rebuild ownership information.
+ *
+ * Strategy:
+ * 1. Try to find scope from primary (if it matches)
+ * 2. Try to find scope from instructions
+ *
+ * @param formData - The combiner data
+ * @param _formContext - deprecated context. No fallback
+ * @returns Selected sources with full ownership information
+ */
+export const reconstructSelectedSources = (
+  formData?: DataCombining,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _formContext?: CombinerContext
+): { tags: DataIdentifierReference[]; topicFilters: DataIdentifierReference[] } => {
+  if (!formData?.sources) {
+    return { tags: [], topicFilters: [] }
+  }
+
+  // Derive unique source references from instructions (authoritative, fully scoped)
+  const fromInstructions = (formData.instructions ?? [])
+    .filter((inst) => inst.sourceRef != null)
+    .map((inst) => inst.sourceRef!)
+
+  // Also prepend scoped primary if not already represented
+  const primary = formData.sources.primary
+  const all: DataIdentifierReference[] = []
+  if (primary?.type === DataIdentifierReference.type.TAG && !primary.scope) {
+    log('TAG primary has no scope — skipped during selectedSources reconstruction %o', primary)
+  }
+  if (primary?.scope) all.push(primary)
+  all.push(...fromInstructions)
+
+  // Deduplicate by id + type + scope
+  const unique = all.reduce<DataIdentifierReference[]>((acc, ref) => {
+    const exists = acc.find((r) => r.id === ref.id && r.type === ref.type && r.scope === ref.scope)
+    return exists ? acc : [...acc, ref]
+  }, [])
+
+  return {
+    tags: unique.filter((r) => r.type === DataIdentifierReference.type.TAG),
+    topicFilters: unique.filter((r) => r.type === DataIdentifierReference.type.TOPIC_FILTER),
+  }
 }

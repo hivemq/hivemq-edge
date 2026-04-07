@@ -18,6 +18,10 @@ export type NorthboundMapping = {
      * Should the timestamp be included when sent out.
      */
     includeTimestamp?: boolean;
+    /**
+     * Should tag metadata entries be included when sent out.
+     */
+    includeMetadata?: boolean;
     maxQoS?: QoS;
     /**
      * The message expiry interval.

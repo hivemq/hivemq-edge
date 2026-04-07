@@ -19,7 +19,6 @@ import static com.hivemq.edge.adapters.opcua.Constants.PROTOCOL_ID_OPCUA;
 
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
-import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
@@ -57,7 +56,6 @@ public class OpcUaClientConnection {
     private final @NotNull OpcUaSpecificAdapterConfig config;
     private final @NotNull List<OpcuaTag> tags;
     private final @NotNull ProtocolAdapterTagStreamingService tagStreamingService;
-    private final @NotNull DataPointFactory dataPointFactory;
     private final @NotNull EventService eventService;
     private final @NotNull String adapterId;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
@@ -71,14 +69,12 @@ public class OpcUaClientConnection {
             final @NotNull List<OpcuaTag> tags,
             final @NotNull ProtocolAdapterState protocolAdapterState,
             final @NotNull ProtocolAdapterTagStreamingService tagStreamingService,
-            final @NotNull DataPointFactory dataPointFactory,
             final @NotNull EventService eventService,
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
             final @NotNull OpcUaSpecificAdapterConfig config,
             final @NotNull OpcUaServiceFaultListener serviceFaultListener) {
         this.config = config;
         this.tagStreamingService = tagStreamingService;
-        this.dataPointFactory = dataPointFactory;
         this.eventService = eventService;
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.adapterId = adapterId;
@@ -191,14 +187,7 @@ public class OpcUaClientConnection {
         }
 
         final var subscriptionLifecycleHandler = new OpcUaSubscriptionLifecycleHandler(
-                protocolAdapterMetricsService,
-                tagStreamingService,
-                eventService,
-                adapterId,
-                tags,
-                client,
-                dataPointFactory,
-                config);
+                protocolAdapterMetricsService, tagStreamingService, eventService, adapterId, tags, client, config);
 
         final var subscriptionOptional = subscriptionLifecycleHandler.subscribe(client);
 

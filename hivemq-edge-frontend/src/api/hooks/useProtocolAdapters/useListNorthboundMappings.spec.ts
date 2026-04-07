@@ -28,6 +28,7 @@ describe('useListNorthboundMappings', () => {
           topic: 'my/topic',
           includeTagNames: true,
           includeTimestamp: true,
+          includeMetadata: false,
           maxQoS: MOCK_MAX_QOS,
           messageExpiryInterval: -1000,
         }),

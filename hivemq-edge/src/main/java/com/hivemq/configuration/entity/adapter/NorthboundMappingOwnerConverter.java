@@ -35,6 +35,7 @@ public final class NorthboundMappingOwnerConverter
                 MessageHandlingOptions.MQTTMessagePerTag,
                 entity.getIncludeTagNames(),
                 entity.getIncludeTimestamp(),
+                entity.getIncludeMetadata(),
                 MqttUserPropertyEntityConverter.INSTANCE.toInternalEntities(entity.getUserProperties()),
                 entity.getMessageExpiryInterval());
     }

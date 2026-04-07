@@ -154,7 +154,7 @@ public class OpcUaSpecificAdapterConfig implements ProtocolSpecificAdapterConfig
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof OpcUaSpecificAdapterConfig that)) return false;
+        if (!(o instanceof final OpcUaSpecificAdapterConfig that)) return false;
         return getOverrideUri().equals(that.getOverrideUri())
                 && Objects.equals(id, that.id)
                 && Objects.equals(getUri(), that.getUri())

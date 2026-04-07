@@ -16,12 +16,20 @@
 package com.hivemq.protocols.northbound;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import java.util.List;
 import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public interface TagConsumer extends Consumer<List<DataPoint>> {
+public interface SingleTagConsumer extends Consumer<DataPoint> {
 
     @NotNull
     String getTagName();
+
+    /**
+     * Returns the scope (adapter ID) this consumer is interested in.
+     * For tag consumers this identifies which adapter's tag to subscribe to.
+     */
+    default @Nullable String getScope() {
+        return null;
+    }
 }

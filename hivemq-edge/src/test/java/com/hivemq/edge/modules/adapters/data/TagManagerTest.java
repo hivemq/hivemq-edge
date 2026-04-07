@@ -18,39 +18,42 @@ package com.hivemq.edge.modules.adapters.data;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.protocols.northbound.TagConsumer;
+import com.hivemq.protocols.northbound.SingleTagConsumer;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 public class TagManagerTest {
 
+    private static final @NotNull String ADAPTER_1 = "adapter-1";
+
     @Test
     public void test_allSucceeds() throws Exception {
-        var tagManager = new TagManager();
-        var countDownLatch = new CountDownLatch(3);
-        tagManager.addConsumer(new SucceedingConsumer("tag1", countDownLatch));
-        tagManager.feed("tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
-        tagManager.feed("tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
-        tagManager.feed("tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
+        final var tagManager = new TagManager();
+        final var countDownLatch = new CountDownLatch(3);
+        tagManager.addConsumer(new SucceedingConsumer(ADAPTER_1, "tag1", countDownLatch));
+        tagManager.feed(List.of(new DataPointImpl("tag1", 1, ADAPTER_1), new DataPointImpl("tag1", 2, ADAPTER_1)));
+        tagManager.feed(List.of(new DataPointImpl("tag1", 1, ADAPTER_1), new DataPointImpl("tag1", 2, ADAPTER_1)));
+        tagManager.feed(List.of(new DataPointImpl("tag1", 1, ADAPTER_1), new DataPointImpl("tag1", 2, ADAPTER_1)));
 
         assertThat(countDownLatch.await(5, TimeUnit.SECONDS)).isTrue();
     }
 
     @Test
     public void test_succeedForMultipleConsumers() throws Exception {
-        var tagManager = new TagManager();
-        var countDownLatch = new CountDownLatch(3);
-        var countDownLatch1 = new CountDownLatch(3);
-        var countDownLatch2 = new CountDownLatch(3);
-        tagManager.addConsumer(new SucceedingConsumer("tag1", countDownLatch));
-        tagManager.addConsumer(new SucceedingConsumer("tag1", countDownLatch1));
-        tagManager.addConsumer(new SucceedingConsumer("tag1", countDownLatch2));
-        tagManager.feed("tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
-        tagManager.feed("tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
-        tagManager.feed("tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
+        final var tagManager = new TagManager();
+        final var countDownLatch = new CountDownLatch(3);
+        final var countDownLatch1 = new CountDownLatch(3);
+        final var countDownLatch2 = new CountDownLatch(3);
+        tagManager.addConsumer(new SucceedingConsumer(ADAPTER_1, "tag1", countDownLatch));
+        tagManager.addConsumer(new SucceedingConsumer(ADAPTER_1, "tag1", countDownLatch1));
+        tagManager.addConsumer(new SucceedingConsumer(ADAPTER_1, "tag1", countDownLatch2));
+        tagManager.feed(List.of(new DataPointImpl("tag1", 1, ADAPTER_1), new DataPointImpl("tag1", 2, ADAPTER_1)));
+        tagManager.feed(List.of(new DataPointImpl("tag1", 1, ADAPTER_1), new DataPointImpl("tag1", 2, ADAPTER_1)));
+        tagManager.feed(List.of(new DataPointImpl("tag1", 1, ADAPTER_1), new DataPointImpl("tag1", 2, ADAPTER_1)));
 
         assertThat(countDownLatch.await(5, TimeUnit.SECONDS)).isTrue();
         assertThat(countDownLatch1.await(5, TimeUnit.SECONDS)).isTrue();
@@ -59,24 +62,26 @@ public class TagManagerTest {
 
     @Test
     public void test_succeedForMultipleConsumers_withOneBroken() throws Exception {
-        var tagManager = new TagManager();
-        var countDownLatch = new CountDownLatch(3);
-        var countDownLatch1 = new CountDownLatch(3);
-        tagManager.addConsumer(new SucceedingConsumer("tag1", countDownLatch));
-        tagManager.addConsumer(new FailingTagConsumer("tag1"));
-        tagManager.addConsumer(new SucceedingConsumer("tag1", countDownLatch1));
-        tagManager.feed("tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
-        tagManager.feed("tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
-        tagManager.feed("tag1", List.of(new DataPointImpl("tag1", 1), new DataPointImpl("tag1", 2)));
+        final var tagManager = new TagManager();
+        final var countDownLatch = new CountDownLatch(3);
+        final var countDownLatch1 = new CountDownLatch(3);
+        tagManager.addConsumer(new SucceedingConsumer(ADAPTER_1, "tag1", countDownLatch));
+        tagManager.addConsumer(new FailingTagConsumer(ADAPTER_1, "tag1"));
+        tagManager.addConsumer(new SucceedingConsumer(ADAPTER_1, "tag1", countDownLatch1));
+        tagManager.feed(List.of(new DataPointImpl("tag1", 1, ADAPTER_1), new DataPointImpl("tag1", 2, ADAPTER_1)));
+        tagManager.feed(List.of(new DataPointImpl("tag1", 1, ADAPTER_1), new DataPointImpl("tag1", 2, ADAPTER_1)));
+        tagManager.feed(List.of(new DataPointImpl("tag1", 1, ADAPTER_1), new DataPointImpl("tag1", 2, ADAPTER_1)));
 
         assertThat(countDownLatch.await(5, TimeUnit.SECONDS)).isTrue();
         assertThat(countDownLatch1.await(5, TimeUnit.SECONDS)).isTrue();
     }
 
-    public static class FailingTagConsumer implements TagConsumer {
+    public static class FailingTagConsumer implements SingleTagConsumer {
+        private final @NotNull String scope;
         private final @NotNull String tagName;
 
-        public FailingTagConsumer(@NotNull final String tagName) {
+        public FailingTagConsumer(@NotNull final String scope, @NotNull final String tagName) {
+            this.scope = scope;
             this.tagName = tagName;
         }
 
@@ -86,16 +91,26 @@ public class TagManagerTest {
         }
 
         @Override
-        public void accept(final List<DataPoint> dataPoints) {
+        public @Nullable String getScope() {
+            return scope;
+        }
+
+        @Override
+        public void accept(final DataPoint dataPoint) {
             throw new RuntimeException();
         }
     }
 
-    public static class SucceedingConsumer implements TagConsumer {
+    public static class SucceedingConsumer implements SingleTagConsumer {
+        private final @NotNull String scope;
         private final @NotNull String tagName;
         private final @NotNull CountDownLatch countDownLatch;
 
-        public SucceedingConsumer(@NotNull final String tagName, @NotNull final CountDownLatch countDownLatch) {
+        public SucceedingConsumer(
+                @NotNull final String scope,
+                @NotNull final String tagName,
+                @NotNull final CountDownLatch countDownLatch) {
+            this.scope = scope;
             this.tagName = tagName;
             this.countDownLatch = countDownLatch;
         }
@@ -106,7 +121,12 @@ public class TagManagerTest {
         }
 
         @Override
-        public void accept(final List<DataPoint> dataPoints) {
+        public @Nullable String getScope() {
+            return scope;
+        }
+
+        @Override
+        public void accept(final DataPoint dataPoint) {
             countDownLatch.countDown();
         }
     }

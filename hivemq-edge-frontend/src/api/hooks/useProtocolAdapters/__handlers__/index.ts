@@ -47,7 +47,15 @@ export const mockUISchema: UiSchema = {
     simulationToMqttMappings: {
       'ui:batchMode': true,
       items: {
-        'ui:order': ['mqttTopic', 'mqttQos', 'mqttUserProperties', 'includeTimestamp', 'includeTagNames', '*'],
+        'ui:order': [
+          'mqttTopic',
+          'mqttQos',
+          'mqttUserProperties',
+          'includeTimestamp',
+          'includeTagNames',
+          'includeMetadata',
+          '*',
+        ],
         'ui:collapsable': {
           titleKey: 'mqttTopic',
         },
@@ -120,6 +128,12 @@ export const mockJSONSchema: JSONSchema7 = {
                 title: 'Include Sample Timestamp In Publish?',
                 description: 'Include the unix timestamp of the sample time in the resulting MQTT message',
                 default: true,
+              },
+              includeMetadata: {
+                type: 'boolean',
+                title: 'Include Sample MEtadata In Publish?',
+                description: 'Include the metadata associated with the tag in the resulting MQTT message',
+                default: false,
               },
               mqttQos: {
                 type: 'integer',

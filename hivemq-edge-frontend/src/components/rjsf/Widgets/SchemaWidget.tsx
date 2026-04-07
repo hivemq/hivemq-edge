@@ -50,7 +50,7 @@ const SchemaWidget: FC<WidgetProps<ManagedAsset['schema']>> = ({ id, value, requ
 
       {schemaHandler.schema && (
         <Box borderWidth={1} p={2} borderRadius="var(--chakra-radii-md)">
-          <JsonSchemaBrowser schema={schemaHandler.schema} />
+          <JsonSchemaBrowser schema={schemaHandler.schema} showReadOnly={false} />
         </Box>
       )}
     </FormControl>

@@ -17,24 +17,27 @@ package com.hivemq.protocols.northbound;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.JsonPayloadCreator;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.edge.modules.adapters.data.AbstractProtocolAdapterJsonPayload;
-import com.hivemq.edge.modules.adapters.data.ProtocolAdapterMultiPublishJsonPayload;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterPublisherJsonPayload;
 import com.hivemq.edge.modules.adapters.data.TagSample;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @Singleton
+/*
+ * @deprecated no longer needed. To be removed in 2026.10
+ */
+@ApiStatus.ScheduledForRemoval(inVersion = "2026.10")
+@Deprecated
 public class JsonPayloadDefaultCreator implements JsonPayloadCreator {
 
     @Inject
@@ -73,35 +76,17 @@ public class JsonPayloadDefaultCreator implements JsonPayloadCreator {
         final List<AbstractProtocolAdapterJsonPayload> list = new ArrayList<>();
         // -- Only include the timestamp if the settings say so
         final Long timestamp = pollingContext.getIncludeTimestamp() ? System.currentTimeMillis() : null;
-        if (dataPoints.size() > 1
-                && pollingContext.getMessageHandlingOptions() == MessageHandlingOptions.MQTTMessagePerSubscription) {
-            // -- Put all derived samples into a single MQTT message
-            final AbstractProtocolAdapterJsonPayload payload =
-                    createMultiPublishPayload(timestamp, dataPoints, pollingContext.getIncludeTagNames());
-            decoratePayloadMessage(payload, pollingContext);
-            list.add(payload);
-        } else {
-            // -- Put all derived samples into individual publish messages
-            dataPoints.stream()
-                    .map(dp -> createPublishPayload(timestamp, dp, pollingContext.getIncludeTagNames()))
-                    .map(pp -> decoratePayloadMessage(pp, pollingContext))
-                    .forEach(list::add);
-        }
+        // -- Put all derived samples into individual publish messages
+        dataPoints.stream()
+                .map(dp -> createPublishPayload(timestamp, dp, pollingContext.getIncludeTagNames()))
+                .map(pp -> decoratePayloadMessage(pp, pollingContext))
+                .forEach(list::add);
         return list;
     }
 
     protected @NotNull ProtocolAdapterPublisherJsonPayload createPublishPayload(
             final @Nullable Long timestamp, @NotNull final DataPoint dataPoint, final boolean includeTagName) {
         return new ProtocolAdapterPublisherJsonPayload(timestamp, createTagSample(dataPoint, includeTagName));
-    }
-
-    protected @NotNull AbstractProtocolAdapterJsonPayload createMultiPublishPayload(
-            final @Nullable Long timestamp, final List<DataPoint> dataPoint, final boolean includeTagName) {
-        return new ProtocolAdapterMultiPublishJsonPayload(
-                timestamp,
-                dataPoint.stream()
-                        .map(dp -> createTagSample(dp, includeTagName))
-                        .collect(Collectors.toList()));
     }
 
     protected static TagSample createTagSample(final @NotNull DataPoint dataPoint, final boolean includeTagName) {

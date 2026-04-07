@@ -35,6 +35,7 @@ declare global {
        * cy.interceptApi(API_ROUTES.bridges.getBridges, { statusCode: 404 })
        */
       interceptApi<T>(route: Route<T>, response: T | StaticResponse<T>): Chainable<null>
+      saveHTMLSnapshot(name: string): Chainable<void>
     }
   }
 }

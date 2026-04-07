@@ -20,11 +20,11 @@ import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionSt
 import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.JSON_MIME_TYPE;
 import static com.hivemq.edge.adapters.http.config.HttpSpecificAdapterConfig.PLAIN_MIME_TYPE;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
-import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -83,7 +83,6 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
     private final @NotNull String version;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ModuleServices moduleServices;
-    private final @NotNull AdapterFactories adapterFactories;
     private final @NotNull String adapterId;
     private final @NotNull ObjectMapper objectMapper;
 
@@ -99,7 +98,6 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
         this.version = input.getVersion();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.moduleServices = input.moduleServices();
-        this.adapterFactories = input.adapterFactories();
         this.objectMapper = new ObjectMapper();
     }
 
@@ -159,6 +157,7 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
                         pollingOutput.fail(throwable, "Error while polling tags.");
                     } else {
                         try {
+                            final var dataPointsPublisher = pollingOutput.dataPointListPublisher();
                             for (final CompletableFuture<HttpData> future : pollingFutures) {
                                 final var data = future.get();
                                 if (data.isSuccessStatusCode()) {
@@ -168,10 +167,18 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
                                 }
                                 if (data.isSuccessStatusCode()
                                         || !adapterConfig.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()) {
-                                    data.getDataPoints().forEach(pollingOutput::addDataPoint);
+                                    final var payload = data.getPayloadData();
+                                    if (payload != null) {
+                                        final var builder = dataPointsPublisher.addDataPoint(data.getTag());
+                                        switch (payload) {
+                                            case final JsonNode jsonNode -> builder.value(jsonNode);
+                                            case final String str -> builder.value(str);
+                                            default -> builder.value(payload.toString());
+                                        }
+                                    }
                                 }
                             }
-                            pollingOutput.finish();
+                            dataPointsPublisher.publish();
                         } catch (final InterruptedException | ExecutionException e) {
                             pollingOutput.fail(e, "Exception while accessing data of completed future.");
                         }
@@ -222,11 +229,11 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
 
         return httpClient
                 .sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString())
-                .thenApply(httpResponse -> getHttpData(httpResponse, url, httpTag.getName()));
+                .thenApply(httpResponse -> getHttpData(httpResponse, url, httpTag));
     }
 
     private @NotNull HttpData getHttpData(
-            final HttpResponse<String> httpResponse, final String url, final @NotNull String tagName) {
+            final HttpResponse<String> httpResponse, final String url, final @NotNull HttpTag httpTag) {
         Object payloadData = null;
         String responseContentType = null;
 
@@ -270,10 +277,9 @@ public class HttpProtocolAdapter implements BatchPollingProtocolAdapter {
                 url,
                 httpResponse.statusCode(),
                 Objects.requireNonNullElse(responseContentType, PLAIN_MIME_TYPE),
-                adapterFactories.dataPointFactory());
-        // When the body is empty, just include the metadata
+                httpTag);
         if (payloadData != null) {
-            data.addDataPoint(tagName, payloadData);
+            data.setPayloadData(payloadData);
         }
         return data;
     }

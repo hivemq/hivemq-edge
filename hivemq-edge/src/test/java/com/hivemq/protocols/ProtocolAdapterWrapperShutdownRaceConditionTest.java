@@ -100,10 +100,11 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
-                tagManager);
+                tagManager,
+                mock());
 
         // Start the adapter first
-        wrapper.startAsync(true, moduleServices).get(5, TimeUnit.SECONDS);
+        wrapper.startAsync(true).get(5, TimeUnit.SECONDS);
         adapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
 
         // Now stop it
@@ -140,10 +141,11 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
                     mock(),
                     adapterState,
                     northboundConsumerFactory,
-                    tagManager);
+                    tagManager,
+                    mock());
 
             // Start the adapter
-            wrapper.startAsync(true, moduleServices).get(5, TimeUnit.SECONDS);
+            wrapper.startAsync(true).get(5, TimeUnit.SECONDS);
             adapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
 
             final CountDownLatch bothStarted = new CountDownLatch(2);
@@ -209,13 +211,14 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
-                tagManager);
+                tagManager,
+                mock());
 
         // Set up listener
         adapterState.setConnectionStatusListener(status -> listenerCallCount.incrementAndGet());
 
         // Start the adapter
-        wrapper.startAsync(true, moduleServices).get(5, TimeUnit.SECONDS);
+        wrapper.startAsync(true).get(5, TimeUnit.SECONDS);
         adapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
 
         final int callCountBeforeStop = listenerCallCount.get();
@@ -247,10 +250,11 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
-                tagManager);
+                tagManager,
+                mock());
 
         // Start, stop, then start again
-        wrapper.startAsync(true, moduleServices).get(5, TimeUnit.SECONDS);
+        wrapper.startAsync(true).get(5, TimeUnit.SECONDS);
         adapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
         wrapper.stopAsync(false).get(5, TimeUnit.SECONDS);
 
@@ -259,7 +263,7 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
         assertThat(changed).isFalse();
 
         // Start again
-        wrapper.startAsync(true, moduleServices).get(5, TimeUnit.SECONDS);
+        wrapper.startAsync(true).get(5, TimeUnit.SECONDS);
 
         // Now status changes should work again (change from CONNECTED to ERROR should succeed)
         changed = adapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.ERROR);
@@ -284,10 +288,11 @@ class ProtocolAdapterWrapperShutdownRaceConditionTest {
                 mock(),
                 adapterState,
                 northboundConsumerFactory,
-                tagManager);
+                tagManager,
+                mock());
 
         // Try to start (will fail)
-        wrapper.startAsync(true, moduleServices).get(5, TimeUnit.SECONDS);
+        wrapper.startAsync(true).get(5, TimeUnit.SECONDS);
 
         // After failed start, status changes should be blocked during cleanup
         final boolean changed = adapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);

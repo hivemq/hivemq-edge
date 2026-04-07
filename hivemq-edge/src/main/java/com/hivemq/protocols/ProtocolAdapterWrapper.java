@@ -25,12 +25,12 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
-import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.modules.adapters.data.TagManager;
+import com.hivemq.edge.modules.adapters.impl.ModuleServicesPerModuleImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.persistence.mappings.NorthboundMapping;
@@ -80,6 +80,7 @@ public class ProtocolAdapterWrapper {
     private final AtomicReference<OperationState> operationState = new AtomicReference<>(OperationState.IDLE);
     private final AtomicReference<ScheduledExecutorService> schedulerRef = new AtomicReference<>(null);
     private final AtomicReference<ScheduledFuture<?>> schedulerFutureRef = new AtomicReference<>(null);
+    private final ModuleServicesPerModuleImpl perModule;
     protected @Nullable Long lastStartAttemptTime;
 
     public ProtocolAdapterWrapper(
@@ -92,7 +93,8 @@ public class ProtocolAdapterWrapper {
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterStateImpl protocolAdapterState,
             final @NotNull NorthboundConsumerFactory northboundConsumerFactory,
-            final @NotNull TagManager tagManager) {
+            final @NotNull TagManager tagManager,
+            final @NotNull ModuleServicesPerModuleImpl perModule) {
         this.protocolAdapterWritingService = protocolAdapterWritingService;
         this.protocolAdapterPollingService = protocolAdapterPollingService;
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
@@ -103,10 +105,14 @@ public class ProtocolAdapterWrapper {
         this.config = config;
         this.northboundConsumerFactory = northboundConsumerFactory;
         this.tagManager = tagManager;
+        this.perModule = perModule;
     }
 
-    public @NotNull CompletableFuture<Void> startAsync(
-            final boolean writingEnabled, final @NotNull ModuleServices moduleServices) {
+    public ModuleServicesPerModuleImpl getPerModule() {
+        return perModule;
+    }
+
+    public @NotNull CompletableFuture<Void> startAsync(final boolean writingEnabled) {
         final var existingStartFuture =
                 getOngoingOperationIfPresent(Objects.requireNonNull(operationState.get()), OperationState.STARTING);
         if (existingStartFuture != null) {
@@ -115,13 +121,13 @@ public class ProtocolAdapterWrapper {
         // Try to atomically transition from IDLE to STARTING
         if (!operationState.compareAndSet(OperationState.IDLE, OperationState.STARTING)) {
             // State changed between check and set, retry
-            return startAsync(writingEnabled, moduleServices);
+            return startAsync(writingEnabled);
         }
         // Clear shutdown flag when starting adapter to allow state changes
         protocolAdapterState.clearShuttingDown();
         initStartAttempt();
         final var output = new ProtocolAdapterStartOutputImpl();
-        final var input = new ProtocolAdapterStartInputImpl(moduleServices);
+        final var input = new ProtocolAdapterStartInputImpl(perModule);
         final var startFuture = CompletableFuture.supplyAsync(() -> {
                     try {
                         adapter.start(input, output);
@@ -140,7 +146,7 @@ public class ProtocolAdapterWrapper {
                         return CompletableFuture.failedFuture(error);
                     } else {
                         protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
-                        return attemptStartingConsumers(writingEnabled, moduleServices.eventService())
+                        return attemptStartingConsumers(writingEnabled, perModule.eventService())
                                 .handle((success, startException) -> {
                                     if (startException == null) {
                                         if (success) {
@@ -249,7 +255,7 @@ public class ProtocolAdapterWrapper {
                                         .get()) {
                                     log.info("Successfully started adapter with id {}", adapter.getId());
                                 } else {
-                                    log.error(
+                                    log.warn(
                                             "Protocol adapter with id {} start writing failed as data hub is not available.",
                                             adapter.getId());
                                 }

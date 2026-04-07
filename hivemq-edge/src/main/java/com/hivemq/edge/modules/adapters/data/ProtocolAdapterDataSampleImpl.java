@@ -17,13 +17,12 @@ package com.hivemq.edge.modules.adapters.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -35,9 +34,12 @@ import org.jetbrains.annotations.NotNull;
 public class ProtocolAdapterDataSampleImpl implements ProtocolAdapterDataSample {
 
     private final @NotNull Long timestamp = System.currentTimeMillis();
-    final @NotNull Map<String, List<DataPoint>> tagNameToDataPoints = new ConcurrentHashMap<>();
+    private final @NotNull List<DataPoint> dataPoints = Collections.synchronizedList(new ArrayList<>());
+    private final @NotNull String adapterid;
 
-    public ProtocolAdapterDataSampleImpl() {}
+    public ProtocolAdapterDataSampleImpl(final @NotNull String adapterid) {
+        this.adapterid = adapterid;
+    }
 
     @Override
     @JsonIgnore
@@ -47,29 +49,32 @@ public class ProtocolAdapterDataSampleImpl implements ProtocolAdapterDataSample 
 
     @Override
     public void addDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {
-        Preconditions.checkNotNull(tagName);
-        Preconditions.checkNotNull(tagValue);
-        final DataPointImpl dataPoint = new DataPointImpl(tagName, tagValue);
+        final DataPointImpl dataPoint = new DataPointImpl(tagName, tagValue, adapterid);
         addDataPoint(dataPoint);
     }
 
     @Override
     public void addDataPoint(final @NotNull DataPoint dataPoint) {
-        tagNameToDataPoints.compute(dataPoint.getTagName(), (key, current) -> {
-            if (current != null) {
-                current.add(dataPoint);
-                return current;
-            } else {
-                final List<DataPoint> dataPoints = new ArrayList<>();
-                dataPoints.add(dataPoint);
-                return dataPoints;
-            }
-        });
+        dataPoints.add(dataPoint);
     }
 
     @Override
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public @NotNull Map<String, List<DataPoint>> getDataPoints() {
-        return tagNameToDataPoints;
+        if (!dataPoints.isEmpty()) {
+            final var firstTag = dataPoints.getFirst();
+            if (firstTag != null) {
+                return Map.of(firstTag.getTagName(), dataPoints);
+            } else {
+                return Collections.emptyMap();
+            }
+        } else {
+            return Collections.emptyMap();
+        }
+    }
+
+    @Override
+    public @NotNull List<DataPoint> getDataPointList() {
+        return List.copyOf(dataPoints);
     }
 }

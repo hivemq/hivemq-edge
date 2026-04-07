@@ -19,12 +19,17 @@ import com.google.common.collect.Sets;
 import com.hivemq.api.errors.AlreadyExistsError;
 import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.InternalServerError;
+import com.hivemq.api.errors.combiners.InvalidScopeForTagError;
+import com.hivemq.api.errors.combiners.MissingScopeForTagError;
+import com.hivemq.api.errors.combiners.TagNotFoundError;
+import com.hivemq.api.errors.combiners.UnexpectedScopeError;
 import com.hivemq.api.errors.pulse.ActivationTokenAlreadyDeletedError;
 import com.hivemq.api.errors.pulse.ActivationTokenInvalidError;
 import com.hivemq.api.errors.pulse.ActivationTokenNotDeletedError;
 import com.hivemq.api.errors.pulse.AssetMapperNotFoundError;
 import com.hivemq.api.errors.pulse.AssetMapperReferencedError;
 import com.hivemq.api.errors.pulse.DuplicatedManagedAssetIdError;
+import com.hivemq.api.errors.pulse.InvalidDataIdentifierReferenceTypeForAssetMapperError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetMappingIdError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetSchemaError;
 import com.hivemq.api.errors.pulse.InvalidManagedAssetTopicError;
@@ -34,11 +39,13 @@ import com.hivemq.api.errors.pulse.MissingEntityTypePulseAgentForAssetMapperErro
 import com.hivemq.api.errors.pulse.PulseAgentDeactivatedError;
 import com.hivemq.api.errors.pulse.PulseAgentNotConnectedError;
 import com.hivemq.combining.model.DataCombiner;
+import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.combining.model.EntityType;
 import com.hivemq.configuration.entity.pulse.PulseAssetEntity;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.AssetMappingExtractor;
+import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.configuration.reader.PulseExtractor;
 import com.hivemq.edge.api.PulseApi;
 import com.hivemq.edge.api.model.Combiner;
@@ -65,6 +72,7 @@ import com.hivemq.util.ErrorResponseUtil;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -91,6 +99,7 @@ public class PulseApiImpl implements PulseApi {
     private static final @NotNull Logger LOGGER = LoggerFactory.getLogger(PulseApiImpl.class);
     private final @NotNull AssetMappingExtractor assetMappingExtractor;
     private final @NotNull PulseExtractor pulseExtractor;
+    private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor;
     private final @NotNull StatusProviderRegistry statusProviderRegistry;
     private final @NotNull SystemInformation systemInformation;
 
@@ -99,9 +108,11 @@ public class PulseApiImpl implements PulseApi {
             final @NotNull SystemInformation systemInformation,
             final @NotNull AssetMappingExtractor assetMappingExtractor,
             final @NotNull PulseExtractor pulseExtractor,
+            final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor,
             final @NotNull StatusProviderRegistry statusProviderRegistry) {
         this.assetMappingExtractor = assetMappingExtractor;
         this.pulseExtractor = pulseExtractor;
+        this.protocolAdapterExtractor = protocolAdapterExtractor;
         this.statusProviderRegistry = statusProviderRegistry;
         this.systemInformation = systemInformation;
     }
@@ -618,6 +629,15 @@ public class PulseApiImpl implements PulseApi {
                         .noneMatch(entityReference -> entityReference.type() == EntityType.PULSE_AGENT)) {
             return Optional.of(ErrorResponseUtil.errorResponse(new MissingEntityTypePulseAgentForAssetMapperError()));
         }
+
+        // Build a map of adapterId -> Set<tagName> for TAG existence validation
+        final Map<String, Set<String>> adapterToTags = new HashMap<>();
+        protocolAdapterExtractor.getAllConfigs().forEach(adapter -> {
+            final Set<String> tagNames = new HashSet<>();
+            adapter.getTags().forEach(tag -> tagNames.add(tag.getName()));
+            adapterToTags.put(adapter.getAdapterId(), tagNames);
+        });
+
         final Set<String> oldAssetIdSet = Optional.ofNullable(oldDataCombiner)
                 .map(DataCombiner::getAssetIdSet)
                 .orElseGet(Set::of);
@@ -663,6 +683,76 @@ public class PulseApiImpl implements PulseApi {
                             ErrorResponseUtil.errorResponse(new InvalidManagedAssetMappingIdError(dataCombiningId)));
                 }
             }
+            // Validate primary TAG reference has scope and exists, and TOPIC_FILTER has no scope
+            final DataIdentifierReference primaryRef = dataCombining.sources().primaryReference();
+            if (primaryRef != null) {
+                switch (primaryRef.type()) {
+                    case PULSE_ASSET -> {
+                        return Optional.of(ErrorResponseUtil.errorResponse(
+                                new InvalidDataIdentifierReferenceTypeForAssetMapperError(
+                                        DataIdentifierReference.Type.PULSE_ASSET)));
+                    }
+                    case TAG -> {
+                        if (primaryRef.scope() == null || primaryRef.scope().isBlank()) {
+                            return Optional.of(
+                                    ErrorResponseUtil.errorResponse(new MissingScopeForTagError(primaryRef.id())));
+                        }
+                        final Optional<Response> tagValidationError = validateTagExists(primaryRef, adapterToTags);
+                        if (tagValidationError.isPresent()) {
+                            return tagValidationError;
+                        }
+                    }
+                    case TOPIC_FILTER -> {
+                        if (primaryRef.scope() != null && !primaryRef.scope().isBlank()) {
+                            return Optional.of(ErrorResponseUtil.errorResponse(
+                                    new UnexpectedScopeError(primaryRef.type(), primaryRef.id())));
+                        }
+                    }
+                    default -> {}
+                }
+            }
+            // Validate TAG references in instructions have scope and exist, and TOPIC_FILTER has no scope
+            for (final var instruction : dataCombining.instructions()) {
+                final DataIdentifierReference ref = instruction.dataIdentifierReference();
+                if (ref != null) {
+                    switch (ref.type()) {
+                        case PULSE_ASSET -> {
+                            return Optional.of(ErrorResponseUtil.errorResponse(
+                                    new InvalidDataIdentifierReferenceTypeForAssetMapperError(
+                                            DataIdentifierReference.Type.PULSE_ASSET)));
+                        }
+                        case TAG -> {
+                            if (ref.scope() == null || ref.scope().isBlank()) {
+                                return Optional.of(
+                                        ErrorResponseUtil.errorResponse(new MissingScopeForTagError(ref.id())));
+                            }
+                            final Optional<Response> tagValidationError = validateTagExists(ref, adapterToTags);
+                            if (tagValidationError.isPresent()) {
+                                return tagValidationError;
+                            }
+                        }
+                        case TOPIC_FILTER -> {
+                            if (ref.scope() != null && !ref.scope().isBlank()) {
+                                return Optional.of(ErrorResponseUtil.errorResponse(
+                                        new UnexpectedScopeError(ref.type(), ref.id())));
+                            }
+                        }
+                        default -> {}
+                    }
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    private @NotNull Optional<Response> validateTagExists(
+            final @NotNull DataIdentifierReference ref, final @NotNull Map<String, Set<String>> adapterToTags) {
+        final Set<String> tags = adapterToTags.get(Objects.requireNonNull(ref.scope()));
+        if (tags == null) {
+            return Optional.of(ErrorResponseUtil.errorResponse(new InvalidScopeForTagError(ref.scope(), ref.id())));
+        }
+        if (!tags.contains(ref.id())) {
+            return Optional.of(ErrorResponseUtil.errorResponse(new TagNotFoundError(ref.id(), ref.scope())));
         }
         return Optional.empty();
     }

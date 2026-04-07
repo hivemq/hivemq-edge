@@ -28,6 +28,12 @@ export const northboundMappingListSchema: JSONSchema7 = {
           description: 'Include the unix timestamp of the sample time in the resulting MQTT message',
           default: true,
         },
+        includeMetadata: {
+          type: 'boolean',
+          title: 'Include Metadata In Publish?',
+          description: 'Include the metadata associated with the tag in the resulting MQTT message',
+          default: false,
+        },
         messageExpiryInterval: {
           type: 'number',
           description: `The message expiry interval.`,

@@ -137,7 +137,7 @@
     "@istanbuljs/nyc-config-typescript": "1.0.2",
     "@mswjs/data": "0.16.2",
     "@percy/cli": "1.28.5",
-    "@percy/cypress": "3.1.7",
+    "@percy/cypress": "3.1.8",
     "@tanstack/eslint-plugin-query": "5.74.7",
     "@testing-library/jest-dom": "6.6.4",
     "@testing-library/react": "16.2.0",
@@ -205,8 +205,9 @@
       "minimatch@3": "3.1.5",
       "minimatch@8": "8.0.7",
       "minimatch@9": "9.0.9",
-      "minimatch@10": "10.2.4",
+      "minimatch@10": "10.2.5",
       "flatted": "3.4.2"
     }
-  }
+  },
+  "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b6563eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be"
 }

@@ -1,0 +1,52 @@
+/*
+ * Copyright 2019-present HiveMQ GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.hivemq.edge.modules.adapters.impl;
+
+import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
+import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
+import com.hivemq.adapter.sdk.api.streaming.ProtocolAdapterTagStreamingService;
+import com.hivemq.datapoint.DataPointListBuilderImpl;
+import com.hivemq.edge.modules.adapters.data.TagManager;
+import java.util.List;
+import java.util.function.Consumer;
+import org.jetbrains.annotations.NotNull;
+
+public class ProtocolAdapterTagStreamingServiceImpl implements ProtocolAdapterTagStreamingService {
+
+    private final @NotNull TagManager tagManager;
+    private final @NotNull Consumer<DataPointBuilder<?>> enricher;
+    private final @NotNull String adapterId;
+
+    public ProtocolAdapterTagStreamingServiceImpl(
+            @NotNull final TagManager tagManager,
+            @NotNull final Consumer<DataPointBuilder<?>> enricher,
+            final @NotNull String adapterId) {
+        this.tagManager = tagManager;
+        this.enricher = enricher;
+        this.adapterId = adapterId;
+    }
+
+    @Override
+    public @NotNull DataPointListBuilder dataPointsPublisher() {
+        return new DataPointListBuilderImpl(adapterId, enricher, tagManager::feed);
+    }
+
+    @Override
+    public void feed(@NotNull final String tag, @NotNull final List<DataPoint> dataPoints) {
+        tagManager.feed(tag, dataPoints);
+    }
+}

@@ -6,7 +6,6 @@ import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 import type { SchemaHandler } from '@/modules/TopicFilters/utils/topic-filter.schema'
 
 export interface DataReference extends DataIdentifierReference {
-  adapterId?: string
   schema?: SchemaHandler
 }
 
@@ -17,12 +16,9 @@ export const useGetCombinedDataSchemas = (dataIdentifiers: DataReference[]) => {
     queries: dataIdentifiers.map((dataPoint) => {
       return dataPoint.type === DataIdentifierReference.type.TAG
         ? {
-            queryKey: [QUERY_KEYS.ADAPTERS, dataPoint.adapterId, QUERY_KEYS.DISCOVERY_TAGS, dataPoint.id],
+            queryKey: [QUERY_KEYS.ADAPTERS, dataPoint.scope, QUERY_KEYS.DISCOVERY_TAGS, dataPoint.id],
             queryFn: () =>
-              appClient.protocolAdapters.getWritingSchema(
-                dataPoint.adapterId as string,
-                encodeURIComponent(dataPoint.id)
-              ),
+              appClient.protocolAdapters.getWritingSchema(dataPoint.scope as string, encodeURIComponent(dataPoint.id)),
           }
         : {
             // TODO[NVL] Certainly a hack: returns topic filters. Bridges are not supported yet

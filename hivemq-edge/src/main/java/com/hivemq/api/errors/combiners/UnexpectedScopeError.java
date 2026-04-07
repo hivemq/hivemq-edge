@@ -13,14 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.combining.runtime;
+package com.hivemq.api.errors.combiners;
 
 import com.hivemq.combining.model.DataIdentifierReference;
+import com.hivemq.http.HttpStatus;
+import com.hivemq.http.error.ProblemDetails;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
-public class SourceSanitizer {
-
-    public static @NotNull String sanitize(final @NotNull DataIdentifierReference dataIdRef) {
-        return dataIdRef.type() + ":" + dataIdRef.id().replaceAll("\\.", "/");
+public class UnexpectedScopeError extends ProblemDetails {
+    public UnexpectedScopeError(final @NotNull DataIdentifierReference.Type type, final @NotNull String id) {
+        super(
+                "UnexpectedScopeError",
+                "Unexpected Scope for " + type + " Reference",
+                "The " + type + " reference '" + id
+                        + "' should not have a scope. Scope is only valid for TAG references.",
+                HttpStatus.BAD_REQUEST_400,
+                List.of());
     }
 }

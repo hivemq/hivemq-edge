@@ -4,6 +4,7 @@ import { MOCK_JWT } from '@/__test-utils__/mocks.ts'
 import type { ErrorObject } from '@/components/rjsf/Form/validation.utils.ts'
 import { validationJWT } from '@/components/rjsf/Form/validation.utils.ts'
 import {
+  cleanSchemaForValidation,
   customFormatsValidator,
   customLocalizer,
   validationTag,
@@ -158,6 +159,43 @@ describe('customLocalizer', () => {
       expect.objectContaining({ message: Messages.noSingleLevelString }),
       expect.objectContaining({ message: Messages.noJWTFormat }),
     ])
+  })
+})
+
+describe('cleanSchemaForValidation', () => {
+  it('should strip $id from the schema', () => {
+    const result = cleanSchemaForValidation({ $id: 'urn:test:schema', type: 'object' })
+    expect(result).not.toHaveProperty('$id')
+    expect(result).toHaveProperty('type', 'object')
+  })
+
+  it('should strip $schema from the schema', () => {
+    const result = cleanSchemaForValidation({ $schema: 'http://json-schema.org/draft-07/schema#', type: 'object' })
+    expect(result).not.toHaveProperty('$schema')
+    expect(result).toHaveProperty('type', 'object')
+  })
+
+  it('should strip both $id and $schema together', () => {
+    const result = cleanSchemaForValidation({
+      $id: 'urn:test:schema',
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      type: 'object',
+      properties: { value: { type: 'number' } },
+    })
+    expect(result).not.toHaveProperty('$id')
+    expect(result).not.toHaveProperty('$schema')
+    expect(result).toStrictEqual({ type: 'object', properties: { value: { type: 'number' } } })
+  })
+
+  it('should preserve all other properties unchanged', () => {
+    const schema = { type: 'object', title: 'My Schema', required: ['name'], properties: { name: { type: 'string' } } }
+    expect(cleanSchemaForValidation(schema)).toStrictEqual(schema)
+  })
+
+  it('should not mutate the original schema', () => {
+    const original = { $id: 'urn:test:schema', type: 'object' }
+    cleanSchemaForValidation(original)
+    expect(original).toHaveProperty('$id', 'urn:test:schema')
   })
 })
 

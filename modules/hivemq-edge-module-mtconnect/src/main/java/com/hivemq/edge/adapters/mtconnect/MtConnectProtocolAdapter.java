@@ -22,8 +22,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
-import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
-import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -90,7 +88,6 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
     protected final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull String adapterId;
     private final @NotNull String version;
-    private final @NotNull AdapterFactories adapterFactories;
     protected volatile @Nullable HttpClient httpClient = null;
 
     public MtConnectProtocolAdapter(
@@ -99,7 +96,6 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
         this.adapterId = input.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
-        this.adapterFactories = input.adapterFactories();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.tags =
                 input.getTags().stream().map(tag -> (MtConnectAdapterTag) tag).toList();
@@ -196,16 +192,13 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
                                             }
                                         },
                                         () -> {
-                                            final DataPointFactory dataPointFactory =
-                                                    adapterFactories.dataPointFactory();
-                                            dataList.stream()
-                                                    .map(data -> dataPointFactory.create(
-                                                            data.getTagName(),
-                                                            Objects.requireNonNull(data.getJsonNode())))
-                                                    .forEach(pollingOutput::addDataPoint);
+                                            final var dataPointsPublisher = pollingOutput.dataPointListPublisher();
+                                            dataList.forEach(data -> dataPointsPublisher
+                                                    .addDataPoint(data.getTag())
+                                                    .value(Objects.requireNonNull(data.getJsonNode())));
                                             protocolAdapterState.setConnectionStatus(
                                                     ProtocolAdapterState.ConnectionStatus.STATELESS);
-                                            pollingOutput.finish();
+                                            dataPointsPublisher.publish();
                                         });
                             }
                         }
@@ -234,8 +227,8 @@ public class MtConnectProtocolAdapter implements BatchPollingProtocolAdapter {
     protected @NotNull MtConnectData processHttpResponse(
             final @NotNull HttpResponse<String> httpResponse, final @NotNull Tag tag) {
         final MtConnectAdapterTagDefinition definition = (MtConnectAdapterTagDefinition) tag.getDefinition();
-        final MtConnectData mtConnectData = new MtConnectData(
-                definition.getUrl(), isStatusCodeSuccessful(httpResponse.statusCode()), tag.getName());
+        final MtConnectData mtConnectData =
+                new MtConnectData(definition.getUrl(), isStatusCodeSuccessful(httpResponse.statusCode()), tag);
         if (mtConnectData.isSuccessful()) {
             // Let's make sure the response body is XML.
             final Optional<String> optionalContentType = httpResponse.headers().firstValue(HEADER_CONTENT_TYPE);

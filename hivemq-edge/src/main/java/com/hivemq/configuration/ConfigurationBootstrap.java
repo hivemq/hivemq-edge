@@ -17,6 +17,7 @@ package com.hivemq.configuration;
 
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.ioc.ConfigurationFileProvider;
+import com.hivemq.configuration.migration.DataCombiningScopeMigrator;
 import com.hivemq.configuration.reader.ApiConfigurator;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -83,6 +84,9 @@ public class ConfigurationBootstrap {
                         new UsageTrackingConfigurator(configurationService.usageTrackingConfiguration()),
                         new ModuleConfigurator(configurationService.commercialModuleConfigurationService()),
                         new InternalConfigurator(configurationService.internalConfigurationService())));
+
+        final DataCombiningScopeMigrator migrator = new DataCombiningScopeMigrator();
+        configFileReader.registerPostApplyCallback(migrator::migrateUnscopedTags);
 
         if (systemInformation.configRefreshIntervalInMs() <= 0) {
             configFileReader.applyConfig();

@@ -6,7 +6,7 @@ import { mockCombinerMapping } from '@/api/hooks/useCombiners/__handlers__'
 import { MOCK_CAPABILITY_PULSE_ASSETS } from '@/api/hooks/useFrontendServices/__handlers__'
 import { mockAdapter_OPCUA, mockProtocolAdapter_OPCUA } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { combinerMappingJsonSchema } from '@/api/schemas/combiner-mapping.json-schema'
-import { formatTopicString } from '@/components/MQTT/topic-utils'
+import { formatOwnershipString, formatTopicString } from '@/components/MQTT/topic-utils'
 
 import { DataCombiningTableField } from './DataCombiningTableField'
 
@@ -25,6 +25,7 @@ const mockPrimary: DataCombining = {
     primary: {
       id: 'my/tag/t3',
       type: DataIdentifierReference.type.TAG,
+      scope: 'my-adapter',
     },
   },
 }
@@ -120,12 +121,31 @@ describe('DataCombiningTableField', () => {
       .eq(1)
       .within(() => {
         cy.getByTestId('topic-wrapper').should('have.length', 3)
-        cy.getByTestId('topic-wrapper').eq(0).should('have.text', formatTopicString('my/tag/t1'))
+        cy.getByTestId('topic-wrapper')
+          .eq(0)
+          .should(
+            'have.text',
+            formatTopicString(
+              formatOwnershipString({ id: 'my/tag/t1', type: DataIdentifierReference.type.TAG, scope: 'my-adapter' })
+            )
+          )
         cy.getByTestId('topic-wrapper').eq(0).find('svg').should('have.attr', 'aria-label', 'Tag')
 
-        cy.getByTestId('topic-wrapper').eq(1).should('have.text', formatTopicString('my/tag/t3'))
+        cy.getByTestId('topic-wrapper')
+          .eq(1)
+          .should(
+            'have.text',
+            formatTopicString(
+              formatOwnershipString({ id: 'my/tag/t3', type: DataIdentifierReference.type.TAG, scope: 'my-adapter' })
+            )
+          )
         cy.getByTestId('topic-wrapper').eq(1).find('svg').should('have.attr', 'aria-label', 'Tag')
-        cy.getByTestId('primary-wrapper').should('have.text', formatTopicString('my/tag/t3'))
+        cy.getByTestId('primary-wrapper').should(
+          'have.text',
+          formatTopicString(
+            formatOwnershipString({ id: 'my/tag/t3', type: DataIdentifierReference.type.TAG, scope: 'my-adapter' })
+          )
+        )
         cy.getByTestId('primary-wrapper').find('svg').should('have.attr', 'aria-label', 'Primary key')
 
         cy.getByTestId('topic-wrapper').eq(2).should('have.text', formatTopicString('my/topic/+/temp'))
@@ -171,6 +191,86 @@ describe('DataCombiningTableField', () => {
         })
 
       cy.get('tbody tr td').eq(0).should('have.text', '< unset >')
+      cy.get('tbody tr td').eq(1).should('have.text', '< unset >')
+    })
+  })
+
+  describe('sources column ownership display', () => {
+    it('should show ownership string for tag found in sources.primary', () => {
+      // mockCombinerMapping: primary = { id: 'my/tag/t1', scope: 'my-adapter' }
+      cy.mountWithProviders(
+        <CustomFormTesting
+          schema={mockDataCombiningTableSchema}
+          uiSchema={mockDataCombiningTableUISchema}
+          formData={{ items: [mockCombinerMapping] }}
+        />
+      )
+
+      cy.get('tbody tr td')
+        .eq(1)
+        .within(() => {
+          cy.getByTestId('topic-wrapper').eq(0).should('contain.text', 'my-adapter ::')
+        })
+    })
+
+    it('should show ownership string for tag found in instructions sourceRef', () => {
+      const mockWithInstructions: DataCombining = {
+        id: 'test-instructions',
+        sources: {
+          primary: { id: 'temperature', type: DataIdentifierReference.type.TAG, scope: 'opcua-adapter' },
+          tags: ['temperature', 'pressure'],
+          topicFilters: [],
+        },
+        destination: { topic: 'north/data' },
+        instructions: [
+          {
+            sourceRef: { id: 'temperature', type: DataIdentifierReference.type.TAG, scope: 'opcua-adapter' },
+            source: 'temperature',
+            destination: 'temp',
+          },
+          {
+            sourceRef: { id: 'pressure', type: DataIdentifierReference.type.TAG, scope: 'modbus-adapter' },
+            source: 'pressure',
+            destination: 'pres',
+          },
+        ],
+      }
+
+      cy.mountWithProviders(
+        <CustomFormTesting
+          schema={mockDataCombiningTableSchema}
+          uiSchema={mockDataCombiningTableUISchema}
+          formData={{ items: [mockWithInstructions] }}
+        />
+      )
+
+      cy.get('tbody tr td')
+        .eq(1)
+        .within(() => {
+          cy.getByTestId('topic-wrapper').should('have.length', 2)
+          cy.getByTestId('topic-wrapper').eq(0).should('contain.text', 'opcua-adapter')
+          cy.getByTestId('topic-wrapper').eq(1).should('contain.text', 'modbus-adapter')
+        })
+    })
+
+    it('should show unset when there are no source instructions', () => {
+      const mockNoInstructions: DataCombining = {
+        id: 'test-no-instructions',
+        sources: {
+          primary: { id: 'my/tag/t1', type: DataIdentifierReference.type.TAG },
+        },
+        destination: { topic: 'north/topic' },
+        instructions: [],
+      }
+
+      cy.mountWithProviders(
+        <CustomFormTesting
+          schema={mockDataCombiningTableSchema}
+          uiSchema={mockDataCombiningTableUISchema}
+          formData={{ items: [mockNoInstructions] }}
+        />
+      )
+
       cy.get('tbody tr td').eq(1).should('have.text', '< unset >')
     })
   })
