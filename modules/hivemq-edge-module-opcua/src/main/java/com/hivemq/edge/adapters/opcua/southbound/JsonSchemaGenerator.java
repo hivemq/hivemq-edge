@@ -15,24 +15,24 @@
  */
 package com.hivemq.edge.adapters.opcua.southbound;
 
-import static com.hivemq.edge.adapters.opcua.Constants.OBJECT_DATA_TYPE;
-import static com.hivemq.edge.adapters.opcua.Constants.TYPE;
-import static com.hivemq.edge.adapters.opcua.southbound.BuiltinJsonSchema.MAPPER;
-import static com.hivemq.edge.adapters.opcua.southbound.BuiltinJsonSchema.SCHEMA_URI;
-import static com.hivemq.edge.adapters.opcua.southbound.BuiltinJsonSchema.createJsonSchemaForArrayType;
-import static com.hivemq.edge.adapters.opcua.southbound.BuiltinJsonSchema.createJsonSchemaForBuiltInType;
-import static com.hivemq.edge.adapters.opcua.southbound.BuiltinJsonSchema.populatePropertiesForArray;
-import static com.hivemq.edge.adapters.opcua.southbound.BuiltinJsonSchema.populatePropertiesForBuiltinType;
+import static com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter.METADATA_SERVER_PICOSECONDS;
+import static com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter.METADATA_SERVER_TIMESTAMP;
+import static com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter.METADATA_SOURCE_PICOSECONDS;
+import static com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter.METADATA_SOURCE_TIMESTAMP;
+import static com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter.METADATA_STATUS_CODE;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import com.hivemq.adapter.sdk.api.schema.ItemSchemaBuilder;
+import com.hivemq.adapter.sdk.api.schema.ObjectSchemaBuilder;
+import com.hivemq.adapter.sdk.api.schema.PropertySchemaBuilder;
+import com.hivemq.adapter.sdk.api.schema.ScalarType;
+import com.hivemq.adapter.sdk.api.schema.Schema;
+import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
+import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
+import com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.nodes.UaVariableNode;
@@ -40,14 +40,20 @@ import org.eclipse.milo.opcua.sdk.core.typetree.DataType;
 import org.eclipse.milo.opcua.sdk.core.typetree.DataTypeTree;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
 import org.eclipse.milo.opcua.stack.core.UaException;
-import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.eclipse.milo.opcua.stack.core.types.structured.EnumDefinition;
 import org.eclipse.milo.opcua.stack.core.types.structured.StructureDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Collects OPC UA type information from the server's type tree and converts it into {@link Schema}
+ * objects using the {@link SchemaBuilder} fluent API.
+ */
 public class JsonSchemaGenerator {
 
     private final @NotNull OpcUaClient client;
@@ -62,73 +68,69 @@ public class JsonSchemaGenerator {
         }
     }
 
-    public @NotNull CompletableFuture<Optional<JsonNode>> createMqttPayloadJsonSchema(final @NotNull OpcuaTag tag) {
-        final String nodeId = tag.getDefinition().getNode();
-        final var jsonSchemaGenerator = new JsonSchemaGenerator(client);
-        final var parsed = NodeId.parse(nodeId);
-        return jsonSchemaGenerator
-                .collectTypeInfo(parsed)
-                .thenApply(info -> {
-                    if (info.arrayDimensions() != null && info.arrayDimensions().length > 0) {
-                        return createJsonSchemaForArrayType(
-                                Objects.requireNonNull(info.dataType()),
-                                Objects.requireNonNull(info.arrayDimensions()));
-                    } else if (info.nestedFields() == null
-                            || info.nestedFields().isEmpty()) {
-                        return createJsonSchemaForBuiltInType(Objects.requireNonNull(info.dataType()));
-                    } else {
-                        return jsonSchemaGenerator.jsonSchemaFromNodeId(info);
-                    }
-                })
-                .thenApply(Optional::of);
+    // ── Public API ───────────────────────────────────────────────────────────
+
+    /**
+     * Collects OPC UA type information for the given tag asynchronously.
+     */
+    public @NotNull CompletableFuture<FieldInformation> collectTypeInfo(final @NotNull OpcuaTag tag) {
+        final var parsed = NodeId.parse(tag.getDefinition().getNode());
+        return collectTypeInfo(parsed);
     }
 
-    private @NotNull CompletableFuture<FieldInformation> collectTypeInfo(final @NotNull NodeId destinationNodeId) {
-        final CompletableFuture<UaVariableNode> variableNodeFuture =
-                client.getAddressSpace().getVariableNodeAsync(destinationNodeId);
+    /**
+     * Builds a {@link Schema} from the given {@link FieldInformation} using the provided
+     * {@link SchemaBuilder}. The result is wrapped in an object with a required {@code value}
+     * property and an optional read-only {@code metadata} property, matching the MQTT payload
+     * structure produced by OPC UA adapters.
+     * Calls {@link SchemaBuilder#build()} at the end.
+     */
+    public static @NotNull TagSchemaCreationOutput.DataPointSchema buildSchema(final @NotNull FieldInformation info) {
+        final var valueSchema = new SchemaBuilderImpl();
+        // value — required, carries the OPC UA node value (scalar, array, or nested object)
+        applyFieldInfoToSchema(valueSchema, info);
 
-        return variableNodeFuture
-                .thenApply(uaVariableNode -> {
-                    final NodeId dataTypeNodeId = uaVariableNode.getDataType();
-                    final DataType dataType = tree.getDataType(dataTypeNodeId);
-                    final UInteger[] dimensions = uaVariableNode.getArrayDimensions();
+        final var metadataSchema = new SchemaBuilderImpl()
+                .startObject()
+                .property(METADATA_STATUS_CODE)
+                .startObject()
+                .property("code")
+                .scalar(ScalarType.LONG)
+                .property("symbol")
+                .scalar(ScalarType.STRING)
+                .endObject()
+                .readable()
+                .writable(false)
+                .property(METADATA_SOURCE_TIMESTAMP)
+                .scalar(ScalarType.LONG)
+                .readable()
+                .writable(false)
+                .property(METADATA_SOURCE_PICOSECONDS)
+                .scalar(ScalarType.LONG)
+                .readable()
+                .writable(false)
+                .property(METADATA_SERVER_TIMESTAMP)
+                .scalar(ScalarType.LONG)
+                .readable()
+                .writable(false)
+                .property(METADATA_SERVER_PICOSECONDS)
+                .scalar(ScalarType.LONG)
+                .readable()
+                .writable(false)
+                .endObject()
+                .readable()
+                .writable(false);
 
-                    if (dataType == null) {
-                        throw new RuntimeException(
-                                "Unable to find the data type for the given node id '" + destinationNodeId + "'.");
-                    }
-                    final OpcUaDataType builtinType = tree.getBuiltinType(dataType.getNodeId());
-
-                    if (builtinType != OpcUaDataType.ExtensionObject) {
-                        return new FieldInformation(
-                                null,
-                                // No name since this is the root
-                                dataType.getNodeId()
-                                        .expanded(client.getNamespaceTable())
-                                        .getNamespaceUri(),
-                                builtinType,
-                                null,
-                                false,
-                                dimensions,
-                                true,
-                                List.of());
-                    } else {
-                        if (dataType.getBinaryEncodingId() == null) {
-                            throw new RuntimeException(
-                                    "No encoding was present for the complex data type: '" + dataType + "'.");
-                        }
-                        return processExtensionObject(dataType, true, null);
-                    }
-                })
-                .exceptionally(throwable -> {
-                    throw new RuntimeException("Problem accessing node", throwable);
-                });
+        return new TagSchemaCreationOutput.DataPointSchema(valueSchema.build(), metadataSchema.build(), null);
     }
 
+    /**
+     * Walks a complex OPC UA data type (ExtensionObject) recursively, producing a
+     * {@link FieldInformation} tree.
+     */
     public @NotNull FieldInformation processExtensionObject(
             final @NotNull DataType dataType, final boolean required, final @Nullable String name) {
         try {
-
             final var dataTypeDefinition = dataType.getDataTypeDefinition();
             if (dataTypeDefinition instanceof final StructureDefinition structureDefinition) {
                 if (structureDefinition.getFields() != null) {
@@ -204,98 +206,261 @@ public class JsonSchemaGenerator {
         }
     }
 
-    private void addNestedStructureInformation(
-            final @NotNull ObjectNode propertiesNode, final @NotNull FieldInformation fieldType) {
-        final @Nullable OpcUaDataType builtinDataType = fieldType.dataType();
+    // ── Type info collection (private) ───────────────────────────────────────
 
-        final ObjectNode nestedPropertiesNode = MAPPER.createObjectNode();
-        propertiesNode.set(fieldType.name(), nestedPropertiesNode);
+    private @NotNull CompletableFuture<FieldInformation> collectTypeInfo(final @NotNull NodeId destinationNodeId) {
+        final CompletableFuture<UaVariableNode> variableNodeFuture =
+                client.getAddressSpace().getVariableNodeAsync(destinationNodeId);
 
-        if (builtinDataType != null
-                && builtinDataType != OpcUaDataType.ExtensionObject
-                && fieldType.customDataType() == null) {
-            populatePropertiesForBuiltinType(nestedPropertiesNode, builtinDataType, MAPPER);
-        } else if (builtinDataType != null
-                && fieldType.arrayDimensions() != null
-                && fieldType.arrayDimensions().length > 0) {
-            populatePropertiesForArray(nestedPropertiesNode, builtinDataType, MAPPER, fieldType.arrayDimensions());
+        return variableNodeFuture
+                .thenApply(uaVariableNode -> {
+                    final NodeId dataTypeNodeId = uaVariableNode.getDataType();
+                    final DataType dataType = tree.getDataType(dataTypeNodeId);
+                    final UInteger[] dimensions = uaVariableNode.getArrayDimensions();
+
+                    if (dataType == null) {
+                        throw new RuntimeException(
+                                "Unable to find the data type for the given node id '" + destinationNodeId + "'.");
+                    }
+                    final OpcUaDataType builtinType = tree.getBuiltinType(dataType.getNodeId());
+
+                    if (builtinType != OpcUaDataType.ExtensionObject) {
+                        return new FieldInformation(
+                                null,
+                                dataType.getNodeId()
+                                        .expanded(client.getNamespaceTable())
+                                        .getNamespaceUri(),
+                                builtinType,
+                                null,
+                                false,
+                                dimensions,
+                                true,
+                                List.of());
+                    } else {
+                        if (dataType.getBinaryEncodingId() == null) {
+                            throw new RuntimeException(
+                                    "No encoding was present for the complex data type: '" + dataType + "'.");
+                        }
+                        return processExtensionObject(dataType, true, null);
+                    }
+                })
+                .exceptionally(throwable -> {
+                    throw new RuntimeException("Problem accessing node", throwable);
+                });
+    }
+
+    private static void applyScalarType(final @NotNull SchemaBuilder schema, final @NotNull OpcUaDataType opcUaType) {
+        if (opcUaType == OpcUaDataType.QualifiedName) {
+            schema.startObject()
+                    .property("namespaceIndex")
+                    .required()
+                    .scalar(ScalarType.LONG)
+                    .property("name")
+                    .required()
+                    .scalar(ScalarType.STRING)
+                    .endObject();
+            return;
+        }
+        schema.scalar(mapOpcUaToScalarType(opcUaType));
+        applyMinMax(schema, opcUaType);
+    }
+
+    private static void applyScalarType(
+            final @NotNull PropertySchemaBuilder<?> prop, final @NotNull OpcUaDataType opcUaType) {
+        if (opcUaType == OpcUaDataType.QualifiedName) {
+            prop.startObject()
+                    .property("namespaceIndex")
+                    .required()
+                    .scalar(ScalarType.LONG)
+                    .property("name")
+                    .required()
+                    .scalar(ScalarType.STRING)
+                    .endObject();
+            return;
+        }
+        prop.scalar(mapOpcUaToScalarType(opcUaType));
+        applyMinMax(prop, opcUaType);
+    }
+
+    private static void applyScalarType(
+            final @NotNull ItemSchemaBuilder<?> items, final @NotNull OpcUaDataType opcUaType) {
+        if (opcUaType == OpcUaDataType.QualifiedName) {
+            items.startObject()
+                    .property("namespaceIndex")
+                    .required()
+                    .scalar(ScalarType.LONG)
+                    .property("name")
+                    .required()
+                    .scalar(ScalarType.STRING)
+                    .endObject();
+            return;
+        }
+        items.scalar(mapOpcUaToScalarType(opcUaType));
+        applyMinMax(items, opcUaType);
+    }
+
+    private static <P> void applyObjectProperties(
+            final @NotNull ObjectSchemaBuilder<P> obj, final @NotNull FieldInformation info) {
+        for (final FieldInformation field : info.nestedFields()) {
+            final String fieldName = field.name();
+            if (fieldName == null) {
+                continue;
+            }
+            final var prop = obj.property(fieldName).writable();
+            if (field.required()) {
+                prop.required();
+            }
+            applyFieldInfoToProperty(prop, field);
+        }
+        obj.endObject();
+    }
+
+    private static void applyFieldInfoToSchema(
+            final @NotNull SchemaBuilder schema, final @NotNull FieldInformation info) {
+        if (info.arrayDimensions() != null && info.arrayDimensions().length > 0) {
+            applyArrayType(schema.startArray().writable(), info.dataType(), info.arrayDimensions(), 0);
+        } else if (!info.nestedFields().isEmpty()) {
+            applyObjectProperties(schema.startObject(), info);
+        } else if (info.dataType() != null) {
+            applyScalarType(schema.writable(), info.dataType());
         } else {
-            nestedPropertiesNode.set(TYPE, new TextNode(OBJECT_DATA_TYPE));
-            final ObjectNode innerProperties = MAPPER.createObjectNode();
-            nestedPropertiesNode.set("properties", innerProperties);
-
-            if (fieldType.namespaceUri() != null) {
-                verifyDataTypeForField(fieldType);
-            }
-
-            final ArrayNode requiredAttributesArray = MAPPER.createArrayNode();
-            for (final FieldInformation entry : fieldType.nestedFields()) {
-                if (entry.required()) {
-                    requiredAttributesArray.add(entry.name());
-                }
-                addNestedStructureInformation(innerProperties, entry);
-            }
-            nestedPropertiesNode.set("required", requiredAttributesArray);
+            schema.any().writable();
         }
     }
 
-    private void verifyDataTypeForField(final @NotNull FieldInformation fieldType) {
-        client.getStaticDataTypeManager().getTypeDictionary(fieldType.namespaceUri());
-
-        final ExpandedNodeId expandedNodeId = fieldType.customDataType() == null
-                ? Objects.requireNonNull(fieldType.dataType()).getNodeId().expanded()
-                : fieldType.customDataType().getNodeId().expanded();
-        final Optional<NodeId> optionalDataTypeId = expandedNodeId.toNodeId(client.getNamespaceTable());
-        if (optionalDataTypeId.isEmpty()) {
-            throw new RuntimeException("Expanded node id '" + expandedNodeId + "' could not be parsed to node id.");
-        }
-
-        final NodeId dataTypeId = optionalDataTypeId.get();
-        final DataType dataType = tree.getDataType(dataTypeId);
-        if (dataType == null) {
-            throw new RuntimeException("No data type was found in the DataTypeTree for node id '" + dataTypeId + "'");
-        }
-        final NodeId binaryEncodingId = dataType.getBinaryEncodingId();
-        if (binaryEncodingId == null) {
-            throw new RuntimeException("Binary encoding id was null for nested struct.");
+    private static <P> void applyFieldInfoToProperty(
+            final @NotNull PropertySchemaBuilder<P> prop, final @NotNull FieldInformation info) {
+        if (info.arrayDimensions() != null && info.arrayDimensions().length > 0) {
+            applyArrayType(prop.startArray().writable(), info.dataType(), info.arrayDimensions(), 0);
+        } else if (!info.nestedFields().isEmpty()) {
+            applyObjectProperties(prop.startObject(), info);
+        } else if (info.dataType() != null) {
+            applyScalarType(prop, info.dataType());
+        } else {
+            prop.any();
         }
     }
 
-    private @NotNull JsonNode jsonSchemaFromNodeId(final @NotNull FieldInformation fieldInformation) {
-        final ObjectNode rootNode = MAPPER.createObjectNode();
-        rootNode.set("$schema", new TextNode(SCHEMA_URI));
-        rootNode.set(
-                "title",
-                new TextNode("CustomStruct: "
-                        + (fieldInformation.dataType() != null
-                                ? fieldInformation.dataType().getNodeId().toParseableString()
-                                : Objects.requireNonNull(fieldInformation.customDataType())
-                                        .getNodeId()
-                                        .toParseableString())));
-        rootNode.set(TYPE, new TextNode(OBJECT_DATA_TYPE));
-
-        final ObjectNode valueNode = MAPPER.createObjectNode();
-        rootNode.set("value", valueNode);
-        valueNode.set(TYPE, new TextNode(OBJECT_DATA_TYPE));
-
-        final ObjectNode propertiesNode = MAPPER.createObjectNode();
-        valueNode.set("properties", propertiesNode);
-
-        final ArrayNode requiredAttributesArray = MAPPER.createArrayNode();
-        fieldInformation.nestedFields().forEach(fieldInfo -> {
-            if (fieldInfo.required()) {
-                requiredAttributesArray.add(fieldInfo.name());
+    private static <P> void applyArrayType(
+            final @NotNull ItemSchemaBuilder<P> items,
+            final @Nullable OpcUaDataType opcUaType,
+            final @NotNull UInteger @NotNull [] dimensions,
+            final int depth) {
+        if (depth == dimensions.length - 1) {
+            if (opcUaType != null) {
+                applyScalarType(items, opcUaType);
+            } else {
+                items.any();
             }
-            addNestedStructureInformation(propertiesNode, fieldInfo);
-        });
-
-        valueNode.set("required", requiredAttributesArray);
-
-        final ArrayNode requiredProperties = MAPPER.createArrayNode();
-        requiredProperties.add("value");
-        rootNode.set("required", requiredProperties);
-        return rootNode;
+        } else {
+            applyArrayType(items.startArray(), opcUaType, dimensions, depth + 1);
+        }
+        final long maxSize = dimensions[depth].longValue();
+        if (maxSize > 0) {
+            items.minContains((int) maxSize).maxContains((int) maxSize);
+        }
+        items.endArray();
     }
+
+    // ── Min/Max helpers ──────────────────────────────────────────────────────
+
+    private static void applyMinMax(final @NotNull SchemaBuilder schema, final @NotNull OpcUaDataType type) {
+        final Number min = minimumForOpcUaType(type);
+        final Number max = maximumForOpcUaType(type);
+        if (min instanceof final Long l) {
+            schema.minimum(l);
+        } else if (min instanceof final Double d) {
+            schema.minimum(d);
+        }
+        if (max instanceof final Long l) {
+            schema.maximum(l);
+        } else if (max instanceof final Double d) {
+            schema.maximum(d);
+        }
+    }
+
+    private static void applyMinMax(final @NotNull PropertySchemaBuilder<?> prop, final @NotNull OpcUaDataType type) {
+        final Number min = minimumForOpcUaType(type);
+        final Number max = maximumForOpcUaType(type);
+        if (min instanceof final Long l) {
+            prop.minimum(l);
+        } else if (min instanceof final Double d) {
+            prop.minimum(d);
+        }
+        if (max instanceof final Long l) {
+            prop.maximum(l);
+        } else if (max instanceof final Double d) {
+            prop.maximum(d);
+        }
+    }
+
+    private static void applyMinMax(final @NotNull ItemSchemaBuilder<?> items, final @NotNull OpcUaDataType type) {
+        final Number min = minimumForOpcUaType(type);
+        final Number max = maximumForOpcUaType(type);
+        if (min instanceof final Long l) {
+            items.minimum(l);
+        } else if (min instanceof final Double d) {
+            items.minimum(d);
+        }
+        if (max instanceof final Long l) {
+            items.maximum(l);
+        } else if (max instanceof final Double d) {
+            items.maximum(d);
+        }
+    }
+
+    // ── Type mapping ─────────────────────────────────────────────────────────
+
+    static @NotNull ScalarType mapOpcUaToScalarType(final @NotNull OpcUaDataType opcUaType) {
+        return switch (opcUaType) {
+            case Boolean -> ScalarType.BOOLEAN;
+            case SByte, Byte, Int16, UInt16, Int32, UInt32, StatusCode, Int64 -> ScalarType.LONG;
+            case UInt64 -> ScalarType.ULONG;
+            case Float, Double -> ScalarType.DOUBLE;
+            case String, Guid, ByteString, XmlElement, NodeId, ExpandedNodeId, LocalizedText, DateTime ->
+                ScalarType.STRING;
+            case QualifiedName -> throw new IllegalArgumentException("QualifiedName is an object type, not a scalar");
+            case ExtensionObject, DataValue, Variant, DiagnosticInfo ->
+                throw new IllegalArgumentException("Unsupported OPC UA data type: " + opcUaType.name());
+        };
+    }
+
+    // ── Range constraints per OPC UA type width ──────────────────────────────
+
+    private static @Nullable Number minimumForOpcUaType(final @NotNull OpcUaDataType opcUaType) {
+        return switch (opcUaType) {
+            case SByte -> (long) java.lang.Byte.MIN_VALUE;
+            case Byte -> (long) UByte.MIN_VALUE;
+            case Int16 -> (long) Short.MIN_VALUE;
+            case UInt16 -> (long) UShort.MIN.intValue();
+            case Int32, StatusCode -> (long) Integer.MIN_VALUE;
+            case UInt32 -> UInteger.MIN_VALUE;
+            case Int64 -> Long.MIN_VALUE;
+            case UInt64 -> ULong.MIN_VALUE;
+            case Float -> (double) -java.lang.Float.MAX_VALUE;
+            case Double -> -java.lang.Double.MAX_VALUE;
+            default -> null;
+        };
+    }
+
+    private static @Nullable Number maximumForOpcUaType(final @NotNull OpcUaDataType opcUaType) {
+        return switch (opcUaType) {
+            case SByte -> (long) java.lang.Byte.MAX_VALUE;
+            case Byte -> (long) UByte.MAX_VALUE;
+            case Int16 -> (long) Short.MAX_VALUE;
+            case UInt16 -> (long) UShort.MAX.intValue();
+            case Int32, StatusCode -> (long) Integer.MAX_VALUE;
+            case UInt32 -> UInteger.MAX_VALUE;
+            case Int64 -> Long.MAX_VALUE;
+            case UInt64 ->
+                BigInteger.valueOf(Long.MAX_VALUE).multiply(BigInteger.TWO).add(BigInteger.ONE);
+            case Float -> (double) java.lang.Float.MAX_VALUE;
+            case Double -> java.lang.Double.MAX_VALUE;
+            default -> null;
+        };
+    }
+
+    // ── Field information record ─────────────────────────────────────────────
 
     @SuppressWarnings("ArrayRecordComponent")
     public record FieldInformation(

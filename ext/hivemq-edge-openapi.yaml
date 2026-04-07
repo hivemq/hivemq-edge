@@ -212,8 +212,8 @@ paths:
         Get all policies. 
 
          This endpoint returns the content of the policies with the content-type `application/json`. 
+      
 
-         
       operationId: getAllBehaviorPolicies
       x-roles-allowed:
         - admin
@@ -523,8 +523,8 @@ paths:
     delete:
       description: |-
         Deletes an existing policy. 
+      
 
-         
       operationId: deleteBehaviorPolicy
       x-roles-allowed:
         - admin
@@ -588,8 +588,8 @@ paths:
         Get a specific policy. 
 
          This endpoint returns the content of the policy with the content-type `application/json`. 
+      
 
-         
       operationId: getBehaviorPolicy
       x-roles-allowed:
         - admin
@@ -686,7 +686,7 @@ paths:
         Update a behavior policy
 
         The path parameter 'policyId' must match the 'id' of the policy in the request body.
-         
+
       operationId: updateBehaviorPolicy
       x-roles-allowed:
         - admin
@@ -914,8 +914,8 @@ paths:
         Get all data policies. 
 
          This endpoint returns the content of the policies with the content-type `application/json`. 
+      
 
-         
       operationId: getAllDataPolicies
       x-roles-allowed:
         - admin
@@ -1302,8 +1302,8 @@ paths:
     delete:
       description: |-
         Deletes an existing data policy. 
+      
 
-         
       operationId: deleteDataPolicy
       x-roles-allowed:
         - admin
@@ -1367,8 +1367,8 @@ paths:
         Get a specific data policy. 
 
          This endpoint returns the content of the policy with the content-type `application/json`. 
+      
 
-         
       operationId: getDataPolicy
       x-roles-allowed:
         - admin
@@ -1465,7 +1465,7 @@ paths:
 
         The path parameter 'policyId' must match the 'id' of the policy in the request body.
          The matching part of policies cannot be changed with an update.
-         
+
       operationId: updateDataPolicy
       x-roles-allowed:
         - admin
@@ -1923,8 +1923,8 @@ paths:
         Get all schemas. 
 
          This endpoint returns the content of the schemas with the content-type `application/json`. 
+      
 
-         
       operationId: getAllSchemas
       x-roles-allowed:
         - admin
@@ -2165,8 +2165,8 @@ paths:
     delete:
       description: |-
         Deletes the selected schema and all associated versions of the schema. 
+      
 
-         
       operationId: deleteSchema
       x-roles-allowed:
         - admin
@@ -2232,8 +2232,8 @@ paths:
         Get a specific schema. 
 
          This endpoint returns the content of the latest version of the schema with the content-type `application/json`. 
+      
 
-         
       operationId: getSchema
       x-roles-allowed:
         - admin

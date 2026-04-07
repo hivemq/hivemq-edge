@@ -672,26 +672,17 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         conn.client()
                 .ifPresentOrElse(
                         client -> {
+                            final var generator = new JsonSchemaGenerator(client);
                             @SuppressWarnings("unused")
-                            final var unused = new JsonSchemaGenerator(client)
-                                    .createMqttPayloadJsonSchema(tag)
-                                    .whenComplete((result, throwable) -> {
-                                        if (throwable == null) {
-                                            result.ifPresentOrElse(
-                                                    schema -> {
-                                                        log.debug("Schema inferred for tag='{}'", tagName);
-                                                        output.finish(schema);
-                                                    },
-                                                    () -> {
-                                                        log.error("No schema inferred for tag='{}'", tagName);
-                                                        output.fail("No schema inferred for tag='" + tagName + "'");
-                                                    });
-                                        } else {
-                                            log.error(
-                                                    "Exception while creating tag schema for '{}'", tagName, throwable);
-                                            output.fail(throwable, null);
-                                        }
-                                    });
+                            final var unused = generator.collectTypeInfo(tag).whenComplete((fieldInfo, throwable) -> {
+                                if (throwable == null) {
+                                    log.debug("Schema inferred for tag='{}'", tagName);
+                                    output.finish(JsonSchemaGenerator.buildSchema(fieldInfo));
+                                } else {
+                                    log.error("Exception while creating tag schema for '{}'", tagName, throwable);
+                                    output.fail(throwable, null);
+                                }
+                            });
                         },
                         () -> {
                             log.error("Discovery failed: Client not connected or not initialized");
