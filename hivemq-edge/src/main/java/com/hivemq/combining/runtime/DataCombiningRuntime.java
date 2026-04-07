@@ -159,10 +159,8 @@ public class DataCombiningRuntime {
         });
 
         tagsToDataPoints.forEach((tagRef, dataPoint) -> {
-            if (dataPoint instanceof DataPointWithMetadata dpMeta) {
-                final ObjectNode wrapper = mapper.createObjectNode();
-                wrapper.set("value", dpMeta.getTagValue());
-                rootNode.set(tagRef.toFullyQualifiedName(), wrapper);
+            if (dataPoint instanceof final DataPointWithMetadata dpMeta) {
+                rootNode.set(tagRef.toFullyQualifiedName(), dpMeta.getJsonNode());
             } else {
                 try {
                     rootNode.set(

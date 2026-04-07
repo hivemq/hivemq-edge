@@ -16,7 +16,9 @@
 package com.hivemq.protocols.tag;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
+import com.hivemq.adapter.sdk.api.schema.impl.SchemaJsonRepresentation;
 import com.hivemq.exceptions.StackLessProtocolAdapterException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -27,27 +29,39 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
 
     private volatile @Nullable String message = null;
     private volatile @NotNull Status status = Status.SUCCESS;
-    private final @NotNull CompletableFuture<JsonNode> future =
-            new CompletableFuture<JsonNode>().orTimeout(30, TimeUnit.SECONDS);
+    private final @NotNull CompletableFuture<ObjectNode> future =
+            new CompletableFuture<ObjectNode>().orTimeout(30, TimeUnit.SECONDS);
 
     public @Nullable String getMessage() {
         return message;
     }
 
-    public @NotNull CompletableFuture<JsonNode> getFuture() {
+    public @NotNull CompletableFuture<ObjectNode> getFuture() {
         return future;
     }
 
     @Override
+    public void finish(@NotNull final DataPointSchema schema) {
+        final SchemaJsonRepresentation instance = SchemaJsonRepresentation.INSTANCE;
+        future.complete(instance.toCompositeSchema(schema));
+    }
+
+    @Override
     public void finish(final @NotNull JsonNode schema) {
-        future.complete(schema);
+        if (schema instanceof final ObjectNode objectNode) {
+            finish(new DataPointSchema(SchemaJsonRepresentation.INSTANCE.fromJsonSchema(objectNode), null, null));
+        } else {
+            status = Status.UNSPECIFIED_FAILURE;
+            future.completeExceptionally(
+                    new StackLessProtocolAdapterException("The provided json schema is not an object node."));
+        }
     }
 
     @Override
     public void notSupported() {
         status = Status.NOT_SUPPORTED;
-        future.completeExceptionally(new UnsupportedOperationException(
-                "The adapter does not support the creation of json schema for tags."));
+        future.completeExceptionally(
+                new UnsupportedOperationException("The adapter does not support the creation of json impl for tags."));
     }
 
     @Override
@@ -67,7 +81,7 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
     public void fail(final @NotNull String errorMessage) {
         status = Status.UNSPECIFIED_FAILURE;
         message = errorMessage;
-        future.completeExceptionally(new StackLessProtocolAdapterException("Json schema creation for tag failed."));
+        future.completeExceptionally(new StackLessProtocolAdapterException("Json impl creation for tag failed."));
     }
 
     @Override
