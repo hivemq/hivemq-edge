@@ -403,11 +403,16 @@ public class DeviceTagImporter {
             else if (bothDiff && (mode == ImportMode.OVERWRITE || mode == ImportMode.MERGE_OVERWRITE)) {
                 requireNonNull(twmFile);
                 requireNonNull(tagNameFile);
+                requireNonNull(twmEdge);
                 finalTags.add(twmFile.tag);
                 finalNorthbound.addAll(twmFile.northboundMappings);
                 finalSouthbound.addAll(twmFile.southboundMappings);
                 tagActions.add(new TagAction(tagNameFile, TagAction.Action.UPDATED));
                 tagsUpdated++;
+                nbDeleted += twmEdge.northboundMappings.size();
+                sbDeleted += twmEdge.southboundMappings.size();
+                nbCreated += twmFile.northboundMappings.size();
+                sbCreated += twmFile.southboundMappings.size();
             }
 
             // DELETE, 2, from Edge

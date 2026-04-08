@@ -694,7 +694,7 @@ class DeviceTagValidatorTest {
 
         assertThat(errors).anySatisfy(e -> {
             assertThat(e.code()).isEqualTo(ValidationError.Code.TAG_CONFLICT);
-            assertThat(e.message()).contains("collides");
+            assertThat(e.message()).contains("assigned to multiple nodes");
         });
     }
 
@@ -721,7 +721,7 @@ class DeviceTagValidatorTest {
 
         assertThat(errors).anySatisfy(e -> {
             assertThat(e.code()).isEqualTo(ValidationError.Code.TAG_CONFLICT);
-            assertThat(e.message()).contains("collides");
+            assertThat(e.message()).contains("assigned to multiple nodes");
         });
     }
 
