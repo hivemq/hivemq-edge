@@ -94,11 +94,11 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
         })
         .filter((item): item is { id: string; type: EntityType } => item !== null)
 
-      const hasEdgeBroker = selectedItems.some(
-        (e) => e.id === IdStubs.EDGE_NODE && e.type === EntityType.EDGE_BROKER
-      )
+      const hasEdgeBroker = selectedItems.some((e) => e.id === IdStubs.EDGE_NODE && e.type === EntityType.EDGE_BROKER)
       const sources: EntityReferenceList = {
-        items: hasEdgeBroker ? selectedItems : [...selectedItems, { id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER }],
+        items: hasEdgeBroker
+          ? selectedItems
+          : [...selectedItems, { id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER }],
       }
 
       if (ghostCombiner) {

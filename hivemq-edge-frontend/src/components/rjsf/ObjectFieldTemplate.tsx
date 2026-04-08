@@ -28,8 +28,7 @@ export const ObjectFieldTemplate = <
     uiOptions
   )
   const { tabIndex, setTabIndex } = useFormControlStore()
-  const { extraTabs } =
-    (formContext as { extraTabs?: ExtraTab[] } | undefined) ?? {}
+  const { extraTabs } = (formContext as { extraTabs?: ExtraTab[] } | undefined) ?? {}
 
   const { tabs } = uiOptions as UIOptionsType & { tabs?: UITab[] }
   if (!tabs) {
