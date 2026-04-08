@@ -16,10 +16,25 @@
 package com.hivemq.edge.adapters.browse.importer;
 
 import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.ADAPTER_NOT_FOUND;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.DUPLICATE_NODE;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.DUPLICATE_TAG_NAME;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.INVALID_EXPIRY;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.INVALID_FIELD_MAPPING;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.INVALID_NODE_ID;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.INVALID_QOS;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.INVALID_TAG_NAME;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.INVALID_TOPIC;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.INVALID_USER_PROPERTIES;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.MAPPING_WITHOUT_TAG;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.TAG_CONFLICT;
+import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.TAG_IN_USE_BY_COMBINER;
 import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.UPDATE_FAILED;
 import static com.hivemq.edge.adapters.browse.validate.ValidationError.Code.WILDCARD_NO_DEFAULT;
 import static java.util.Objects.requireNonNull;
 
+import com.hivemq.combining.model.DataCombiner;
+import com.hivemq.combining.model.DataCombining;
+import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.configuration.entity.adapter.MqttUserPropertyEntity;
 import com.hivemq.configuration.entity.adapter.NorthboundMappingEntity;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
@@ -27,10 +42,12 @@ import com.hivemq.configuration.entity.adapter.SouthboundMappingEntity;
 import com.hivemq.configuration.entity.adapter.TagEntity;
 import com.hivemq.configuration.entity.adapter.fieldmapping.FieldMappingEntity;
 import com.hivemq.configuration.entity.adapter.fieldmapping.InstructionEntity;
+import com.hivemq.configuration.reader.DataCombiningExtractor;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
 import com.hivemq.edge.adapters.browse.BrowseException;
 import com.hivemq.edge.adapters.browse.BulkTagBrowser;
 import com.hivemq.edge.adapters.browse.model.DeviceTagRow;
+import com.hivemq.edge.adapters.browse.model.FieldMappingInstruction;
 import com.hivemq.edge.adapters.browse.model.ImportMode;
 import com.hivemq.edge.adapters.browse.model.ImportResult;
 import com.hivemq.edge.adapters.browse.model.TagAction;
@@ -59,64 +76,248 @@ public class DeviceTagImporter {
 
     private final @NotNull DeviceTagValidator validator;
     private final @NotNull ProtocolAdapterExtractor adapterExtractor;
+    private final @NotNull DataCombiningExtractor combiningExtractor;
 
     @Inject
     public DeviceTagImporter(
-            final @NotNull DeviceTagValidator validator, final @NotNull ProtocolAdapterExtractor adapterExtractor) {
+            final @NotNull DeviceTagValidator validator,
+            final @NotNull ProtocolAdapterExtractor adapterExtractor,
+            final @NotNull DataCombiningExtractor combiningExtractor) {
         this.validator = validator;
         this.adapterExtractor = adapterExtractor;
+        this.combiningExtractor = combiningExtractor;
     }
 
-    private static @Nullable String resolveWildcard(final @Nullable String value, final @Nullable String defaultValue) {
-        return "*".equals(value) ? defaultValue : value;
-    }
+    // ------------------------------------------------------------------------------------------------------------------
 
-    /**
-     * Resolves a node ID against the device's current namespace table using the stable namespace URI.
-     * If the adapter supports namespace resolution and the URI is present, the returned node ID will
-     * contain the updated namespace index. Otherwise the original nodeId is returned unchanged.
-     */
-    private static @Nullable String resolveNodeIdIfNeeded(
-            final @Nullable BulkTagBrowser browser,
-            final @Nullable String nodeId,
-            final @Nullable String namespaceUri) {
-        if (browser == null || nodeId == null || namespaceUri == null || namespaceUri.isEmpty()) {
-            return nodeId;
+    private static final int MAX_DESCRIPTION_LENGTH = 1024;
+    private static final int MAX_TOPIC_LENGTH = 65535;
+    private static final int MAX_USER_PROPERTY_LENGTH = 256;
+    private static final long MAX_MESSAGE_EXPIRY_INTERVAL = 4_294_967_295L; // MQTT uint32 max
+
+    private @Nullable String tagNameValidated(
+            final @NotNull DeviceTagRow row, final int rowNum, final @NotNull List<ValidationError> errors) {
+        String tagName = row.getTagName();
+        if (tagName == null || tagName.isEmpty()) {
+            // rows without a tag_name are silently skipped, this is NOT an error, it is like they don't exist at all
+            // the only check is whether the row has north- or southbound mapping defined, that is an error
+            if (row.getNorthboundTopic() != null && !row.getNorthboundTopic().isEmpty()) {
+                errors.add(new ValidationError(
+                        rowNum,
+                        "northbound_topic",
+                        row.getNorthboundTopic(),
+                        MAPPING_WITHOUT_TAG,
+                        "Northbound mapping topic is defined, but row has empty tag_name."
+                                + "Delete the mapping topic or define a tag_name to create a tag."));
+            }
+            if (row.getSouthboundTopic() != null && !row.getSouthboundTopic().isEmpty()) {
+                errors.add(new ValidationError(
+                        rowNum,
+                        "southbound_topic",
+                        row.getSouthboundTopic(),
+                        MAPPING_WITHOUT_TAG,
+                        "Southbound mapping topic is defined, but row has empty tag_name."
+                                + "Delete the mapping topic or define a tag_name to create a tag."));
+            }
+            return null;
         }
-        try {
-            return browser.resolveNodeId(nodeId, namespaceUri);
-        } catch (final BrowseException e) {
-            log.warn("Failed to resolve namespace URI '{}' for nodeId '{}': {}", namespaceUri, nodeId, e.getMessage());
-            return nodeId;
+        if (tagName.equals("*")) {
+            tagName = row.getTagNameDefault();
+            // Rules for tagNames are deliberately the same as the rules for topics, see Edge-Lore/Product/TagNames
+            if (tagName == null || tagName.isEmpty()) {
+                errors.add(new ValidationError(
+                        rowNum,
+                        "tag_name",
+                        "*",
+                        WILDCARD_NO_DEFAULT,
+                        "Tag name uses the '*' default character but tag_name_default is empty."
+                                + "Define either tag_name_default or use a different tag_name."));
+                return null;
+            }
+            if (tagName.length() > MAX_TOPIC_LENGTH) {
+                errors.add(new ValidationError(
+                        rowNum,
+                        "tag_name",
+                        tagName.substring(50) + "...",
+                        INVALID_TAG_NAME,
+                        "Tag name is longer than 65535 character." + "Shorten the tag_name."));
+                return null;
+            }
+            if (tagName.contains("#") || tagName.contains("+") || tagName.contains("\0")) {
+                errors.add(new ValidationError(
+                        rowNum,
+                        "tag_name",
+                        tagName,
+                        INVALID_TAG_NAME,
+                        "Tag name contains invalid characters '#', '+', or '\0'."
+                                + "Remove invalid characters from tag_name."));
+                return null;
+            }
         }
+        return tagName;
     }
 
-    private static @NotNull TagEntity toTagEntity(final @NotNull DeviceTagRow row) {
-        return new TagEntity(
-                requireNonNull(row.getTagName()),
-                row.getTagDescription(),
-                Map.of("node", requireNonNull(row.getNodeId())));
+    private @Nullable String nodeIdValidated(
+            final @NotNull DeviceTagRow row,
+            final int rowNum,
+            final @NotNull List<ValidationError> errors,
+            final @Nullable BulkTagBrowser browser) {
+        String nodeId = row.getNodeId();
+        if (nodeId == null || nodeId.isEmpty()) {
+            errors.add(new ValidationError(
+                    rowNum,
+                    "node_id",
+                    "",
+                    INVALID_NODE_ID,
+                    "NodeId is empty. " + "Define NodeId to define the node for the tag."));
+            return null;
+        }
+        if (browser != null
+                && row.getNamespaceUri() != null
+                && !row.getNamespaceUri().isEmpty()) {
+            try {
+                nodeId = browser.resolveNodeId(nodeId, row.getNamespaceUri());
+            } catch (final BrowseException e) {
+                log.warn(
+                        "Failed to resolve namespace URI '{}' for nodeId '{}': {}",
+                        row.getNamespaceUri(),
+                        nodeId,
+                        e.getMessage());
+            }
+        }
+        return nodeId;
     }
 
-    private static @NotNull NorthboundMappingEntity toNorthboundMappingEntity(final @NotNull DeviceTagRow row) {
-        final int qos = row.getMaxQos() != null ? row.getMaxQos() : QoS.AT_LEAST_ONCE.getQosNumber();
+    private @Nullable TagEntity tagValidated(
+            final @NotNull DeviceTagRow row,
+            final int rowNum,
+            final @NotNull List<ValidationError> errors,
+            final @NotNull String tagName,
+            final @NotNull String nodeId) {
+        final String description = Objects.requireNonNullElse(row.getTagDescription(), "");
+        if (description.length() > MAX_DESCRIPTION_LENGTH) {
+            errors.add(new ValidationError(
+                    rowNum,
+                    "tag_description",
+                    description.substring(0, 50) + "...",
+                    INVALID_TAG_NAME,
+                    "Tag description exceeds maximum length of " + MAX_DESCRIPTION_LENGTH
+                            + ". "
+                            + "Shorten the description."));
+            return null;
+        }
+        return new TagEntity(tagName, description, Map.of("node", nodeId));
+    }
 
-        final boolean includeTagNames = row.getIncludeTagNames() != null ? row.getIncludeTagNames() : false;
-        final boolean includeTimestamp = row.getIncludeTimestamp() != null ? row.getIncludeTimestamp() : true;
-        final boolean includeMetadata = row.getIncludeMetadata() != null ? row.getIncludeMetadata() : false;
-        final Long expiry = row.getMessageExpiryInterval();
-        final List<MqttUserPropertyEntity> userProperties;
+    private @Nullable NorthboundMappingEntity northboundMappingValidated(
+            final @NotNull DeviceTagRow row,
+            final int rowNum,
+            final @NotNull List<ValidationError> errors,
+            final @NotNull String tagName) {
+
+        String topic = row.getNorthboundTopic();
+        if (topic == null || topic.trim().isEmpty()) {
+            return null;
+        }
+        if (topic.equals("*")) {
+            topic = row.getNorthboundTopicDefault();
+            // Rules for topics, see Edge-Lore/Product/TagNames
+            if (topic == null || topic.isEmpty()) {
+                errors.add(new ValidationError(
+                        rowNum,
+                        "northbound_topic",
+                        "*",
+                        WILDCARD_NO_DEFAULT,
+                        "Northbound topic uses the '*' default character but northbound_topic_default is empty."
+                                + "Define either northbound_topic_default or use a different northbound_topic."));
+                return null;
+            }
+            if (topic.length() > MAX_TOPIC_LENGTH) {
+                errors.add(new ValidationError(
+                        rowNum,
+                        "northbound_topic",
+                        topic.substring(50) + "...",
+                        INVALID_TOPIC,
+                        "Northbound topic is longer than 65535 character." + "Shorten the northbound_topic."));
+                return null;
+            }
+            if (topic.contains("#") || topic.contains("+") || topic.contains("\0")) {
+                errors.add(new ValidationError(
+                        rowNum,
+                        "northbound_topic",
+                        topic,
+                        INVALID_TOPIC,
+                        "Northbound topic contains invalid characters '#', '+', or '\0'."
+                                + "Remove invalid characters from northbound_topic."));
+                return null;
+            }
+        }
+
+        Integer maxQos = row.getMaxQos();
+        if (maxQos == null) {
+            maxQos = QoS.AT_LEAST_ONCE.getQosNumber();
+        }
+        if (maxQos < 0 || maxQos > 2) {
+            errors.add(new ValidationError(
+                    rowNum,
+                    "max_qos",
+                    String.valueOf(maxQos),
+                    INVALID_QOS,
+                    "Max QoS is not a valid MQTT Quality of Service number. " + "Set QoS to 0, 1, or 2"));
+        }
+
+        final boolean includeTagNames = Objects.requireNonNullElse(row.getIncludeTagNames(), false);
+        final boolean includeTimestamp = Objects.requireNonNullElse(row.getIncludeTimestamp(), true);
+        final boolean includeMetadata = Objects.requireNonNullElse(row.getIncludeMetadata(), false);
+
+        final List<MqttUserPropertyEntity> userProperties = new ArrayList<>();
         if (row.getMqttUserProperties() != null) {
-            userProperties = row.getMqttUserProperties().entrySet().stream()
-                    .map(e -> new MqttUserPropertyEntity(e.getKey(), e.getValue()))
-                    .toList();
-        } else {
-            userProperties = List.of();
+            for (final var prop : row.getMqttUserProperties().entrySet()) {
+                if (prop.getKey() == null || prop.getKey().isEmpty()) {
+                    errors.add(new ValidationError(
+                            rowNum,
+                            "mqtt_user_properties",
+                            null,
+                            INVALID_USER_PROPERTIES,
+                            "User property key must not be empty"));
+                    continue;
+                } else if (prop.getKey().length() > MAX_USER_PROPERTY_LENGTH) {
+                    errors.add(new ValidationError(
+                            rowNum,
+                            "mqtt_user_properties",
+                            prop.getKey().substring(0, 50) + "...",
+                            INVALID_USER_PROPERTIES,
+                            "User property key exceeds maximum length of " + MAX_USER_PROPERTY_LENGTH));
+                    continue;
+                }
+                if (prop.getValue() != null && prop.getValue().length() > MAX_USER_PROPERTY_LENGTH) {
+                    errors.add(new ValidationError(
+                            rowNum,
+                            "mqtt_user_properties",
+                            prop.getKey(),
+                            INVALID_USER_PROPERTIES,
+                            "User property value exceeds maximum length of " + MAX_USER_PROPERTY_LENGTH));
+                    continue;
+                }
+                userProperties.add(new MqttUserPropertyEntity(prop.getKey(), prop.getValue()));
+            }
         }
+
+        final Long expiry = row.getMessageExpiryInterval(); // null is allowed in constructor below
+        if (expiry != null && (expiry <= 0 || expiry > MAX_MESSAGE_EXPIRY_INTERVAL)) {
+            errors.add(new ValidationError(
+                    rowNum,
+                    "message_expiry_interval",
+                    String.valueOf(expiry),
+                    INVALID_EXPIRY,
+                    "Message expiry interval must be between 1 and " + MAX_MESSAGE_EXPIRY_INTERVAL + " seconds"));
+            return null;
+        }
+
         return new NorthboundMappingEntity(
-                requireNonNull(row.getTagName()),
-                requireNonNull(row.getNorthboundTopic()),
-                qos,
+                tagName,
+                topic,
+                maxQos,
                 null, // messageHandlingOptions — always MQTTMessagePerTag
                 includeTagNames,
                 includeTimestamp,
@@ -125,67 +326,165 @@ public class DeviceTagImporter {
                 expiry);
     }
 
-    private static @NotNull SouthboundMappingEntity toSouthboundMappingEntity(final @NotNull DeviceTagRow row) {
-        final List<InstructionEntity> instructions;
-        if (row.getSouthboundFieldMapping() != null
-                && !row.getSouthboundFieldMapping().isEmpty()) {
-            instructions = row.getSouthboundFieldMapping().stream()
-                    .map(fm -> new InstructionEntity(fm.source(), fm.destination(), null))
-                    .toList();
-        } else {
-            // Default: value -> value
-            instructions = List.of(new InstructionEntity("value", "value", null));
+    private @Nullable SouthboundMappingEntity southboundMappingValidated(
+            final @NotNull DeviceTagRow row,
+            final int rowNum,
+            final @NotNull List<ValidationError> errors,
+            final @NotNull String tagName) {
+
+        String topic = row.getSouthboundTopic();
+        if (topic == null || topic.trim().isEmpty()) {
+            return null;
         }
-        return new SouthboundMappingEntity(
-                requireNonNull(row.getTagName()),
-                requireNonNull(row.getSouthboundTopic()),
-                new FieldMappingEntity(instructions),
-                ""); // fromNorthSchema — empty; populated after tag creation by the adapter
-    }
-
-    private static boolean tagMatch(final @NotNull TagEntity tagFile, final @NotNull TagEntity tagEdge) {
-        return Objects.equals(tagFile.getName(), tagEdge.getName())
-                && Objects.equals(tagFile.getDescription(), tagEdge.getDescription());
-    }
-
-    private static @NotNull List<ValidationError> collectWildcardErrors(final @NotNull List<DeviceTagRow> rows) {
-        final List<ValidationError> errors = new ArrayList<>();
-        for (int i = 0; i < rows.size(); i++) {
-            final DeviceTagRow row = rows.get(i);
-            final int rowNum = i + 1;
-            if ("*".equals(row.getTagName())
-                    && (row.getTagNameDefault() == null
-                            || row.getTagNameDefault().isEmpty())) {
-                errors.add(new ValidationError(
-                        rowNum,
-                        "tag_name",
-                        "*",
-                        WILDCARD_NO_DEFAULT,
-                        "Wildcard '*' used for tag_name but no default value available"));
-            }
-            if ("*".equals(row.getNorthboundTopic())
-                    && (row.getNorthboundTopicDefault() == null
-                            || row.getNorthboundTopicDefault().isEmpty())) {
-                errors.add(new ValidationError(
-                        rowNum,
-                        "northbound_topic",
-                        "*",
-                        WILDCARD_NO_DEFAULT,
-                        "Wildcard '*' used for northbound_topic but no default value available"));
-            }
-            if ("*".equals(row.getSouthboundTopic())
-                    && (row.getSouthboundTopicDefault() == null
-                            || row.getSouthboundTopicDefault().isEmpty())) {
+        if (topic.equals("*")) {
+            topic = row.getSouthboundTopicDefault();
+            // Rules for topics, see Edge-Lore/Product/TagNames
+            if (topic == null || topic.isEmpty()) {
                 errors.add(new ValidationError(
                         rowNum,
                         "southbound_topic",
                         "*",
                         WILDCARD_NO_DEFAULT,
-                        "Wildcard '*' used for southbound_topic but no default value available"));
+                        "Southbound topic uses the '*' default character but southbound_topic_default is empty."
+                                + "Define either southbound_topic_default or use a different southbound_topic."));
+                return null;
+            }
+            if (topic.length() > MAX_TOPIC_LENGTH) {
+                errors.add(new ValidationError(
+                        rowNum,
+                        "southbound_topic",
+                        topic.substring(50) + "...",
+                        INVALID_TOPIC,
+                        "Southbound topic is longer than 65535 character." + "Shorten the southbound_topic."));
+                return null;
+            }
+            if (topic.contains("#") || topic.contains("+") || topic.contains("\0")) {
+                errors.add(new ValidationError(
+                        rowNum,
+                        "southbound_topic",
+                        topic,
+                        INVALID_TOPIC,
+                        "Southbound topic contains invalid characters '#', '+', or '\0'."
+                                + "Remove invalid characters from southbound_topic."));
+                return null;
             }
         }
-        return errors;
+
+        final List<InstructionEntity> instructions = new ArrayList<>();
+        if (row.getSouthboundFieldMapping() != null) {
+            for (final FieldMappingInstruction fm : row.getSouthboundFieldMapping()) {
+                if (fm.source() == null || fm.source().isEmpty()) {
+                    errors.add(new ValidationError(
+                            rowNum,
+                            "southbound_field_mapping",
+                            null,
+                            INVALID_FIELD_MAPPING,
+                            "Field mapping source is empty. Define a field mapping source."));
+                    return null;
+                }
+                if (fm.destination() == null || fm.destination().isEmpty()) {
+                    errors.add(new ValidationError(
+                            rowNum,
+                            "southbound_field_mapping",
+                            null,
+                            INVALID_FIELD_MAPPING,
+                            "Field mapping destination is empty. Define a field mapping destination."));
+                    return null;
+                }
+                instructions.add(new InstructionEntity(fm.source(), fm.destination(), null));
+            }
+        } else {
+            // is there really a default for the southbound field mapping?
+            instructions.add(new InstructionEntity("value", "value", null));
+        }
+
+        return new SouthboundMappingEntity(
+                tagName,
+                topic,
+                new FieldMappingEntity(instructions),
+                ""); // fromNorthSchema — empty; populated after tag creation by the adapter
     }
+
+    // ------------------------------------------------------------------------------------------------------------------
+
+    private static class TagWithMappings<T extends TagEntity> {
+        @NotNull
+        T tag;
+
+        @NotNull
+        Set<NorthboundMappingEntity> northboundMappings;
+
+        @NotNull
+        Set<SouthboundMappingEntity> southboundMappings;
+
+        private TagWithMappings(@NotNull T tag) {
+            this.tag = tag;
+            this.northboundMappings = new HashSet<>();
+            this.southboundMappings = new HashSet<>();
+        }
+
+        public boolean matchTag(@NonNull T that) {
+            return Objects.equals(this.tag.getName(), that.getName())
+                    && Objects.equals(this.tag.getDescription(), that.getDescription());
+        }
+
+        public boolean match(@NonNull TagWithMappings<T> that) {
+            return matchTag(that.tag)
+                    && Objects.equals(this.northboundMappings, that.northboundMappings)
+                    && Objects.equals(this.southboundMappings, that.southboundMappings);
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------------------------------
+
+    private @NotNull Set<String> collectCombinerTags(final @NotNull String adapterId) {
+        final Set<String> tagNames = new HashSet<>();
+        for (final DataCombiner combiner : combiningExtractor.getAllCombiners()) {
+            for (final DataCombining mapping : combiner.dataCombinings()) {
+                final DataIdentifierReference p = mapping.sources().primaryReference();
+                if (p != null
+                        && p.type() == DataIdentifierReference.Type.TAG
+                        && p.scope() != null
+                        && p.scope().equals(adapterId)
+                        && p.id() != null) {
+                    tagNames.add(p.id());
+                }
+                for (final var inst : mapping.instructions()) {
+                    final DataIdentifierReference s = inst.dataIdentifierReference();
+                    if (s != null
+                            && s.type() == DataIdentifierReference.Type.TAG
+                            && s.scope() != null
+                            && s.scope().equals(adapterId)
+                            && s.id() != null) {
+                        tagNames.add(s.id());
+                    }
+                }
+            }
+        }
+        return tagNames;
+    }
+
+    // ------------------------------------------------------------------------------------------------------------------
+
+    private static class ImportStat {
+        List<TagAction> tagActions;
+        int tagsCreated;
+        int tagsUpdated;
+        int tagsDeleted;
+        int nbCreated;
+        int nbDeleted;
+        int sbCreated;
+        int sbDeleted;
+
+        ImportStat() {
+            tagActions = new ArrayList<>();
+            tagsCreated = tagsUpdated = tagsDeleted = 0;
+            nbCreated = nbDeleted = 0;
+            sbCreated = sbDeleted = 0;
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------------------------------
 
     public @NotNull ImportResult doImport(
             final @NotNull List<DeviceTagRow> rows, final @NotNull ImportMode mode, final @NotNull String adapterId)
@@ -207,38 +506,6 @@ public class DeviceTagImporter {
         }
     }
 
-    private static class TagWithMappings<T extends TagEntity> {
-        @NotNull
-        T tag;
-
-        @NotNull
-        Set<NorthboundMappingEntity> northboundMappings;
-
-        @NotNull
-        Set<SouthboundMappingEntity> southboundMappings;
-
-        private TagWithMappings(@NotNull T tag) {
-            this.tag = tag;
-            this.northboundMappings = new HashSet<>();
-            this.southboundMappings = new HashSet<>();
-        }
-
-        private void addNorthboundMapping(NorthboundMappingEntity northboundMappingEntity) {
-            this.northboundMappings.add(northboundMappingEntity);
-        }
-
-        private void addSouthboundMapping(SouthboundMappingEntity southboundMappingEntity) {
-            this.southboundMappings.add(southboundMappingEntity);
-        }
-
-        public boolean match(@NonNull TagWithMappings<T> that) {
-            return Objects.equals(this.tag.getName(), that.tag.getName())
-                    && Objects.equals(this.tag.getDescription(), that.tag.getDescription())
-                    && Objects.equals(this.northboundMappings, that.northboundMappings)
-                    && Objects.equals(this.southboundMappings, that.southboundMappings);
-        }
-    }
-
     private @NotNull ImportResult doImportLocked(
             final @NotNull List<DeviceTagRow> rows,
             final @NotNull ImportMode mode,
@@ -246,87 +513,59 @@ public class DeviceTagImporter {
             final @Nullable BulkTagBrowser browser)
             throws DeviceTagImporterException {
 
-        // Step 1: Resolve wildcards and namespace URIs
-        final List<DeviceTagRow> resolved = new ArrayList<>();
-        for (final DeviceTagRow row : rows) {
-            // Resolve namespace URI to current index if adapter supports it
-            final String resolvedNodeId = resolveNodeIdIfNeeded(browser, row.getNodeId(), row.getNamespaceUri());
-            final DeviceTagRow.Builder builder = DeviceTagRow.builder()
-                    .nodePath(row.getNodePath())
-                    .namespaceUri(row.getNamespaceUri())
-                    .namespaceIndex(row.getNamespaceIndex())
-                    .nodeId(resolvedNodeId)
-                    .dataType(row.getDataType())
-                    .accessLevel(row.getAccessLevel())
-                    .nodeDescription(row.getNodeDescription())
-                    .tagNameDefault(row.getTagNameDefault())
-                    .tagDescription(row.getTagDescription())
-                    .northboundTopicDefault(row.getNorthboundTopicDefault())
-                    .southboundTopicDefault(row.getSouthboundTopicDefault())
-                    .southboundFieldMapping(row.getSouthboundFieldMapping())
-                    .maxQos(row.getMaxQos())
-                    .messageExpiryInterval(row.getMessageExpiryInterval())
-                    .includeTimestamp(row.getIncludeTimestamp())
-                    .includeTagNames(row.getIncludeTagNames())
-                    .includeMetadata(row.getIncludeMetadata())
-                    .mqttUserProperties(row.getMqttUserProperties());
-            // Resolve * wildcards
-            builder.tagName(resolveWildcard(row.getTagName(), row.getTagNameDefault()));
-            builder.northboundTopic(resolveWildcard(row.getNorthboundTopic(), row.getNorthboundTopicDefault()));
-            builder.southboundTopic(resolveWildcard(row.getSouthboundTopic(), row.getSouthboundTopicDefault()));
-            resolved.add(builder.build());
-        }
-
-        // Step 2: Validate
-        final List<ValidationError> errors = validator.validate(resolved, mode, adapterId);
-
-        // Collect wildcard resolution errors
-        final List<ValidationError> wildcardErrors = collectWildcardErrors(rows);
-        final List<ValidationError> allErrors = new ArrayList<>(errors);
-        allErrors.addAll(wildcardErrors);
-
-        // Step 3: If errors, fail
-        if (!allErrors.isEmpty()) {
-            throw new DeviceTagImporterException(allErrors);
-        }
-
-        // Step 4: Load current state
+        // connect to the adapter
         final ProtocolAdapterEntity adapter = adapterExtractor
                 .getAdapterByAdapterId(adapterId)
                 .orElseThrow(() -> new DeviceTagImporterException(List.of(new ValidationError(
                         null, null, adapterId, ADAPTER_NOT_FOUND, "Adapter '" + adapterId + "' not found"))));
 
+        // One List to rule them all, One List to find them, One List to bring them all and in the darkness bind them.
+        List<ValidationError> errors = new ArrayList<>();
+
         // collect all the tags with their mappings from the File
         Map<String, TagWithMappings<TagEntity>> tagWithMappingsByNodeIdFromFile = new HashMap<>();
-        for (final DeviceTagRow fileRow : resolved) {
-            if (!fileRow.hasTag()
-                    || fileRow.getNodeId() == null
-                    || fileRow.getNodeId().isEmpty()) {
+        for (int rowNum = 1; rowNum <= rows.size(); rowNum++) {
+            final DeviceTagRow row = rows.get(rowNum - 1);
+
+            final String tagName = tagNameValidated(row, rowNum, errors);
+            if (tagName == null) {
                 continue;
             }
-            final String nodeId = fileRow.getNodeId();
-            final var tag = toTagEntity(fileRow);
-            final var twm = tagWithMappingsByNodeIdFromFile.computeIfAbsent(nodeId, n -> new TagWithMappings<>(tag));
-            if (!tagMatch(twm.tag, tag)) {
-                throw new DeviceTagImporterException(
-                        List.of(
-                                new ValidationError(
-                                        null,
-                                        null,
-                                        null,
-                                        UPDATE_FAILED,
-                                        "Failed to update adapter configuration. Two rows have the same nodeId but different tagNames")));
+
+            final String nodeId = nodeIdValidated(row, rowNum, errors, browser);
+            if (nodeId == null) {
+                continue;
             }
-            if (fileRow.hasNorthboundMapping()) {
-                twm.addNorthboundMapping(toNorthboundMappingEntity(fileRow));
+
+            final TagEntity tag = tagValidated(row, rowNum, errors, tagName, nodeId);
+            if (tag == null) {
+                continue;
             }
-            if (fileRow.hasSouthboundMapping()) {
-                twm.addSouthboundMapping(toSouthboundMappingEntity(fileRow));
+            final var twm = tagWithMappingsByNodeIdFromFile.computeIfAbsent(nodeId, z -> new TagWithMappings<>(tag));
+            if (!twm.matchTag(tag)) {
+                errors.add(new ValidationError(
+                        rowNum,
+                        "node_id",
+                        nodeId,
+                        DUPLICATE_TAG_NAME,
+                        "Duplicate tag names for node '" + nodeId
+                                + "'. "
+                                + "Ensure that every node has a unique tag_name."));
+            }
+
+            final NorthboundMappingEntity nbm = northboundMappingValidated(row, rowNum, errors, tagName);
+            if (nbm != null) {
+                twm.northboundMappings.add(nbm);
+            }
+
+            final SouthboundMappingEntity sbm = southboundMappingValidated(row, rowNum, errors, tagName);
+            if (sbm != null) {
+                twm.southboundMappings.add(sbm);
             }
         }
 
         // collect all tags with their mappings from the Edge
-        Map<String, TagWithMappings<TagEntity>> tagWithMappingsByNodeIdFromEdge = new HashMap<>();
+        final Map<String, TagWithMappings<TagEntity>> tagWithMappingsByNodeIdFromEdge = new HashMap<>();
         final Map<String, String> nodeIdByTagNameFromEdge = new HashMap<>();
         for (final TagEntity tag : adapter.getTags()) {
             if (tag.getDefinition().get("node") == null) {
@@ -343,7 +582,7 @@ public class DeviceTagImporter {
                 // That is actually bad: the existing configuration had dangling tag reference
                 continue;
             }
-            twm.addNorthboundMapping(northboundMappingEntity);
+            twm.northboundMappings.add(northboundMappingEntity);
         }
         for (final SouthboundMappingEntity southboundMappingEntity : adapter.getSouthboundMappings()) {
             String nodeId = nodeIdByTagNameFromEdge.get(southboundMappingEntity.getTagName());
@@ -352,22 +591,25 @@ public class DeviceTagImporter {
                 // That is actually bad: the existing configuration had dangling tag reference
                 continue;
             }
-            twm.addSouthboundMapping(southboundMappingEntity);
+            twm.southboundMappings.add(southboundMappingEntity);
         }
 
-        // Step 6: Determine actions per mode
-        final List<TagAction> tagActions = new ArrayList<>();
+        // figure out which tags and mappings will exist after the import
         final List<TagEntity> finalTags = new ArrayList<>();
         final List<NorthboundMappingEntity> finalNorthbound = new ArrayList<>();
         final List<SouthboundMappingEntity> finalSouthbound = new ArrayList<>();
-        int tagsCreated = 0, tagsUpdated = 0, tagsDeleted = 0;
-        int nbCreated = 0, nbDeleted = 0, sbCreated = 0, sbDeleted = 0;
+        final ImportStat stats = new ImportStat();
+
+        // collect the (keyset) of all the tags that will be created, updated, or kept
+        // represented as map of their nodeIds, to detect tags that will be duplicated
+        final Map<String, Set<String>> nodeIdsByTagName = new HashMap<>();
 
         // loop over all the nodeIds, both from the file and the adapter
-        for (String nodeId :
-                union(tagWithMappingsByNodeIdFromFile.keySet(), tagWithMappingsByNodeIdFromEdge.keySet())) {
+        final Set<String> allNodeIds = new HashSet<>(tagWithMappingsByNodeIdFromFile.keySet());
+        allNodeIds.addAll(tagWithMappingsByNodeIdFromEdge.keySet());
+        for (String nodeId : allNodeIds) {
 
-            // get the edgeTag and fileRow, and the information where they exist
+            // get the file and edge tag with their mappings, and the information where they exist
             final var twmFile = tagWithMappingsByNodeIdFromFile.get(nodeId);
             final String tagNameFile = twmFile != null ? twmFile.tag.getName() : null;
             final var twmEdge = tagWithMappingsByNodeIdFromEdge.get(nodeId);
@@ -377,7 +619,18 @@ public class DeviceTagImporter {
             final boolean bothSame = twmFile != null && twmEdge != null && twmFile.match(twmEdge);
             final boolean bothDiff = twmFile != null && twmEdge != null && !twmFile.match(twmEdge);
 
-            // KEEP, 5+2, from Edge
+            // collect the tags that will exist after the import, with their nodeIds
+            if (bothSame || (onlyFile && mode != ImportMode.DELETE)) {
+                nodeIdsByTagName
+                        .computeIfAbsent(tagNameFile, k -> new HashSet<>())
+                        .add(nodeId);
+            } else if (onlyEdge && (mode == ImportMode.MERGE_SAFE || mode == ImportMode.MERGE_OVERWRITE)) {
+                nodeIdsByTagName
+                        .computeIfAbsent(tagNameEdge, k -> new HashSet<>())
+                        .add(nodeId);
+            }
+
+            // KEEP, 5+2 cases, from Edge
             if (bothSame || (onlyEdge && (mode == ImportMode.MERGE_SAFE || mode == ImportMode.MERGE_OVERWRITE))) {
                 requireNonNull(twmEdge);
                 finalTags.add(twmEdge.tag);
@@ -386,20 +639,20 @@ public class DeviceTagImporter {
                 // no statistics for tags that we keep
             }
 
-            // CREATE, 4, from File
+            // CREATE, 4 cases, from File
             else if (onlyFile && mode != ImportMode.DELETE) {
                 requireNonNull(twmFile);
                 requireNonNull(tagNameFile);
                 finalTags.add(twmFile.tag);
                 finalNorthbound.addAll(twmFile.northboundMappings);
                 finalSouthbound.addAll(twmFile.southboundMappings);
-                tagActions.add(new TagAction(tagNameFile, TagAction.Action.CREATED));
-                tagsCreated++;
-                nbCreated += twmFile.northboundMappings.size();
-                sbCreated += twmFile.southboundMappings.size();
+                stats.tagActions.add(new TagAction(tagNameFile, TagAction.Action.CREATED));
+                stats.tagsCreated++;
+                stats.nbCreated += twmFile.northboundMappings.size();
+                stats.sbCreated += twmFile.southboundMappings.size();
             }
 
-            // UPDATE, 2, from File
+            // UPDATE, 2 cases, from File
             else if (bothDiff && (mode == ImportMode.OVERWRITE || mode == ImportMode.MERGE_OVERWRITE)) {
                 requireNonNull(twmFile);
                 requireNonNull(tagNameFile);
@@ -407,45 +660,100 @@ public class DeviceTagImporter {
                 finalTags.add(twmFile.tag);
                 finalNorthbound.addAll(twmFile.northboundMappings);
                 finalSouthbound.addAll(twmFile.southboundMappings);
-                tagActions.add(new TagAction(tagNameFile, TagAction.Action.UPDATED));
-                tagsUpdated++;
-                nbDeleted += twmEdge.northboundMappings.size();
-                sbDeleted += twmEdge.southboundMappings.size();
-                nbCreated += twmFile.northboundMappings.size();
-                sbCreated += twmFile.southboundMappings.size();
+                stats.tagActions.add(new TagAction(tagNameFile, TagAction.Action.UPDATED));
+                stats.tagsUpdated++;
+                stats.nbDeleted += twmEdge.northboundMappings.size();
+                stats.sbDeleted += twmEdge.southboundMappings.size();
+                stats.nbCreated += twmFile.northboundMappings.size();
+                stats.sbCreated += twmFile.southboundMappings.size();
             }
 
-            // DELETE, 2, from Edge
+            // DELETE, 2 cases, from Edge
             else if (onlyEdge && (mode == ImportMode.DELETE || mode == ImportMode.OVERWRITE)) {
                 requireNonNull(twmEdge);
                 requireNonNull(tagNameEdge);
-                tagActions.add(new TagAction(tagNameEdge, TagAction.Action.DELETED));
-                tagsDeleted++;
-                nbDeleted += twmEdge.northboundMappings.size();
-                sbDeleted += twmEdge.southboundMappings.size();
+                stats.tagActions.add(new TagAction(tagNameEdge, TagAction.Action.DELETED));
+                stats.tagsDeleted++;
+                stats.nbDeleted += twmEdge.northboundMappings.size();
+                stats.sbDeleted += twmEdge.southboundMappings.size();
             }
 
-            // ERROR, 5
-            else if ((onlyEdge && mode == ImportMode.CREATE)
-                    || (onlyFile && mode == ImportMode.DELETE)
-                    || (bothDiff && mode != ImportMode.OVERWRITE && mode != ImportMode.MERGE_OVERWRITE)) {
-                throw new DeviceTagImporterException(List.of(new ValidationError(
+            // ERROR, 1 + 3 + 1 cases
+            else if (onlyFile && mode == ImportMode.DELETE) {
+                errors.add(new ValidationError(
                         null,
+                        "tag_name",
+                        tagNameFile,
+                        TAG_CONFLICT,
+                        "Tag '" + tagNameFile
+                                + "' (node: "
+                                + nodeId
+                                + ") exists in the file but not on the adapter and would be created. "
+                                + "Use CREATE, OVERWRITE, or MERGE mode to create."));
+            } else if (bothDiff && mode != ImportMode.OVERWRITE && mode != ImportMode.MERGE_OVERWRITE) {
+                errors.add(new ValidationError(
                         null,
+                        "tag_name",
+                        tagNameFile,
+                        TAG_CONFLICT,
+                        "Tag '" + tagNameFile
+                                + "' (node: "
+                                + nodeId
+                                + ") exists on the adapter and the file with different definitions and would be updated. "
+                                + "Use OVERWRITE or MERGE_OVERWRITE mode to update."));
+            } else if (onlyEdge && mode == ImportMode.CREATE) {
+                errors.add(new ValidationError(
                         null,
-                        UPDATE_FAILED,
-                        "Failed to update adapter configuration. Should have been caught in Validation")));
+                        "tag_name",
+                        tagNameEdge,
+                        TAG_CONFLICT,
+                        "Tag '" + tagNameEdge
+                                + "' (node "
+                                + nodeId
+                                + ") exists on adapter but not in file and would be deleted. "
+                                + "Use DELETE or OVERWRITE to delete - or MERGE to keep."));
             } else {
-                throw new DeviceTagImporterException(List.of(new ValidationError(
-                        null,
-                        null,
-                        null,
-                        UPDATE_FAILED,
-                        "Failed to update adapter configuration. This shouldn't happen")));
+                errors.add(new ValidationError(
+                        null, "", "", UPDATE_FAILED, "Failed to update adapter configuration. Unknown Error 1."));
             }
         }
 
-        // Step 7: Apply mutations atomically
+        // raise an error if we are creating, updating, or keeping (duplicate) tags for multiple nodeIds
+        for (String tagName : nodeIdsByTagName.keySet()) {
+            if (nodeIdsByTagName.get(tagName).size() > 1) {
+                errors.add(new ValidationError(
+                        null,
+                        "tag_name",
+                        tagName,
+                        DUPLICATE_NODE,
+                        "Tag '" + tagName
+                                + "' (nodes: "
+                                + nodeIdsByTagName.get(tagName)
+                                + ") will be assigned to multiple nodes. "
+                                + "Ensure uniqueness of the tag names."));
+            }
+        }
+
+        // raise an error if we are deleting a tag that is used in a combiner
+        final Set<String> duplicateTagNames = new HashSet<>(collectCombinerTags(adapterId));
+        duplicateTagNames.removeAll(nodeIdsByTagName.keySet());
+        for (String tagName : duplicateTagNames) {
+            errors.add(new ValidationError(
+                    null,
+                    "tag_name",
+                    tagName,
+                    TAG_IN_USE_BY_COMBINER,
+                    "Tag '" + tagName
+                            + "' is used in a combiner, but not created, updated, or kept. "
+                            + "Ensure that there are no dangling references."));
+        }
+
+        // only now do we know whether the import is valid
+        if (!errors.isEmpty()) {
+            throw new DeviceTagImporterException(errors);
+        }
+
+        // create the adapter with its new configuration
         final ProtocolAdapterEntity updatedAdapter = new ProtocolAdapterEntity(
                 adapter.getAdapterId(),
                 adapter.getProtocolId(),
@@ -455,30 +763,30 @@ public class DeviceTagImporter {
                 finalSouthbound,
                 finalTags);
 
+        // and now is the time to actually DO something at all (up to this point we have only been planning)
         final boolean success = adapterExtractor.updateAdapter(updatedAdapter);
         if (!success) {
             throw new DeviceTagImporterException(List.of(new ValidationError(
-                    null,
-                    null,
-                    null,
-                    UPDATE_FAILED,
-                    "Failed to update adapter configuration. Possible tag name conflict.")));
+                    null, null, null, UPDATE_FAILED, "Failed to update adapter configuration. Unknown Error.")));
         }
 
+        // log statistics
         log.info(
                 "Import completed for adapter '{}': {} tags created, {} updated, {} deleted",
                 adapterId,
-                tagsCreated,
-                tagsUpdated,
-                tagsDeleted);
+                stats.tagsCreated,
+                stats.tagsUpdated,
+                stats.tagsDeleted);
 
+        // and return the statistics
         return new ImportResult(
-                tagsCreated, tagsUpdated, tagsDeleted, nbCreated, nbDeleted, sbCreated, sbDeleted, tagActions);
-    }
-
-    private static <T> Set<T> union(final Set<T> a, final Set<T> b) {
-        final Set<T> result = new HashSet<>(a);
-        result.addAll(b);
-        return result;
+                stats.tagsCreated,
+                stats.tagsUpdated,
+                stats.tagsDeleted,
+                stats.nbCreated,
+                stats.nbDeleted,
+                stats.sbCreated,
+                stats.sbDeleted,
+                stats.tagActions);
     }
 }
