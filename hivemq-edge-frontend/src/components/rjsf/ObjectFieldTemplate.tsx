@@ -9,6 +9,7 @@ import { descriptionId } from '@rjsf/utils'
 import { getTemplate, getUiOptions, titleId } from '@rjsf/utils'
 import { Box, Tab, TabList, TabPanel, TabPanels, Tabs } from '@chakra-ui/react'
 import type { UITab } from '@/components/rjsf/Form/types.ts'
+import type { ExtraTab } from '@/modules/ProtocolAdapters/types.ts'
 import { useFormControlStore } from '@/components/rjsf/Form/useFormControlStore.ts'
 
 export const ObjectFieldTemplate = <
@@ -28,7 +29,7 @@ export const ObjectFieldTemplate = <
   )
   const { tabIndex, setTabIndex } = useFormControlStore()
   const { extraTabs } =
-    (formContext as { extraTabs?: import('@/modules/ProtocolAdapters/types.ts').ExtraTab[] } | undefined) ?? {}
+    (formContext as { extraTabs?: ExtraTab[] } | undefined) ?? {}
 
   const { tabs } = uiOptions as UIOptionsType & { tabs?: UITab[] }
   if (!tabs) {
