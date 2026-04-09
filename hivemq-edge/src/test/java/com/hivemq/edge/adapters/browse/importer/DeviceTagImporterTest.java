@@ -35,7 +35,6 @@ import com.hivemq.edge.adapters.browse.model.FieldMappingInstruction;
 import com.hivemq.edge.adapters.browse.model.ImportMode;
 import com.hivemq.edge.adapters.browse.model.ImportResult;
 import com.hivemq.edge.adapters.browse.model.TagAction;
-import com.hivemq.edge.adapters.browse.validate.DeviceTagValidator;
 import com.hivemq.edge.adapters.browse.validate.ValidationError;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,8 +61,7 @@ class DeviceTagImporterTest {
     void setUp() {
         when(combiningExtractor.getAllCombiners()).thenReturn(List.of());
         when(adapterExtractor.getAllConfigs()).thenReturn(List.of());
-        importer = new DeviceTagImporter(
-                new DeviceTagValidator(adapterExtractor, combiningExtractor), adapterExtractor, combiningExtractor);
+        importer = new DeviceTagImporter(adapterExtractor, combiningExtractor);
     }
 
     private ProtocolAdapterEntity emptyAdapter() {
@@ -1101,9 +1099,7 @@ class DeviceTagImporterTest {
                     when(localExtractor.getAllConfigs()).thenReturn(List.of(adapter));
                     when(localExtractor.updateAdapter(any())).thenReturn(true);
 
-                    final DeviceTagValidator localValidator = new DeviceTagValidator(localExtractor, localCombining);
-                    final DeviceTagImporter localImporter =
-                            new DeviceTagImporter(localValidator, localExtractor, localCombining);
+                    final DeviceTagImporter localImporter = new DeviceTagImporter(localExtractor, localCombining);
 
                     final List<DeviceTagRow> rows = new ArrayList<>();
                     for (int i = 0; i < 20; i++) {
