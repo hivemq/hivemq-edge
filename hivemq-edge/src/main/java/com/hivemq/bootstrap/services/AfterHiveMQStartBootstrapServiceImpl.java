@@ -29,6 +29,7 @@ import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.extensions.core.RestComponentsService;
 import com.hivemq.mqtt.services.InternalPublishService;
+import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.pulse.asset.AssetProviderRegistry;
@@ -117,6 +118,11 @@ public class AfterHiveMQStartBootstrapServiceImpl implements AfterHiveMQStartBoo
     @Override
     public @NotNull PublishService publishService() {
         return delegate.publishService();
+    }
+
+    @Override
+    public @NotNull LocalTopicTree localTopicTree() {
+        return delegate.localTopicTree();
     }
 
     @Override

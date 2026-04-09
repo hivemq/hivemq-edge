@@ -28,6 +28,7 @@ import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.extensions.core.RestComponentsService;
 import com.hivemq.mqtt.services.InternalPublishService;
+import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.pulse.asset.AssetProviderRegistry;
 import com.hivemq.pulse.status.StatusProviderRegistry;
@@ -47,6 +48,7 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     private final @NotNull AssetProviderRegistry assetProviderRegistry;
     private final @NotNull StatusProviderRegistry statusProviderRegistry;
     private final @NotNull PersistenceBootstrapService delegate;
+    private final @NotNull LocalTopicTree localTopicTree;
 
     @Inject
     public CompleteBootstrapServiceImpl(
@@ -58,7 +60,8 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
             final @NotNull PublishService publishService,
             final @NotNull InternalPublishService internalPublishService,
             final @NotNull AssetProviderRegistry assetProviderRegistry,
-            final @NotNull StatusProviderRegistry statusProviderRegistry) {
+            final @NotNull StatusProviderRegistry statusProviderRegistry,
+            final @NotNull LocalTopicTree localTopicTree) {
         this.delegate = delegate;
         this.persistences = persistences;
         this.restComponentsService = restComponentsService;
@@ -68,6 +71,7 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
         this.internalPublishService = internalPublishService;
         this.assetProviderRegistry = assetProviderRegistry;
         this.statusProviderRegistry = statusProviderRegistry;
+        this.localTopicTree = localTopicTree;
     }
 
     @Override
@@ -133,6 +137,11 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     @Override
     public @NotNull PublishService publishService() {
         return publishService;
+    }
+
+    @Override
+    public @NotNull LocalTopicTree localTopicTree() {
+        return localTopicTree;
     }
 
     @Override
