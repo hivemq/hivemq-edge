@@ -21,6 +21,7 @@ import com.hivemq.extension.sdk.api.services.publish.PublishService;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.extensions.core.RestComponentsService;
 import com.hivemq.mqtt.services.InternalPublishService;
+import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.pulse.asset.AssetProviderRegistry;
 import com.hivemq.pulse.status.StatusProviderRegistry;
 import org.jetbrains.annotations.NotNull;
@@ -41,6 +42,9 @@ public interface CompleteBootstrapService extends PersistenceBootstrapService {
 
     @NotNull
     PublishService publishService();
+
+    @NotNull
+    LocalTopicTree localTopicTree();
 
     /**
      * Required here to be able to directly put messages into client queues without them getting processed again by
