@@ -16,9 +16,18 @@ describe('Databases Protocol Adapter', () => {
 
   it('should be accessible', () => {
     cy.injectAxe()
+    cy.wait('@getAdapters')
+    // Disable CSS transitions so axe does not capture mid-animation contrast values
+    cy.document().then((doc) => {
+      const style = doc.createElement('style')
+      style.textContent = '*, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }'
+      doc.head.appendChild(style)
+    })
+    adapterPage.addNewAdapter.should('be.visible')
     cy.checkAccessibility()
 
     adapterPage.addNewAdapter.click()
+    adapterPage.protocols.list.should('be.visible')
     cy.checkAccessibility()
   })
 })
