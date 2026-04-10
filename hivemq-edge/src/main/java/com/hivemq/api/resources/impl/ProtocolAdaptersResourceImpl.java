@@ -15,17 +15,6 @@
  */
 package com.hivemq.api.resources.impl;
 
-import static com.hivemq.api.resources.impl.ProtocolAdapterApiUtils.convertInstalledAdapterType;
-import static com.hivemq.api.resources.impl.ProtocolAdapterApiUtils.convertModuleAdapterType;
-import static com.hivemq.api.utils.ApiErrorUtils.addValidationError;
-import static com.hivemq.api.utils.ApiErrorUtils.hasRequestErrors;
-import static com.hivemq.api.utils.ApiErrorUtils.validateRequiredEntity;
-import static com.hivemq.api.utils.ApiErrorUtils.validateRequiredField;
-import static com.hivemq.api.utils.ApiErrorUtils.validateRequiredFieldRegex;
-import static com.hivemq.protocols.ProtocolAdapterManager.runWithContextLoader;
-import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
-import static com.hivemq.util.ErrorResponseUtil.errorResponse;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
@@ -33,7 +22,6 @@ import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
-import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.errors.BadRequestError;
 import com.hivemq.api.errors.ConfigWritingDisabled;
@@ -45,7 +33,6 @@ import com.hivemq.api.errors.adapters.AdapterNotFound403Error;
 import com.hivemq.api.errors.adapters.AdapterNotFoundError;
 import com.hivemq.api.errors.adapters.AdapterOperationNotSupportedError;
 import com.hivemq.api.errors.adapters.AdapterTypeNotFoundError;
-import com.hivemq.api.errors.adapters.AdapterTypeReadOnlyError;
 import com.hivemq.api.errors.adapters.DomainTagNotFoundError;
 import com.hivemq.api.errors.adapters.DuplicateTagError;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
@@ -99,6 +86,11 @@ import com.hivemq.protocols.tag.TagSchemaCreationOutputImpl;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -118,10 +110,17 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static com.hivemq.api.resources.impl.ProtocolAdapterApiUtils.convertInstalledAdapterType;
+import static com.hivemq.api.resources.impl.ProtocolAdapterApiUtils.convertModuleAdapterType;
+import static com.hivemq.api.utils.ApiErrorUtils.addValidationError;
+import static com.hivemq.api.utils.ApiErrorUtils.hasRequestErrors;
+import static com.hivemq.api.utils.ApiErrorUtils.validateRequiredEntity;
+import static com.hivemq.api.utils.ApiErrorUtils.validateRequiredField;
+import static com.hivemq.api.utils.ApiErrorUtils.validateRequiredFieldRegex;
+import static com.hivemq.protocols.ProtocolAdapterManager.runWithContextLoader;
+import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
+import static com.hivemq.util.ErrorResponseUtil.errorResponse;
 
 @Singleton
 @SuppressWarnings("FutureReturnValueIgnored")
@@ -719,13 +718,6 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
         final com.hivemq.adapter.sdk.api.ProtocolAdapter adapter =
                 maybeWrapper.get().getAdapter();
-        if (!(adapter instanceof WritingProtocolAdapter)) {
-            log.warn(
-                    "The Json Schema for an adapter '{}' was requested, which does not support writing to PLCs.",
-                    adapterId);
-            return errorResponse(new AdapterTypeReadOnlyError(
-                    "The adapter with id '" + adapterId + "' exists, but it does not support writing to PLCs."));
-        }
 
         final TagSchemaCreationOutputImpl tagSchemaCreationOutput = new TagSchemaCreationOutputImpl();
         adapter.createTagSchema(new TagSchemaCreationInputImpl(decodedTagName), tagSchemaCreationOutput);
@@ -880,9 +872,16 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response updateAdapterSouthboundMappings(
             final @NotNull String adapterId, final @NotNull SouthboundMappingList southboundMappings) {
+
         return systemInformation.isConfigWriteable()
                 ? configExtractor
                         .getAdapterByAdapterId(adapterId)
+                        .filter(adapter ->
+                            protocolAdapterManager
+                                    .getAdapterTypeById(adapter.getProtocolId())
+                                    .map(type -> type.getCapabilities().contains(ProtocolAdapterCapability.WRITE))
+                                    .orElse(false)
+                        )
                         .map(updateAdapterSouthboundMappingsResponse(adapterId, southboundMappings))
                         .orElseGet(adapterNotFoundError(adapterId))
                 : errorResponse(new ConfigWritingDisabled());

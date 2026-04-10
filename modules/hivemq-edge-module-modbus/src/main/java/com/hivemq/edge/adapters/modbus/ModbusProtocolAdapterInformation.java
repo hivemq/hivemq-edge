@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.modbus;
 
+import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
@@ -24,6 +25,7 @@ import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.EnumSet;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
@@ -123,5 +125,10 @@ public class ModbusProtocolAdapterInformation implements ProtocolAdapterInformat
     @Override
     public @NotNull Class<? extends ProtocolSpecificAdapterConfig> configurationClassNorthAndSouthbound() {
         return ModbusSpecificAdapterConfig.class;
+    }
+
+    @Override
+    public @NotNull EnumSet<ProtocolAdapterCapability> getCapabilities() {
+        return EnumSet.of(ProtocolAdapterCapability.READ, ProtocolAdapterCapability.COMBINE);
     }
 }
