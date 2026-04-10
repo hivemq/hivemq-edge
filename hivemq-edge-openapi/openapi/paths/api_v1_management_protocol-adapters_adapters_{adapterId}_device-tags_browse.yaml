@@ -27,19 +27,6 @@ post:
       schema:
         type: integer
         default: 0
-    - description: >-
-        Desired response format. When provided, this takes precedence over
-        the Accept header — useful for generated clients that send a
-        multi-value Accept header listing all supported types.
-      in: query
-      name: format
-      required: false
-      schema:
-        type: string
-        enum:
-          - csv
-          - json
-          - yaml
   responses:
     '200':
       description: Success

@@ -80,40 +80,40 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         this.objectMapper = objectMapper;
     }
 
-    private @NotNull String resolveFormat(final @Nullable String formatParam) {
-        // Explicit query parameter takes precedence — generated clients send a multi-value
-        // Accept header listing every supported type, making Accept unreliable for format selection.
-        if (formatParam != null && !formatParam.isEmpty()) {
-            return switch (formatParam.strip().toLowerCase(Locale.ROOT)) {
-                case "json" -> APPLICATION_JSON;
-                case "yaml" -> MEDIA_TYPE_YAML;
-                default -> MEDIA_TYPE_CSV;
-            };
-        }
+    private @NotNull String resolveFormat() {
         final String accept = headers != null ? headers.getHeaderString("Accept") : null;
-        if (accept == null || accept.isEmpty() || accept.contains("*/*")) {
+        if (accept == null || accept.isEmpty()) {
             return MEDIA_TYPE_CSV;
         }
-        // Parse comma-separated Accept header and pick the first recognized type.
-        for (final String part : accept.split(",")) {
-            final String trimmed = part.strip().toLowerCase(Locale.ROOT);
-            if (trimmed.contains("json")) {
+        // Walk the comma-separated Accept header and return the first recognised MIME type.
+        // Quality parameters (";q=0.9") are stripped before matching. Wildcard (*/*) falls
+        // through to the CSV default. Unrecognised types are skipped.
+        int start = 0;
+        while (start < accept.length()) {
+            final int comma = accept.indexOf(',', start);
+            final String token = (comma == -1 ? accept.substring(start) : accept.substring(start, comma)).strip();
+            final int semicolon = token.indexOf(';');
+            final String mediaType = (semicolon == -1 ? token : token.substring(0, semicolon)).strip();
+            if (mediaType.equalsIgnoreCase(APPLICATION_JSON)) {
                 return APPLICATION_JSON;
-            } else if (trimmed.contains("yaml")) {
+            } else if (mediaType.equalsIgnoreCase(MEDIA_TYPE_YAML)) {
                 return MEDIA_TYPE_YAML;
-            } else if (trimmed.contains("csv") || trimmed.contains("text")) {
+            } else if (mediaType.equalsIgnoreCase(MEDIA_TYPE_CSV)) {
+                return MEDIA_TYPE_CSV;
+            } else if (mediaType.equals("*/*")) {
                 return MEDIA_TYPE_CSV;
             }
+            if (comma == -1) {
+                break;
+            }
+            start = comma + 1;
         }
         return MEDIA_TYPE_CSV;
     }
 
     @Override
     public @NotNull Response browseDeviceTags(
-            final @NotNull String adapterId,
-            final @Nullable String rootId,
-            final @Nullable Integer maxDepth,
-            final @Nullable String format) {
+            final @NotNull String adapterId, final @Nullable String rootId, final @Nullable Integer maxDepth) {
         // Lookup adapter
         final Optional<ProtocolAdapterWrapper> wrapperOpt =
                 protocolAdapterManager.getProtocolAdapterWrapperByAdapterId(adapterId);
@@ -151,7 +151,7 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         // Determine output format and stream directly to the HTTP response.
         // Attribute reads happen lazily as the stream is consumed during serialization.
         // UncheckedBrowseException may be thrown if a batch read fails mid-stream.
-        final String resolvedFormat = resolveFormat(format);
+        final String resolvedFormat = resolveFormat();
         final String extension;
         final String mediaType;
         final StreamingOutput stream;

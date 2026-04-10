@@ -37,8 +37,8 @@ class DeviceTagBrowsingApiAnnotationTest {
 
     @Test
     void browseHasOperationAnnotation() throws NoSuchMethodException {
-        final Method browse = DeviceTagBrowsingApi.class.getMethod(
-                "browseDeviceTags", String.class, String.class, Integer.class, String.class);
+        final Method browse =
+                DeviceTagBrowsingApi.class.getMethod("browseDeviceTags", String.class, String.class, Integer.class);
         final ApiOperation op = browse.getAnnotation(ApiOperation.class);
         assertThat(op).isNotNull();
         assertThat(op.value()).isNotEmpty();
