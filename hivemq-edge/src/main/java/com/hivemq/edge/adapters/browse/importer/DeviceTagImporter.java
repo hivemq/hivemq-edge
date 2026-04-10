@@ -69,9 +69,8 @@ import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// region class DeviceTagImporter (instance variables and constructor)
+// region DeviceTagImporter is the class to import tags from a file to an adapter (instance variables and constructor)
 // =====================================================================================================================
-// DeviceTagImporter is the class to import to a given adapter from a file
 @Singleton
 public class DeviceTagImporter {
 
@@ -92,7 +91,18 @@ public class DeviceTagImporter {
 
     // region doImport - executes the import of tags and their mappings from a file to an adapter
     // =================================================================================================================
-    // doImport executes the import of tags and their mappings from a file to an adapter
+    // It reads the information from the file and adapter, computes the goal state, and updates the configuration
+    // Generally the file describes the desired goal state (mode = CREATE, DELETE, OVERWRITE),
+    // but it is also possible to merge file and adapter state (mode = OVERWRITE).
+    //
+    // One very important aspect is that everything is keyed/indexed by the nodeId (and not by the tagName)
+    // so a row in the file is interpreted as "for this nodeId, there should be a tag with the following tagName"
+    // and the information from the adapter is interpreted as "for this nodeId, there exists a tag with that tagName"
+    // and the computation merges those two lists based by their nodeIds "for this nodeId, this is the goal state"
+    //
+    // In addition Edge enforces that for every nodeId there can be at most one tag,
+    // because some adapters have problems with multiple subscriptions,
+    // and northbound mappings are the better way to create fan-out.
 
     public @NotNull ImportResult doImport(
             final @NotNull List<DeviceTagRow> rows, final @NotNull ImportMode mode, final @NotNull String adapterId)
@@ -124,7 +134,7 @@ public class DeviceTagImporter {
         final List<ValidationError> errors = new ArrayList<>();
         final ImportStat stats = new ImportStat();
 
-        // fetch the information from the file and the edge adapter
+        // fetch the information from the file and the edge adapter (keyed by their nodeIds)
         final Map<String, TagWithMappings<TagEntity>> twmsFile =
                 getTagsWithMappingsByNodeIdFromFile(rows, browser, errors);
 
@@ -138,6 +148,8 @@ public class DeviceTagImporter {
         // most validations are done en-passant, these can only be done in the end based on the final list
         checkNoTagIsAssignedToTwoMultipleNodes(twmsFinal, errors);
         checkNoDanglingReferencesFromCombinerMappings(adapterId, twmsFinal, errors);
+
+        // At this point it should be considered to browse the adapter again and verify that all nodes exist
 
         // we make NO change if there is ANY problem at all (so far we have only collected, planned, and validated)
         if (!errors.isEmpty()) {
@@ -161,21 +173,27 @@ public class DeviceTagImporter {
 
     // region Tag and Node abstractions - to make the import protocol independent
     // =================================================================================================================
-    // These methods provide an abstraction for the import, so that the main code would work for all protocols.
+    // These methods provide an abstraction for the import, so that the main code could work for all protocols.
+    //
     // It uses the following concepts:
-    // - Tag: the entity in Edge that allows to read from a device, consisting of:
-    //     - tagName (the "identifier" of the tag, concrete field)
-    //     - description (concrete field)
-    //     - and the protocol specific part (abstract concept)
-    // - Node: the protocol specific part of the tag, consisting of certain logical aspects:
-    //     - nodeId (the "identifier" for the node)
-    //     - type (currently missing, but MUST be added, is mapped to a schema for the Tag)
-    //     - information (additional information)
+    // - Tag: the entity in Edge that allows to read from a device, consisting of the following fields:
+    //     - tagName: the "identifier" of the tag
+    //     - description
+    //     - and the protocol specific part, which is an abstract concept with protocol specific implementations
+    // - Node: the protocol specific part of the tag, consisting of the following logical aspects:
+    //     - nodeId: the "identifier" for the node
+    //     - type: the datatype of the node, is mapped to a schema for the tag, not yet implemented
+    //     - information: additional information, which is not relevant for the function, but useful for the user
     // - NodeId: a concrete representation of the nodeId as an opaque string (which is compared and used as an index)
+    //
     // The Tag and Protocol adapter call the protocol specific part of the tag the "tag definition",
     // which is unfortunate and incorrect, e.g. the tagName is clearly part of the definition of a tag,
     // so we instead use the term "node" and "nodeId", which helps to distinguish this entity from the tag entity.
+    //
     // The code below implements these concepts for the OPC-UA adapter.
+    // There is minor problem in the current implementation the nodeId should actually contain the namespaceUri
+    // and not the namespaceIndex, since the former is stable while the latter might change
+    //
     // Eventually these concepts and abstractions belong in the Protocol Adapter SDK,
     // and the concrete implementation in the adapter code.
     // But we will only do this when we have completely nailed the concepts and abstractions
@@ -247,10 +265,10 @@ public class DeviceTagImporter {
 
     // endregion
 
-    // region Reading tags and mappings from file
+    // region Read tags and mappings from the file, returned as a map of nodeId -> TagWithMappings
     // =================================================================================================================
     // One step is to read the map of tags with their mappings from the file.
-    // Uses the methods from the following section to extract and validate individual fields.
+    // It uses the methods from the following section to extract and validate individual fields.
     // Most validations are field level (field must not be empty, not too long, etc.),
     // some are row level (if there is a northbound mapping, then the tagName must be defined),
     // and one is cross-row level (if two rows have the same node-Id, then they must also have the same tagName).
@@ -258,7 +276,7 @@ public class DeviceTagImporter {
 
     private @NonNull Map<String, TagWithMappings<TagEntity>> getTagsWithMappingsByNodeIdFromFile(
             final @NonNull List<DeviceTagRow> rows,
-            final @org.jspecify.annotations.Nullable BulkTagBrowser browser,
+            final @Nullable BulkTagBrowser browser,
             final @NotNull List<ValidationError> errors) {
         final Map<String, TagWithMappings<TagEntity>> tagWithMappingsByNodeIdFromFile = new HashMap<>();
         for (int rowNum = 1; rowNum <= rows.size(); rowNum++) {
@@ -641,9 +659,10 @@ public class DeviceTagImporter {
 
     // endregion
 
-    // region Reading tags and mappings from the Edge Adapter
+    // region Read tags and mappings from the Edge Adapter, returned as a map of nodeId -> TagWithMappings
     // =================================================================================================================
     // Extract the information about existing tags and their mappings from the adapter.
+    // This is pretty straight forward.
 
     private ProtocolAdapterEntity getProtocolAdapterEntity(@NonNull String adapterId)
             throws DeviceTagImporterException {
@@ -692,7 +711,7 @@ public class DeviceTagImporter {
 
     // endregion
 
-    // region Computing the final tag list, depending on the import mode
+    // region Computing the final tag list, depending on the import mode, merging file and edge adapter information
     // =================================================================================================================
     // Compute which tags and mappings should exist after the import.
     // In three modes (CREATE, DELETE, OVERWRITE) the list of tags is exactly what is in the file,
@@ -890,7 +909,7 @@ public class DeviceTagImporter {
 
     // endregion
 
-    // region Building the final adapter configuration
+    // region Build the final adapter configuration
     // =================================================================================================================
     // Transform the list of tags with mappings into the configuration for the adapter (in the format that it expects).
 
