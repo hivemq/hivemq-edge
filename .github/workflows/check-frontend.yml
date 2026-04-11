@@ -48,7 +48,7 @@ jobs:
         run: pnpm test:coverage
 
       - name: 💾 Upload Vitest Code Coverage
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: lcov-vitest
           path: hivemq-edge-frontend/coverage-vitest/lcov.info
@@ -75,7 +75,7 @@ jobs:
           VITE_COVERAGE: true
 
       - name: Upload artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: application-instrumented
           path: ./hivemq-edge-frontend/dist
@@ -97,7 +97,7 @@ jobs:
         run: pnpm run build --base=/
 
       - name: Upload artifact
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: application-clean
           path: ./hivemq-edge-frontend/dist
@@ -200,7 +200,7 @@ jobs:
       # after the test, store videos
       - name: 💾 Upload Cypress - ${{ matrix.cypress.target }} videos
         if: failure()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: cypress-${{ matrix.cypress.target }}-videos
           path: hivemq-edge-frontend/cypress/videos
@@ -209,7 +209,7 @@ jobs:
 
       - name: 💾 Upload Cypress Code Coverage
         if: success() || failure()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: lcov-cypress-${{ matrix.cypress.target }}
           path: hivemq-edge-frontend/coverage-cypress/lcov.info
