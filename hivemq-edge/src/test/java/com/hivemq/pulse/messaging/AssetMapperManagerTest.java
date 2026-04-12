@@ -29,9 +29,9 @@ import com.hivemq.combining.model.DataCombiningSources;
 import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.combining.model.EntityReference;
 import com.hivemq.combining.model.EntityType;
-import com.hivemq.combining.runtime.DataCombiningPublishService;
 import com.hivemq.combining.runtime.DataCombiningRuntimeFactory;
 import com.hivemq.common.shutdown.ShutdownHooks;
+import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.entity.pulse.PulseAssetEntity;
 import com.hivemq.configuration.entity.pulse.PulseAssetMappingEntity;
 import com.hivemq.configuration.entity.pulse.PulseAssetMappingStatus;
@@ -82,9 +82,6 @@ public class AssetMapperManagerTest {
     private @NotNull SingleWriterService singleWriterService;
 
     @Mock
-    private @NotNull DataCombiningPublishService dataCombiningPublishService;
-
-    @Mock
     private @NotNull TagManager tagManager;
 
     @Mock
@@ -97,8 +94,7 @@ public class AssetMapperManagerTest {
     private @NotNull EventService eventService;
 
     private static @NotNull DataCombiner createDataCombiner() {
-        return createDataCombiner(
-                List.of(EntityType.PULSE_AGENT), List.of(List.of(DataIdentifierReference.Type.PULSE_ASSET)));
+        return createDataCombiner(List.of(EntityType.PULSE_AGENT), List.of(List.of(DataIdentifierReference.Type.TAG)));
     }
 
     private static @NotNull DataCombiner createDataCombiner(
@@ -136,9 +132,9 @@ public class AssetMapperManagerTest {
                 localTopicTree,
                 clientQueuePersistence,
                 singleWriterService,
-                dataCombiningPublishService,
                 tagManager,
-                dataCombiningTransformationService);
+                dataCombiningTransformationService,
+                new HivemqId());
         assetMapperManager = new AssetMapperManager(
                 eventService,
                 new NoopMetricRegistry(),
