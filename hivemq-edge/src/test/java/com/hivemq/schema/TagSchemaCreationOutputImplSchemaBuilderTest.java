@@ -15,34 +15,90 @@
  */
 package com.hivemq.schema;
 
-import org.junit.jupiter.api.Disabled;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.hivemq.adapter.sdk.api.schema.ScalarType;
+import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
+import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
+import com.hivemq.protocols.tag.TagSchemaCreationOutputImpl;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.Test;
 
-// TODO: these tests appear to be duplicates of SchemaBuilderImplTest and do not actually test
-// TagSchemaCreationOutputImpl behaviour (finish, notSupported, adapterNotStarted, fail,
-// tagNotFound, status transitions, future completion). They also rely on a tagSchemaBuilder()
-// method that was never implemented. The whole class should be replaced with real tests for
-// TagSchemaCreationOutputImpl.
-@Disabled("tagSchemaBuilder() was never implemented; these tests are duplicates of SchemaBuilderImplTest")
 class TagSchemaCreationOutputImplSchemaBuilderTest {
 
     @Test
-    void test_tagSchemaBuilder_build_completesTheFuture() {
-        // TODO: rewrite as a real test for TagSchemaCreationOutputImpl
+    void test_tagSchemaBuilder_build_completesTheFuture()
+            throws ExecutionException, InterruptedException, TimeoutException {
+        final var output = new TagSchemaCreationOutputImpl();
+
+        output.finish(new TagSchemaCreationOutput.DataPointSchema(
+                new SchemaBuilder().scalar(ScalarType.LONG).title("RPM").build(),
+                null,
+                null
+        ));
+
+        final JsonNode result = output.getFuture().get(1, TimeUnit.SECONDS);
+        assertThat(result).isNotNull();
+        assertThat(result.get("properties").get("value").get("type").asText()).isEqualTo("integer");
+        assertThat(result.get("properties").get("value").get("title").asText()).isEqualTo("RPM");
     }
 
     @Test
-    void test_tagSchemaBuilder_object_completesWithJsonSchema() {
-        // TODO: rewrite as a real test for TagSchemaCreationOutputImpl
+    void test_tagSchemaBuilder_object_completesWithJsonSchema()
+            throws ExecutionException, InterruptedException, TimeoutException {
+        final var output = new TagSchemaCreationOutputImpl();
+
+
+        output.finish(new TagSchemaCreationOutput.DataPointSchema(
+                new SchemaBuilder()
+                        .startObject()
+                        .property("temperature")
+                        .required()
+                        .scalar(ScalarType.DOUBLE)
+                        .title("Temperature")
+                        .property("unit")
+                        .scalar(ScalarType.STRING)
+                        .readable(true)
+                        .writable(false)
+                        .endObject()
+                        .build(),
+                null,
+                null
+        ));
+
+        final JsonNode result = output.getFuture().get(1, TimeUnit.SECONDS);
+        System.out.println(result);
+        assertThat(result.get("type").asText()).isEqualTo("object");
+        assertThat(result.get("properties").get("value").get("properties").has("temperature")).isTrue();
+        assertThat(result.get("properties").get("value").get("properties").has("unit")).isTrue();
+        assertThat(result.get("properties").get("value").get("required").get(0).asText()).isEqualTo("temperature");
     }
 
     @Test
     void test_tagSchemaBuilder_buildReturnsSchemaObject() {
-        // TODO: rewrite as a real test for TagSchemaCreationOutputImpl
+        final SchemaBuilder builder = new SchemaBuilder();
+
+        final var schema = builder.scalar(ScalarType.LONG).build();
+
+        assertThat(schema).isNotNull();
+        assertThat(schema.title()).isNull();
     }
 
     @Test
-    void test_tagSchemaBuilder_statusRemainsSuccess() {
-        // TODO: rewrite as a real test for TagSchemaCreationOutputImpl
+    void test_tagSchemaBuilder_statusRemainsSuccess()
+            throws ExecutionException, InterruptedException, TimeoutException {
+        final var output = new TagSchemaCreationOutputImpl();
+
+        output.finish(new TagSchemaCreationOutput.DataPointSchema(
+                new SchemaBuilder().scalar(ScalarType.BOOLEAN).build(),
+                null,
+                null
+        ));
+
+        output.getFuture().get(1, TimeUnit.SECONDS);
+        assertThat(output.getStatus()).isEqualTo(TagSchemaCreationOutputImpl.Status.SUCCESS);
     }
 }

@@ -37,7 +37,7 @@ import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationInput;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
-import com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl;
+import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
@@ -286,7 +286,7 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                 .filter(tag -> input.getTagName().equals(tag.getName()))
                 .findFirst()
                 .map(tag -> {
-                    final var builder = new SchemaBuilderImpl();
+                    final var builder = new SchemaBuilder();
                     switch (tag.getDefinition().getDataType()) {
                         case BOOL -> builder.scalar(ScalarType.BOOLEAN).writable().readable();
                         case INT_16 -> builder.scalar(ScalarType.LONG)

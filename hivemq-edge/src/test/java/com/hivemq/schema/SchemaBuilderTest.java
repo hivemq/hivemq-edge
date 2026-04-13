@@ -15,25 +15,26 @@
  */
 package com.hivemq.schema;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import com.hivemq.adapter.sdk.api.schema.AnySchema;
 import com.hivemq.adapter.sdk.api.schema.ArraySchema;
 import com.hivemq.adapter.sdk.api.schema.ObjectSchema;
 import com.hivemq.adapter.sdk.api.schema.ScalarSchema;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.Schema;
-import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 
-class SchemaBuilderImplTest {
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+class SchemaBuilderTest {
 
     // ── Any ──────────────────────────────────────────────────────────────────
 
     @Test
     void test_any_buildsAnySchema() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .any()
                 .build();
 
@@ -47,7 +48,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_any_nullable() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .any()
                 .nullable()
                 .build();
@@ -60,7 +61,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_scalar_long() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.LONG)
                 .build();
 
@@ -73,7 +74,7 @@ class SchemaBuilderImplTest {
     @Test
     void test_scalar_allTypes() {
         for (final ScalarType type : ScalarType.values()) {
-            final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+            final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                     .scalar(type)
                     .build();
             assertThat(schema).isInstanceOf(ScalarSchema.class);
@@ -83,7 +84,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_scalar_withAnnotations() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.LONG)
                 .title("Motor Speed")
                 .description("Rotational speed of the main motor shaft")
@@ -100,7 +101,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_scalar_nullable() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.LONG)
                 .nullable()
                 .build();
@@ -111,7 +112,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_scalar_writeOnly() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.LONG)
                 .readable(false)
                 .writable(true)
@@ -125,7 +126,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_object_simple() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startObject()
                 .property("rpm")
                 .required()
@@ -155,7 +156,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_object_nestedObject() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startObject()
                 .property("bearing")
                 .startObject()
@@ -179,7 +180,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_object_nullable() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startObject()
                 .property("x")
                 .scalar(ScalarType.LONG)
@@ -193,7 +194,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_object_annotationsOnObject() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startObject()
                 .property("x")
                 .scalar(ScalarType.LONG)
@@ -208,7 +209,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_object_propertyAny() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startObject()
                 .property("extra")
                 .any()
@@ -223,7 +224,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_array_uniformLong() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startArray()
                 .scalar(ScalarType.LONG)
                 .endArray()
@@ -239,7 +240,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_array_withBounds() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startArray()
                 .scalar(ScalarType.STRING)
                 .nullable()
@@ -259,7 +260,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_array_ofObjects() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startArray()
                 .startObject()
                 .property("code")
@@ -280,7 +281,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_array_ofArrays() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startArray()
                 .startArray()
                 .scalar(ScalarType.DOUBLE)
@@ -297,7 +298,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_array_unconstrained() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startArray()
                 .endArray()
                 .build();
@@ -308,7 +309,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_array_nullable() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startArray()
                 .scalar(ScalarType.LONG)
                 .endArray()
@@ -320,7 +321,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_array_itemAnnotationsVsArrayAnnotations() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startObject()
                 .property("readings")
                 .startArray()
@@ -347,11 +348,11 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_schema_composesFromSubschemas() {
-        final Schema valueSchema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema valueSchema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.DOUBLE)
                 .build();
 
-        final Schema metadataSchema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema metadataSchema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startObject()
                 .property("status")
                 .scalar(ScalarType.STRING)
@@ -363,7 +364,7 @@ class SchemaBuilderImplTest {
                 .endObject()
                 .build();
 
-        final Schema dpSchema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema dpSchema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startObject()
                 .property("value")
                 .schema(valueSchema)
@@ -384,7 +385,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_localVariablesStyle() {
-        final var rootBuilder = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl();
+        final var rootBuilder = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder();
         final var root = rootBuilder.startObject();
         root.property("rpm").required().scalar(ScalarType.LONG).title("Motor Speed");
         final var bearing = root.property("bearing").startObject();
@@ -407,7 +408,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_annotationsBeforeStructure() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .title("RPM")
                 .description("desc")
                 .nullable()
@@ -424,7 +425,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_doubleStructure_throwsException() {
-        final var builder = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl();
+        final var builder = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder();
         builder.scalar(ScalarType.LONG);
 
         assertThatThrownBy(() -> builder.scalar(ScalarType.STRING))
@@ -434,7 +435,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_doubleStructure_scalarThenObject_throwsException() {
-        final var builder = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl();
+        final var builder = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder();
         builder.scalar(ScalarType.LONG);
 
         assertThatThrownBy(builder::startObject).isInstanceOf(IllegalStateException.class);
@@ -442,7 +443,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_noStructure_throwsException() {
-        final var builder = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl();
+        final var builder = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder();
 
         assertThatThrownBy(builder::build)
                 .isInstanceOf(IllegalStateException.class)
@@ -454,7 +455,7 @@ class SchemaBuilderImplTest {
     @Test
     void test_callback_calledOnBuild() {
         final AtomicReference<Schema> captured = new AtomicReference<>();
-        final var builder = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl(captured::set);
+        final var builder = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder(captured::set);
 
         final Schema schema = builder.scalar(ScalarType.LONG).build();
 
@@ -463,7 +464,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_noCallback_noError() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.LONG)
                 .build();
         assertThat(schema).isNotNull();
@@ -473,7 +474,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_build_returnsSameInstance() {
-        final var builder = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl();
+        final var builder = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder();
         builder.scalar(ScalarType.LONG);
 
         final Schema first = builder.build();
@@ -486,7 +487,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_fullDocumentExample() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startObject()
                 .property("rpm")
                 .required()
@@ -538,7 +539,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_required_canBeUnset() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startObject()
                 .property("a")
                 .required(true)
@@ -558,7 +559,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_nullable_false_explicitlySet() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.LONG)
                 .nullable(false)
                 .build();
@@ -570,7 +571,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_scalar_withMinMax_long() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.LONG)
                 .minimum(-128)
                 .maximum(127)
@@ -583,7 +584,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_scalar_withMinMax_double() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.DOUBLE)
                 .minimum(-3.4e38)
                 .maximum(3.4e38)
@@ -596,7 +597,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_scalar_noMinMax_defaultsToNull() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.LONG)
                 .build();
 
@@ -607,7 +608,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_scalar_minMaxOnProperty() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startObject()
                 .property("temp")
                 .scalar(ScalarType.LONG)
@@ -624,7 +625,7 @@ class SchemaBuilderImplTest {
 
     @Test
     void test_scalar_minMaxOnArrayItem() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startArray()
                 .scalar(ScalarType.DOUBLE)
                 .minimum(-100.0)

@@ -15,9 +15,6 @@
  */
 package com.hivemq.schema;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.schema.AnySchema;
 import com.hivemq.adapter.sdk.api.schema.ArraySchema;
@@ -27,16 +24,19 @@ import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.Schema;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 class SchemaJsonRepresentationTest {
 
-    private final com.hivemq.adapter.sdk.api.schema.impl.SchemaJsonRepresentation repr =
-            com.hivemq.adapter.sdk.api.schema.impl.SchemaJsonRepresentation.INSTANCE;
+    private final com.hivemq.adapter.sdk.api.schema.SchemaJsonRepresentation repr =
+            com.hivemq.adapter.sdk.api.schema.SchemaJsonRepresentation.INSTANCE;
 
     // ── Scalar → JSON ────────────────────────────────────────────────────────
 
     @Test
     void test_toJson_scalarLong() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.LONG)
                 .build();
         final ObjectNode json = repr.toJsonSchema(schema);
@@ -47,7 +47,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_toJson_scalarBoolean() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.BOOLEAN)
                 .build();
         final ObjectNode json = repr.toJsonSchema(schema);
@@ -57,7 +57,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_toJson_scalarDouble() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.DOUBLE)
                 .build();
         final ObjectNode json = repr.toJsonSchema(schema);
@@ -67,7 +67,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_toJson_scalarString() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.STRING)
                 .build();
         final ObjectNode json = repr.toJsonSchema(schema);
@@ -77,7 +77,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_toJson_scalarUlong() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.ULONG)
                 .build();
         final ObjectNode json = repr.toJsonSchema(schema);
@@ -87,7 +87,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_toJson_scalarBinary() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.BINARY)
                 .build();
         final ObjectNode json = repr.toJsonSchema(schema);
@@ -100,7 +100,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_toJson_nullableScalar() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.LONG)
                 .nullable()
                 .build();
@@ -116,7 +116,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_toJson_scalarWithAnnotations() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.LONG)
                 .nullable()
                 .title("Motor Speed")
@@ -133,7 +133,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_toJson_writableDoesNotEmitReadOnly() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.LONG)
                 .writable(true)
                 .build();
@@ -144,7 +144,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_toJson_notReadableEmitsWriteOnly() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.LONG)
                 .readable(false)
                 .writable(true)
@@ -158,7 +158,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_toJson_any() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .any()
                 .build();
         final ObjectNode json = repr.toJsonSchema(schema);
@@ -171,7 +171,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_toJson_object() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startObject()
                 .property("rpm")
                 .required()
@@ -211,7 +211,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_toJson_objectNoRequired_omitsRequiredField() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startObject()
                 .property("x")
                 .scalar(ScalarType.LONG)
@@ -224,7 +224,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_toJson_nullableObject_usesAnyOf() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startObject()
                 .property("x")
                 .scalar(ScalarType.LONG)
@@ -244,7 +244,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_toJson_array() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startArray()
                 .scalar(ScalarType.LONG)
                 .minContains(1)
@@ -262,7 +262,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_toJson_nullableArray_usesAnyOf() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startArray()
                 .scalar(ScalarType.LONG)
                 .endArray()
@@ -401,7 +401,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_roundTrip_scalarLong() {
-        final Schema original = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema original = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.LONG)
                 .title("RPM")
                 .description("Rotational speed")
@@ -418,7 +418,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_roundTrip_nullableScalar() {
-        final Schema original = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema original = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.DOUBLE)
                 .nullable()
                 .build();
@@ -432,7 +432,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_roundTrip_object() {
-        final Schema original = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema original = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startObject()
                 .property("x")
                 .required()
@@ -457,7 +457,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_roundTrip_array() {
-        final Schema original = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema original = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .startArray()
                 .scalar(ScalarType.LONG)
                 .minContains(0)
@@ -479,7 +479,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_roundTripLoss_ulongBecomesLong() {
-        final Schema original = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema original = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.ULONG)
                 .build();
         final String json = repr.toJsonSchemaString(original);
@@ -491,7 +491,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_roundTripLoss_binaryBecomesString() {
-        final Schema original = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema original = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.BINARY)
                 .build();
         final String json = repr.toJsonSchemaString(original);
@@ -505,7 +505,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_toJson_scalarWithMinMax() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.LONG)
                 .minimum(-128)
                 .maximum(127)
@@ -518,7 +518,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_toJson_scalarWithoutMinMax_omitsFields() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.LONG)
                 .build();
         final ObjectNode json = repr.toJsonSchema(schema);
@@ -549,7 +549,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_roundTrip_scalarWithMinMax() {
-        final Schema original = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema original = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.LONG)
                 .minimum(0)
                 .maximum(65535)
@@ -568,7 +568,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_roundTrip_scalarDoubleWithMinMax() {
-        final Schema original = new com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl()
+        final Schema original = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
                 .scalar(ScalarType.DOUBLE)
                 .minimum(-1.5)
                 .maximum(99.9)
