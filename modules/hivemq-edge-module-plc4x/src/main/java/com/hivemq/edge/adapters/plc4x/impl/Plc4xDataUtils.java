@@ -44,7 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Some data utilies to manage the interaction with the PLC API
+ * Some data utilities to manage the interaction with the PLC API
  */
 public class Plc4xDataUtils {
     private static final Logger log = LoggerFactory.getLogger(Plc4xDataUtils.class);
