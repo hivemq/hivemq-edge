@@ -26,7 +26,6 @@ import com.hivemq.combining.mapping.DataCombiningTransformationService;
 import com.hivemq.combining.model.DataCombining;
 import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.configuration.HivemqId;
-import com.hivemq.datapoint.DataPointWithMetadata;
 import com.hivemq.edge.modules.adapters.data.TagManager;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
@@ -261,13 +260,6 @@ public class DataCombiningRuntime {
 
         @Override
         public @NotNull JsonNode getTagValue4Combiner() {
-            // DataPointWithMetadata wraps the tag value in {"value": <actual value>}, matching what instructions
-            // expect (source "$.value") and what the DataHub commercial module expects for tag data.
-            if (dataPoint instanceof DataPointWithMetadata dpMeta) {
-                final ObjectNode wrapper = mapper.createObjectNode();
-                wrapper.set("value", dpMeta.getTagValue());
-                return wrapper;
-            }
             final Object tagValue = dataPoint.getTagValue();
             if (tagValue == null) {
                 log.warn("Tag value of datapoint '{}' is null", dataPoint.getTagName());

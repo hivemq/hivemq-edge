@@ -52,6 +52,10 @@ public class DataPointWithMetadata implements DataPoint {
 
     @Override
     public @NotNull JsonNode getTagValue() {
+        return jsonNode;
+    }
+
+    public @NotNull JsonNode getTagValueValue() {
         return jsonNode.get("value");
     }
 

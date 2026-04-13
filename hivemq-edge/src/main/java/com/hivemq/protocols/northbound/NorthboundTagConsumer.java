@@ -125,7 +125,7 @@ public class NorthboundTagConsumer implements SingleTagConsumer {
             throws JsonProcessingException {
         final ObjectNode node = JsonNodeFactory.instance.objectNode();
         if (dataPoint instanceof final DataPointWithMetadata dpMeta) {
-            node.set("value", dpMeta.getTagValue());
+            node.set("value", dpMeta.getTagValueValue());
             if (northboundMapping.getIncludeTimestamp()) {
                 node.set("timestamp", JsonNodeFactory.instance.numberNode(dpMeta.getTimestamp()));
             }
