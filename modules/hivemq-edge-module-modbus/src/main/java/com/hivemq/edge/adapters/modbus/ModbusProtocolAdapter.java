@@ -304,6 +304,11 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                                 .maximum(2_147_483_647L) // Modbus INT_32: signed 32-bit integer upper bound
                                 .writable()
                                 .readable();
+                        case INT_64 -> builder.scalar(ScalarType.LONG)
+                                .minimum(-9_223_372_036_854_775_808L) // Modbus INT_64: signed 64-bit integer lower bound
+                                .maximum(9_223_372_036_854_775_807L) // Modbus INT_64: signed 64-bit integer upper bound
+                                .writable()
+                                .readable();
                         case UINT_32 -> builder.scalar(ScalarType.ULONG)
                                 .minimum(0L) // Modbus UINT_32: unsigned 32-bit integer lower bound
                                 .maximum(4_294_967_295L) // Modbus UINT_32: unsigned 32-bit integer upper bound
@@ -317,6 +322,9 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
                         case FLOAT_64 -> builder.scalar(ScalarType.DOUBLE)
                                 .minimum(-1.7976931348623157e308d) // Modbus FLOAT_64: IEEE 754 double precision lower bound
                                 .maximum(1.7976931348623157e308d) // Modbus FLOAT_64: IEEE 754 double precision upper bound
+                                .writable()
+                                .readable();
+                        case UTF_8 -> builder.scalar(ScalarType.STRING)
                                 .writable()
                                 .readable();
                     }
