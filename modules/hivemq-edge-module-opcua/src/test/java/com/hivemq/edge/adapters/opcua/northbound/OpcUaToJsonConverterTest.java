@@ -122,7 +122,7 @@ class OpcUaToJsonConverterTest extends AbstractOpcUaPayloadConverterTest {
                 .asInstanceOf(InstanceOfAssertFactories.type(DataPointWithMetadata.class))
                 .satisfies(dp -> {
                     assertThat(dp.getTagName()).isEqualTo(nodeId);
-                    assertThat(dp.getTagValue().toString()).isEqualTo(jsonValue);
+                    assertThat(dp.getTagValueValue().toString()).isEqualTo(jsonValue);
                 }));
     }
 }
