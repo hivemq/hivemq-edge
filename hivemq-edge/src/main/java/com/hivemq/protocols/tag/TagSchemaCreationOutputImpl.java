@@ -18,7 +18,7 @@ package com.hivemq.protocols.tag;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
-import com.hivemq.adapter.sdk.api.schema.impl.SchemaJsonRepresentation;
+import com.hivemq.adapter.sdk.api.schema.SchemaJsonRepresentation;
 import com.hivemq.exceptions.StackLessProtocolAdapterException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;

@@ -28,7 +28,6 @@ import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.Schema;
 import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
-import com.hivemq.adapter.sdk.api.schema.impl.SchemaBuilderImpl;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -86,11 +85,11 @@ public class JsonSchemaGenerator {
      * Calls {@link SchemaBuilder#build()} at the end.
      */
     public static @NotNull TagSchemaCreationOutput.DataPointSchema buildSchema(final @NotNull FieldInformation info) {
-        final var valueSchema = new SchemaBuilderImpl();
+        final var valueSchema = new SchemaBuilder();
         // value — required, carries the OPC UA node value (scalar, array, or nested object)
         applyFieldInfoToSchema(valueSchema, info);
 
-        final var metadataSchema = new SchemaBuilderImpl()
+        final var metadataSchema = new SchemaBuilder()
                 .startObject()
                 .property(METADATA_STATUS_CODE)
                 .startObject()
