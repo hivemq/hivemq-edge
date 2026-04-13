@@ -135,7 +135,7 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
         try {
             nodes = browser.browse(rootId, depth);
         } catch (final BrowseException e) {
-            logger.warn("Browse failed for adapter '{}': {}", adapterId, e.getMessage());
+            logger.warn("Browse failed for adapter '{}': {}", adapterId, e.getMessage(), e);
             if (e.getMessage() != null
                     && e.getMessage().toLowerCase(Locale.ROOT).contains("timed out")) {
                 return errorResponse(Response.Status.GATEWAY_TIMEOUT, e.getMessage());

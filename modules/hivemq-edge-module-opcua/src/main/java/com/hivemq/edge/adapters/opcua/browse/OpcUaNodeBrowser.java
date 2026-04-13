@@ -47,6 +47,7 @@ import org.eclipse.milo.opcua.stack.core.NamespaceTable;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte;
@@ -59,6 +60,7 @@ import org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseResult;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
+import org.eclipse.milo.opcua.stack.core.types.structured.ViewDescription;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -83,10 +85,22 @@ public class OpcUaNodeBrowser {
 
     private final @NotNull OpcUaClient client;
     private final @NotNull String adapterId;
+    private final int maxReferencesPerNode;
 
     public OpcUaNodeBrowser(final @NotNull OpcUaClient client, final @NotNull String adapterId) {
+        this(client, adapterId, 0);
+    }
+
+    /**
+     * @param maxReferencesPerNode maximum references the server should return per browse request.
+     *                             0 means server-decides (default). A low value forces the server
+     *                             to paginate via continuation points.
+     */
+    public OpcUaNodeBrowser(
+            final @NotNull OpcUaClient client, final @NotNull String adapterId, final int maxReferencesPerNode) {
         this.client = client;
         this.adapterId = adapterId;
+        this.maxReferencesPerNode = maxReferencesPerNode;
     }
 
     /**
@@ -169,14 +183,23 @@ public class OpcUaNodeBrowser {
         if (!visited.add(browseRoot)) {
             return CompletableFuture.completedFuture(null);
         }
+        final BrowseDescription browseDescription = new BrowseDescription(
+                browseRoot,
+                BrowseDirection.Forward,
+                NodeIds.HierarchicalReferences,
+                true,
+                uint(0),
+                uint(BrowseResultMask.All.getValue()));
         return CompletableFuture.runAsync(concurrency::acquireUninterruptibly)
-                .thenCompose(ignored -> client.browseAsync(new BrowseDescription(
-                        browseRoot,
-                        BrowseDirection.Forward,
-                        NodeIds.HierarchicalReferences,
-                        true,
-                        uint(0),
-                        uint(BrowseResultMask.All.getValue()))))
+                .thenCompose(ignored -> {
+                    if (maxReferencesPerNode > 0) {
+                        final var viewDescription = new ViewDescription(NodeId.NULL_VALUE, DateTime.MIN_VALUE, uint(0));
+                        return client.browseAsync(
+                                        viewDescription, uint(maxReferencesPerNode), List.of(browseDescription))
+                                .thenApply(response -> response.getResults()[0]);
+                    }
+                    return client.browseAsync(browseDescription);
+                })
                 .whenComplete((result, error) -> concurrency.release())
                 .thenCompose(browseResult ->
                         handleBrowseResult(browseResult, currentPath, remainingDepth, variables, visited, concurrency));
@@ -200,69 +223,108 @@ public class OpcUaNodeBrowser {
                     null);
         }
 
-        final var childFutures = new ArrayList<CompletableFuture<Void>>();
         final var references = new ArrayList<ReferenceDescription>();
 
         if (browseResult.getReferences() != null) {
             Collections.addAll(references, browseResult.getReferences());
         }
 
-        final NamespaceTable nsTable = client.getNamespaceTable();
+        // Drain all continuation pages BEFORE starting child recursive browses.
+        // Continuation points are server-side cursors with a limited lifetime — resource-
+        // constrained devices (e.g. S7-1500) expire them quickly. If continuation follow-ups
+        // compete with recursive browses for the semaphore, the recursive browses may run
+        // first and the continuation point expires -> Bad_ContinuationPointInvalid.
+        // Continuation pages bypass the semaphore because they are part of the same logical
+        // browse operation that already acquired and released the semaphore.
+        final CompletableFuture<Void> continuationFuture = drainContinuationPages(
+                browseResult, currentPath, remainingDepth, references, variables, visited, concurrency);
 
-        for (final ReferenceDescription rd : references) {
-            final String browseName =
-                    rd.getBrowseName() != null && rd.getBrowseName().getName() != null
-                            ? rd.getBrowseName().getName()
-                            : "";
-            final String childPath = currentPath + "/" + browseName;
+        // After all continuation pages are drained, process all collected references and
+        // start recursive browses for child nodes.
+        return continuationFuture.thenCompose(ignored -> {
+            final var childFutures = new ArrayList<CompletableFuture<Void>>();
+            final NamespaceTable nsTable = client.getNamespaceTable();
 
-            final Optional<NodeId> resolvedNodeId = rd.getNodeId().toNodeId(nsTable);
-            if (resolvedNodeId.isEmpty()) {
-                continue;
-            }
-            final NodeId nodeId = resolvedNodeId.get();
+            for (final ReferenceDescription rd : references) {
+                final String browseName =
+                        rd.getBrowseName() != null && rd.getBrowseName().getName() != null
+                                ? rd.getBrowseName().getName()
+                                : "";
+                final String childPath = currentPath + "/" + browseName;
 
-            if (rd.getNodeClass() == NodeClass.Variable) {
-                // Deduplicate variable nodes reachable via multiple paths.
-                // visited.add() returns false if this nodeId was already seen.
-                if (visited.add(nodeId)) {
-                    final int nsIndex = nodeId.getNamespaceIndex().intValue();
-                    final String nsUri =
-                            nsIndex < nsTable.toArray().length ? nsTable.get(nsIndex) : String.valueOf(nsIndex);
-                    variables.add(
-                            new DiscoveredVariable(nodeId, childPath, nsUri != null ? nsUri : "", nsIndex, browseName));
+                final Optional<NodeId> resolvedNodeId = rd.getNodeId().toNodeId(nsTable);
+                if (resolvedNodeId.isEmpty()) {
+                    continue;
+                }
+                final NodeId nodeId = resolvedNodeId.get();
+
+                if (rd.getNodeClass() == NodeClass.Variable) {
+                    if (visited.add(nodeId)) {
+                        final int nsIndex = nodeId.getNamespaceIndex().intValue();
+                        final String nsUri =
+                                nsIndex < nsTable.toArray().length ? nsTable.get(nsIndex) : String.valueOf(nsIndex);
+                        variables.add(new DiscoveredVariable(
+                                nodeId, childPath, nsUri != null ? nsUri : "", nsIndex, browseName));
+                    }
+                }
+
+                if (remainingDepth > 1) {
+                    childFutures.add(
+                            browseRecursive(nodeId, childPath, remainingDepth - 1, variables, visited, concurrency));
                 }
             }
 
-            if (remainingDepth > 1) {
-                childFutures.add(
-                        browseRecursive(nodeId, childPath, remainingDepth - 1, variables, visited, concurrency));
-            }
-        }
+            return CompletableFuture.allOf(childFutures.toArray(CompletableFuture[]::new));
+        });
+    }
 
-        // Handle continuation points (drain all pages from the server).
-        // Route through the semaphore so browseNext doesn't overlap with browseAsync.
-        if (browseResult.getContinuationPoint() != null
-                && browseResult.getContinuationPoint().bytes() != null
-                && browseResult.getContinuationPoint().bytes().length > 0) {
-            childFutures.add(CompletableFuture.runAsync(concurrency::acquireUninterruptibly)
-                    .thenCompose(ignored -> client.browseNextAsync(false, List.of(browseResult.getContinuationPoint())))
-                    .whenComplete((result, error) -> concurrency.release())
-                    .thenCompose(nextResult -> {
-                        final var continuationFutures = new ArrayList<CompletableFuture<Void>>();
-                        if (nextResult.getResults() != null) {
-                            for (final BrowseResult result : nextResult.getResults()) {
-                                if (result != null) {
-                                    continuationFutures.add(handleBrowseResult(
-                                            result, currentPath, remainingDepth, variables, visited, concurrency));
+    /**
+     * Drain all continuation pages for a browse result, appending references to the shared list.
+     * Continuation pages bypass the browse semaphore because they are part of the same logical
+     * browse operation and must be consumed promptly before the server expires them.
+     */
+    private @NotNull CompletableFuture<Void> drainContinuationPages(
+            final @NotNull BrowseResult browseResult,
+            final @NotNull String currentPath,
+            final int remainingDepth,
+            final @NotNull List<ReferenceDescription> references,
+            final @NotNull List<DiscoveredVariable> variables,
+            final @NotNull Set<NodeId> visited,
+            final @NotNull Semaphore concurrency) {
+        if (browseResult.getContinuationPoint() == null
+                || browseResult.getContinuationPoint().bytes() == null
+                || browseResult.getContinuationPoint().bytes().length == 0) {
+            return CompletableFuture.completedFuture(null);
+        }
+        return client.browseNextAsync(false, List.of(browseResult.getContinuationPoint()))
+                .thenCompose(nextResult -> {
+                    if (nextResult.getResults() != null) {
+                        for (final BrowseResult result : nextResult.getResults()) {
+                            if (result != null) {
+                                if (result.getStatusCode() != null
+                                        && !result.getStatusCode().isGood()) {
+                                    throw new UncheckedBrowseException(
+                                            "Browse continuation at path '" + currentPath
+                                                    + "' returned non-Good status: " + result.getStatusCode(),
+                                            null);
                                 }
+                                if (result.getReferences() != null) {
+                                    Collections.addAll(references, result.getReferences());
+                                }
+                                // Recursively drain further continuation pages.
+                                return drainContinuationPages(
+                                        result,
+                                        currentPath,
+                                        remainingDepth,
+                                        references,
+                                        variables,
+                                        visited,
+                                        concurrency);
                             }
                         }
-                        return CompletableFuture.allOf(continuationFutures.toArray(CompletableFuture[]::new));
-                    }));
-        }
-
-        return CompletableFuture.allOf(childFutures.toArray(CompletableFuture[]::new));
+                    }
+                    return CompletableFuture.completedFuture(null);
+                });
     }
 
     /**
