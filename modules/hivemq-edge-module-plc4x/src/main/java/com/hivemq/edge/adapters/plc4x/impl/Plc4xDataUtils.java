@@ -244,11 +244,9 @@ public class Plc4xDataUtils {
                 return value.getString();
 
             case TIME: // 32bit signed, millisecond of the day (or day prior) (-24d20h31m23s648ms - +24d20h31m23s647ms)
-                return value.getDuration().toMillis();
-
             case LTIME: // 64bit signed, nanosecond of the day (or day prior) (--106751d23h47m16s854ms775us808ns -
                 // +106751d23h47m16s854ms775us807ns)
-                return value.getDuration().toNanos();
+                return value.getDuration().toString(); // ISO 8601 duration, e.g. "PT1H30M45S"
 
             case DATE: // 16bit signed, days since 1990-1-1 (1990-01-01 - 2168-12-31)
             case LDATE:
