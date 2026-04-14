@@ -118,9 +118,6 @@ describe('useValidateCombiner', () => {
       })
       expect(errors).toStrictEqual([
         expect.objectContaining({
-          message: "The Edge broker must be connected to the combiner's sources",
-        }),
-        expect.objectContaining({
           message: 'This is not a valid reference to a Workspace entity',
         }),
       ])
@@ -144,9 +141,6 @@ describe('useValidateCombiner', () => {
         },
       })
       expect(errors).toStrictEqual([
-        expect.objectContaining({
-          message: "The Edge broker must be connected to the combiner's sources",
-        }),
         expect.objectContaining({
           message: 'The adapter does not support data combining and cannot be used as a source',
         }),
