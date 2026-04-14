@@ -638,4 +638,46 @@ class SchemaBuilderTest {
         assertThat(items.minimum()).isEqualTo(-100.0);
         assertThat(items.maximum()).isEqualTo(100.0);
     }
+
+    // ── Minimum / Maximum rejected on non-numeric scalars ────────────────────
+
+    @Test
+    void test_minimum_onTemporalScalar_throws() {
+        for (final ScalarType type : new ScalarType[] {
+                ScalarType.INSTANT,
+                ScalarType.LOCAL_DATE,
+                ScalarType.LOCAL_TIME,
+                ScalarType.LOCAL_DATE_TIME,
+                ScalarType.DURATION,
+                ScalarType.STRING,
+                ScalarType.BOOLEAN,
+                ScalarType.BINARY
+        }) {
+            assertThatThrownBy(() -> new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
+                    .scalar(type)
+                    .minimum(0L))
+                    .as("minimum() must be rejected for %s", type)
+                    .isInstanceOf(IllegalStateException.class);
+        }
+    }
+
+    @Test
+    void test_maximum_onTemporalScalar_throws() {
+        for (final ScalarType type : new ScalarType[] {
+                ScalarType.INSTANT,
+                ScalarType.LOCAL_DATE,
+                ScalarType.LOCAL_TIME,
+                ScalarType.LOCAL_DATE_TIME,
+                ScalarType.DURATION,
+                ScalarType.STRING,
+                ScalarType.BOOLEAN,
+                ScalarType.BINARY
+        }) {
+            assertThatThrownBy(() -> new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
+                    .scalar(type)
+                    .maximum(0L))
+                    .as("maximum() must be rejected for %s", type)
+                    .isInstanceOf(IllegalStateException.class);
+        }
+    }
 }
