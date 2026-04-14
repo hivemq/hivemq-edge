@@ -193,32 +193,35 @@ public class Plc4xDataUtilsTest {
     }
 
     @Test
-    public void whenConvertTime_thenReturnSignedMillis() {
+    public void whenConvertTime_thenReturnIso8601DurationString() {
+        assertEquals("PT0S", convertObject(new PlcTIME(Duration.ZERO)));
 
-        final Duration expected1 = Duration.ofDays(0);
-        assertEquals(0L, convertObject(new PlcTIME(expected1)));
+        final Duration positive = Duration.ofHours(1).plusMinutes(30).plusSeconds(45).plusMillis(500);
+        assertEquals(positive.toString(), convertObject(new PlcTIME(positive)));
+        assertEquals("PT1H30M45.5S", convertObject(new PlcTIME(positive)));
 
-        final Duration expectedMax = Duration.ofDays(24)
+        final Duration negative = Duration.ofSeconds(-5);
+        assertEquals("PT-5S", convertObject(new PlcTIME(negative)));
+
+        final Duration longDuration = Duration.ofDays(24)
                 .plusHours(20)
                 .plusMinutes(31)
                 .plusSeconds(23)
                 .plusMillis(647);
-        assertEquals(expectedMax.toMillis(), convertObject(new PlcTIME(expectedMax)));
-
-        final Duration expectedMin = Duration.ofDays(0)
-                .minusDays(24)
-                .minusHours(20)
-                .minusMinutes(31)
-                .minusSeconds(23)
-                .minusMillis(648);
-        assertEquals(expectedMin.toMillis(), convertObject(new PlcTIME(expectedMin)));
+        assertEquals(longDuration.toString(), convertObject(new PlcTIME(longDuration)));
     }
 
     @Test
-    public void whenConvertLTime_thenReturnSignedNanos() {
-        assertEquals(0L, convertObject(new PlcTIME(0L)));
-        assertEquals(9223372036854775807L, convertObject(new PlcTIME(9223372036854775807L)));
-        assertEquals(-9223372036854775808L, convertObject(new PlcTIME(-9223372036854775808L)));
+    public void whenConvertLTime_thenReturnIso8601DurationString() {
+        assertEquals("PT0S", convertObject(new PlcTIME(0L)));
+        // PlcTIME(long) stores the value as milliseconds; the schema contract only cares
+        // that the emitted form is the ISO 8601 duration produced by Duration.toString().
+        assertEquals(
+                Duration.ofMillis(Long.MAX_VALUE).toString(),
+                convertObject(new PlcTIME(Long.MAX_VALUE)));
+        assertEquals(
+                Duration.ofMillis(Long.MIN_VALUE).toString(),
+                convertObject(new PlcTIME(Long.MIN_VALUE)));
     }
 
     @Test
