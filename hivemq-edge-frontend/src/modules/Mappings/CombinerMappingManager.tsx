@@ -1,4 +1,4 @@
-import { type FC, useEffect, useMemo, useState } from 'react'
+import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import type { IChangeEvent } from '@rjsf/core'
@@ -140,18 +140,22 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
     throw new Error('Failed to create phantom node for wizard')
   }
 
-  // Track live sources from the form so that adding/removing a source in the Sources tab
-  // immediately updates the entity queries and integration point selectors in the Mapping tab.
+  // Track live sources so that adding/removing a source in the Sources tab
+  // immediately updates entity queries and the Mapping tab's integration point selectors.
+  // This state is updated ONLY via onSourcesChange (called explicitly by EntityReferenceTableWidget)
+  // rather than via form onChange, which would fire on every keystroke and risk resetting the form.
   const [liveSources, setLiveSources] = useState<EntityReference[]>(selectedNode.data.sources.items || [])
 
-  const handleFormChange = (data: IChangeEvent<Combiner>) => {
-    const items = data.formData?.sources?.items
-    if (items) setLiveSources(items)
-  }
+  const onSourcesChange = useCallback((sources: EntityReference[]) => {
+    setLiveSources(sources)
+  }, [])
 
-  const entities = useMemo(() => {
-    return liveSources
-  }, [liveSources])
+  const entities = useMemo(() => liveSources, [liveSources])
+
+  // Stable formData reference: keyed to the combiner ID so RJSF's internal state is
+  // never reset by re-renders (e.g. React Flow recreating node objects for position updates).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const initialFormData = useMemo(() => selectedNode.data, [combinerId])
 
   const isAssetManager = useMemo(() => {
     return entities?.some((e) => e.type === EntityType.PULSE_AGENT)
@@ -196,6 +200,7 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
       queries: sources,
       entities,
       availableEntities,
+      onSourcesChange,
     }
     // Stabilize by checking if sources data has actually changed, not array reference
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -383,8 +388,7 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
             id="combiner-main-form"
             schema={combinerMappingJsonSchema}
             uiSchema={combinerMappingUiSchema(isAssetManager, tabId)}
-            formData={selectedNode.data}
-            onChange={handleFormChange}
+            formData={initialFormData}
             onSubmit={handleOnSubmit}
             formContext={formContext}
             customValidate={validator?.validateCombiner}

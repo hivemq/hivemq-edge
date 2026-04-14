@@ -124,6 +124,12 @@ export interface CombinerContext {
    * All workspace entities that are not yet in the combiner's sources, available to be added.
    */
   availableEntities?: AvailableEntity[]
+
+  /**
+   * Callback for when the user adds or removes a source entity in the Sources tab.
+   * Updating this triggers a live refresh of entity queries and the Mapping tab's integration point selectors.
+   */
+  onSourcesChange?: (sources: EntityReference[]) => void
 }
 
 export interface AvailableEntity {

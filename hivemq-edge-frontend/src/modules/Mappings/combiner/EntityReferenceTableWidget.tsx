@@ -30,11 +30,15 @@ export const EntityReferenceTableWidget = (
   const handleAdd = (option: { value: AvailableEntity; label: string } | null) => {
     if (!option) return
     const { id, type } = option.value
-    props.onChange([...(props.value || []), { id, type }])
+    const newSources = [...(props.value || []), { id, type }]
+    props.onChange(newSources)
+    props.formContext?.onSourcesChange?.(newSources)
   }
 
   const handleDelete = (item: EntityReference) => {
-    props.onChange((props.value || []).filter((e: EntityReference) => e.id !== item.id || e.type !== item.type))
+    const newSources = (props.value || []).filter((e: EntityReference) => e.id !== item.id || e.type !== item.type)
+    props.onChange(newSources)
+    props.formContext?.onSourcesChange?.(newSources)
   }
 
   const displayColumns = useMemo<ColumnDef<EntityReference>[]>(() => {
