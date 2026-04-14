@@ -14,7 +14,7 @@ info:
     ## OpenAPI
     HiveMQ's REST API provides an OpenAPI 3.0 schema definition that can imported into popular API tooling (e.g. Postman) or can be used to generate client-code for multiple programming languages.
   title: HiveMQ Edge REST API
-  version: 2026.7-SNAPSHOT
+  version: PLACEHOLDER_HIVEMQ_VERSION
   x-logo:
     url: https://www.hivemq.com/img/svg/hivemq-bee.svg
 tags:
@@ -32,6 +32,8 @@ tags:
     name: Metrics Endpoint
   - description: Interact with protocol adapters.
     name: Protocol Adapters
+  - description: Browse and import device tags in bulk for protocol adapters.
+    name: Device Tag Browsing
   - description: Manage samples of payloads.
     name: Payload Sampling
   - description: Interact with topic filters.
@@ -4052,6 +4054,146 @@ paths:
       summary: Update the domain tag of an adapter.
       tags:
         - Protocol Adapters
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/device-tags/browse:
+    post:
+      description: Browse the device address space of the specified adapter and return discovered nodes as a downloadable file. The response format is determined by the Accept header (text/csv, application/json, or application/yaml).
+      operationId: browseDeviceTags
+      x-roles-allowed:
+        - admin
+      parameters:
+        - description: The adapter ID.
+          in: path
+          name: adapterId
+          required: true
+          schema:
+            type: string
+        - description: Optional device-specific root identifier to start browsing from.
+          in: query
+          name: rootId
+          required: false
+          schema:
+            type: string
+        - description: Max browse depth (0 = unlimited).
+          in: query
+          name: maxDepth
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Success
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/json:
+              schema:
+                type: string
+                format: binary
+            application/yaml:
+              schema:
+                type: string
+                format: binary
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Adapter not found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Adapter does not support bulk tag browsing or browse failed
+        '504':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Browse timed out
+      summary: Browse device tags
+      tags:
+        - Device Tag Browsing
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/device-tags/import:
+    post:
+      description: Import device tags and mappings from a file. The file format is determined by the Content-Type header (text/csv, application/json, or application/yaml). Multiple rows with the same tag name produce multiple northbound mappings for that tag.
+      operationId: importDeviceTags
+      x-roles-allowed:
+        - admin
+      parameters:
+        - description: The adapter ID.
+          in: path
+          name: adapterId
+          required: true
+          schema:
+            type: string
+        - description: Import conflict-resolution mode.
+          in: query
+          name: mode
+          required: false
+          schema:
+            type: string
+            default: MERGE_SAFE
+            enum:
+              - CREATE
+              - DELETE
+              - OVERWRITE
+              - MERGE_SAFE
+              - MERGE_OVERWRITE
+        - description: Validate node existence on the device.
+          in: query
+          name: validateNodes
+          required: false
+          schema:
+            type: boolean
+            default: false
+      requestBody:
+        description: The file content (CSV, JSON, or YAML).
+        required: true
+        content:
+          text/csv:
+            schema:
+              type: string
+              format: binary
+          application/json:
+            schema:
+              type: string
+              format: binary
+          application/yaml:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportResult'
+          description: Success
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Invalid file or validation errors
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Adapter not found
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+          description: Unsupported media type
+      summary: Import device tags
+      tags:
+        - Device Tag Browsing
   /api/v1/management/protocol-adapters/adapters/{adapterType}:
     post:
       description: Add adapter to the system.
@@ -8255,6 +8397,50 @@ components:
             $ref: '#/components/schemas/DomainTag'
       required:
         - items
+    TagAction:
+      type: object
+      description: Action performed on a single tag during import.
+      properties:
+        name:
+          type: string
+          description: The tag name.
+        action:
+          type: string
+          description: The action performed.
+          enum:
+            - CREATED
+            - UPDATED
+            - DELETED
+    ImportResult:
+      type: object
+      description: Result of a bulk device tag import operation.
+      properties:
+        tagsCreated:
+          type: integer
+          description: Number of new tags created.
+        tagsUpdated:
+          type: integer
+          description: Number of existing tags overwritten.
+        tagsDeleted:
+          type: integer
+          description: Number of tags removed.
+        northboundMappingsCreated:
+          type: integer
+          description: Number of northbound mappings created.
+        northboundMappingsDeleted:
+          type: integer
+          description: Number of northbound mappings removed.
+        southboundMappingsCreated:
+          type: integer
+          description: Number of southbound mappings created.
+        southboundMappingsDeleted:
+          type: integer
+          description: Number of southbound mappings removed.
+        tagActions:
+          type: array
+          description: Per-tag detail of what was done.
+          items:
+            $ref: '#/components/schemas/TagAction'
     NorthboundMappingOwner:
       allOf:
         - $ref: '#/components/schemas/NorthboundMapping'
