@@ -119,4 +119,15 @@ export interface CombinerContext {
    * @deprecated Use entityQueries instead. Kept for backward compatibility during migration.
    */
   entities?: EntityReference[]
+
+  /**
+   * All workspace entities that are not yet in the combiner's sources, available to be added.
+   */
+  availableEntities?: AvailableEntity[]
+}
+
+export interface AvailableEntity {
+  id: string
+  type: EntityReference['type']
+  label: string
 }

@@ -106,10 +106,7 @@ describe('toolbar.utils', () => {
             data: { id: 'adapter-1', type: 'mqtt' } as Adapter,
           },
         ] as CombinerEligibleNode[],
-        expected: [
-          { type: EntityType.ADAPTER, id: 'adapter-1' },
-          { id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER },
-        ],
+        expected: [{ type: EntityType.ADAPTER, id: 'adapter-1' }],
       },
       {
         description: 'bridge nodes',
@@ -121,10 +118,7 @@ describe('toolbar.utils', () => {
             data: { id: 'bridge-1' } as Bridge,
           },
         ] as CombinerEligibleNode[],
-        expected: [
-          { type: EntityType.BRIDGE, id: 'bridge-1' },
-          { id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER },
-        ],
+        expected: [{ type: EntityType.BRIDGE, id: 'bridge-1' }],
       },
       {
         description: 'pulse nodes',
@@ -136,10 +130,7 @@ describe('toolbar.utils', () => {
             data: { id: 'pulse-1', label: 'Pulse' },
           },
         ] as CombinerEligibleNode[],
-        expected: [
-          { type: EntityType.PULSE_AGENT, id: 'pulse-1' },
-          { id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER },
-        ],
+        expected: [{ type: EntityType.PULSE_AGENT, id: 'pulse-1' }],
       },
     ])('should build entity references from $description', ({ nodes, expected }) => {
       const result = buildEntityReferencesFromNodes(nodes)
@@ -174,15 +165,31 @@ describe('toolbar.utils', () => {
         { type: EntityType.ADAPTER, id: 'adapter-1' },
         { type: EntityType.BRIDGE, id: 'bridge-1' },
         { type: EntityType.PULSE_AGENT, id: 'pulse-1' },
-        { id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER },
       ])
     })
 
-    it('should always include edge broker as last reference', () => {
+    it('should not include edge broker by default', () => {
       const nodes: CombinerEligibleNode[] = []
       const result = buildEntityReferencesFromNodes(nodes)
 
-      expect(result).toEqual([{ id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER }])
+      expect(result).toEqual([])
+    })
+
+    it('should include edge broker as last reference when requested', () => {
+      const nodes: CombinerEligibleNode[] = [
+        {
+          id: 'adapter-1',
+          type: NodeTypes.ADAPTER_NODE,
+          position: { x: 0, y: 0 },
+          data: { id: 'adapter-1', type: 'mqtt' } as Adapter,
+        },
+      ]
+      const result = buildEntityReferencesFromNodes(nodes, true)
+
+      expect(result).toEqual([
+        { type: EntityType.ADAPTER, id: 'adapter-1' },
+        { id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER },
+      ])
     })
   })
 

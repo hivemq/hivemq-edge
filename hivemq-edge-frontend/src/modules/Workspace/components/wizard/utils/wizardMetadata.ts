@@ -105,8 +105,8 @@ export const WIZARD_REGISTRY: Record<WizardType, WizardMetadata> = {
         descriptionKey: 'step_COMBINER_0', // "Select data sources"
         requiresSelection: true,
         selectionConstraints: {
-          minNodes: 2,
-          allowedNodeTypes: [NodeTypes.ADAPTER_NODE, NodeTypes.BRIDGE_NODE],
+          minNodes: 1,
+          allowedNodeTypes: [NodeTypes.ADAPTER_NODE, NodeTypes.BRIDGE_NODE, NodeTypes.EDGE_NODE],
           // Only allow adapters with COMBINE capability
           // Note: customFilter will be enhanced by WizardSelectionRestrictions with protocol adapter data
           customFilter: (node) => {

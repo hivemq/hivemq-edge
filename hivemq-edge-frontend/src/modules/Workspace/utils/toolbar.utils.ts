@@ -33,7 +33,10 @@ export const isNodeCombinerCandidate = (node: Node, adapterTypes?: ProtocolAdapt
  * @param nodes - Array of eligible nodes to convert to entity references
  * @returns Array of EntityReference objects with proper types and IDs
  */
-export const buildEntityReferencesFromNodes = (nodes: CombinerEligibleNode[]): EntityReference[] => {
+export const buildEntityReferencesFromNodes = (
+  nodes: CombinerEligibleNode[],
+  includeEdgeBroker = false
+): EntityReference[] => {
   const references = nodes.map<EntityReference>((node) => {
     const getType = () => {
       if (node.type === NodeTypes.ADAPTER_NODE) return EntityType.ADAPTER
@@ -47,8 +50,9 @@ export const buildEntityReferencesFromNodes = (nodes: CombinerEligibleNode[]): E
     }
   })
 
-  // Always add the edge broker as the last reference
-  references.push({ id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER })
+  if (includeEdgeBroker) {
+    references.push({ id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER })
+  }
 
   return references
 }

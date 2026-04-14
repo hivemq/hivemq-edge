@@ -1769,6 +1769,7 @@
       },
       "sources": {
         "description": "The list of data sources available for this combiner",
+        "addSource": "Add a source...",
         "table": {
           "action": "Actions",
           "delete": "Delete the source",

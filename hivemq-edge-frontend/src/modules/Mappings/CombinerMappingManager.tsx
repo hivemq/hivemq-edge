@@ -24,7 +24,7 @@ import {
   useToast,
 } from '@chakra-ui/react'
 
-import type { Combiner, EntityReferenceList } from '@/api/__generated__'
+import type { Combiner, EntityReference, EntityReferenceList } from '@/api/__generated__'
 import { AssetMapping, EntityType } from '@/api/__generated__'
 import { useDeleteCombiner, useUpdateCombiner } from '@/api/hooks/useCombiners/'
 import { useDeleteAssetMapper, useUpdateAssetMapper } from '@/api/hooks/useAssetMapper'
@@ -36,12 +36,12 @@ import { useUpdateManagedAsset } from '@/api/hooks/usePulse/useUpdateManagedAsse
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm'
 import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
 import DangerZone from '@/modules/Mappings/components/DangerZone.tsx'
-import type { CombinerContext } from '@/modules/Mappings/types.ts'
+import type { AvailableEntity, CombinerContext } from '@/modules/Mappings/types.ts'
 import { useValidateCombiner } from '@/modules/Mappings/hooks/useValidateCombiner.ts'
 import { MappingType } from '@/modules/Mappings/types.ts'
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
-import { IdStubs, NodeTypes } from '@/modules/Workspace/types.ts'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 
 import config from '@/config'
 
@@ -87,18 +87,18 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
             if (node.type === NodeTypes.BRIDGE_NODE) return EntityType.BRIDGE
             if (node.type === NodeTypes.DEVICE_NODE) return EntityType.DEVICE
             if (node.type === NodeTypes.PULSE_NODE) return EntityType.PULSE_AGENT
+            if (node.type === NodeTypes.EDGE_NODE) return EntityType.EDGE_BROKER
             return EntityType.EDGE_BROKER
           }
           // Use node.data.id (entity ID), not node.id (React Flow node ID)
-          return { id: node.data.id, type: getType() }
+          // For the EDGE node, the entity ID is the node ID itself (IdStubs.EDGE_NODE)
+          const entityId = node.type === NodeTypes.EDGE_NODE ? node.id : (node.data.id as string)
+          return { id: entityId, type: getType() }
         })
-        .filter((item): item is { id: string; type: EntityType } => item !== null)
+        .filter((item): item is EntityReference => item !== null)
 
-      const hasEdgeBroker = selectedItems.some((e) => e.id === IdStubs.EDGE_NODE && e.type === EntityType.EDGE_BROKER)
       const sources: EntityReferenceList = {
-        items: hasEdgeBroker
-          ? selectedItems
-          : [...selectedItems, { id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER }],
+        items: selectedItems,
       }
 
       if (ghostCombiner) {
@@ -141,15 +141,7 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
   }
 
   const entities = useMemo(() => {
-    const sourceItems = selectedNode.data.sources.items || []
-    const isBridgeIn = Boolean(
-      sourceItems.find((entity) => entity.id === IdStubs.EDGE_NODE && entity.type === EntityType.EDGE_BROKER)
-    )
-    // Create new array to avoid mutation
-    if (!isBridgeIn) {
-      return [...sourceItems, { id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER }]
-    }
-    return sourceItems
+    return selectedNode.data.sources.items || []
   }, [selectedNode.data.sources.items])
 
   const isAssetManager = useMemo(() => {
@@ -157,6 +149,30 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
   }, [entities])
 
   const sources = useGetCombinedEntities(entities)
+
+  const availableEntities = useMemo((): AvailableEntity[] => {
+    const selectedIds = new Set(entities.map((e) => e.id))
+    return nodes
+      .filter((n) =>
+        [NodeTypes.ADAPTER_NODE, NodeTypes.BRIDGE_NODE, NodeTypes.EDGE_NODE].includes(n.type as NodeTypes)
+      )
+      .filter((n) => {
+        const entityId = n.type === NodeTypes.EDGE_NODE ? n.id : (n.data as { id?: string }).id
+        return entityId && !selectedIds.has(entityId)
+      })
+      .map((n) => {
+        const entityId = n.type === NodeTypes.EDGE_NODE ? n.id : ((n.data as { id?: string }).id ?? n.id)
+        const type =
+          n.type === NodeTypes.ADAPTER_NODE
+            ? EntityType.ADAPTER
+            : n.type === NodeTypes.BRIDGE_NODE
+              ? EntityType.BRIDGE
+              : EntityType.EDGE_BROKER
+        const label =
+          n.type === NodeTypes.EDGE_NODE ? 'HiveMQ Edge' : ((n.data as { name?: string }).name ?? entityId)
+        return { id: entityId, type, label }
+      })
+  }, [nodes, entities])
 
   // Build formContext with explicit entity-query pairings
   // NOTE: selectedSources is NOT in the shared context because it's per-mapping, not per-combiner
@@ -172,10 +188,11 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
       // Backward compatibility: keep old fields during migration
       queries: sources,
       entities,
+      availableEntities,
     }
     // Stabilize by checking if sources data has actually changed, not array reference
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entities, ...sources.map((s) => s.dataUpdatedAt)])
+  }, [entities, availableEntities, ...sources.map((s) => s.dataUpdatedAt)])
 
   const validator = useValidateCombiner(sources, entities)
   // TODO[NVL] Need to split the manager between Combiner and AssetMapper; no need to have so many hooks not in use
@@ -251,7 +268,7 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
         name: data.formData.name || wizardContext.combinerName || 'New Combiner',
         description: data.formData.description || '',
         sources: {
-          items: entities,
+          items: data.formData.sources?.items || entities,
         },
         mappings: data.formData.mappings || { items: [] },
       }
