@@ -1,4 +1,4 @@
-import { type FC, useEffect, useMemo } from 'react'
+import { type FC, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import type { IChangeEvent } from '@rjsf/core'
@@ -140,9 +140,18 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
     throw new Error('Failed to create phantom node for wizard')
   }
 
+  // Track live sources from the form so that adding/removing a source in the Sources tab
+  // immediately updates the entity queries and integration point selectors in the Mapping tab.
+  const [liveSources, setLiveSources] = useState<EntityReference[]>(selectedNode.data.sources.items || [])
+
+  const handleFormChange = (data: IChangeEvent<Combiner>) => {
+    const items = data.formData?.sources?.items
+    if (items) setLiveSources(items)
+  }
+
   const entities = useMemo(() => {
-    return selectedNode.data.sources.items || []
-  }, [selectedNode.data.sources.items])
+    return liveSources
+  }, [liveSources])
 
   const isAssetManager = useMemo(() => {
     return entities?.some((e) => e.type === EntityType.PULSE_AGENT)
@@ -375,6 +384,7 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
             schema={combinerMappingJsonSchema}
             uiSchema={combinerMappingUiSchema(isAssetManager, tabId)}
             formData={selectedNode.data}
+            onChange={handleFormChange}
             onSubmit={handleOnSubmit}
             formContext={formContext}
             customValidate={validator?.validateCombiner}
