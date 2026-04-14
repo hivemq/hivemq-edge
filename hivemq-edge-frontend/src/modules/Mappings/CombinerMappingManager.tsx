@@ -175,9 +175,7 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
   // based on props.value (live RJSF state), so the dropdown stays reactive on add/delete.
   const availableEntities = useMemo((): AvailableEntity[] => {
     return nodes
-      .filter((n) =>
-        [NodeTypes.ADAPTER_NODE, NodeTypes.BRIDGE_NODE, NodeTypes.EDGE_NODE].includes(n.type as NodeTypes)
-      )
+      .filter((n) => [NodeTypes.ADAPTER_NODE, NodeTypes.BRIDGE_NODE, NodeTypes.EDGE_NODE].includes(n.type as NodeTypes))
       .map((n) => {
         const entityId = n.type === NodeTypes.EDGE_NODE ? n.id : ((n.data as { id?: string }).id ?? n.id)
         const type =
@@ -186,8 +184,7 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
             : n.type === NodeTypes.BRIDGE_NODE
               ? EntityType.BRIDGE
               : EntityType.EDGE_BROKER
-        const label =
-          n.type === NodeTypes.EDGE_NODE ? 'HiveMQ Edge' : ((n.data as { name?: string }).name ?? entityId)
+        const label = n.type === NodeTypes.EDGE_NODE ? 'HiveMQ Edge' : ((n.data as { name?: string }).name ?? entityId)
         return { id: entityId, type, label }
       })
   }, [nodes])
