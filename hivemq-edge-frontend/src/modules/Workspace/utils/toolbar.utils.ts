@@ -25,7 +25,7 @@ export const isNodeCombinerCandidate = (node: Node, adapterTypes?: ProtocolAdapt
     return protocol?.capabilities?.includes('COMBINE') ?? false
   }
 
-  return node.type === NodeTypes.BRIDGE_NODE || node.type === NodeTypes.PULSE_NODE
+  return node.type === NodeTypes.BRIDGE_NODE || node.type === NodeTypes.PULSE_NODE || node.type === NodeTypes.EDGE_NODE
 }
 
 /**

@@ -80,14 +80,14 @@ describe('toolbar.utils', () => {
         expected: true,
       },
       {
-        description: 'other node types',
+        description: 'edge nodes',
         node: {
           id: 'edge-1',
           type: NodeTypes.EDGE_NODE,
           position: { x: 0, y: 0 },
           data: { label: 'Edge' },
         } as Node,
-        expected: false,
+        expected: true,
       },
     ])('should return $expected for $description', ({ node, expected }) => {
       expect(isNodeCombinerCandidate(node)).toBe(expected)
@@ -448,10 +448,10 @@ describe('toolbar.utils', () => {
         description: 'no eligible nodes exist',
         nodes: [
           {
-            id: 'edge-1',
-            type: NodeTypes.EDGE_NODE,
+            id: 'combiner-1',
+            type: NodeTypes.COMBINER_NODE,
             position: { x: 0, y: 0 },
-            data: { label: 'Edge' },
+            data: { label: 'Combiner' },
           },
         ] as Node[],
       },
@@ -494,8 +494,8 @@ describe('toolbar.utils', () => {
 
       const result = filterCombinerCandidates(nodes, adapterTypes)
 
-      expect(result).toHaveLength(2)
-      expect(result?.map((n) => n.id)).toEqual(['adapter-1', 'bridge-1'])
+      expect(result).toHaveLength(3)
+      expect(result?.map((n) => n.id)).toEqual(['adapter-1', 'bridge-1', 'edge-1'])
     })
   })
 
