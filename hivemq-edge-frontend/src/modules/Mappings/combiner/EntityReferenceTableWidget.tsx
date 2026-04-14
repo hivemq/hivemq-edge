@@ -18,12 +18,14 @@ export const EntityReferenceTableWidget = (
 ) => {
   const { t } = useTranslation()
   const { schema } = props
-  const availableEntities: AvailableEntity[] = props.formContext?.availableEntities || []
+  const allEntities: AvailableEntity[] = props.formContext?.availableEntities || []
 
-  const selectOptions = useMemo(
-    () => availableEntities.map((e: AvailableEntity) => ({ value: e, label: e.label })),
-    [availableEntities]
-  )
+  const selectOptions = useMemo(() => {
+    const currentIds = new Set((props.value || []).map((e: EntityReference) => e.id))
+    return allEntities
+      .filter((e: AvailableEntity) => !currentIds.has(e.id))
+      .map((e: AvailableEntity) => ({ value: e, label: e.label }))
+  }, [allEntities, props.value])
 
   const handleAdd = (option: { value: AvailableEntity; label: string } | null) => {
     if (!option) return

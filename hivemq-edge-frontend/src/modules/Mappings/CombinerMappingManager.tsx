@@ -150,16 +150,14 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
 
   const sources = useGetCombinedEntities(entities)
 
+  // All workspace entities that could be added as sources.
+  // Filtering against what's already selected happens inside EntityReferenceTableWidget
+  // based on props.value (live RJSF state), so the dropdown stays reactive on add/delete.
   const availableEntities = useMemo((): AvailableEntity[] => {
-    const selectedIds = new Set(entities.map((e) => e.id))
     return nodes
       .filter((n) =>
         [NodeTypes.ADAPTER_NODE, NodeTypes.BRIDGE_NODE, NodeTypes.EDGE_NODE].includes(n.type as NodeTypes)
       )
-      .filter((n) => {
-        const entityId = n.type === NodeTypes.EDGE_NODE ? n.id : (n.data as { id?: string }).id
-        return entityId && !selectedIds.has(entityId)
-      })
       .map((n) => {
         const entityId = n.type === NodeTypes.EDGE_NODE ? n.id : ((n.data as { id?: string }).id ?? n.id)
         const type =
@@ -172,7 +170,7 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
           n.type === NodeTypes.EDGE_NODE ? 'HiveMQ Edge' : ((n.data as { name?: string }).name ?? entityId)
         return { id: entityId, type, label }
       })
-  }, [nodes, entities])
+  }, [nodes])
 
   // Build formContext with explicit entity-query pairings
   // NOTE: selectedSources is NOT in the shared context because it's per-mapping, not per-combiner

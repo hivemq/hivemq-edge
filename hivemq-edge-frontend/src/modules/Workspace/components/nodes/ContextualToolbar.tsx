@@ -155,9 +155,11 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
   const onManageTransformationNode = () => {
     if (!selectedCombinerCandidates) return
 
-    // Include Edge Broker only if the user explicitly selected the Edge node
+    // Include Edge Broker only if the user explicitly selected the Edge node.
+    // Filter it out of the candidates array — it has no data.id and is handled separately via includeEdgeBroker.
     const hasEdgeNode = selectedNodes.some((n) => n.id === IdStubs.EDGE_NODE)
-    const entityReferences = buildEntityReferencesFromNodes(selectedCombinerCandidates, hasEdgeNode)
+    const nonEdgeCandidates = selectedCombinerCandidates.filter((n) => n.id !== IdStubs.EDGE_NODE)
+    const entityReferences = buildEntityReferencesFromNodes(nonEdgeCandidates, hasEdgeNode)
 
     // Check if a combiner with these exact sources already exists
     const existingCombiner = findExistingCombiner(nodes, entityReferences)
