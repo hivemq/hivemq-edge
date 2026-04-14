@@ -155,25 +155,20 @@ describe('useValidateCombiner', () => {
 
     it('should fail to validate an adapter without combine but validate the Edge', async () => {
       server.use(...failCapabilityHandlers)
-      const errors = await renderValidateHook({
-        id: mockCombinerId,
-        name: 'my-combiner',
-        sources: {
-          items: [
-            {
-              id: 'the edge name',
-              type: EntityType.EDGE_BROKER,
-            },
-            {
-              id: 'my-adapter',
-              type: EntityType.ADAPTER,
-            },
-          ],
+      const edgeAndAdapter = [
+        { id: 'the edge name', type: EntityType.EDGE_BROKER },
+        { id: 'my-adapter', type: EntityType.ADAPTER },
+      ]
+      const errors = await renderValidateHook(
+        {
+          id: mockCombinerId,
+          name: 'my-combiner',
+          sources: { items: edgeAndAdapter },
+          mappings: { items: [] },
         },
-        mappings: {
-          items: [],
-        },
-      })
+        undefined,
+        edgeAndAdapter
+      )
       expect(errors).toStrictEqual([
         expect.objectContaining({
           message: 'The adapter does not support data combining and cannot be used as a source',
@@ -182,25 +177,20 @@ describe('useValidateCombiner', () => {
     })
 
     it('should validate properly', async () => {
-      const errors = await renderValidateHook({
-        id: mockCombinerId,
-        name: 'my-combiner',
-        sources: {
-          items: [
-            {
-              id: 'the edge name',
-              type: EntityType.EDGE_BROKER,
-            },
-            {
-              id: 'opcua-1',
-              type: EntityType.ADAPTER,
-            },
-          ],
+      const edgeAndAdapter = [
+        { id: 'the edge name', type: EntityType.EDGE_BROKER },
+        { id: 'opcua-1', type: EntityType.ADAPTER },
+      ]
+      const errors = await renderValidateHook(
+        {
+          id: mockCombinerId,
+          name: 'my-combiner',
+          sources: { items: edgeAndAdapter },
+          mappings: { items: [] },
         },
-        mappings: {
-          items: [],
-        },
-      })
+        undefined,
+        edgeAndAdapter
+      )
       expect(errors).toStrictEqual([])
     })
   })
@@ -228,7 +218,7 @@ describe('useValidateCombiner', () => {
     })
 
     it('should validate an empty list of mappings', async () => {
-      const errors = await renderValidateHook(getFormData([]))
+      const errors = await renderValidateHook(getFormData([]), undefined, sources)
       expect(errors).toStrictEqual([])
     })
 
@@ -246,7 +236,9 @@ describe('useValidateCombiner', () => {
             destination: {},
             instructions: [],
           },
-        ])
+        ]),
+        undefined,
+        sources
       )
       expect(errors).toStrictEqual([
         expect.objectContaining({
