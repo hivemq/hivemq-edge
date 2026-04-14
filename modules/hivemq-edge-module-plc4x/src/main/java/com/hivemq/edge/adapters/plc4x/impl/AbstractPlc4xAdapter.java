@@ -29,10 +29,15 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.schema.ScalarType;
+import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
+import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationInput;
+import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
 import com.hivemq.edge.adapters.plc4x.PublishChangedDataOnlyHandler;
 import com.hivemq.edge.adapters.plc4x.config.Plc4XSpecificAdapterConfig;
+import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
 import java.math.BigInteger;
@@ -242,6 +247,64 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
      * @return Decides on the mode of reading data from the underlying connection
      */
     protected abstract @NotNull ReadType getReadType();
+
+    @Override
+    public void createTagSchema(
+            final @NotNull TagSchemaCreationInput input,
+            final @NotNull TagSchemaCreationOutput output) {
+        tags.stream()
+                .filter(tag -> input.getTagName().equals(tag.getName()))
+                .findFirst()
+                .ifPresentOrElse(
+                        tag -> {
+                            final var dataType = tag.getDefinition().getDataType();
+                            if (dataType == Plc4xDataType.DATA_TYPE.NULL) {
+                                output.fail("Cannot create schema for NULL data type");
+                                return;
+                            }
+                            final var builder = new SchemaBuilder();
+                            applyDataTypeToBuilder(builder, dataType);
+                            output.finish(new TagSchemaCreationOutput.DataPointSchema(
+                                    builder.writable().readable().build(), null, null));
+                        },
+                        () -> output.fail("Unable to find tag definition for tag "
+                                + input.getTagName() + ", cannot create schema"));
+        BatchPollingProtocolAdapter.super.createTagSchema(input, output);
+    }
+
+    static void applyDataTypeToBuilder(
+            final @NotNull SchemaBuilder builder, final @NotNull Plc4xDataType.DATA_TYPE dataType) {
+        switch (dataType) {
+            case BOOL -> builder.scalar(ScalarType.BOOLEAN);
+            case SINT -> builder.scalar(ScalarType.LONG).minimum(-128L).maximum(127L);
+            case BYTE, USINT -> builder.scalar(ScalarType.ULONG).minimum(0L).maximum(255L);
+            case WORD, INT -> builder.scalar(ScalarType.LONG).minimum(-32_768L).maximum(32_767L);
+            case UINT -> builder.scalar(ScalarType.ULONG).minimum(0L).maximum(65_535L);
+            case DWORD, DINT -> builder.scalar(ScalarType.LONG)
+                    .minimum(-2_147_483_648L)
+                    .maximum(2_147_483_647L);
+            case UDINT -> builder.scalar(ScalarType.ULONG).minimum(0L).maximum(4_294_967_295L);
+            case LWORD, LINT -> builder.scalar(ScalarType.LONG)
+                    .minimum(Long.MIN_VALUE)
+                    .maximum(Long.MAX_VALUE);
+            case ULINT -> builder.scalar(ScalarType.ULONG).minimum(0L);
+            case REAL -> builder.scalar(ScalarType.DOUBLE)
+                    .minimum(-3.4028235e38d)
+                    .maximum(3.4028235e38d);
+            case LREAL -> builder.scalar(ScalarType.DOUBLE)
+                    .minimum(-1.7976931348623157e308d)
+                    .maximum(1.7976931348623157e308d);
+            case CHAR, WCHAR, STRING, WSTRING -> builder.scalar(ScalarType.STRING);
+            case TIME, LTIME -> builder.scalar(ScalarType.DURATION);
+            case DATE, LDATE -> builder.scalar(ScalarType.LOCAL_DATE);
+            case TIME_OF_DAY, LTIME_OF_DAY -> builder.scalar(ScalarType.LOCAL_TIME);
+            case DATE_AND_TIME, LDATE_AND_TIME, DATE_AND_LTIME ->
+                    builder.scalar(ScalarType.LOCAL_DATE_TIME);
+            case RAW_BYTE_ARRAY -> builder.scalar(ScalarType.BINARY);
+            case NULL -> throw new IllegalStateException(
+                    "NULL must be handled by the caller before invoking applyDataTypeToBuilder");
+        }
+    }
 
     /**
      * Use this hook method to modify the query generated used to read|subscribe to the devices,

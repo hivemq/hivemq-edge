@@ -581,4 +581,122 @@ class SchemaJsonRepresentationTest {
         assertThat(s.minimum().doubleValue()).isEqualTo(-1.5);
         assertThat(s.maximum().doubleValue()).isEqualTo(99.9);
     }
+
+    // ── Temporal scalars → JSON ──────────────────────────────────────────────
+
+    @Test
+    void test_toJson_scalarInstant() {
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
+                .scalar(ScalarType.INSTANT)
+                .build();
+        final ObjectNode json = repr.toJsonSchema(schema);
+
+        assertThat(json.get("type").asText()).isEqualTo("string");
+        assertThat(json.get("format").asText()).isEqualTo("date-time");
+    }
+
+    @Test
+    void test_toJson_scalarLocalDate() {
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
+                .scalar(ScalarType.LOCAL_DATE)
+                .build();
+        final ObjectNode json = repr.toJsonSchema(schema);
+
+        assertThat(json.get("type").asText()).isEqualTo("string");
+        assertThat(json.get("format").asText()).isEqualTo("date");
+    }
+
+    @Test
+    void test_toJson_scalarLocalTime() {
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
+                .scalar(ScalarType.LOCAL_TIME)
+                .build();
+        final ObjectNode json = repr.toJsonSchema(schema);
+
+        assertThat(json.get("type").asText()).isEqualTo("string");
+        assertThat(json.get("format").asText()).isEqualTo("local-time");
+    }
+
+    @Test
+    void test_toJson_scalarLocalDateTime() {
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
+                .scalar(ScalarType.LOCAL_DATE_TIME)
+                .build();
+        final ObjectNode json = repr.toJsonSchema(schema);
+
+        assertThat(json.get("type").asText()).isEqualTo("string");
+        assertThat(json.get("format").asText()).isEqualTo("local-date-time");
+    }
+
+    @Test
+    void test_toJson_scalarDuration() {
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
+                .scalar(ScalarType.DURATION)
+                .build();
+        final ObjectNode json = repr.toJsonSchema(schema);
+
+        assertThat(json.get("type").asText()).isEqualTo("string");
+        assertThat(json.get("format").asText()).isEqualTo("duration");
+    }
+
+    @Test
+    void test_toJson_nullableTemporalPreservesFormat() {
+        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
+                .scalar(ScalarType.LOCAL_DATE_TIME)
+                .nullable()
+                .build();
+        final ObjectNode json = repr.toJsonSchema(schema);
+
+        final var typeNode = json.get("type");
+        assertThat(typeNode.isArray()).isTrue();
+        assertThat(typeNode.get(0).asText()).isEqualTo("string");
+        assertThat(typeNode.get(1).asText()).isEqualTo("null");
+        assertThat(json.get("format").asText()).isEqualTo("local-date-time");
+    }
+
+    // ── Temporal round-trip ──────────────────────────────────────────────────
+
+    @Test
+    void test_roundTrip_scalarInstant() {
+        assertTemporalRoundTrip(ScalarType.INSTANT);
+    }
+
+    @Test
+    void test_roundTrip_scalarLocalDate() {
+        assertTemporalRoundTrip(ScalarType.LOCAL_DATE);
+    }
+
+    @Test
+    void test_roundTrip_scalarLocalTime() {
+        assertTemporalRoundTrip(ScalarType.LOCAL_TIME);
+    }
+
+    @Test
+    void test_roundTrip_scalarLocalDateTime() {
+        assertTemporalRoundTrip(ScalarType.LOCAL_DATE_TIME);
+    }
+
+    @Test
+    void test_roundTrip_scalarDuration() {
+        assertTemporalRoundTrip(ScalarType.DURATION);
+    }
+
+    @Test
+    void test_fromJson_unknownFormatStaysString() {
+        final Schema recovered = repr.fromJsonSchemaString(
+                "{\"type\":\"string\",\"format\":\"email\"}");
+        assertThat(((ScalarSchema) recovered).type()).isEqualTo(ScalarType.STRING);
+    }
+
+    private void assertTemporalRoundTrip(final ScalarType type) {
+        final Schema original = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
+                .scalar(type)
+                .build();
+
+        final String json = repr.toJsonSchemaString(original);
+        final Schema recovered = repr.fromJsonSchemaString(json);
+
+        assertThat(recovered).isInstanceOf(ScalarSchema.class);
+        assertThat(((ScalarSchema) recovered).type()).isEqualTo(type);
+    }
 }
