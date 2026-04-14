@@ -152,10 +152,17 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
 
   const entities = useMemo(() => liveSources, [liveSources])
 
-  // Stable formData reference: keyed to the combiner ID so RJSF's internal state is
-  // never reset by re-renders (e.g. React Flow recreating node objects for position updates).
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const initialFormData = useMemo(() => selectedNode.data, [combinerId])
+  // Controlled form data: kept in sync with RJSF's internal state via onChange.
+  // This prevents RJSF from resetting when formContext changes (e.g. when entity queries resolve
+  // after a source is added). RJSF's getSnapshotBeforeUpdate fires on ANY prop change and calls
+  // getStateFromProps(this.props.formData). If formData prop lags behind internal state, the reset
+  // produces a different nextState and wipes user edits. By keeping them in sync, nextState ≈
+  // prevState, so shouldUpdate = false and no visible reset occurs.
+  const [currentFormData, setCurrentFormData] = useState(() => selectedNode.data)
+
+  const handleFormChange = useCallback((e: IChangeEvent) => {
+    if (e.formData) setCurrentFormData(e.formData)
+  }, [])
 
   const isAssetManager = useMemo(() => {
     return entities?.some((e) => e.type === EntityType.PULSE_AGENT)
@@ -388,7 +395,8 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
             id="combiner-main-form"
             schema={combinerMappingJsonSchema}
             uiSchema={combinerMappingUiSchema(isAssetManager, tabId)}
-            formData={initialFormData}
+            formData={currentFormData}
+            onChange={handleFormChange}
             onSubmit={handleOnSubmit}
             formContext={formContext}
             customValidate={validator?.validateCombiner}
