@@ -52,9 +52,7 @@ export const isSourceUsedInMappings = (
   })
 
   if (entity.type === EntityType.ADAPTER) {
-    return allRefs.some(
-      (ref) => ref.type === DataIdentifierReference.type.TAG && ref.scope === entity.id
-    )
+    return allRefs.some((ref) => ref.type === DataIdentifierReference.type.TAG && ref.scope === entity.id)
   }
 
   if (entity.type === EntityType.EDGE_BROKER || entity.type === EntityType.BRIDGE) {
