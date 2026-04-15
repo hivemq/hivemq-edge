@@ -111,9 +111,9 @@ describe('Combiner', () => {
     workspacePage.canvas.should('be.visible')
     workspacePage.toolbox.fit.click()
 
-    workspacePage.adapterNode('opcua-pump').click()
-    workspacePage.adapterNode('opcua-boiler').click({ metaKey: true })
-    workspacePage.edgeNode.click({ metaKey: true })
+    workspacePage.adapterNode('opcua-pump').click({ force: true })
+    workspacePage.adapterNode('opcua-boiler').click({ metaKey: true, force: true })
+    workspacePage.edgeNode.click({ metaKey: true, force: true })
     workspacePage.toolbar.combine.click()
 
     cy.wait('@postCombiner')
