@@ -17,31 +17,30 @@ export const EntityReferenceTableWidget = (
   props: WidgetProps<WidgetProps<Array<EntityReference>, RJSFSchema>, RJSFSchema, CombinerContext>
 ) => {
   const { t } = useTranslation()
-  const { schema } = props
+  const { schema, value, onChange, formContext } = props
 
   const selectOptions = useMemo(() => {
-    const allEntities: AvailableEntity[] = props.formContext?.availableEntities || []
-    const currentIds = new Set((props.value || []).map((e: EntityReference) => e.id))
+    const allEntities: AvailableEntity[] = formContext?.availableEntities || []
+    const currentIds = new Set((value || []).map((e: EntityReference) => e.id))
     return allEntities
       .filter((e: AvailableEntity) => !currentIds.has(e.id))
       .map((e: AvailableEntity) => ({ value: e, label: e.label }))
-  }, [props.formContext?.availableEntities, props.value])
+  }, [formContext?.availableEntities, value])
 
   const handleAdd = (option: { value: AvailableEntity; label: string } | null) => {
     if (!option) return
     const { id, type } = option.value
-    const newSources = [...(props.value || []), { id, type }]
-    props.onChange(newSources)
-    props.formContext?.onSourcesChange?.(newSources)
-  }
-
-  const handleDelete = (item: EntityReference) => {
-    const newSources = (props.value || []).filter((e: EntityReference) => e.id !== item.id || e.type !== item.type)
-    props.onChange(newSources)
-    props.formContext?.onSourcesChange?.(newSources)
+    const newSources = [...(value || []), { id, type }]
+    onChange(newSources)
+    formContext?.onSourcesChange?.(newSources)
   }
 
   const displayColumns = useMemo<ColumnDef<EntityReference>[]>(() => {
+    const handleDelete = (item: EntityReference) => {
+      const newSources = (value || []).filter((e: EntityReference) => e.id !== item.id || e.type !== item.type)
+      onChange(newSources)
+      formContext?.onSourcesChange?.(newSources)
+    }
     return [
       {
         accessorKey: 'type',
@@ -70,15 +69,14 @@ export const EntityReferenceTableWidget = (
         },
       },
     ]
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [t, props.value])
+  }, [t, value, onChange, formContext])
 
   if (schema.type !== 'array') throw new Error('[RJSF] Cannot apply the template to the schema')
   return (
     <>
       <PaginatedTable<EntityReference>
         aria-label={t('combiner.schema.sources.description')}
-        data={props.value}
+        data={value}
         columns={displayColumns}
         enablePaginationGoTo={false}
         enablePaginationSizes={false}
