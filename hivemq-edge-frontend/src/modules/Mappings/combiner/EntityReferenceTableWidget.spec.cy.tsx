@@ -65,7 +65,7 @@ describe('EntityReferenceTableWidget', () => {
   })
 
   it('should render permanent ', () => {
-    const v = { ...MOCK_ENTITY_PROPS }
+    const v = { ...MOCK_ENTITY_PROPS, value: [...(MOCK_ENTITY_PROPS.value as Array<EntityReference>)] }
     ;(v.value as Array<EntityReference>).push(
       {
         type: EntityType.PULSE_AGENT,
