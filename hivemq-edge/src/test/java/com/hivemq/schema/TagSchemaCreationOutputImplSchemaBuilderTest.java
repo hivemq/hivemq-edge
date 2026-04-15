@@ -35,10 +35,7 @@ class TagSchemaCreationOutputImplSchemaBuilderTest {
         final var output = new TagSchemaCreationOutputImpl();
 
         output.finish(new TagSchemaCreationOutput.DataPointSchema(
-                new SchemaBuilder().scalar(ScalarType.LONG).title("RPM").build(),
-                null,
-                null
-        ));
+                new SchemaBuilder().scalar(ScalarType.LONG).title("RPM").build(), null, null));
 
         final JsonNode result = output.getFuture().get(1, TimeUnit.SECONDS);
         assertThat(result).isNotNull();
@@ -50,7 +47,6 @@ class TagSchemaCreationOutputImplSchemaBuilderTest {
     void test_tagSchemaBuilder_object_completesWithJsonSchema()
             throws ExecutionException, InterruptedException, TimeoutException {
         final var output = new TagSchemaCreationOutputImpl();
-
 
         output.finish(new TagSchemaCreationOutput.DataPointSchema(
                 new SchemaBuilder()
@@ -66,15 +62,17 @@ class TagSchemaCreationOutputImplSchemaBuilderTest {
                         .endObject()
                         .build(),
                 null,
-                null
-        ));
+                null));
 
         final JsonNode result = output.getFuture().get(1, TimeUnit.SECONDS);
         System.out.println(result);
         assertThat(result.get("type").asText()).isEqualTo("object");
-        assertThat(result.get("properties").get("value").get("properties").has("temperature")).isTrue();
-        assertThat(result.get("properties").get("value").get("properties").has("unit")).isTrue();
-        assertThat(result.get("properties").get("value").get("required").get(0).asText()).isEqualTo("temperature");
+        assertThat(result.get("properties").get("value").get("properties").has("temperature"))
+                .isTrue();
+        assertThat(result.get("properties").get("value").get("properties").has("unit"))
+                .isTrue();
+        assertThat(result.get("properties").get("value").get("required").get(0).asText())
+                .isEqualTo("temperature");
     }
 
     @Test
@@ -93,10 +91,7 @@ class TagSchemaCreationOutputImplSchemaBuilderTest {
         final var output = new TagSchemaCreationOutputImpl();
 
         output.finish(new TagSchemaCreationOutput.DataPointSchema(
-                new SchemaBuilder().scalar(ScalarType.BOOLEAN).build(),
-                null,
-                null
-        ));
+                new SchemaBuilder().scalar(ScalarType.BOOLEAN).build(), null, null));
 
         output.getFuture().get(1, TimeUnit.SECONDS);
         assertThat(output.getStatus()).isEqualTo(TagSchemaCreationOutputImpl.Status.SUCCESS);

@@ -15,6 +15,17 @@
  */
 package com.hivemq.api.resources.impl;
 
+import static com.hivemq.api.resources.impl.ProtocolAdapterApiUtils.convertInstalledAdapterType;
+import static com.hivemq.api.resources.impl.ProtocolAdapterApiUtils.convertModuleAdapterType;
+import static com.hivemq.api.utils.ApiErrorUtils.addValidationError;
+import static com.hivemq.api.utils.ApiErrorUtils.hasRequestErrors;
+import static com.hivemq.api.utils.ApiErrorUtils.validateRequiredEntity;
+import static com.hivemq.api.utils.ApiErrorUtils.validateRequiredField;
+import static com.hivemq.api.utils.ApiErrorUtils.validateRequiredFieldRegex;
+import static com.hivemq.protocols.ProtocolAdapterManager.runWithContextLoader;
+import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
+import static com.hivemq.util.ErrorResponseUtil.errorResponse;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
@@ -86,11 +97,6 @@ import com.hivemq.protocols.tag.TagSchemaCreationOutputImpl;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -110,17 +116,10 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.hivemq.api.resources.impl.ProtocolAdapterApiUtils.convertInstalledAdapterType;
-import static com.hivemq.api.resources.impl.ProtocolAdapterApiUtils.convertModuleAdapterType;
-import static com.hivemq.api.utils.ApiErrorUtils.addValidationError;
-import static com.hivemq.api.utils.ApiErrorUtils.hasRequestErrors;
-import static com.hivemq.api.utils.ApiErrorUtils.validateRequiredEntity;
-import static com.hivemq.api.utils.ApiErrorUtils.validateRequiredField;
-import static com.hivemq.api.utils.ApiErrorUtils.validateRequiredFieldRegex;
-import static com.hivemq.protocols.ProtocolAdapterManager.runWithContextLoader;
-import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
-import static com.hivemq.util.ErrorResponseUtil.errorResponse;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Singleton
 @SuppressWarnings("FutureReturnValueIgnored")
@@ -876,12 +875,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         return systemInformation.isConfigWriteable()
                 ? configExtractor
                         .getAdapterByAdapterId(adapterId)
-                        .filter(adapter ->
-                            protocolAdapterManager
-                                    .getAdapterTypeById(adapter.getProtocolId())
-                                    .map(type -> type.getCapabilities().contains(ProtocolAdapterCapability.WRITE))
-                                    .orElse(false)
-                        )
+                        .filter(adapter -> protocolAdapterManager
+                                .getAdapterTypeById(adapter.getProtocolId())
+                                .map(type -> type.getCapabilities().contains(ProtocolAdapterCapability.WRITE))
+                                .orElse(false))
                         .map(updateAdapterSouthboundMappingsResponse(adapterId, southboundMappings))
                         .orElseGet(adapterNotFoundError(adapterId))
                 : errorResponse(new ConfigWritingDisabled());

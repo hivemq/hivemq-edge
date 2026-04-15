@@ -196,7 +196,8 @@ public class Plc4xDataUtilsTest {
     public void whenConvertTime_thenReturnIso8601DurationString() {
         assertEquals("PT0S", convertObject(new PlcTIME(Duration.ZERO)));
 
-        final Duration positive = Duration.ofHours(1).plusMinutes(30).plusSeconds(45).plusMillis(500);
+        final Duration positive =
+                Duration.ofHours(1).plusMinutes(30).plusSeconds(45).plusMillis(500);
         assertEquals(positive.toString(), convertObject(new PlcTIME(positive)));
         assertEquals("PT1H30M45.5S", convertObject(new PlcTIME(positive)));
 
@@ -216,12 +217,8 @@ public class Plc4xDataUtilsTest {
         assertEquals("PT0S", convertObject(new PlcTIME(0L)));
         // PlcTIME(long) stores the value as milliseconds; the schema contract only cares
         // that the emitted form is the ISO 8601 duration produced by Duration.toString().
-        assertEquals(
-                Duration.ofMillis(Long.MAX_VALUE).toString(),
-                convertObject(new PlcTIME(Long.MAX_VALUE)));
-        assertEquals(
-                Duration.ofMillis(Long.MIN_VALUE).toString(),
-                convertObject(new PlcTIME(Long.MIN_VALUE)));
+        assertEquals(Duration.ofMillis(Long.MAX_VALUE).toString(), convertObject(new PlcTIME(Long.MAX_VALUE)));
+        assertEquals(Duration.ofMillis(Long.MIN_VALUE).toString(), convertObject(new PlcTIME(Long.MIN_VALUE)));
     }
 
     @Test
