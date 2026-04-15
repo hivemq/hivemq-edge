@@ -90,7 +90,7 @@ describe('Wizard: Create Combiner', () => {
 
     cy.percySnapshot('Wizard: Combiner Selection Panel (Empty)')
 
-    wizardPage.selectionPanel.selectedCount.should('contain', '0 (min: 2)')
+    wizardPage.selectionPanel.selectedCount.should('contain', '0 (min: 1)')
     wizardPage.selectionPanel.nextButton.should('be.disabled')
   })
 
@@ -114,18 +114,18 @@ describe('Wizard: Create Combiner', () => {
     // Find and click first adapter node
     workspacePage.adapterNode(MOCK_ADAPTER_ID1).click()
 
-    wizardPage.selectionPanel.selectedCount.should('contain', '1 (min: 2)')
+    wizardPage.selectionPanel.selectedCount.should('contain', '1 (min: 1)')
     wizardPage.selectionPanel.selectedNode(MOCK_ADAPTER_ID1).should('be.visible')
-    wizardPage.selectionPanel.nextButton.should('be.disabled')
+    wizardPage.selectionPanel.nextButton.should('not.be.disabled')
 
     // workspacePage.adapterNode(MOCK_ADAPTER_ID1).click()
-    // wizardPage.selectionPanel.selectedCount.should('contain', '0 (min: 2)')
+    // wizardPage.selectionPanel.selectedCount.should('contain', '0 (min: 1)')
     // wizardPage.selectionPanel.selectedNode(MOCK_ADAPTER_ID1).should('not.exist')
     //
     // workspacePage.adapterNode(MOCK_ADAPTER_ID1).click()
     workspacePage.adapterNode(MOCK_ADAPTER_ID2).click()
 
-    wizardPage.selectionPanel.selectedCount.should('contain', '2 (min: 2)')
+    wizardPage.selectionPanel.selectedCount.should('contain', '2 (min: 1)')
     wizardPage.selectionPanel.selectedNode(MOCK_ADAPTER_ID1).should('be.visible')
     wizardPage.selectionPanel.selectedNode(MOCK_ADAPTER_ID2).should('be.visible')
     wizardPage.selectionPanel.nextButton.should('not.be.disabled')
@@ -147,18 +147,18 @@ describe('Wizard: Create Combiner', () => {
     // Find and click first adapter node
     workspacePage.adapterNode(MOCK_ADAPTER_ID1).click()
 
-    wizardPage.selectionPanel.selectedCount.should('contain', '1 (min: 2)')
+    wizardPage.selectionPanel.selectedCount.should('contain', '1 (min: 1)')
     wizardPage.selectionPanel.selectedNode(MOCK_ADAPTER_ID1).should('be.visible')
-    wizardPage.selectionPanel.nextButton.should('be.disabled')
+    wizardPage.selectionPanel.nextButton.should('not.be.disabled')
 
     workspacePage.adapterNode(MOCK_ADAPTER_ID1).click({ force: true })
-    wizardPage.selectionPanel.selectedCount.should('contain', '0 (min: 2)')
+    wizardPage.selectionPanel.selectedCount.should('contain', '0 (min: 1)')
 
     workspacePage.adapterNode(MOCK_ADAPTER_ID2).click({ force: true })
 
-    wizardPage.selectionPanel.selectedCount.should('contain', '1 (min: 2)')
+    wizardPage.selectionPanel.selectedCount.should('contain', '1 (min: 1)')
     wizardPage.selectionPanel.selectedNode(MOCK_ADAPTER_ID2).should('be.visible')
-    wizardPage.selectionPanel.nextButton.should('be.disabled')
+    wizardPage.selectionPanel.nextButton.should('not.be.disabled')
   })
 
   // ========== 4. COMBINER CONFIGURATION ==========

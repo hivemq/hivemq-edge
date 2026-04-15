@@ -4,7 +4,7 @@ import { factory, primaryKey, drop } from '@mswjs/data'
 import { MOCK_ADAPTER_OPC_UA, MOCK_PROTOCOL_OPC_UA } from '@/__test-utils__/adapters/opc-ua.ts'
 import { MOCK_TOPIC_FILTER } from '@/api/hooks/useTopicFilters/__handlers__'
 
-import { adapterPage, loginPage, rjsf, workspacePage } from 'cypress/pages'
+import { loginPage, workspacePage } from 'cypress/pages'
 import { cy_interceptCoreE2E } from 'cypress/utils/intercept.utils.ts'
 import { workspaceCombinerPanel } from 'cypress/pages/Workspace/CombinerFormPage.ts'
 
@@ -261,7 +261,7 @@ describe('Duplicate Combiner Detection', () => {
 
   describe('Modal with Mappings', () => {
     it('should display existing mappings in modal', () => {
-      // Create combiner with mappings
+      // Create combiner
       workspacePage.toolbox.fit.click()
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
       workspacePage.toolbar.combine.click()
@@ -269,31 +269,34 @@ describe('Duplicate Combiner Detection', () => {
       cy.wait('@getCombiners')
       workspacePage.closeToast.click()
 
-      // Open combiner and add mapping
-      workspacePage.combinerNode(COMBINER_ID).click()
-      workspacePage.combinerNode(COMBINER_ID).dblclick()
-      workspaceCombinerPanel.form.should('be.visible')
+      // Inject mapping directly into mswDB to avoid requiring Edge Broker in sources
+      cy.then(() => {
+        mswDB.combiner.update({
+          where: { id: { equals: COMBINER_ID } },
+          data: {
+            json: JSON.stringify({
+              id: COMBINER_ID,
+              name: 'unnamed combiner',
+              sources: { items: [{ type: 'ADAPTER', id: 'opcua-pump' }, { type: 'ADAPTER', id: 'opcua-boiler' }] },
+              mappings: {
+                items: [
+                  {
+                    id: 'test-mapping-id',
+                    sources: { primary: null, tags: [], topicFilters: [] },
+                    destination: { topic: 'my/destination' },
+                    instructions: [],
+                  },
+                ],
+              },
+            }),
+          },
+        })
+      })
 
-      adapterPage.config.formTab(2).click()
-      cy.getByTestId('combiner-mapping-list-add').click()
-      rjsf.field('mappings').table.row(0).edit.click()
-
-      workspaceCombinerPanel.mappingEditor.sources.selector.click()
-      workspaceCombinerPanel.mappingEditor.sources.selector.type('a/topic/')
-      workspaceCombinerPanel.mappingEditor.sources.options.first().click()
-      workspaceCombinerPanel.mappingEditor.destination.selector.type('my/destination{enter}')
-      workspaceCombinerPanel.mappingEditor.primary.selector.type('a/topic/{enter}')
-
-      workspaceCombinerPanel.mappingEditor.destination.inferSchema.click()
-
-      workspaceCombinerPanel.inferSchema.modal.should('be.visible')
-      workspaceCombinerPanel.inferSchema.submit.click()
-
-      workspaceCombinerPanel.mappingEditor.submit.click()
-      workspaceCombinerPanel.submit.click()
-      cy.wait('@putCombiner')
-      cy.wait('@getCombiners')
-      workspacePage.closeToast.click()
+      // Reload to make React Query pick up the updated combiner state with mappings
+      cy.reload()
+      workspacePage.canvas.should('be.visible')
+      workspacePage.toolbox.fit.click()
 
       // Attempt to create duplicate
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
@@ -409,7 +412,7 @@ describe('Duplicate Combiner Detection', () => {
     it('should be accessible with mappings', { tags: ['@percy'] }, () => {
       cy.injectAxe()
 
-      // Create combiner with mappings
+      // Create combiner
       workspacePage.toolbox.fit.click()
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
       workspacePage.toolbar.combine.click()
@@ -417,31 +420,34 @@ describe('Duplicate Combiner Detection', () => {
       cy.wait('@getCombiners')
       workspacePage.closeToast.click()
 
-      // Add mapping
-      workspacePage.combinerNode(COMBINER_ID).click()
-      workspacePage.combinerNode(COMBINER_ID).dblclick()
-      workspaceCombinerPanel.form.should('be.visible')
+      // Inject mapping directly into mswDB to avoid requiring Edge Broker in sources
+      cy.then(() => {
+        mswDB.combiner.update({
+          where: { id: { equals: COMBINER_ID } },
+          data: {
+            json: JSON.stringify({
+              id: COMBINER_ID,
+              name: 'unnamed combiner',
+              sources: { items: [{ type: 'ADAPTER', id: 'opcua-pump' }, { type: 'ADAPTER', id: 'opcua-boiler' }] },
+              mappings: {
+                items: [
+                  {
+                    id: 'test-mapping-id',
+                    sources: { primary: null, tags: [], topicFilters: [] },
+                    destination: { topic: 'my/destination' },
+                    instructions: [],
+                  },
+                ],
+              },
+            }),
+          },
+        })
+      })
 
-      adapterPage.config.formTab(2).click()
-      cy.getByTestId('combiner-mapping-list-add').click()
-      rjsf.field('mappings').table.row(0).edit.click()
-
-      workspaceCombinerPanel.mappingEditor.sources.selector.click()
-      workspaceCombinerPanel.mappingEditor.sources.selector.type('a/topic/')
-      workspaceCombinerPanel.mappingEditor.sources.options.first().click()
-      workspaceCombinerPanel.mappingEditor.destination.selector.type('my/destination{enter}')
-      workspaceCombinerPanel.mappingEditor.primary.selector.type('a/topic/{enter}')
-
-      workspaceCombinerPanel.mappingEditor.destination.inferSchema.click()
-
-      workspaceCombinerPanel.inferSchema.modal.should('be.visible')
-      workspaceCombinerPanel.inferSchema.submit.click()
-
-      workspaceCombinerPanel.mappingEditor.submit.click()
-      workspaceCombinerPanel.submit.click()
-      cy.wait('@putCombiner')
-      cy.wait('@getCombiners')
-      workspacePage.closeToast.click()
+      // Reload to make React Query pick up the updated combiner state with mappings
+      cy.reload()
+      workspacePage.canvas.should('be.visible')
+      workspacePage.toolbox.fit.click()
 
       // Show modal
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
