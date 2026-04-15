@@ -144,7 +144,7 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
   // immediately updates entity queries and the Mapping tab's integration point selectors.
   // This state is updated ONLY via onSourcesChange (called explicitly by EntityReferenceTableWidget)
   // rather than via form onChange, which would fire on every keystroke and risk resetting the form.
-  const [liveSources, setLiveSources] = useState<EntityReference[]>(selectedNode.data.sources.items || [])
+  const [liveSources, setLiveSources] = useState<EntityReference[]>([...(selectedNode.data.sources.items || [])])
 
   const onSourcesChange = useCallback((sources: EntityReference[]) => {
     setLiveSources(sources)
