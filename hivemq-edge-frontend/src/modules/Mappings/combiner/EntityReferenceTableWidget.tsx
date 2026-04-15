@@ -54,7 +54,8 @@ export const EntityReferenceTableWidget = (
         header: t('combiner.schema.sources.table.action'),
         sortingFn: undefined,
         cell: (info) => {
-          const isPermanent = info.row.original.type === EntityType.PULSE_AGENT
+          const isPermanent =
+            info.row.original.type === EntityType.PULSE_AGENT || info.row.original.type === EntityType.EDGE_BROKER
           return (
             <ButtonGroup isAttached size="sm">
               {!isPermanent && (
