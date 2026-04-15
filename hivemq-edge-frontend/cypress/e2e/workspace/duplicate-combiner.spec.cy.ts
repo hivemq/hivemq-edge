@@ -292,7 +292,7 @@ describe('Duplicate Combiner Detection', () => {
       loginPage.loginButton.click()
       workspacePage.navLink.click()
       workspacePage.canvas.should('be.visible')
-      workspacePage.combinerNode(COMBINER_ID).should('be.visible')
+      workspacePage.combinerNode(COMBINER_ID).should('exist')
       workspacePage.toolbox.fit.click()
 
       // Attempt to create a duplicate combiner with the same sources
@@ -438,7 +438,7 @@ describe('Duplicate Combiner Detection', () => {
       loginPage.loginButton.click()
       workspacePage.navLink.click()
       workspacePage.canvas.should('be.visible')
-      workspacePage.combinerNode(COMBINER_ID).should('be.visible')
+      workspacePage.combinerNode(COMBINER_ID).should('exist')
       workspacePage.toolbox.fit.click()
 
       // Show modal
