@@ -1,0 +1,29 @@
+type: object
+description: Result of a bulk device tag import operation.
+properties:
+  tagsCreated:
+    type: integer
+    description: Number of new tags created.
+  tagsUpdated:
+    type: integer
+    description: Number of existing tags overwritten.
+  tagsDeleted:
+    type: integer
+    description: Number of tags removed.
+  northboundMappingsCreated:
+    type: integer
+    description: Number of northbound mappings created.
+  northboundMappingsDeleted:
+    type: integer
+    description: Number of northbound mappings removed.
+  southboundMappingsCreated:
+    type: integer
+    description: Number of southbound mappings created.
+  southboundMappingsDeleted:
+    type: integer
+    description: Number of southbound mappings removed.
+  tagActions:
+    type: array
+    description: Per-tag detail of what was done.
+    items:
+      $ref: ./TagAction.yaml

@@ -85,6 +85,7 @@ describe('Event Log', () => {
       expect(loc.pathname).to.eq('/app/event-logs')
     })
 
+    cy.get('[data-testid="eventLog-refetch"]').should('be.visible')
     cy.checkAccessibility()
   })
 })

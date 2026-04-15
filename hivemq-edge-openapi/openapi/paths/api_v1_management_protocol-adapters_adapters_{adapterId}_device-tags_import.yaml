@@ -1,0 +1,80 @@
+post:
+  description: >-
+    Import device tags and mappings from a file. The file format is
+    determined by the Content-Type header (text/csv, application/json, or
+    application/yaml). Multiple rows with the same tag name produce
+    multiple northbound mappings for that tag.
+  operationId: importDeviceTags
+  x-roles-allowed:
+    - admin
+  parameters:
+    - description: The adapter ID.
+      in: path
+      name: adapterId
+      required: true
+      schema:
+        type: string
+    - description: Import conflict-resolution mode.
+      in: query
+      name: mode
+      required: false
+      schema:
+        type: string
+        default: MERGE_SAFE
+        enum:
+          - CREATE
+          - DELETE
+          - OVERWRITE
+          - MERGE_SAFE
+          - MERGE_OVERWRITE
+    - description: Validate node existence on the device.
+      in: query
+      name: validateNodes
+      required: false
+      schema:
+        type: boolean
+        default: false
+  requestBody:
+    description: The file content (CSV, JSON, or YAML).
+    required: true
+    content:
+      text/csv:
+        schema:
+          type: string
+          format: binary
+      application/json:
+        schema:
+          type: string
+          format: binary
+      application/yaml:
+        schema:
+          type: string
+          format: binary
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ImportResult.yaml
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Invalid file or validation errors
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Adapter not found
+    '415':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProblemDetails.yaml
+      description: Unsupported media type
+  summary: Import device tags
+  tags:
+    - Device Tag Browsing

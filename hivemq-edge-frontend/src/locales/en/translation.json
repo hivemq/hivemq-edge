@@ -418,7 +418,10 @@
     "websocket": {
       "label": "Websockets",
       "description": "Websocket configuration associated with the bridge",
-      "enabled": { "label": "Enabled", "helper": "If Websockets are used" },
+      "enabled": {
+        "label": "Enabled",
+        "helper": "If Websockets are used"
+      },
       "serverPath": {
         "label": "Server Path",
         "helper": "The server path used by the bridge client. This must be setup as path at the remote broker."
@@ -670,7 +673,8 @@
         "header_COMBINING": "Manage Data combining mappings"
       },
       "actions": {
-        "submit": "Submit"
+        "submit": "Submit",
+        "enableAllMetadata": "Enable All Metadata"
       },
       "toast": {
         "description_loading": "Processing the request",
@@ -751,18 +755,14 @@
     "capability": {
       "title_DISCOVER": "DISCOVER",
       "description_DISCOVER": "The device supports data point discoverability",
-
       "title_WRITE": "SOUTHBOUND",
       "description_WRITE": "The device supports Southbound mapping (WRITE)",
-
       "title_READ": "NORTHBOUND",
       "description_READ": "The device supports Northbound mapping (READ)",
-
       "title_COMBINE": "COMBINE",
       "description_COMBINE": "The device supports Data combining (COMBINE)"
     }
   },
-
   "articles": {
     "title": "Articles",
     "description": "Some reading for your understanding of HiveMQ Edge",
@@ -1377,7 +1377,6 @@
           "EDGE_NODE": "Edge Broker",
           "COMBINER_NODE": "Combiners",
           "ASSETS_NODE": "Assets",
-
           "CLUSTER_NODE": "Groups"
         }
       },
@@ -2057,13 +2056,37 @@
         }
       }
     },
-
     "workspace": {
       "nodeClient": {
         "status_ACTIVATED": "Activated",
         "status_DEACTIVATED": "Not Activated",
         "title": "Pulse Agent"
       }
+    }
+  },
+  "deviceTagBrowse": {
+    "section": {
+      "browse": "Browse Device Tags",
+      "import": "Import Device Tags"
+    },
+    "field": {
+      "rootId": "Root node ID",
+      "rootId.placeholder": "Optional — leave empty for full browse",
+      "maxDepth": "Max depth",
+      "format": "Format",
+      "file": "File",
+      "importMode": "Import mode"
+    },
+    "action": {
+      "browse": "Browse & Download",
+      "import": "Import"
+    },
+    "success": {
+      "import": "Tags imported successfully"
+    },
+    "error": {
+      "browse": "Failed to browse device tags",
+      "import": "Failed to import device tags"
     }
   }
 }

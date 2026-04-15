@@ -48,6 +48,8 @@ tags:
     name: Metrics Endpoint
   - description: Interact with protocol adapters.
     name: Protocol Adapters
+  - description: Browse and import device tags in bulk for protocol adapters.
+    name: Device Tag Browsing
   - description: Manage samples of payloads.
     name: Payload Sampling
   - description: Interact with topic filters.
@@ -256,6 +258,10 @@ paths:
     $ref: paths/api_v1_management_protocol-adapters_adapters_{adapterId}_tags.yaml
   /api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagName}:
     $ref: paths/api_v1_management_protocol-adapters_adapters_{adapterId}_tags_{tagName}.yaml
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/device-tags/browse:
+    $ref: paths/api_v1_management_protocol-adapters_adapters_{adapterId}_device-tags_browse.yaml
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/device-tags/import:
+    $ref: paths/api_v1_management_protocol-adapters_adapters_{adapterId}_device-tags_import.yaml
   /api/v1/management/protocol-adapters/adapters/{adapterType}:
     $ref: paths/api_v1_management_protocol-adapters_adapters_{adapterType}.yaml
   /api/v1/management/protocol-adapters/mappings/northboundMappings:

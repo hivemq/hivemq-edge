@@ -8,7 +8,7 @@ overrides:
   minimatch@3: 3.1.5
   minimatch@8: 8.0.7
   minimatch@9: 9.0.9
-  minimatch@10: 10.2.4
+  minimatch@10: 10.2.5
   flatted: 3.4.2
 
 importers:
@@ -296,8 +296,8 @@ importers:
         specifier: 1.28.5
         version: 1.28.5(typescript@5.7.3)
       '@percy/cypress':
-        specifier: 3.1.7
-        version: 3.1.7(cypress@15.11.0)
+        specifier: 3.1.8
+        version: 3.1.8(cypress@15.11.0)
       '@tanstack/eslint-plugin-query':
         specifier: 5.74.7
         version: 5.74.7(eslint@9.26.0(hono@4.11.5))(typescript@5.7.3)
@@ -2339,8 +2339,8 @@ packages:
     resolution: {integrity: sha512-txGpE/pffSHjspZPSWhRcdXlPjdyrpC9KaQkhteIPRpUeX6VpkrLZUMRiHWF9AEq+06ZaZLTlMbeq6ffFmDo2g==}
     engines: {node: '>=14'}
 
-  '@percy/cypress@3.1.7':
-    resolution: {integrity: sha512-UXPE7egnOOX/nv5oSwhTG7BEGio/HjnFdMuBR1Vbm2Izj3pUwMkxGqZRJsNtFuGl2iVckwbh9SuFoeKIdcaTcg==}
+  '@percy/cypress@3.1.8':
+    resolution: {integrity: sha512-0eSgzkU4S19giir/PKpWPCEnUDSqBaRrTB/flBMbkhXRv/OP2b66dZsA68Im6t/xZ8UpKYvJ4l643Bh1toSoyg==}
     peerDependencies:
       cypress: '>=3'
 
@@ -2359,8 +2359,8 @@ packages:
     resolution: {integrity: sha512-GFhQLFJ9dD4LHNZ0Prg5La4cS5b6dDbvht5ofzJ0/ZaTxGAmB+imxusxIk2wUYio7kQN9hlOFTs7TCLwYnCGMA==}
     engines: {node: '>=14'}
 
-  '@percy/sdk-utils@1.31.4':
-    resolution: {integrity: sha512-IBzSQZ8jx1pnSyyn7tF4UX8BVffbw0xjsNsPl/MuYuFuE5rW/D8arc+sH6xI1Kog0+tECt2XdAf4hMGWij2lxw==}
+  '@percy/sdk-utils@1.31.11':
+    resolution: {integrity: sha512-I4/Bx2RqSx/k00qVU0t/wcYudeyVRARQPdMnRZ/JvEZRZmXo0u+mHHpvZ5liHvnlpvWq6dv2WRA5MVy+GZHUhA==}
     engines: {node: '>=14'}
 
   '@percy/webdriver-utils@1.28.5':
@@ -3631,9 +3631,9 @@ packages:
   brace-expansion@2.0.2:
     resolution: {integrity: sha512-Jt0vHyM+jmUBqojB7E1NIYadt0vI0Qxjxd2TErW94wDz+E2LAm5vKMXXwg6ZZBTHPuUlDgQHKXvjGBdfcF1ZDQ==}
 
-  brace-expansion@5.0.2:
-    resolution: {integrity: sha512-Pdk8c9poy+YhOgVWw1JNN22/HcivgKWwpxKq04M/jTmHyCZn12WPJebZxdjSa5TmBqISrUSgNYU3eRORljfCCw==}
-    engines: {node: 20 || >=22}
+  brace-expansion@5.0.5:
+    resolution: {integrity: sha512-VZznLgtwhn+Mact9tfiwx64fA9erHH/MCXEUfB/0bX/6Fz6ny5EGTXYltMocqg4xFAQZtnO3DHWWXi8RiuN7cQ==}
+    engines: {node: 18 || 20 || >=22}
 
   braces@3.0.3:
     resolution: {integrity: sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==}
@@ -5830,8 +5830,8 @@ packages:
     resolution: {integrity: sha512-I9jwMn07Sy/IwOj3zVkVik2JTvgpaykDZEigL6Rx6N9LbMywwUSMtxET+7lVoDLLd3O3IXwJwvuuns8UB/HeAg==}
     engines: {node: '>=4'}
 
-  minimatch@10.2.4:
-    resolution: {integrity: sha512-oRjTw/97aTBN0RHbYCdtF1MQfvusSIBQM0IZEgzl6426+8jSC0nF1a/GmnVLpfB9yyr6g6FTqWqiZVbxrtaCIg==}
+  minimatch@10.2.5:
+    resolution: {integrity: sha512-MULkVLfKGYDFYejP07QOurDLLQpcjk7Fw+7jXS2R2czRQzR56yHRveU5NDJEOviH+hETZKSkIk5c+T23GjFUMg==}
     engines: {node: 18 || 20 || >=22}
 
   minimatch@3.1.5:
@@ -7717,7 +7717,7 @@ packages:
         optional: true
 
   xlsx@https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz:
-    resolution: {tarball: https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz}
+    resolution: {integrity: sha512-oLDq3jw7AcLqKWH2AhCpVTZl8mf6X2YReP+Neh0SJUzV/BdZYjth94tG5toiMB1PPrYtxOCfaoUCkvtuH+3AJA==, tarball: https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz}
     version: 0.20.3
     engines: {node: '>=0.8'}
     hasBin: true
@@ -10327,9 +10327,9 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@percy/cypress@3.1.7(cypress@15.11.0)':
+  '@percy/cypress@3.1.8(cypress@15.11.0)':
     dependencies:
-      '@percy/sdk-utils': 1.31.4
+      '@percy/sdk-utils': 1.31.11
       cypress: 15.11.0
     transitivePeerDependencies:
       - supports-color
@@ -10344,7 +10344,7 @@ snapshots:
 
   '@percy/sdk-utils@1.28.5': {}
 
-  '@percy/sdk-utils@1.31.4':
+  '@percy/sdk-utils@1.31.11':
     dependencies:
       pac-proxy-agent: 7.2.0
     transitivePeerDependencies:
@@ -11784,7 +11784,7 @@ snapshots:
     dependencies:
       balanced-match: 1.0.2
 
-  brace-expansion@5.0.2:
+  brace-expansion@5.0.5:
     dependencies:
       balanced-match: 4.0.2
 
@@ -12924,7 +12924,7 @@ snapshots:
       functional-red-black-tree: 1.0.1
       jsx-ast-utils-x: 0.1.0
       lodash.merge: 4.6.2
-      minimatch: 10.2.4
+      minimatch: 10.2.5
       scslre: 0.3.0
       semver: 7.7.4
       typescript: 5.7.3
@@ -13394,7 +13394,7 @@ snapshots:
 
   glob@13.0.1:
     dependencies:
-      minimatch: 10.2.4
+      minimatch: 10.2.5
       minipass: 7.1.2
       path-scurry: 2.0.1
 
@@ -14249,9 +14249,9 @@ snapshots:
 
   min-indent@1.0.1: {}
 
-  minimatch@10.2.4:
+  minimatch@10.2.5:
     dependencies:
-      brace-expansion: 5.0.2
+      brace-expansion: 5.0.5
 
   minimatch@3.1.5:
     dependencies:
