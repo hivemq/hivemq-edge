@@ -250,8 +250,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
 
     @Override
     public void createTagSchema(
-            final @NotNull TagSchemaCreationInput input,
-            final @NotNull TagSchemaCreationOutput output) {
+            final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
         tags.stream()
                 .filter(tag -> input.getTagName().equals(tag.getName()))
                 .findFirst()
@@ -267,8 +266,8 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
                             output.finish(new TagSchemaCreationOutput.DataPointSchema(
                                     builder.writable().readable().build(), null, null));
                         },
-                        () -> output.fail("Unable to find tag definition for tag "
-                                + input.getTagName() + ", cannot create schema"));
+                        () -> output.fail("Unable to find tag definition for tag " + input.getTagName()
+                                + ", cannot create schema"));
         BatchPollingProtocolAdapter.super.createTagSchema(input, output);
     }
 
@@ -280,29 +279,27 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4XSpecificAdapterConfig<
             case BYTE, USINT -> builder.scalar(ScalarType.ULONG).minimum(0L).maximum(255L);
             case WORD, INT -> builder.scalar(ScalarType.LONG).minimum(-32_768L).maximum(32_767L);
             case UINT -> builder.scalar(ScalarType.ULONG).minimum(0L).maximum(65_535L);
-            case DWORD, DINT -> builder.scalar(ScalarType.LONG)
-                    .minimum(-2_147_483_648L)
-                    .maximum(2_147_483_647L);
+            case DWORD, DINT ->
+                builder.scalar(ScalarType.LONG).minimum(-2_147_483_648L).maximum(2_147_483_647L);
             case UDINT -> builder.scalar(ScalarType.ULONG).minimum(0L).maximum(4_294_967_295L);
-            case LWORD, LINT -> builder.scalar(ScalarType.LONG)
-                    .minimum(Long.MIN_VALUE)
-                    .maximum(Long.MAX_VALUE);
+            case LWORD, LINT ->
+                builder.scalar(ScalarType.LONG).minimum(Long.MIN_VALUE).maximum(Long.MAX_VALUE);
             case ULINT -> builder.scalar(ScalarType.ULONG).minimum(0L);
-            case REAL -> builder.scalar(ScalarType.DOUBLE)
-                    .minimum(-3.4028235e38d)
-                    .maximum(3.4028235e38d);
-            case LREAL -> builder.scalar(ScalarType.DOUBLE)
-                    .minimum(-1.7976931348623157e308d)
-                    .maximum(1.7976931348623157e308d);
+            case REAL ->
+                builder.scalar(ScalarType.DOUBLE).minimum(-3.4028235e38d).maximum(3.4028235e38d);
+            case LREAL ->
+                builder.scalar(ScalarType.DOUBLE)
+                        .minimum(-1.7976931348623157e308d)
+                        .maximum(1.7976931348623157e308d);
             case CHAR, WCHAR, STRING, WSTRING -> builder.scalar(ScalarType.STRING);
             case TIME, LTIME -> builder.scalar(ScalarType.DURATION);
             case DATE, LDATE -> builder.scalar(ScalarType.LOCAL_DATE);
             case TIME_OF_DAY, LTIME_OF_DAY -> builder.scalar(ScalarType.LOCAL_TIME);
-            case DATE_AND_TIME, LDATE_AND_TIME, DATE_AND_LTIME ->
-                    builder.scalar(ScalarType.LOCAL_DATE_TIME);
+            case DATE_AND_TIME, LDATE_AND_TIME, DATE_AND_LTIME -> builder.scalar(ScalarType.LOCAL_DATE_TIME);
             case RAW_BYTE_ARRAY -> builder.scalar(ScalarType.BINARY);
-            case NULL -> throw new IllegalStateException(
-                    "NULL must be handled by the caller before invoking applyDataTypeToBuilder");
+            case NULL ->
+                throw new IllegalStateException(
+                        "NULL must be handled by the caller before invoking applyDataTypeToBuilder");
         }
     }
 

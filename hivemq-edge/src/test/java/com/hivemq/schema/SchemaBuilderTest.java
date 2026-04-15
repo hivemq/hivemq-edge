@@ -15,18 +15,17 @@
  */
 package com.hivemq.schema;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.hivemq.adapter.sdk.api.schema.AnySchema;
 import com.hivemq.adapter.sdk.api.schema.ArraySchema;
 import com.hivemq.adapter.sdk.api.schema.ObjectSchema;
 import com.hivemq.adapter.sdk.api.schema.ScalarSchema;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.Schema;
-import org.junit.jupiter.api.Test;
-
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.junit.jupiter.api.Test;
 
 class SchemaBuilderTest {
 
@@ -34,9 +33,8 @@ class SchemaBuilderTest {
 
     @Test
     void test_any_buildsAnySchema() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
-                .any()
-                .build();
+        final Schema schema =
+                new com.hivemq.adapter.sdk.api.schema.SchemaBuilder().any().build();
 
         assertThat(schema).isInstanceOf(AnySchema.class);
         assertThat(schema.nullable()).isFalse();
@@ -644,18 +642,18 @@ class SchemaBuilderTest {
     @Test
     void test_minimum_onTemporalScalar_throws() {
         for (final ScalarType type : new ScalarType[] {
-                ScalarType.INSTANT,
-                ScalarType.LOCAL_DATE,
-                ScalarType.LOCAL_TIME,
-                ScalarType.LOCAL_DATE_TIME,
-                ScalarType.DURATION,
-                ScalarType.STRING,
-                ScalarType.BOOLEAN,
-                ScalarType.BINARY
+            ScalarType.INSTANT,
+            ScalarType.LOCAL_DATE,
+            ScalarType.LOCAL_TIME,
+            ScalarType.LOCAL_DATE_TIME,
+            ScalarType.DURATION,
+            ScalarType.STRING,
+            ScalarType.BOOLEAN,
+            ScalarType.BINARY
         }) {
             assertThatThrownBy(() -> new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
-                    .scalar(type)
-                    .minimum(0L))
+                            .scalar(type)
+                            .minimum(0L))
                     .as("minimum() must be rejected for %s", type)
                     .isInstanceOf(IllegalStateException.class);
         }
@@ -664,18 +662,18 @@ class SchemaBuilderTest {
     @Test
     void test_maximum_onTemporalScalar_throws() {
         for (final ScalarType type : new ScalarType[] {
-                ScalarType.INSTANT,
-                ScalarType.LOCAL_DATE,
-                ScalarType.LOCAL_TIME,
-                ScalarType.LOCAL_DATE_TIME,
-                ScalarType.DURATION,
-                ScalarType.STRING,
-                ScalarType.BOOLEAN,
-                ScalarType.BINARY
+            ScalarType.INSTANT,
+            ScalarType.LOCAL_DATE,
+            ScalarType.LOCAL_TIME,
+            ScalarType.LOCAL_DATE_TIME,
+            ScalarType.DURATION,
+            ScalarType.STRING,
+            ScalarType.BOOLEAN,
+            ScalarType.BINARY
         }) {
             assertThatThrownBy(() -> new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
-                    .scalar(type)
-                    .maximum(0L))
+                            .scalar(type)
+                            .maximum(0L))
                     .as("maximum() must be rejected for %s", type)
                     .isInstanceOf(IllegalStateException.class);
         }

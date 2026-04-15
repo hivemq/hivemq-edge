@@ -35,9 +35,9 @@ import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
+import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationInput;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
-import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.modbus.config.ModbusSpecificAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.tag.ModbusTag;
@@ -280,60 +280,71 @@ public class ModbusProtocolAdapter implements BatchPollingProtocolAdapter {
 
     @Override
     public void createTagSchema(
-            final @NotNull TagSchemaCreationInput input,
-            final @NotNull TagSchemaCreationOutput output) {
+            final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
         tags.stream()
                 .filter(tag -> input.getTagName().equals(tag.getName()))
                 .findFirst()
                 .map(tag -> {
                     final var builder = new SchemaBuilder();
                     switch (tag.getDefinition().getDataType()) {
-                        case BOOL -> builder.scalar(ScalarType.BOOLEAN).writable().readable();
-                        case INT_16 -> builder.scalar(ScalarType.LONG)
-                                .minimum(-32_768L) // Modbus INT_16: signed 16-bit integer lower bound
-                                .maximum(32_767L) // Modbus INT_16: signed 16-bit integer upper bound
-                                .writable()
-                                .readable();
-                        case UINT_16 -> builder.scalar(ScalarType.ULONG)
-                                .minimum(0L) // Modbus UINT_16: unsigned 16-bit integer lower bound
-                                .maximum(65_535L) // Modbus UINT_16: unsigned 16-bit integer upper bound
-                                .writable()
-                                .readable();
-                        case INT_32 -> builder.scalar(ScalarType.LONG)
-                                .minimum(-2_147_483_648L) // Modbus INT_32: signed 32-bit integer lower bound
-                                .maximum(2_147_483_647L) // Modbus INT_32: signed 32-bit integer upper bound
-                                .writable()
-                                .readable();
-                        case INT_64 -> builder.scalar(ScalarType.LONG)
-                                .minimum(-9_223_372_036_854_775_808L) // Modbus INT_64: signed 64-bit integer lower bound
-                                .maximum(9_223_372_036_854_775_807L) // Modbus INT_64: signed 64-bit integer upper bound
-                                .writable()
-                                .readable();
-                        case UINT_32 -> builder.scalar(ScalarType.ULONG)
-                                .minimum(0L) // Modbus UINT_32: unsigned 32-bit integer lower bound
-                                .maximum(4_294_967_295L) // Modbus UINT_32: unsigned 32-bit integer upper bound
-                                .writable()
-                                .readable();
-                        case FLOAT_32 -> builder.scalar(ScalarType.DOUBLE)
-                                .minimum(-3.4028235e38d) // Modbus FLOAT_32: IEEE 754 single precision lower bound
-                                .maximum(3.4028235e38d) // Modbus FLOAT_32: IEEE 754 single precision upper bound
-                                .writable()
-                                .readable();
-                        case FLOAT_64 -> builder.scalar(ScalarType.DOUBLE)
-                                .minimum(-1.7976931348623157e308d) // Modbus FLOAT_64: IEEE 754 double precision lower bound
-                                .maximum(1.7976931348623157e308d) // Modbus FLOAT_64: IEEE 754 double precision upper bound
-                                .writable()
-                                .readable();
-                        case UTF_8 -> builder.scalar(ScalarType.STRING)
-                                .writable()
-                                .readable();
+                        case BOOL ->
+                            builder.scalar(ScalarType.BOOLEAN).writable().readable();
+                        case INT_16 ->
+                            builder.scalar(ScalarType.LONG)
+                                    .minimum(-32_768L) // Modbus INT_16: signed 16-bit integer lower bound
+                                    .maximum(32_767L) // Modbus INT_16: signed 16-bit integer upper bound
+                                    .writable()
+                                    .readable();
+                        case UINT_16 ->
+                            builder.scalar(ScalarType.ULONG)
+                                    .minimum(0L) // Modbus UINT_16: unsigned 16-bit integer lower bound
+                                    .maximum(65_535L) // Modbus UINT_16: unsigned 16-bit integer upper bound
+                                    .writable()
+                                    .readable();
+                        case INT_32 ->
+                            builder.scalar(ScalarType.LONG)
+                                    .minimum(-2_147_483_648L) // Modbus INT_32: signed 32-bit integer lower bound
+                                    .maximum(2_147_483_647L) // Modbus INT_32: signed 32-bit integer upper bound
+                                    .writable()
+                                    .readable();
+                        case INT_64 ->
+                            builder.scalar(ScalarType.LONG)
+                                    .minimum(-9_223_372_036_854_775_808L) // Modbus INT_64: signed 64-bit integer lower
+                                    // bound
+                                    .maximum(9_223_372_036_854_775_807L) // Modbus INT_64: signed 64-bit integer upper
+                                    // bound
+                                    .writable()
+                                    .readable();
+                        case UINT_32 ->
+                            builder.scalar(ScalarType.ULONG)
+                                    .minimum(0L) // Modbus UINT_32: unsigned 32-bit integer lower bound
+                                    .maximum(4_294_967_295L) // Modbus UINT_32: unsigned 32-bit integer upper bound
+                                    .writable()
+                                    .readable();
+                        case FLOAT_32 ->
+                            builder.scalar(ScalarType.DOUBLE)
+                                    .minimum(-3.4028235e38d) // Modbus FLOAT_32: IEEE 754 single precision lower bound
+                                    .maximum(3.4028235e38d) // Modbus FLOAT_32: IEEE 754 single precision upper bound
+                                    .writable()
+                                    .readable();
+                        case FLOAT_64 ->
+                            builder.scalar(ScalarType.DOUBLE)
+                                    .minimum(-1.7976931348623157e308d) // Modbus FLOAT_64: IEEE 754 double precision
+                                    // lower bound
+                                    .maximum(
+                                            1.7976931348623157e308d) // Modbus FLOAT_64: IEEE 754 double precision upper
+                                    // bound
+                                    .writable()
+                                    .readable();
+                        case UTF_8 ->
+                            builder.scalar(ScalarType.STRING).writable().readable();
                     }
                     return builder.build();
                 })
                 .ifPresentOrElse(
                         schema -> output.finish(new TagSchemaCreationOutput.DataPointSchema(schema, null, null)),
-                        () -> output.fail("Unable to find tag definition for tag " + input.getTagName() + ", cannot create schema")
-                );
+                        () -> output.fail("Unable to find tag definition for tag " + input.getTagName()
+                                + ", cannot create schema"));
         BatchPollingProtocolAdapter.super.createTagSchema(input, output);
     }
 

@@ -49,15 +49,16 @@ class AbstractPlc4xAdapterCreateTagSchemaTest {
     // ── Exhaustive coverage of the data-type → ScalarType mapping ──────────────
 
     @ParameterizedTest
-    @EnumSource(value = DATA_TYPE.class, mode = EnumSource.Mode.EXCLUDE, names = {"NULL"})
+    @EnumSource(
+            value = DATA_TYPE.class,
+            mode = EnumSource.Mode.EXCLUDE,
+            names = {"NULL"})
     void test_applyDataTypeToBuilder_everyNonNullTypeProducesAScalarSchema(final DATA_TYPE type) {
         final var builder = new SchemaBuilder();
         AbstractPlc4xAdapter.applyDataTypeToBuilder(builder, type);
         final Schema schema = builder.build();
 
-        assertThat(schema)
-                .as("Schema for %s", type)
-                .isInstanceOfAny(ScalarSchema.class);
+        assertThat(schema).as("Schema for %s", type).isInstanceOfAny(ScalarSchema.class);
     }
 
     // ── Spot-check mapping correctness for every category ─────────────────────
@@ -214,9 +215,13 @@ class AbstractPlc4xAdapterCreateTagSchemaTest {
     }
 
     private static final class CapturingOutput implements TagSchemaCreationOutput {
-        @Nullable DataPointSchema finishedSchema;
+        @Nullable
+        DataPointSchema finishedSchema;
+
         boolean failed;
-        @Nullable String failMessage;
+
+        @Nullable
+        String failMessage;
 
         @Override
         public void finish(final @NotNull DataPointSchema schema) {

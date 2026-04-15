@@ -15,6 +15,9 @@
  */
 package com.hivemq.schema;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.schema.AnySchema;
 import com.hivemq.adapter.sdk.api.schema.ArraySchema;
@@ -23,9 +26,6 @@ import com.hivemq.adapter.sdk.api.schema.ScalarSchema;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
 import com.hivemq.adapter.sdk.api.schema.Schema;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class SchemaJsonRepresentationTest {
 
@@ -158,9 +158,8 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_toJson_any() {
-        final Schema schema = new com.hivemq.adapter.sdk.api.schema.SchemaBuilder()
-                .any()
-                .build();
+        final Schema schema =
+                new com.hivemq.adapter.sdk.api.schema.SchemaBuilder().any().build();
         final ObjectNode json = repr.toJsonSchema(schema);
 
         assertThat(json.has("type")).isFalse();
@@ -683,8 +682,7 @@ class SchemaJsonRepresentationTest {
 
     @Test
     void test_fromJson_unknownFormatStaysString() {
-        final Schema recovered = repr.fromJsonSchemaString(
-                "{\"type\":\"string\",\"format\":\"email\"}");
+        final Schema recovered = repr.fromJsonSchemaString("{\"type\":\"string\",\"format\":\"email\"}");
         assertThat(((ScalarSchema) recovered).type()).isEqualTo(ScalarType.STRING);
     }
 
