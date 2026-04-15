@@ -257,8 +257,9 @@ describe('Duplicate Combiner Detection', () => {
 
   describe('Modal with Mappings', () => {
     it('should display existing mappings in modal', () => {
-      // Override @postCombiner to store the combiner with a mapping so the GET refetch
-      // returns it with mappings — making the duplicate modal display them correctly.
+      // Override @postCombiner with a distinct alias to avoid double-alias conflicts.
+      // Cypress stops the interceptor chain when req.reply() is called, so the
+      // beforeEach @postCombiner handler won't run — no mswDB duplicate-key error.
       cy.intercept<Combiner>('POST', '/api/v1/management/combiners', (req) => {
         const combiner = req.body
         const withMappings: Combiner = {
@@ -276,13 +277,13 @@ describe('Duplicate Combiner Detection', () => {
         }
         mswDB.combiner.create({ id: combiner.id, json: JSON.stringify(withMappings) })
         req.reply(200, withMappings)
-      }).as('postCombiner')
+      }).as('postCombinerMapped')
 
       // Create combiner
       workspacePage.toolbox.fit.click()
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
       workspacePage.toolbar.combine.click()
-      cy.wait('@postCombiner')
+      cy.wait('@postCombinerMapped')
       cy.wait('@getCombiners')
       workspacePage.closeToast.click()
 
@@ -398,8 +399,9 @@ describe('Duplicate Combiner Detection', () => {
     })
 
     it('should be accessible with mappings', { tags: ['@percy'] }, () => {
-      // Override @postCombiner to store the combiner with a mapping so the GET refetch
-      // returns it with mappings — making the duplicate modal display them correctly.
+      // Override @postCombiner with a distinct alias to avoid double-alias conflicts.
+      // Cypress stops the interceptor chain when req.reply() is called, so the
+      // beforeEach @postCombiner handler won't run — no mswDB duplicate-key error.
       cy.intercept<Combiner>('POST', '/api/v1/management/combiners', (req) => {
         const combiner = req.body
         const withMappings: Combiner = {
@@ -417,13 +419,13 @@ describe('Duplicate Combiner Detection', () => {
         }
         mswDB.combiner.create({ id: combiner.id, json: JSON.stringify(withMappings) })
         req.reply(200, withMappings)
-      }).as('postCombiner')
+      }).as('postCombinerMapped')
 
       // Create combiner
       workspacePage.toolbox.fit.click()
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
       workspacePage.toolbar.combine.click()
-      cy.wait('@postCombiner')
+      cy.wait('@postCombinerMapped')
       cy.wait('@getCombiners')
       workspacePage.closeToast.click()
 
