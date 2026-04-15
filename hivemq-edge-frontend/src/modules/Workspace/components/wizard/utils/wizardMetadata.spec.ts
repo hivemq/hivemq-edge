@@ -105,7 +105,7 @@ describe('wizardMetadata', () => {
       expect(step).toBeDefined()
       expect(step?.requiresSelection).toBe(true)
       expect(step?.selectionConstraints).toBeDefined()
-      expect(step?.selectionConstraints?.minNodes).toBe(2)
+      expect(step?.selectionConstraints?.minNodes).toBe(1)
     })
 
     it('should return step with selection constraints for ASSET_MAPPER', () => {

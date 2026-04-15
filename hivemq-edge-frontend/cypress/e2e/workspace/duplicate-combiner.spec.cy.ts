@@ -261,11 +261,9 @@ describe('Duplicate Combiner Detection', () => {
 
   describe('Modal with Mappings', () => {
     it('should display existing mappings in modal', () => {
-      // Create combiner with mappings — include Edge Broker so topic filters are available in the editor
+      // Create combiner with mappings
       workspacePage.toolbox.fit.click()
-      workspacePage.adapterNode('opcua-pump').click()
-      workspacePage.adapterNode('opcua-boiler').click({ metaKey: true })
-      workspacePage.edgeNode.click({ metaKey: true })
+      workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
       workspacePage.toolbar.combine.click()
       cy.wait('@postCombiner')
       cy.wait('@getCombiners')
@@ -411,11 +409,9 @@ describe('Duplicate Combiner Detection', () => {
     it('should be accessible with mappings', { tags: ['@percy'] }, () => {
       cy.injectAxe()
 
-      // Create combiner with mappings — include Edge Broker so topic filters are available in the editor
+      // Create combiner with mappings
       workspacePage.toolbox.fit.click()
-      workspacePage.adapterNode('opcua-pump').click()
-      workspacePage.adapterNode('opcua-boiler').click({ metaKey: true })
-      workspacePage.edgeNode.click({ metaKey: true })
+      workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
       workspacePage.toolbar.combine.click()
       cy.wait('@postCombiner')
       cy.wait('@getCombiners')
