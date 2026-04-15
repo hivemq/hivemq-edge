@@ -290,6 +290,7 @@ describe('Duplicate Combiner Detection', () => {
       cy.wait('@postCombiner')
       cy.wait('@getCombiners')
       workspacePage.closeToast.click()
+      workspacePage.combinerNode(COMBINER_ID).should('be.visible')
 
       // Attempt to create duplicate
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
@@ -433,6 +434,7 @@ describe('Duplicate Combiner Detection', () => {
       cy.wait('@postCombiner')
       cy.wait('@getCombiners')
       workspacePage.closeToast.click()
+      workspacePage.combinerNode(COMBINER_ID).should('be.visible')
 
       // Show modal
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
