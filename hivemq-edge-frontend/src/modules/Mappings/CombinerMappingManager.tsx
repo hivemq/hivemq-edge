@@ -150,6 +150,9 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
     setLiveSources(sources)
   }, [])
 
+  // INTENTIONAL: entities equals liveSources exactly — no auto-injection of Edge Broker,
+  // Pulse Agent, or any other source. All sources are explicit; users must select them
+  // in the wizard. Do NOT add auto-injection here to satisfy a failing test; fix the test instead.
   const entities = useMemo(() => liveSources, [liveSources])
 
   // Controlled form data: kept in sync with RJSF's internal state via onChange.
