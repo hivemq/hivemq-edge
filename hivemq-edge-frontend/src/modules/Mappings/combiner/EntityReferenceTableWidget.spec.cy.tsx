@@ -57,7 +57,8 @@ describe('EntityReferenceTableWidget', () => {
   })
 
   it('should render all sources as deletable', () => {
-    const v = structuredClone(MOCK_ENTITY_PROPS)
+    // structuredClone cannot be used here because MOCK_ENTITY_PROPS contains function values (onChange)
+    const v = { ...MOCK_ENTITY_PROPS, value: [...(MOCK_ENTITY_PROPS.value as Array<EntityReference>)] }
     ;(v.value as Array<EntityReference>).push(
       {
         type: EntityType.PULSE_AGENT,
