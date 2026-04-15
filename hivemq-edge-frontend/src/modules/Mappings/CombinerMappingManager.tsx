@@ -150,13 +150,7 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
     setLiveSources(sources)
   }, [])
 
-  // Always include the Edge Broker so topic-filter queries fire regardless of what is in sources.items.
-  // The Edge Broker may be absent from liveSources when a combiner is created without explicitly
-  // selecting the Edge node, but the mapping editor always needs its topic filters available.
-  const entities = useMemo(() => {
-    const hasEdgeBroker = liveSources.some((e) => e.id === IdStubs.EDGE_NODE && e.type === EntityType.EDGE_BROKER)
-    return hasEdgeBroker ? liveSources : [...liveSources, { id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER }]
-  }, [liveSources])
+  const entities = useMemo(() => liveSources, [liveSources])
 
   // Controlled form data: kept in sync with RJSF's internal state via onChange.
   // This prevents RJSF from resetting when formContext changes (e.g. when entity queries resolve
