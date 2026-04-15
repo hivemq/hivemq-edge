@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import type { RJSFSchema, WidgetProps } from '@rjsf/utils'
 import { useTranslation } from 'react-i18next'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ButtonGroup, HStack } from '@chakra-ui/react'
+import { ButtonGroup, HStack, Tooltip } from '@chakra-ui/react'
 import { LuTrash } from 'react-icons/lu'
 import { Select } from 'chakra-react-select'
 
@@ -11,6 +11,7 @@ import IconButton from '@/components/Chakra/IconButton'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable'
 import { EntityRenderer } from '@/modules/Mappings/combiner/EntityRenderer.tsx'
 import type { AvailableEntity, CombinerContext } from '@/modules/Mappings/types.ts'
+import { isSourceUsedInMappings } from '@/modules/Mappings/utils/combining.utils.ts'
 
 export const EntityReferenceTableWidget = (
   props: WidgetProps<WidgetProps<Array<EntityReference>, RJSFSchema>, RJSFSchema, CombinerContext>
@@ -53,13 +54,22 @@ export const EntityReferenceTableWidget = (
         header: t('combiner.schema.sources.table.action'),
         sortingFn: undefined,
         cell: (info) => {
+          const inUse = isSourceUsedInMappings(info.row.original, value || [], formContext?.combiner)
           return (
             <ButtonGroup isAttached size="sm">
-              <IconButton
-                aria-label={t('combiner.schema.sources.table.delete')}
-                icon={<LuTrash />}
-                onClick={() => handleDelete(info.row.original)}
-              />
+              <Tooltip
+                label={inUse ? t('combiner.schema.sources.table.deleteDisabledReason') : undefined}
+                isDisabled={!inUse}
+              >
+                <span>
+                  <IconButton
+                    aria-label={t('combiner.schema.sources.table.delete')}
+                    icon={<LuTrash />}
+                    onClick={() => handleDelete(info.row.original)}
+                    isDisabled={inUse}
+                  />
+                </span>
+              </Tooltip>
             </ButtonGroup>
           )
         },

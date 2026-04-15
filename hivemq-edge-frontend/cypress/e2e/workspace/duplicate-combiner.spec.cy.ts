@@ -50,8 +50,8 @@ describe('Duplicate Combiner Detection', () => {
     cy.intercept<Combiner>('POST', '/api/v1/management/combiners', (req) => {
       const combiner = req.body
       const newCombinerData = mswDB.combiner.create({
-        id: COMBINER_ID,
-        json: JSON.stringify({ ...combiner, id: COMBINER_ID }),
+        id: combiner.id,
+        json: JSON.stringify(combiner),
       })
       req.reply(200, JSON.parse(newCombinerData.json))
     }).as('postCombiner')
@@ -109,6 +109,7 @@ describe('Duplicate Combiner Detection', () => {
 
       cy.wait('@postCombiner').then((interception) => {
         expect(interception.response?.statusCode).to.equal(200)
+        cy.wrap(interception.response?.body.id).as('firstCombinerID')
       })
       cy.wait('@getCombiners')
 
@@ -118,7 +119,9 @@ describe('Duplicate Combiner Detection', () => {
       workspacePage.closeToast.click()
 
       // Verify first combiner exists
-      workspacePage.combinerNode(COMBINER_ID).should('be.visible')
+      cy.get('@firstCombinerID').then((id) => {
+        workspacePage.combinerNode(id as unknown as string).should('be.visible')
+      })
 
       // Step 2: Attempt to create duplicate combiner
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
@@ -198,7 +201,9 @@ describe('Duplicate Combiner Detection', () => {
       workspacePage.toolbox.fit.click()
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
       workspacePage.toolbar.combine.click()
-      cy.wait('@postCombiner')
+      cy.wait('@postCombiner').then((interception) => {
+        cy.wrap(interception.response?.body.id).as('combinerID')
+      })
       cy.wait('@getCombiners')
       workspacePage.closeToast.click()
 
@@ -215,19 +220,12 @@ describe('Duplicate Combiner Detection', () => {
       workspaceCombinerPanel.form.should('be.visible')
 
       // Verify we're editing the existing combiner
-      cy.url().should('include', COMBINER_ID)
+      cy.get('@combinerID').then((id) => {
+        cy.url().should('include', id as unknown as string)
+      })
     })
 
     it('should create new combiner when "Create New Anyway" is clicked', () => {
-      cy.intercept<Combiner>('POST', '/api/v1/management/combiners', (req) => {
-        const combiner = req.body
-        const newCombinerData = mswDB.combiner.create({
-          id: combiner.id,
-          json: JSON.stringify({ ...combiner, id: combiner.id }),
-        })
-        req.reply(200, JSON.parse(newCombinerData.json))
-      }).as('postCombiner')
-
       // Create initial combiner
       workspacePage.toolbox.fit.click()
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
@@ -291,6 +289,7 @@ describe('Duplicate Combiner Detection', () => {
       loginPage.visit('/app/workspace')
       loginPage.loginButton.click()
       workspacePage.navLink.click()
+      cy.wait('@getCombiners')
       workspacePage.fitCanvas(COMBINER_ID)
 
       // Attempt to create a duplicate combiner with the same sources
@@ -435,6 +434,7 @@ describe('Duplicate Combiner Detection', () => {
       loginPage.visit('/app/workspace')
       loginPage.loginButton.click()
       workspacePage.navLink.click()
+      cy.wait('@getCombiners')
       workspacePage.fitCanvas(COMBINER_ID)
 
       // Show modal

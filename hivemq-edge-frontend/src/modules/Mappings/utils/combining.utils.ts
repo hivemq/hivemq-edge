@@ -5,6 +5,7 @@ const log = debug('Mappings:combining:utils')
 
 import {
   DataIdentifierReference,
+  type Combiner,
   type DataCombining,
   type DomainTag,
   type EntityReference,
@@ -23,6 +24,61 @@ import i18n from '@/config/i18n.config.ts'
 
 export const STUB_TAG_PROPERTY = 'tg'
 export const STUB_TOPIC_FILTER_PROPERTY = 'tf'
+
+/**
+ * Returns true if removing `entity` from `currentSources` would leave at least one instruction
+ * in any mapping without a valid data provider.
+ *
+ * Mapping rules by entity type:
+ * - ADAPTER: owns instructions whose sourceRef has type=TAG and scope=entity.id
+ * - EDGE_BROKER / BRIDGE: both serve TOPIC_FILTER instructions (scope: null, shared query).
+ *   In use when topic filter instructions exist AND no other EDGE_BROKER or BRIDGE would remain.
+ * - PULSE_AGENT: owns PULSE_ASSET instructions.
+ *   In use when pulse asset instructions exist AND no other PULSE_AGENT would remain.
+ */
+export const isSourceUsedInMappings = (
+  entity: EntityReference,
+  currentSources: EntityReference[],
+  combiner?: Combiner
+): boolean => {
+  if (!combiner?.mappings?.items?.length) return false
+
+  const allRefs = combiner.mappings.items.flatMap((mapping) => {
+    const primary = mapping.sources?.primary
+    const fromInstructions = (mapping.instructions ?? [])
+      .map((inst) => inst.sourceRef)
+      .filter((ref): ref is DataIdentifierReference => ref != null)
+    return primary ? [primary, ...fromInstructions] : fromInstructions
+  })
+
+  if (entity.type === EntityType.ADAPTER) {
+    return allRefs.some(
+      (ref) => ref.type === DataIdentifierReference.type.TAG && ref.scope === entity.id
+    )
+  }
+
+  if (entity.type === EntityType.EDGE_BROKER || entity.type === EntityType.BRIDGE) {
+    const hasTopicFilterRefs = allRefs.some((ref) => ref.type === DataIdentifierReference.type.TOPIC_FILTER)
+    if (!hasTopicFilterRefs) return false
+    const remainingProviders = currentSources.filter(
+      (s) =>
+        !(s.id === entity.id && s.type === entity.type) &&
+        (s.type === EntityType.EDGE_BROKER || s.type === EntityType.BRIDGE)
+    )
+    return remainingProviders.length === 0
+  }
+
+  if (entity.type === EntityType.PULSE_AGENT) {
+    const hasPulseRefs = allRefs.some((ref) => ref.type === DataIdentifierReference.type.PULSE_ASSET)
+    if (!hasPulseRefs) return false
+    const remainingProviders = currentSources.filter(
+      (s) => !(s.id === entity.id && s.type === entity.type) && s.type === EntityType.PULSE_AGENT
+    )
+    return remainingProviders.length === 0
+  }
+
+  return false
+}
 
 // TODO[NVL] wrong data structure; simplify
 /* istanbul ignore next -- @preserve */

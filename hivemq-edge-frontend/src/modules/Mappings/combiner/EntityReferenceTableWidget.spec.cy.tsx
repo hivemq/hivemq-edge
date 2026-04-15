@@ -1,7 +1,7 @@
 import type { WidgetProps } from '@rjsf/utils'
 
-import type { EntityReference } from '@/api/__generated__'
-import { EntityType } from '@/api/__generated__'
+import type { Combiner, EntityReference } from '@/api/__generated__'
+import { DataIdentifierReference, EntityType } from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { mockCombiner } from '@/api/hooks/useCombiners/__handlers__'
@@ -56,7 +56,7 @@ describe('EntityReferenceTableWidget', () => {
     cy.get('nav').find('[role="group"]').should('have.length', 2)
   })
 
-  it('should render all sources as deletable', () => {
+  it('should render all sources as deletable when no mappings reference them', () => {
     // structuredClone cannot be used here because MOCK_ENTITY_PROPS contains function values (onChange)
     const v = { ...MOCK_ENTITY_PROPS, value: [...(MOCK_ENTITY_PROPS.value as Array<EntityReference>)] }
     ;(v.value as Array<EntityReference>).push(
@@ -76,7 +76,48 @@ describe('EntityReferenceTableWidget', () => {
 
     cy.get('table tbody tr').each(($row) => {
       cy.wrap($row).find('td').eq(1).find('button').should('have.attr', 'aria-label', 'Delete the source')
+      cy.wrap($row).find('td').eq(1).find('button').should('not.be.disabled')
     })
+  })
+
+  it('should disable the delete button for a source that is used in mapping instructions', () => {
+    const combinerWithInstructions: Combiner = {
+      ...mockCombiner,
+      mappings: {
+        items: [
+          {
+            id: 'test-mapping',
+            sources: {
+              primary: { id: 'my/tag/t1', type: DataIdentifierReference.type.TAG, scope: 'my-adapter' },
+            },
+            destination: { topic: 'test/topic' },
+            instructions: [
+              {
+                sourceRef: { id: 'my/tag/t1', type: DataIdentifierReference.type.TAG, scope: 'my-adapter' },
+                source: '$.value',
+                destination: '$.result',
+              },
+            ],
+          },
+        ],
+      },
+    }
+
+    const props = {
+      ...MOCK_ENTITY_PROPS,
+      // @ts-ignore
+      formContext: { combiner: combinerWithInstructions },
+    }
+
+    cy.mountWithProviders(<EntityReferenceTableWidget {...props} />)
+
+    cy.get('table tbody tr').should('have.length', 2)
+
+    // my-adapter is referenced in instructions — delete must be disabled
+    cy.get('table tbody tr').eq(0).find('td').eq(1).find('button').should('be.disabled')
+
+    // my-other-adapter is not referenced — delete must be enabled
+    cy.get('table tbody tr').eq(1).find('td').eq(1).find('button').should('not.be.disabled')
   })
 
   it('should be accessible', () => {

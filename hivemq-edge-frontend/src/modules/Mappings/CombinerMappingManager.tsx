@@ -208,10 +208,11 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
       entities,
       availableEntities,
       onSourcesChange,
+      combiner: currentFormData,
     }
     // Stabilize by checking if sources data has actually changed, not array reference
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entities, availableEntities, ...sources.map((s) => s.dataUpdatedAt)])
+  }, [entities, availableEntities, currentFormData, ...sources.map((s) => s.dataUpdatedAt)])
 
   const validator = useValidateCombiner(sources, entities)
   // TODO[NVL] Need to split the manager between Combiner and AssetMapper; no need to have so many hooks not in use
