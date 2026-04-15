@@ -173,6 +173,25 @@ export class WorkspacePage extends ShellPage {
     return cy.get(`[role="group"][data-id="${id}"]`)
   }
 
+  /**
+   * Waits for the canvas to be ready and fits all nodes into the viewport.
+   *
+   * ReactFlow positions nodes using JS-driven transforms. On initial load, nodes may be
+   * positioned outside the visible canvas viewport and appear clipped (overflow:hidden).
+   * Always call this before asserting node visibility or interacting with specific nodes.
+   *
+   * @param nodeToConfirm - optional data-id of a node that must exist in the DOM before
+   *   fitting (e.g. when the node was loaded async from an API response). Uses `.exist()`
+   *   not `.visible()` because the node is off-canvas before fit runs.
+   */
+  fitCanvas(nodeToConfirm?: string) {
+    this.canvas.should('be.visible')
+    if (nodeToConfirm) {
+      cy.get(`[role="group"][data-id="${nodeToConfirm}"]`).should('exist')
+    }
+    this.toolbox.fit.click()
+  }
+
   combinerNodeContent(id: string) {
     return {
       get title() {

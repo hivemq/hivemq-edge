@@ -291,9 +291,7 @@ describe('Duplicate Combiner Detection', () => {
       loginPage.visit('/app/workspace')
       loginPage.loginButton.click()
       workspacePage.navLink.click()
-      workspacePage.canvas.should('be.visible')
-      workspacePage.combinerNode(COMBINER_ID).should('exist')
-      workspacePage.toolbox.fit.click()
+      workspacePage.fitCanvas(COMBINER_ID)
 
       // Attempt to create a duplicate combiner with the same sources
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
@@ -437,9 +435,7 @@ describe('Duplicate Combiner Detection', () => {
       loginPage.visit('/app/workspace')
       loginPage.loginButton.click()
       workspacePage.navLink.click()
-      workspacePage.canvas.should('be.visible')
-      workspacePage.combinerNode(COMBINER_ID).should('exist')
-      workspacePage.toolbox.fit.click()
+      workspacePage.fitCanvas(COMBINER_ID)
 
       // Show modal
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
