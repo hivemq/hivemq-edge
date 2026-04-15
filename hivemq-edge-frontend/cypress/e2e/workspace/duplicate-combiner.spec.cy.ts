@@ -261,42 +261,35 @@ describe('Duplicate Combiner Detection', () => {
 
   describe('Modal with Mappings', () => {
     it('should display existing mappings in modal', () => {
-      // Create combiner
+      // Override postCombiner to create the combiner with a mapping pre-injected,
+      // avoiding the need to open the mapping editor UI (which requires Edge Broker in sources)
+      cy.intercept<Combiner>('POST', '/api/v1/management/combiners', (req) => {
+        const combiner = req.body
+        const combinerWithMapping = {
+          ...combiner,
+          id: COMBINER_ID,
+          mappings: {
+            items: [
+              {
+                id: 'test-mapping-id',
+                sources: { primary: null, tags: [], topicFilters: [] },
+                destination: { topic: 'my/destination' },
+                instructions: [],
+              },
+            ],
+          },
+        }
+        mswDB.combiner.create({ id: COMBINER_ID, json: JSON.stringify(combinerWithMapping) })
+        req.reply(200, combinerWithMapping)
+      }).as('postCombiner')
+
+      workspacePage.canvas.should('be.visible')
       workspacePage.toolbox.fit.click()
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
       workspacePage.toolbar.combine.click()
       cy.wait('@postCombiner')
       cy.wait('@getCombiners')
       workspacePage.closeToast.click()
-
-      // Inject mapping directly into mswDB to avoid requiring Edge Broker in sources
-      cy.then(() => {
-        mswDB.combiner.update({
-          where: { id: { equals: COMBINER_ID } },
-          data: {
-            json: JSON.stringify({
-              id: COMBINER_ID,
-              name: 'unnamed combiner',
-              sources: { items: [{ type: 'ADAPTER', id: 'opcua-pump' }, { type: 'ADAPTER', id: 'opcua-boiler' }] },
-              mappings: {
-                items: [
-                  {
-                    id: 'test-mapping-id',
-                    sources: { primary: null, tags: [], topicFilters: [] },
-                    destination: { topic: 'my/destination' },
-                    instructions: [],
-                  },
-                ],
-              },
-            }),
-          },
-        })
-      })
-
-      // Reload to make React Query pick up the updated combiner state with mappings
-      cy.reload()
-      workspacePage.canvas.should('be.visible')
-      workspacePage.toolbox.fit.click()
 
       // Attempt to create duplicate
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
@@ -412,42 +405,34 @@ describe('Duplicate Combiner Detection', () => {
     it('should be accessible with mappings', { tags: ['@percy'] }, () => {
       cy.injectAxe()
 
-      // Create combiner
+      // Override postCombiner to create the combiner with a mapping pre-injected,
+      // avoiding the need to open the mapping editor UI (which requires Edge Broker in sources)
+      cy.intercept<Combiner>('POST', '/api/v1/management/combiners', (req) => {
+        const combiner = req.body
+        const combinerWithMapping = {
+          ...combiner,
+          id: COMBINER_ID,
+          mappings: {
+            items: [
+              {
+                id: 'test-mapping-id',
+                sources: { primary: null, tags: [], topicFilters: [] },
+                destination: { topic: 'my/destination' },
+                instructions: [],
+              },
+            ],
+          },
+        }
+        mswDB.combiner.create({ id: COMBINER_ID, json: JSON.stringify(combinerWithMapping) })
+        req.reply(200, combinerWithMapping)
+      }).as('postCombiner')
+
       workspacePage.toolbox.fit.click()
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
       workspacePage.toolbar.combine.click()
       cy.wait('@postCombiner')
       cy.wait('@getCombiners')
       workspacePage.closeToast.click()
-
-      // Inject mapping directly into mswDB to avoid requiring Edge Broker in sources
-      cy.then(() => {
-        mswDB.combiner.update({
-          where: { id: { equals: COMBINER_ID } },
-          data: {
-            json: JSON.stringify({
-              id: COMBINER_ID,
-              name: 'unnamed combiner',
-              sources: { items: [{ type: 'ADAPTER', id: 'opcua-pump' }, { type: 'ADAPTER', id: 'opcua-boiler' }] },
-              mappings: {
-                items: [
-                  {
-                    id: 'test-mapping-id',
-                    sources: { primary: null, tags: [], topicFilters: [] },
-                    destination: { topic: 'my/destination' },
-                    instructions: [],
-                  },
-                ],
-              },
-            }),
-          },
-        })
-      })
-
-      // Reload to make React Query pick up the updated combiner state with mappings
-      cy.reload()
-      workspacePage.canvas.should('be.visible')
-      workspacePage.toolbox.fit.click()
 
       // Show modal
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
