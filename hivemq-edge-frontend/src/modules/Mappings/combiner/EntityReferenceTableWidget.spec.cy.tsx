@@ -34,14 +34,6 @@ const MOCK_ENTITY_PROPS: WidgetProps<WidgetProps<Array<EntityReference>>> = {
   onChange: () => undefined,
 }
 
-const cy_withinActionButtonFromRow = (index: number, fn: (currentSubject: JQuery<HTMLElement>) => void) => {
-  cy.get('table tbody tr')
-    .eq(index)
-    .within(() => {
-      cy.get('td').eq(1).within(fn)
-    })
-}
-
 describe('EntityReferenceTableWidget', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
@@ -64,7 +56,7 @@ describe('EntityReferenceTableWidget', () => {
     cy.get('nav').find('[role="group"]').should('have.length', 2)
   })
 
-  it('should render permanent ', () => {
+  it('should render all sources as deletable', () => {
     const v = { ...MOCK_ENTITY_PROPS, value: [...(MOCK_ENTITY_PROPS.value as Array<EntityReference>)] }
     ;(v.value as Array<EntityReference>).push(
       {
@@ -73,7 +65,7 @@ describe('EntityReferenceTableWidget', () => {
       },
       {
         type: EntityType.EDGE_BROKER,
-        id: 'my-pulse',
+        id: 'my-edge',
       }
     )
     cy.mountWithProviders(<EntityReferenceTableWidget {...v} />)
@@ -81,16 +73,8 @@ describe('EntityReferenceTableWidget', () => {
     cy.get('table thead tr th').should('have.length', 2)
     cy.get('table tbody tr').should('have.length', 4)
 
-    cy_withinActionButtonFromRow(0, () => {
-      cy.get('button').should('have.attr', 'aria-label', 'Delete the source')
-    })
-
-    cy_withinActionButtonFromRow(2, () => {
-      cy.get('button').should('not.exist')
-    })
-
-    cy_withinActionButtonFromRow(3, () => {
-      cy.get('button').should('not.exist')
+    cy.get('table tbody tr').each(($row) => {
+      cy.wrap($row).find('td').eq(1).find('button').should('have.attr', 'aria-label', 'Delete the source')
     })
   })
 

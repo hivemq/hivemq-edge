@@ -7,7 +7,6 @@ import { LuTrash } from 'react-icons/lu'
 import { Select } from 'chakra-react-select'
 
 import type { EntityReference } from '@/api/__generated__'
-import { EntityType } from '@/api/__generated__'
 import IconButton from '@/components/Chakra/IconButton'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable'
 import { EntityRenderer } from '@/modules/Mappings/combiner/EntityRenderer.tsx'
@@ -54,17 +53,13 @@ export const EntityReferenceTableWidget = (
         header: t('combiner.schema.sources.table.action'),
         sortingFn: undefined,
         cell: (info) => {
-          const isPermanent =
-            info.row.original.type === EntityType.PULSE_AGENT || info.row.original.type === EntityType.EDGE_BROKER
           return (
             <ButtonGroup isAttached size="sm">
-              {!isPermanent && (
-                <IconButton
-                  aria-label={t('combiner.schema.sources.table.delete')}
-                  icon={<LuTrash />}
-                  onClick={() => handleDelete(info.row.original)}
-                />
-              )}
+              <IconButton
+                aria-label={t('combiner.schema.sources.table.delete')}
+                icon={<LuTrash />}
+                onClick={() => handleDelete(info.row.original)}
+              />
             </ButtonGroup>
           )
         },
