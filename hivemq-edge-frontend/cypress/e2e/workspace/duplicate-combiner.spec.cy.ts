@@ -283,9 +283,28 @@ describe('Duplicate Combiner Detection', () => {
       workspacePage.toolbox.fit.click()
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
       workspacePage.toolbar.combine.click()
-      cy.wait('@postCombinerMapped')
-      cy.wait('@getCombiners')
+      cy.wait('@postCombinerMapped').then((interception) => {
+        cy.log('POST status:', String(interception.response?.statusCode))
+        cy.log('POST response sources:', JSON.stringify(interception.response?.body?.sources))
+        cy.log('POST response mappings:', JSON.stringify(interception.response?.body?.mappings))
+        cy.wrap(interception.response?.body?.id).as('mappedCombinerID')
+      })
+      cy.wait('@getCombiners').then((interception) => {
+        cy.log('GET combiners count:', String(interception.response?.body?.items?.length))
+        cy.log('GET first combiner sources:', JSON.stringify(interception.response?.body?.items?.[0]?.sources))
+      })
       workspacePage.closeToast.click()
+
+      // Verify the combiner node is rendered in the canvas before attempting duplicate
+      cy.get('@mappedCombinerID').then((id) => {
+        cy.log('Combiner ID:', String(id))
+        workspacePage
+          .combinerNode(id as unknown as string)
+          .should('be.visible')
+          .then(() => {
+            cy.log('Combiner node IS visible in canvas')
+          })
+      })
 
       // Attempt duplicate
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
