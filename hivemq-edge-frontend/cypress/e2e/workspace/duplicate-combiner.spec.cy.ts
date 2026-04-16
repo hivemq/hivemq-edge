@@ -257,19 +257,10 @@ describe('Duplicate Combiner Detection', () => {
 
   describe('Modal with Mappings', () => {
     it('should display existing mappings in modal', () => {
-      // Pre-populate mswDB before re-visiting so the page-load GET returns a combiner
-      // with mappings. This avoids POST intercept conflicts entirely.
-      mswDB.combiner.create({
-        id: 'combiner-with-mappings',
-        json: JSON.stringify({
-          id: 'combiner-with-mappings',
-          name: 'test combiner',
-          sources: {
-            items: [
-              { type: 'ADAPTER', id: 'opcua-pump' },
-              { type: 'ADAPTER', id: 'opcua-boiler' },
-            ],
-          },
+      // Override POST to return a combiner that already has a mapping (LIFO — runs before @postCombiner)
+      cy.intercept<Combiner>('POST', '/api/v1/management/combiners', (req) => {
+        const combiner: Combiner = {
+          ...req.body,
           mappings: {
             items: [
               {
@@ -280,18 +271,20 @@ describe('Duplicate Combiner Detection', () => {
               },
             ],
           },
-        }),
-      })
+        }
+        mswDB.combiner.create({ id: combiner.id, json: JSON.stringify(combiner) })
+        req.reply(200, combiner)
+      }).as('postCombinerMapped')
 
-      // Re-visit workspace so the page-load GET picks up the populated mswDB
-      loginPage.visit('/app/workspace')
-      loginPage.loginButton.click()
-      workspacePage.navLink.click()
+      // Create the combiner (POST will include mappings in response)
+      workspacePage.toolbox.fit.click()
+      workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
+      workspacePage.toolbar.combine.click()
+      cy.wait('@postCombinerMapped')
+      cy.wait('@getCombiners')
+      workspacePage.closeToast.click()
 
-      // Wait for combiner node to be visible (confirms Zustand store is updated)
-      workspacePage.fitCanvas('combiner-with-mappings')
-
-      // Attempt to create a combiner with the same sources → should detect duplicate
+      // Attempt duplicate → modal should show the mappings
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
       workspacePage.toolbar.combine.click()
 
@@ -401,19 +394,12 @@ describe('Duplicate Combiner Detection', () => {
     })
 
     it('should be accessible with mappings', { tags: ['@percy'] }, () => {
-      // Pre-populate mswDB before re-visiting so the page-load GET returns a combiner
-      // with mappings. This avoids POST intercept conflicts entirely.
-      mswDB.combiner.create({
-        id: 'combiner-with-mappings',
-        json: JSON.stringify({
-          id: 'combiner-with-mappings',
-          name: 'test combiner',
-          sources: {
-            items: [
-              { type: 'ADAPTER', id: 'opcua-pump' },
-              { type: 'ADAPTER', id: 'opcua-boiler' },
-            ],
-          },
+      cy.injectAxe()
+
+      // Override POST to return a combiner that already has a mapping (LIFO — runs before @postCombiner)
+      cy.intercept<Combiner>('POST', '/api/v1/management/combiners', (req) => {
+        const combiner: Combiner = {
+          ...req.body,
           mappings: {
             items: [
               {
@@ -424,23 +410,23 @@ describe('Duplicate Combiner Detection', () => {
               },
             ],
           },
-        }),
-      })
+        }
+        mswDB.combiner.create({ id: combiner.id, json: JSON.stringify(combiner) })
+        req.reply(200, combiner)
+      }).as('postCombinerMapped')
 
-      // Re-visit workspace so the page-load GET picks up the populated mswDB
-      loginPage.visit('/app/workspace')
-      loginPage.loginButton.click()
-      workspacePage.navLink.click()
+      // Create the combiner (POST will include mappings in response)
+      workspacePage.toolbox.fit.click()
+      workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
+      workspacePage.toolbar.combine.click()
+      cy.wait('@postCombinerMapped')
+      cy.wait('@getCombiners')
+      workspacePage.closeToast.click()
 
-      // Wait for combiner node to be visible (confirms Zustand store is updated)
-      workspacePage.fitCanvas('combiner-with-mappings')
-
-      // Attempt to create a combiner with the same sources → should detect duplicate
+      // Attempt duplicate → modal should show the mappings
       workspacePage.act.selectReactFlowNodes(['opcua-pump', 'opcua-boiler'])
       workspacePage.toolbar.combine.click()
       workspacePage.duplicateCombinerModal.modal.should('be.visible')
-
-      cy.injectAxe()
 
       // Check accessibility
       cy.checkAccessibility(undefined, {
