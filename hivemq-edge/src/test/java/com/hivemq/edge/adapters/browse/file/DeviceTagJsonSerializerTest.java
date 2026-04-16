@@ -342,4 +342,24 @@ class DeviceTagJsonSerializerTest {
 
         assertThat(errors.get()).isZero();
     }
+
+    @Test
+    void serialize_producesCompactJson_noPrettyPrint() throws IOException {
+        // Compact output halves wire size on large browses; consumers that want indented JSON
+        // can pipe through `jq`.
+        final DeviceTagRow row = DeviceTagRow.builder()
+                .nodeId("ns=2;i=100")
+                .tagName("t1")
+                .nodePath("/A")
+                .build();
+        final byte[] bytes = serializer.serialize(List.of(row));
+        final String json = new String(bytes, StandardCharsets.UTF_8);
+
+        // A pretty-printed single-row document would contain newlines between object keys.
+        // Compact output contains no newlines at all (Jackson's default separator is a comma).
+        assertThat(json).doesNotContain("\n");
+        assertThat(json).doesNotContain("\r");
+        // Round-trip must still work — the shape hasn't changed, only the whitespace.
+        assertThat(serializer.deserialize(bytes)).hasSize(1);
+    }
 }

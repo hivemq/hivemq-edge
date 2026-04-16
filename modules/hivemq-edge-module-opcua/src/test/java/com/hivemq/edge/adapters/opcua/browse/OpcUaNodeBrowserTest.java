@@ -112,6 +112,36 @@ class OpcUaNodeBrowserTest {
         assertThat(OpcUaNodeBrowser.sanitize("!@#$%")).isEqualTo("");
     }
 
+    @Test
+    void sanitize_leadingAndTrailingSpecialChars_produceNoDashes() {
+        // Runs of non-alphanumeric characters at either edge collapse away entirely.
+        assertThat(OpcUaNodeBrowser.sanitize("!!!ABC!!!")).isEqualTo("abc");
+    }
+
+    @Test
+    void sanitize_singleCharacterInputs() {
+        assertThat(OpcUaNodeBrowser.sanitize("A")).isEqualTo("a");
+        assertThat(OpcUaNodeBrowser.sanitize("1")).isEqualTo("1");
+        assertThat(OpcUaNodeBrowser.sanitize("-")).isEqualTo("");
+    }
+
+    @Test
+    void sanitize_internalDashesCollapse() {
+        // Multiple kinds of non-alphanumeric runs collapse into a single dash.
+        assertThat(OpcUaNodeBrowser.sanitize("foo !!!   bar")).isEqualTo("foo-bar");
+    }
+
+    @Test
+    void sanitize_alreadyKebabCase_isIdempotent() {
+        assertThat(OpcUaNodeBrowser.sanitize("already-kebab-case")).isEqualTo("already-kebab-case");
+    }
+
+    @Test
+    void sanitize_unicodeFallsBackToDashes() {
+        // Non-ASCII alphanumeric characters are not preserved; they collapse like punctuation.
+        assertThat(OpcUaNodeBrowser.sanitize("caf\u00e9-con-leche")).isEqualTo("caf-con-leche");
+    }
+
     // --- sanitizePath() ---
 
     @Test
