@@ -274,7 +274,7 @@ describe('Duplicate Combiner Detection', () => {
             items: [
               {
                 id: 'test-mapping-id',
-                sources: { primary: null },
+                sources: { primary: { id: 'my/tag/t1', type: 'TAG', scope: 'opcua-pump' } },
                 destination: { topic: 'my/destination' },
                 instructions: [],
               },
@@ -418,7 +418,7 @@ describe('Duplicate Combiner Detection', () => {
             items: [
               {
                 id: 'test-mapping-id',
-                sources: { primary: null },
+                sources: { primary: { id: 'my/tag/t1', type: 'TAG', scope: 'opcua-pump' } },
                 destination: { topic: 'my/destination' },
                 instructions: [],
               },
