@@ -660,7 +660,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         final OpcuaTag tag = tagNameToTag.get(tagName);
         if (tag == null) {
             log.error("Cannot create schema for non-existent tag '{}'", tagName);
-            output.fail("Tag '" + tagName + "' not found.");
+            output.tagNotFound("Tag '" + tagName + "' not found.");
             return;
         }
 
