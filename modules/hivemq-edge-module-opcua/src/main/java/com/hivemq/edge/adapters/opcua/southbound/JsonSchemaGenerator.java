@@ -32,9 +32,11 @@ import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.nodes.UaVariableNode;
+import org.eclipse.milo.opcua.sdk.core.AccessLevel;
 import org.eclipse.milo.opcua.sdk.core.typetree.DataType;
 import org.eclipse.milo.opcua.sdk.core.typetree.DataTypeTree;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
@@ -128,7 +130,11 @@ public class JsonSchemaGenerator {
      * {@link FieldInformation} tree.
      */
     public @NotNull FieldInformation processExtensionObject(
-            final @NotNull DataType dataType, final boolean required, final @Nullable String name) {
+            final @NotNull DataType dataType,
+            final boolean required,
+            final boolean readable,
+            final boolean writable,
+            final @Nullable String name) {
         try {
             final var dataTypeDefinition = dataType.getDataTypeDefinition();
             if (dataTypeDefinition instanceof final StructureDefinition structureDefinition) {
@@ -166,9 +172,12 @@ public class JsonSchemaGenerator {
                                             false,
                                             null,
                                             isRequired,
+                                            readable,
+                                            writable,
                                             List.of());
                                 } else {
-                                    return processExtensionObject(extractedDataType, isRequired, fieldName);
+                                    return processExtensionObject(
+                                            extractedDataType, isRequired, readable, writable, fieldName);
                                 }
                             })
                             .toList();
@@ -182,6 +191,8 @@ public class JsonSchemaGenerator {
                             false,
                             null,
                             required,
+                            readable,
+                            writable,
                             properties);
                 } else {
                     return new FieldInformation(
@@ -193,6 +204,8 @@ public class JsonSchemaGenerator {
                             false,
                             null,
                             required,
+                            readable,
+                            writable,
                             List.of());
                 }
             } else if (dataTypeDefinition instanceof EnumDefinition) {
@@ -206,6 +219,28 @@ public class JsonSchemaGenerator {
     }
 
     // ── Type info collection (private) ───────────────────────────────────────
+
+    /**
+     * Decodes the AccessLevel attribute of the given variable node into read/write flags.
+     * Defaults to read+write when the attribute is unavailable or exposes neither
+     * {@link AccessLevel#CurrentRead} nor {@link AccessLevel#CurrentWrite}, so schema generation
+     * stays usable on servers that do not publish a meaningful access level.
+     */
+    private static @NotNull AccessFlags decodeAccessLevel(final @NotNull UaVariableNode uaVariableNode) {
+        try {
+            final Set<AccessLevel> levels = AccessLevel.fromValue(uaVariableNode.getAccessLevel());
+            final boolean hasRead = levels.contains(AccessLevel.CurrentRead);
+            final boolean hasWrite = levels.contains(AccessLevel.CurrentWrite);
+            if (!hasRead && !hasWrite) {
+                return new AccessFlags(true, true);
+            }
+            return new AccessFlags(hasRead, hasWrite);
+        } catch (final Exception e) {
+            return new AccessFlags(true, true);
+        }
+    }
+
+    private record AccessFlags(boolean readable, boolean writable) {}
 
     private @NotNull CompletableFuture<FieldInformation> collectTypeInfo(final @NotNull NodeId destinationNodeId) {
         final CompletableFuture<UaVariableNode> variableNodeFuture =
@@ -223,6 +258,10 @@ public class JsonSchemaGenerator {
                     }
                     final OpcUaDataType builtinType = tree.getBuiltinType(dataType.getNodeId());
 
+                    final AccessFlags access = decodeAccessLevel(uaVariableNode);
+                    final boolean readable = access.readable();
+                    final boolean writable = access.writable();
+
                     if (builtinType != OpcUaDataType.ExtensionObject) {
                         return new FieldInformation(
                                 null,
@@ -234,13 +273,15 @@ public class JsonSchemaGenerator {
                                 false,
                                 dimensions,
                                 true,
+                                readable,
+                                writable,
                                 List.of());
                     } else {
                         if (dataType.getBinaryEncodingId() == null) {
                             throw new RuntimeException(
                                     "No encoding was present for the complex data type: '" + dataType + "'.");
                         }
-                        return processExtensionObject(dataType, true, null);
+                        return processExtensionObject(dataType, true, readable, writable, null);
                     }
                 })
                 .exceptionally(throwable -> {
@@ -305,7 +346,9 @@ public class JsonSchemaGenerator {
             if (fieldName == null) {
                 continue;
             }
-            final var prop = obj.property(fieldName).writable();
+            final var prop = obj.property(fieldName)
+                    .readable(field.readable())
+                    .writable(field.writable());
             if (field.required()) {
                 prop.required();
             }
@@ -316,21 +359,26 @@ public class JsonSchemaGenerator {
 
     private static void applyFieldInfoToSchema(
             final @NotNull SchemaBuilder schema, final @NotNull FieldInformation info) {
+        schema.readable(info.readable()).writable(info.writable());
         if (info.arrayDimensions() != null && info.arrayDimensions().length > 0) {
-            applyArrayType(schema.startArray().writable(), info.dataType(), info.arrayDimensions(), 0);
+            applyArrayType(schema.startArray(), info.dataType(), info.arrayDimensions(), 0);
         } else if (!info.nestedFields().isEmpty()) {
             applyObjectProperties(schema.startObject(), info);
         } else if (info.dataType() != null) {
-            applyScalarType(schema.writable(), info.dataType());
+            applyScalarType(schema, info.dataType());
         } else {
-            schema.any().writable();
+            schema.any();
         }
     }
 
     private static <P> void applyFieldInfoToProperty(
             final @NotNull PropertySchemaBuilder<P> prop, final @NotNull FieldInformation info) {
         if (info.arrayDimensions() != null && info.arrayDimensions().length > 0) {
-            applyArrayType(prop.startArray().writable(), info.dataType(), info.arrayDimensions(), 0);
+            applyArrayType(
+                    prop.startArray().readable(info.readable()).writable(info.writable()),
+                    info.dataType(),
+                    info.arrayDimensions(),
+                    0);
         } else if (!info.nestedFields().isEmpty()) {
             applyObjectProperties(prop.startObject(), info);
         } else if (info.dataType() != null) {
@@ -470,5 +518,7 @@ public class JsonSchemaGenerator {
             boolean isEnum,
             UInteger @Nullable [] arrayDimensions,
             boolean required,
+            boolean readable,
+            boolean writable,
             @NotNull List<FieldInformation> nestedFields) {}
 }
