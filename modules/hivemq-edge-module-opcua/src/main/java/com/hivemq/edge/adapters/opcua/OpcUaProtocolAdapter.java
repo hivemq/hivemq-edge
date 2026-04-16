@@ -652,8 +652,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     public void createTagSchema(
             final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
         if (stopped) {
-            log.debug("Create tag schema operation skipped for adapter '{}' - adapter has been stopped", adapterId);
-            output.fail("Create tag schema failed: Adapter has been stopped");
+            log.debug("Create tag schema operation skipped for adapter '{}' - adapter is not started", adapterId);
+            output.adapterNotStarted();
             return;
         }
         final String tagName = input.getTagName();

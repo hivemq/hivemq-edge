@@ -81,7 +81,7 @@ public class TagSchemaCreationOutputImpl implements TagSchemaCreationOutput {
     public void fail(final @NotNull String errorMessage) {
         status = Status.UNSPECIFIED_FAILURE;
         message = errorMessage;
-        future.completeExceptionally(new StackLessProtocolAdapterException("Json impl creation for tag failed."));
+        future.completeExceptionally(new StackLessProtocolAdapterException("Json schema creation for tag failed."));
     }
 
     @Override
