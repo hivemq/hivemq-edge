@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import type { RJSFSchema, WidgetProps } from '@rjsf/utils'
 import { useTranslation } from 'react-i18next'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ButtonGroup, HStack, Tooltip } from '@chakra-ui/react'
+import { ButtonGroup, HStack, useToast } from '@chakra-ui/react'
 import { LuTrash } from 'react-icons/lu'
 import { Select } from 'chakra-react-select'
 
@@ -17,6 +17,7 @@ export const EntityReferenceTableWidget = (
   props: WidgetProps<WidgetProps<Array<EntityReference>, RJSFSchema>, RJSFSchema, CombinerContext>
 ) => {
   const { t } = useTranslation()
+  const toast = useToast()
   const { schema, value, onChange, formContext } = props
 
   const selectOptions = useMemo(() => {
@@ -37,6 +38,14 @@ export const EntityReferenceTableWidget = (
 
   const displayColumns = useMemo<ColumnDef<EntityReference>[]>(() => {
     const handleDelete = (item: EntityReference) => {
+      const inUse = isSourceUsedInMappings(item, value || [], formContext?.combiner)
+      if (inUse) {
+        toast({
+          status: 'warning',
+          title: t('combiner.schema.sources.table.deleteDisabledReason'),
+        })
+        return
+      }
       const newSources = (value || []).filter((e: EntityReference) => e.id !== item.id || e.type !== item.type)
       onChange(newSources)
       formContext?.onSourcesChange?.(newSources)
@@ -54,28 +63,19 @@ export const EntityReferenceTableWidget = (
         header: t('combiner.schema.sources.table.action'),
         sortingFn: undefined,
         cell: (info) => {
-          const inUse = isSourceUsedInMappings(info.row.original, value || [], formContext?.combiner)
           return (
             <ButtonGroup isAttached size="sm">
-              <Tooltip
-                label={inUse ? t('combiner.schema.sources.table.deleteDisabledReason') : undefined}
-                isDisabled={!inUse}
-              >
-                <span>
-                  <IconButton
-                    aria-label={t('combiner.schema.sources.table.delete')}
-                    icon={<LuTrash />}
-                    onClick={() => handleDelete(info.row.original)}
-                    isDisabled={inUse}
-                  />
-                </span>
-              </Tooltip>
+              <IconButton
+                aria-label={t('combiner.schema.sources.table.delete')}
+                icon={<LuTrash />}
+                onClick={() => handleDelete(info.row.original)}
+              />
             </ButtonGroup>
           )
         },
       },
     ]
-  }, [t, value, onChange, formContext])
+  }, [t, toast, value, onChange, formContext])
 
   if (schema.type !== 'array') throw new Error('[RJSF] Cannot apply the template to the schema')
   return (

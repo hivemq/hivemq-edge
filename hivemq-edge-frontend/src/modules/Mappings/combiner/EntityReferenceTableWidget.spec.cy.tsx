@@ -80,7 +80,7 @@ describe('EntityReferenceTableWidget', () => {
     })
   })
 
-  it('should disable the delete button for a source that is used in mapping instructions', () => {
+  it('should show a warning toast when deleting a source that is used in mapping instructions', () => {
     const combinerWithInstructions: Combiner = {
       ...mockCombiner,
       mappings: {
@@ -103,8 +103,10 @@ describe('EntityReferenceTableWidget', () => {
       },
     }
 
+    const onChange = cy.stub().as('onChange')
     const props = {
       ...MOCK_ENTITY_PROPS,
+      onChange,
       // @ts-ignore
       formContext: { combiner: combinerWithInstructions },
     }
@@ -113,11 +115,22 @@ describe('EntityReferenceTableWidget', () => {
 
     cy.get('table tbody tr').should('have.length', 2)
 
-    // my-adapter is referenced in instructions — delete must be disabled
-    cy.get('table tbody tr').eq(0).find('td').eq(1).find('button').should('be.disabled')
+    // all delete buttons must be enabled
+    cy.get('table tbody tr').each(($row) => {
+      cy.wrap($row).find('td').eq(1).find('button').should('not.be.disabled')
+    })
 
-    // my-other-adapter is not referenced — delete must be enabled
-    cy.get('table tbody tr').eq(1).find('td').eq(1).find('button').should('not.be.disabled')
+    // clicking delete for my-adapter (in use) must show a warning toast and NOT call onChange
+    cy.get('table tbody tr').eq(0).find('td').eq(1).find('button').click()
+    cy.get('[role="status"]').should(
+      'contain',
+      'This source cannot be removed because it is used in one or more mapping instructions'
+    )
+    cy.get('@onChange').should('not.have.been.called')
+
+    // clicking delete for my-other-adapter (not in use) must call onChange
+    cy.get('table tbody tr').eq(1).find('td').eq(1).find('button').click()
+    cy.get('@onChange').should('have.been.called')
   })
 
   it('should be accessible', () => {
