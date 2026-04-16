@@ -133,14 +133,14 @@ export const useValidateCombiner = (
         }
       })
 
-      const hasEdge = formData?.sources.items?.filter((e) => e.type === EntityType.EDGE_BROKER)
+      const hasEdge = entities.filter((e) => e.type === EntityType.EDGE_BROKER)
       if (!hasEdge || hasEdge.length !== 1) {
         errors.sources?.items?.addError(t('combiner.error.validation.notEdgeSource'))
       }
 
       return errors
     },
-    [hasAdapterCapability, t]
+    [hasAdapterCapability, t, entities]
   )
 
   /**
