@@ -40,9 +40,11 @@ import com.hivemq.api.resources.impl.TopicFilterResourceImpl;
 import com.hivemq.api.resources.impl.UnsResourceImpl;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.ApiConfigurationService;
+import com.hivemq.edge.adapters.browse.rest.DeviceTagBrowsingResourceImpl;
 import com.hivemq.edge.api.AuthenticationApi;
 import com.hivemq.edge.api.BridgesApi;
 import com.hivemq.edge.api.CombinersApi;
+import com.hivemq.edge.api.DeviceTagBrowsingApi;
 import com.hivemq.edge.api.EventsApi;
 import com.hivemq.edge.api.FrontendApi;
 import com.hivemq.edge.api.GatewayEndpointApi;
@@ -114,6 +116,10 @@ public abstract class ApiModule {
 
     @Binds
     abstract @NotNull CombinersApi combinersApi(@NotNull CombinersResourceImpl bridgeResource);
+
+    @Binds
+    abstract @NotNull DeviceTagBrowsingApi deviceTagBrowsingApi(
+            @NotNull DeviceTagBrowsingResourceImpl deviceTagBrowsingResource);
 
     @Provides
     @Singleton

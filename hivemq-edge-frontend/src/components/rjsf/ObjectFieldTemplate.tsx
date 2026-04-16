@@ -9,6 +9,7 @@ import { descriptionId } from '@rjsf/utils'
 import { getTemplate, getUiOptions, titleId } from '@rjsf/utils'
 import { Box, Tab, TabList, TabPanel, TabPanels, Tabs } from '@chakra-ui/react'
 import type { UITab } from '@/components/rjsf/Form/types.ts'
+import type { ExtraTab } from '@/modules/ProtocolAdapters/types.ts'
 import { useFormControlStore } from '@/components/rjsf/Form/useFormControlStore.ts'
 
 export const ObjectFieldTemplate = <
@@ -18,7 +19,7 @@ export const ObjectFieldTemplate = <
 >(
   props: ObjectFieldTemplateProps<T, S, F>
 ) => {
-  const { registry, properties, title, description, uiSchema, required, schema, idSchema } = props
+  const { registry, properties, title, description, uiSchema, required, schema, idSchema, formContext } = props
   const uiOptions = getUiOptions(uiSchema, {})
   const TitleFieldTemplate = getTemplate<'TitleFieldTemplate', T, S, F>('TitleFieldTemplate', registry, uiOptions)
   const DescriptionFieldTemplate = getTemplate<'DescriptionFieldTemplate', T, S, F>(
@@ -27,6 +28,7 @@ export const ObjectFieldTemplate = <
     uiOptions
   )
   const { tabIndex, setTabIndex } = useFormControlStore()
+  const { extraTabs } = (formContext as { extraTabs?: ExtraTab[] } | undefined) ?? {}
 
   const { tabs } = uiOptions as UIOptionsType & { tabs?: UITab[] }
   if (!tabs) {
@@ -77,6 +79,11 @@ export const ObjectFieldTemplate = <
             </Tab>
           )
         })}
+        {extraTabs?.map((tab) => (
+          <Tab fontSize="md" key={tab.id}>
+            {tab.title}
+          </Tab>
+        ))}
       </TabList>
 
       <TabPanels>
@@ -95,6 +102,11 @@ export const ObjectFieldTemplate = <
             </TabPanel>
           )
         })}
+        {extraTabs?.map((tab) => (
+          <TabPanel key={tab.id} p={0} pt="1px" mb={6}>
+            {tab.content}
+          </TabPanel>
+        ))}
       </TabPanels>
       {properties
         .filter((property) => !allGrouped.includes(property.name))

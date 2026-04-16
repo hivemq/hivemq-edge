@@ -6,9 +6,9 @@ hivemq-edge-module-etherip uses the following third party libraries:
  Module                                                                     | Version                                   | License ID    | License URL
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  com.fasterxml.jackson.core:jackson-annotations                             | 2.21                                      | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- com.fasterxml.jackson.core:jackson-core                                    | 2.21.0                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- com.fasterxml.jackson.core:jackson-databind                                | 2.21.0                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- com.fasterxml.jackson:jackson-bom                                          | 2.21.0                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.fasterxml.jackson.core:jackson-core                                    | 2.21.1                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.fasterxml.jackson.core:jackson-databind                                | 2.21.1                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.fasterxml.jackson:jackson-bom                                          | 2.21.1                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  org.slf4j:slf4j-api                                                        | 2.0.17                                    | MIT           | https://spdx.org/licenses/MIT.html
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 

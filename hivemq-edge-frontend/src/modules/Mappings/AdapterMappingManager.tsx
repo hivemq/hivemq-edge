@@ -1,4 +1,4 @@
-import { type FC, useEffect, useMemo } from 'react'
+import { type FC, useCallback, useEffect, useMemo } from 'react'
 import type { Node } from '@xyflow/react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -21,7 +21,7 @@ import {
 
 import config from '@/config'
 
-import type { Adapter } from '@/api/__generated__'
+import type { Adapter, NorthboundMappingList } from '@/api/__generated__'
 import DrawerExpandButton from '@/components/Chakra/DrawerExpandButton.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import MappingForm from '@/modules/Mappings/components/MappingForm.tsx'
@@ -69,6 +69,23 @@ const AdapterMappingManager: FC<AdapterMappingManagerProps> = ({ type }) => {
 
   const manager = type === MappingType.NORTHBOUND ? useNorthboundMappingManager : useSouthboundMappingManager
 
+  const mappingManager = manager(selectedNode?.data.id ?? '')
+  const isNorthbound = type === MappingType.NORTHBOUND
+
+  const allMetadataEnabled = useMemo(() => {
+    if (!isNorthbound || !mappingManager.data) return true
+    const items = (mappingManager.data as NorthboundMappingList).items
+    return items.length === 0 || items.every((item) => item.includeMetadata)
+  }, [isNorthbound, mappingManager.data])
+
+  const handleEnableAllMetadata = useCallback(() => {
+    if (!mappingManager.data) return
+    const items = (mappingManager.data as NorthboundMappingList).items
+    mappingManager.onUpdateCollection({
+      items: items.map((item) => ({ ...item, includeMetadata: true })),
+    } as NorthboundMappingList)
+  }, [mappingManager])
+
   const [showNativeWidgets, setShowNativeWidgets] = useBoolean()
 
   return (
@@ -89,14 +106,26 @@ const AdapterMappingManager: FC<AdapterMappingManagerProps> = ({ type }) => {
         <DrawerBody display="flex" flexDirection="column" gap={6}>
           {!selectedNode && <ErrorMessage message={t('protocolAdapter.error.loading')} />}
           {selectedNode && (
-            <MappingForm
-              adapterId={selectedNode.data.id}
-              adapterType={selectedNode?.data.type}
-              onSubmit={handleClose}
-              useManager={manager}
-              type={type}
-              showNativeWidgets={showNativeWidgets}
-            />
+            <>
+              {isNorthbound && (
+                <Button
+                  size="sm"
+                  alignSelf="flex-end"
+                  isDisabled={allMetadataEnabled || mappingManager.isPending}
+                  onClick={handleEnableAllMetadata}
+                >
+                  {t('protocolAdapter.mapping.actions.enableAllMetadata')}
+                </Button>
+              )}
+              <MappingForm
+                adapterId={selectedNode.data.id}
+                adapterType={selectedNode?.data.type}
+                onSubmit={handleClose}
+                useManager={manager}
+                type={type}
+                showNativeWidgets={showNativeWidgets}
+              />
+            </>
           )}
         </DrawerBody>
         <DrawerFooter>

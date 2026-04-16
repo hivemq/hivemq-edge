@@ -2,7 +2,7 @@ import type { UseFormReturn, FieldValues } from 'react-hook-form'
 import type { IdSchema } from '@rjsf/utils'
 import type { Adapter, ProtocolAdapter } from '@/api/__generated__'
 import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
-import type { Dispatch, SetStateAction } from 'react'
+import type { Dispatch, ReactNode, SetStateAction } from 'react'
 
 export type SubscriptionType = 'remoteSubscriptions' | 'localSubscriptions'
 
@@ -37,11 +37,19 @@ export interface AdapterNavigateState {
 
 export type AdapterConfig = NonNullable<Adapter['config']>
 
+export interface ExtraTab {
+  id: string
+  title: string
+  content: ReactNode
+}
+
 export interface AdapterContext {
   // TODO[NVL] Is that good enough for ANY form data?
   onBatchUpload?: (idSchema: IdSchema<unknown>, batch: Record<string, unknown>[]) => void
   isEditAdapter: boolean
   isDiscoverable: boolean
+  isBrowsable?: boolean
+  extraTabs?: ExtraTab[]
   adapterType?: string
   adapterId?: string
 }

@@ -177,6 +177,9 @@ dependencies {
 
     implementation(libs.jakarta.annotation.api)
 
+    // CSV
+    implementation(libs.apache.commons.csv)
+
     // common
     implementation(libs.apache.commons.io)
     implementation(libs.apache.commons.lang)
@@ -207,6 +210,7 @@ dependencies {
     implementation(libs.jackson.databind)
     implementation(libs.jackson.databind.nullable)
     implementation(libs.jackson.dataformat.xml)
+    implementation(libs.jackson.dataformat.yaml)
 
     // Open API
     implementation(libs.swagger.annotations)
@@ -237,8 +241,10 @@ dependencies {
     compileOnly("com.hivemq:hivemq-edge-module-modbus")
     compileOnly("com.hivemq:hivemq-edge-module-mtconnect")
     compileOnly("com.hivemq:hivemq-edge-module-databases")
-    compileOnly("com.hivemq:hivemq-edge-module-opcua")
     compileOnly("com.hivemq:hivemq-edge-module-file")
+    // hivemq-edge-module-opcua: NOT listed here because opcua has compileOnly on core (for browse types),
+    // and bidirectional compileOnly creates a Gradle task cycle. OPC UA module is still included in the
+    // distribution — the dependency direction is opcua -> core, not core -> opcua.
 
     // FIXME: should be in module instead
     // we need better module isolation for that as the modules pick up Netty from the app class loader
@@ -406,6 +412,10 @@ val hivemqZip by tasks.registering(Zip::class) {
     from("src/main/resources/config.xml") { into("conf") }
     from(tasks.shadowJar) { into("bin").rename { "hivemq.jar" } }
     into(name)
+
+    filesMatching(listOf("**/bin/run.sh", "**/bin/init-script/hivemq")) {
+        permissions { unix("rwxr-xr-x") }
+    }
 }
 
 tasks.javadoc {

@@ -16,3 +16,7 @@ installLogsCollector({
   // filterLog: ({ message }) => message.includes('a11y error!'),
 })
 registerCypressGrep()
+
+Cypress.on('uncaught:exception', (err) => {
+  if (err.message.includes('ResizeObserver loop')) return false
+})

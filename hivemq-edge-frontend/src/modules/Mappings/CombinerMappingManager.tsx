@@ -75,25 +75,30 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
     if (wizardContext?.isWizardMode) {
       // Wizard mode: check for ghost node first, otherwise create phantom
       const ghostCombiner = nodes.find((n) => n.id.startsWith('ghost-combiner-'))
+      const selectedItems = wizardContext.selectedNodeIds
+        .map((nodeId) => {
+          const node = nodes.find((n) => n.id === nodeId)
+          if (!node) {
+            combinerLog(`Node not found: ${nodeId}`)
+            return null
+          }
+          const getType = (): EntityType => {
+            if (node.type === NodeTypes.ADAPTER_NODE) return EntityType.ADAPTER
+            if (node.type === NodeTypes.BRIDGE_NODE) return EntityType.BRIDGE
+            if (node.type === NodeTypes.DEVICE_NODE) return EntityType.DEVICE
+            if (node.type === NodeTypes.PULSE_NODE) return EntityType.PULSE_AGENT
+            return EntityType.EDGE_BROKER
+          }
+          // Use node.data.id (entity ID), not node.id (React Flow node ID)
+          return { id: node.data.id, type: getType() }
+        })
+        .filter((item): item is { id: string; type: EntityType } => item !== null)
+
+      const hasEdgeBroker = selectedItems.some((e) => e.id === IdStubs.EDGE_NODE && e.type === EntityType.EDGE_BROKER)
       const sources: EntityReferenceList = {
-        items: wizardContext.selectedNodeIds
-          .map((nodeId) => {
-            const node = nodes.find((n) => n.id === nodeId)
-            if (!node) {
-              combinerLog(`Node not found: ${nodeId}`)
-              return null
-            }
-            const getType = (): EntityType => {
-              if (node.type === NodeTypes.ADAPTER_NODE) return EntityType.ADAPTER
-              if (node.type === NodeTypes.BRIDGE_NODE) return EntityType.BRIDGE
-              if (node.type === NodeTypes.DEVICE_NODE) return EntityType.DEVICE
-              if (node.type === NodeTypes.PULSE_NODE) return EntityType.PULSE_AGENT
-              return EntityType.EDGE_BROKER
-            }
-            // Use node.data.id (entity ID), not node.id (React Flow node ID)
-            return { id: node.data.id, type: getType() }
-          })
-          .filter((item): item is { id: string; type: EntityType } => item !== null),
+        items: hasEdgeBroker
+          ? selectedItems
+          : [...selectedItems, { id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER }],
       }
 
       if (ghostCombiner) {

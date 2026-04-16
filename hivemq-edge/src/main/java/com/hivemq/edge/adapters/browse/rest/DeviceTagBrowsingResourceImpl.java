@@ -1,0 +1,319 @@
+/*
+ * Copyright 2019-present HiveMQ GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.hivemq.edge.adapters.browse.rest;
+
+import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.api.AbstractApi;
+import com.hivemq.edge.adapters.browse.BrowseException;
+import com.hivemq.edge.adapters.browse.BrowsedNode;
+import com.hivemq.edge.adapters.browse.BulkTagBrowser;
+import com.hivemq.edge.adapters.browse.file.DeviceTagCsvSerializer;
+import com.hivemq.edge.adapters.browse.file.DeviceTagJsonSerializer;
+import com.hivemq.edge.adapters.browse.file.DeviceTagYamlSerializer;
+import com.hivemq.edge.adapters.browse.importer.DeviceTagImporter;
+import com.hivemq.edge.adapters.browse.importer.DeviceTagImporterException;
+import com.hivemq.edge.adapters.browse.model.DeviceTagRow;
+import com.hivemq.edge.adapters.browse.model.ImportMode;
+import com.hivemq.edge.adapters.browse.model.ImportResult;
+import com.hivemq.edge.adapters.browse.validate.ValidationError;
+import com.hivemq.edge.api.DeviceTagBrowsingApi;
+import com.hivemq.protocols.ProtocolAdapterManager;
+import com.hivemq.protocols.ProtocolAdapterWrapper;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+@Singleton
+public class DeviceTagBrowsingResourceImpl extends AbstractApi implements DeviceTagBrowsingApi {
+
+    private static final @NotNull String MEDIA_TYPE_CSV = "text/csv";
+    private static final @NotNull String MEDIA_TYPE_YAML = "application/yaml";
+
+    private final @NotNull ProtocolAdapterManager protocolAdapterManager;
+    private final @NotNull DeviceTagCsvSerializer csvSerializer;
+    private final @NotNull DeviceTagJsonSerializer jsonSerializer;
+    private final @NotNull DeviceTagYamlSerializer yamlSerializer;
+    private final @NotNull DeviceTagImporter importer;
+    private final @NotNull ObjectMapper objectMapper;
+
+    @Inject
+    public DeviceTagBrowsingResourceImpl(
+            final @NotNull ProtocolAdapterManager protocolAdapterManager,
+            final @NotNull DeviceTagCsvSerializer csvSerializer,
+            final @NotNull DeviceTagJsonSerializer jsonSerializer,
+            final @NotNull DeviceTagYamlSerializer yamlSerializer,
+            final @NotNull DeviceTagImporter importer,
+            final @NotNull ObjectMapper objectMapper) {
+        this.protocolAdapterManager = protocolAdapterManager;
+        this.csvSerializer = csvSerializer;
+        this.jsonSerializer = jsonSerializer;
+        this.yamlSerializer = yamlSerializer;
+        this.importer = importer;
+        this.objectMapper = objectMapper;
+    }
+
+    private @NotNull String resolveFormat() {
+        final String accept = headers != null ? headers.getHeaderString("Accept") : null;
+        if (accept == null || accept.isEmpty()) {
+            return MEDIA_TYPE_CSV;
+        }
+        // Walk the comma-separated Accept header and return the first recognised MIME type.
+        // Quality parameters (";q=0.9") are stripped before matching. Wildcard (*/*) falls
+        // through to the CSV default. Unrecognised types are skipped.
+        int start = 0;
+        while (start < accept.length()) {
+            final int comma = accept.indexOf(',', start);
+            final String token = (comma == -1 ? accept.substring(start) : accept.substring(start, comma)).strip();
+            final int semicolon = token.indexOf(';');
+            final String mediaType = (semicolon == -1 ? token : token.substring(0, semicolon)).strip();
+            if (mediaType.equalsIgnoreCase(APPLICATION_JSON)) {
+                return APPLICATION_JSON;
+            } else if (mediaType.equalsIgnoreCase(MEDIA_TYPE_YAML)) {
+                return MEDIA_TYPE_YAML;
+            } else if (mediaType.equalsIgnoreCase(MEDIA_TYPE_CSV)) {
+                return MEDIA_TYPE_CSV;
+            } else if (mediaType.equals("*/*")) {
+                return MEDIA_TYPE_CSV;
+            }
+            if (comma == -1) {
+                break;
+            }
+            start = comma + 1;
+        }
+        return MEDIA_TYPE_CSV;
+    }
+
+    @Override
+    public @NotNull Response browseDeviceTags(
+            final @NotNull String adapterId, final @Nullable String rootId, final @Nullable Integer maxDepth) {
+        // Lookup adapter
+        final Optional<ProtocolAdapterWrapper> wrapperOpt =
+                protocolAdapterManager.getProtocolAdapterWrapperByAdapterId(adapterId);
+        if (wrapperOpt.isEmpty()) {
+            return errorResponse(Response.Status.NOT_FOUND, "Adapter '" + adapterId + "' not found");
+        }
+        final ProtocolAdapter adapter = wrapperOpt.get().getAdapter();
+        if (!(adapter instanceof final BulkTagBrowser browser)) {
+            return errorResponse(
+                    Response.Status.CONFLICT, "Adapter '" + adapterId + "' does not support bulk tag browsing");
+        }
+
+        // Browse
+        if (maxDepth != null && maxDepth < 0) {
+            return errorResponse(Response.Status.BAD_REQUEST, "maxDepth must be >= 0 (0 = unlimited)");
+        }
+        final int depth = maxDepth != null ? maxDepth : 0;
+        final Stream<BrowsedNode> nodes;
+        try {
+            nodes = browser.browse(rootId, depth);
+        } catch (final BrowseException e) {
+            logger.warn("Browse failed for adapter '{}': {}", adapterId, e.getMessage(), e);
+            if (e.getMessage() != null
+                    && e.getMessage().toLowerCase(Locale.ROOT).contains("timed out")) {
+                return errorResponse(Response.Status.GATEWAY_TIMEOUT, e.getMessage());
+            }
+            return errorResponse(Response.Status.CONFLICT, e.getMessage() != null ? e.getMessage() : "Browse failed");
+        }
+
+        // Lazy mapping: DeviceTagRow objects are created one-at-a-time during serialization,
+        // avoiding a second fully-materialized list alongside the BrowsedNode list.
+        final Iterable<DeviceTagRow> rows =
+                () -> nodes.map(DeviceTagRow::fromBrowsedNode).iterator();
+
+        // Determine output format and stream directly to the HTTP response.
+        // Attribute reads happen lazily as the stream is consumed during serialization.
+        // UncheckedBrowseException may be thrown if a batch read fails mid-stream.
+        final String resolvedFormat = resolveFormat();
+        final String extension;
+        final String mediaType;
+        final StreamingOutput stream;
+        switch (resolvedFormat) {
+            case APPLICATION_JSON -> {
+                stream = output -> serializeSafely(() -> jsonSerializer.serialize(rows, output), adapterId);
+                extension = "json";
+                mediaType = APPLICATION_JSON;
+            }
+            case MEDIA_TYPE_YAML -> {
+                stream = output -> serializeSafely(() -> yamlSerializer.serialize(rows, output), adapterId);
+                extension = "yaml";
+                mediaType = MEDIA_TYPE_YAML;
+            }
+            default -> {
+                stream = output -> serializeSafely(() -> csvSerializer.serialize(rows, output), adapterId);
+                extension = "csv";
+                mediaType = MEDIA_TYPE_CSV;
+            }
+        }
+        return Response.ok(stream, mediaType)
+                .header(
+                        "Content-Disposition",
+                        "attachment; filename=\"" + adapterId + "-device-tags." + extension + "\"")
+                .build();
+    }
+
+    @Override
+    public @NotNull Response importDeviceTags(
+            final @NotNull String adapterId,
+            final @NotNull File body,
+            final @Nullable String mode,
+            final @Nullable Boolean validateNodes) {
+        // Lookup adapter
+        final Optional<ProtocolAdapterWrapper> wrapperOpt =
+                protocolAdapterManager.getProtocolAdapterWrapperByAdapterId(adapterId);
+        if (wrapperOpt.isEmpty()) {
+            return errorResponse(Response.Status.NOT_FOUND, "Adapter '" + adapterId + "' not found");
+        }
+
+        // Parse mode
+        final String modeStr = mode != null ? mode : "MERGE_SAFE";
+        final ImportMode importMode;
+        try {
+            importMode = ImportMode.valueOf(modeStr);
+        } catch (final IllegalArgumentException e) {
+            return errorResponse(
+                    Response.Status.BAD_REQUEST,
+                    "Invalid import mode '" + modeStr
+                            + "'. Valid values: CREATE, DELETE, OVERWRITE, MERGE_SAFE, MERGE_OVERWRITE");
+        }
+
+        // Read body bytes from the File provided by JAX-RS
+        final byte[] bodyBytes;
+        try {
+            bodyBytes = Files.readAllBytes(body.toPath());
+        } catch (final IOException e) {
+            logger.warn("Failed to read import file for adapter '{}'", adapterId, e);
+            return errorResponse(Response.Status.BAD_REQUEST, "Failed to read file: " + e.getMessage());
+        }
+
+        // Deserialize body based on Content-Type
+        final String contentType = headers != null ? headers.getHeaderString("Content-Type") : "";
+        final List<DeviceTagRow> rows;
+        try {
+            final String ct = contentType != null ? contentType.toLowerCase(Locale.ROOT) : "";
+            // Reject explicitly declared non-UTF-8 charsets to prevent silent mojibake
+            if (ct.contains("charset=") && !ct.contains("charset=utf-8")) {
+                return errorResponse(
+                        Response.Status.UNSUPPORTED_MEDIA_TYPE,
+                        "Only UTF-8 encoding is supported. Remove the charset parameter or use charset=utf-8.");
+            }
+            if (ct.contains("json")) {
+                rows = jsonSerializer.deserialize(bodyBytes);
+            } else if (ct.contains("yaml")) {
+                rows = yamlSerializer.deserialize(bodyBytes);
+            } else if (ct.contains("csv") || ct.contains("text")) {
+                rows = csvSerializer.deserialize(bodyBytes);
+            } else {
+                return Response.status(Response.Status.UNSUPPORTED_MEDIA_TYPE)
+                        .entity(errorBody(
+                                "Unsupported Content-Type",
+                                "Supported types: text/csv, application/json, application/yaml"))
+                        .type(APPLICATION_JSON)
+                        .build();
+            }
+        } catch (final Exception e) {
+            logger.warn("Failed to parse import file for adapter '{}'", adapterId, e);
+            return errorResponse(Response.Status.BAD_REQUEST, "Failed to parse file: " + e.getMessage());
+        }
+
+        // Obtain BulkTagBrowser for namespace resolution (if adapter supports it)
+        final ProtocolAdapter adapter = wrapperOpt.get().getAdapter();
+        final BulkTagBrowser browser = adapter instanceof BulkTagBrowser b ? b : null;
+
+        // Perform import
+        try {
+            final ImportResult result = importer.doImport(rows, importMode, adapterId, browser);
+            return Response.ok(objectMapper.writeValueAsString(result), APPLICATION_JSON)
+                    .build();
+        } catch (final DeviceTagImporterException e) {
+            return validationErrorResponse(e.getErrors());
+        } catch (final Exception e) {
+            logger.error("Import failed for adapter '{}'", adapterId, e);
+            return errorResponse(Response.Status.INTERNAL_SERVER_ERROR, "Import failed: " + e.getMessage());
+        }
+    }
+
+    private @NotNull Response errorResponse(final @NotNull Response.Status status, final @NotNull String detail) {
+        return Response.status(status)
+                .entity(errorBody(status.getReasonPhrase(), detail))
+                .type(APPLICATION_JSON)
+                .build();
+    }
+
+    private @NotNull Response validationErrorResponse(final @NotNull List<ValidationError> errors) {
+        final Map<String, Object> body = new LinkedHashMap<>();
+        body.put("title", "Validation Failed");
+        body.put("detail", errors.size() + " validation error(s) found");
+        body.put("errors", errors);
+        try {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(objectMapper.writeValueAsString(body))
+                    .type(APPLICATION_JSON)
+                    .build();
+        } catch (final Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("{\"title\":\"Validation Failed\"}")
+                    .type(APPLICATION_JSON)
+                    .build();
+        }
+    }
+
+    /**
+     * Runs a serialization action, translating any {@code UncheckedBrowseException} (thrown by the
+     * lazy batch-reading spliterator) into an {@link IOException} so the JAX-RS container can handle it.
+     */
+    private void serializeSafely(final @NotNull IORunnable action, final @NotNull String adapterId) throws IOException {
+        try {
+            action.run();
+        } catch (final RuntimeException e) {
+            // UncheckedBrowseException is thrown by the lazy attribute-reading spliterator when
+            // an OPC-UA batch read fails mid-stream.  We check by class name to avoid a compile-time
+            // dependency on the OPC UA module for this single exception type.
+            if ("UncheckedBrowseException".equals(e.getClass().getSimpleName())) {
+                logger.error("Attribute read failed during browse serialization for adapter '{}'", adapterId, e);
+                throw new IOException("Browse serialization failed: " + e.getMessage(), e);
+            }
+            throw e;
+        }
+    }
+
+    @FunctionalInterface
+    private interface IORunnable {
+        void run() throws IOException;
+    }
+
+    private @NotNull String errorBody(final @NotNull String title, final @NotNull String detail) {
+        try {
+            return objectMapper.writeValueAsString(Map.of("title", title, "detail", detail));
+        } catch (final Exception e) {
+            return "{\"title\":\"Error\",\"detail\":\"Internal error generating response\"}";
+        }
+    }
+}

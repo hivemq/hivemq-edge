@@ -21,7 +21,6 @@ import com.hivemq.pulse.asset.Asset;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-@SuppressWarnings("EqualsIncompatibleType")
 public class PulseAssetEntityTest {
     @Test
     public void whenAllPropertiesAreIdentical_thenEqualsReturnsTrue() {
@@ -39,7 +38,7 @@ public class PulseAssetEntityTest {
                 "Test Asset",
                 "This is a test asset",
                 "{ \"type\": \"object\" }");
-        assertThat(asset1.equals(asset2)).isTrue();
+        assertThat(asset1.matchesRemoteAsset(asset2)).isTrue();
     }
 
     @Test
@@ -58,7 +57,7 @@ public class PulseAssetEntityTest {
                 "Test Asset",
                 "This is a test asset",
                 "{\"b\":2,\"a\":1}");
-        assertThat(asset1.equals(asset2)).isTrue();
+        assertThat(asset1.matchesRemoteAsset(asset2)).isTrue();
     }
 
     @Test
@@ -77,7 +76,7 @@ public class PulseAssetEntityTest {
                 "Test Asset",
                 "This is a test asset",
                 "{\"a\":1,\"b\":2}");
-        assertThat(asset1.equals(asset2)).isFalse();
+        assertThat(asset1.matchesRemoteAsset(asset2)).isFalse();
     }
 
     @Test
@@ -96,7 +95,7 @@ public class PulseAssetEntityTest {
                 "Test Asset 2",
                 "This is a test asset",
                 "{\"a\":1,\"b\":2}");
-        assertThat(asset1.equals(asset2)).isFalse();
+        assertThat(asset1.matchesRemoteAsset(asset2)).isFalse();
     }
 
     @Test
@@ -115,7 +114,7 @@ public class PulseAssetEntityTest {
                 "Test Asset",
                 "This is another test asset",
                 "{\"a\":1,\"b\":2}");
-        assertThat(asset1.equals(asset2)).isFalse();
+        assertThat(asset1.matchesRemoteAsset(asset2)).isFalse();
     }
 
     @Test
@@ -134,6 +133,6 @@ public class PulseAssetEntityTest {
                 "Test Asset",
                 "This is a test asset",
                 "{\"a\":1,\"b\":2}");
-        assertThat(asset1.equals(asset2)).isFalse();
+        assertThat(asset1.matchesRemoteAsset(asset2)).isFalse();
     }
 }
