@@ -181,12 +181,10 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
       .filter((n) => [NodeTypes.ADAPTER_NODE, NodeTypes.BRIDGE_NODE, NodeTypes.EDGE_NODE].includes(n.type as NodeTypes))
       .map((n) => {
         const entityId = n.type === NodeTypes.EDGE_NODE ? n.id : ((n.data as { id?: string }).id ?? n.id)
-        const type =
-          n.type === NodeTypes.ADAPTER_NODE
-            ? EntityType.ADAPTER
-            : n.type === NodeTypes.BRIDGE_NODE
-              ? EntityType.BRIDGE
-              : EntityType.EDGE_BROKER
+        let type: EntityType
+        if (n.type === NodeTypes.ADAPTER_NODE) type = EntityType.ADAPTER
+        else if (n.type === NodeTypes.BRIDGE_NODE) type = EntityType.BRIDGE
+        else type = EntityType.EDGE_BROKER
         const label = n.type === NodeTypes.EDGE_NODE ? 'HiveMQ Edge' : ((n.data as { name?: string }).name ?? entityId)
         return { id: entityId, type, label }
       })
