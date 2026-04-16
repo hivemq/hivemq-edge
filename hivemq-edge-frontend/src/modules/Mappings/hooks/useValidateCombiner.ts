@@ -48,17 +48,16 @@ export const useValidateCombiner = (
 
   // TODO[NVL] This is a duplicate from CombinedSchemaLoader; refactor
   const allReferences = useMemo<DataReference[]>(() => {
-    const dataSources = entities.filter((e) => e.type === EntityType.ADAPTER || e.type === EntityType.EDGE_BROKER)
     return queries?.reduce<DataReference[]>((acc, cur, currentIndex) => {
       const firstItem = cur.data?.items?.[0]
       if (!firstItem) return acc
 
       if ((firstItem as DomainTag).name) {
-        // This is a domain tag
+        // This is a domain tag. queries[i] corresponds to entities[i] directly — no filtered-index mismatch.
         const tagDataReferences = (cur.data?.items as DomainTag[]).map<DataReference>((tag) => ({
           id: tag.name,
           type: DataIdentifierReference.type.TAG,
-          scope: dataSources?.[currentIndex]?.id,
+          scope: entities[currentIndex]?.id,
         }))
         acc.push(...tagDataReferences)
       } else if ((firstItem as TopicFilter).topicFilter) {
