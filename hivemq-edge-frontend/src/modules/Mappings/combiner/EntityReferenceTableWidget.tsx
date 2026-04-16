@@ -43,6 +43,8 @@ export const EntityReferenceTableWidget = (
         toast({
           status: 'warning',
           title: t('combiner.schema.sources.table.deleteDisabledReason'),
+          duration: 3000,
+          isClosable: true,
         })
         return
       }
