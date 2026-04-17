@@ -3,6 +3,7 @@ import { type RJSFSchema, type UiSchema } from '@rjsf/utils'
 import type { AlertProps } from '@chakra-ui/react'
 import type {
   ApiError,
+  Combiner,
   DataIdentifierReference,
   DomainTagList,
   EntityReference,
@@ -119,4 +120,27 @@ export interface CombinerContext {
    * @deprecated Use entityQueries instead. Kept for backward compatibility during migration.
    */
   entities?: EntityReference[]
+
+  /**
+   * All workspace entities that are not yet in the combiner's sources, available to be added.
+   */
+  availableEntities?: AvailableEntity[]
+
+  /**
+   * Callback for when the user adds or removes a source entity in the Sources tab.
+   * Updating this triggers a live refresh of entity queries and the Mapping tab's integration point selectors.
+   */
+  onSourcesChange?: (sources: EntityReference[]) => void
+
+  /**
+   * The full combiner form data, used by EntityReferenceTableWidget to check
+   * whether a source is referenced by any mapping instruction before allowing deletion.
+   */
+  combiner?: Combiner
+}
+
+export interface AvailableEntity {
+  id: string
+  type: EntityReference['type']
+  label: string
 }

@@ -12,7 +12,7 @@ import './reactflow-chakra.fix.css'
 
 import MiniMap from '@/components/react-flow/MiniMap.tsx'
 import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
-import { EdgeTypes, IdStubs, NodeTypes } from '@/modules/Workspace/types.ts'
+import { EdgeTypes, NodeTypes } from '@/modules/Workspace/types.ts'
 import useGetFlowElements from '@/modules/Workspace/hooks/useGetFlowElements.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import StatusListener from '@/modules/Workspace/components/controls/StatusListener.tsx'
@@ -139,11 +139,10 @@ const ReactFlowWrapper = () => {
 
       // Check if node is selectable based on constraints
       const isGhost = node.data?.isGhost
-      const isEdgeNode = node.id === IdStubs.EDGE_NODE
 
-      if (isGhost || isEdgeNode) {
-        debugLog('🚫 Ghost or edge node - not selectable')
-        return // Can't select ghost or edge nodes
+      if (isGhost) {
+        debugLog('🚫 Ghost node - not selectable')
+        return // Can't select ghost nodes
       }
 
       // GROUP wizard specific: Check if node is already in a group

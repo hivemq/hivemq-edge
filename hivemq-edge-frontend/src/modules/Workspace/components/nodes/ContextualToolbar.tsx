@@ -22,7 +22,7 @@ import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
 import { ANIMATION } from '@/modules/Theme/utils.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import type { NodeAdapterType, NodeDeviceType } from '@/modules/Workspace/types.ts'
-import { NodeTypes } from '@/modules/Workspace/types.ts'
+import { IdStubs, NodeTypes } from '@/modules/Workspace/types.ts'
 import { createGroup, getGroupBounds } from '@/modules/Workspace/utils/group.utils.ts'
 import { gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { resetSelectedNodesState } from '@/modules/Workspace/utils/react-flow.utils.ts'
@@ -155,8 +155,11 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
   const onManageTransformationNode = () => {
     if (!selectedCombinerCandidates) return
 
-    // Build entity references from selected nodes
-    const entityReferences = buildEntityReferencesFromNodes(selectedCombinerCandidates)
+    // Include Edge Broker only if the user explicitly selected the Edge node.
+    // Filter it out of the candidates array — it has no data.id and is handled separately via includeEdgeBroker.
+    const hasEdgeNode = selectedNodes.some((n) => n.id === IdStubs.EDGE_NODE)
+    const nonEdgeCandidates = selectedCombinerCandidates.filter((n) => n.id !== IdStubs.EDGE_NODE)
+    const entityReferences = buildEntityReferencesFromNodes(nonEdgeCandidates, hasEdgeNode)
 
     // Check if a combiner with these exact sources already exists
     const existingCombiner = findExistingCombiner(nodes, entityReferences)
