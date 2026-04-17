@@ -51,6 +51,11 @@ public class OpcUaToJsonConverter {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaToJsonConverter.class);
 
     private static final @NotNull Base64.Encoder BASE_64 = Base64.getEncoder();
+    public static final String METADATA_STATUS_CODE = "statusCode";
+    public static final String METADATA_SOURCE_TIMESTAMP = "sourceTimestamp";
+    public static final String METADATA_SOURCE_PICOSECONDS = "sourcePicoseconds";
+    public static final String METADATA_SERVER_TIMESTAMP = "serverTimestamp";
+    public static final String METADATA_SERVER_PICOSECONDS = "serverPicoseconds";
 
     public static void convertPayload(
             final @NotNull EncodingContext serializationContext,
@@ -64,28 +69,26 @@ public class OpcUaToJsonConverter {
         }
         final var metadataBuilder = builder.startObjectMetadata();
         if (dataValue.getStatusCode().getValue() >= 0) {
-            populateStatusCode(metadataBuilder.startObject("statusCode"), dataValue.getStatusCode())
+            populateStatusCode(metadataBuilder.startObject(METADATA_STATUS_CODE), dataValue.getStatusCode())
                     .endObject();
         }
         if (dataValue.getSourceTime() != null) {
             metadataBuilder.put(
-                    "sourceTimestamp",
-                    DateTimeFormatter.ISO_INSTANT.format(
-                            dataValue.getSourceTime().getJavaInstant()));
+                    METADATA_SOURCE_TIMESTAMP, dataValue.getSourceTime().getUtcTime());
         }
         if (dataValue.getSourcePicoseconds() != null) {
             metadataBuilder.put(
-                    "sourcePicoseconds", dataValue.getSourcePicoseconds().intValue());
+                    METADATA_SOURCE_PICOSECONDS,
+                    dataValue.getSourcePicoseconds().intValue());
         }
         if (dataValue.getServerTime() != null) {
             metadataBuilder.put(
-                    "serverTimestamp",
-                    DateTimeFormatter.ISO_INSTANT.format(
-                            dataValue.getServerTime().getJavaInstant()));
+                    METADATA_SERVER_TIMESTAMP, dataValue.getServerTime().getUtcTime());
         }
         if (dataValue.getServerPicoseconds() != null) {
             metadataBuilder.put(
-                    "serverPicoseconds", dataValue.getServerPicoseconds().intValue());
+                    METADATA_SERVER_PICOSECONDS,
+                    dataValue.getServerPicoseconds().intValue());
         }
         metadataBuilder.endObject();
     }
