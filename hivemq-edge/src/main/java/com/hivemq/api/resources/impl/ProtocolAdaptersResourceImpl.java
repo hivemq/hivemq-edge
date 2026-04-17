@@ -33,7 +33,6 @@ import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
-import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.errors.BadRequestError;
 import com.hivemq.api.errors.ConfigWritingDisabled;
@@ -45,7 +44,6 @@ import com.hivemq.api.errors.adapters.AdapterNotFound403Error;
 import com.hivemq.api.errors.adapters.AdapterNotFoundError;
 import com.hivemq.api.errors.adapters.AdapterOperationNotSupportedError;
 import com.hivemq.api.errors.adapters.AdapterTypeNotFoundError;
-import com.hivemq.api.errors.adapters.AdapterTypeReadOnlyError;
 import com.hivemq.api.errors.adapters.DomainTagNotFoundError;
 import com.hivemq.api.errors.adapters.DuplicateTagError;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
@@ -719,13 +717,6 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
         final com.hivemq.adapter.sdk.api.ProtocolAdapter adapter =
                 maybeWrapper.get().getAdapter();
-        if (!(adapter instanceof WritingProtocolAdapter)) {
-            log.warn(
-                    "The Json Schema for an adapter '{}' was requested, which does not support writing to PLCs.",
-                    adapterId);
-            return errorResponse(new AdapterTypeReadOnlyError(
-                    "The adapter with id '" + adapterId + "' exists, but it does not support writing to PLCs."));
-        }
 
         final TagSchemaCreationOutputImpl tagSchemaCreationOutput = new TagSchemaCreationOutputImpl();
         adapter.createTagSchema(new TagSchemaCreationInputImpl(decodedTagName), tagSchemaCreationOutput);
@@ -739,22 +730,25 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return errorResponse(new InternalServerError(null));
         } catch (final @NotNull ExecutionException e) {
             final Throwable cause = e.getCause();
+            final String message;
             if (cause == null) {
-                return errorResponse(new InternalServerError(null));
+                message = "unknown error";
+                ;
+            } else {
+                message = cause.getMessage();
             }
             return switch (tagSchemaCreationOutput.getStatus()) {
                 case NOT_SUPPORTED ->
-                    errorResponse(
-                            new AdapterOperationNotSupportedError("Operation not supported:" + cause.getMessage()));
+                    errorResponse(new AdapterOperationNotSupportedError("Operation not supported:" + message));
                 case ADAPTER_NOT_STARTED ->
-                    errorResponse(new AdapterOperationNotSupportedError("Adapter not started: " + cause.getMessage()));
+                    errorResponse(new AdapterOperationNotSupportedError("Adapter not started: " + message));
                 case TAG_NOT_FOUND -> errorResponse(new DomainTagNotFoundError(tagName));
                 default -> {
                     log.warn("Exception was raised during creation of json schema for writing to PLCs.");
                     if (log.isDebugEnabled()) {
                         log.debug("Original exception: ", e);
                     }
-                    yield errorResponse(new InternalServerError(null));
+                    yield errorResponse(new InternalServerError(message));
                 }
             };
         }
@@ -880,9 +874,14 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response updateAdapterSouthboundMappings(
             final @NotNull String adapterId, final @NotNull SouthboundMappingList southboundMappings) {
+
         return systemInformation.isConfigWriteable()
                 ? configExtractor
                         .getAdapterByAdapterId(adapterId)
+                        .filter(adapter -> protocolAdapterManager
+                                .getAdapterTypeById(adapter.getProtocolId())
+                                .map(type -> type.getCapabilities().contains(ProtocolAdapterCapability.WRITE))
+                                .orElse(false))
                         .map(updateAdapterSouthboundMappingsResponse(adapterId, southboundMappings))
                         .orElseGet(adapterNotFoundError(adapterId))
                 : errorResponse(new ConfigWritingDisabled());

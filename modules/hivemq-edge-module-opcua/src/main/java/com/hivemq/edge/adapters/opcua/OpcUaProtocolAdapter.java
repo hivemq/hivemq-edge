@@ -34,6 +34,10 @@ import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
+import com.hivemq.edge.adapters.browse.BrowseException;
+import com.hivemq.edge.adapters.browse.BrowsedNode;
+import com.hivemq.edge.adapters.browse.BulkTagBrowser;
+import com.hivemq.edge.adapters.opcua.browse.OpcUaNodeBrowser;
 import com.hivemq.edge.adapters.opcua.client.Failure;
 import com.hivemq.edge.adapters.opcua.client.ParsedConfig;
 import com.hivemq.edge.adapters.opcua.client.Success;
@@ -60,6 +64,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
@@ -70,7 +76,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
+public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrowser {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
@@ -98,6 +104,10 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     // Stored for reconnection - set during start()
     private volatile @Nullable ParsedConfig parsedConfig;
     private volatile @Nullable ModuleServices moduleServices;
+
+    // Last-known-good client reference for browse operations during adapter restarts.
+    // Set when a connection succeeds, cleared only on explicit stop (not during reconnect).
+    private final @NotNull AtomicReference<OpcUaClient> browseClient = new AtomicReference<>();
 
     // Flag to prevent scheduling after stop
     private volatile boolean stopped = false;
@@ -234,6 +244,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
             // Clear stored configuration to prevent reconnection after stop
             this.parsedConfig = null;
             this.moduleServices = null;
+            // Clear browse client on explicit stop
+            this.browseClient.set(null);
 
             final OpcUaClientConnection conn = opcUaClientConnection.getAndSet(null);
             if (conn != null) {
@@ -525,6 +537,57 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     }
 
     @Override
+    public @NotNull Stream<BrowsedNode> browse(final @Nullable String rootId, final int maxDepth)
+            throws BrowseException {
+        if (stopped) {
+            throw new BrowseException("Browse failed: Adapter has been stopped");
+        }
+        // Try primary connection first, fall back to last-known-good browse client snapshot.
+        // This allows browse to work during adapter restarts triggered by tag imports.
+        OpcUaClient client = null;
+        final OpcUaClientConnection conn = opcUaClientConnection.get();
+        if (conn != null) {
+            client = conn.client().orElse(null);
+        }
+        if (client == null) {
+            client = browseClient.get();
+        }
+        if (client == null) {
+            throw new BrowseException("Browse failed: Client not connected");
+        }
+        return new OpcUaNodeBrowser(client, adapterId).browse(rootId, maxDepth);
+    }
+
+    @Override
+    public @NotNull String resolveNodeId(final @NotNull String nodeId, final @Nullable String namespaceUri) {
+        if (namespaceUri == null || namespaceUri.isEmpty()) {
+            return nodeId;
+        }
+        // Try primary connection, fall back to browse client snapshot
+        OpcUaClient client = null;
+        final OpcUaClientConnection conn = opcUaClientConnection.get();
+        if (conn != null) {
+            client = conn.client().orElse(null);
+        }
+        if (client == null) {
+            client = browseClient.get();
+        }
+        if (client == null) {
+            return nodeId;
+        }
+        final NodeId parsed = NodeId.parseOrNull(nodeId);
+        if (parsed == null) {
+            return nodeId;
+        }
+        try {
+            return parsed.reindex(client.getNamespaceTable(), namespaceUri).toParseableString();
+        } catch (final Exception e) {
+            log.debug("Could not resolve namespace URI '{}' for nodeId '{}': {}", namespaceUri, nodeId, e.getMessage());
+            return nodeId;
+        }
+    }
+
+    @Override
     public void write(final @NotNull WritingInput input, final @NotNull WritingOutput output) {
         if (stopped) {
             log.debug("Write operation skipped for adapter '{}' - adapter has been stopped", adapterId);
@@ -589,15 +652,15 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
     public void createTagSchema(
             final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
         if (stopped) {
-            log.debug("Create tag schema operation skipped for adapter '{}' - adapter has been stopped", adapterId);
-            output.fail("Create tag schema failed: Adapter has been stopped");
+            log.debug("Create tag schema operation skipped for adapter '{}' - adapter is not started", adapterId);
+            output.adapterNotStarted();
             return;
         }
         final String tagName = input.getTagName();
         final OpcuaTag tag = tagNameToTag.get(tagName);
         if (tag == null) {
             log.error("Cannot create schema for non-existent tag '{}'", tagName);
-            output.fail("Tag '" + tagName + "' not found.");
+            output.tagNotFound("Tag '" + tagName + "' not found.");
             return;
         }
 
@@ -609,26 +672,17 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
         conn.client()
                 .ifPresentOrElse(
                         client -> {
+                            final var generator = new JsonSchemaGenerator(client);
                             @SuppressWarnings("unused")
-                            final var unused = new JsonSchemaGenerator(client)
-                                    .createMqttPayloadJsonSchema(tag)
-                                    .whenComplete((result, throwable) -> {
-                                        if (throwable == null) {
-                                            result.ifPresentOrElse(
-                                                    schema -> {
-                                                        log.debug("Schema inferred for tag='{}'", tagName);
-                                                        output.finish(schema);
-                                                    },
-                                                    () -> {
-                                                        log.error("No schema inferred for tag='{}'", tagName);
-                                                        output.fail("No schema inferred for tag='" + tagName + "'");
-                                                    });
-                                        } else {
-                                            log.error(
-                                                    "Exception while creating tag schema for '{}'", tagName, throwable);
-                                            output.fail(throwable, null);
-                                        }
-                                    });
+                            final var unused = generator.collectTypeInfo(tag).whenComplete((fieldInfo, throwable) -> {
+                                if (throwable == null) {
+                                    log.debug("Schema inferred for tag='{}'", tagName);
+                                    output.finish(JsonSchemaGenerator.buildSchema(fieldInfo));
+                                } else {
+                                    log.error("Exception while creating tag schema for '{}'", tagName, throwable);
+                                    output.fail(throwable, null);
+                                }
+                            });
                         },
                         () -> {
                             log.error("Discovery failed: Client not connected or not initialized");
@@ -672,6 +726,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter {
                     lastReconnectTimestamp.set(System.currentTimeMillis());
                     if (success && throwable == null) {
                         reconnectAttempts.set(0);
+                        // Update browse client snapshot so browse works during future restarts
+                        conn.client().ifPresent(browseClient::set);
                         // Connection succeeded - cancel any pending retries and start health check
                         cancelRetry();
                         scheduleHealthCheck();

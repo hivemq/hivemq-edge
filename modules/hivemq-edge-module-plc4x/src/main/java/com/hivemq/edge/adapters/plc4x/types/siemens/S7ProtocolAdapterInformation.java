@@ -98,7 +98,7 @@ public class S7ProtocolAdapterInformation implements ProtocolAdapterInformation 
 
     @Override
     public @NotNull EnumSet<ProtocolAdapterCapability> getCapabilities() {
-        return EnumSet.of(ProtocolAdapterCapability.READ);
+        return EnumSet.of(ProtocolAdapterCapability.READ, ProtocolAdapterCapability.COMBINE);
     }
 
     @Override

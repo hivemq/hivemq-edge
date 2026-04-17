@@ -87,6 +87,7 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import org.apache.commons.io.FileUtils;
+import org.glassfish.jaxb.runtime.v2.runtime.IllegalAnnotationsException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -140,7 +141,11 @@ public class ConfigFileReaderWriter {
                     .build()
                     .toArray(new Class<?>[0]));
         } catch (final Throwable e) {
-            log.error("Cannot create the jaxb context:", e);
+            if (e instanceof IllegalAnnotationsException iae) {
+                log.error("Cannot create the jaxb context: {}", iae.getErrors(), e);
+            } else {
+                log.error("Cannot create the jaxb context", e);
+            }
             throw new UnrecoverableException(false);
         }
     }

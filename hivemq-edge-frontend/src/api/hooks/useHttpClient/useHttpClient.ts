@@ -11,7 +11,7 @@ import type { ApiRequestOptions } from '@/api/__generated__/core/ApiRequestOptio
 import { request as __request } from '@/api/__generated__/core/request.ts'
 import { useAuth } from '@/modules/Auth/hooks/useAuth.ts'
 
-const axiosInstance = axios.create()
+export const axiosInstance = axios.create()
 
 export class AxiosHttpRequestWithInterceptors extends BaseHttpRequest {
   constructor(config: OpenAPIConfig) {

@@ -19,6 +19,7 @@ import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.UUID;
+import org.eclipse.milo.opcua.sdk.core.types.DynamicEnumType;
 import org.eclipse.milo.opcua.sdk.core.types.DynamicStructType;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
@@ -50,6 +51,11 @@ public class OpcUaToJsonConverter {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaToJsonConverter.class);
 
     private static final @NotNull Base64.Encoder BASE_64 = Base64.getEncoder();
+    public static final String METADATA_STATUS_CODE = "statusCode";
+    public static final String METADATA_SOURCE_TIMESTAMP = "sourceTimestamp";
+    public static final String METADATA_SOURCE_PICOSECONDS = "sourcePicoseconds";
+    public static final String METADATA_SERVER_TIMESTAMP = "serverTimestamp";
+    public static final String METADATA_SERVER_PICOSECONDS = "serverPicoseconds";
 
     public static void convertPayload(
             final @NotNull EncodingContext serializationContext,
@@ -63,28 +69,26 @@ public class OpcUaToJsonConverter {
         }
         final var metadataBuilder = builder.startObjectMetadata();
         if (dataValue.getStatusCode().getValue() >= 0) {
-            populateStatusCode(metadataBuilder.startObject("statusCode"), dataValue.getStatusCode())
+            populateStatusCode(metadataBuilder.startObject(METADATA_STATUS_CODE), dataValue.getStatusCode())
                     .endObject();
         }
         if (dataValue.getSourceTime() != null) {
             metadataBuilder.put(
-                    "sourceTimestamp",
-                    DateTimeFormatter.ISO_INSTANT.format(
-                            dataValue.getSourceTime().getJavaInstant()));
+                    METADATA_SOURCE_TIMESTAMP, dataValue.getSourceTime().getUtcTime());
         }
         if (dataValue.getSourcePicoseconds() != null) {
             metadataBuilder.put(
-                    "sourcePicoseconds", dataValue.getSourcePicoseconds().intValue());
+                    METADATA_SOURCE_PICOSECONDS,
+                    dataValue.getSourcePicoseconds().intValue());
         }
         if (dataValue.getServerTime() != null) {
             metadataBuilder.put(
-                    "serverTimestamp",
-                    DateTimeFormatter.ISO_INSTANT.format(
-                            dataValue.getServerTime().getJavaInstant()));
+                    METADATA_SERVER_TIMESTAMP, dataValue.getServerTime().getUtcTime());
         }
         if (dataValue.getServerPicoseconds() != null) {
             metadataBuilder.put(
-                    "serverPicoseconds", dataValue.getServerPicoseconds().intValue());
+                    METADATA_SERVER_PICOSECONDS,
+                    dataValue.getServerPicoseconds().intValue());
         }
         metadataBuilder.endObject();
     }
@@ -412,6 +416,14 @@ public class OpcUaToJsonConverter {
             }
         } else if (value instanceof final DiagnosticInfo info) {
             populateDiagnosticInfo(arr.startObject(), info).endObject();
+        } else if (value instanceof final DynamicEnumType enumValue) {
+            final var nested = arr.startObject();
+            final String name = enumValue.getName();
+            if (name != null) {
+                nested.put("name", name);
+            }
+            nested.put("value", enumValue.getValue());
+            nested.endObject();
         } else if (value instanceof final DynamicStructType struct) {
             final var nested = arr.startObject();
             struct.getMembers().forEach((k, v) -> addValueToObject(nested, k, v, ctx));

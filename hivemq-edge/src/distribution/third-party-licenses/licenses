@@ -9,16 +9,16 @@ HiveMQ Edge uses the following third party libraries:
  ch.qos.logback:logback-core                                                | 1.5.32                                    | EPL-2.0       | https://spdx.org/licenses/EPL-2.0.html
  com.ethlo.time:itu                                                         | 1.14.0                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  com.fasterxml.jackson.core:jackson-annotations                             | 2.21                                      | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- com.fasterxml.jackson.core:jackson-core                                    | 2.21.0                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- com.fasterxml.jackson.core:jackson-databind                                | 2.21.0                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- com.fasterxml.jackson.dataformat:jackson-dataformat-xml                    | 2.21.0                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- com.fasterxml.jackson.dataformat:jackson-dataformat-yaml                   | 2.21.0                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- com.fasterxml.jackson.datatype:jackson-datatype-jdk8                       | 2.21.0                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- com.fasterxml.jackson.datatype:jackson-datatype-jsr310                     | 2.21.0                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-base                   | 2.21.0                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-json-provider          | 2.21.0                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- com.fasterxml.jackson.module:jackson-module-jakarta-xmlbind-annotations    | 2.21.0                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- com.fasterxml.jackson:jackson-bom                                          | 2.21.0                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.fasterxml.jackson.core:jackson-core                                    | 2.21.1                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.fasterxml.jackson.core:jackson-databind                                | 2.21.1                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.fasterxml.jackson.dataformat:jackson-dataformat-xml                    | 2.21.1                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.fasterxml.jackson.dataformat:jackson-dataformat-yaml                   | 2.21.1                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.fasterxml.jackson.datatype:jackson-datatype-jdk8                       | 2.21.1                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.fasterxml.jackson.datatype:jackson-datatype-jsr310                     | 2.21.1                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-base                   | 2.21.1                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-json-provider          | 2.21.1                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.fasterxml.jackson.module:jackson-module-jakarta-xmlbind-annotations    | 2.21.1                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.fasterxml.jackson:jackson-bom                                          | 2.21.1                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  com.fasterxml.woodstox:woodstox-core                                       | 7.1.1                                     | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  com.fasterxml:classmate                                                    | 1.7.0                                     | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  com.github.simon622.mqtt-sn:mqtt-sn-codec                                  | 838f51d691                                | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
@@ -39,6 +39,7 @@ HiveMQ Edge uses the following third party libraries:
  com.sun.istack:istack-commons-runtime                                      | 4.1.2                                     | BSD-3-Clause  | https://spdx.org/licenses/BSD-3-Clause.html
  com.sun.xml.bind:jaxb-impl                                                 | 2.3.9                                     | BSD-3-Clause  | https://spdx.org/licenses/BSD-3-Clause.html
  com.unboundid:unboundid-ldapsdk                                            | 7.0.4                                     | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ commons-codec:commons-codec                                                | 1.17.1                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  commons-io:commons-io                                                      | 2.21.0                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  io.dropwizard.metrics:metrics-bom                                          | 4.2.38                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  io.dropwizard.metrics:metrics-core                                         | 4.2.38                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
@@ -79,6 +80,7 @@ HiveMQ Edge uses the following third party libraries:
  net.minidev:accessors-smart                                                | 2.6.0                                     | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  net.minidev:json-smart                                                     | 2.6.0                                     | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  net.openhft:zero-allocation-hashing                                        | 0.27ea1                                   | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ org.apache.commons:commons-csv                                             | 1.12.0                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  org.apache.commons:commons-lang3                                           | 3.20.0                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  org.bitbucket.b_c:jose4j                                                   | 0.9.6                                     | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  org.bouncycastle:bcpkix-jdk18on                                            | 1.83                                      | MIT           | https://www.bouncycastle.org/licence.html
@@ -115,7 +117,7 @@ HiveMQ Edge uses the following third party libraries:
  org.reflections:reflections                                                | 0.10.2                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  org.slf4j:jul-to-slf4j                                                     | 2.0.17                                    | MIT           | https://spdx.org/licenses/MIT.html
  org.slf4j:slf4j-api                                                        | 2.0.17                                    | MIT           | https://spdx.org/licenses/MIT.html
- org.yaml:snakeyaml                                                         | 2.4                                       | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ org.yaml:snakeyaml                                                         | 2.5                                       | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 The open source code of the libraries can be obtained by sending an email to legal@hivemq.com.
