@@ -209,7 +209,7 @@ const AssetMapperWizard: FC<AssetMapperWizardProps> = ({ assetId, isOpen, onClos
                     id: uuidv4(),
                     sources: {
                       // This is annoying, we should have the API to accept nullable
-                      primary: { id: '', type: DataIdentifierReference.type.TAG },
+                      primary: { id: '', type: DataIdentifierReference.type.TOPIC_FILTER },
                       tags: [],
                       topicFilters: [],
                     },
