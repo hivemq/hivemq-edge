@@ -346,9 +346,7 @@ public class JsonSchemaGenerator {
             if (fieldName == null) {
                 continue;
             }
-            final var prop = obj.property(fieldName)
-                    .readable(field.readable())
-                    .writable(field.writable());
+            final var prop = obj.property(fieldName).readable(field.readable()).writable(field.writable());
             if (field.required()) {
                 prop.required();
             }

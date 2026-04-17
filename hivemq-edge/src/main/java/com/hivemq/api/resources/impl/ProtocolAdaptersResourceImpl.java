@@ -732,14 +732,14 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             final Throwable cause = e.getCause();
             final String message;
             if (cause == null) {
-                message = "unknown error";;
+                message = "unknown error";
+                ;
             } else {
                 message = cause.getMessage();
             }
             return switch (tagSchemaCreationOutput.getStatus()) {
                 case NOT_SUPPORTED ->
-                    errorResponse(
-                            new AdapterOperationNotSupportedError("Operation not supported:" + message));
+                    errorResponse(new AdapterOperationNotSupportedError("Operation not supported:" + message));
                 case ADAPTER_NOT_STARTED ->
                     errorResponse(new AdapterOperationNotSupportedError("Adapter not started: " + message));
                 case TAG_NOT_FOUND -> errorResponse(new DomainTagNotFoundError(tagName));
