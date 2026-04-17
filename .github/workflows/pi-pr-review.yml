@@ -1,0 +1,508 @@
+name: pi pr review
+
+on:
+  pull_request:
+    types: [labeled]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number to review
+        required: true
+        type: number
+      post_comment:
+        description: Post or update PR comment with results
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: pi-review-${{ github.event.pull_request.number || github.event.issue.number || github.event.inputs.pr_number }}
+  cancel-in-progress: true
+
+jobs:
+  setup:
+    name: Setup
+    if: >-
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       startsWith(github.event.comment.body, '/review') &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)) ||
+      (github.event_name == 'pull_request' &&
+       !github.event.pull_request.draft &&
+       github.event.label.name == 'review')
+    runs-on: [pi]
+    outputs:
+      review-matrix: ${{ steps.parse.outputs.review-matrix }}
+      judge-model: ${{ steps.parse.outputs.judge-model }}
+      judge-thinking: ${{ steps.parse.outputs.judge-thinking }}
+    steps:
+      - name: Parse model config
+        id: parse
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          PI_REVIEW_MODELS: ${{ vars.PI_REVIEW_MODELS }}
+        with:
+          script: |
+            const defaultConfig = {
+              review: [
+                { model: 'openai/gpt-5.4', thinking: 'medium', label: 'gpt-5.4' },
+                { model: 'anthropic/claude-sonnet-4-6', thinking: 'medium', label: 'claude-sonnet-4.6' },
+                { model: 'openrouter/google/gemini-3.1-pro-preview', label: 'gemini-3.1-pro' },
+              ],
+              judge: { model: 'openai/gpt-5.4', thinking: 'medium' },
+            };
+
+            const raw = process.env.PI_REVIEW_MODELS;
+            if (!raw) {
+              core.warning('PI_REVIEW_MODELS is not set — using defaults');
+              core.setOutput('review-matrix', JSON.stringify(defaultConfig.review));
+              core.setOutput('judge-model', defaultConfig.judge.model);
+              core.setOutput('judge-thinking', defaultConfig.judge.thinking);
+              return;
+            }
+
+            let config;
+            try {
+              config = JSON.parse(raw);
+            } catch (e) {
+              core.setFailed(`PI_REVIEW_MODELS is not valid JSON: ${e.message}`);
+              return;
+            }
+
+            if (!Array.isArray(config.review) || config.review.length === 0) {
+              core.setFailed('PI_REVIEW_MODELS.review must be a non-empty array');
+              return;
+            }
+            for (const [i, entry] of config.review.entries()) {
+              if (!entry.model) {
+                core.setFailed(`PI_REVIEW_MODELS.review[${i}] is missing required field 'model'`);
+                return;
+              }
+              if (!entry.label) {
+                core.setFailed(`PI_REVIEW_MODELS.review[${i}] is missing required field 'label'`);
+                return;
+              }
+            }
+
+            if (!config.judge?.model) {
+              core.setFailed('PI_REVIEW_MODELS.judge.model is required');
+              return;
+            }
+
+            core.setOutput('review-matrix', JSON.stringify(config.review));
+            core.setOutput('judge-model', config.judge.model);
+            core.setOutput('judge-thinking', config.judge.thinking || '');
+
+  pi_review:
+    name: Pi Review (${{ matrix.label }})
+    if: >-
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       startsWith(github.event.comment.body, '/review') &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)) ||
+      (github.event_name == 'pull_request' &&
+       !github.event.pull_request.draft &&
+       github.event.label.name == 'review')
+    needs: [setup]
+    runs-on: [pi]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.setup.outputs.review-matrix) }}
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Resolve PR context
+        id: pr_context
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            let pr;
+
+            if (context.eventName === 'workflow_dispatch') {
+              const input = context.payload.inputs.pr_number;
+              const number = Number(input);
+
+              if (!Number.isInteger(number) || number <= 0) {
+                core.setFailed(`Invalid pr_number input: ${input}`);
+                return;
+              }
+
+              const { data } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: number,
+              });
+              pr = data;
+            } else if (context.eventName === 'issue_comment') {
+              const { data } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.issue.number,
+              });
+              pr = data;
+            } else {
+              pr = context.payload.pull_request;
+            }
+
+            core.setOutput('number', String(pr.number));
+            core.setOutput('title', pr.title);
+            core.setOutput('url', pr.html_url);
+            core.setOutput('base_ref', pr.base.ref);
+            core.setOutput('base_sha', pr.base.sha);
+            core.setOutput('head_ref', pr.head.ref);
+            core.setOutput('head_sha', pr.head.sha);
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: refs/pull/${{ steps.pr_context.outputs.number }}/merge
+          fetch-depth: 0
+
+      - name: Pre-fetch base and head refs
+        run: |
+          git fetch --no-tags origin \
+            ${{ steps.pr_context.outputs.base_ref }} \
+            +refs/pull/${{ steps.pr_context.outputs.number }}/head
+
+      - name: Ensure Node.js and Pi agent
+        run: |
+          if ! node --version 2>/dev/null | grep -q '^v24\.'; then
+            echo "Node 24 not found, installing via setup-node..."
+            echo "need_node=true" >> "$GITHUB_OUTPUT"
+          fi
+          command -v pi || echo "need_pi=true" >> "$GITHUB_OUTPUT"
+        id: deps
+
+      - name: Install Node.js
+        if: steps.deps.outputs.need_node == 'true'
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: 24
+
+      - name: Install Pi coding agent
+        if: steps.deps.outputs.need_pi == 'true'
+        run: sudo npm install -g @mariozechner/pi-coding-agent
+
+      - name: Print Pi version
+        run: pi --version
+
+      - name: Compute PR file list
+        run: |
+          git diff --name-status "$PR_BASE_SHA...$PR_HEAD_SHA" | tee pr-changed-files.txt
+        env:
+          PR_BASE_SHA: ${{ steps.pr_context.outputs.base_sha }}
+          PR_HEAD_SHA: ${{ steps.pr_context.outputs.head_sha }}
+
+      - name: Generate Pi review plan
+        id: generate_plan
+        run: |
+          set -o pipefail
+          {
+            cat .github/prompts/gen-review-plan.md
+            printf '\n## Pre-computed PR delta\nUse this list as the PR delta:\n\n'
+            cat pr-changed-files.txt
+          } > pi-review-prompt.txt
+          pi -p --model ${{ matrix.model }} ${{ matrix.thinking && format('--thinking {0}', matrix.thinking) || '' }} --no-session \
+            "$(cat pi-review-prompt.txt)" \
+            | tee pi-review-plan.txt
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PR_NUMBER: ${{ steps.pr_context.outputs.number }}
+          PR_TITLE: ${{ steps.pr_context.outputs.title }}
+          PR_URL: ${{ steps.pr_context.outputs.url }}
+          PR_BASE_REF: ${{ steps.pr_context.outputs.base_ref }}
+          PR_BASE_SHA: ${{ steps.pr_context.outputs.base_sha }}
+          PR_HEAD_REF: ${{ steps.pr_context.outputs.head_ref }}
+          PR_HEAD_SHA: ${{ steps.pr_context.outputs.head_sha }}
+          REVIEW_PLAN_FILE: pi-review-plan.txt
+
+      - name: Validate review plan output
+        run: |
+          if [ ! -s "pi-review-plan.txt" ] || ! grep -q '[^[:space:]]' pi-review-plan.txt; then
+            echo "pi-review-plan.txt is missing or whitespace-only; failing fast."
+            exit 1
+          fi
+
+      - name: Print review plan
+        run: |
+          echo "Full Pi review plan (${{ matrix.label }}):"
+          cat pi-review-plan.txt
+
+      - name: Run Pi review
+        id: run_pi
+        run: |
+          set -o pipefail
+          pi -p --model ${{ matrix.model }} ${{ matrix.thinking && format('--thinking {0}', matrix.thinking) || '' }} --no-session \
+            "$(cat .github/prompts/review.md)" \
+            | tee pi-output.md
+
+          sed -i 's|<h2>PR Review</h2>|<h2>PR Review (${{ matrix.label }})</h2>|' pi-output.md
+
+          delim="PIEOF_$(dd if=/dev/urandom bs=15 count=1 status=none | base64)"
+          {
+            echo "final-message<<$delim"
+            cat pi-output.md
+            echo "$delim"
+          } >> "$GITHUB_OUTPUT"
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PR_NUMBER: ${{ steps.pr_context.outputs.number }}
+          PR_TITLE: ${{ steps.pr_context.outputs.title }}
+          PR_URL: ${{ steps.pr_context.outputs.url }}
+          PR_BASE_REF: ${{ steps.pr_context.outputs.base_ref }}
+          PR_BASE_SHA: ${{ steps.pr_context.outputs.base_sha }}
+          PR_HEAD_REF: ${{ steps.pr_context.outputs.head_ref }}
+          PR_HEAD_SHA: ${{ steps.pr_context.outputs.head_sha }}
+          REVIEW_PLAN_FILE: pi-review-plan.txt
+
+      - name: Publish Pi result to run summary
+        if: ${{ steps.run_pi.outputs.final-message != '' }}
+        env:
+          PI_FINAL_MESSAGE: ${{ steps.run_pi.outputs.final-message }}
+          PR_NUMBER: ${{ steps.pr_context.outputs.number }}
+        run: |
+          plan_section_file="$(mktemp)"
+          final_with_plan_file="$(mktemp)"
+
+          {
+            echo "<details><summary>Full review plan</summary>"
+            echo
+            echo '```text'
+            cat pi-review-plan.txt
+            echo
+            echo '```'
+            echo
+            echo "</details>"
+            echo
+          } > "$plan_section_file"
+
+          if printf '%s\n' "$PI_FINAL_MESSAGE" | grep -q '<h2>PR Review'; then
+            printf '%s\n' "$PI_FINAL_MESSAGE" | sed -e "0,/<h2>PR Review/{/<h2>PR Review/r $plan_section_file" -e "}" > "$final_with_plan_file"
+          else
+            {
+              cat "$plan_section_file"
+              printf '%s\n' "$PI_FINAL_MESSAGE"
+            } > "$final_with_plan_file"
+          fi
+
+          {
+            echo "## Pi PR review (${{ matrix.label }})"
+            echo
+            echo "PR #$PR_NUMBER"
+            echo
+            cat "$final_with_plan_file"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Pi output
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: pi-pr-review-${{ matrix.label }}-${{ steps.pr_context.outputs.number }}-${{ github.run_id }}
+          path: |
+            pi-output.md
+            pi-review-plan.txt
+          if-no-files-found: ignore
+
+  pi_judge:
+    name: Pi Judge
+    needs: [setup, pi_review]
+    if: ${{ !cancelled() && needs.pi_review.result != 'skipped' }}
+    runs-on: [pi]
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Resolve PR context
+        id: pr_context
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            let pr;
+
+            if (context.eventName === 'workflow_dispatch') {
+              const input = context.payload.inputs.pr_number;
+              const number = Number(input);
+
+              if (!Number.isInteger(number) || number <= 0) {
+                core.setFailed(`Invalid pr_number input: ${input}`);
+                return;
+              }
+
+              const { data } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: number,
+              });
+              pr = data;
+            } else if (context.eventName === 'issue_comment') {
+              const { data } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.issue.number,
+              });
+              pr = data;
+            } else {
+              pr = context.payload.pull_request;
+            }
+
+            core.setOutput('number', String(pr.number));
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: refs/pull/${{ steps.pr_context.outputs.number }}/merge
+          fetch-depth: 1
+
+      - name: Ensure Node.js and Pi agent
+        run: |
+          if ! node --version 2>/dev/null | grep -q '^v24\.'; then
+            echo "need_node=true" >> "$GITHUB_OUTPUT"
+          fi
+          command -v pi || echo "need_pi=true" >> "$GITHUB_OUTPUT"
+        id: deps
+
+      - name: Install Node.js
+        if: steps.deps.outputs.need_node == 'true'
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: 24
+
+      - name: Install Pi coding agent
+        if: steps.deps.outputs.need_pi == 'true'
+        run: sudo npm install -g @mariozechner/pi-coding-agent
+
+      - name: Print Pi version
+        run: pi --version
+
+      - name: Download all review artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: pi-pr-review-*-${{ steps.pr_context.outputs.number }}-${{ github.run_id }}
+          path: reviews
+
+      - name: Assemble judge input
+        run: |
+          : > judge-input.md
+          shopt -s nullglob
+          for dir in reviews/pi-pr-review-*; do
+            label="$(basename "$dir" | sed "s/^pi-pr-review-//; s/-${{ steps.pr_context.outputs.number }}-${{ github.run_id }}$//")"
+            if [ -f "$dir/pi-output.md" ]; then
+              printf '\n---\n\n## Review: %s\n\n' "$label" >> judge-input.md
+              cat "$dir/pi-output.md" >> judge-input.md
+            fi
+          done
+          echo "=== Judge input: $(wc -c < judge-input.md) bytes ==="
+
+      - name: Validate judge input
+        id: validate_judge
+        run: |
+          if [ ! -s judge-input.md ] || ! grep -q '[^[:space:]]' judge-input.md; then
+            echo "judge-input.md is missing or empty; skipping judge."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run Pi Judge
+        id: run_judge
+        if: steps.validate_judge.outputs.skip != 'true'
+        run: |
+          set -o pipefail
+          pi -p --model ${{ needs.setup.outputs.judge-model }} ${{ needs.setup.outputs.judge-thinking && format('--thinking {0}', needs.setup.outputs.judge-thinking) || '' }} --no-session \
+            "$(cat .github/prompts/judge.md)" \
+            | tee pi-judge-output.md
+
+          delim="PIEOF_$(dd if=/dev/urandom bs=15 count=1 status=none | base64)"
+          {
+            echo "final-message<<$delim"
+            cat pi-judge-output.md
+            echo "$delim"
+          } >> "$GITHUB_OUTPUT"
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          JUDGE_INPUT_FILE: judge-input.md
+
+      - name: Publish judge result to run summary
+        if: ${{ steps.run_judge.outputs.final-message != '' }}
+        env:
+          PI_FINAL_MESSAGE: ${{ steps.run_judge.outputs.final-message }}
+          PR_NUMBER: ${{ steps.pr_context.outputs.number }}
+        run: |
+          {
+            echo "## Pi Judge"
+            echo
+            echo "PR #$PR_NUMBER"
+            echo
+            printf '%s\n' "$PI_FINAL_MESSAGE"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upsert judge comment
+        if: ${{ steps.run_judge.outputs.final-message != '' && (github.event_name == 'pull_request' || github.event_name == 'issue_comment' || (github.event_name == 'workflow_dispatch' && github.event.inputs.post_comment == 'true')) }}
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          PI_FINAL_MESSAGE: ${{ steps.run_judge.outputs.final-message }}
+          PR_NUMBER: ${{ steps.pr_context.outputs.number }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const marker = '<!-- pi-judge -->';
+            const body = `${marker}\n${process.env.PI_FINAL_MESSAGE}`;
+            const issue_number = Number(process.env.PR_NUMBER);
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number,
+              per_page: 100,
+            });
+
+            const existing = comments.find(
+              (c) => c.user?.type === 'Bot' && c.body?.includes(marker),
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+
+              // Un-minimize the comment in case it was marked as outdated
+              try {
+                await github.graphql(`
+                  mutation($id: ID!) {
+                    unminimizeComment(input: { subjectId: $id }) {
+                      unminimizedComment { isMinimized }
+                    }
+                  }
+                `, { id: existing.node_id });
+              } catch (_) { /* comment may not be minimized */ }
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number,
+                body,
+              });
+            }
+
+      - name: Upload judge output
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: pi-judge-${{ steps.pr_context.outputs.number }}-${{ github.run_id }}
+          path: |
+            pi-judge-output.md
+            judge-input.md
+          if-no-files-found: ignore
