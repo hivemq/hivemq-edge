@@ -141,8 +141,11 @@ public class ConfigFileReaderWriter {
                     .build()
                     .toArray(new Class<?>[0]));
         } catch (final Throwable e) {
-            log.error("Cannot create the jaxb context:", e);
-            log.error("argh {}", ((IllegalAnnotationsException) e).getErrors());
+            if (e instanceof IllegalAnnotationsException iae) {
+                log.error("Cannot create the jaxb context: {}", iae.getErrors(), e);
+            } else {
+                log.error("Cannot create the jaxb context", e);
+            }
             throw new UnrecoverableException(false);
         }
     }
