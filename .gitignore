@@ -28,3 +28,5 @@ out/
 /hivemq-edge/src/test/resources/opc-large-config.xml
 /edge-plugins/.kotlin/
 .vscode/
+/hivemq-edge-frontend/package-lock.json
+/_run/
