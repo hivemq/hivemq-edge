@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.hivemq.edge.adapters.browse.model.DeviceTagRow;
 import com.hivemq.edge.adapters.browse.model.FieldMappingInstruction;
 import jakarta.inject.Inject;
@@ -52,9 +51,10 @@ public class DeviceTagJsonSerializer {
     }
 
     static @NotNull ObjectMapper createDefaultMapper() {
+        // INDENT_OUTPUT is intentionally off: for large browses the whitespace roughly doubles the
+        // wire size. Consumers that want human-readable JSON can pipe through `jq`.
         return new ObjectMapper()
                 .setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
-                .configure(SerializationFeature.INDENT_OUTPUT, true)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 

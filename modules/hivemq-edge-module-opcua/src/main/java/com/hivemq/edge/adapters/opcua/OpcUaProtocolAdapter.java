@@ -66,6 +66,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.sdk.core.typetree.DataTypeTree;
+import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
@@ -108,6 +110,13 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     // Last-known-good client reference for browse operations during adapter restarts.
     // Set when a connection succeeds, cleared only on explicit stop (not during reconnect).
     private final @NotNull AtomicReference<OpcUaClient> browseClient = new AtomicReference<>();
+
+    // Cached DataTypeTree reused across browse operations. Building the tree requires a
+    // non-trivial walk of the server's type hierarchy; most servers never reconfigure their
+    // types during operation, so caching saves one round-trip per browse. Invalidated on
+    // explicit stop only — on reconnect we keep the cache because the tree is server-side
+    // and rarely changes while the adapter is alive.
+    private final @NotNull AtomicReference<DataTypeTree> cachedDataTypeTree = new AtomicReference<>();
 
     // Flag to prevent scheduling after stop
     private volatile boolean stopped = false;
@@ -246,6 +255,8 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             this.moduleServices = null;
             // Clear browse client on explicit stop
             this.browseClient.set(null);
+            // Clear cached DataTypeTree — the next adapter start rebuilds from the fresh server.
+            this.cachedDataTypeTree.set(null);
 
             final OpcUaClientConnection conn = opcUaClientConnection.getAndSet(null);
             if (conn != null) {
@@ -555,7 +566,32 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         if (client == null) {
             throw new BrowseException("Browse failed: Client not connected");
         }
-        return new OpcUaNodeBrowser(client, adapterId).browse(rootId, maxDepth);
+        return new OpcUaNodeBrowser(client, adapterId, 0, getOrBuildDataTypeTree(client)).browse(rootId, maxDepth);
+    }
+
+    /**
+     * Returns the cached {@link DataTypeTree} for this adapter, building one on first use.
+     * The tree is tied to the live server's type hierarchy but changes so rarely during an
+     * adapter's lifetime that a per-adapter cache is safe. The cache is invalidated on
+     * {@link #stop}, so the next start rebuilds from the fresh server. Returns {@code null} if
+     * the tree cannot be built (the {@link OpcUaNodeBrowser} handles null by falling back to
+     * raw NodeId-based data type names).
+     */
+    private @Nullable DataTypeTree getOrBuildDataTypeTree(final @NotNull OpcUaClient client) {
+        final DataTypeTree cached = cachedDataTypeTree.get();
+        if (cached != null) {
+            return cached;
+        }
+        try {
+            final DataTypeTree tree = client.getDataTypeTree();
+            // CAS ensures we only publish a non-null tree once; concurrent callers may
+            // build their own but only one installs it.
+            cachedDataTypeTree.compareAndSet(null, tree);
+            return cachedDataTypeTree.get();
+        } catch (final UaException e) {
+            log.debug("Failed to build DataTypeTree for adapter '{}'; falling back to raw NodeId names", adapterId, e);
+            return null;
+        }
     }
 
     @Override
