@@ -34,7 +34,7 @@ jobs:
           fetch-depth: 0
           
       - name: Check for backend changes
-        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
         id: backend
         with:
           filters: |
@@ -46,7 +46,7 @@ jobs:
               - '.github/**'
 
       - name: Check for frontend changes
-        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
         id: frontend
         with:
           filters: |
@@ -55,7 +55,7 @@ jobs:
               - '.github/**'
 
       - name: Check for openAPI changes
-        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
         id: openapi
         with:
           filters: |
