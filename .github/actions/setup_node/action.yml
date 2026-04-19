@@ -11,7 +11,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+    - uses: pnpm/action-setup@71c92474e7e4f5bca283fb17ef80fba9cdb2b4b1 # v6
       name: Install pnpm
       id: pnpm-install
       with:
