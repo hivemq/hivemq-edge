@@ -53,6 +53,7 @@ import etherip.types.CNService;
 import java.nio.BufferUnderflowException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -115,7 +116,7 @@ public class EtherNetIP implements AutoCloseable {
             throw new Exception("Device does not support EtherIP services");
         }
         logger.log(Level.FINE, "Service: {0}", services[0].getName());
-        if (!services[0].getName().toLowerCase().startsWith("comm")) {
+        if (!services[0].getName().toLowerCase(Locale.ROOT).startsWith("comm")) {
             throw new Exception("Expected EtherIP communication service, got " + services[0].getName());
         }
         return services;
@@ -156,162 +157,162 @@ public class EtherNetIP implements AutoCloseable {
 
     public short getShortAttribute(final CNClassPath classPath ,final int instance, final int attr) throws Exception
     {
-        final GetShortAttributeProtocol attr_proto;
+        final GetShortAttributeProtocol attr_proto = new GetShortAttributeProtocol();
         final Encapsulation encap =
                 new Encapsulation(SendRRData, this.connection.getSession(),
                         new SendRRDataProtocol(
                                 new MessageRouterProtocol(Get_Attribute_Single, classPath.instance(instance).attr(attr),
-                                        (attr_proto = new GetShortAttributeProtocol()))));
+                                        attr_proto)));
         this.connection.execute(encap);
         return attr_proto.getValue();
     }
 
     public short getShortAttribute(final int slot, final CNClassPath classPath ,final int instance, final int attr) throws Exception
     {
-        final GetShortAttributeProtocol attr_proto;
+        final GetShortAttributeProtocol attr_proto = new GetShortAttributeProtocol();
         final Encapsulation encap =
                 new Encapsulation(SendRRData, this.connection.getSession(),
                         new SendRRDataProtocol(
                                 new UnconnectedSendProtocol(slot,
                                         new MessageRouterProtocol(Get_Attribute_Single, classPath.instance(instance).attr(attr),
-                                                attr_proto= new GetShortAttributeProtocol()))));
+                                                attr_proto))));
         this.connection.execute(encap);
         return  attr_proto.getValue() ;
     }
 
     public int getIntAttribute(final CNClassPath classPath ,final int instance, final int attr) throws Exception
     {
-        final GetIntAttributeProtocol attr_proto;
+        final GetIntAttributeProtocol attr_proto = new GetIntAttributeProtocol();
         final Encapsulation encap =
                 new Encapsulation(SendRRData, this.connection.getSession(),
                         new SendRRDataProtocol(
                                 new MessageRouterProtocol(Get_Attribute_Single, classPath.instance(instance).attr(attr),
-                                        (attr_proto = new GetIntAttributeProtocol()))));
+                                        attr_proto)));
         this.connection.execute(encap);
         return attr_proto.getValue();
     }
 
     public int getIntAttribute(final int slot, final CNClassPath classPath ,final int instance, final int attr) throws Exception
     {
-        final GetIntAttributeProtocol attr_proto;
+        final GetIntAttributeProtocol attr_proto = new GetIntAttributeProtocol();
         final Encapsulation encap =
                 new Encapsulation(SendRRData, this.connection.getSession(),
                         new SendRRDataProtocol(
                                 new UnconnectedSendProtocol(slot,
                                         new MessageRouterProtocol(Get_Attribute_Single, classPath.instance(instance).attr(attr),
-                                                attr_proto= new GetIntAttributeProtocol()))));
+                                                attr_proto))));
         this.connection.execute(encap);
         return  attr_proto.getValue() ;
     }
 
     public String getStringAttribute(final CNClassPath classPath ,final int instance, final int attr) throws Exception
     {
-        final GetStringAttributeProtocol attr_proto;
+        final GetStringAttributeProtocol attr_proto = new GetStringAttributeProtocol();
         final Encapsulation encap =
                 new Encapsulation(SendRRData, this.connection.getSession(),
                         new SendRRDataProtocol(
                                 new MessageRouterProtocol(Get_Attribute_Single, classPath.instance(instance).attr(attr),
-                                        (attr_proto = new GetStringAttributeProtocol()))));
+                                        attr_proto)));
         this.connection.execute(encap);
         return attr_proto.getValue();
     }
 
     public String getStringAttribute(final int slot, final CNClassPath classPath ,final int instance, final int attr) throws Exception
     {
-        final GetStringAttributeProtocol attr_proto;
+        final GetStringAttributeProtocol attr_proto = new GetStringAttributeProtocol();
         final Encapsulation encap =
                 new Encapsulation(SendRRData, this.connection.getSession(),
                         new SendRRDataProtocol(
                                 new UnconnectedSendProtocol(slot,
                                         new MessageRouterProtocol(Get_Attribute_Single, classPath.instance(instance).attr(attr),
-                                                attr_proto= new GetStringAttributeProtocol()))));
+                                                attr_proto))));
         this.connection.execute(encap);
         return  attr_proto.getValue() ;
     }
 
     public String getHexStringAttribute(final CNClassPath classPath ,final int instance, final int attr) throws Exception
     {
-        final GetHexStringDataProtocol attr_proto;
+        final GetHexStringDataProtocol attr_proto = new GetHexStringDataProtocol();
         final Encapsulation encap =
                 new Encapsulation(SendRRData, this.connection.getSession(),
                         new SendRRDataProtocol(
                                 new MessageRouterProtocol(Get_Attribute_Single, classPath.instance(instance).attr(attr),
-                                        (attr_proto = new GetHexStringDataProtocol()))));
+                                        attr_proto)));
         this.connection.execute(encap);
         return attr_proto.getValue();
     }
 
     public String getHexStringAttribute(final int slot, final CNClassPath classPath ,final int instance, final int attr) throws Exception
     {
-        final GetHexStringDataProtocol attr_proto;
+        final GetHexStringDataProtocol attr_proto = new GetHexStringDataProtocol();
         final Encapsulation encap =
                 new Encapsulation(SendRRData, this.connection.getSession(),
                         new SendRRDataProtocol(
                                 new UnconnectedSendProtocol(slot,
                                         new MessageRouterProtocol(Get_Attribute_Single, classPath.instance(instance).attr(attr),
-                                                attr_proto= new GetHexStringDataProtocol()))));
+                                                attr_proto))));
         this.connection.execute(encap);
         return  attr_proto.getValue() ;
     }
 
     public String getHexStringAttributeAll(final CNClassPath classPath ,final int instance) throws Exception
     {
-        final GetHexStringDataProtocol attr_proto;
+        final GetHexStringDataProtocol attr_proto = new GetHexStringDataProtocol();
         final Encapsulation encap =
                 new Encapsulation(SendRRData, this.connection.getSession(),
                         new SendRRDataProtocol(
                                 new MessageRouterProtocol(Get_Attribute_All, classPath.instance(instance),
-                                        (attr_proto = new GetHexStringDataProtocol()))));
+                                        attr_proto)));
         this.connection.execute(encap);
         return attr_proto.getValue();
     }
 
     public String getHexStringAttributeAll(final int slot, final CNClassPath classPath ,final int instance) throws Exception
     {
-        final GetHexStringDataProtocol attr_proto;
+        final GetHexStringDataProtocol attr_proto = new GetHexStringDataProtocol();
         final Encapsulation encap =
                 new Encapsulation(SendRRData, this.connection.getSession(),
                         new SendRRDataProtocol(
                                 new UnconnectedSendProtocol(slot,
                                         new MessageRouterProtocol(Get_Attribute_All, classPath.instance(instance),
-                                                attr_proto= new GetHexStringDataProtocol()))));
+                                                attr_proto))));
         this.connection.execute(encap);
         return  attr_proto.getValue() ;
     }
 
     public Identity getIdentity() throws Exception
     {
-        final GetIdentityProtocol attr_proto;
+        final GetIdentityProtocol attr_proto = new GetIdentityProtocol();
         final Encapsulation encap =
                 new Encapsulation(SendRRData, this.connection.getSession(),
                         new SendRRDataProtocol(
                                 new MessageRouterProtocol(Get_Attribute_All, CNPath.Identity(),
-                                        (attr_proto = new GetIdentityProtocol()))));
+                                        attr_proto)));
         this.connection.execute(encap);
         return attr_proto.getValue();
     }
 
     public Identity getSlotIdentity(final int slot) throws Exception
     {
-        final GetIdentityProtocol attr_proto;
+        final GetIdentityProtocol attr_proto = new GetIdentityProtocol();
         final Encapsulation encap =
                 new Encapsulation(SendRRData, this.connection.getSession(),
                         new SendRRDataProtocol(
                                 new UnconnectedSendProtocol(slot,
                                         new MessageRouterProtocol(Get_Attribute_All, CNPath.Identity(),
-                                                attr_proto = new GetIdentityProtocol()))));
+                                                attr_proto))));
         this.connection.execute(encap);
         return  attr_proto.getValue();
     }
 
     public ConnectionData getConnectionData() throws Exception
     {
-        final GetConnectionDataProtocol attr_proto;
+        final GetConnectionDataProtocol attr_proto = new GetConnectionDataProtocol();
 
         final Encapsulation encap = new Encapsulation(SendRRData, this.connection.getSession(),
                 new SendRRDataProtocol(
                         new ConnectionDataProtocol(
-                                attr_proto = new GetConnectionDataProtocol())));
+                                attr_proto)));
         this.connection.execute(encap);
         return attr_proto.getValue();
     }
@@ -320,12 +321,12 @@ public class EtherNetIP implements AutoCloseable {
     {
         try
         {
-            final GetTcpIpInterfaceProtocol attr_proto;
+            final GetTcpIpInterfaceProtocol attr_proto = new GetTcpIpInterfaceProtocol();
             final Encapsulation encap =
                     new Encapsulation(SendRRData, this.connection.getSession(),
                             new SendRRDataProtocol(
                                     new MessageRouterProtocol(Get_Attribute_All, CNPath.TcpIpInterface().instance(instance),
-                                            (attr_proto = new GetTcpIpInterfaceProtocol()))));
+                                            attr_proto)));
             this.connection.execute(encap);
 
             return attr_proto.getValue();
@@ -334,7 +335,7 @@ public class EtherNetIP implements AutoCloseable {
         {
             if(cipException.getStatusCode() == 0x08)
             {
-                /**
+                /*
                  * In case of Get_Attribute_All service not supported. The service is optional, not always implemented.
                  * @see CIP Vol2_1.4: 5-3.3.1
                  */
@@ -344,7 +345,7 @@ public class EtherNetIP implements AutoCloseable {
         }
         catch (final BufferUnderflowException e)
         {
-            /**
+            /*
              * In case of the device not correctly implemented CIP possible BufferUnderFlow exception.
              * In this case may the device will answer correctly with Get_Attribute_Single service.
              * @see CIP Vol2_1.4: 5-3.3.1
@@ -369,36 +370,36 @@ public class EtherNetIP implements AutoCloseable {
 
     public CNClassPath getPhysicalLinkObject(final int instance) throws Exception
     {
-        final GetPhysicalLinkObjectProtocol attr_proto;
+        final GetPhysicalLinkObjectProtocol attr_proto = new GetPhysicalLinkObjectProtocol();
         final Encapsulation encap =
                 new Encapsulation(SendRRData, this.connection.getSession(),
                         new SendRRDataProtocol(
                                 new MessageRouterProtocol(Get_Attribute_Single, CNPath.TcpIpInterface().instance(instance).attr(4),
-                                        (attr_proto = new GetPhysicalLinkObjectProtocol()))));
+                                        attr_proto)));
         this.connection.execute(encap);
         return attr_proto;
     }
 
     public InterfaceConfiguration getInterfaceConfiguration(final int instance) throws Exception
     {
-        final GetInterfaceConfigurationProtocol attr_proto;
+        final GetInterfaceConfigurationProtocol attr_proto = new GetInterfaceConfigurationProtocol();
         final Encapsulation encap =
                 new Encapsulation(SendRRData, this.connection.getSession(),
                         new SendRRDataProtocol(
                                 new MessageRouterProtocol(Get_Attribute_Single, CNPath.TcpIpInterface().instance(instance).attr(5),
-                                        (attr_proto = new GetInterfaceConfigurationProtocol()))));
+                                        attr_proto)));
         this.connection.execute(encap);
         return attr_proto.getValue();
     }
 
     public EthernetLink getEthernetLink(final int instance) throws Exception
     {
-        final GetEthernetLinkProtocol attr_proto;
+        final GetEthernetLinkProtocol attr_proto = new GetEthernetLinkProtocol();
         final Encapsulation encap =
                 new Encapsulation(SendRRData, this.connection.getSession(),
                         new SendRRDataProtocol(
                                 new MessageRouterProtocol(Get_Attribute_All, CNPath.EthernetLink().instance(instance),
-                                        (attr_proto = new GetEthernetLinkProtocol()))));
+                                        attr_proto)));
         this.connection.execute(encap);
         return attr_proto.getValue();
     }

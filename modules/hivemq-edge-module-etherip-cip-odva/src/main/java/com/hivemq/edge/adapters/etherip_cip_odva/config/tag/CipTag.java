@@ -89,11 +89,9 @@ public class CipTag implements Tag, Serializable {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof final CipTag cipTag)) {
             return false;
         }
-
-        final CipTag cipTag = (CipTag) o;
         return name.equals(cipTag.name) && definition.equals(cipTag.definition);
     }
 

@@ -50,7 +50,7 @@ public class StatsTracker {
             String adapterIdAndTag = adapterId + ":" + tagAddress;
 
             rttStats.computeIfAbsent(adapterIdAndTag, (k) -> new StatsAccumulator())
-                    .add(rtt.elapsed(TimeUnit.MICROSECONDS));
+                    .add((double) rtt.elapsed(TimeUnit.MICROSECONDS));
 
             long elapsed = statsTimes.elapsed(TimeUnit.MILLISECONDS);
             if (elapsed >= 10000 || !statsTimes.isRunning()) { // count check?

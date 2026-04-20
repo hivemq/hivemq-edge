@@ -9,7 +9,6 @@ package etherip.types;
 
 import com.google.common.base.Objects;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 /**
  * Control Net Path for class, instance, attribute
@@ -153,7 +152,6 @@ public class CNClassPath extends CNPath {
     public void decode(final ByteBuffer buf, int available, final StringBuilder log) throws Exception {
         final byte[] raw = new byte[2];
         buf.get(raw);
-        available = ByteBuffer.wrap(raw).order(ByteOrder.LITTLE_ENDIAN).getShort();
 
         if (raw[0] == 0x02) {
             buf.get(raw);
