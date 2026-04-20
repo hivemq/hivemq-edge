@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.etherip_cip_odva.util;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ExceptionUtils {
     private ExceptionUtils() {}
@@ -29,7 +30,7 @@ public class ExceptionUtils {
         return stringBuilder.toString();
     }
 
-    private static void extractMessageIfPresent(StringBuilder stringBuilder, Throwable e, String prefix) {
+    private static void extractMessageIfPresent(StringBuilder stringBuilder, @Nullable Throwable e, String prefix) {
         if (e == null) {
             return;
         }

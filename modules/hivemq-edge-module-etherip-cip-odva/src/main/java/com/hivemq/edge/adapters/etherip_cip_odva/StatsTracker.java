@@ -85,7 +85,7 @@ public class StatsTracker {
         return isLoggingEnabled() ? Stopwatch.createStarted() : null;
     }
 
-    public void stop(final @NotNull Supplier<String> tagAddressSupplier, final Stopwatch rttTimer) {
+    public void stop(final @NotNull Supplier<String> tagAddressSupplier, final @Nullable Stopwatch rttTimer) {
         if (isLoggingEnabled() && rttTimer != null) {
             rttTimer.stop();
             calculateStats(tagAddressSupplier.get(), rttTimer);

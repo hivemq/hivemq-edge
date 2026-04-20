@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class Hysteresis {
     @NotNull
@@ -40,11 +41,12 @@ public class Hysteresis {
         hysteresCheckerMap.put(Double.class, new DoubleHysteresisChecker());
     }
 
-    public <T> boolean isModified(T newValue, T currentValue, @NotNull CipTagDefinition tagDefinition) {
+    public <T> boolean isModified(
+            @Nullable T newValue, @Nullable T currentValue, @NotNull CipTagDefinition tagDefinition) {
         return isModified(newValue, currentValue, tagDefinition.getHysteresis());
     }
 
-    public <T> boolean isModified(T newValue, T currentValue, @NotNull Double hysteresisValue) {
+    public <T> boolean isModified(@Nullable T newValue, @Nullable T currentValue, @NotNull Double hysteresisValue) {
         if (newValue == null) {
             return currentValue != null;
         } else if (currentValue == null) {

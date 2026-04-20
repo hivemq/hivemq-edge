@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.etherip_cip_odva;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
+import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Stopwatch;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
@@ -222,9 +223,10 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
                 return;
             }
         }
+        final EthernetIPWithODVA connectedClient = requireNonNull(client);
 
         List<String> errors = new ArrayList<>();
-        DataPointStore currentLastSamples = lastSamples.get();
+        DataPointStore currentLastSamples = requireNonNull(lastSamples.get());
         try {
             // FIXME: Introduce Multi Request: MPR for single tags, Separate requests for BatchedTags?
             // Have to be careful - as maximum PLC response and request size are limiting factors and need
@@ -241,7 +243,7 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
                     return;
                 }
 
-                tryPoll(client, pollingOutput, tagGroup, currentLastSamples, errors::add);
+                tryPoll(connectedClient, pollingOutput, tagGroup, currentLastSamples, errors::add);
             }
 
         } catch (Exception e) {
@@ -272,7 +274,7 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
                 "%s is stopped during polling (state=%s)", adapterId, protocolAdapterState.getRuntimeStatus());
     }
 
-    private boolean isNotConnected(EtherNetIP client) {
+    private boolean isNotConnected(final @Nullable EtherNetIP client) {
         return client == null || protocolAdapterState.getConnectionStatus() != CONNECTED;
     }
 
