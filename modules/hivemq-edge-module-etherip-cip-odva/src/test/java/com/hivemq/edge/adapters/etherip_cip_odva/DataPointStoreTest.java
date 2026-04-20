@@ -18,7 +18,6 @@ package com.hivemq.edge.adapters.etherip_cip_odva;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.CipDataType;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTag;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTagDefinition;
-import java.util.concurrent.atomic.AtomicLong;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -53,13 +52,13 @@ class DataPointStoreTest {
         CipTag cipTagWithMinUpdateNull = new CipTag(
                 "withMinUpdate=null", "", new CipTagDefinition("address", 1, CipDataType.INT, 0d, null, 0, null));
 
-        AtomicLong clock = new AtomicLong(0);
+        final long clock = 0L;
 
         // when
         DataPointStore dataPointStore = new DataPointStore();
-        dataPointStore.put(cipTagWithMinUpdate, 1, clock.get());
-        dataPointStore.put(cipTagWithMinUpdate0, 2, clock.get());
-        dataPointStore.put(cipTagWithMinUpdateNull, 3, clock.get());
+        dataPointStore.put(cipTagWithMinUpdate, 1, clock);
+        dataPointStore.put(cipTagWithMinUpdate0, 2, clock);
+        dataPointStore.put(cipTagWithMinUpdateNull, 3, clock);
 
         // then
         Assertions.assertThat(dataPointStore.isValueOlderThan(cipTagWithMinUpdate, 0L))

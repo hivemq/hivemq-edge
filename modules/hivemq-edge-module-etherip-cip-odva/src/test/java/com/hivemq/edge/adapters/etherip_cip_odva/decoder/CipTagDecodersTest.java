@@ -69,7 +69,7 @@ class CipTagDecodersTest extends BaseCipTagDecoderTest {
                 testCaseSingleTag(1, INT, new byte[] {127, -1}, Short.MAX_VALUE),
                 testCaseSingleTag(1, INT, new byte[] {-128, 0}, Short.MIN_VALUE),
                 testCaseSingleTag(1, UINT, new byte[] {127, -1}, (int) Short.MAX_VALUE),
-                testCaseSingleTag(1, UINT, new byte[] {-128, 0}, (int) (Short.MAX_VALUE) + 1),
+                testCaseSingleTag(1, UINT, new byte[] {-128, 0}, (int) Short.MAX_VALUE + 1),
                 testCaseSingleTag(1, UINT, new byte[] {-1, -1}, (int) Short.MAX_VALUE * 2 + 1),
                 testCaseSingleTag(1, DINT, new byte[] {127, -1, -1, -1}, Integer.MAX_VALUE),
                 testCaseSingleTag(1, DINT, new byte[] {-128, 0, 0, 0}, Integer.MIN_VALUE),
@@ -119,10 +119,10 @@ class CipTagDecodersTest extends BaseCipTagDecoderTest {
                         LREAL,
                         toByteArray(() -> {
                             ByteBuffer buffer = ByteBuffer.allocate(Double.BYTES);
-                            buffer.putDouble(1234567890.123456789d);
+                            buffer.putDouble(1234567890.1234567);
                             return buffer.array();
                         }),
-                        1234567890.123456789d));
+                        1234567890.1234567));
     }
 
     @ParameterizedTest
