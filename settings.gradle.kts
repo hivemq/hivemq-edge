@@ -4,10 +4,6 @@ pluginManagement {
     }
 }
 
-plugins {
-    id("com.hivemq.tools.oci-version-catalog") version "0.2.0"
-}
-
 rootProject.name = "hivemq-edge-build"
 
 includeBuild("./hivemq-edge")
