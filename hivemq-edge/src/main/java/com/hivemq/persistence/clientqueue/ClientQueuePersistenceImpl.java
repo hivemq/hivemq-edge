@@ -165,6 +165,12 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
 
     @Override
     public void publishAvailable(final @NotNull String client) {
+        final PublishAvailableCallback availableCallback = queueidCallbackMap.get(client);
+        if (availableCallback != null) {
+            availableCallback.onPublishAvailable(client);
+            return;
+        }
+
         final ClientSession session = clientSessionLocalPersistence.getSession(client);
         if (session == null || !session.isConnected()) {
             return;

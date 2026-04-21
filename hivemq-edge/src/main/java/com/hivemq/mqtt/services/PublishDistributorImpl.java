@@ -59,6 +59,12 @@ import org.jetbrains.annotations.Nullable;
 @Singleton
 public class PublishDistributorImpl implements PublishDistributor {
 
+    /**
+     * Client ID prefix shared by all {@link com.hivemq.persistence.clientqueue.InternalTopicFilterSubscriber}
+     * instances. Used in {@link #handlePublish} to bypass the session check for internal subscribers.
+     */
+    public static final @NotNull String INTERNAL_SUBSCRIBER_PREFIX = "internal#";
+
     @NotNull
     private final ClientQueuePersistence clientQueuePersistence;
 
@@ -190,26 +196,26 @@ public class PublishDistributorImpl implements PublishDistributor {
         }
 
         final boolean qos0Message = Math.min(subscriptionQos, publish.getQoS().getQosNumber()) == 0;
-        final ClientSession clientSession = clientSessionPersistence.get().getSession(client, false);
-        final boolean clientConnected = clientSession != null && clientSession.isConnected();
+        Long queueLimit = null;
 
-        if ((qos0Message && !clientConnected)) {
-            return Futures.immediateFuture(NOT_CONNECTED);
-        }
+        if (!client.startsWith(INTERNAL_SUBSCRIBER_PREFIX)) {
+            final ClientSession clientSession = clientSessionPersistence.get().getSession(client, false);
+            final boolean clientConnected = clientSession != null && clientSession.isConnected();
 
-        // no session present or session already expired
-        if (clientSession == null) {
-            return Futures.immediateFuture(NOT_CONNECTED);
+            if (qos0Message && !clientConnected) {
+                return Futures.immediateFuture(NOT_CONNECTED);
+            }
+
+            // no session present or session already expired
+            if (clientSession == null) {
+                return Futures.immediateFuture(NOT_CONNECTED);
+            }
+
+            queueLimit = clientSession.getQueueLimit();
         }
 
         return queuePublish(
-                client,
-                publish,
-                subscriptionQos,
-                false,
-                retainAsPublished,
-                subscriptionIdentifier,
-                clientSession.getQueueLimit());
+                client, publish, subscriptionQos, false, retainAsPublished, subscriptionIdentifier, queueLimit);
     }
 
     private @NotNull SettableFuture<PublishStatus> handlePublishForBridgeForwarder(
