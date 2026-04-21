@@ -39,8 +39,8 @@ public class SimulationTag implements Tag {
     @JsonProperty(value = "definition", required = true)
     @ModuleConfigField(
             title = "definition",
-            description = "The simulation adapter doesn't currently support any custom definition",
-            readOnly = true,
+            description = "Per-tag value generation: kind (legacy random double, random number, static value), "
+                    + "value type, bounds, or static value.",
             required = true)
     private final @NotNull SimulationTagDefinition definition;
 
@@ -84,7 +84,7 @@ public class SimulationTag implements Tag {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof SimulationTag opcuaTag)) return false;
+        if (!(o instanceof final SimulationTag opcuaTag)) return false;
         return Objects.equals(name, opcuaTag.name)
                 && Objects.equals(description, opcuaTag.description)
                 && Objects.equals(definition, opcuaTag.definition);

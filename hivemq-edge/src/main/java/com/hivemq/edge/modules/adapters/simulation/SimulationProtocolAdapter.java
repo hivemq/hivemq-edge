@@ -17,7 +17,6 @@ package com.hivemq.edge.modules.adapters.simulation;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -27,12 +26,20 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.schema.ScalarType;
+import com.hivemq.adapter.sdk.api.schema.Schema;
+import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationInput;
 import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationSpecificAdapterConfig;
+import com.hivemq.edge.modules.adapters.simulation.tag.RandomValueConfig;
 import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTag;
+import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTagDefinition;
+import com.hivemq.edge.modules.adapters.simulation.tag.SimulationValueType;
+import com.hivemq.edge.modules.adapters.simulation.tag.StaticValueConfig;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import org.jetbrains.annotations.NotNull;
@@ -45,7 +52,6 @@ public class SimulationProtocolAdapter implements BatchPollingProtocolAdapter {
     private final @NotNull TimeWaiter timeWaiter;
     private static final @NotNull Random RANDOM = new Random();
     private final @NotNull String adapterId;
-    private final @NotNull ObjectMapper objectMapper = new ObjectMapper();
     private final @NotNull List<SimulationTag> tags;
 
     public SimulationProtocolAdapter(
@@ -112,17 +118,32 @@ public class SimulationProtocolAdapter implements BatchPollingProtocolAdapter {
                                 return;
                             }
                         }
-                        pollingOutput.addDataPoint(
-                                tag.getName(),
-                                ThreadLocalRandom.current()
-                                        .nextDouble(
-                                                Math.min(adapterConfig.getMinValue(), adapterConfig.getMaxValue()),
-                                                Math.max(
-                                                        adapterConfig.getMinValue() + 1, adapterConfig.getMaxValue())));
+                        pollingOutput.addDataPoint(tag.getName(), generateValue(tag.getDefinition()));
                     }
                     pollingOutput.finish();
                 })
                 .start();
+    }
+
+    private @NotNull Object generateValue(final @NotNull SimulationTagDefinition def) {
+        return switch (def.getType()) {
+            case LEGACY_RANDOM_DOUBLE -> ThreadLocalRandom.current()
+                    .nextDouble(
+                            Math.min(adapterConfig.getMinValue(), adapterConfig.getMaxValue()),
+                            Math.max(adapterConfig.getMinValue() + 1, adapterConfig.getMaxValue()));
+            case RANDOM_NUMBER -> {
+                final RandomValueConfig rv = Objects.requireNonNull(def.getRandomValue());
+                yield switch (rv.getValueType()) {
+                    case INT -> ThreadLocalRandom.current().nextInt((int) rv.getMinValue(), (int) rv.getMaxValue());
+                    case LONG -> ThreadLocalRandom.current()
+                            .nextLong((long) rv.getMinValue(), (long) rv.getMaxValue());
+                    case DOUBLE -> ThreadLocalRandom.current().nextDouble(rv.getMinValue(), rv.getMaxValue());
+                    case STRING -> throw new IllegalStateException(
+                            "randomValue with STRING valueType is rejected at construction");
+                };
+            }
+            case STATIC_VALUE -> Objects.requireNonNull(def.getStaticValue()).getParsedValue();
+        };
     }
 
     @Override
@@ -138,6 +159,67 @@ public class SimulationProtocolAdapter implements BatchPollingProtocolAdapter {
     @Override
     public void createTagSchema(
             final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
-        output.finish(objectMapper.createObjectNode());
+        tags.stream()
+                .filter(tag -> input.getTagName().equals(tag.getName()))
+                .findFirst()
+                .map(tag -> buildSchemaForTag(tag.getDefinition()))
+                .ifPresentOrElse(
+                        schema -> output.finish(new TagSchemaCreationOutput.DataPointSchema(schema, null, null)),
+                        () -> output.fail("Unable to find tag definition for tag " + input.getTagName()
+                                + ", cannot create schema"));
+    }
+
+    private @NotNull Schema buildSchemaForTag(final @NotNull SimulationTagDefinition def) {
+        final var builder = new SchemaBuilder();
+        switch (def.getType()) {
+            case LEGACY_RANDOM_DOUBLE -> builder.scalar(ScalarType.DOUBLE)
+                    .minimum((double) Math.min(adapterConfig.getMinValue(), adapterConfig.getMaxValue()))
+                    .maximum((double) Math.max(adapterConfig.getMinValue() + 1, adapterConfig.getMaxValue()))
+                    .readable();
+            case RANDOM_NUMBER -> {
+                final RandomValueConfig rv = Objects.requireNonNull(def.getRandomValue());
+                applyNumericScalar(builder, rv.getValueType(), rv.getMinValue(), rv.getMaxValue());
+            }
+            case STATIC_VALUE -> {
+                final StaticValueConfig sv = Objects.requireNonNull(def.getStaticValue());
+                applyScalarForValueType(builder, sv.getValueType()).readable();
+            }
+        }
+        return builder.build();
+    }
+
+    private static @NotNull SchemaBuilder applyNumericScalar(
+            final @NotNull SchemaBuilder builder,
+            final @NotNull SimulationValueType valueType,
+            final double min,
+            final double max) {
+        switch (valueType) {
+            case INT -> builder.scalar(ScalarType.LONG)
+                    .minimum((long) min)
+                    .maximum((long) max)
+                    .readable();
+            case LONG -> builder.scalar(ScalarType.LONG)
+                    .minimum((long) min)
+                    .maximum((long) max)
+                    .readable();
+            case DOUBLE -> builder.scalar(ScalarType.DOUBLE)
+                    .minimum(min)
+                    .maximum(max)
+                    .readable();
+            case STRING -> throw new IllegalStateException("RANDOM_NUMBER cannot have STRING valueType");
+        }
+        return builder;
+    }
+
+    private static @NotNull SchemaBuilder applyScalarForValueType(
+            final @NotNull SchemaBuilder builder, final @NotNull SimulationValueType valueType) {
+        return switch (valueType) {
+            case INT -> builder.scalar(ScalarType.LONG)
+                    .minimum((long) Integer.MIN_VALUE)
+                    .maximum((long) Integer.MAX_VALUE);
+            case LONG -> builder.scalar(ScalarType.LONG);
+            case DOUBLE -> builder.scalar(ScalarType.DOUBLE);
+            case STRING -> builder.scalar(ScalarType.STRING);
+        };
     }
 }

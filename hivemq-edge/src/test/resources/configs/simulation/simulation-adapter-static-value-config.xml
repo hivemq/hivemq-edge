@@ -1,0 +1,66 @@
+<hivemq>
+    <protocol-adapters>
+        <protocol-adapter>
+            <adapterId>my-simulation-protocol-adapter</adapterId>
+            <protocolId>simulation</protocolId>
+            <config>
+                <simulationToMqtt>
+                    <pollingIntervalMillis>10</pollingIntervalMillis>
+                    <maxPollingErrorsBeforeRemoval>9</maxPollingErrorsBeforeRemoval>
+                </simulationToMqtt>
+            </config>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>my/topic</topic>
+                    <maxQos>1</maxQos>
+                    <tagName>static-int</tagName>
+                    <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>false</includeTimestamp>
+                </northboundMapping>
+            </northboundMappings>
+            <tags>
+                <tag>
+                    <name>static-int</name>
+                    <description>static int 42</description>
+                    <definition>
+                        <staticValue>
+                            <valueType>INT</valueType>
+                            <value>42</value>
+                        </staticValue>
+                    </definition>
+                </tag>
+                <tag>
+                    <name>static-long</name>
+                    <description>static long 1234567890123</description>
+                    <definition>
+                        <staticValue>
+                            <valueType>LONG</valueType>
+                            <value>1234567890123</value>
+                        </staticValue>
+                    </definition>
+                </tag>
+                <tag>
+                    <name>static-double</name>
+                    <description>static double 3.14</description>
+                    <definition>
+                        <staticValue>
+                            <valueType>DOUBLE</valueType>
+                            <value>3.14</value>
+                        </staticValue>
+                    </definition>
+                </tag>
+                <tag>
+                    <name>static-string</name>
+                    <description>static string hello</description>
+                    <definition>
+                        <staticValue>
+                            <valueType>STRING</valueType>
+                            <value>hello</value>
+                        </staticValue>
+                    </definition>
+                </tag>
+            </tags>
+        </protocol-adapter>
+    </protocol-adapters>
+</hivemq>
