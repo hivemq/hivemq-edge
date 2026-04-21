@@ -105,7 +105,8 @@ public class EthernetIPCipOdvaProtocolAdapterInformation implements ProtocolAdap
 
     @Override
     public @NotNull EnumSet<ProtocolAdapterCapability> getCapabilities() {
-        return EnumSet.of(ProtocolAdapterCapability.READ, ProtocolAdapterCapability.WRITE);
+        return EnumSet.of(
+                ProtocolAdapterCapability.READ, ProtocolAdapterCapability.WRITE, ProtocolAdapterCapability.COMBINE);
     }
 
     @Override

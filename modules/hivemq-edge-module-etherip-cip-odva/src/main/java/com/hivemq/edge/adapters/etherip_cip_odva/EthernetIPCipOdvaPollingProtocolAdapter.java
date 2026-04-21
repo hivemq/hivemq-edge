@@ -30,6 +30,10 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.schema.Schema;
+import com.hivemq.adapter.sdk.api.schema.SchemaBuilder;
+import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationInput;
+import com.hivemq.adapter.sdk.api.schema.TagSchemaCreationOutput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
@@ -37,6 +41,7 @@ import com.hivemq.adapter.sdk.api.writing.WritingPayload;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.adapters.etherip_cip_odva.composite.CompositeValues;
 import com.hivemq.edge.adapters.etherip_cip_odva.composite.CompositeValuesFactory;
+import com.hivemq.edge.adapters.etherip_cip_odva.config.CipDataType;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.EipSpecificAdapterConfig;
 import com.hivemq.edge.adapters.etherip_cip_odva.config.tag.CipTag;
 import com.hivemq.edge.adapters.etherip_cip_odva.decoder.CipTagDecoders;
@@ -47,6 +52,7 @@ import com.hivemq.edge.adapters.etherip_cip_odva.handler.CipTagDecodingAttribute
 import com.hivemq.edge.adapters.etherip_cip_odva.hysteresis.Hysteresis;
 import com.hivemq.edge.adapters.etherip_cip_odva.tag.TagGroup;
 import com.hivemq.edge.adapters.etherip_cip_odva.tag.TagGroups;
+import com.hivemq.edge.adapters.etherip_cip_odva.tag.TagSchemaMapper;
 import com.hivemq.edge.adapters.etherip_cip_odva.util.ExceptionUtils;
 import etherip.EtherNetIP;
 import etherip.EthernetIPWithODVA;
@@ -54,6 +60,7 @@ import etherip.data.CipException;
 import etherip.protocol.Encapsulation;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -382,6 +389,54 @@ public class EthernetIPCipOdvaPollingProtocolAdapter implements BatchPollingProt
     @Override
     public int getMaxPollingErrorsBeforeRemoval() {
         return adapterConfig.getEipToMqttConfig().getMaxPollingErrorsBeforeRemoval();
+    }
+
+    @Override
+    public void createTagSchema(
+            final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
+        final String tagName = input.getTagName();
+        final Optional<CipTag> maybeTag =
+                tags.stream().filter(t -> t.getName().equals(tagName)).findFirst();
+        if (maybeTag.isEmpty()) {
+            output.fail("Unable to find tag definition for tag " + tagName + ", cannot create schema");
+            return;
+        }
+        final CipTag tag = maybeTag.get();
+        if (tag.isComposite()) {
+            final Schema compositeSchema = buildCompositeSchema(tag, output);
+            if (compositeSchema == null) {
+                return;
+            }
+            output.finish(new TagSchemaCreationOutput.DataPointSchema(compositeSchema, null, null));
+            return;
+        }
+        final Schema scalarSchema =
+                TagSchemaMapper.buildScalarSchema(tag.getDefinition().getDataType());
+        output.finish(new TagSchemaCreationOutput.DataPointSchema(scalarSchema, null, null));
+    }
+
+    private @Nullable Schema buildCompositeSchema(
+            final @NotNull CipTag composite, final @NotNull TagSchemaCreationOutput output) {
+        final String address = composite.getDefinition().getAddress();
+        final List<CipTag> siblings = tags.stream()
+                .filter(t -> !t.isComposite())
+                .filter(t -> t.getDefinition().getAddress().equals(address))
+                .toList();
+        if (siblings.isEmpty()) {
+            output.fail("Composite tag '" + composite.getName() + "' has no scalar siblings at address " + address);
+            return null;
+        }
+        final SchemaBuilder builder = new SchemaBuilder();
+        var objectBuilder = builder.startObject();
+        for (final CipTag sibling : siblings) {
+            final CipDataType siblingType = sibling.getDefinition().getDataType();
+            objectBuilder = objectBuilder
+                    .property(sibling.getName())
+                    .schema(TagSchemaMapper.buildReadOnlyScalarSchema(siblingType))
+                    .endProperty();
+        }
+        objectBuilder.endObject();
+        return builder.readable().build();
     }
 
     @Override
