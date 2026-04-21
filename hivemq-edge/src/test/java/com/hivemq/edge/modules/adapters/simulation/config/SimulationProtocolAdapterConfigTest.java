@@ -25,6 +25,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactoryInput;
@@ -47,6 +48,10 @@ import com.hivemq.configuration.reader.RestrictionConfigurator;
 import com.hivemq.configuration.reader.SecurityConfigurator;
 import com.hivemq.configuration.reader.UsageTrackingConfigurator;
 import com.hivemq.edge.modules.adapters.simulation.SimulationProtocolAdapterFactory;
+import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTag;
+import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTagDefinition;
+import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTagType;
+import com.hivemq.edge.modules.adapters.simulation.tag.SimulationValueType;
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Path;
@@ -150,6 +155,100 @@ class SimulationProtocolAdapterConfigTest {
             assertThat(subscription.isIncludeTagNames()).isFalse();
             assertThat(subscription.getUserProperties()).isEmpty();
         });
+    }
+
+    @Test
+    public void convertTag_legacyEmptyDefinition_defaultsToLegacyRandomDouble() throws Exception {
+        final SimulationTag tag = mapper.readValue("{\"name\":\"t\",\"definition\":{}}", SimulationTag.class);
+
+        assertThat(tag.getDefinition().getType()).isEqualTo(SimulationTagType.LEGACY_RANDOM_DOUBLE);
+        assertThat(tag.getDefinition().getRandomValue()).isNull();
+        assertThat(tag.getDefinition().getStaticValue()).isNull();
+    }
+
+    @Test
+    public void convertTag_randomNumberInt_valid() throws Exception {
+        final SimulationTag tag = mapper.readValue(
+                "{\"name\":\"t\",\"definition\":{\"randomValue\":{\"valueType\":\"INT\","
+                        + "\"minValue\":5,\"maxValue\":15}}}",
+                SimulationTag.class);
+
+        final SimulationTagDefinition def = tag.getDefinition();
+        assertThat(def.getType()).isEqualTo(SimulationTagType.RANDOM_NUMBER);
+        assertThat(def.getRandomValue()).isNotNull();
+        assertThat(def.getRandomValue().getValueType()).isEqualTo(SimulationValueType.INT);
+        assertThat(def.getRandomValue().getMinValue()).isEqualTo(5.0);
+        assertThat(def.getRandomValue().getMaxValue()).isEqualTo(15.0);
+    }
+
+    @Test
+    public void convertTag_staticValueString_valid() throws Exception {
+        final SimulationTag tag = mapper.readValue(
+                "{\"name\":\"t\",\"definition\":{\"staticValue\":{\"valueType\":\"STRING\","
+                        + "\"value\":\"hello\"}}}",
+                SimulationTag.class);
+
+        final SimulationTagDefinition def = tag.getDefinition();
+        assertThat(def.getType()).isEqualTo(SimulationTagType.STATIC_VALUE);
+        assertThat(def.getStaticValue()).isNotNull();
+        assertThat(def.getStaticValue().getValueType()).isEqualTo(SimulationValueType.STRING);
+        assertThat(def.getStaticValue().getValue()).isEqualTo("hello");
+        assertThat(def.getStaticValue().getParsedValue()).isEqualTo("hello");
+    }
+
+    @Test
+    public void convertTag_staticValueDouble_parsesValue() throws Exception {
+        final SimulationTag tag = mapper.readValue(
+                "{\"name\":\"t\",\"definition\":{\"staticValue\":{\"valueType\":\"DOUBLE\","
+                        + "\"value\":\"3.14\"}}}",
+                SimulationTag.class);
+
+        assertThat(tag.getDefinition().getStaticValue()).isNotNull();
+        assertThat(tag.getDefinition().getStaticValue().getParsedValue()).isEqualTo(3.14d);
+    }
+
+    @Test
+    public void convertTag_randomNumberStringValueType_rejected() {
+        assertThatThrownBy(() -> mapper.readValue(
+                        "{\"name\":\"t\",\"definition\":{\"randomValue\":{\"valueType\":\"STRING\","
+                                + "\"minValue\":0,\"maxValue\":1}}}",
+                        SimulationTag.class))
+                .isInstanceOf(ValueInstantiationException.class)
+                .hasRootCauseInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("valueType must be INT, LONG or DOUBLE");
+    }
+
+    @Test
+    public void convertTag_randomNumberMinGreaterEqualMax_rejected() {
+        assertThatThrownBy(() -> mapper.readValue(
+                        "{\"name\":\"t\",\"definition\":{\"randomValue\":{\"valueType\":\"INT\","
+                                + "\"minValue\":5,\"maxValue\":3}}}",
+                        SimulationTag.class))
+                .isInstanceOf(ValueInstantiationException.class)
+                .hasRootCauseInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("minValue < maxValue");
+    }
+
+    @Test
+    public void convertTag_staticValueUnparseable_rejected() {
+        assertThatThrownBy(() -> mapper.readValue(
+                        "{\"name\":\"t\",\"definition\":{\"staticValue\":{\"valueType\":\"INT\","
+                                + "\"value\":\"not-a-number\"}}}",
+                        SimulationTag.class))
+                .isInstanceOf(ValueInstantiationException.class)
+                .hasRootCauseInstanceOf(NumberFormatException.class);
+    }
+
+    @Test
+    public void convertTag_bothSubConfigsSet_rejected() {
+        assertThatThrownBy(() -> mapper.readValue(
+                        "{\"name\":\"t\",\"definition\":{"
+                                + "\"randomValue\":{\"valueType\":\"INT\",\"minValue\":0,\"maxValue\":10},"
+                                + "\"staticValue\":{\"valueType\":\"STRING\",\"value\":\"x\"}}}",
+                        SimulationTag.class))
+                .isInstanceOf(ValueInstantiationException.class)
+                .hasRootCauseInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("at most one");
     }
 
     @Test
