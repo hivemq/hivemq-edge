@@ -25,13 +25,11 @@ import com.hivemq.combining.model.DataCombining;
 import com.hivemq.combining.model.DataIdentifierReference;
 import com.hivemq.datapoint.DataPointWithMetadata;
 import com.hivemq.edge.modules.adapters.data.TagManager;
-import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
-import com.hivemq.mqtt.message.subscribe.Topic;
-import com.hivemq.mqtt.topic.SubscriptionFlag;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
+import com.hivemq.persistence.clientqueue.InternalTopicFilterSubscriber;
 import com.hivemq.persistence.mappings.fieldmapping.Instruction;
 import com.hivemq.protocols.northbound.SingleTagConsumer;
 import java.io.IOException;
@@ -137,7 +135,7 @@ public class DataCombiningRuntime {
     }
 
     public void stop() {
-        consumers.forEach(InternalConsumer::close);
+        consumers.forEach(InternalConsumer::stop);
         consumers.clear();
         dataCombiningTransformationService.removeScriptForDataCombining(combining);
     }
@@ -177,12 +175,52 @@ public class DataCombiningRuntime {
                 combining.destination(), rootNode.toString().getBytes(StandardCharsets.UTF_8), dataCombining);
     }
 
-    public abstract class InternalConsumer implements SingleTagConsumer {
-        protected final @NotNull DataIdentifierReference dataIdentifierReference;
-        protected final boolean primary;
-        protected final boolean storeDataPoints;
+    public interface InternalConsumer {
+        void start();
 
-        public InternalConsumer(
+        void stop();
+    }
+
+    public final class InternalTopicFilterConsumer extends InternalTopicFilterSubscriber implements InternalConsumer {
+        private static final String COMPONENT_PREFIX = "combiner";
+
+        private final @NotNull String topicFilter;
+        private final boolean primary;
+        private final boolean storeDataPoints;
+
+        public InternalTopicFilterConsumer(
+                final @NotNull DataIdentifierReference dataIdentifierReference,
+                final boolean primary,
+                final boolean storeDataPoints) {
+            super(
+                    COMPONENT_PREFIX,
+                    combining.id() + "/" + dataIdentifierReference.id(),
+                    dataIdentifierReference.id(),
+                    localTopicTree,
+                    clientQueuePersistence,
+                    singleWriterService);
+            this.topicFilter = dataIdentifierReference.id();
+            this.primary = primary;
+            this.storeDataPoints = storeDataPoints;
+        }
+
+        @Override
+        public void process(final @NotNull PUBLISH publish) {
+            if (storeDataPoints) {
+                topicFilterToPublish.put(topicFilter, publish);
+            }
+            if (primary) {
+                triggerPublish(combining);
+            }
+        }
+    }
+
+    public final class InternalTagConsumer implements InternalConsumer, SingleTagConsumer {
+        private final @NotNull DataIdentifierReference dataIdentifierReference;
+        private final boolean primary;
+        private final boolean storeDataPoints;
+
+        public InternalTagConsumer(
                 final @NotNull DataIdentifierReference dataIdentifierReference,
                 final boolean primary,
                 final boolean storeDataPoints) {
@@ -216,78 +254,13 @@ public class DataCombiningRuntime {
             }
         }
 
-        public abstract void close();
-
-        public abstract void start();
-    }
-
-    public final class InternalTopicFilterConsumer extends InternalConsumer {
-        private static final byte DEFAULT_FLAGS = SubscriptionFlag.getDefaultFlags(true, true, false);
-        private final @NotNull QueueConsumer queueConsumer;
-        private final @NotNull String queueId;
-        private final @NotNull String subscriber;
-        private final @NotNull String topicFilter;
-
-        public InternalTopicFilterConsumer(
-                final @NotNull DataIdentifierReference dataIdentifierReference,
-                final boolean primary,
-                final boolean storeDataPoints) {
-            super(dataIdentifierReference, primary, storeDataPoints);
-            this.queueId = combining.id() + "/" + dataIdentifierReference.id();
-            this.subscriber = combining.id() + "#";
-            this.topicFilter = dataIdentifierReference.id();
-            this.queueConsumer =
-                    new QueueConsumer(clientQueuePersistence, combining.id() + "/" + topicFilter, singleWriterService) {
-                        @Override
-                        public void process(final @NotNull PUBLISH publish) {
-                            if (storeDataPoints) {
-                                topicFilterToPublish.put(topicFilter, publish);
-                            }
-                            if (primary) {
-                                triggerPublish(combining);
-                            }
-                        }
-                    };
-        }
-
-        public @NotNull String getQueueId() {
-            return queueId;
-        }
-
-        @Override
-        public void close() {
-            queueConsumer.close();
-            localTopicTree.removeSubscriber(
-                    subscriber, topicFilter, combining.id().toString()); // I guess we should keep the subscription?
-        }
-
-        @Override
-        public void start() {
-            localTopicTree.addTopic(
-                    subscriber,
-                    new Topic(topicFilter, QoS.EXACTLY_ONCE, false, true),
-                    DEFAULT_FLAGS,
-                    combining.id().toString());
-            queueConsumer.start();
-        }
-    }
-
-    public final class InternalTagConsumer extends InternalConsumer {
-
-        public InternalTagConsumer(
-                final @NotNull DataIdentifierReference dataIdentifierReference,
-                final boolean primary,
-                final boolean storeDataPoints) {
-            super(dataIdentifierReference, primary, storeDataPoints);
-        }
-
         @Override
         public void start() {
             tagManager.addConsumer(this);
         }
 
         @Override
-        public void close() {
+        public void stop() {
             tagManager.removeConsumer(this);
         }
     }
