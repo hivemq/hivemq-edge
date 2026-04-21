@@ -110,7 +110,9 @@ public class JsonToOpcUAConverter {
                 }
             }
 
-            final var field = jsonSchemaGenerator.processExtensionObject(dataType, true, null);
+            // readable/writable flags only influence schema generation; this is the write path,
+            // so defaults are fine.
+            final var field = jsonSchemaGenerator.processExtensionObject(dataType, true, true, true, null);
 
             final var dataTypesToRegister = new ArrayList<DataType>();
             collectCustomDatatypes(field, dataTypesToRegister);
