@@ -5,6 +5,8 @@ import type { NodeProps } from '@xyflow/react'
 import { Handle, Position, useStore, useNodeConnections, useNodesData, useReactFlow } from '@xyflow/react'
 import { HStack, Icon, Text, VStack } from '@chakra-ui/react'
 
+import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
+import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import TooltipIcon from '@/components/Chakra/TooltipIcon.tsx'
@@ -28,7 +30,12 @@ import { RuntimeStatus, OperationalStatus, type NodeStatusModel } from '@/module
 const NodeDevice: FC<NodeProps<NodeDeviceType>> = ({ id, selected, data, dragging }) => {
   const { t } = useTranslation()
   const { onContextMenu } = useContextMenu(id, selected, `/workspace/device/${id}`)
-  const { category, capabilities } = data
+  const { data: adapterInstances } = useListProtocolAdapters()
+  const adapterInstance = adapterInstances?.find((a) => a.id === data.sourceAdapterId)
+  const { data: adapterTypes } = useGetAdapterTypes()
+  const adapterProtocol = adapterTypes?.items?.find((e) => e.id === adapterInstance?.type)
+  const category = adapterProtocol?.category ?? data.category
+  const capabilities = adapterProtocol?.capabilities ?? data.capabilities
   const showSkeleton = useStore(selectorIsSkeletonZoom)
   const { data: deviceTags } = useGetDomainTags(data.sourceAdapterId)
   const { updateNodeData } = useReactFlow()
@@ -122,7 +129,7 @@ const NodeDevice: FC<NodeProps<NodeDeviceType>> = ({ id, selected, data, draggin
                   as={deviceCategoryIcon[category?.name || ProtocolAdapterCategoryName.SIMULATION]}
                   data-type={category?.name}
                 />
-                <Text>{data.protocol}</Text>
+                <Text>{adapterProtocol?.protocol ?? data.protocol}</Text>
               </HStack>
               <MappingBadge destinations={tagNames} type={SelectEntityType.TAG} />
             </>
