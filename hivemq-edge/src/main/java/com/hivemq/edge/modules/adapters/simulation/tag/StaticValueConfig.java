@@ -49,8 +49,7 @@ public final class StaticValueConfig {
         this.parsedValue = parse(valueType, value);
     }
 
-    private static @NotNull Object parse(
-            final @NotNull SimulationValueType valueType, final @NotNull String value) {
+    private static @NotNull Object parse(final @NotNull SimulationValueType valueType, final @NotNull String value) {
         try {
             return switch (valueType) {
                 case INT -> Integer.parseInt(value);
@@ -59,8 +58,7 @@ public final class StaticValueConfig {
                 case STRING -> value;
             };
         } catch (final NumberFormatException nfe) {
-            throw new IllegalArgumentException(
-                    "staticValue could not parse `" + value + "` as " + valueType, nfe);
+            throw new IllegalArgumentException("staticValue could not parse `" + value + "` as " + valueType, nfe);
         }
     }
 

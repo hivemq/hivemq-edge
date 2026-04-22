@@ -81,8 +81,8 @@ class CustomConfigSchemaGeneratorTest {
         // The frontend (useTagManager.ts) re-nests the returned schema under `definitions.TagSchema`,
         // which would invalidate any top-level `$defs` referenced via `#/$defs/...`. Every generated
         // schema must be fully self-contained.
-        final JsonNode tagSchema = generator.generateJsonSchema(
-                com.hivemq.edge.modules.adapters.simulation.tag.SimulationTag.class);
+        final JsonNode tagSchema =
+                generator.generateJsonSchema(com.hivemq.edge.modules.adapters.simulation.tag.SimulationTag.class);
         assertThat(tagSchema.has("$defs")).isFalse();
         assertThat(tagSchema.toString()).doesNotContain("\"$ref\"");
     }
@@ -201,8 +201,7 @@ class CustomConfigSchemaGeneratorTest {
 
         @JsonCreator
         public PlainPojo(
-                @JsonProperty("foo") final @Nullable String foo,
-                @JsonProperty("bar") final @Nullable String bar) {
+                @JsonProperty("foo") final @Nullable String foo, @JsonProperty("bar") final @Nullable String bar) {
             this.foo = foo;
             this.bar = bar;
         }

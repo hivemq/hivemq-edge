@@ -131,31 +131,33 @@ public class CustomConfigSchemaGenerator {
      * fires before nested {@code $ref}s and inlined properties are finalised.
      */
     private static void withMutuallyExclusiveFieldsMarker(final @NotNull SchemaGeneratorConfigBuilder configBuilder) {
-        configBuilder.forTypesInGeneral().withTypeAttributeOverride(
-                (final ObjectNode collectedTypeAttributes,
-                        final TypeScope scope,
-                        final SchemaGenerationContext context) -> {
-                    final Class<?> clazz = scope.getType().getErasedType();
-                    if (clazz == null) {
-                        return;
-                    }
-                    final MutuallyExclusiveFields mef = clazz.getAnnotation(MutuallyExclusiveFields.class);
-                    if (mef == null || mef.value().length == 0) {
-                        return;
-                    }
-                    final ObjectNode marker = collectedTypeAttributes.putObject(MEF_MARKER);
-                    final ArrayNode valueArr = marker.putArray("value");
-                    for (final String v : mef.value()) {
-                        valueArr.add(v);
-                    }
-                    final ArrayNode titlesArr = marker.putArray("titles");
-                    for (final String t : mef.titles()) {
-                        titlesArr.add(t);
-                    }
-                    marker.put("includeDefault", mef.includeDefault());
-                    marker.put("defaultTitle", mef.defaultTitle());
-                    marker.put("groupTitle", mef.groupTitle());
-                });
+        configBuilder
+                .forTypesInGeneral()
+                .withTypeAttributeOverride(
+                        (final ObjectNode collectedTypeAttributes,
+                                final TypeScope scope,
+                                final SchemaGenerationContext context) -> {
+                            final Class<?> clazz = scope.getType().getErasedType();
+                            if (clazz == null) {
+                                return;
+                            }
+                            final MutuallyExclusiveFields mef = clazz.getAnnotation(MutuallyExclusiveFields.class);
+                            if (mef == null || mef.value().length == 0) {
+                                return;
+                            }
+                            final ObjectNode marker = collectedTypeAttributes.putObject(MEF_MARKER);
+                            final ArrayNode valueArr = marker.putArray("value");
+                            for (final String v : mef.value()) {
+                                valueArr.add(v);
+                            }
+                            final ArrayNode titlesArr = marker.putArray("titles");
+                            for (final String t : mef.titles()) {
+                                titlesArr.add(t);
+                            }
+                            marker.put("includeDefault", mef.includeDefault());
+                            marker.put("defaultTitle", mef.defaultTitle());
+                            marker.put("groupTitle", mef.groupTitle());
+                        });
     }
 
     /**
