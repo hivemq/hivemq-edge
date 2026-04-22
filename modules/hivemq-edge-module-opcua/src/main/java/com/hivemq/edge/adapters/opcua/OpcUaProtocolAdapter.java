@@ -652,15 +652,15 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     public void createTagSchema(
             final @NotNull TagSchemaCreationInput input, final @NotNull TagSchemaCreationOutput output) {
         if (stopped) {
-            log.debug("Create tag schema operation skipped for adapter '{}' - adapter has been stopped", adapterId);
-            output.fail("Create tag schema failed: Adapter has been stopped");
+            log.debug("Create tag schema operation skipped for adapter '{}' - adapter is not started", adapterId);
+            output.adapterNotStarted();
             return;
         }
         final String tagName = input.getTagName();
         final OpcuaTag tag = tagNameToTag.get(tagName);
         if (tag == null) {
             log.error("Cannot create schema for non-existent tag '{}'", tagName);
-            output.fail("Tag '" + tagName + "' not found.");
+            output.tagNotFound("Tag '" + tagName + "' not found.");
             return;
         }
 
@@ -672,26 +672,17 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         conn.client()
                 .ifPresentOrElse(
                         client -> {
+                            final var generator = new JsonSchemaGenerator(client);
                             @SuppressWarnings("unused")
-                            final var unused = new JsonSchemaGenerator(client)
-                                    .createMqttPayloadJsonSchema(tag)
-                                    .whenComplete((result, throwable) -> {
-                                        if (throwable == null) {
-                                            result.ifPresentOrElse(
-                                                    schema -> {
-                                                        log.debug("Schema inferred for tag='{}'", tagName);
-                                                        output.finish(schema);
-                                                    },
-                                                    () -> {
-                                                        log.error("No schema inferred for tag='{}'", tagName);
-                                                        output.fail("No schema inferred for tag='" + tagName + "'");
-                                                    });
-                                        } else {
-                                            log.error(
-                                                    "Exception while creating tag schema for '{}'", tagName, throwable);
-                                            output.fail(throwable, null);
-                                        }
-                                    });
+                            final var unused = generator.collectTypeInfo(tag).whenComplete((fieldInfo, throwable) -> {
+                                if (throwable == null) {
+                                    log.debug("Schema inferred for tag='{}'", tagName);
+                                    output.finish(JsonSchemaGenerator.buildSchema(fieldInfo));
+                                } else {
+                                    log.error("Exception while creating tag schema for '{}'", tagName, throwable);
+                                    output.fail(throwable, null);
+                                }
+                            });
                         },
                         () -> {
                             log.error("Discovery failed: Client not connected or not initialized");
