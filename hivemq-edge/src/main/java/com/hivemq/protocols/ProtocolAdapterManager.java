@@ -509,10 +509,7 @@ public class ProtocolAdapterManager {
                 final var streamingService =
                         new ProtocolAdapterTagStreamingServiceImpl(config.getAdapterId(), tagManager);
                 final ModuleServicesPerModuleImpl perModule = new ModuleServicesPerModuleImpl(
-                        adapterPublishService,
-                        eventService,
-                        protocolAdapterWritingService,
-                        streamingService);
+                        adapterPublishService, eventService, protocolAdapterWritingService, streamingService);
                 final ProtocolAdapter protocolAdapter = factory.createAdapter(
                         factory.getInformation(),
                         new ProtocolAdapterInputImpl(
