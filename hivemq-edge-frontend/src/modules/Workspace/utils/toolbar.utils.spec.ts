@@ -80,14 +80,14 @@ describe('toolbar.utils', () => {
         expected: true,
       },
       {
-        description: 'other node types',
+        description: 'edge nodes',
         node: {
           id: 'edge-1',
           type: NodeTypes.EDGE_NODE,
           position: { x: 0, y: 0 },
           data: { label: 'Edge' },
         } as Node,
-        expected: false,
+        expected: true,
       },
     ])('should return $expected for $description', ({ node, expected }) => {
       expect(isNodeCombinerCandidate(node)).toBe(expected)
@@ -106,10 +106,7 @@ describe('toolbar.utils', () => {
             data: { id: 'adapter-1', type: 'mqtt' } as Adapter,
           },
         ] as CombinerEligibleNode[],
-        expected: [
-          { type: EntityType.ADAPTER, id: 'adapter-1' },
-          { id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER },
-        ],
+        expected: [{ type: EntityType.ADAPTER, id: 'adapter-1' }],
       },
       {
         description: 'bridge nodes',
@@ -121,10 +118,7 @@ describe('toolbar.utils', () => {
             data: { id: 'bridge-1' } as Bridge,
           },
         ] as CombinerEligibleNode[],
-        expected: [
-          { type: EntityType.BRIDGE, id: 'bridge-1' },
-          { id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER },
-        ],
+        expected: [{ type: EntityType.BRIDGE, id: 'bridge-1' }],
       },
       {
         description: 'pulse nodes',
@@ -136,10 +130,7 @@ describe('toolbar.utils', () => {
             data: { id: 'pulse-1', label: 'Pulse' },
           },
         ] as CombinerEligibleNode[],
-        expected: [
-          { type: EntityType.PULSE_AGENT, id: 'pulse-1' },
-          { id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER },
-        ],
+        expected: [{ type: EntityType.PULSE_AGENT, id: 'pulse-1' }],
       },
     ])('should build entity references from $description', ({ nodes, expected }) => {
       const result = buildEntityReferencesFromNodes(nodes)
@@ -174,15 +165,31 @@ describe('toolbar.utils', () => {
         { type: EntityType.ADAPTER, id: 'adapter-1' },
         { type: EntityType.BRIDGE, id: 'bridge-1' },
         { type: EntityType.PULSE_AGENT, id: 'pulse-1' },
-        { id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER },
       ])
     })
 
-    it('should always include edge broker as last reference', () => {
+    it('should not include edge broker by default', () => {
       const nodes: CombinerEligibleNode[] = []
       const result = buildEntityReferencesFromNodes(nodes)
 
-      expect(result).toEqual([{ id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER }])
+      expect(result).toEqual([])
+    })
+
+    it('should include edge broker as last reference when requested', () => {
+      const nodes: CombinerEligibleNode[] = [
+        {
+          id: 'adapter-1',
+          type: NodeTypes.ADAPTER_NODE,
+          position: { x: 0, y: 0 },
+          data: { id: 'adapter-1', type: 'mqtt' } as Adapter,
+        },
+      ]
+      const result = buildEntityReferencesFromNodes(nodes, true)
+
+      expect(result).toEqual([
+        { type: EntityType.ADAPTER, id: 'adapter-1' },
+        { id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER },
+      ])
     })
   })
 
@@ -441,10 +448,10 @@ describe('toolbar.utils', () => {
         description: 'no eligible nodes exist',
         nodes: [
           {
-            id: 'edge-1',
-            type: NodeTypes.EDGE_NODE,
+            id: 'combiner-1',
+            type: NodeTypes.COMBINER_NODE,
             position: { x: 0, y: 0 },
-            data: { label: 'Edge' },
+            data: { label: 'Combiner' },
           },
         ] as Node[],
       },
@@ -487,8 +494,8 @@ describe('toolbar.utils', () => {
 
       const result = filterCombinerCandidates(nodes, adapterTypes)
 
-      expect(result).toHaveLength(2)
-      expect(result?.map((n) => n.id)).toEqual(['adapter-1', 'bridge-1'])
+      expect(result).toHaveLength(3)
+      expect(result?.map((n) => n.id)).toEqual(['adapter-1', 'bridge-1', 'edge-1'])
     })
   })
 
