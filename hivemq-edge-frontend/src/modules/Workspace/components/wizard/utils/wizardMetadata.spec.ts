@@ -105,7 +105,7 @@ describe('wizardMetadata', () => {
       expect(step).toBeDefined()
       expect(step?.requiresSelection).toBe(true)
       expect(step?.selectionConstraints).toBeDefined()
-      expect(step?.selectionConstraints?.minNodes).toBe(2)
+      expect(step?.selectionConstraints?.minNodes).toBe(1)
     })
 
     it('should return step with selection constraints for ASSET_MAPPER', () => {
@@ -237,11 +237,12 @@ describe('wizardMetadata', () => {
       expect(step?.selectionConstraints?.requiresProtocolCapabilities).toContain('COMBINE')
     })
 
-    it('should allow ADAPTER_NODE and BRIDGE_NODE for COMBINER', () => {
+    it('should allow ADAPTER_NODE, BRIDGE_NODE and EDGE_NODE for COMBINER', () => {
       const step = getWizardStep(EntityType.COMBINER, 0)
 
       expect(step?.selectionConstraints?.allowedNodeTypes).toContain('ADAPTER_NODE')
       expect(step?.selectionConstraints?.allowedNodeTypes).toContain('BRIDGE_NODE')
+      expect(step?.selectionConstraints?.allowedNodeTypes).toContain('EDGE_NODE')
     })
 
     it('should allow ADAPTER_NODE and BRIDGE_NODE for ASSET_MAPPER', () => {

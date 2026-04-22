@@ -46,7 +46,7 @@ const CombinerMappingsList: FC<CombinerMappingsListProps> = ({ mappings }) => {
               <VStack align="flex-start" spacing={1} flex={1}>
                 <HStack spacing={2} w="full">
                   <Text fontWeight="medium" data-testid={`mapping-source-${mapping.id}`}>
-                    {mapping.sources.primary.id}
+                    {mapping.sources?.primary?.id ?? '-'}
                   </Text>
                   <Icon as={LuArrowRight} color="chakra-subtle-text" />
                   <Text fontWeight="medium" data-testid={`mapping-destination-${mapping.id}`}>
