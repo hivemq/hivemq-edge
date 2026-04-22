@@ -184,8 +184,7 @@ class SimulationProtocolAdapterConfigTest {
     @Test
     public void convertTag_staticValueString_valid() throws Exception {
         final SimulationTag tag = mapper.readValue(
-                "{\"name\":\"t\",\"definition\":{\"staticValue\":{\"valueType\":\"STRING\","
-                        + "\"value\":\"hello\"}}}",
+                "{\"name\":\"t\",\"definition\":{\"staticValue\":{\"valueType\":\"STRING\"," + "\"value\":\"hello\"}}}",
                 SimulationTag.class);
 
         final SimulationTagDefinition def = tag.getDefinition();
@@ -199,8 +198,7 @@ class SimulationProtocolAdapterConfigTest {
     @Test
     public void convertTag_staticValueDouble_parsesValue() throws Exception {
         final SimulationTag tag = mapper.readValue(
-                "{\"name\":\"t\",\"definition\":{\"staticValue\":{\"valueType\":\"DOUBLE\","
-                        + "\"value\":\"3.14\"}}}",
+                "{\"name\":\"t\",\"definition\":{\"staticValue\":{\"valueType\":\"DOUBLE\"," + "\"value\":\"3.14\"}}}",
                 SimulationTag.class);
 
         assertThat(tag.getDefinition().getStaticValue()).isNotNull();
