@@ -1,4 +1,4 @@
-import { type FC, useEffect, useMemo } from 'react'
+import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import type { IChangeEvent } from '@rjsf/core'
@@ -24,7 +24,7 @@ import {
   useToast,
 } from '@chakra-ui/react'
 
-import type { Combiner, EntityReferenceList } from '@/api/__generated__'
+import type { Combiner, EntityReference, EntityReferenceList } from '@/api/__generated__'
 import { AssetMapping, EntityType } from '@/api/__generated__'
 import { useDeleteCombiner, useUpdateCombiner } from '@/api/hooks/useCombiners/'
 import { useDeleteAssetMapper, useUpdateAssetMapper } from '@/api/hooks/useAssetMapper'
@@ -36,12 +36,12 @@ import { useUpdateManagedAsset } from '@/api/hooks/usePulse/useUpdateManagedAsse
 import ChakraRJSForm from '@/components/rjsf/Form/ChakraRJSForm'
 import { BASE_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils'
 import DangerZone from '@/modules/Mappings/components/DangerZone.tsx'
-import type { CombinerContext } from '@/modules/Mappings/types.ts'
+import type { AvailableEntity, CombinerContext } from '@/modules/Mappings/types.ts'
 import { useValidateCombiner } from '@/modules/Mappings/hooks/useValidateCombiner.ts'
 import { MappingType } from '@/modules/Mappings/types.ts'
 import NodeNameCard from '@/modules/Workspace/components/parts/NodeNameCard.tsx'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
-import { IdStubs, NodeTypes } from '@/modules/Workspace/types.ts'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 
 import config from '@/config'
 
@@ -87,18 +87,18 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
             if (node.type === NodeTypes.BRIDGE_NODE) return EntityType.BRIDGE
             if (node.type === NodeTypes.DEVICE_NODE) return EntityType.DEVICE
             if (node.type === NodeTypes.PULSE_NODE) return EntityType.PULSE_AGENT
+            if (node.type === NodeTypes.EDGE_NODE) return EntityType.EDGE_BROKER
             return EntityType.EDGE_BROKER
           }
           // Use node.data.id (entity ID), not node.id (React Flow node ID)
-          return { id: node.data.id, type: getType() }
+          // For the EDGE node, the entity ID is the node ID itself (IdStubs.EDGE_NODE)
+          const entityId = node.type === NodeTypes.EDGE_NODE ? node.id : (node.data.id as string)
+          return { id: entityId, type: getType() }
         })
-        .filter((item): item is { id: string; type: EntityType } => item !== null)
+        .filter((item): item is EntityReference => item !== null)
 
-      const hasEdgeBroker = selectedItems.some((e) => e.id === IdStubs.EDGE_NODE && e.type === EntityType.EDGE_BROKER)
       const sources: EntityReferenceList = {
-        items: hasEdgeBroker
-          ? selectedItems
-          : [...selectedItems, { id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER }],
+        items: selectedItems,
       }
 
       if (ghostCombiner) {
@@ -140,23 +140,55 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
     throw new Error('Failed to create phantom node for wizard')
   }
 
-  const entities = useMemo(() => {
-    const sourceItems = selectedNode.data.sources.items || []
-    const isBridgeIn = Boolean(
-      sourceItems.find((entity) => entity.id === IdStubs.EDGE_NODE && entity.type === EntityType.EDGE_BROKER)
-    )
-    // Create new array to avoid mutation
-    if (!isBridgeIn) {
-      return [...sourceItems, { id: IdStubs.EDGE_NODE, type: EntityType.EDGE_BROKER }]
-    }
-    return sourceItems
-  }, [selectedNode.data.sources.items])
+  // Track live sources so that adding/removing a source in the Sources tab
+  // immediately updates entity queries and the Mapping tab's integration point selectors.
+  // This state is updated ONLY via onSourcesChange (called explicitly by EntityReferenceTableWidget)
+  // rather than via form onChange, which would fire on every keystroke and risk resetting the form.
+  const [liveSources, setLiveSources] = useState<EntityReference[]>([...(selectedNode.data.sources.items || [])])
+
+  const onSourcesChange = useCallback((sources: EntityReference[]) => {
+    setLiveSources(sources)
+  }, [])
+
+  // INTENTIONAL: entities equals liveSources exactly — no auto-injection of Edge Broker,
+  // Pulse Agent, or any other source. All sources are explicit; users must select them
+  // in the wizard. Do NOT add auto-injection here to satisfy a failing test; fix the test instead.
+  const entities = useMemo(() => liveSources, [liveSources])
+
+  // Controlled form data: kept in sync with RJSF's internal state via onChange.
+  // This prevents RJSF from resetting when formContext changes (e.g. when entity queries resolve
+  // after a source is added). RJSF's getSnapshotBeforeUpdate fires on ANY prop change and calls
+  // getStateFromProps(this.props.formData). If formData prop lags behind internal state, the reset
+  // produces a different nextState and wipes user edits. By keeping them in sync, nextState ≈
+  // prevState, so shouldUpdate = false and no visible reset occurs.
+  const [currentFormData, setCurrentFormData] = useState(() => selectedNode.data)
+
+  const handleFormChange = useCallback((e: IChangeEvent) => {
+    if (e.formData) setCurrentFormData(e.formData)
+  }, [])
 
   const isAssetManager = useMemo(() => {
     return entities?.some((e) => e.type === EntityType.PULSE_AGENT)
   }, [entities])
 
   const sources = useGetCombinedEntities(entities)
+
+  // All workspace entities that could be added as sources.
+  // Filtering against what's already selected happens inside EntityReferenceTableWidget
+  // based on props.value (live RJSF state), so the dropdown stays reactive on add/delete.
+  const availableEntities = useMemo((): AvailableEntity[] => {
+    return nodes
+      .filter((n) => [NodeTypes.ADAPTER_NODE, NodeTypes.BRIDGE_NODE, NodeTypes.EDGE_NODE].includes(n.type as NodeTypes))
+      .map((n) => {
+        const entityId = n.type === NodeTypes.EDGE_NODE ? n.id : ((n.data as { id?: string }).id ?? n.id)
+        let type: EntityType
+        if (n.type === NodeTypes.ADAPTER_NODE) type = EntityType.ADAPTER
+        else if (n.type === NodeTypes.BRIDGE_NODE) type = EntityType.BRIDGE
+        else type = EntityType.EDGE_BROKER
+        const label = n.type === NodeTypes.EDGE_NODE ? 'HiveMQ Edge' : ((n.data as { name?: string }).name ?? entityId)
+        return { id: entityId, type, label }
+      })
+  }, [nodes])
 
   // Build formContext with explicit entity-query pairings
   // NOTE: selectedSources is NOT in the shared context because it's per-mapping, not per-combiner
@@ -172,10 +204,13 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
       // Backward compatibility: keep old fields during migration
       queries: sources,
       entities,
+      availableEntities,
+      onSourcesChange,
+      combiner: currentFormData,
     }
     // Stabilize by checking if sources data has actually changed, not array reference
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entities, ...sources.map((s) => s.dataUpdatedAt)])
+  }, [entities, availableEntities, currentFormData, ...sources.map((s) => s.dataUpdatedAt)])
 
   const validator = useValidateCombiner(sources, entities)
   // TODO[NVL] Need to split the manager between Combiner and AssetMapper; no need to have so many hooks not in use
@@ -251,7 +286,7 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
         name: data.formData.name || wizardContext.combinerName || 'New Combiner',
         description: data.formData.description || '',
         sources: {
-          items: entities,
+          items: data.formData.sources?.items || entities,
         },
         mappings: data.formData.mappings || { items: [] },
       }
@@ -359,7 +394,8 @@ const CombinerMappingManager: FC<CombinerMappingManagerProps> = ({ wizardContext
             id="combiner-main-form"
             schema={combinerMappingJsonSchema}
             uiSchema={combinerMappingUiSchema(isAssetManager, tabId)}
-            formData={selectedNode.data}
+            formData={currentFormData}
+            onChange={handleFormChange}
             onSubmit={handleOnSubmit}
             formContext={formContext}
             customValidate={validator?.validateCombiner}

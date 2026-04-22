@@ -6,8 +6,6 @@ on:
     secrets:
       SONAR_TOKEN:
         required: false
-      PERCY_TOKEN:
-        required: false
 
 defaults:
   run:
@@ -126,27 +124,10 @@ jobs:
           uploadArtifacts: true # save results as an action artifacts
           configPath: 'hivemq-edge-frontend/.lighthouserc.cjs'
 
-  percy_prepare:
-    name: Percy (initialise parallel)
-    runs-on: ubuntu-latest
-    outputs:
-      LOCAL_NONCE: ${{ steps.percy.outputs.nonce }}
-    steps:
-      - name: 👓 Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-      - id: percy
-        run: |
-          echo "nonce=$(date +'%s')" >> "$GITHUB_OUTPUT"
-
   cypress_matrix:
     runs-on: ubuntu-latest
     continue-on-error: true
-    needs: [ build_instrumented, percy_prepare ]
-    env:
-      LOCAL_NONCE: ${{ needs.percy_prepare.outputs.LOCAL_NONCE }}
-      PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
-    outputs:
-      LOCAL_NONCE: ${{ env.LOCAL_NONCE }}
+    needs: [ build_instrumented ]
     strategy:
       matrix:
         cypress: [
@@ -191,11 +172,7 @@ jobs:
           spec: ${{ matrix.cypress.spec }}
           start: pnpm preview --port 3000
           working-directory: ./hivemq-edge-frontend/
-          command-prefix: 'npx percy exec --parallel'
           quiet: true
-        env:
-          PERCY_PARALLEL_NONCE: ${{ env.LOCAL_NONCE }}
-          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
 
       # after the test, store videos
       - name: 💾 Upload Cypress - ${{ matrix.cypress.target }} videos
@@ -249,24 +226,3 @@ jobs:
           SONAR_HOST_URL: https://sonarcloud.io
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  percy_finalise:
-    name: Percy (finalise)
-    needs: [ cypress_matrix ]
-    runs-on: ubuntu-latest
-    env:
-      LOCAL_NONCE: ${{ needs.cypress_matrix.outputs.LOCAL_NONCE }}
-      PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
-    steps:
-      - name: 👓 Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-
-      - name: 🏗️ Setup node environment
-        uses: ./.github/actions/setup_node
-        with:
-          working-directory: ./hivemq-edge-frontend/
-          run-install: true
-
-      - run: npx percy build:finalize
-        env:
-          PERCY_PARALLEL_NONCE: ${{ env.LOCAL_NONCE }}
-          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
