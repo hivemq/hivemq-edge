@@ -16,13 +16,22 @@
 package com.hivemq.edge.modules.adapters.simulation.tag;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.annotations.MutuallyExclusiveFields;
 import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@MutuallyExclusiveFields(
+        value = {"randomValue", "staticValue"},
+        titles = {"Random Value", "Static Value"},
+        includeDefault = true,
+        defaultTitle = "Default (adapter-level random double)",
+        groupTitle = "Tag Configuration")
 public class SimulationTagDefinition implements TagDefinition {
 
     @JsonProperty("randomValue")
