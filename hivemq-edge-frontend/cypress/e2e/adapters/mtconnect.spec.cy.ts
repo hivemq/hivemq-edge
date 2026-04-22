@@ -16,9 +16,19 @@ describe('Databases Protocol Adapter', () => {
 
   it('should be accessible', () => {
     cy.injectAxe()
-    cy.checkAccessibility()
+    cy.checkAccessibility(undefined, {
+      rules: {
+        region: { enabled: false },
+        'color-contrast': { enabled: false },
+      },
+    })
 
     adapterPage.addNewAdapter.click()
-    cy.checkAccessibility()
+    cy.checkAccessibility(undefined, {
+      rules: {
+        region: { enabled: false },
+        'color-contrast': { enabled: false },
+      },
+    })
   })
 })

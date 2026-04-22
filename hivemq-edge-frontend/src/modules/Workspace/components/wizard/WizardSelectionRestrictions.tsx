@@ -6,7 +6,7 @@ import debug from 'debug'
 
 import type { ProtocolAdapter } from '@/api/__generated__'
 import { useWizardState } from '@/modules/Workspace/hooks/useWizardStore'
-import { EdgeTypes, IdStubs, NodeTypes } from '@/modules/Workspace/types'
+import { EdgeTypes, NodeTypes } from '@/modules/Workspace/types'
 import type { SelectionConstraints } from './types'
 import { GHOST_COLOR_EDGE, GHOST_EDGE_STYLE } from './utils/styles'
 import { useProtocolAdaptersContext } from './hooks/useProtocolAdaptersContext'
@@ -24,11 +24,6 @@ const checkConstraints = (
 ): boolean => {
   // Ghost nodes are never selectable
   if (node.data?.isGhost) {
-    return false
-  }
-
-  // EDGE node is never selectable
-  if (node.id === IdStubs.EDGE_NODE) {
     return false
   }
 
@@ -165,23 +160,9 @@ const WizardSelectionRestrictions: FC = () => {
     const constrainedNodes = nodes.map((node): Node => {
       const isAllowed = checkConstraints(node, enhancedConstraints, enhancedConstraints._protocolAdapters)
       const isGhost = node.data?.isGhost
-      const isEdge = node.id === 'EDGE_NODE'
 
       // Ghost nodes: keep visible with ghost styling
       if (isGhost) {
-        return {
-          ...node,
-          hidden: false,
-          selectable: false,
-          style: {
-            ...node.style,
-            cursor: 'default',
-          },
-        }
-      }
-
-      // EDGE node: keep visible but not selectable
-      if (isEdge) {
         return {
           ...node,
           hidden: false,
