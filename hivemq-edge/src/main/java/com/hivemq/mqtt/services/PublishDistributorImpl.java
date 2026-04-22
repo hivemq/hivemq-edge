@@ -15,9 +15,12 @@
  */
 package com.hivemq.mqtt.services;
 
+import static com.hivemq.bridge.MessageForwarderImpl.FORWARDER_PREFIX;
+import static com.hivemq.combining.runtime.DataCombiningRuntime.COMBINER_PREFIX;
 import static com.hivemq.mqtt.handler.publish.PublishStatus.DELIVERED;
 import static com.hivemq.mqtt.handler.publish.PublishStatus.FAILED;
 import static com.hivemq.mqtt.handler.publish.PublishStatus.NOT_CONNECTED;
+import static com.hivemq.persistence.clientqueue.InternalTopicFilterSubscriber.INTERNAL_SUBSCRIBER_PREFIX;
 import static com.hivemq.sampling.SamplingService.SAMPLER_PREFIX;
 import static com.hivemq.sampling.SamplingService.SAMPLER_QUEUE_LIMIT;
 
@@ -28,7 +31,6 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
-import com.hivemq.bridge.MessageForwarderImpl;
 import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.configuration.reader.BridgeExtractor;
@@ -60,10 +62,15 @@ import org.jetbrains.annotations.Nullable;
 public class PublishDistributorImpl implements PublishDistributor {
 
     /**
-     * Client ID prefix shared by all {@link com.hivemq.persistence.clientqueue.InternalTopicFilterSubscriber}
-     * instances. Used in {@link #handlePublish} to bypass the session check for internal subscribers.
+     * Returns {@code true} if the given client ID is reserved for an internal Edge component and
+     * must not be used by an external MQTT client.
      */
-    public static final @NotNull String INTERNAL_SUBSCRIBER_PREFIX = "internal#";
+    public static boolean isReservedClientId(final @NotNull String clientId) {
+        return clientId.startsWith(INTERNAL_SUBSCRIBER_PREFIX)
+                || clientId.startsWith(FORWARDER_PREFIX)
+                || clientId.startsWith(SAMPLER_PREFIX)
+                || clientId.startsWith(COMBINER_PREFIX);
+    }
 
     @NotNull
     private final ClientQueuePersistence clientQueuePersistence;
@@ -166,7 +173,7 @@ public class PublishDistributorImpl implements PublishDistributor {
 
         if (sharedSubscription) {
             // only do the bridge iterations for client ids that can even be bridge clients
-            if (client.startsWith(MessageForwarderImpl.FORWARDER_PREFIX)) {
+            if (client.startsWith(FORWARDER_PREFIX)) {
                 return handlePublishForBridgeForwarder(
                         publish,
                         client,
@@ -285,11 +292,11 @@ public class PublishDistributorImpl implements PublishDistributor {
 
     private @Nullable CustomBridgeLimitations getBridgeConfig(final @NotNull String clientId) {
         for (final MqttBridge bridge : bridgeConfiguration.getBridges()) {
-            final String bridgeClientId = MessageForwarderImpl.FORWARDER_PREFIX + bridge.getId();
+            final String bridgeClientId = FORWARDER_PREFIX + bridge.getId();
             if (clientId.contains(bridgeClientId)) {
                 for (final LocalSubscription localSubscription : bridge.getLocalSubscriptions()) {
-                    final String detailedBridgeClientId = MessageForwarderImpl.FORWARDER_PREFIX + bridge.getId() + "-"
-                            + localSubscription.calculateUniqueId();
+                    final String detailedBridgeClientId =
+                            FORWARDER_PREFIX + bridge.getId() + "-" + localSubscription.calculateUniqueId();
                     // contains as it ends with the topic filter, which we dont know
                     if (clientId.contains(detailedBridgeClientId)) {
                         return new CustomBridgeLimitations(bridge.isPersist(), localSubscription.getQueueLimit());

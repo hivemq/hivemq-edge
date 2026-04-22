@@ -51,6 +51,8 @@ public class DataCombiningRuntime {
 
     private static final Logger log = LoggerFactory.getLogger(DataCombiningRuntime.class);
 
+    public static final @NotNull String COMBINER_PREFIX = "$COMBINER::";
+
     private final @NotNull DataCombining combining;
     private final @NotNull LocalTopicTree localTopicTree;
     private final @NotNull TagManager tagManager;
@@ -234,7 +236,7 @@ public class DataCombiningRuntime {
                 final boolean storeDataPoints) {
             super(dataIdentifierReference, primary, storeDataPoints);
             this.queueId = combining.id() + "/" + dataIdentifierReference.id();
-            this.subscriber = combining.id() + "#";
+            this.subscriber = COMBINER_PREFIX + combining.id();
             this.topicFilter = dataIdentifierReference.id();
             this.queueConsumer =
                     new QueueConsumer(clientQueuePersistence, combining.id() + "/" + topicFilter, singleWriterService) {

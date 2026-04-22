@@ -37,7 +37,7 @@ public class SamplingService {
 
     private static final Logger log = LoggerFactory.getLogger(SamplingService.class);
 
-    public static final @NotNull String SAMPLER_PREFIX = "Sampler#";
+    public static final @NotNull String SAMPLER_PREFIX = "$SAMPLER::";
 
     public static final int SAMPLE_SIZE = 10;
     public static final long SAMPLER_QUEUE_LIMIT = SAMPLE_SIZE;

@@ -16,7 +16,6 @@
 package com.hivemq.persistence.clientqueue;
 
 import static com.hivemq.configuration.service.InternalConfigurations.PUBLISH_POLL_BATCH_SIZE_BYTES;
-import static com.hivemq.mqtt.services.PublishDistributorImpl.INTERNAL_SUBSCRIBER_PREFIX;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.ImmutableIntArray;
@@ -40,18 +39,18 @@ import org.slf4j.LoggerFactory;
  * being an MQTT client. Extend this class, supply a {@code COMPONENT_PREFIX} constant and a
  * unique {@code instanceId}, and implement {@link #process(PUBLISH)}.
  *
- * <p>The client ID has the form {@code "internal#<componentPrefix>#<instanceId>"}, e.g.
- * {@code "internal#tynebridge#my-bridge"} or {@code "internal#combiner#combiner:123/inst:2"}.
+ * <p>The client ID has the form {@code "$INTERNAL::<componentPrefix>::<instanceId>"}, e.g.
+ * {@code "$INTERNAL::tynebridge::my-bridge"} or {@code "$INTERNAL::combiner::combiner:123/inst:2"}.
  *
  * <p>Call {@link #start()} once to subscribe and {@link #stop()} to unsubscribe. Both methods
  * are safe to call on any thread.
- *
- * @see com.hivemq.mqtt.services.PublishDistributorImpl#INTERNAL_SUBSCRIBER_PREFIX
  */
 @SuppressWarnings({"FutureReturnValueIgnored", "CheckReturnValue"})
 public abstract class InternalTopicFilterSubscriber {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(InternalTopicFilterSubscriber.class);
+
+    public static final @NotNull String INTERNAL_SUBSCRIBER_PREFIX = "$INTERNAL::";
 
     // Built once, reused on every poll. SHARED_IN_FLIGHT_MARKER acts as a boolean inflight flag —
     // not a real wire packet ID, since messages never go to an MQTT client.
@@ -87,7 +86,7 @@ public abstract class InternalTopicFilterSubscriber {
         this.singleWriterService = singleWriterService;
         this.topicTree = topicTree;
         this.topicFilters = topicFilters;
-        this.clientId = INTERNAL_SUBSCRIBER_PREFIX + componentPrefix + "#" + instanceId;
+        this.clientId = INTERNAL_SUBSCRIBER_PREFIX + componentPrefix + "::" + instanceId;
         this.callback = id -> submitPoll();
     }
 
