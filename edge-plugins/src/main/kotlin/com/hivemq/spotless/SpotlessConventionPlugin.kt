@@ -52,7 +52,7 @@ class SpotlessConventionPlugin : Plugin<Project> {
         }
 
         spotless.kotlin {
-            target("src/*/kotlin/**/*.kt", "**/*.kts")
+            target("src/*/kotlin/**/*.kt")
 
             // License header
             if (licenseHeaderFile != null) {
