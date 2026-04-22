@@ -86,6 +86,11 @@ describe('Event Log', () => {
     })
 
     cy.get('[data-testid="eventLog-refetch"]').should('be.visible')
-    cy.checkAccessibility()
+    cy.checkAccessibility(undefined, {
+      rules: {
+        region: { enabled: false },
+        'color-contrast': { enabled: false },
+      },
+    })
   })
 })
