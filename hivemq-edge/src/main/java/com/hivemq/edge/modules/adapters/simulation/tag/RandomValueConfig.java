@@ -36,7 +36,7 @@ public final class RandomValueConfig {
     private final double minValue;
 
     @JsonProperty(value = "maxValue", required = true)
-    @ModuleConfigField(title = "Maximum Value (Excl.)", description = "Exclusive upper bound.", required = true)
+    @ModuleConfigField(title = "Maximum Value", description = "Upper bound.", required = true)
     private final double maxValue;
 
     @JsonCreator
