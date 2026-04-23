@@ -61,7 +61,7 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("FutureReturnValueIgnored")
 public class MessageForwarderImpl implements MessageForwarder {
 
-    public static final @NotNull String FORWARDER_PREFIX = "forwarder#";
+    public static final @NotNull String FORWARDER_PREFIX = "$FORWARDER::";
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(MessageForwarderImpl.class);
     public static final int RESET_INFLIGHT_COUNTERS_TIMEOUT_IN_SECONDS = 30;
@@ -265,7 +265,7 @@ public class MessageForwarderImpl implements MessageForwarder {
     @Override
     public void removeForwarder(final @NotNull MqttForwarder mqttForwarder, final boolean clearQueue) {
         final String forwarderId = mqttForwarder.getId();
-        final String clientId = forwarderId + hivemqId.get();
+        final String clientId = FORWARDER_PREFIX + forwarderId + "#" + hivemqId.get();
 
         if (log.isDebugEnabled()) {
             log.debug(
