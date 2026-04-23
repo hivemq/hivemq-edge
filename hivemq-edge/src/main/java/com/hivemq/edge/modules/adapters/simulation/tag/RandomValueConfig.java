@@ -51,6 +51,20 @@ public final class RandomValueConfig {
             throw new IllegalArgumentException(
                     "randomValue requires minValue < maxValue, was: " + minValue + " / " + maxValue);
         }
+
+        if(valueType == SimulationValueType.INT) {
+            if (minValue < Integer.MIN_VALUE || maxValue > (long) Integer.MAX_VALUE + 1) {
+                throw new IllegalArgumentException(
+                        "randomValue with valueType INT requires minValue >= " + Integer.MIN_VALUE
+                                + " and maxValue <= " + ((long) Integer.MAX_VALUE + 1));
+            }
+        } else if (valueType == SimulationValueType.LONG) {
+            if (minValue < Long.MIN_VALUE || maxValue > (double) Long.MAX_VALUE + 1) {
+                throw new IllegalArgumentException(
+                        "randomValue with valueType LONG requires minValue >= " + Long.MIN_VALUE
+                                + " and maxValue <= " + ((double) Long.MAX_VALUE + 1));
+            }
+        }
         this.valueType = valueType;
         this.minValue = minValue;
         this.maxValue = maxValue;
@@ -70,7 +84,7 @@ public final class RandomValueConfig {
 
     @Override
     public boolean equals(final Object o) {
-        return o instanceof RandomValueConfig that
+        return o instanceof final RandomValueConfig that
                 && valueType == that.valueType
                 && Double.compare(minValue, that.minValue) == 0
                 && Double.compare(maxValue, that.maxValue) == 0;
