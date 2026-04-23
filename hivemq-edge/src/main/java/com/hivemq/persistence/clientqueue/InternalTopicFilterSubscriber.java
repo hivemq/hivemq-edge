@@ -53,18 +53,17 @@ public abstract class InternalTopicFilterSubscriber {
 
     public static final @NotNull String INTERNAL_SUBSCRIBER_PREFIX = "$INTERNAL::";
 
-    // Built once, reused on every poll. SHARED_IN_FLIGHT_MARKER acts as a boolean inflight flag —
-    // not a real wire packet ID, since messages never go to an MQTT client.
-    // removeShared() uses uniqueId, not the packet ID, so the value here does not matter.
+    // SHARED_IN_FLIGHT_MARKER acts as a boolean inflight flag — not a real wire packet ID, since
+    // messages never go to an MQTT client. removeShared() uses uniqueId, not the packet ID, so
+    // the value here does not matter.
     private static final @NotNull ImmutableIntArray POLL_PACKET_IDS =
             ImmutableIntArray.of(ClientQueuePersistenceImpl.SHARED_IN_FLIGHT_MARKER);
 
+    private final @NotNull String clientId;
+    private final @NotNull List<String> topicFilters;
+    private final @NotNull LocalTopicTree topicTree;
     private final @NotNull ClientQueuePersistence clientQueuePersistence;
     private final @NotNull SingleWriterService singleWriterService;
-    private final @NotNull LocalTopicTree topicTree;
-    private final @NotNull List<String> topicFilters;
-    private final @NotNull String clientId;
-    private final @NotNull ClientQueuePersistence.PublishAvailableCallback callback;
 
     // endregion
 
@@ -96,12 +95,11 @@ public abstract class InternalTopicFilterSubscriber {
             final @NotNull LocalTopicTree topicTree,
             final @NotNull ClientQueuePersistence clientQueuePersistence,
             final @NotNull SingleWriterService singleWriterService) {
+        this.clientId = INTERNAL_SUBSCRIBER_PREFIX + componentPrefix + "::" + instanceId;
+        this.topicFilters = topicFilters;
+        this.topicTree = topicTree;
         this.clientQueuePersistence = clientQueuePersistence;
         this.singleWriterService = singleWriterService;
-        this.topicTree = topicTree;
-        this.topicFilters = topicFilters;
-        this.clientId = INTERNAL_SUBSCRIBER_PREFIX + componentPrefix + "::" + instanceId;
-        this.callback = id -> submitPoll();
     }
 
     // endregion
@@ -115,15 +113,20 @@ public abstract class InternalTopicFilterSubscriber {
 
     // endregion
 
-    // region start() - starts the subscription for the topic filters
+    // region start() / doStart() - starts the subscription for the topic filters
     // =================================================================================================================
-    // Registers the queue callback, schedules the initial poll, and subscribes to all configured
-    // topic filters in the topic tree. Safe to call on any thread.
+    // start() is the public entry point; override it to add logic before or after the subscription
+    // is established. doStart() contains the core wiring — call super.start() or doStart()
+    // explicitly if you override start(). Safe to call on any thread.
     //
     public void start() {
-        // Register the callback and kick off the initial poll first, so that no message
-        // arriving during topic registration is missed.
-        clientQueuePersistence.addPublishAvailableCallback(callback, clientId);
+        doStart();
+    }
+
+    protected void doStart() {
+        // Register the callback first so any message arriving during topic registration wakes the
+        // poller. The explicit submitPoll() drains messages already in the queue from a previous run.
+        clientQueuePersistence.addPublishAvailableCallback(id -> submitPoll(), clientId);
         submitPoll();
         for (final String topicFilter : topicFilters) {
             topicTree.addTopic(
@@ -136,12 +139,17 @@ public abstract class InternalTopicFilterSubscriber {
 
     // endregion
 
-    // region stop() - stops the subscription
+    // region stop() / doStop() - stops the subscription
     // =================================================================================================================
-    // Removes all topic tree subscriptions and deregisters the queue callback. Safe to call on
-    // any thread.
+    // stop() is the public entry point; override it to add logic before or after the subscription
+    // is torn down. doStop() contains the core wiring — call super.stop() or doStop() explicitly
+    // if you override stop(). Safe to call on any thread.
     //
     public void stop() {
+        doStop();
+    }
+
+    protected void doStop() {
         // Unsubscribe from the topic tree first so no new messages are routed here,
         // then deregister the callback.
         for (final String topicFilter : topicFilters) {
@@ -154,6 +162,20 @@ public abstract class InternalTopicFilterSubscriber {
 
     // region internal wiring
     // =================================================================================================================
+    // The four methods below form a simple pipeline that runs entirely on the SingleWriter thread:
+    //
+    // submitPoll()      — schedules pollAndForward() on the SingleWriter queue. Called from the
+    //                     publish-available callback (new message arrived), from doStart() (drain
+    //                     pre-existing messages), and at the end of each processed message (to
+    //                     continue draining).
+    // pollAndForward()  — reads one message from the client queue. On success hands it to
+    //                     processPublish(); on failure logs and reschedules via submitPoll().
+    // processPublish()  — calls process() (the user-supplied handler), then removeMessage(), then
+    //                     submitPoll() to pick up the next message. Errors are caught, logged, and
+    //                     the message is dropped — processing continues regardless.
+    // removeMessage()   — acknowledges the message to the queue persistence. QoS 0 messages are
+    //                     not persisted and need no acknowledgement.
+    //
     private void submitPoll() {
         singleWriterService.getQueuedMessagesQueue().submit(clientId, bucketIndex -> {
             pollAndForward();
