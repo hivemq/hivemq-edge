@@ -241,7 +241,15 @@ public class ProtocolAdapterWrapper {
                 future.thenAccept(success -> cleanUpScheduler());
                 final var initialConnectionStatus = protocolAdapterState.getConnectionStatus();
                 protocolAdapterState.setConnectionStatusListener(status -> {
-                    if (firstCallToStatusListener.compareAndSet(true, false) && status == initialConnectionStatus) {
+                    // setConnectionStatusListener fires the listener once with the current status.
+                    // We want to skip that synthetic "initial" callback only when the adapter has
+                    // not yet reached a ready state — otherwise we'd wait forever for a transition
+                    // that never comes (e.g. STATELESS adapters that are ready the moment they
+                    // are constructed).
+                    if (firstCallToStatusListener.compareAndSet(true, false)
+                            && status == initialConnectionStatus
+                            && status != ProtocolAdapterState.ConnectionStatus.CONNECTED
+                            && status != ProtocolAdapterState.ConnectionStatus.STATELESS) {
                         log.trace(
                                 "Ignoring initial status {} for adapter {}", initialConnectionStatus, adapter.getId());
                         return;
