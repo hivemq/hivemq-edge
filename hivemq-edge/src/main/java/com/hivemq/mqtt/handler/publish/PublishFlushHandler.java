@@ -25,13 +25,19 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Daniel Krüger
  */
 public class PublishFlushHandler extends ChannelInboundHandlerAdapter implements Runnable {
+
+    private static final Logger log = LoggerFactory.getLogger(PublishFlushHandler.class);
 
     private @Nullable ChannelHandlerContext ctx;
     private final @NotNull Deque<PublishWithFuture> messagesToWrite = new ArrayDeque<>();
@@ -82,14 +88,21 @@ public class PublishFlushHandler extends ChannelInboundHandlerAdapter implements
             return;
         }
         final ChannelHandlerContext localCtx = ctx;
-        localCtx.channel().eventLoop().execute(() -> {
-            messagesToWrite.addAll(publishes);
-            if (localCtx.channel().isActive()) {
-                consumeQueue();
-            } else {
-                handleChannelInactiveState();
+        try{
+            localCtx.channel().eventLoop().execute(() -> {
+                messagesToWrite.addAll(publishes);
+                if (localCtx.channel().isActive()) {
+                    consumeQueue();
+                } else {
+                    handleChannelInactiveState();
+                }
+            });
+        } catch (final RejectedExecutionException e) {
+            log.warn("Failed to schedule publish flush task for channel {}. Marking publishes as not connected.", localCtx.channel(), e);
+            for (final PublishWithFuture publish : publishes) {
+                publish.getFuture().set(PublishStatus.NOT_CONNECTED);
             }
-        });
+        }
     }
 
     @Override
