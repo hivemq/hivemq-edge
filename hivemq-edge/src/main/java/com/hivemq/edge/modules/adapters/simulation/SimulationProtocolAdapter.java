@@ -15,8 +15,6 @@
  */
 package com.hivemq.edge.modules.adapters.simulation;
 
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
@@ -45,12 +43,15 @@ import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTag;
 import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTagDefinition;
 import com.hivemq.edge.modules.adapters.simulation.tag.SimulationValueType;
 import com.hivemq.edge.modules.adapters.simulation.tag.StaticValueConfig;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
-import org.jetbrains.annotations.NotNull;
+
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
 
 public class SimulationProtocolAdapter implements BatchPollingProtocolAdapter, WritingProtocolAdapter {
 
@@ -77,6 +78,7 @@ public class SimulationProtocolAdapter implements BatchPollingProtocolAdapter, W
         this.adapterInformation = adapterInformation;
         this.adapterConfig = protocolAdapterInput.getConfig();
         this.protocolAdapterState = protocolAdapterInput.getProtocolAdapterState();
+        protocolAdapterState.setConnectionStatus(STATELESS);
         this.timeWaiter = timeWaiter;
         this.tags = protocolAdapterInput.getTags().stream()
                 .map(tag -> (SimulationTag) tag)
@@ -98,22 +100,6 @@ public class SimulationProtocolAdapter implements BatchPollingProtocolAdapter, W
             }
         }
         output.startedSuccessfully();
-        // Signal STATELESS *after* start returns so the wrapper's connection-status listener has
-        // a chance to register. If we set the status inside start() the listener's initial firing
-        // matches the pre-registered status and the wrapper skips the "first call" — which means
-        // the writing service would never be started and all southbound writes would be dropped.
-        new Thread(
-                        () -> {
-                            try {
-                                Thread.sleep(50);
-                            } catch (final InterruptedException e) {
-                                Thread.currentThread().interrupt();
-                                return;
-                            }
-                            protocolAdapterState.setConnectionStatus(STATELESS);
-                        },
-                        "simulation-adapter-" + adapterId + "-status-setter")
-                .start();
     }
 
     @Override
