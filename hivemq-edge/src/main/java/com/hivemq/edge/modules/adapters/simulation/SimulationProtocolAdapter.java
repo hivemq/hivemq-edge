@@ -15,6 +15,8 @@
  */
 package com.hivemq.edge.modules.adapters.simulation;
 
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
@@ -43,15 +45,12 @@ import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTag;
 import com.hivemq.edge.modules.adapters.simulation.tag.SimulationTagDefinition;
 import com.hivemq.edge.modules.adapters.simulation.tag.SimulationValueType;
 import com.hivemq.edge.modules.adapters.simulation.tag.StaticValueConfig;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
-
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
+import org.jetbrains.annotations.NotNull;
 
 public class SimulationProtocolAdapter implements BatchPollingProtocolAdapter, WritingProtocolAdapter {
 
@@ -162,10 +161,13 @@ public class SimulationProtocolAdapter implements BatchPollingProtocolAdapter, W
                 final RandomValueConfig rv = Objects.requireNonNull(def.getRandomValue());
                 switch (rv.getValueType()) {
                     case INT ->
-                        b.value(ThreadLocalRandom.current().nextInt((int) rv.getMinValue(), (int) rv.getMaxValue() + 1));
+                        b.value(ThreadLocalRandom.current()
+                                .nextInt((int) rv.getMinValue(), (int) rv.getMaxValue() + 1));
                     case LONG ->
-                        b.value(ThreadLocalRandom.current().nextLong((long) rv.getMinValue(), (long) rv.getMaxValue() + 1));
-                    case DOUBLE -> b.value(ThreadLocalRandom.current().nextDouble(rv.getMinValue(), rv.getMaxValue() + 1));
+                        b.value(ThreadLocalRandom.current()
+                                .nextLong((long) rv.getMinValue(), (long) rv.getMaxValue() + 1));
+                    case DOUBLE ->
+                        b.value(ThreadLocalRandom.current().nextDouble(rv.getMinValue(), rv.getMaxValue() + 1));
                     case STRING ->
                         throw new IllegalStateException(
                                 "randomValue with STRING valueType is rejected at construction");

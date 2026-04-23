@@ -52,17 +52,15 @@ public final class RandomValueConfig {
                     "randomValue requires minValue < maxValue, was: " + minValue + " / " + maxValue);
         }
 
-        if(valueType == SimulationValueType.INT) {
+        if (valueType == SimulationValueType.INT) {
             if (minValue < Integer.MIN_VALUE || maxValue > (long) Integer.MAX_VALUE + 1) {
-                throw new IllegalArgumentException(
-                        "randomValue with valueType INT requires minValue >= " + Integer.MIN_VALUE
-                                + " and maxValue <= " + ((long) Integer.MAX_VALUE + 1));
+                throw new IllegalArgumentException("randomValue with valueType INT requires minValue >= "
+                        + Integer.MIN_VALUE + " and maxValue <= " + ((long) Integer.MAX_VALUE + 1));
             }
         } else if (valueType == SimulationValueType.LONG) {
             if (minValue < Long.MIN_VALUE || maxValue > (double) Long.MAX_VALUE + 1) {
-                throw new IllegalArgumentException(
-                        "randomValue with valueType LONG requires minValue >= " + Long.MIN_VALUE
-                                + " and maxValue <= " + ((double) Long.MAX_VALUE + 1));
+                throw new IllegalArgumentException("randomValue with valueType LONG requires minValue >= "
+                        + Long.MIN_VALUE + " and maxValue <= " + ((double) Long.MAX_VALUE + 1));
             }
         }
         this.valueType = valueType;
