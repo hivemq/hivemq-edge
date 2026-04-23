@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="30" fill="#1a5fb4"/>
+
+  <!-- Central server/device node -->
+  <rect x="24" y="24" width="16" height="16" rx="2" fill="#ffffff"/>
+  <rect x="27" y="27" width="10" height="2" fill="#1a5fb4"/>
+  <rect x="27" y="31" width="10" height="2" fill="#1a5fb4"/>
+  <rect x="27" y="35" width="6" height="2" fill="#1a5fb4"/>
+
+  <!-- Top connection node -->
+  <circle cx="32" cy="12" r="5" fill="#ffffff"/>
+  <circle cx="32" cy="12" r="2.5" fill="#3584e4"/>
+
+  <!-- Bottom connection node -->
+  <circle cx="32" cy="52" r="5" fill="#ffffff"/>
+  <circle cx="32" cy="52" r="2.5" fill="#3584e4"/>
+
+  <!-- Left connection node -->
+  <circle cx="12" cy="32" r="5" fill="#ffffff"/>
+  <circle cx="12" cy="32" r="2.5" fill="#3584e4"/>
+
+  <!-- Right connection node -->
+  <circle cx="52" cy="32" r="5" fill="#ffffff"/>
+  <circle cx="52" cy="32" r="2.5" fill="#3584e4"/>
+
+  <!-- Connection lines -->
+  <line x1="32" y1="17" x2="32" y2="24" stroke="#ffffff" stroke-width="2"/>
+  <line x1="32" y1="40" x2="32" y2="47" stroke="#ffffff" stroke-width="2"/>
+  <line x1="17" y1="32" x2="24" y2="32" stroke="#ffffff" stroke-width="2"/>
+  <line x1="40" y1="32" x2="47" y2="32" stroke="#ffffff" stroke-width="2"/>
+
+  <!-- Signal waves (monitoring indicator) -->
+  <path d="M46 18 Q50 22 46 26" stroke="#ffffff" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M49 16 Q55 22 49 28" stroke="#ffffff" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+</svg>

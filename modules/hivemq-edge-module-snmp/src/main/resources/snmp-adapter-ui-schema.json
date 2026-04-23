@@ -1,0 +1,61 @@
+{
+  "ui:tabs": [
+    {
+      "id": "connection",
+      "title": "Connection",
+      "properties": ["id", "host", "port", "snmpVersion", "timeoutMillis", "retries"]
+    },
+    {
+      "id": "authentication",
+      "title": "Authentication",
+      "properties": ["community", "securityName", "authProtocol", "authPassword", "privProtocol", "privPassword"]
+    },
+    {
+      "id": "snmpToMqtt",
+      "title": "SNMP To MQTT",
+      "properties": ["snmpToMqtt"]
+    }
+  ],
+  "id": {
+    "ui:disabled": true
+  },
+  "port": {
+    "ui:widget": "updown"
+  },
+  "timeoutMillis": {
+    "ui:widget": "updown"
+  },
+  "retries": {
+    "ui:widget": "updown"
+  },
+  "authPassword": {
+    "ui:widget": "password"
+  },
+  "privPassword": {
+    "ui:widget": "password"
+  },
+  "ui:order": [
+    "id",
+    "host",
+    "port",
+    "snmpVersion",
+    "community",
+    "securityName",
+    "authProtocol",
+    "authPassword",
+    "privProtocol",
+    "privPassword",
+    "timeoutMillis",
+    "retries",
+    "*"
+  ],
+  "snmpToMqtt": {
+    "ui:batchMode": true,
+    "ui:order": [
+      "maxPollingErrorsBeforeRemoval",
+      "pollingIntervalMillis",
+      "publishChangedDataOnly",
+      "*"
+    ]
+  }
+}
