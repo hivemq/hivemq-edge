@@ -241,9 +241,9 @@ public class DataCombiningRuntime {
             this.queueConsumer =
                     new QueueConsumer(clientQueuePersistence, combining.id() + "/" + topicFilter, singleWriterService) {
                         @Override
-                        public void process(final @NotNull PUBLISH publish) {
+                        public void process(final @NotNull PUBLISH message) {
                             if (storeDataPoints) {
-                                topicFilterToPublish.put(topicFilter, publish);
+                                topicFilterToPublish.put(topicFilter, message);
                             }
                             if (primary) {
                                 triggerPublish(combining);

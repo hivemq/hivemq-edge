@@ -98,19 +98,19 @@ public abstract class QueueConsumer {
         }
     }
 
-    private void processPublish(final @NotNull PUBLISH publish) {
+    private void processPublish(final @NotNull PUBLISH message) {
         try {
-            process(publish);
-            removeMessage(queueId, publish.getUniqueId(), publish.getQoS());
+            process(message);
+            removeMessage(queueId, message.getUniqueId(), message.getQoS());
             submitPoll();
         } catch (final Exception e) {
             handleExceptionDuringHandling(e, e.getMessage());
-            removeMessage(queueId, publish.getUniqueId(), publish.getQoS());
+            removeMessage(queueId, message.getUniqueId(), message.getQoS());
             submitPoll();
         }
     }
 
-    public abstract void process(final @NotNull PUBLISH publish);
+    public abstract void process(final @NotNull PUBLISH message);
 
     private void handleExceptionDuringPolling(final @NotNull Throwable throwable) {
         log.error("Failed to poll message because: {}", throwable.getMessage());

@@ -34,17 +34,18 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Base class for internal components that need to receive messages from the topic tree without
- * being an MQTT client. Extend this class, supply a {@code COMPONENT_PREFIX} constant and a
- * unique {@code instanceId}, and implement {@link #process(PUBLISH)}.
- *
- * <p>The client ID has the form {@code "$INTERNAL::<componentPrefix>::<instanceId>"}, e.g.
- * {@code "$INTERNAL::tynebridge::my-bridge"} or {@code "$INTERNAL::combiner::combiner:123/inst:2"}.
- *
- * <p>Call {@link #start()} once to subscribe and {@link #stop()} to unsubscribe. Both methods
- * are safe to call on any thread.
- */
+// region InternalTopicFilterSubscriber — base class for internal topic-tree subscribers
+// =====================================================================================================================
+// Base class for internal Edge components that need to receive messages from the topic tree without
+// being an MQTT client. Extend this class, supply a COMPONENT_PREFIX constant and a unique
+// instanceId, and implement process().
+//
+// Call start() once to subscribe and stop() to unsubscribe. Both methods are safe to call on any
+// thread.
+//
+// @see <a href="https://hivemq.github.io/hivemq-edge-lore/2-implementation/internal-topic-filter-subscriber/">Edge Lore
+// — Internal Topic Filter Subscriber</a>
+//
 @SuppressWarnings({"FutureReturnValueIgnored", "CheckReturnValue"})
 public abstract class InternalTopicFilterSubscriber {
 
@@ -65,6 +66,19 @@ public abstract class InternalTopicFilterSubscriber {
     private final @NotNull String clientId;
     private final @NotNull ClientQueuePersistence.PublishAvailableCallback callback;
 
+    // endregion
+
+    // region InternalTopicFilterSubscriber() constructor
+    // =================================================================================================================
+    // componentPrefix — identifies the Edge component type (e.g. "combiner", "sampler"). Must be
+    //                   unique across all components in Edge. Becomes the middle segment of the
+    //                   internal client ID.
+    // instanceId      — identifies this specific subscriber instance within the component. Must be
+    //                   unique within the componentPrefix namespace. Typically derived from the
+    //                   configuration ID of the owning instance.
+    // topicFilter(s)  — the MQTT topic filter(s) to subscribe to. All filters share the same
+    //                   client queue; messages matching any of them are delivered to process().
+    //
     protected InternalTopicFilterSubscriber(
             final @NotNull String componentPrefix,
             final @NotNull String instanceId,
@@ -90,10 +104,22 @@ public abstract class InternalTopicFilterSubscriber {
         this.callback = id -> submitPoll();
     }
 
-    /**
-     * Registers the queue callback, schedules the initial poll, and subscribes to all configured
-     * topic filters in the topic tree. Safe to call on any thread.
-     */
+    // endregion
+
+    // region process(message) - handler that must be defined by the user of this mechanism
+    // =================================================================================================================
+    // Called once per message, on the SingleWriter thread. Implementations must not block.
+    // Any exception thrown is caught, logged, and the message is dropped.
+    //
+    public abstract void process(final @NotNull PUBLISH message);
+
+    // endregion
+
+    // region start() - starts the subscription for the topic filters
+    // =================================================================================================================
+    // Registers the queue callback, schedules the initial poll, and subscribes to all configured
+    // topic filters in the topic tree. Safe to call on any thread.
+    //
     public void start() {
         // Register the callback and kick off the initial poll first, so that no message
         // arriving during topic registration is missed.
@@ -108,10 +134,13 @@ public abstract class InternalTopicFilterSubscriber {
         }
     }
 
-    /**
-     * Removes all topic tree subscriptions and deregisters the queue callback. Safe to call on
-     * any thread.
-     */
+    // endregion
+
+    // region stop() - stops the subscription
+    // =================================================================================================================
+    // Removes all topic tree subscriptions and deregisters the queue callback. Safe to call on
+    // any thread.
+    //
     public void stop() {
         // Unsubscribe from the topic tree first so no new messages are routed here,
         // then deregister the callback.
@@ -121,6 +150,10 @@ public abstract class InternalTopicFilterSubscriber {
         clientQueuePersistence.removePublishAvailableCallback(clientId);
     }
 
+    // endregion
+
+    // region internal wiring
+    // =================================================================================================================
     private void submitPoll() {
         singleWriterService.getQueuedMessagesQueue().submit(clientId, bucketIndex -> {
             pollAndForward();
@@ -148,30 +181,27 @@ public abstract class InternalTopicFilterSubscriber {
         }
     }
 
-    private void processPublish(final @NotNull PUBLISH publish) {
+    private void processPublish(final @NotNull PUBLISH message) {
         try {
-            process(publish);
-            removeMessage(publish);
+            process(message);
+            removeMessage(message);
             submitPoll();
         } catch (final Exception e) {
             log.error(
                     "Failed to process message for internal subscriber '{}', message will be dropped: {}",
                     clientId,
                     e.getMessage());
-            removeMessage(publish);
+            removeMessage(message);
             submitPoll();
         }
     }
 
-    private void removeMessage(final @NotNull PUBLISH publish) {
-        if (publish.getQoS() != QoS.AT_MOST_ONCE) {
-            FutureUtils.addExceptionLogger(clientQueuePersistence.removeShared(clientId, publish.getUniqueId()));
+    private void removeMessage(final @NotNull PUBLISH message) {
+        if (message.getQoS() != QoS.AT_MOST_ONCE) {
+            FutureUtils.addExceptionLogger(clientQueuePersistence.removeShared(clientId, message.getUniqueId()));
         }
     }
 
-    /**
-     * Called once per message, on the SingleWriter thread. Implementations must not block.
-     * Any exception thrown is caught, logged, and the message is dropped.
-     */
-    public abstract void process(final @NotNull PUBLISH publish);
+    // endregion
+
 }
