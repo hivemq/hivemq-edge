@@ -26,7 +26,6 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -88,7 +87,7 @@ public class PublishFlushHandler extends ChannelInboundHandlerAdapter implements
             return;
         }
         final ChannelHandlerContext localCtx = ctx;
-        try{
+        try {
             localCtx.channel().eventLoop().execute(() -> {
                 messagesToWrite.addAll(publishes);
                 if (localCtx.channel().isActive()) {
@@ -98,7 +97,10 @@ public class PublishFlushHandler extends ChannelInboundHandlerAdapter implements
                 }
             });
         } catch (final RejectedExecutionException e) {
-            log.warn("Failed to schedule publish flush task for channel {}. Marking publishes as not connected.", localCtx.channel(), e);
+            log.warn(
+                    "Failed to schedule publish flush task for channel {}. Marking publishes as not connected.",
+                    localCtx.channel(),
+                    e);
             for (final PublishWithFuture publish : publishes) {
                 publish.getFuture().set(PublishStatus.NOT_CONNECTED);
             }
