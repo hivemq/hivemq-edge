@@ -219,6 +219,11 @@ public class ProtocolAdapterWrapper {
             if (writingEnabled && isWriting()) {
                 final AtomicBoolean futureCompleted = new AtomicBoolean(false);
                 final AtomicBoolean firstCallToStatusListener = new AtomicBoolean(true);
+                // startWritingAsync is not idempotent — each call installs a fresh topic-tree
+                // subscription, Data Hub schemas/scripts/policies, and a ReactiveWriter.
+                // Ensure it runs at most once per start cycle so a reconnect
+                // (CONNECTED → DISCONNECTED → CONNECTED) does not leak resources.
+                final AtomicBoolean writingStarted = new AtomicBoolean(false);
                 cleanUpScheduler();
                 schedulerRef.set(Executors.newSingleThreadScheduledExecutor(runnable -> {
                     final Thread thread = new Thread(runnable);
@@ -258,6 +263,11 @@ public class ProtocolAdapterWrapper {
                     // Process all other statuses (including ERROR on first call, or any subsequent status changes)
                     switch (status) {
                         case CONNECTED, STATELESS -> {
+                            if (!writingStarted.compareAndSet(false, true)) {
+                                // Writing was already wired up on an earlier transition; a later
+                                // reconnect must not re-subscribe.
+                                return;
+                            }
                             try {
                                 if (startWritingAsync(protocolAdapterWritingService)
                                         .get()) {
@@ -275,6 +285,11 @@ public class ProtocolAdapterWrapper {
                             }
                         }
                         case ERROR, DISCONNECTED, UNKNOWN -> {
+                            if (writingStarted.get()) {
+                                // Writing has already been started successfully; a later
+                                // disconnect is a normal lifecycle event, not a start failure.
+                                return;
+                            }
                             log.error(
                                     "Failed to start writing for adapter with id {} because the status is {}.",
                                     adapter.getId(),
