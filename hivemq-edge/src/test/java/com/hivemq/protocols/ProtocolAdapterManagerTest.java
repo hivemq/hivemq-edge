@@ -79,7 +79,7 @@ class ProtocolAdapterManagerTest {
     private @NotNull MetricRegistry metricRegistry;
 
     @Mock
-    private @NotNull ModuleServicesImpl moduleServices;
+    private @NotNull ProtocolAdapterPublishService protocolAdapterPublishService;
 
     @Mock
     private @NotNull HiveMQEdgeRemoteService remoteService;
@@ -610,7 +610,6 @@ class ProtocolAdapterManagerTest {
             final ProtocolAdapterFactory<?> factory = mock(ProtocolAdapterFactory.class);
             final ProtocolAdapterInformation info = mock(ProtocolAdapterInformation.class);
             final ProtocolAdapter createdAdapter = mock(ProtocolAdapter.class);
-            final ProtocolAdapterPublishService publishService = mock(ProtocolAdapterPublishService.class);
 
             when(config.getAdapterId()).thenReturn("adapter-1");
             when(config.getProtocolId()).thenReturn("test-protocol");
@@ -626,9 +625,6 @@ class ProtocolAdapterManagerTest {
             when(factory.createAdapter(any(), any())).thenReturn(createdAdapter);
             when(createdAdapter.getId()).thenReturn("adapter-1");
             when(createdAdapter.getProtocolAdapterInformation()).thenReturn(info);
-
-            when(moduleServices.eventService()).thenReturn(eventService);
-            when(moduleServices.adapterPublishService()).thenReturn(publishService);
 
             final int calls = 16;
             final ExecutorService executor = Executors.newFixedThreadPool(calls);

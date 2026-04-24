@@ -28,6 +28,7 @@ import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity;
 import com.hivemq.configuration.reader.ProtocolAdapterExtractor;
@@ -119,6 +120,7 @@ public class ProtocolAdapterManager {
     private final @NotNull ProtocolAdapterExtractor protocolAdapterConfig;
     private final @NotNull ExecutorService executorService;
     private final @NotNull ExecutorService adapterLifecycleExecutor;
+    private final @NotNull ProtocolAdapterPublishService adapterPublishService;
     private final @NotNull AtomicInteger refreshTasksInProgress = new AtomicInteger(0);
     private final @NotNull AtomicReference<ProtocolAdapterManagerState> managerState =
             new AtomicReference<>(ProtocolAdapterManagerState.Idle);
@@ -150,6 +152,7 @@ public class ProtocolAdapterManager {
         this.northboundConsumerFactory = northboundConsumerFactory;
         this.tagManager = tagManager;
         this.protocolAdapterConfig = protocolAdapterConfig;
+        this.adapterPublishService = adapterPublishService;
         this.executorService = Executors.newSingleThreadExecutor();
         this.adapterLifecycleExecutor = new ThreadPoolExecutor(
                 ADAPTER_LIFECYCLE_CORE_POOL_SIZE,
@@ -504,10 +507,10 @@ public class ProtocolAdapterManager {
             return runWithContextLoader(factory.getClass().getClassLoader(), () -> {
                 final ProtocolAdapterMetricsService metricsService =
                         new ProtocolAdapterMetricsServiceImpl(configProtocolId, config.getAdapterId(), metricRegistry);
-                final ProtocolAdapterStateImpl state = new ProtocolAdapterStateImpl(
-                        moduleServices.eventService(), config.getAdapterId(), configProtocolId);
-                final var streamingService =
-                        new ProtocolAdapterTagStreamingServiceImpl(config.getAdapterId(), tagManager);
+                final ProtocolAdapterStateImpl state =
+                        new ProtocolAdapterStateImpl(eventService, config.getAdapterId(), configProtocolId);
+                final var streamingService = new ProtocolAdapterTagStreamingServiceImpl(
+                        config.getAdapterId(), tagManager, dataPointBuilder -> {});
                 final ModuleServicesPerModuleImpl perModule = new ModuleServicesPerModuleImpl(
                         adapterPublishService, eventService, protocolAdapterWritingService, streamingService);
                 final ProtocolAdapter protocolAdapter = factory.createAdapter(
