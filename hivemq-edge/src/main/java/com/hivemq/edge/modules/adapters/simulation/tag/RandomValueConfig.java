@@ -36,7 +36,7 @@ public final class RandomValueConfig {
     private final double minValue;
 
     @JsonProperty(value = "maxValue", required = true)
-    @ModuleConfigField(title = "Maximum Value", description = "Upper bound.", required = true)
+    @ModuleConfigField(title = "Maximum Value", description = "Upper bound (inclusive).", required = true)
     private final double maxValue;
 
     @JsonCreator
@@ -53,14 +53,14 @@ public final class RandomValueConfig {
         }
 
         if (valueType == SimulationValueType.INT) {
-            if (minValue < Integer.MIN_VALUE || maxValue > (long) Integer.MAX_VALUE + 1) {
+            if (minValue < Integer.MIN_VALUE || maxValue > (long) Integer.MAX_VALUE) {
                 throw new IllegalArgumentException("randomValue with valueType INT requires minValue >= "
-                        + Integer.MIN_VALUE + " and maxValue <= " + ((long) Integer.MAX_VALUE + 1));
+                        + Integer.MIN_VALUE + " and maxValue <= " + ((long) Integer.MAX_VALUE));
             }
         } else if (valueType == SimulationValueType.LONG) {
-            if (minValue < Long.MIN_VALUE || maxValue > (double) Long.MAX_VALUE + 1) {
+            if (minValue < Long.MIN_VALUE || maxValue > (double) Long.MAX_VALUE) {
                 throw new IllegalArgumentException("randomValue with valueType LONG requires minValue >= "
-                        + Long.MIN_VALUE + " and maxValue <= " + ((double) Long.MAX_VALUE + 1));
+                        + Long.MIN_VALUE + " and maxValue <= " + ((double) Long.MAX_VALUE));
             }
         }
         this.valueType = valueType;
