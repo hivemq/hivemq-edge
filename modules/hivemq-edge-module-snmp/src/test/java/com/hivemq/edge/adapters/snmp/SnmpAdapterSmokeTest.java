@@ -15,6 +15,14 @@
  */
 package com.hivemq.edge.adapters.snmp;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
 import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
@@ -28,6 +36,8 @@ import com.hivemq.edge.adapters.snmp.config.SnmpSpecificAdapterConfig;
 import com.hivemq.edge.adapters.snmp.config.SnmpVersion;
 import com.hivemq.edge.adapters.snmp.config.tag.SnmpTag;
 import com.hivemq.edge.adapters.snmp.config.tag.SnmpTagDefinition;
+import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -42,17 +52,6 @@ import org.snmp4j.smi.UdpAddress;
 import org.snmp4j.smi.Variable;
 import org.snmp4j.smi.VariableBinding;
 import org.snmp4j.transport.DefaultUdpTransportMapping;
-
-import java.util.List;
-import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * Smoke tests that spin up an embedded SNMP4J agent and exercise the real SnmpClient
@@ -76,8 +75,7 @@ class SnmpAdapterSmokeTest {
 
     @BeforeAll
     static void startEmbeddedAgent() throws Exception {
-        final DefaultUdpTransportMapping transport =
-                new DefaultUdpTransportMapping(new UdpAddress("127.0.0.1/0"));
+        final DefaultUdpTransportMapping transport = new DefaultUdpTransportMapping(new UdpAddress("127.0.0.1/0"));
         agentSnmp = new Snmp(transport);
 
         agentSnmp.addCommandResponder(event -> {
@@ -99,15 +97,16 @@ class SnmpAdapterSmokeTest {
             }
 
             try {
-                event.getMessageDispatcher().returnResponsePdu(
-                        event.getMessageProcessingModel(),
-                        event.getSecurityModel(),
-                        event.getSecurityName(),
-                        event.getSecurityLevel(),
-                        response,
-                        event.getMaxSizeResponsePDU(),
-                        event.getStateReference(),
-                        new StatusInformation());
+                event.getMessageDispatcher()
+                        .returnResponsePdu(
+                                event.getMessageProcessingModel(),
+                                event.getSecurityModel(),
+                                event.getSecurityName(),
+                                event.getSecurityLevel(),
+                                response,
+                                event.getMaxSizeResponsePDU(),
+                                event.getStateReference(),
+                                new StatusInformation());
                 event.setProcessed(true);
             } catch (final Exception e) {
                 throw new RuntimeException("Failed to send SNMP response", e);
@@ -165,8 +164,7 @@ class SnmpAdapterSmokeTest {
     @Test
     void adapterPoll_publishesDataPointsFromRealAgent() throws Exception {
         // Set up mock SDK objects
-        final ProtocolAdapterInput<SnmpSpecificAdapterConfig> adapterInput =
-                mock(ProtocolAdapterInput.class);
+        final ProtocolAdapterInput<SnmpSpecificAdapterConfig> adapterInput = mock(ProtocolAdapterInput.class);
         final ProtocolAdapterState state = mock(ProtocolAdapterState.class);
         final ProtocolAdapterStartInput startInput = mock(ProtocolAdapterStartInput.class);
         final ProtocolAdapterStartOutput startOutput = mock(ProtocolAdapterStartOutput.class);
@@ -197,8 +195,8 @@ class SnmpAdapterSmokeTest {
         when(dpBuilder.value(any(Double.class))).thenReturn(dpBuilder);
         when(dpBuilder.valueNull()).thenReturn(dpBuilder);
 
-        final SnmpProtocolAdapter adapter = new SnmpProtocolAdapter(
-                mock(ProtocolAdapterInformation.class), adapterInput);
+        final SnmpProtocolAdapter adapter =
+                new SnmpProtocolAdapter(mock(ProtocolAdapterInformation.class), adapterInput);
 
         adapter.start(startInput, startOutput);
         verify(startOutput).startedSuccessfully();

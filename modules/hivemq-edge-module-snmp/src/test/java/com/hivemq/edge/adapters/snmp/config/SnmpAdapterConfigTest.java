@@ -15,13 +15,12 @@
  */
 package com.hivemq.edge.adapters.snmp.config;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.InputStream;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
-
-import java.io.InputStream;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class SnmpAdapterConfigTest {
 

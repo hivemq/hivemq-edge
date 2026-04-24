@@ -19,6 +19,10 @@ import com.hivemq.edge.adapters.snmp.config.SnmpAuthProtocol;
 import com.hivemq.edge.adapters.snmp.config.SnmpPrivProtocol;
 import com.hivemq.edge.adapters.snmp.config.SnmpSpecificAdapterConfig;
 import com.hivemq.edge.adapters.snmp.config.SnmpVersion;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -54,11 +58,6 @@ import org.snmp4j.util.DefaultPDUFactory;
 import org.snmp4j.util.TreeEvent;
 import org.snmp4j.util.TreeUtils;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 /**
  * SNMP4J wrapper that handles SNMP communication for all protocol versions.
  */
@@ -89,8 +88,11 @@ public class SnmpClient implements AutoCloseable {
         // Start listening
         transport.listen();
 
-        log.debug("SNMP client initialized for {}:{} using version {}",
-                config.getHost(), config.getPort(), config.getSnmpVersion());
+        log.debug(
+                "SNMP client initialized for {}:{} using version {}",
+                config.getHost(),
+                config.getPort(),
+                config.getSnmpVersion());
     }
 
     private void configureSnmpV3() {
@@ -106,11 +108,9 @@ public class SnmpClient implements AutoCloseable {
         if (config.getSecurityName() != null) {
             OctetString securityName = new OctetString(config.getSecurityName());
             OID authProtocol = config.getAuthProtocol().getOid();
-            OctetString authPass = config.getAuthPassword() != null ?
-                    new OctetString(config.getAuthPassword()) : null;
+            OctetString authPass = config.getAuthPassword() != null ? new OctetString(config.getAuthPassword()) : null;
             OID privProtocol = config.getPrivProtocol().getOid();
-            OctetString privPass = config.getPrivPassword() != null ?
-                    new OctetString(config.getPrivPassword()) : null;
+            OctetString privPass = config.getPrivPassword() != null ? new OctetString(config.getPrivPassword()) : null;
 
             UsmUser user = new UsmUser(securityName, authProtocol, authPass, privProtocol, privPass);
             snmp.getUSM().addUser(user);
@@ -138,8 +138,8 @@ public class SnmpClient implements AutoCloseable {
             CommunityTarget target = new CommunityTarget();
             target.setAddress(address);
             target.setCommunity(new OctetString(config.getCommunity()));
-            target.setVersion(config.getSnmpVersion() == SnmpVersion.V1 ?
-                    SnmpConstants.version1 : SnmpConstants.version2c);
+            target.setVersion(
+                    config.getSnmpVersion() == SnmpVersion.V1 ? SnmpConstants.version1 : SnmpConstants.version2c);
             target.setTimeout(config.getTimeoutMillis());
             target.setRetries(config.getRetries());
             return target;
@@ -172,14 +172,13 @@ public class SnmpClient implements AutoCloseable {
         final ResponseEvent<?> response = snmp.send(pdu, target);
 
         if (response == null || response.getResponse() == null) {
-            throw new IOException("SNMP timeout - no response from " +
-                    config.getHost() + ":" + config.getPort());
+            throw new IOException("SNMP timeout - no response from " + config.getHost() + ":" + config.getPort());
         }
 
         final PDU responsePDU = response.getResponse();
         if (responsePDU.getErrorStatus() != PDU.noError) {
-            throw new IOException("SNMP error: " + responsePDU.getErrorStatusText() +
-                    " (index: " + responsePDU.getErrorIndex() + ")");
+            throw new IOException("SNMP error: " + responsePDU.getErrorStatusText() + " (index: "
+                    + responsePDU.getErrorIndex() + ")");
         }
 
         if (responsePDU.size() == 0) {

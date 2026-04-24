@@ -15,18 +15,17 @@
  */
 package com.hivemq.edge.adapters.snmp.config;
 
-import org.snmp4j.security.PrivDES;
+import org.jetbrains.annotations.Nullable;
 import org.snmp4j.security.PrivAES128;
 import org.snmp4j.security.PrivAES192;
 import org.snmp4j.security.PrivAES256;
+import org.snmp4j.security.PrivDES;
 import org.snmp4j.smi.OID;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * SNMPv3 privacy (encryption) protocols.
  */
 public enum SnmpPrivProtocol {
-
     NONE(null),
     DES(PrivDES.ID),
     AES128(PrivAES128.ID),

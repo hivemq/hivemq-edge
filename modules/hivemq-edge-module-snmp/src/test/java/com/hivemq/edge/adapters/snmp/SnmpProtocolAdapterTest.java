@@ -15,6 +15,20 @@
  */
 package com.hivemq.edge.adapters.snmp;
 
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
 import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
@@ -34,26 +48,11 @@ import com.hivemq.edge.adapters.snmp.config.SnmpSpecificAdapterConfig;
 import com.hivemq.edge.adapters.snmp.config.SnmpVersion;
 import com.hivemq.edge.adapters.snmp.config.tag.SnmpTag;
 import com.hivemq.edge.adapters.snmp.config.tag.SnmpTagDefinition;
+import java.io.IOException;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
-import java.util.List;
-
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @SuppressWarnings("unchecked")
 class SnmpProtocolAdapterTest {
@@ -199,8 +198,7 @@ class SnmpProtocolAdapterTest {
     @Test
     void poll_withOneTag_addsDataPointAndPublishes() throws IOException {
         when(snmpClient.testConnection()).thenReturn(true);
-        when(snmpClient.get("1.3.6.1.2.1.1.1.0"))
-                .thenReturn(new SnmpReadResult("HiveMQ Edge", "OctetString", 0, 0));
+        when(snmpClient.get("1.3.6.1.2.1.1.1.0")).thenReturn(new SnmpReadResult("HiveMQ Edge", "OctetString", 0, 0));
 
         final SnmpTag tag = sysDescrTag();
         final SnmpProtocolAdapter adapter = createAdapter(List.of(tag));
@@ -217,8 +215,7 @@ class SnmpProtocolAdapterTest {
     @Test
     void poll_withIntegerValue_usesTypedIntOverload() throws IOException {
         when(snmpClient.testConnection()).thenReturn(true);
-        when(snmpClient.get("1.3.6.1.2.1.1.7.0"))
-                .thenReturn(new SnmpReadResult(72, "Integer32", 0, 0));
+        when(snmpClient.get("1.3.6.1.2.1.1.7.0")).thenReturn(new SnmpReadResult(72, "Integer32", 0, 0));
 
         final SnmpTag tag = new SnmpTag("sysServices", "", new SnmpTagDefinition("1.3.6.1.2.1.1.7.0", null));
         final SnmpProtocolAdapter adapter = createAdapter(List.of(tag));
@@ -246,8 +243,7 @@ class SnmpProtocolAdapterTest {
     void poll_whenOneTagFails_otherTagsAreStillPublished() throws IOException {
         when(snmpClient.testConnection()).thenReturn(true);
         when(snmpClient.get("1.3.6.1.2.1.1.1.0")).thenThrow(new IOException("SNMP timeout"));
-        when(snmpClient.get("1.3.6.1.2.1.1.5.0"))
-                .thenReturn(new SnmpReadResult("my-device", "OctetString", 0, 0));
+        when(snmpClient.get("1.3.6.1.2.1.1.5.0")).thenReturn(new SnmpReadResult("my-device", "OctetString", 0, 0));
 
         final SnmpTag failingTag = sysDescrTag();
         final SnmpTag successTag = sysNameTag();
@@ -276,8 +272,8 @@ class SnmpProtocolAdapterTest {
         final SnmpProtocolAdapter adapter = createAdapter();
         adapter.discoverValues(discoveryInput, discoveryOutput);
 
-        verify(nodeTree, times(6)).addNode(anyString(), anyString(), anyString(), anyString(),
-                isNull(), eq(NodeType.FOLDER), eq(false));
+        verify(nodeTree, times(6))
+                .addNode(anyString(), anyString(), anyString(), anyString(), isNull(), eq(NodeType.FOLDER), eq(false));
         verify(discoveryOutput).finish();
     }
 

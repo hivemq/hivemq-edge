@@ -15,17 +15,16 @@
  */
 package com.hivemq.edge.adapters.snmp.config.tag;
 
+import static java.util.Objects.requireNonNullElse;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.TagDefinition;
 import com.hivemq.edge.adapters.snmp.config.SnmpDataType;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
-
-import static java.util.Objects.requireNonNullElse;
 
 /**
  * Defines an SNMP tag using an Object Identifier (OID).
@@ -35,16 +34,18 @@ public class SnmpTagDefinition implements TagDefinition {
     private static final @NotNull String OID_REGEX = "^[0-9]+(\\.[0-9]+)*$";
 
     @JsonProperty(value = "oid", required = true)
-    @ModuleConfigField(title = "OID",
-                       description = "SNMP Object Identifier (e.g., 1.3.6.1.2.1.1.5.0 for sysName)",
-                       required = true,
-                       stringPattern = OID_REGEX)
+    @ModuleConfigField(
+            title = "OID",
+            description = "SNMP Object Identifier (e.g., 1.3.6.1.2.1.1.5.0 for sysName)",
+            required = true,
+            stringPattern = OID_REGEX)
     private final @NotNull String oid;
 
     @JsonProperty(value = "dataType")
-    @ModuleConfigField(title = "Data Type",
-                       description = "Expected SNMP data type. Use AUTO for automatic detection.",
-                       defaultValue = "AUTO")
+    @ModuleConfigField(
+            title = "Data Type",
+            description = "Expected SNMP data type. Use AUTO for automatic detection.",
+            defaultValue = "AUTO")
     private final @NotNull SnmpDataType dataType;
 
     @JsonCreator
@@ -65,10 +66,7 @@ public class SnmpTagDefinition implements TagDefinition {
 
     @Override
     public String toString() {
-        return "SnmpTagDefinition{" +
-                "oid='" + oid + '\'' +
-                ", dataType=" + dataType +
-                '}';
+        return "SnmpTagDefinition{" + "oid='" + oid + '\'' + ", dataType=" + dataType + '}';
     }
 
     @Override

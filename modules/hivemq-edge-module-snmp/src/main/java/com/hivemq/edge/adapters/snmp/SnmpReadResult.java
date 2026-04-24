@@ -30,10 +30,7 @@ public class SnmpReadResult {
     private final int errorIndex;
 
     public SnmpReadResult(
-            final @Nullable Object value,
-            final @NotNull String rawType,
-            final int errorStatus,
-            final int errorIndex) {
+            final @Nullable Object value, final @NotNull String rawType, final int errorStatus, final int errorIndex) {
         this.value = value;
         this.rawType = rawType;
         this.errorStatus = errorStatus;
