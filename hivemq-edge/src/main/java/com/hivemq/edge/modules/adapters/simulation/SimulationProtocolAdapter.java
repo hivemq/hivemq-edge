@@ -166,8 +166,7 @@ public class SimulationProtocolAdapter implements BatchPollingProtocolAdapter, W
                     case LONG ->
                         b.value(ThreadLocalRandom.current()
                                 .nextLong((long) rv.getMinValue(), (long) rv.getMaxValue() + 1));
-                    case DOUBLE ->
-                        b.value(ThreadLocalRandom.current().nextDouble(rv.getMinValue(), rv.getMaxValue()));
+                    case DOUBLE -> b.value(ThreadLocalRandom.current().nextDouble(rv.getMinValue(), rv.getMaxValue()));
                     case STRING ->
                         throw new IllegalStateException(
                                 "randomValue with STRING valueType is rejected at construction");
