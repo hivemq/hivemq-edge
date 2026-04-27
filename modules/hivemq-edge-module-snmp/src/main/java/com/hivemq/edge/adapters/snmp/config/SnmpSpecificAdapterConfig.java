@@ -44,6 +44,7 @@ public class SnmpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
             stringPattern = ID_REGEX,
             stringMinLength = 1,
             stringMaxLength = 1024)
+    @SuppressWarnings("UnusedVariable") // write-only: accepted from JSON, ID is managed by the framework
     private @Nullable String id;
 
     @JsonProperty(value = "host", required = true)

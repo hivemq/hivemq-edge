@@ -248,31 +248,22 @@ public class SnmpClient implements AutoCloseable {
      * Convert an SNMP Variable to a Java object.
      */
     private @Nullable Object convertVariable(final @NotNull Variable var) {
-        if (var instanceof Integer32) {
-            return ((Integer32) var).getValue();
-        } else if (var instanceof Counter32) {
-            return ((Counter32) var).getValue();
-        } else if (var instanceof Counter64) {
-            return ((Counter64) var).getValue();
-        } else if (var instanceof Gauge32) {
-            return ((Gauge32) var).getValue();
-        } else if (var instanceof TimeTicks) {
+        if (var instanceof final Integer32 v) {
+            return v.getValue();
+        } else if (var instanceof final Counter32 v) {
+            return v.getValue();
+        } else if (var instanceof final Counter64 v) {
+            return v.getValue();
+        } else if (var instanceof final Gauge32 v) {
+            return v.getValue();
+        } else if (var instanceof final TimeTicks v) {
             // Convert hundredths of a second to seconds as a double
-            return ((TimeTicks) var).getValue() / 100.0;
-        } else if (var instanceof IpAddress) {
+            return v.getValue() / 100.0;
+        } else if (var instanceof IpAddress || var instanceof OID) {
             return var.toString();
-        } else if (var instanceof OID) {
-            return var.toString();
-        } else if (var instanceof OctetString) {
-            OctetString os = (OctetString) var;
-            // Try to return as string if it's printable, otherwise as hex
-            if (os.isPrintable()) {
-                return os.toString();
-            } else {
-                return os.toHexString();
-            }
+        } else if (var instanceof final OctetString v) {
+            return v.isPrintable() ? v.toString() : v.toHexString();
         } else {
-            // For any other type, return string representation
             return var.toString();
         }
     }
