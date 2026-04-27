@@ -169,11 +169,12 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
             try {
                 publishTagResult(publisher, futures.get(i).get());
             } catch (final ExecutionException e) {
+                final Throwable cause = e.getCause();
                 log.warn(
                         "Failed to read OID {} for tag {}: {}",
                         tag.getDefinition().getOid(),
                         tag.getName(),
-                        e.getCause().getMessage());
+                        cause != null ? cause.getMessage() : e.getMessage());
             } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
                 state.setConnectionStatus(ERROR);
@@ -190,8 +191,12 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
     }
 
     private @NotNull TagReadResult readTag(final @NotNull SnmpTag tag) throws IOException {
+        final SnmpClient snmpClient = client;
+        if (snmpClient == null) {
+            throw new IOException("SNMP client is not initialized");
+        }
         final String oid = tag.getDefinition().getOid();
-        return new TagReadResult(tag, oid, client.get(oid));
+        return new TagReadResult(tag, oid, snmpClient.get(oid));
     }
 
     private void publishTagResult(
