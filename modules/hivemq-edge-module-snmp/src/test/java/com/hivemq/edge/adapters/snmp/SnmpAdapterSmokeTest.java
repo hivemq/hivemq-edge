@@ -81,10 +81,10 @@ class SnmpAdapterSmokeTest {
         final DefaultUdpTransportMapping transport = new DefaultUdpTransportMapping(new UdpAddress("127.0.0.1/0"));
         agentSnmp = new Snmp(transport);
 
-        // CommandResponder.processPdu() is itself generic so a lambda is not a valid SAM target
-        agentSnmp.addCommandResponder(new CommandResponder<Address>() {
+        // CommandResponder is non-generic; processPdu() carries the type parameter on the method
+        agentSnmp.addCommandResponder(new CommandResponder() {
             @Override
-            public <B extends Address> void processPdu(final @NotNull CommandResponderEvent<B> event) {
+            public <A extends Address> void processPdu(final CommandResponderEvent<A> event) {
                 final PDU pdu = event.getPDU();
                 if (pdu == null || pdu.getType() != PDU.GET) {
                     return;
