@@ -1,0 +1,14 @@
+{
+  "id": "test-v2c",
+  "host": "192.168.1.100",
+  "port": 1161,
+  "snmpVersion": "V2C",
+  "community": "private",
+  "timeoutMillis": 5000,
+  "retries": 3,
+  "snmpToMqtt": {
+    "pollingIntervalMillis": 2000,
+    "maxPollingErrorsBeforeRemoval": 5,
+    "publishChangedDataOnly": true
+  }
+}

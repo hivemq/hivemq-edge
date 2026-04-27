@@ -94,7 +94,7 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
         }
 
         try {
-            client = new SnmpClient(config);
+            client = createClient();
 
             if (client.testConnection()) {
                 state.setConnectionStatus(CONNECTED);
@@ -184,6 +184,10 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
             state.setConnectionStatus(ERROR);
             pollingOutput.fail(e, "Polling interrupted");
         }
+    }
+
+    protected @NotNull SnmpClient createClient() throws IOException {
+        return new SnmpClient(config);
     }
 
     private @NotNull TagReadResult readTag(final @NotNull SnmpTag tag) throws IOException {

@@ -1,0 +1,5 @@
+{
+  "id": "test-adapter",
+  "host": "192.168.1.1",
+  "snmpVersion": "V2C"
+}
