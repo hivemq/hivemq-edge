@@ -25,7 +25,6 @@ import com.hivemq.edge.adapters.snmp.config.tag.SnmpTag;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -103,7 +102,7 @@ public class SnmpProtocolAdapterInformation implements ProtocolAdapterInformatio
                 log.warn("The UISchema for the SNMP Adapter could not be loaded from resources: Not found.");
                 return null;
             }
-            return IOUtils.toString(is, StandardCharsets.UTF_8);
+            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
         } catch (final Exception e) {
             log.warn("The UISchema for the SNMP Adapter could not be loaded from resources:", e);
             return null;

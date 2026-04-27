@@ -41,7 +41,10 @@ import com.hivemq.edge.adapters.snmp.config.SnmpVersion;
 import com.hivemq.edge.adapters.snmp.config.tag.SnmpTag;
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -152,36 +155,34 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
             return;
         }
 
-        // Fan out all SNMP GETs as virtual-thread subtasks, collect results, then publish in one batch.
-        try (var scope = StructuredTaskScope.<TagReadResult>open()) {
-            final List<StructuredTaskScope.Subtask<TagReadResult>> subtasks =
-                    tags.stream().map(tag -> scope.fork(() -> readTag(tag))).toList();
+        // Fan out all SNMP GETs on virtual threads, then collect results sequentially.
+        final List<Future<TagReadResult>> futures;
+        try (final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            futures = tags.stream()
+                    .map(tag -> executor.submit(() -> readTag(tag)))
+                    .toList();
+        } // close() blocks until all submitted tasks complete
 
-            scope.join();
-
-            final var publisher = pollingOutput.dataPointListPublisher();
-            for (int i = 0; i < tags.size(); i++) {
-                final SnmpTag tag = tags.get(i);
-                final StructuredTaskScope.Subtask<TagReadResult> subtask = subtasks.get(i);
-                switch (subtask.state()) {
-                    case SUCCESS -> publishTagResult(publisher, subtask.get());
-                    case FAILED ->
-                        log.warn(
-                                "Failed to read OID {} for tag {}: {}",
-                                tag.getDefinition().getOid(),
-                                tag.getName(),
-                                subtask.exception().getMessage());
-                    case UNAVAILABLE -> {} // unreachable after join()
-                }
+        final var publisher = pollingOutput.dataPointListPublisher();
+        for (int i = 0; i < tags.size(); i++) {
+            final SnmpTag tag = tags.get(i);
+            try {
+                publishTagResult(publisher, futures.get(i).get());
+            } catch (final ExecutionException e) {
+                log.warn(
+                        "Failed to read OID {} for tag {}: {}",
+                        tag.getDefinition().getOid(),
+                        tag.getName(),
+                        e.getCause().getMessage());
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+                state.setConnectionStatus(ERROR);
+                pollingOutput.fail(e, "Polling interrupted");
+                return;
             }
-            state.setConnectionStatus(CONNECTED);
-            publisher.publish();
-
-        } catch (final InterruptedException e) {
-            Thread.currentThread().interrupt();
-            state.setConnectionStatus(ERROR);
-            pollingOutput.fail(e, "Polling interrupted");
         }
+        state.setConnectionStatus(CONNECTED);
+        publisher.publish();
     }
 
     protected @NotNull SnmpClient createClient() throws IOException {
