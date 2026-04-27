@@ -185,9 +185,10 @@ class SnmpAdapterSmokeTest {
         final SnmpTag sysDescrTag = new SnmpTag("sysDescr", "desc", new SnmpTagDefinition(OID_SYS_DESCR, null));
         final SnmpTag sysNameTag = new SnmpTag("sysName", "name", new SnmpTagDefinition(OID_SYS_NAME, null));
 
+        final SnmpSpecificAdapterConfig adapterConfig = config();
         when(adapterInput.getAdapterId()).thenReturn("smoke-snmp");
         when(adapterInput.getProtocolAdapterState()).thenReturn(state);
-        when(adapterInput.getConfig()).thenReturn(config());
+        when(adapterInput.getConfig()).thenReturn(adapterConfig);
         when(adapterInput.getTags()).thenReturn((List) List.of(sysDescrTag, sysNameTag));
 
         when(pollingOutput.dataPointListPublisher()).thenReturn(publisher);
