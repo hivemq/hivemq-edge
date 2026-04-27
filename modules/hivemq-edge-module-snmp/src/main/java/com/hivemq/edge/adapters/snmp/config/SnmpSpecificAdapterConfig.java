@@ -19,10 +19,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
 
 @SuppressWarnings("FieldCanBeLocal")
 public class SnmpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig {
@@ -37,93 +36,97 @@ public class SnmpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
     @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
-    @ModuleConfigField(title = "Identifier",
-                       description = "Unique identifier for this protocol adapter",
-                       format = ModuleConfigField.FieldType.IDENTIFIER,
-                       required = true,
-                       stringPattern = ID_REGEX,
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
+    @ModuleConfigField(
+            title = "Identifier",
+            description = "Unique identifier for this protocol adapter",
+            format = ModuleConfigField.FieldType.IDENTIFIER,
+            required = true,
+            stringPattern = ID_REGEX,
+            stringMinLength = 1,
+            stringMaxLength = 1024)
     private @Nullable String id;
 
     @JsonProperty(value = "host", required = true)
-    @ModuleConfigField(title = "Host",
-                       description = "IP address or hostname of the SNMP agent",
-                       required = true,
-                       format = ModuleConfigField.FieldType.HOSTNAME)
+    @ModuleConfigField(
+            title = "Host",
+            description = "IP address or hostname of the SNMP agent",
+            required = true,
+            format = ModuleConfigField.FieldType.HOSTNAME)
     private final @NotNull String host;
 
     @JsonProperty(value = "port")
-    @ModuleConfigField(title = "Port",
-                       description = "SNMP port number",
-                       numberMin = PORT_MIN,
-                       numberMax = PORT_MAX,
-                       defaultValue = "161")
+    @ModuleConfigField(
+            title = "Port",
+            description = "SNMP port number",
+            numberMin = PORT_MIN,
+            numberMax = PORT_MAX,
+            defaultValue = "161")
     private final int port;
 
     @JsonProperty(value = "snmpVersion", required = true)
-    @ModuleConfigField(title = "SNMP Version",
-                       description = "SNMP protocol version to use",
-                       required = true,
-                       defaultValue = "V2C")
+    @ModuleConfigField(
+            title = "SNMP Version",
+            description = "SNMP protocol version to use",
+            required = true,
+            defaultValue = "V2C")
     private final @NotNull SnmpVersion snmpVersion;
 
     // SNMPv1/v2c settings
     @JsonProperty(value = "community")
-    @ModuleConfigField(title = "Community String",
-                       description = "Community string for SNMPv1/v2c authentication",
-                       defaultValue = "public")
+    @ModuleConfigField(
+            title = "Community String",
+            description = "Community string for SNMPv1/v2c authentication",
+            defaultValue = "public")
     private final @NotNull String community;
 
     // SNMPv3 settings
     @JsonProperty(value = "securityName")
-    @ModuleConfigField(title = "Security Name",
-                       description = "SNMPv3 username (required for SNMPv3)")
+    @ModuleConfigField(title = "Security Name", description = "SNMPv3 username (required for SNMPv3)")
     private final @Nullable String securityName;
 
     @JsonProperty(value = "authProtocol")
-    @ModuleConfigField(title = "Authentication Protocol",
-                       description = "SNMPv3 authentication protocol",
-                       defaultValue = "NONE")
+    @ModuleConfigField(
+            title = "Authentication Protocol",
+            description = "SNMPv3 authentication protocol",
+            defaultValue = "NONE")
     private final @NotNull SnmpAuthProtocol authProtocol;
 
     @JsonProperty(value = "authPassword")
-    @ModuleConfigField(title = "Authentication Password",
-                       description = "SNMPv3 authentication password")
+    @ModuleConfigField(title = "Authentication Password", description = "SNMPv3 authentication password")
     private final @Nullable String authPassword;
 
     @JsonProperty(value = "privProtocol")
-    @ModuleConfigField(title = "Privacy Protocol",
-                       description = "SNMPv3 encryption protocol",
-                       defaultValue = "NONE")
+    @ModuleConfigField(title = "Privacy Protocol", description = "SNMPv3 encryption protocol", defaultValue = "NONE")
     private final @NotNull SnmpPrivProtocol privProtocol;
 
     @JsonProperty(value = "privPassword")
-    @ModuleConfigField(title = "Privacy Password",
-                       description = "SNMPv3 encryption password")
+    @ModuleConfigField(title = "Privacy Password", description = "SNMPv3 encryption password")
     private final @Nullable String privPassword;
 
     // Timeout & retry settings
     @JsonProperty(value = "timeoutMillis")
-    @ModuleConfigField(title = "Timeout",
-                       description = "Request timeout in milliseconds",
-                       numberMin = 500,
-                       numberMax = 30000,
-                       defaultValue = "3000")
+    @ModuleConfigField(
+            title = "Timeout",
+            description = "Request timeout in milliseconds",
+            numberMin = 500,
+            numberMax = 30000,
+            defaultValue = "3000")
     private final int timeoutMillis;
 
     @JsonProperty(value = "retries")
-    @ModuleConfigField(title = "Retries",
-                       description = "Number of retry attempts for failed requests",
-                       numberMin = 0,
-                       numberMax = 10,
-                       defaultValue = "1")
+    @ModuleConfigField(
+            title = "Retries",
+            description = "Number of retry attempts for failed requests",
+            numberMin = 0,
+            numberMax = 10,
+            defaultValue = "1")
     private final int retries;
 
     // SNMP to MQTT config
     @JsonProperty(value = "snmpToMqtt")
-    @ModuleConfigField(title = "SNMP To MQTT Config",
-                       description = "Configuration for polling and publishing SNMP data to MQTT")
+    @ModuleConfigField(
+            title = "SNMP To MQTT Config",
+            description = "Configuration for polling and publishing SNMP data to MQTT")
     private final @Nullable SnmpToMqttConfig snmpToMqttConfig;
 
     @JsonCreator
@@ -151,8 +154,8 @@ public class SnmpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
         this.privPassword = privPassword;
         this.timeoutMillis = Objects.requireNonNullElse(timeoutMillis, DEFAULT_TIMEOUT_MILLIS);
         this.retries = Objects.requireNonNullElse(retries, DEFAULT_RETRIES);
-        this.snmpToMqttConfig = Objects.requireNonNullElseGet(snmpToMqttConfig,
-                () -> new SnmpToMqttConfig(null, null, null));
+        this.snmpToMqttConfig =
+                Objects.requireNonNullElseGet(snmpToMqttConfig, () -> new SnmpToMqttConfig(null, null, null));
     }
 
     public @NotNull String getHost() {
@@ -208,23 +211,34 @@ public class SnmpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
         if (!(o instanceof SnmpSpecificAdapterConfig that)) {
             return false;
         }
-        return port == that.port &&
-                timeoutMillis == that.timeoutMillis &&
-                retries == that.retries &&
-                Objects.equals(host, that.host) &&
-                snmpVersion == that.snmpVersion &&
-                Objects.equals(community, that.community) &&
-                Objects.equals(securityName, that.securityName) &&
-                authProtocol == that.authProtocol &&
-                Objects.equals(authPassword, that.authPassword) &&
-                privProtocol == that.privProtocol &&
-                Objects.equals(privPassword, that.privPassword) &&
-                Objects.equals(snmpToMqttConfig, that.snmpToMqttConfig);
+        return port == that.port
+                && timeoutMillis == that.timeoutMillis
+                && retries == that.retries
+                && Objects.equals(host, that.host)
+                && snmpVersion == that.snmpVersion
+                && Objects.equals(community, that.community)
+                && Objects.equals(securityName, that.securityName)
+                && authProtocol == that.authProtocol
+                && Objects.equals(authPassword, that.authPassword)
+                && privProtocol == that.privProtocol
+                && Objects.equals(privPassword, that.privPassword)
+                && Objects.equals(snmpToMqttConfig, that.snmpToMqttConfig);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(host, port, snmpVersion, community, securityName, authProtocol,
-                authPassword, privProtocol, privPassword, timeoutMillis, retries, snmpToMqttConfig);
+        return Objects.hash(
+                host,
+                port,
+                snmpVersion,
+                community,
+                securityName,
+                authProtocol,
+                authPassword,
+                privProtocol,
+                privPassword,
+                timeoutMillis,
+                retries,
+                snmpToMqttConfig);
     }
 }

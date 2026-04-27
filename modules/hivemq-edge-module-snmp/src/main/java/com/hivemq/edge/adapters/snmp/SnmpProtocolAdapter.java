@@ -15,6 +15,10 @@
  */
 package com.hivemq.edge.adapters.snmp;
 
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
+
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.datapoint.DataPointBuilder;
 import com.hivemq.adapter.sdk.api.datapoint.DataPointListBuilder;
@@ -35,20 +39,15 @@ import com.hivemq.edge.adapters.snmp.config.SnmpSpecificAdapterConfig;
 import com.hivemq.edge.adapters.snmp.config.SnmpToMqttConfig;
 import com.hivemq.edge.adapters.snmp.config.SnmpVersion;
 import com.hivemq.edge.adapters.snmp.config.tag.SnmpTag;
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snmp4j.smi.VariableBinding;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.StructuredTaskScope;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
-import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
 
 /**
  * SNMP Protocol Adapter for HiveMQ Edge.
@@ -81,8 +80,7 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
 
     @Override
     public void start(
-            final @NotNull ProtocolAdapterStartInput input,
-            final @NotNull ProtocolAdapterStartOutput output) {
+            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         if (stopRequested.get()) {
             output.failStart(new IllegalStateException("Stop requested"), "Adapter is stopping");
             return;
@@ -102,7 +100,8 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
                 log.info("SNMP adapter {} started - connected to {}:{}", adapterId, config.getHost(), config.getPort());
             } else {
                 state.setConnectionStatus(ERROR);
-                output.failStart(new RuntimeException("Connection test failed"),
+                output.failStart(
+                        new RuntimeException("Connection test failed"),
                         "Failed to connect to SNMP agent at " + config.getHost() + ":" + config.getPort());
                 started.set(false);
             }
@@ -116,9 +115,7 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
     }
 
     @Override
-    public void stop(
-            final @NotNull ProtocolAdapterStopInput input,
-            final @NotNull ProtocolAdapterStopOutput output) {
+    public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
         if (!stopRequested.compareAndSet(false, true)) {
             output.stoppedSuccessfully();
             return;
@@ -144,9 +141,7 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
     }
 
     @Override
-    public void poll(
-            final @NotNull BatchPollingInput pollingInput,
-            final @NotNull BatchPollingOutput pollingOutput) {
+    public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
         if (!started.get() || client == null || stopRequested.get()) {
             pollingOutput.fail(new IllegalStateException("Adapter not running"), "Adapter is not started");
             return;
@@ -159,9 +154,8 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
 
         // Fan out all SNMP GETs as virtual-thread subtasks, collect results, then publish in one batch.
         try (var scope = StructuredTaskScope.<TagReadResult>open()) {
-            final List<StructuredTaskScope.Subtask<TagReadResult>> subtasks = tags.stream()
-                    .map(tag -> scope.fork(() -> readTag(tag)))
-                    .toList();
+            final List<StructuredTaskScope.Subtask<TagReadResult>> subtasks =
+                    tags.stream().map(tag -> scope.fork(() -> readTag(tag))).toList();
 
             scope.join();
 
@@ -171,8 +165,12 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
                 final StructuredTaskScope.Subtask<TagReadResult> subtask = subtasks.get(i);
                 switch (subtask.state()) {
                     case SUCCESS -> publishTagResult(publisher, subtask.get());
-                    case FAILED -> log.warn("Failed to read OID {} for tag {}: {}",
-                            tag.getDefinition().getOid(), tag.getName(), subtask.exception().getMessage());
+                    case FAILED ->
+                        log.warn(
+                                "Failed to read OID {} for tag {}: {}",
+                                tag.getDefinition().getOid(),
+                                tag.getName(),
+                                subtask.exception().getMessage());
                     case UNAVAILABLE -> {} // unreachable after join()
                 }
             }
@@ -196,9 +194,9 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
     }
 
     private void publishTagResult(
-            final @NotNull DataPointListBuilder publisher,
-            final @NotNull TagReadResult tagResult) {
-        final var metaBuilder = publisher.addDataPoint(tagResult.tag())
+            final @NotNull DataPointListBuilder publisher, final @NotNull TagReadResult tagResult) {
+        final var metaBuilder = publisher
+                .addDataPoint(tagResult.tag())
                 .startObjectMetadata()
                 .put("oid", tagResult.oid())
                 .put("dataType", tagResult.tag().getDefinition().getDataType().name())
@@ -216,47 +214,73 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
         }
 
         setTypedValue(metaBuilder.endObject(), tagResult.result().getValue());
-        log.trace("Read OID {} = {} for tag {}", tagResult.oid(), tagResult.result().getValue(), tagResult.tag().getName());
+        log.trace(
+                "Read OID {} = {} for tag {}",
+                tagResult.oid(),
+                tagResult.result().getValue(),
+                tagResult.tag().getName());
     }
 
     private void setTypedValue(
-            final @NotNull DataPointBuilder<DataPointListBuilder> builder,
-            final @Nullable Object value) {
+            final @NotNull DataPointBuilder<DataPointListBuilder> builder, final @Nullable Object value) {
         switch (value) {
             case Integer v -> builder.value(v);
-            case Long v    -> builder.value(v);
-            case Double v  -> builder.value(v);
-            case null      -> builder.valueNull();
-            default        -> builder.value(value.toString());
+            case Long v -> builder.value(v);
+            case Double v -> builder.value(v);
+            case null -> builder.valueNull();
+            default -> builder.value(value.toString());
         }
         builder.endDataPoint();
     }
 
     @Override
     public void discoverValues(
-            final @NotNull ProtocolAdapterDiscoveryInput input,
-            final @NotNull ProtocolAdapterDiscoveryOutput output) {
+            final @NotNull ProtocolAdapterDiscoveryInput input, final @NotNull ProtocolAdapterDiscoveryOutput output) {
         final NodeTree tree = output.getNodeTree();
 
         if (input.getRootNode() == null) {
-            tree.addNode("mib2-system", "System", "1.3.6.1.2.1.1",
+            tree.addNode(
+                    "mib2-system",
+                    "System",
+                    "1.3.6.1.2.1.1",
                     "System MIB - sysDescr, sysObjectID, sysUpTime, sysContact, sysName, sysLocation, sysServices",
-                    null, NodeType.FOLDER, false);
-            tree.addNode("mib2-interfaces", "Interfaces", "1.3.6.1.2.1.2",
+                    null,
+                    NodeType.FOLDER,
+                    false);
+            tree.addNode(
+                    "mib2-interfaces",
+                    "Interfaces",
+                    "1.3.6.1.2.1.2",
                     "Network interface statistics - ifNumber, ifTable",
-                    null, NodeType.FOLDER, false);
-            tree.addNode("mib2-ip", "IP", "1.3.6.1.2.1.4",
+                    null,
+                    NodeType.FOLDER,
+                    false);
+            tree.addNode(
+                    "mib2-ip",
+                    "IP",
+                    "1.3.6.1.2.1.4",
                     "IP statistics - forwarding, routing, addresses",
-                    null, NodeType.FOLDER, false);
-            tree.addNode("mib2-tcp", "TCP", "1.3.6.1.2.1.6",
+                    null,
+                    NodeType.FOLDER,
+                    false);
+            tree.addNode(
+                    "mib2-tcp",
+                    "TCP",
+                    "1.3.6.1.2.1.6",
                     "TCP statistics - connections, segments",
-                    null, NodeType.FOLDER, false);
-            tree.addNode("mib2-udp", "UDP", "1.3.6.1.2.1.7",
-                    "UDP statistics - datagrams",
-                    null, NodeType.FOLDER, false);
-            tree.addNode("mib2-host", "Host Resources", "1.3.6.1.2.1.25",
+                    null,
+                    NodeType.FOLDER,
+                    false);
+            tree.addNode(
+                    "mib2-udp", "UDP", "1.3.6.1.2.1.7", "UDP statistics - datagrams", null, NodeType.FOLDER, false);
+            tree.addNode(
+                    "mib2-host",
+                    "Host Resources",
+                    "1.3.6.1.2.1.25",
                     "Host resources MIB - storage, processors, software, devices",
-                    null, NodeType.FOLDER, false);
+                    null,
+                    NodeType.FOLDER,
+                    false);
             output.finish();
             return;
         }
@@ -269,8 +293,8 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
                     final String oid = vb.getOid().toString();
                     final String value = vb.getVariable().toString();
                     final String displayValue = value.length() > 50 ? value.substring(0, 47) + "..." : value;
-                    tree.addNode(oid, getLastOidSegment(oid), oid, "Value: " + displayValue,
-                            null, NodeType.VALUE, true);
+                    tree.addNode(
+                            oid, getLastOidSegment(oid), oid, "Value: " + displayValue, null, NodeType.VALUE, true);
                 }
                 log.debug("Discovery walk from {} found {} OIDs", rootOid, results.size());
             } catch (final IOException e) {
@@ -298,17 +322,17 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
     @Override
     public int getPollingIntervalMillis() {
         final SnmpToMqttConfig mqttConfig = config.getSnmpToMqttConfig();
-        return mqttConfig != null ?
-                mqttConfig.getPollingIntervalMillis() :
-                SnmpToMqttConfig.DEFAULT_POLLING_INTERVAL_MILLIS;
+        return mqttConfig != null
+                ? mqttConfig.getPollingIntervalMillis()
+                : SnmpToMqttConfig.DEFAULT_POLLING_INTERVAL_MILLIS;
     }
 
     @Override
     public int getMaxPollingErrorsBeforeRemoval() {
         final SnmpToMqttConfig mqttConfig = config.getSnmpToMqttConfig();
-        return mqttConfig != null ?
-                mqttConfig.getMaxPollingErrorsBeforeRemoval() :
-                SnmpToMqttConfig.DEFAULT_MAX_POLLING_ERRORS_BEFORE_REMOVAL;
+        return mqttConfig != null
+                ? mqttConfig.getMaxPollingErrorsBeforeRemoval()
+                : SnmpToMqttConfig.DEFAULT_MAX_POLLING_ERRORS_BEFORE_REMOVAL;
     }
 
     @Override
@@ -316,5 +340,8 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
         return adapterInformation;
     }
 
-    private record TagReadResult(@NotNull SnmpTag tag, @NotNull String oid, @NotNull SnmpReadResult result) {}
+    private record TagReadResult(
+            @NotNull SnmpTag tag,
+            @NotNull String oid,
+            @NotNull SnmpReadResult result) {}
 }

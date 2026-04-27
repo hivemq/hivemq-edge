@@ -15,15 +15,14 @@
  */
 package com.hivemq.edge.adapters.snmp;
 
-import com.hivemq.edge.adapters.snmp.config.SnmpSpecificAdapterConfig;
-import com.hivemq.edge.adapters.snmp.config.tag.SnmpTag;
-import org.junit.jupiter.api.Test;
-
-import java.util.regex.Pattern;
-
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.hivemq.edge.adapters.snmp.config.SnmpSpecificAdapterConfig;
+import com.hivemq.edge.adapters.snmp.config.tag.SnmpTag;
+import java.util.regex.Pattern;
+import org.junit.jupiter.api.Test;
 
 class SnmpProtocolAdapterInformationTest {
 

@@ -22,15 +22,14 @@ import com.hivemq.adapter.sdk.api.config.ProtocolSpecificAdapterConfig;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.snmp.config.SnmpSpecificAdapterConfig;
 import com.hivemq.edge.adapters.snmp.config.tag.SnmpTag;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 /**
  * Provides metadata about the SNMP protocol adapter.
@@ -43,8 +42,7 @@ public class SnmpProtocolAdapterInformation implements ProtocolAdapterInformatio
     public static final @NotNull String PROTOCOL_ID = "snmp";
     private static final int CURRENT_CONFIG_VERSION = 1;
 
-    protected SnmpProtocolAdapterInformation() {
-    }
+    protected SnmpProtocolAdapterInformation() {}
 
     @Override
     public @NotNull String getProtocolName() {
@@ -63,8 +61,8 @@ public class SnmpProtocolAdapterInformation implements ProtocolAdapterInformatio
 
     @Override
     public @NotNull String getDescription() {
-        return "Connects HiveMQ Edge to SNMP-enabled devices for monitoring network infrastructure, " +
-                "UPS systems, environmental sensors, and other SNMP agents.";
+        return "Connects HiveMQ Edge to SNMP-enabled devices for monitoring network infrastructure, "
+                + "UPS systems, environmental sensors, and other SNMP agents.";
     }
 
     @Override
@@ -99,9 +97,8 @@ public class SnmpProtocolAdapterInformation implements ProtocolAdapterInformatio
 
     @Override
     public @Nullable String getUiSchema() {
-        try (final InputStream is = this.getClass()
-                .getClassLoader()
-                .getResourceAsStream("snmp-adapter-ui-schema.json")) {
+        try (final InputStream is =
+                this.getClass().getClassLoader().getResourceAsStream("snmp-adapter-ui-schema.json")) {
             if (is == null) {
                 log.warn("The UISchema for the SNMP Adapter could not be loaded from resources: Not found.");
                 return null;

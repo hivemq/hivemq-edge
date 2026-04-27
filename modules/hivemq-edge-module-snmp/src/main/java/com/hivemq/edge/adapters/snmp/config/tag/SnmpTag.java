@@ -18,10 +18,9 @@ package com.hivemq.edge.adapters.snmp.config.tag;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.Tag;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
 
 /**
  * Represents an SNMP tag that maps an OID to a named data point.
@@ -29,20 +28,19 @@ import java.util.Objects;
 public class SnmpTag implements Tag {
 
     @JsonProperty(value = "name", required = true)
-    @ModuleConfigField(title = "Name",
-                       description = "Name of the tag to be used in mappings",
-                       format = ModuleConfigField.FieldType.MQTT_TAG,
-                       required = true)
+    @ModuleConfigField(
+            title = "Name",
+            description = "Name of the tag to be used in mappings",
+            format = ModuleConfigField.FieldType.MQTT_TAG,
+            required = true)
     private final @NotNull String name;
 
     @JsonProperty(value = "description")
-    @ModuleConfigField(title = "Description",
-                       description = "A human-readable description of the tag")
+    @ModuleConfigField(title = "Description", description = "A human-readable description of the tag")
     private final @NotNull String description;
 
     @JsonProperty(value = "definition", required = true)
-    @ModuleConfigField(title = "Definition",
-                       description = "The OID definition for this tag")
+    @ModuleConfigField(title = "Definition", description = "The OID definition for this tag")
     private final @NotNull SnmpTagDefinition definition;
 
     public SnmpTag(
@@ -71,20 +69,19 @@ public class SnmpTag implements Tag {
 
     @Override
     public String toString() {
-        return "SnmpTag{" +
-                "name='" + name + '\'' +
-                ", description='" + description + '\'' +
-                ", definition=" + definition +
-                '}';
+        return "SnmpTag{" + "name='"
+                + name + '\'' + ", description='"
+                + description + '\'' + ", definition="
+                + definition + '}';
     }
 
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (!(o instanceof SnmpTag snmpTag)) return false;
-        return Objects.equals(name, snmpTag.name) &&
-                Objects.equals(description, snmpTag.description) &&
-                Objects.equals(definition, snmpTag.definition);
+        return Objects.equals(name, snmpTag.name)
+                && Objects.equals(description, snmpTag.description)
+                && Objects.equals(definition, snmpTag.definition);
     }
 
     @Override

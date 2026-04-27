@@ -15,20 +15,19 @@
  */
 package com.hivemq.edge.adapters.snmp.config;
 
-import org.snmp4j.security.AuthMD5;
-import org.snmp4j.security.AuthSHA;
+import org.jetbrains.annotations.Nullable;
 import org.snmp4j.security.AuthHMAC128SHA224;
 import org.snmp4j.security.AuthHMAC192SHA256;
 import org.snmp4j.security.AuthHMAC256SHA384;
 import org.snmp4j.security.AuthHMAC384SHA512;
+import org.snmp4j.security.AuthMD5;
+import org.snmp4j.security.AuthSHA;
 import org.snmp4j.smi.OID;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * SNMPv3 authentication protocols.
  */
 public enum SnmpAuthProtocol {
-
     NONE(null),
     MD5(AuthMD5.ID),
     SHA(AuthSHA.ID),
