@@ -42,9 +42,12 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.snmp4j.CommandResponder;
+import org.snmp4j.CommandResponderEvent;
 import org.snmp4j.PDU;
 import org.snmp4j.Snmp;
 import org.snmp4j.mp.StatusInformation;
+import org.snmp4j.smi.Address;
 import org.snmp4j.smi.OID;
 import org.snmp4j.smi.OctetString;
 import org.snmp4j.smi.TimeTicks;
@@ -78,38 +81,42 @@ class SnmpAdapterSmokeTest {
         final DefaultUdpTransportMapping transport = new DefaultUdpTransportMapping(new UdpAddress("127.0.0.1/0"));
         agentSnmp = new Snmp(transport);
 
-        agentSnmp.addCommandResponder(event -> {
-            final PDU pdu = event.getPDU();
-            if (pdu == null || pdu.getType() != PDU.GET) {
-                return;
-            }
+        // CommandResponder.processPdu() is itself generic so a lambda is not a valid SAM target
+        agentSnmp.addCommandResponder(new CommandResponder<Address>() {
+            @Override
+            public <B extends Address> void processPdu(final @NotNull CommandResponderEvent<B> event) {
+                final PDU pdu = event.getPDU();
+                if (pdu == null || pdu.getType() != PDU.GET) {
+                    return;
+                }
 
-            final PDU response = new PDU();
-            response.setType(PDU.RESPONSE);
-            response.setRequestID(pdu.getRequestID());
-            response.setErrorStatus(PDU.noError);
-            response.setErrorIndex(0);
+                final PDU response = new PDU();
+                response.setType(PDU.RESPONSE);
+                response.setRequestID(pdu.getRequestID());
+                response.setErrorStatus(PDU.noError);
+                response.setErrorIndex(0);
 
-            for (final VariableBinding vb : pdu.getVariableBindings()) {
-                final String oid = vb.getOid().toString();
-                final Variable value = OID_VALUES.getOrDefault(oid, new OctetString("unknown"));
-                response.add(new VariableBinding(new OID(oid), value));
-            }
+                for (final VariableBinding vb : pdu.getVariableBindings()) {
+                    final String oid = vb.getOid().toString();
+                    final Variable value = OID_VALUES.getOrDefault(oid, new OctetString("unknown"));
+                    response.add(new VariableBinding(new OID(oid), value));
+                }
 
-            try {
-                event.getMessageDispatcher()
-                        .returnResponsePdu(
-                                event.getMessageProcessingModel(),
-                                event.getSecurityModel(),
-                                event.getSecurityName(),
-                                event.getSecurityLevel(),
-                                response,
-                                event.getMaxSizeResponsePDU(),
-                                event.getStateReference(),
-                                new StatusInformation());
-                event.setProcessed(true);
-            } catch (final Exception e) {
-                throw new RuntimeException("Failed to send SNMP response", e);
+                try {
+                    event.getMessageDispatcher()
+                            .returnResponsePdu(
+                                    event.getMessageProcessingModel(),
+                                    event.getSecurityModel(),
+                                    event.getSecurityName(),
+                                    event.getSecurityLevel(),
+                                    response,
+                                    event.getMaxSizeResponsePDU(),
+                                    event.getStateReference(),
+                                    new StatusInformation());
+                    event.setProcessed(true);
+                } catch (final Exception e) {
+                    throw new RuntimeException("Failed to send SNMP response", e);
+                }
             }
         });
 

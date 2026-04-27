@@ -66,7 +66,7 @@ class SnmpAdapterConfigTest {
         assertThat(mqtt).isNotNull();
         assertThat(mqtt.getPollingIntervalMillis()).isEqualTo(2000);
         assertThat(mqtt.getMaxPollingErrorsBeforeRemoval()).isEqualTo(5);
-        assertThat(mqtt.isPublishChangedDataOnly()).isTrue();
+        assertThat(mqtt.getPublishChangedDataOnly()).isTrue();
     }
 
     @Test
@@ -99,6 +99,6 @@ class SnmpAdapterConfigTest {
         assertThat(mqtt.getPollingIntervalMillis()).isEqualTo(SnmpToMqttConfig.DEFAULT_POLLING_INTERVAL_MILLIS);
         assertThat(mqtt.getMaxPollingErrorsBeforeRemoval())
                 .isEqualTo(SnmpToMqttConfig.DEFAULT_MAX_POLLING_ERRORS_BEFORE_REMOVAL);
-        assertThat(mqtt.isPublishChangedDataOnly()).isFalse();
+        assertThat(mqtt.getPublishChangedDataOnly()).isFalse();
     }
 }
