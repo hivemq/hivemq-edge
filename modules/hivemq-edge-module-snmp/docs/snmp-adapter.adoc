@@ -1,0 +1,505 @@
+= SNMP Protocol Adapter
+:description: Configure the HiveMQ Edge SNMP Protocol Adapter to bridge SNMP-enabled devices to MQTT.
+:page-aliases: snmp-adapter.adoc
+:imagesdir: ../assets/img
+
+The SNMP Protocol Adapter bridges SNMP-enabled devices (network switches, routers, UPS systems, industrial equipment) to MQTT by polling Object Identifiers (OIDs) at configurable intervals.
+
+Supported SNMP versions:
+
+* *SNMPv1* – community string authentication, no encryption
+* *SNMPv2c* – community string authentication, 64-bit counters, bulk operations
+* *SNMPv3* – User Security Model (USM) with authentication and privacy encryption
+
+== Prerequisites
+
+The SNMP adapter is included in HiveMQ Edge.
+No additional installation is required.
+
+For Kubernetes deployments, the adapter JAR must be made available to the container.
+See <<helm-configuration>> for details.
+
+== Configuration
+
+=== Console (UI)
+
+. In the HiveMQ Edge console, navigate to *Protocol Adapters*.
+. Click *Add Adapter* and select *SNMP Protocol Adapter*.
+. Complete the *Connection* tab fields (see <<connection-settings>>).
+. If using SNMPv3, complete the *Authentication* tab (see <<snmpv3-settings>>).
+. Configure polling behavior under the *SNMP To MQTT* tab (see <<snmp-to-mqtt-settings>>).
+. Click *Save*.
+
+After saving, define one or more *Tags*.
+Each tag maps a single OID to a named data point that can be used in northbound mappings.
+
+==== Tag Configuration (Console)
+
+. On the adapter detail page, click *Tags*.
+. Click *Add Tag*.
+. Enter a *Name* (used to reference this tag in mappings), an optional description, and the *OID* to poll.
+. Optionally select a *Data Type* (defaults to `AUTO`).
+. Click *Save*.
+
+=== config.xml
+
+Protocol adapters are configured under the `<protocol-adapters>` element.
+
+==== SNMPv2c Example
+
+[source,xml]
+----
+<hivemq>
+    <protocol-adapters>
+        <protocol-adapter>
+            <adapterId>network-switch-01</adapterId>
+            <protocolId>snmp</protocolId>
+            <config>
+                <host>192.168.1.100</host>
+                <port>161</port>
+                <snmpVersion>V2C</snmpVersion>
+                <community>public</community>
+                <timeoutMillis>3000</timeoutMillis>
+                <retries>1</retries>
+                <snmpToMqtt>
+                    <pollingIntervalMillis>5000</pollingIntervalMillis>
+                    <maxPollingErrorsBeforeRemoval>10</maxPollingErrorsBeforeRemoval>
+                    <publishChangedDataOnly>false</publishChangedDataOnly>
+                </snmpToMqtt>
+            </config>
+            <tags>
+                <tag>
+                    <name>sys-name</name>
+                    <description>System name</description>
+                    <definition>
+                        <oid>1.3.6.1.2.1.1.5.0</oid>
+                        <dataType>AUTO</dataType>
+                    </definition>
+                </tag>
+                <tag>
+                    <name>sys-uptime</name>
+                    <description>System uptime in seconds</description>
+                    <definition>
+                        <oid>1.3.6.1.2.1.1.3.0</oid>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>factory/network/switch-01/status</topic>
+                    <maxQos>1</maxQos>
+                    <tagName>sys-name</tagName>
+                    <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                </northboundMapping>
+                <northboundMapping>
+                    <topic>factory/network/switch-01/uptime</topic>
+                    <maxQos>0</maxQos>
+                    <tagName>sys-uptime</tagName>
+                    <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
+                    <includeTagNames>false</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+    </protocol-adapters>
+</hivemq>
+----
+
+==== SNMPv3 Example
+
+[source,xml]
+----
+<hivemq>
+    <protocol-adapters>
+        <protocol-adapter>
+            <adapterId>ups-v3</adapterId>
+            <protocolId>snmp</protocolId>
+            <config>
+                <host>10.0.0.50</host>
+                <port>161</port>
+                <snmpVersion>V3</snmpVersion>
+                <securityName>monitoruser</securityName>
+                <authProtocol>SHA256</authProtocol>
+                <authPassword>auth-secret-here</authPassword>
+                <privProtocol>AES128</privProtocol>
+                <privPassword>priv-secret-here</privPassword>
+                <timeoutMillis>5000</timeoutMillis>
+                <retries>2</retries>
+                <snmpToMqtt>
+                    <pollingIntervalMillis>10000</pollingIntervalMillis>
+                    <maxPollingErrorsBeforeRemoval>5</maxPollingErrorsBeforeRemoval>
+                    <publishChangedDataOnly>true</publishChangedDataOnly>
+                </snmpToMqtt>
+            </config>
+            <tags>
+                <tag>
+                    <name>ups-battery-capacity</name>
+                    <description>UPS battery capacity percentage</description>
+                    <definition>
+                        <oid>1.3.6.1.2.1.33.1.2.5.0</oid>
+                    </definition>
+                </tag>
+            </tags>
+            <northboundMappings>
+                <northboundMapping>
+                    <topic>facility/ups/battery-capacity</topic>
+                    <maxQos>1</maxQos>
+                    <tagName>ups-battery-capacity</tagName>
+                    <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>true</includeTimestamp>
+                </northboundMapping>
+            </northboundMappings>
+        </protocol-adapter>
+    </protocol-adapters>
+</hivemq>
+----
+
+[[connection-settings]]
+=== Connection Settings
+
+[cols="2,1,4,1",options="header"]
+|===
+|Property |Type |Description |Default
+
+|`host`
+|String
+|IP address or hostname of the SNMP agent.
+|Required
+
+|`port`
+|Integer (1–65535)
+|UDP port on which the SNMP agent is listening.
+|`161`
+
+|`snmpVersion`
+|Enum
+|SNMP protocol version. Valid values: `V1`, `V2C`, `V3`.
+|Required
+
+|`timeoutMillis`
+|Integer (500–30000)
+|Request timeout in milliseconds. Applies per retry attempt.
+|`3000`
+
+|`retries`
+|Integer (0–10)
+|Number of retry attempts after a timeout before the request is considered failed.
+|`1`
+|===
+
+[[snmpv3-settings]]
+=== SNMPv3 Authentication Settings
+
+Required only when `snmpVersion` is `V3`.
+
+[cols="2,1,4,1",options="header"]
+|===
+|Property |Type |Description |Default
+
+|`community`
+|String
+|Community string used for SNMPv1 and SNMPv2c authentication.
+|`public`
+
+|`securityName`
+|String
+|USM security name (username) for SNMPv3.
+|—
+
+|`authProtocol`
+|Enum
+|SNMPv3 authentication protocol.
+Valid values: `NONE`, `MD5`, `SHA`, `SHA224`, `SHA256`, `SHA384`, `SHA512`.
+|`NONE`
+
+|`authPassword`
+|String
+|Password for the authentication protocol. Required when `authProtocol` is not `NONE`.
+|—
+
+|`privProtocol`
+|Enum
+|SNMPv3 privacy (encryption) protocol.
+Valid values: `NONE`, `DES`, `AES128`, `AES192`, `AES256`.
+|`NONE`
+
+|`privPassword`
+|String
+|Passphrase for the privacy protocol. Required when `privProtocol` is not `NONE`.
+|—
+|===
+
+NOTE: When `authProtocol` is `NONE`, the SNMPv3 security level is `noAuthNoPriv`.
+When `authProtocol` is set but `privProtocol` is `NONE`, the level is `authNoPriv`.
+Both set yields `authPriv`.
+
+[[snmp-to-mqtt-settings]]
+=== SNMP to MQTT Settings
+
+[cols="2,1,4,1",options="header"]
+|===
+|Property |Type |Description |Default
+
+|`pollingIntervalMillis`
+|Integer (100–86400000)
+|Interval between successive OID polls in milliseconds.
+|`1000`
+
+|`maxPollingErrorsBeforeRemoval`
+|Integer (1–100)
+|Maximum consecutive polling errors before the adapter is automatically stopped.
+|`10`
+
+|`publishChangedDataOnly`
+|Boolean
+|When `true`, a data point is only published when its value has changed since the previous poll.
+|`false`
+|===
+
+=== Tag Settings
+
+Each tag maps one OID to a named data point.
+
+[cols="2,1,4,1",options="header"]
+|===
+|Property |Type |Description |Default
+
+|`name`
+|String
+|Unique identifier for this tag within the adapter. Used in northbound mappings.
+|Required
+
+|`description`
+|String
+|Human-readable description of what this OID represents.
+|—
+
+|`oid`
+|String
+|SNMP Object Identifier in dotted-decimal notation (e.g., `1.3.6.1.2.1.1.5.0`).
+Pattern: `^[0-9]+(\.[0-9]+)*$`
+|Required
+
+|`dataType`
+|Enum
+|Expected SNMP data type hint for value conversion.
+Valid values: `AUTO`, `INTEGER`, `STRING`, `COUNTER32`, `COUNTER64`, `GAUGE`, `TIMETICKS`, `IP_ADDRESS`, `OID`, `OPAQUE`.
+`AUTO` performs automatic type detection from the agent response.
+|`AUTO`
+|===
+
+== Data Type Conversion
+
+SNMP values are converted to JSON-compatible types as follows:
+
+[cols="2,1,3",options="header"]
+|===
+|SNMP Type |JSON Type |Notes
+
+|Integer32
+|`number` (int)
+|Signed 32-bit integer.
+
+|Counter32
+|`number` (long)
+|32-bit monotonically increasing counter. Wraps at 2^32.
+
+|Counter64
+|`number` (long)
+|64-bit monotonically increasing counter.
+
+|Gauge32
+|`number` (long)
+|32-bit value that can increase or decrease.
+
+|TimeTicks
+|`number` (double)
+|Converted from hundredths-of-a-second to seconds (e.g., `123456` → `1234.56`).
+
+|OctetString
+|`string`
+|Printable strings rendered as text. Non-printable bytes rendered as hexadecimal.
+
+|IpAddress
+|`string`
+|Dotted-decimal notation (e.g., `"192.168.1.1"`).
+
+|OID
+|`string`
+|Dotted-decimal notation (e.g., `"1.3.6.1.2.1.1.1.0"`).
+
+|Opaque
+|`string`
+|Rendered as hexadecimal.
+|===
+
+== Common OIDs (MIB-II)
+
+The following OIDs from RFC 1213 (MIB-II) are available on most SNMP-enabled devices:
+
+[cols="3,1,2",options="header"]
+|===
+|OID |Name |Description
+
+|`1.3.6.1.2.1.1.1.0`
+|sysDescr
+|Full description of the device hardware, OS, and software.
+
+|`1.3.6.1.2.1.1.3.0`
+|sysUpTime
+|Time since the device was last re-initialized (seconds).
+
+|`1.3.6.1.2.1.1.4.0`
+|sysContact
+|Contact information for the device administrator.
+
+|`1.3.6.1.2.1.1.5.0`
+|sysName
+|Assigned name for the device (typically FQDN).
+
+|`1.3.6.1.2.1.1.6.0`
+|sysLocation
+|Physical location of the device.
+
+|`1.3.6.1.2.1.2.1.0`
+|ifNumber
+|Number of network interfaces.
+
+|`1.3.6.1.2.1.31.1.1.1.10.1`
+|ifHCInOctets (if 1)
+|Total octets received on interface 1 (64-bit counter).
+
+|`1.3.6.1.2.1.31.1.1.1.16.1`
+|ifHCOutOctets (if 1)
+|Total octets transmitted on interface 1 (64-bit counter).
+|===
+
+TIP: Use the *Discover* feature in the HiveMQ Edge console to browse available OIDs on a connected device.
+The adapter supports walking `iso.org.dod.internet.mgmt.mib-2` subtrees.
+
+[[helm-configuration]]
+== Kubernetes / Helm Configuration
+
+When deploying HiveMQ Edge with the https://github.com/hivemq/helm-charts[HiveMQ Helm chart], the SNMP adapter JAR must be mounted into the container.
+
+=== Mounting the Adapter JAR
+
+The adapter JAR (`hivemq-edge-module-snmp-<version>-all.jar`) is a self-contained shadow JAR.
+Add it to the `modules/` directory inside the HiveMQ Edge container using an `initContainer` and a shared volume:
+
+[source,yaml]
+----
+# values.yaml
+hivemq-edge:
+  extraInitContainers:
+    - name: install-snmp-adapter
+      image: curlimages/curl:latest
+      command:
+        - sh
+        - -c
+        - |
+          curl -fsSL \
+            https://your-artifact-repo/hivemq-edge-module-snmp-VERSION-all.jar \
+            -o /hivemq-edge/modules/hivemq-edge-module-snmp-VERSION-all.jar
+      volumeMounts:
+        - name: modules
+          mountPath: /hivemq-edge/modules
+
+  extraVolumes:
+    - name: modules
+      emptyDir: {}
+
+  extraVolumeMounts:
+    - name: modules
+      mountPath: /opt/hivemq-edge/modules
+----
+
+Replace `VERSION` with the actual release version (e.g., `2026.2`).
+
+=== Providing config.xml
+
+Mount the `config.xml` containing the adapter configuration as a `ConfigMap`:
+
+[source,yaml]
+----
+# values.yaml
+hivemq-edge:
+  config:
+    overrideStaticConfig: |
+      <?xml version="1.0"?>
+      <hivemq>
+          <protocol-adapters>
+              <protocol-adapter>
+                  <adapterId>switch-01</adapterId>
+                  <protocolId>snmp</protocolId>
+                  <config>
+                      <host>192.168.1.100</host>
+                      <port>161</port>
+                      <snmpVersion>V2C</snmpVersion>
+                      <community>public</community>
+                      <timeoutMillis>3000</timeoutMillis>
+                      <retries>1</retries>
+                      <snmpToMqtt>
+                          <pollingIntervalMillis>5000</pollingIntervalMillis>
+                          <maxPollingErrorsBeforeRemoval>10</maxPollingErrorsBeforeRemoval>
+                          <publishChangedDataOnly>false</publishChangedDataOnly>
+                      </snmpToMqtt>
+                  </config>
+                  <tags>
+                      <tag>
+                          <name>sys-name</name>
+                          <description>System name</description>
+                          <definition>
+                              <oid>1.3.6.1.2.1.1.5.0</oid>
+                          </definition>
+                      </tag>
+                  </tags>
+                  <northboundMappings>
+                      <northboundMapping>
+                          <topic>network/switch-01/sysname</topic>
+                          <maxQos>1</maxQos>
+                          <tagName>sys-name</tagName>
+                          <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
+                          <includeTagNames>true</includeTagNames>
+                          <includeTimestamp>true</includeTimestamp>
+                      </northboundMapping>
+                  </northboundMappings>
+              </protocol-adapter>
+          </protocol-adapters>
+      </hivemq>
+----
+
+=== Network Considerations
+
+SNMP uses UDP port 161 by default.
+Ensure the HiveMQ Edge pods can reach the SNMP agents on the correct port.
+Kubernetes `NetworkPolicy` rules may need to be updated to allow outbound UDP traffic from the HiveMQ Edge namespace.
+
+== Troubleshooting
+
+=== Adapter fails to start
+
+* Verify the host is reachable from the HiveMQ Edge instance using `snmpget` or a UDP connectivity test.
+* Confirm the community string (`V1`/`V2c`) or security credentials (`V3`) are correct.
+* Check that the SNMP agent is listening on the configured port (default `161`).
+
+=== Timeout errors during polling
+
+* Increase `timeoutMillis` (default `3000`).
+* Increase `retries` (default `1`).
+* Check for network firewalls or access control lists blocking UDP traffic.
+
+=== OID returns `unknown` or unexpected value
+
+* Verify the OID is supported by the target device using an SNMP browser or `snmpwalk`.
+* Some OIDs require a specific SNMP version — for example, `Counter64` values require SNMPv2c or later.
+* Use the *Discover* feature in the console to enumerate OIDs actually available on the device.
+
+=== SNMPv3 authentication failures
+
+* Confirm `securityName`, `authPassword`, and `privPassword` exactly match the configuration on the agent.
+* Check that the `authProtocol` and `privProtocol` values are supported by the agent.
+* SNMPv3 requires that the clocks of the manager and agent be synchronized within the engine boot window. Ensure NTP is configured.
