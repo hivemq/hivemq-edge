@@ -6,8 +6,8 @@ hivemq-edge-module-modbus uses the following third party libraries:
  Module                                                                     | Version                                   | License ID    | License URL
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  com.digitalpetri.fsm:strict-machine                                        | 1.0.0                                     | EPL-2.0       | https://spdx.org/licenses/EPL-2.0.html
- com.digitalpetri.modbus:modbus                                             | 2.1.4                                     | EPL-2.0       | https://spdx.org/licenses/EPL-2.0.html
- com.digitalpetri.modbus:modbus-tcp                                         | 2.1.4                                     | EPL-2.0       | https://spdx.org/licenses/EPL-2.0.html
+ com.digitalpetri.modbus:modbus                                             | 2.1.5                                     | EPL-2.0       | https://spdx.org/licenses/EPL-2.0.html
+ com.digitalpetri.modbus:modbus-tcp                                         | 2.1.5                                     | EPL-2.0       | https://spdx.org/licenses/EPL-2.0.html
  com.digitalpetri.netty:netty-channel-fsm                                   | 1.0.2                                     | EPL-2.0       | https://spdx.org/licenses/EPL-2.0.html
  io.netty:netty-buffer                                                      | 4.1.131.Final                             | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  io.netty:netty-codec                                                       | 4.1.131.Final                             | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html

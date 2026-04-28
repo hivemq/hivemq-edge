@@ -194,7 +194,7 @@ export class PulseService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `Topic, schema, or mapping ID invalid`,
+                400: `Topic, schema, mapping ID invalid, or TAG reference missing scope`,
                 404: `Managed asset not found`,
                 409: `Combiner already exists`,
             },
@@ -266,7 +266,7 @@ export class PulseService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `Topic, schema, or mapping ID invalid`,
+                400: `Topic, schema, mapping ID invalid, or TAG reference missing scope`,
                 404: `Managed asset not found`,
                 409: `Combiner already exists`,
             },

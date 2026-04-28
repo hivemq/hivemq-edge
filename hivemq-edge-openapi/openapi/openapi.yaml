@@ -282,6 +282,8 @@ paths:
     $ref: paths/api_v1_management_protocol-adapters_types_{adapterType}.yaml
   /api/v1/management/protocol-adapters/writing-schema/{adapterId}/{tagName}:
     $ref: paths/api_v1_management_protocol-adapters_writing-schema_{adapterId}_{tagName}.yaml
+  /api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}:
+    $ref: paths/api_v1_management_protocol-adapters_schema_{adapterId}_{tagName}.yaml
 
   # Sampling paths
   /api/v1/management/sampling/schema/{topic}:

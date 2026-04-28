@@ -286,8 +286,8 @@ describe('DataCombiningEditorField', () => {
   //          from instructions.sourceRef, not from the deprecated tags array
   // ---------------------------------------------------------------------------
   describe('EDG-164 — integration points derive from instructions, not sources.tags', () => {
-    const writingSchemaUrl = (adapterId: string, tagId: string) =>
-      `/api/v1/management/protocol-adapters/writing-schema/${adapterId}/${encodeURIComponent(tagId)}`
+    const schemaUrl = (adapterId: string, tagId: string) =>
+      `/api/v1/management/protocol-adapters/schema/${adapterId}/${encodeURIComponent(tagId)}`
 
     const sensorSchema = { type: 'object', properties: { value: { type: 'number' } } }
 
@@ -352,7 +352,7 @@ describe('DataCombiningEditorField', () => {
     // Expected: one chip `adapter-a :: temperature`, one schema panel
     // -------------------------------------------------------------------------
     it('S2: scoped instruction drives one chip and one schema panel', () => {
-      cy.intercept('GET', writingSchemaUrl('adapter-a', 'temperature'), {
+      cy.intercept('GET', schemaUrl('adapter-a', 'temperature'), {
         statusCode: 200,
         body: sensorSchema,
       }).as('schema')
@@ -405,12 +405,12 @@ describe('DataCombiningEditorField', () => {
     // AFTER fix:  distinct scopes → two chips, two schemas
     // -------------------------------------------------------------------------
     it('S3 (bug): same-named tag from two adapters shows two distinct chips and loads two schemas', () => {
-      cy.intercept('GET', writingSchemaUrl('o1', 'temperature'), {
+      cy.intercept('GET', schemaUrl('o1', 'temperature'), {
         statusCode: 200,
         body: { type: 'object', properties: { value: { type: 'number' } } },
       }).as('schemaO1')
 
-      cy.intercept('GET', writingSchemaUrl('o2', 'temperature'), {
+      cy.intercept('GET', schemaUrl('o2', 'temperature'), {
         statusCode: 200,
         body: { type: 'object', properties: { value: { type: 'string' } } },
       }).as('schemaO2')
@@ -516,7 +516,7 @@ describe('DataCombiningEditorField', () => {
     // Expected: only the instruction-sourced chips appear (not all from sources.tags)
     // -------------------------------------------------------------------------
     it('S5: partial deprecated data — only instruction-based sources shown', () => {
-      cy.intercept('GET', writingSchemaUrl('adapter-a', 'temperature'), {
+      cy.intercept('GET', schemaUrl('adapter-a', 'temperature'), {
         statusCode: 200,
         body: sensorSchema,
       }).as('schema')
@@ -627,7 +627,7 @@ describe('DataCombiningEditorField', () => {
     // Expected: all schema panels load
     // -------------------------------------------------------------------------
     it('S7: mixed tags and topic filters from instructions all load schemas', () => {
-      cy.intercept('GET', writingSchemaUrl('adapter-a', 'temperature'), {
+      cy.intercept('GET', schemaUrl('adapter-a', 'temperature'), {
         statusCode: 200,
         body: sensorSchema,
       }).as('tagSchema')
@@ -718,7 +718,7 @@ describe('DataCombiningEditorField', () => {
     })
 
     it('should render source schema properties without readOnly indicators', () => {
-      cy.intercept('GET', '**/writing-schema/adapter-a/**', { body: readOnlySourceSchema }).as('schema')
+      cy.intercept('GET', '**/schema/adapter-a/**', { body: readOnlySourceSchema }).as('schema')
 
       const formData: DataCombining = {
         id: '58677276-fc48-4a9a-880c-41c755f5063b',
@@ -777,8 +777,8 @@ describe('DataCombiningEditorField', () => {
     })
 
     it('should capture ownership chips in source and destination panels', () => {
-      cy.intercept('GET', '**/writing-schema/boiler-line-1/**', { body: boilerSourceSchema }).as('schema1')
-      cy.intercept('GET', '**/writing-schema/boiler-line-2/**', { body: boilerSourceSchema }).as('schema2')
+      cy.intercept('GET', '**/schema/boiler-line-1/**', { body: boilerSourceSchema }).as('schema1')
+      cy.intercept('GET', '**/schema/boiler-line-2/**', { body: boilerSourceSchema }).as('schema2')
 
       const formData: DataCombining = {
         id: 'blog-screenshot-combiner',

@@ -12,7 +12,7 @@ const mockTopic = 'test/topic'
 describe('DataModelDestination', () => {
   beforeEach(() => {
     cy.viewport(800, 900)
-    cy.intercept('/api/v1/management/protocol-adapters/writing-schema/*/*', GENERATE_DATA_MODELS(true, mockTopic))
+    cy.intercept('/api/v1/management/protocol-adapters/schema/*/*', GENERATE_DATA_MODELS(true, mockTopic))
   })
 
   it('should render properly', () => {

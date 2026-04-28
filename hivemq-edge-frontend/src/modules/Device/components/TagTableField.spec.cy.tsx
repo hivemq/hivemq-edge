@@ -25,7 +25,7 @@ const mockTagListSchema = {
 describe('TagTableField', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
-    cy.intercept('/api/v1/management/protocol-adapters/writing-schema/*/*', { statusCode: 203, log: false })
+    cy.intercept('/api/v1/management/protocol-adapters/schema/*/*', { statusCode: 203, log: false })
   })
 
   it('should render the base table', () => {

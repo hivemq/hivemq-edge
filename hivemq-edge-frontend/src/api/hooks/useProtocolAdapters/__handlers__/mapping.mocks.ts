@@ -32,7 +32,7 @@ export const MOCK_NORTHBOUND_MAPPING: NorthboundMapping = {
 
 export const mappingHandlers = [
   http.get<{ adapterId: string; tagName: string }>(
-    '*/management/protocol-adapters/writing-schema/:adapterId/:tagName',
+    '*/management/protocol-adapters/schema/:adapterId/:tagName',
     ({ params }) => {
       const { tagName } = params
       return HttpResponse.json<JsonNode>(GENERATE_DATA_MODELS(true, tagName), { status: 200 })
@@ -100,9 +100,9 @@ export const mappingHandlers = [
   ),
 ]
 
-export const safeWritingSchemaHandlers = [
+export const safeSchemaHandlers = [
   http.get<{ adapterId: string; tagName: string }>(
-    '*/management/protocol-adapters/writing-schema/:adapterId/:tagName',
+    '*/management/protocol-adapters/schema/:adapterId/:tagName',
     ({ params }) => {
       const { tagName } = params
       return HttpResponse.json<JsonNode>(GENERATE_DATA_MODELS(true, tagName), { status: 200 })

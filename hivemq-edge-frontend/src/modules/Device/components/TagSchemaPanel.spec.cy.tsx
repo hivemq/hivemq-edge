@@ -10,7 +10,7 @@ const mocTag = MOCK_DEVICE_TAGS('opcua-1', MockAdapterType.OPC_UA)[0]
 describe('TagSchemaPanel', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
-    cy.intercept('/api/v1/management/protocol-adapters/writing-schema/**', GENERATE_DATA_MODELS(true, 'test'))
+    cy.intercept('/api/v1/management/protocol-adapters/schema/**', GENERATE_DATA_MODELS(true, 'test'))
   })
 
   it('should render properly', () => {

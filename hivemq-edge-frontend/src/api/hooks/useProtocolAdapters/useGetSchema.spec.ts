@@ -3,12 +3,12 @@ import { renderHook, waitFor } from '@testing-library/react'
 
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
-import { useGetWritingSchema } from '@/api/hooks/useProtocolAdapters/useGetWritingSchema.ts'
+import { useGetSchema } from '@/api/hooks/useProtocolAdapters/useGetSchema.ts'
 
 import type { JsonNode } from '@/api/__generated__'
 import { mappingHandlers } from './__handlers__/mapping.mocks.ts'
 
-describe('useGetWritingSchema', () => {
+describe('useGetSchema', () => {
   beforeEach(() => {
     server.use(...mappingHandlers)
   })
@@ -18,7 +18,7 @@ describe('useGetWritingSchema', () => {
   })
 
   it('should load the data', async () => {
-    const { result } = renderHook(() => useGetWritingSchema('my-adapter', 'my-tag'), { wrapper })
+    const { result } = renderHook(() => useGetSchema('my-adapter', 'my-tag'), { wrapper })
     await waitFor(() => {
       expect(result.current.isLoading).toBeFalsy()
       expect(result.current.isSuccess).toBeTruthy()

@@ -54,6 +54,7 @@ export class ProtocolAdaptersService {
             errors: {
                 400: `Adapter failed validation`,
                 404: `Adapter type not found`,
+                409: `Tag already exists`,
                 500: `Internal Server Error`,
             },
         });
@@ -398,6 +399,7 @@ export class ProtocolAdaptersService {
             mediaType: 'application/json',
             errors: {
                 404: `Adapter not found`,
+                409: `Tag already exists`,
                 500: `Internal Server Error`,
             },
         });
@@ -455,6 +457,7 @@ export class ProtocolAdaptersService {
             errors: {
                 403: `Adapter not found`,
                 404: `Tag not found`,
+                409: `Tag already exists`,
                 500: `Internal Server Error`,
             },
         });
@@ -639,6 +642,32 @@ export class ProtocolAdaptersService {
         return this.httpRequest.request({
             method: 'GET',
             url: '/api/v1/management/protocol-adapters/writing-schema/{adapterId}/{tagName}',
+            path: {
+                'adapterId': adapterId,
+                'tagName': tagName,
+            },
+            errors: {
+                404: `Adapter not found`,
+                500: `Internal Server Error`,
+            },
+        });
+    }
+
+    /**
+     * Get a json schema that represents the tag with the provided name.
+     * Get a json schema that explains the json schema that represents the tag with the provided name."
+     * @param adapterId The id of the adapter for which the Json Schema should be retrieved.
+     * @param tagName The tag name (urlencoded) for which the Json Schema should be retrieved.
+     * @returns JsonNode Success
+     * @throws ApiError
+     */
+    public getSchema(
+        adapterId: string,
+        tagName: string,
+    ): CancelablePromise<JsonNode> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}',
             path: {
                 'adapterId': adapterId,
                 'tagName': tagName,
