@@ -15,11 +15,17 @@
  */
 package com.hivemq.edge.adapters.snmp;
 
+import com.hivemq.edge.adapters.snmp.config.SnmpSpecificAdapterConfig;
+import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
- * Value carrier for an SNMP GET result: the converted Java value and the raw SNMP4J type name.
+ * Creates an {@link SnmpClient} for a given adapter configuration.
+ * The default implementation is {@code SnmpClient::new}; tests inject a mock.
  */
-public record SnmpReadResult(
-        @Nullable Object value, @NotNull String rawType) {}
+@FunctionalInterface
+public interface SnmpClientFactory {
+
+    @NotNull
+    SnmpClient create(@NotNull SnmpSpecificAdapterConfig config) throws IOException;
+}

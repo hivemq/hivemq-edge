@@ -101,7 +101,6 @@ class SnmpProtocolAdapterTest {
         when(config.getCommunity()).thenReturn("public");
         when(config.getSnmpToMqttConfig()).thenReturn(null);
 
-        // Wire up the DataPointBuilder chain so none of the calls NPE
         when(pollingOutput.dataPointListPublisher()).thenReturn(publisher);
         when(publisher.addDataPoint(any())).thenReturn(dpBuilder);
         when(dpBuilder.startObjectMetadata()).thenReturn(metaBuilder);
@@ -149,7 +148,6 @@ class SnmpProtocolAdapterTest {
         adapter.start(startInput, startOutput);
         adapter.start(startInput, startOutput);
 
-        // Only one successful start; second call should fail
         verify(startOutput, times(1)).startedSuccessfully();
         verify(startOutput, times(1)).failStart(any(IllegalStateException.class), anyString());
     }
@@ -200,7 +198,7 @@ class SnmpProtocolAdapterTest {
     @Test
     void poll_withOneTag_addsDataPointAndPublishes() throws IOException {
         when(snmpClient.testConnection()).thenReturn(true);
-        when(snmpClient.get("1.3.6.1.2.1.1.1.0")).thenReturn(new SnmpReadResult("HiveMQ Edge", "OctetString", 0, 0));
+        when(snmpClient.get("1.3.6.1.2.1.1.1.0")).thenReturn(new SnmpReadResult("HiveMQ Edge", "OctetString"));
 
         final SnmpTag tag = sysDescrTag();
         final SnmpProtocolAdapter adapter = createAdapter(List.of(tag));
@@ -217,7 +215,7 @@ class SnmpProtocolAdapterTest {
     @Test
     void poll_withIntegerValue_usesTypedIntOverload() throws IOException {
         when(snmpClient.testConnection()).thenReturn(true);
-        when(snmpClient.get("1.3.6.1.2.1.1.7.0")).thenReturn(new SnmpReadResult(72, "Integer32", 0, 0));
+        when(snmpClient.get("1.3.6.1.2.1.1.7.0")).thenReturn(new SnmpReadResult(72, "Integer32"));
 
         final SnmpTag tag = new SnmpTag("sysServices", "", new SnmpTagDefinition("1.3.6.1.2.1.1.7.0", null));
         final SnmpProtocolAdapter adapter = createAdapter(List.of(tag));
@@ -230,8 +228,7 @@ class SnmpProtocolAdapterTest {
     @Test
     void poll_withLongValue_usesTypedLongOverload() throws IOException {
         when(snmpClient.testConnection()).thenReturn(true);
-        when(snmpClient.get("1.3.6.1.2.1.31.1.1.1.10.1"))
-                .thenReturn(new SnmpReadResult(4_000_000_000L, "Counter64", 0, 0));
+        when(snmpClient.get("1.3.6.1.2.1.31.1.1.1.10.1")).thenReturn(new SnmpReadResult(4_000_000_000L, "Counter64"));
 
         final SnmpTag tag = new SnmpTag("ifHCInOctets", "", new SnmpTagDefinition("1.3.6.1.2.1.31.1.1.1.10.1", null));
         final SnmpProtocolAdapter adapter = createAdapter(List.of(tag));
@@ -242,10 +239,23 @@ class SnmpProtocolAdapterTest {
     }
 
     @Test
+    void poll_withDoubleValue_usesTypedDoubleOverload() throws IOException {
+        when(snmpClient.testConnection()).thenReturn(true);
+        when(snmpClient.get("1.3.6.1.2.1.1.3.0")).thenReturn(new SnmpReadResult(1234.56, "TimeTicks"));
+
+        final SnmpTag tag = new SnmpTag("sysUpTime", "", new SnmpTagDefinition("1.3.6.1.2.1.1.3.0", null));
+        final SnmpProtocolAdapter adapter = createAdapter(List.of(tag));
+        adapter.start(startInput, startOutput);
+        adapter.poll(pollingInput, pollingOutput);
+
+        verify(dpBuilder).value(1234.56);
+    }
+
+    @Test
     void poll_whenOneTagFails_otherTagsAreStillPublished() throws IOException {
         when(snmpClient.testConnection()).thenReturn(true);
         when(snmpClient.get("1.3.6.1.2.1.1.1.0")).thenThrow(new IOException("SNMP timeout"));
-        when(snmpClient.get("1.3.6.1.2.1.1.5.0")).thenReturn(new SnmpReadResult("my-device", "OctetString", 0, 0));
+        when(snmpClient.get("1.3.6.1.2.1.1.5.0")).thenReturn(new SnmpReadResult("my-device", "OctetString"));
 
         final SnmpTag failingTag = sysDescrTag();
         final SnmpTag successTag = sysNameTag();
@@ -289,7 +299,7 @@ class SnmpProtocolAdapterTest {
 
     private @NotNull SnmpProtocolAdapter createAdapter(final @NotNull List<SnmpTag> tags) {
         when(adapterInput.getTags()).thenReturn((List) tags);
-        return new TestableAdapter(information, adapterInput, snmpClient);
+        return new SnmpProtocolAdapter(information, adapterInput, config -> snmpClient);
     }
 
     private static @NotNull SnmpTag sysDescrTag() {
@@ -298,24 +308,5 @@ class SnmpProtocolAdapterTest {
 
     private static @NotNull SnmpTag sysNameTag() {
         return new SnmpTag("sysName", "System name", new SnmpTagDefinition("1.3.6.1.2.1.1.5.0", null));
-    }
-
-    /** Subclass that injects the mock SnmpClient instead of opening a real UDP socket. */
-    private static class TestableAdapter extends SnmpProtocolAdapter {
-
-        private final @NotNull SnmpClient injectedClient;
-
-        TestableAdapter(
-                final @NotNull ProtocolAdapterInformation information,
-                final @NotNull ProtocolAdapterInput<SnmpSpecificAdapterConfig> input,
-                final @NotNull SnmpClient injectedClient) {
-            super(information, input);
-            this.injectedClient = injectedClient;
-        }
-
-        @Override
-        protected @NotNull SnmpClient createClient() {
-            return injectedClient;
-        }
     }
 }

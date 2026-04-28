@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.snmp.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.InputStream;
@@ -100,5 +101,63 @@ class SnmpAdapterConfigTest {
         assertThat(mqtt.getMaxPollingErrorsBeforeRemoval())
                 .isEqualTo(SnmpToMqttConfig.DEFAULT_MAX_POLLING_ERRORS_BEFORE_REMOVAL);
         assertThat(mqtt.getPublishChangedDataOnly()).isFalse();
+    }
+
+    // -------------------------------------------------------------------------
+    // Validation
+    // -------------------------------------------------------------------------
+
+    @Test
+    void v3Config_withoutSecurityName_throwsIllegalArgument() {
+        assertThatThrownBy(() -> new SnmpSpecificAdapterConfig(
+                        "192.168.1.1", null, SnmpVersion.V3, null, null, null, null, null, null, null, null, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("securityName");
+    }
+
+    @Test
+    void v3Config_withAuthProtocolButNoPassword_throwsIllegalArgument() {
+        assertThatThrownBy(() -> new SnmpSpecificAdapterConfig(
+                        "192.168.1.1",
+                        null,
+                        SnmpVersion.V3,
+                        null,
+                        "user",
+                        SnmpAuthProtocol.SHA256,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("authPassword");
+    }
+
+    @Test
+    void v3Config_withPrivProtocolButNoPassword_throwsIllegalArgument() {
+        assertThatThrownBy(() -> new SnmpSpecificAdapterConfig(
+                        "192.168.1.1",
+                        null,
+                        SnmpVersion.V3,
+                        null,
+                        "user",
+                        SnmpAuthProtocol.SHA256,
+                        "authpass",
+                        SnmpPrivProtocol.AES128,
+                        null,
+                        null,
+                        null,
+                        null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("privPassword");
+    }
+
+    @Test
+    void v2cConfig_doesNotRequireSecurityFields() throws Exception {
+        // Should not throw — V1/V2c have no security field requirements
+        final SnmpSpecificAdapterConfig config = load("/snmp-config-full-v2c.json");
+        assertThat(config.getSnmpVersion()).isEqualTo(SnmpVersion.V2C);
+        assertThat(config.getSecurityName()).isNull();
     }
 }

@@ -157,6 +157,22 @@ public class SnmpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
         this.retries = Objects.requireNonNullElse(retries, DEFAULT_RETRIES);
         this.snmpToMqttConfig =
                 Objects.requireNonNullElseGet(snmpToMqttConfig, () -> new SnmpToMqttConfig(null, null, null));
+
+        if (snmpVersion == SnmpVersion.V3) {
+            if (this.securityName == null || this.securityName.isBlank()) {
+                throw new IllegalArgumentException("securityName is required for SNMPv3");
+            }
+            if (this.authProtocol != SnmpAuthProtocol.NONE
+                    && (this.authPassword == null || this.authPassword.isBlank())) {
+                throw new IllegalArgumentException(
+                        "authPassword is required when authProtocol is " + this.authProtocol);
+            }
+            if (this.privProtocol != SnmpPrivProtocol.NONE
+                    && (this.privPassword == null || this.privPassword.isBlank())) {
+                throw new IllegalArgumentException(
+                        "privPassword is required when privProtocol is " + this.privProtocol);
+            }
+        }
     }
 
     public @NotNull String getHost() {

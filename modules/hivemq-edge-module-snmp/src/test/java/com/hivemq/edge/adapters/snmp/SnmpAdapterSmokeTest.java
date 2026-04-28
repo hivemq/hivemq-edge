@@ -41,6 +41,7 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.snmp4j.CommandResponder;
 import org.snmp4j.CommandResponderEvent;
@@ -60,10 +61,10 @@ import org.snmp4j.transport.DefaultUdpTransportMapping;
  * Smoke tests that spin up an embedded SNMP4J agent and exercise the real SnmpClient
  * against it, then run a full adapter poll cycle to verify end-to-end data flow.
  */
+@Tag("integration")
 @SuppressWarnings("unchecked")
 class SnmpAdapterSmokeTest {
 
-    // OIDs served by the embedded agent
     private static final String OID_SYS_DESCR = "1.3.6.1.2.1.1.1.0";
     private static final String OID_SYS_UPTIME = "1.3.6.1.2.1.1.3.0";
     private static final String OID_SYS_NAME = "1.3.6.1.2.1.1.5.0";
@@ -121,7 +122,6 @@ class SnmpAdapterSmokeTest {
         });
 
         agentSnmp.listen();
-
         agentPort = ((UdpAddress) transport.getListenAddress()).getPort();
     }
 
@@ -139,27 +139,29 @@ class SnmpAdapterSmokeTest {
     @Test
     void snmpClient_get_sysDescr_returnsExpectedString() throws Exception {
         try (final SnmpClient client = new SnmpClient(config())) {
+            client.open();
             final SnmpReadResult result = client.get(OID_SYS_DESCR);
 
-            assertThat(result.getValue()).isEqualTo("HiveMQ SNMP Test Agent");
-            assertThat(result.getRawType()).isEqualTo("OctetString");
-            assertThat(result.getErrorStatus()).isEqualTo(PDU.noError);
+            assertThat(result.value()).isEqualTo("HiveMQ SNMP Test Agent");
+            assertThat(result.rawType()).isEqualTo("OctetString");
         }
     }
 
     @Test
     void snmpClient_get_sysUpTime_returnsDoubleSeconds() throws Exception {
         try (final SnmpClient client = new SnmpClient(config())) {
+            client.open();
             final SnmpReadResult result = client.get(OID_SYS_UPTIME);
 
             // TimeTicks(123456) hundredths-of-a-second → 1234.56 seconds
-            assertThat(result.getValue()).isEqualTo(123456L / 100.0);
+            assertThat(result.value()).isEqualTo(123456L / 100.0);
         }
     }
 
     @Test
     void snmpClient_testConnection_returnsTrueWhenAgentReachable() throws Exception {
         try (final SnmpClient client = new SnmpClient(config())) {
+            client.open();
             assertThat(client.testConnection()).isTrue();
         }
     }
@@ -170,7 +172,6 @@ class SnmpAdapterSmokeTest {
 
     @Test
     void adapterPoll_publishesDataPointsFromRealAgent() throws Exception {
-        // Set up mock SDK objects
         final ProtocolAdapterInput<SnmpSpecificAdapterConfig> adapterInput = mock(ProtocolAdapterInput.class);
         final ProtocolAdapterState state = mock(ProtocolAdapterState.class);
         final ProtocolAdapterStartInput startInput = mock(ProtocolAdapterStartInput.class);
@@ -211,7 +212,6 @@ class SnmpAdapterSmokeTest {
 
         adapter.poll(pollingInput, pollingOutput);
 
-        // Both tags should have been added and the batch published
         verify(publisher).addDataPoint(sysDescrTag);
         verify(publisher).addDataPoint(sysNameTag);
         verify(publisher).publish();

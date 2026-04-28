@@ -54,7 +54,6 @@ import org.snmp4j.smi.VariableBinding;
 
 /**
  * SNMP Protocol Adapter for HiveMQ Edge.
- * <p>
  * Polls SNMP agents and publishes values to MQTT topics.
  */
 public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
@@ -66,6 +65,7 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
     private final @NotNull SnmpSpecificAdapterConfig config;
     private final @NotNull ProtocolAdapterState state;
     private final @NotNull List<SnmpTag> tags;
+    private final @NotNull SnmpClientFactory clientFactory;
     private final @NotNull AtomicBoolean started = new AtomicBoolean(false);
     private final @NotNull AtomicBoolean stopRequested = new AtomicBoolean(false);
 
@@ -74,11 +74,19 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
     public SnmpProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterInput<SnmpSpecificAdapterConfig> input) {
+        this(adapterInformation, input, SnmpClient::new);
+    }
+
+    public SnmpProtocolAdapter(
+            final @NotNull ProtocolAdapterInformation adapterInformation,
+            final @NotNull ProtocolAdapterInput<SnmpSpecificAdapterConfig> input,
+            final @NotNull SnmpClientFactory clientFactory) {
         this.adapterId = input.getAdapterId();
         this.adapterInformation = adapterInformation;
         this.config = input.getConfig();
         this.state = input.getProtocolAdapterState();
         this.tags = input.getTags().stream().map(t -> (SnmpTag) t).toList();
+        this.clientFactory = clientFactory;
     }
 
     @Override
@@ -95,7 +103,9 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
         }
 
         try {
-            client = createClient();
+            final SnmpClient newClient = clientFactory.create(config);
+            newClient.open();
+            client = newClient;
 
             if (client.testConnection()) {
                 state.setConnectionStatus(CONNECTED);
@@ -164,17 +174,22 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
         } // close() blocks until all submitted tasks complete
 
         final var publisher = pollingOutput.dataPointListPublisher();
+        int published = 0;
+        int failed = 0;
         for (int i = 0; i < tags.size(); i++) {
             final SnmpTag tag = tags.get(i);
             try {
                 publishTagResult(publisher, futures.get(i).get());
+                published++;
             } catch (final ExecutionException e) {
                 final Throwable cause = e.getCause();
                 log.warn(
-                        "Failed to read OID {} for tag {}: {}",
+                        "[{}] Failed to read OID {} for tag {}: {}",
+                        adapterId,
                         tag.getDefinition().getOid(),
                         tag.getName(),
                         cause != null ? cause.getMessage() : e.getMessage());
+                failed++;
             } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
                 state.setConnectionStatus(ERROR);
@@ -182,12 +197,9 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
                 return;
             }
         }
+        log.debug("[{}] Poll complete: {} published, {} failed", adapterId, published, failed);
         state.setConnectionStatus(CONNECTED);
         publisher.publish();
-    }
-
-    protected @NotNull SnmpClient createClient() throws IOException {
-        return new SnmpClient(config);
     }
 
     private @NotNull TagReadResult readTag(final @NotNull SnmpTag tag) throws IOException {
@@ -206,10 +218,8 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
                 .startObjectMetadata()
                 .put("oid", tagResult.oid())
                 .put("dataType", tagResult.tag().getDefinition().getDataType().name())
-                .put("rawType", tagResult.result().getRawType())
-                .put("snmpVersion", config.getSnmpVersion().name())
-                .put("errorStatus", tagResult.result().getErrorStatus())
-                .put("errorIndex", tagResult.result().getErrorIndex());
+                .put("rawType", tagResult.result().rawType())
+                .put("snmpVersion", config.getSnmpVersion().name());
 
         if (config.getSnmpVersion() == SnmpVersion.V3) {
             if (config.getSecurityName() != null) {
@@ -219,12 +229,7 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
             metaBuilder.put("community", config.getCommunity());
         }
 
-        setTypedValue(metaBuilder.endObject(), tagResult.result().getValue());
-        log.trace(
-                "Read OID {} = {} for tag {}",
-                tagResult.oid(),
-                tagResult.result().getValue(),
-                tagResult.tag().getName());
+        setTypedValue(metaBuilder.endObject(), tagResult.result().value());
     }
 
     private void setTypedValue(
@@ -302,9 +307,9 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
                     tree.addNode(
                             oid, getLastOidSegment(oid), oid, "Value: " + displayValue, null, NodeType.VALUE, true);
                 }
-                log.debug("Discovery walk from {} found {} OIDs", rootOid, results.size());
+                log.debug("[{}] Discovery walk from {} found {} OIDs", adapterId, rootOid, results.size());
             } catch (final IOException e) {
-                log.warn("SNMP WALK failed for {}: {}", rootOid, e.getMessage());
+                log.warn("[{}] SNMP WALK failed for {}: {}", adapterId, rootOid, e.getMessage());
                 state.reportErrorMessage(e, "Discovery failed: " + e.getMessage(), false);
             }
         }
