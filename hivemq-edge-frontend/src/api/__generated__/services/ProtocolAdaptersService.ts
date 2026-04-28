@@ -628,17 +628,18 @@ export class ProtocolAdaptersService {
     }
 
     /**
-     * Get a json schema that explains the json schema that is used to write to a PLC for the given tag name.
-     * Get a json schema that explains the json schema that is used to write to a PLC for the given tag name."
+     * @deprecated
+     * Deprecated. Redirects to the replacement schema endpoint.
+     * **Deprecated:** Use `GET /api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}` instead. This endpoint now returns a 301 redirect to the replacement.
      * @param adapterId The id of the adapter for which the Json Schema for writing to a PLC gets created.
      * @param tagName The tag name (urlencoded) for which the Json Schema for writing to a PLC gets created.
-     * @returns JsonNode Success
+     * @returns void
      * @throws ApiError
      */
     public getWritingSchema(
         adapterId: string,
         tagName: string,
-    ): CancelablePromise<JsonNode> {
+    ): CancelablePromise<void> {
         return this.httpRequest.request({
             method: 'GET',
             url: '/api/v1/management/protocol-adapters/writing-schema/{adapterId}/{tagName}',
@@ -647,8 +648,7 @@ export class ProtocolAdaptersService {
                 'tagName': tagName,
             },
             errors: {
-                404: `Adapter not found`,
-                500: `Internal Server Error`,
+                301: `Moved Permanently. The schema endpoint has moved to \`/api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}\`.`,
             },
         });
     }
