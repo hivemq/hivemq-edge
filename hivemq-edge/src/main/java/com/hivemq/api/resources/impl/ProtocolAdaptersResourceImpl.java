@@ -705,6 +705,11 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     @Override
+    public @NotNull Response getSchema(final @NotNull String adapterId, final @NotNull String tagName) {
+        return getWritingSchema(adapterId, tagName);
+    }
+
+    @Override
     public @NotNull Response getWritingSchema(final @NotNull String adapterId, final @NotNull String tagName) {
         final String decodedTagName = URLDecoder.decode(tagName, StandardCharsets.UTF_8);
 
