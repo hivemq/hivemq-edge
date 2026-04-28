@@ -33,7 +33,6 @@ import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.snmp.config.SnmpSpecificAdapterConfig;
-import com.hivemq.edge.adapters.snmp.config.SnmpVersion;
 import com.hivemq.edge.adapters.snmp.config.tag.SnmpTag;
 import com.hivemq.edge.adapters.snmp.config.tag.SnmpTagDefinition;
 import java.util.List;
@@ -222,13 +221,6 @@ class SnmpAdapterSmokeTest {
     // -------------------------------------------------------------------------
 
     private static @NotNull SnmpSpecificAdapterConfig config() {
-        final SnmpSpecificAdapterConfig cfg = mock(SnmpSpecificAdapterConfig.class);
-        when(cfg.getHost()).thenReturn("127.0.0.1");
-        when(cfg.getPort()).thenReturn(agentPort);
-        when(cfg.getSnmpVersion()).thenReturn(SnmpVersion.V2C);
-        when(cfg.getCommunity()).thenReturn("public");
-        when(cfg.getTimeoutMillis()).thenReturn(2000);
-        when(cfg.getRetries()).thenReturn(1);
-        return cfg;
+        return SnmpSpecificAdapterConfig.forV2c("127.0.0.1", agentPort, "public", 2000, 1);
     }
 }

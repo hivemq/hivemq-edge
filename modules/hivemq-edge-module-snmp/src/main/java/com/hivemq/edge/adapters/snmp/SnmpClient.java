@@ -102,7 +102,10 @@ public class SnmpClient implements AutoCloseable {
     private void configureSnmpV3() {
         SecurityProtocols.getInstance().addDefaultProtocols();
 
-        final OctetString localEngineID = new OctetString(MPv3.createLocalEngineID());
+        final String rawEngineId = config.getEngineId();
+        final OctetString localEngineID = rawEngineId != null
+                ? OctetString.fromHexString(rawEngineId)
+                : new OctetString(MPv3.createLocalEngineID());
         final USM usm = new USM(SecurityProtocols.getInstance(), localEngineID, 0);
         SecurityModels.getInstance().addSecurityModel(usm);
 
@@ -227,7 +230,8 @@ public class SnmpClient implements AutoCloseable {
         return new PDU();
     }
 
-    private @Nullable Object convertVariable(final @NotNull Variable var) {
+    @Nullable
+    Object convertVariable(final @NotNull Variable var) {
         if (var instanceof final Integer32 v) {
             return v.getValue();
         } else if (var instanceof final Counter32 v) {

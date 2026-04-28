@@ -289,6 +289,70 @@ class SnmpProtocolAdapterTest {
         verify(discoveryOutput).finish();
     }
 
+    @Test
+    void discoverValues_withRootNode_walksClientAndAddsValueNodes() throws IOException {
+        final ProtocolAdapterDiscoveryInput discoveryInput = mock(ProtocolAdapterDiscoveryInput.class);
+        final ProtocolAdapterDiscoveryOutput discoveryOutput = mock(ProtocolAdapterDiscoveryOutput.class);
+        final NodeTree nodeTree = mock(NodeTree.class);
+
+        when(discoveryInput.getRootNode()).thenReturn("1.3.6.1.2.1.1");
+        when(discoveryOutput.getNodeTree()).thenReturn(nodeTree);
+        when(snmpClient.testConnection()).thenReturn(true);
+        when(snmpClient.walk("1.3.6.1.2.1.1")).thenReturn(List.of());
+
+        final SnmpProtocolAdapter adapter = createAdapter();
+        adapter.start(startInput, startOutput);
+        adapter.discoverValues(discoveryInput, discoveryOutput);
+
+        verify(snmpClient).walk("1.3.6.1.2.1.1");
+        verify(discoveryOutput).finish();
+    }
+
+    @Test
+    void poll_withMalformedOid_skipsTagAndPublishesRemainder() throws IOException {
+        when(snmpClient.testConnection()).thenReturn(true);
+        when(snmpClient.get("1.3.6.1.2.1.1.1.0")).thenThrow(new IOException("invalid OID"));
+        when(snmpClient.get("1.3.6.1.2.1.1.5.0")).thenReturn(new SnmpReadResult("router-01", "OctetString"));
+
+        final SnmpTag badTag = sysDescrTag();
+        final SnmpTag goodTag = sysNameTag();
+        final SnmpProtocolAdapter adapter = createAdapter(List.of(badTag, goodTag));
+        adapter.start(startInput, startOutput);
+        adapter.poll(pollingInput, pollingOutput);
+
+        verify(publisher, never()).addDataPoint(badTag);
+        verify(publisher).addDataPoint(goodTag);
+        verify(publisher).publish();
+    }
+
+    @Test
+    void poll_whenAllTagsFail_stillCallsPublish() throws IOException {
+        when(snmpClient.testConnection()).thenReturn(true);
+        when(snmpClient.get(anyString())).thenThrow(new IOException("agent down"));
+
+        final SnmpProtocolAdapter adapter = createAdapter(List.of(sysDescrTag(), sysNameTag()));
+        adapter.start(startInput, startOutput);
+        adapter.poll(pollingInput, pollingOutput);
+
+        verify(publisher, never()).addDataPoint(any());
+        verify(publisher).publish();
+    }
+
+    @Test
+    void poll_withV3Config_includesSecurityNameInMetadata() throws IOException {
+        when(config.getSnmpVersion()).thenReturn(SnmpVersion.V3);
+        when(config.getSecurityName()).thenReturn("monitoruser");
+        when(snmpClient.testConnection()).thenReturn(true);
+        when(snmpClient.get("1.3.6.1.2.1.1.1.0")).thenReturn(new SnmpReadResult("HiveMQ Edge", "OctetString"));
+
+        final SnmpProtocolAdapter adapter = createAdapter(List.of(sysDescrTag()));
+        adapter.start(startInput, startOutput);
+        adapter.poll(pollingInput, pollingOutput);
+
+        verify(metaBuilder).put("securityName", "monitoruser");
+        verify(metaBuilder, never()).put(eq("community"), anyString());
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------

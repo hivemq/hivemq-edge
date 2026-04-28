@@ -104,6 +104,13 @@ public class SnmpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
     @ModuleConfigField(title = "Privacy Password", description = "SNMPv3 encryption password")
     private final @Nullable String privPassword;
 
+    @JsonProperty(value = "engineId")
+    @ModuleConfigField(
+            title = "Engine ID",
+            description = "SNMPv3 engine ID in hex (e.g. 0102030405). "
+                    + "Required only for agents that do not support engine ID discovery.")
+    private final @Nullable String engineId;
+
     // Timeout & retry settings
     @JsonProperty(value = "timeoutMillis")
     @ModuleConfigField(
@@ -141,6 +148,7 @@ public class SnmpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
             @JsonProperty(value = "authPassword") final @Nullable String authPassword,
             @JsonProperty(value = "privProtocol") final @Nullable SnmpPrivProtocol privProtocol,
             @JsonProperty(value = "privPassword") final @Nullable String privPassword,
+            @JsonProperty(value = "engineId") final @Nullable String engineId,
             @JsonProperty(value = "timeoutMillis") final @Nullable Integer timeoutMillis,
             @JsonProperty(value = "retries") final @Nullable Integer retries,
             @JsonProperty(value = "snmpToMqtt") final @Nullable SnmpToMqttConfig snmpToMqttConfig) {
@@ -153,6 +161,7 @@ public class SnmpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
         this.authPassword = authPassword;
         this.privProtocol = Objects.requireNonNullElse(privProtocol, SnmpPrivProtocol.NONE);
         this.privPassword = privPassword;
+        this.engineId = engineId;
         this.timeoutMillis = Objects.requireNonNullElse(timeoutMillis, DEFAULT_TIMEOUT_MILLIS);
         this.retries = Objects.requireNonNullElse(retries, DEFAULT_RETRIES);
         this.snmpToMqttConfig =
@@ -172,7 +181,42 @@ public class SnmpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
                 throw new IllegalArgumentException(
                         "privPassword is required when privProtocol is " + this.privProtocol);
             }
+        } else {
+            if (this.securityName != null) {
+                throw new IllegalArgumentException("securityName is only valid for SNMPv3, not " + snmpVersion);
+            }
+            if (this.authProtocol != SnmpAuthProtocol.NONE) {
+                throw new IllegalArgumentException("authProtocol is only valid for SNMPv3, not " + snmpVersion);
+            }
+            if (this.privProtocol != SnmpPrivProtocol.NONE) {
+                throw new IllegalArgumentException("privProtocol is only valid for SNMPv3, not " + snmpVersion);
+            }
         }
+    }
+
+    /**
+     * Convenience factory for SNMPv2c adapters. Used in tests and simple configurations.
+     */
+    public static @NotNull SnmpSpecificAdapterConfig forV2c(
+            final @NotNull String host,
+            final int port,
+            final @NotNull String community,
+            final int timeoutMillis,
+            final int retries) {
+        return new SnmpSpecificAdapterConfig(
+                host,
+                port,
+                SnmpVersion.V2C,
+                community,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                timeoutMillis,
+                retries,
+                null);
     }
 
     public @NotNull String getHost() {
@@ -211,6 +255,10 @@ public class SnmpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
         return privPassword;
     }
 
+    public @Nullable String getEngineId() {
+        return engineId;
+    }
+
     public int getTimeoutMillis() {
         return timeoutMillis;
     }
@@ -239,6 +287,7 @@ public class SnmpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
                 && Objects.equals(authPassword, that.authPassword)
                 && privProtocol == that.privProtocol
                 && Objects.equals(privPassword, that.privPassword)
+                && Objects.equals(engineId, that.engineId)
                 && Objects.equals(snmpToMqttConfig, that.snmpToMqttConfig);
     }
 
@@ -254,6 +303,7 @@ public class SnmpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
                 authPassword,
                 privProtocol,
                 privPassword,
+                engineId,
                 timeoutMillis,
                 retries,
                 snmpToMqttConfig);

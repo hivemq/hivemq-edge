@@ -107,10 +107,24 @@ class SnmpAdapterConfigTest {
     // Validation
     // -------------------------------------------------------------------------
 
+    // SNMPv3 required-field checks
+
     @Test
     void v3Config_withoutSecurityName_throwsIllegalArgument() {
         assertThatThrownBy(() -> new SnmpSpecificAdapterConfig(
-                        "192.168.1.1", null, SnmpVersion.V3, null, null, null, null, null, null, null, null, null))
+                        "192.168.1.1",
+                        null,
+                        SnmpVersion.V3,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("securityName");
     }
@@ -124,6 +138,7 @@ class SnmpAdapterConfigTest {
                         null,
                         "user",
                         SnmpAuthProtocol.SHA256,
+                        null,
                         null,
                         null,
                         null,
@@ -148,14 +163,76 @@ class SnmpAdapterConfigTest {
                         null,
                         null,
                         null,
+                        null,
                         null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("privPassword");
     }
 
+    // Cross-version field rejection
+
+    @Test
+    void v2cConfig_withSecurityName_throwsIllegalArgument() {
+        assertThatThrownBy(() -> new SnmpSpecificAdapterConfig(
+                        "192.168.1.1",
+                        null,
+                        SnmpVersion.V2C,
+                        "public",
+                        "user",
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("securityName");
+    }
+
+    @Test
+    void v2cConfig_withAuthProtocol_throwsIllegalArgument() {
+        assertThatThrownBy(() -> new SnmpSpecificAdapterConfig(
+                        "192.168.1.1",
+                        null,
+                        SnmpVersion.V2C,
+                        "public",
+                        null,
+                        SnmpAuthProtocol.MD5,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("authProtocol");
+    }
+
+    @Test
+    void v2cConfig_withPrivProtocol_throwsIllegalArgument() {
+        assertThatThrownBy(() -> new SnmpSpecificAdapterConfig(
+                        "192.168.1.1",
+                        null,
+                        SnmpVersion.V2C,
+                        "public",
+                        null,
+                        null,
+                        null,
+                        SnmpPrivProtocol.AES128,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("privProtocol");
+    }
+
     @Test
     void v2cConfig_doesNotRequireSecurityFields() throws Exception {
-        // Should not throw — V1/V2c have no security field requirements
         final SnmpSpecificAdapterConfig config = load("/snmp-config-full-v2c.json");
         assertThat(config.getSnmpVersion()).isEqualTo(SnmpVersion.V2C);
         assertThat(config.getSecurityName()).isNull();
