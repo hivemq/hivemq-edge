@@ -1,7 +1,9 @@
 get:
+  deprecated: true
   description: >-
-    Get a json schema that explains the json schema that is used to write to a
-    PLC for the given tag name."
+    **Deprecated:** Use `GET
+    /api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}` instead.
+    This endpoint now returns a 301 redirect to the replacement.
   operationId: get-writing-schema
   x-roles-allowed:
     - admin
@@ -26,38 +28,17 @@ get:
         type: string
         format: urlencoded
   responses:
-    '200':
-      content:
-        application/json:
-          examples:
-            opc ua domain tags example:
-              description: An example for domain tags in opc ua
-              summary: 'Example for domain tags for opc ua '
-              value:
-                items:
-                  - definition:
-                      node: ns=2;i=test
-                    name: tag1
-                  - definition:
-                      node: ns=2;i=test2
-                    name: tag2
+    '301':
+      description: >-
+        Moved Permanently. The schema endpoint has moved to
+        `/api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}`.
+      headers:
+        Location:
+          description: The new URL for this resource.
           schema:
-            $ref: ../components/schemas/JsonNode.yaml
-      description: Success
-    '404':
-      content:
-        application/json:
-          schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: Adapter not found
-    '500':
-      content:
-        application/json:
-          schema:
-            $ref: ../components/schemas/ProblemDetails.yaml
-      description: Internal Server Error
+            type: string
+            format: uri
   summary: >-
-    Get a json schema that explains the json schema that is used to write to a
-    PLC for the given tag name.
+    Deprecated. Redirects to the replacement schema endpoint.
   tags:
     - Protocol Adapters

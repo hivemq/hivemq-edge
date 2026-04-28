@@ -97,6 +97,8 @@ import com.hivemq.protocols.tag.TagSchemaCreationOutputImpl;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -706,11 +708,6 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response getSchema(final @NotNull String adapterId, final @NotNull String tagName) {
-        return getWritingSchema(adapterId, tagName);
-    }
-
-    @Override
-    public @NotNull Response getWritingSchema(final @NotNull String adapterId, final @NotNull String tagName) {
         final String decodedTagName = URLDecoder.decode(tagName, StandardCharsets.UTF_8);
 
         final Optional<ProtocolAdapterWrapper> maybeWrapper =
@@ -757,6 +754,15 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 }
             };
         }
+    }
+
+    @Override
+    public @NotNull Response getWritingSchema(final @NotNull String adapterId, final @NotNull String tagName) {
+        final URI newLocation = UriBuilder.fromPath("/api/v1/management/protocol-adapters/schema/{adapterId}/{tagName}")
+                .build(adapterId, tagName);
+        return Response.status(Response.Status.MOVED_PERMANENTLY)
+                .location(newLocation)
+                .build();
     }
 
     @SuppressWarnings("unchecked")
