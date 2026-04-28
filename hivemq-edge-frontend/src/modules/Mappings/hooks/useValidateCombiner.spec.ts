@@ -409,7 +409,7 @@ describe('useValidateCombiner', () => {
     it.skip('should not validate when a tag schema is invalid', async () => {
       const result = await loadingEntities(sources, undefined, [
         http.get<{ adapterId: string; tagName: string }>(
-          '*/management/protocol-adapters/writing-schema/:adapterId/:tagName',
+          '*/management/protocol-adapters/schema/:adapterId/:tagName',
           ({ params }) => {
             const { tagName } = params
 

@@ -16,7 +16,7 @@ import {
 } from '@chakra-ui/react'
 
 import type { DomainTag } from '@/api/__generated__'
-import { useGetWritingSchema } from '@/api/hooks/useProtocolAdapters/useGetWritingSchema'
+import { useGetSchema } from '@/api/hooks/useProtocolAdapters/useGetSchema'
 import { PLCTag } from '@/components/MQTT/EntityTag.tsx'
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner'
@@ -29,7 +29,7 @@ interface TagSchemaPanelProps {
 }
 
 export const TagSchemaPanel: FC<TagSchemaPanelProps> = ({ tag, adapterId }) => {
-  const { data, isLoading, isError } = useGetWritingSchema(adapterId, tag.name)
+  const { data, isLoading, isError } = useGetSchema(adapterId, tag.name)
   const { t } = useTranslation()
 
   const handleSchemaDownload = () => {

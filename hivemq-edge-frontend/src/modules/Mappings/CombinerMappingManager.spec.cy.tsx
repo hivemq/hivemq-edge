@@ -174,7 +174,7 @@ describe('CombinerMappingManager', () => {
     cy.intercept('/api/v1/management/protocol-adapters/adapters/my-other-adapter/tags', {
       items: MOCK_DEVICE_TAGS('my-other-adapter', MockAdapterType.OPC_UA),
     })
-    cy.intercept('/api/v1/management/protocol-adapters/writing-schema/**', { body: {} })
+    cy.intercept('/api/v1/management/protocol-adapters/schema/**', { body: {} })
     cy.intercept('/api/v1/management/topic-filters', {
       items: [
         MOCK_TOPIC_FILTER,

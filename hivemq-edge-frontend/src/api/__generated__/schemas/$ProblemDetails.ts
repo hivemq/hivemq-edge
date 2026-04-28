@@ -27,7 +27,6 @@ export const $ProblemDetails = {
         },
         type: {
             type: 'string',
-            isRequired: true,
             format: 'uri',
         },
     },

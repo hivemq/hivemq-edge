@@ -76,10 +76,7 @@ describe('AutoMapping', () => {
       items: MOCK_DEVICE_TAGS('my-other-adapter', MockAdapterType.OPC_UA),
     })
 
-    cy.intercept(
-      '/api/v1/management/protocol-adapters/writing-schema/**',
-      GENERATE_DATA_MODELS(true, 'my-adapter/power/off')
-    )
+    cy.intercept('/api/v1/management/protocol-adapters/schema/**', GENERATE_DATA_MODELS(true, 'my-adapter/power/off'))
   })
 
   it('should render properly', () => {

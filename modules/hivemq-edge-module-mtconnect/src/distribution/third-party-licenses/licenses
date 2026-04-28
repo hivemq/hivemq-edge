@@ -9,9 +9,9 @@ hivemq-edge-module-mtconnect uses the following third party libraries:
  jakarta.activation:jakarta.activation-api                                  | 2.1.4                                     | BSD-3-Clause  | https://spdx.org/licenses/BSD-3-Clause.html
  jakarta.xml.bind:jakarta.xml.bind-api                                      | 4.0.5                                     | BSD-3-Clause  | https://spdx.org/licenses/BSD-3-Clause.html
  org.eclipse.angus:angus-activation                                         | 2.0.3                                     | BSD-3-Clause  | https://spdx.org/licenses/BSD-3-Clause.html
- org.glassfish.jaxb:jaxb-core                                               | 4.0.6                                     | BSD-3-Clause  | https://spdx.org/licenses/BSD-3-Clause.html
- org.glassfish.jaxb:jaxb-runtime                                            | 4.0.6                                     | BSD-3-Clause  | https://spdx.org/licenses/BSD-3-Clause.html
- org.glassfish.jaxb:txw2                                                    | 4.0.6                                     | BSD-3-Clause  | https://spdx.org/licenses/BSD-3-Clause.html
+ org.glassfish.jaxb:jaxb-core                                               | 4.0.7                                     | BSD-3-Clause  | https://spdx.org/licenses/BSD-3-Clause.html
+ org.glassfish.jaxb:jaxb-runtime                                            | 4.0.7                                     | BSD-3-Clause  | https://spdx.org/licenses/BSD-3-Clause.html
+ org.glassfish.jaxb:txw2                                                    | 4.0.7                                     | BSD-3-Clause  | https://spdx.org/licenses/BSD-3-Clause.html
  org.jetbrains:annotations                                                  | 24.1.0                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
