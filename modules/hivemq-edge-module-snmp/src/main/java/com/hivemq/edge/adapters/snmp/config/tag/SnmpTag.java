@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.snmp.config.tag;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.tag.Tag;
@@ -43,6 +44,7 @@ public class SnmpTag implements Tag {
     @ModuleConfigField(title = "Definition", description = "The OID definition for this tag")
     private final @NotNull SnmpTagDefinition definition;
 
+    @JsonCreator
     public SnmpTag(
             @JsonProperty(value = "name", required = true) final @NotNull String name,
             @JsonProperty(value = "description") final @Nullable String description,

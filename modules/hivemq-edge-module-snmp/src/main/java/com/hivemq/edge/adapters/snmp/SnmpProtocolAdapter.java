@@ -35,12 +35,15 @@ import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.edge.adapters.snmp.config.SnmpDataType;
 import com.hivemq.edge.adapters.snmp.config.SnmpSpecificAdapterConfig;
 import com.hivemq.edge.adapters.snmp.config.SnmpToMqttConfig;
 import com.hivemq.edge.adapters.snmp.config.SnmpVersion;
 import com.hivemq.edge.adapters.snmp.config.tag.SnmpTag;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -67,7 +70,9 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
     private final @NotNull List<SnmpTag> tags;
     private final @NotNull SnmpClientFactory clientFactory;
     private final @NotNull AtomicBoolean started = new AtomicBoolean(false);
+    // One-way latch: once stop() is called this adapter instance is permanently retired.
     private final @NotNull AtomicBoolean stopRequested = new AtomicBoolean(false);
+    private final @NotNull ConcurrentHashMap<String, Optional<Object>> lastValues = new ConcurrentHashMap<>();
 
     private @Nullable SnmpClient client;
 
@@ -107,16 +112,28 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
             newClient.open();
             client = newClient;
 
+            // Guard against a concurrent stop() that arrived before we assigned client.
+            if (stopRequested.get()) {
+                closeClientQuietly(client);
+                client = null;
+                started.set(false);
+                state.setConnectionStatus(DISCONNECTED);
+                output.failStart(new IllegalStateException("Stop requested"), "Adapter is stopping");
+                return;
+            }
+
             if (client.testConnection()) {
                 state.setConnectionStatus(CONNECTED);
                 output.startedSuccessfully();
                 log.info("SNMP adapter {} started - connected to {}:{}", adapterId, config.getHost(), config.getPort());
             } else {
+                closeClientQuietly(client);
+                client = null;
+                started.set(false);
                 state.setConnectionStatus(ERROR);
                 output.failStart(
                         new RuntimeException("Connection test failed"),
                         "Failed to connect to SNMP agent at " + config.getHost() + ":" + config.getPort());
-                started.set(false);
             }
 
         } catch (final Exception e) {
@@ -135,6 +152,7 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
         }
 
         log.info("Stopping SNMP adapter {}", adapterId);
+        lastValues.clear();
 
         try {
             if (client != null) {
@@ -148,8 +166,6 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
         } catch (final Exception e) {
             log.error("Error stopping SNMP adapter {}", adapterId, e);
             output.failStop(e, "Failed to stop SNMP client: " + e.getMessage());
-        } finally {
-            stopRequested.set(false);
         }
     }
 
@@ -173,14 +189,20 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
                     .toList();
         } // close() blocks until all submitted tasks complete
 
+        final boolean publishChangedDataOnly = config.getSnmpToMqttConfig() != null
+                && config.getSnmpToMqttConfig().getPublishChangedDataOnly();
+
         final var publisher = pollingOutput.dataPointListPublisher();
         int published = 0;
         int failed = 0;
-        for (int i = 0; i < tags.size(); i++) {
+        for (int i = 0; i < futures.size(); i++) {
             final SnmpTag tag = tags.get(i);
             try {
-                publishTagResult(publisher, futures.get(i).get());
-                published++;
+                final TagReadResult result = futures.get(i).get();
+                if (!publishChangedDataOnly || hasValueChanged(tag.getName(), result.result().value())) {
+                    publishTagResult(publisher, result);
+                    published++;
+                }
             } catch (final ExecutionException e) {
                 final Throwable cause = e.getCause();
                 log.warn(
@@ -198,7 +220,8 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
             }
         }
         log.debug("[{}] Poll complete: {} published, {} failed", adapterId, published, failed);
-        state.setConnectionStatus(CONNECTED);
+        // Only mark ERROR if every attempted tag failed; partial failures keep CONNECTED.
+        state.setConnectionStatus(published == 0 && failed > 0 ? ERROR : CONNECTED);
         publisher.publish();
     }
 
@@ -208,7 +231,28 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
             throw new IOException("SNMP client is not initialized");
         }
         final String oid = tag.getDefinition().getOid();
-        return new TagReadResult(tag, oid, snmpClient.get(oid));
+        final SnmpReadResult raw = snmpClient.get(oid);
+        final SnmpDataType hint = tag.getDefinition().getDataType();
+        final Object coerced = hint == SnmpDataType.AUTO ? raw.value() : applyHint(raw.value(), hint);
+        return new TagReadResult(tag, oid, new SnmpReadResult(coerced, raw.rawType()));
+    }
+
+    private @Nullable Object applyHint(final @Nullable Object value, final @NotNull SnmpDataType hint) {
+        if (value == null) {
+            return null;
+        }
+        return switch (hint) {
+            case INTEGER -> value instanceof Number n ? n.intValue() : value;
+            case STRING, IP_ADDRESS, OID, OPAQUE -> value.toString();
+            case COUNTER32, COUNTER64, GAUGE -> value instanceof Number n ? n.longValue() : value;
+            case TIMETICKS -> value instanceof Number n ? n.doubleValue() : value;
+            case AUTO -> value;
+        };
+    }
+
+    private boolean hasValueChanged(final @NotNull String tagName, final @Nullable Object newValue) {
+        final Optional<Object> wrapped = Optional.ofNullable(newValue);
+        return !wrapped.equals(lastValues.put(tagName, wrapped));
     }
 
     private void publishTagResult(
@@ -297,15 +341,22 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
         }
 
         final String rootOid = input.getRootNode();
-        if (client != null) {
+        final SnmpClient snmpClient = client;
+        if (snmpClient != null) {
             try {
-                final List<VariableBinding> results = client.walk(rootOid);
+                final List<VariableBinding> results = snmpClient.walk(rootOid);
                 for (final VariableBinding vb : results) {
                     final String oid = vb.getOid().toString();
                     final String value = vb.getVariable().toString();
                     final String displayValue = value.length() > 50 ? value.substring(0, 47) + "..." : value;
                     tree.addNode(
-                            oid, getLastOidSegment(oid), oid, "Value: " + displayValue, null, NodeType.VALUE, true);
+                            oid,
+                            getLastOidSegment(oid),
+                            oid,
+                            "Value: " + displayValue,
+                            rootOid,
+                            NodeType.VALUE,
+                            true);
                 }
                 log.debug("[{}] Discovery walk from {} found {} OIDs", adapterId, rootOid, results.size());
             } catch (final IOException e) {
@@ -323,6 +374,17 @@ public class SnmpProtocolAdapter implements BatchPollingProtocolAdapter {
             return oid.substring(lastDot + 1);
         }
         return oid;
+    }
+
+    private void closeClientQuietly(final @Nullable SnmpClient snmpClient) {
+        if (snmpClient == null) {
+            return;
+        }
+        try {
+            snmpClient.close();
+        } catch (final Exception e) {
+            log.warn("[{}] Error closing SNMP client: {}", adapterId, e.getMessage());
+        }
     }
 
     @Override

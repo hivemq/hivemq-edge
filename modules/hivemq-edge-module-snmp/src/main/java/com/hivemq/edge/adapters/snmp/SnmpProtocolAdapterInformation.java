@@ -91,7 +91,7 @@ public class SnmpProtocolAdapterInformation implements ProtocolAdapterInformatio
 
     @Override
     public List<ProtocolAdapterTag> getTags() {
-        return List.of(ProtocolAdapterTag.UDP, ProtocolAdapterTag.TCP);
+        return List.of(ProtocolAdapterTag.UDP);
     }
 
     @Override

@@ -33,7 +33,7 @@ public class SnmpSpecificAdapterConfig implements ProtocolSpecificAdapterConfig 
     public static final int DEFAULT_RETRIES = 1;
     public static final String DEFAULT_COMMUNITY = "public";
 
-    private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
+    private static final @NotNull String ID_REGEX = "^[a-zA-Z0-9_-]+$";
 
     @JsonProperty(value = "id", required = true, access = JsonProperty.Access.WRITE_ONLY)
     @ModuleConfigField(

@@ -47,6 +47,7 @@ import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingInput;
 import com.hivemq.adapter.sdk.api.polling.batch.BatchPollingOutput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.snmp.config.SnmpSpecificAdapterConfig;
+import com.hivemq.edge.adapters.snmp.config.SnmpToMqttConfig;
 import com.hivemq.edge.adapters.snmp.config.SnmpVersion;
 import com.hivemq.edge.adapters.snmp.config.tag.SnmpTag;
 import com.hivemq.edge.adapters.snmp.config.tag.SnmpTagDefinition;
@@ -55,6 +56,9 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.snmp4j.smi.OID;
+import org.snmp4j.smi.OctetString;
+import org.snmp4j.smi.VariableBinding;
 
 @SuppressWarnings("unchecked")
 class SnmpProtocolAdapterTest {
@@ -130,7 +134,7 @@ class SnmpProtocolAdapterTest {
     }
 
     @Test
-    void start_whenConnectionTestFails_setsErrorAndFailsStart() {
+    void start_whenConnectionTestFails_setsErrorAndClosesClient() throws IOException {
         when(snmpClient.testConnection()).thenReturn(false);
 
         final SnmpProtocolAdapter adapter = createAdapter();
@@ -138,6 +142,7 @@ class SnmpProtocolAdapterTest {
 
         verify(state).setConnectionStatus(ERROR);
         verify(startOutput).failStart(any(RuntimeException.class), anyString());
+        verify(snmpClient).close();
     }
 
     @Test
@@ -268,6 +273,73 @@ class SnmpProtocolAdapterTest {
         verify(publisher).publish();
     }
 
+    @Test
+    void poll_whenAllTagsFail_setsErrorStatusAndStillPublishes() throws IOException {
+        when(snmpClient.testConnection()).thenReturn(true);
+        when(snmpClient.get(anyString())).thenThrow(new IOException("agent down"));
+
+        final SnmpProtocolAdapter adapter = createAdapter(List.of(sysDescrTag(), sysNameTag()));
+        adapter.start(startInput, startOutput);
+        adapter.poll(pollingInput, pollingOutput);
+
+        verify(publisher, never()).addDataPoint(any());
+        verify(publisher).publish();
+        verify(state).setConnectionStatus(ERROR);
+    }
+
+    @Test
+    void poll_publishChangedDataOnly_suppressesDuplicateValues() throws IOException {
+        when(config.getSnmpToMqttConfig()).thenReturn(new SnmpToMqttConfig(1000, 10, true));
+        when(snmpClient.testConnection()).thenReturn(true);
+        when(snmpClient.get("1.3.6.1.2.1.1.1.0")).thenReturn(new SnmpReadResult("unchanged", "OctetString"));
+
+        final SnmpTag tag = sysDescrTag();
+        final SnmpProtocolAdapter adapter = createAdapter(List.of(tag));
+        adapter.start(startInput, startOutput);
+
+        // First poll — value is new, must publish.
+        adapter.poll(pollingInput, pollingOutput);
+        verify(publisher, times(1)).addDataPoint(tag);
+
+        // Second poll — same value, must be suppressed.
+        final BatchPollingOutput pollingOutput2 = mock(BatchPollingOutput.class);
+        final DataPointListBuilder publisher2 = mock(DataPointListBuilder.class);
+        when(pollingOutput2.dataPointListPublisher()).thenReturn(publisher2);
+        adapter.poll(pollingInput, pollingOutput2);
+        verify(publisher2, never()).addDataPoint(any());
+        verify(publisher2).publish();
+    }
+
+    @Test
+    void poll_publishChangedDataOnly_publishesWhenValueChanges() throws IOException {
+        when(config.getSnmpToMqttConfig()).thenReturn(new SnmpToMqttConfig(1000, 10, true));
+        when(snmpClient.testConnection()).thenReturn(true);
+        when(snmpClient.get("1.3.6.1.2.1.1.1.0"))
+                .thenReturn(new SnmpReadResult("first", "OctetString"))
+                .thenReturn(new SnmpReadResult("second", "OctetString"));
+
+        final SnmpTag tag = sysDescrTag();
+        final SnmpProtocolAdapter adapter = createAdapter(List.of(tag));
+        adapter.start(startInput, startOutput);
+
+        adapter.poll(pollingInput, pollingOutput);
+
+        final BatchPollingOutput pollingOutput2 = mock(BatchPollingOutput.class);
+        final DataPointListBuilder publisher2 = mock(DataPointListBuilder.class);
+        final DataPointBuilder<DataPointListBuilder> dpBuilder2 = mock(DataPointBuilder.class);
+        final DataPointBuilder.ObjectBuilder<DataPointBuilder<DataPointListBuilder>> metaBuilder2 =
+                mock(DataPointBuilder.ObjectBuilder.class);
+        when(pollingOutput2.dataPointListPublisher()).thenReturn(publisher2);
+        when(publisher2.addDataPoint(any())).thenReturn(dpBuilder2);
+        when(dpBuilder2.startObjectMetadata()).thenReturn(metaBuilder2);
+        when(metaBuilder2.put(anyString(), anyString())).thenReturn(metaBuilder2);
+        when(metaBuilder2.endObject()).thenReturn(dpBuilder2);
+        when(dpBuilder2.value(anyString())).thenReturn(dpBuilder2);
+
+        adapter.poll(pollingInput, pollingOutput2);
+        verify(publisher2).addDataPoint(tag);
+    }
+
     // -------------------------------------------------------------------------
     // discoverValues()
     // -------------------------------------------------------------------------
@@ -309,6 +381,32 @@ class SnmpProtocolAdapterTest {
     }
 
     @Test
+    void discoverValues_withRootNode_linksValueNodesToParent() throws IOException {
+        final ProtocolAdapterDiscoveryInput discoveryInput = mock(ProtocolAdapterDiscoveryInput.class);
+        final ProtocolAdapterDiscoveryOutput discoveryOutput = mock(ProtocolAdapterDiscoveryOutput.class);
+        final NodeTree nodeTree = mock(NodeTree.class);
+
+        when(discoveryInput.getRootNode()).thenReturn("1.3.6.1.2.1.1");
+        when(discoveryOutput.getNodeTree()).thenReturn(nodeTree);
+        when(snmpClient.testConnection()).thenReturn(true);
+        when(snmpClient.walk("1.3.6.1.2.1.1")).thenReturn(
+                List.of(new VariableBinding(new OID("1.3.6.1.2.1.1.1.0"), new OctetString("test"))));
+
+        final SnmpProtocolAdapter adapter = createAdapter();
+        adapter.start(startInput, startOutput);
+        adapter.discoverValues(discoveryInput, discoveryOutput);
+
+        verify(nodeTree).addNode(
+                eq("1.3.6.1.2.1.1.1.0"),
+                anyString(),
+                anyString(),
+                anyString(),
+                eq("1.3.6.1.2.1.1"),
+                eq(NodeType.VALUE),
+                eq(true));
+    }
+
+    @Test
     void poll_withMalformedOid_skipsTagAndPublishesRemainder() throws IOException {
         when(snmpClient.testConnection()).thenReturn(true);
         when(snmpClient.get("1.3.6.1.2.1.1.1.0")).thenThrow(new IOException("invalid OID"));
@@ -322,19 +420,6 @@ class SnmpProtocolAdapterTest {
 
         verify(publisher, never()).addDataPoint(badTag);
         verify(publisher).addDataPoint(goodTag);
-        verify(publisher).publish();
-    }
-
-    @Test
-    void poll_whenAllTagsFail_stillCallsPublish() throws IOException {
-        when(snmpClient.testConnection()).thenReturn(true);
-        when(snmpClient.get(anyString())).thenThrow(new IOException("agent down"));
-
-        final SnmpProtocolAdapter adapter = createAdapter(List.of(sysDescrTag(), sysNameTag()));
-        adapter.start(startInput, startOutput);
-        adapter.poll(pollingInput, pollingOutput);
-
-        verify(publisher, never()).addDataPoint(any());
         verify(publisher).publish();
     }
 
