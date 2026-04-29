@@ -1,0 +1,18 @@
+{
+  "id": "test-v3",
+  "host": "10.0.0.1",
+  "port": 161,
+  "snmpVersion": "V3",
+  "securityName": "snmpuser",
+  "authProtocol": "SHA256",
+  "authPassword": "authpass123",
+  "privProtocol": "AES256",
+  "privPassword": "privpass456",
+  "timeoutMillis": 3000,
+  "retries": 1,
+  "snmpToMqtt": {
+    "pollingIntervalMillis": 5000,
+    "maxPollingErrorsBeforeRemoval": 10,
+    "publishChangedDataOnly": false
+  }
+}
