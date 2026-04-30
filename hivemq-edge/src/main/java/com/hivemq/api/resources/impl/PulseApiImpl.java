@@ -67,6 +67,7 @@ import com.hivemq.pulse.converters.PulseAgentStatusConverter;
 import com.hivemq.pulse.status.Status;
 import com.hivemq.pulse.status.StatusProvider;
 import com.hivemq.pulse.status.StatusProviderRegistry;
+import com.hivemq.pulse.status.StatusProviderRegistryImpl;
 import com.hivemq.pulse.utils.PulseAgentAssetUtils;
 import com.hivemq.util.ErrorResponseUtil;
 import jakarta.inject.Inject;
@@ -109,7 +110,7 @@ public class PulseApiImpl implements PulseApi {
             final @NotNull AssetMappingExtractor assetMappingExtractor,
             final @NotNull PulseExtractor pulseExtractor,
             final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor,
-            final @NotNull StatusProviderRegistry statusProviderRegistry) {
+            final @NotNull StatusProviderRegistryImpl statusProviderRegistry) {
         this.assetMappingExtractor = assetMappingExtractor;
         this.pulseExtractor = pulseExtractor;
         this.protocolAdapterExtractor = protocolAdapterExtractor;

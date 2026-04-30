@@ -36,6 +36,7 @@ import com.hivemq.pulse.integration.PulseDatapointPublisherImpl;
 import com.hivemq.pulse.status.StatusFactory;
 import com.hivemq.pulse.status.StatusFactoryImpl;
 import com.hivemq.pulse.status.StatusProviderRegistry;
+import com.hivemq.pulse.status.StatusProviderRegistryImpl;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
@@ -65,7 +66,7 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
             final @NotNull PublishService publishService,
             final @NotNull InternalPublishService internalPublishService,
             final @NotNull AssetProviderRegistryImpl assetProviderRegistry,
-            final @NotNull StatusProviderRegistry statusProviderRegistry,
+            final @NotNull StatusProviderRegistryImpl statusProviderRegistry,
             final @NotNull PulseDatapointPublisherImpl pulseDatapointPublisher,
             final @NotNull StatusFactoryImpl statusFactory) {
         this.delegate = delegate;

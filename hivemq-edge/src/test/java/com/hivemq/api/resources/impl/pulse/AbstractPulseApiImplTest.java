@@ -36,7 +36,7 @@ import com.hivemq.edge.api.model.EntityReferenceList;
 import com.hivemq.edge.api.model.EntityType;
 import com.hivemq.edge.api.model.Instruction;
 import com.hivemq.pulse.status.StatusProvider;
-import com.hivemq.pulse.status.StatusProviderRegistry;
+import com.hivemq.pulse.status.StatusProviderRegistryImpl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -64,7 +64,7 @@ public abstract class AbstractPulseApiImplTest {
     protected @NotNull StatusProvider statusProvider;
 
     @Mock
-    protected @NotNull StatusProviderRegistry statusProviderRegistry;
+    protected @NotNull StatusProviderRegistryImpl statusProviderRegistry;
 
     @Mock
     protected @NotNull ProtocolAdapterExtractor protocolAdapterExtractor;

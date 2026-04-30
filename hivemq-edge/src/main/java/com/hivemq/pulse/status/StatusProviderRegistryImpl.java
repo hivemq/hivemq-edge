@@ -22,17 +22,19 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import org.jetbrains.annotations.NotNull;
 
 @Singleton
-public class StatusProviderRegistry {
+public class StatusProviderRegistryImpl implements StatusProviderRegistry {
 
     private final @NotNull Set<StatusProvider> statusProviders = new CopyOnWriteArraySet<>();
 
     @Inject
-    public StatusProviderRegistry() {}
+    public StatusProviderRegistryImpl() {}
 
+    @Override
     public void registerStatusProvider(final @NotNull StatusProvider statusProvider) {
         statusProviders.add(statusProvider);
     }
 
+    @Override
     public @NotNull Set<StatusProvider> getStatusProviders() {
         return Set.copyOf(statusProviders);
     }
