@@ -17,6 +17,8 @@ package com.hivemq.extensions.core;
 
 import com.hivemq.bootstrap.factories.HandlerFactory;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandlingFactory;
+import com.hivemq.edge.pulse.integration.api.PulseDatapointProcessor;
+import com.hivemq.pulse.integration.PulseDatapointProcessorAdapterFactory;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -49,6 +51,17 @@ public class HandlerService {
                     + ", new: "
                     + prePublishProcessorHandlingFactory.getClass().getCanonicalName());
         }
+    }
+
+    /**
+     * Registers a {@link PulseDatapointProcessor} for the Pulse Agent integration. Internally the processor is wrapped
+     * as a {@link PrePublishProcessorHandlingFactory} that always passes the publish through unchanged.
+     *
+     * @param prio      lower prio is executed first; the same prio will throw an exception
+     * @param processor the processor implementation
+     */
+    public void supplyPulseDatapointProcessor(final int prio, final @NotNull PulseDatapointProcessor processor) {
+        supplyPrePublishProcessorHandlingFactory(prio, new PulseDatapointProcessorAdapterFactory(processor));
     }
 
     public @Nullable HandlerFactory getHandlerFactory() {

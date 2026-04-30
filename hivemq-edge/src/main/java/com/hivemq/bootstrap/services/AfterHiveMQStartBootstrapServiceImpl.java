@@ -24,6 +24,7 @@ import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.ModulesAndExtensionsService;
+import com.hivemq.edge.pulse.integration.api.PulseDatapointPublisher;
 import com.hivemq.extension.sdk.api.services.publish.PublishService;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.extensions.core.PersistencesService;
@@ -132,6 +133,11 @@ public class AfterHiveMQStartBootstrapServiceImpl implements AfterHiveMQStartBoo
     @Override
     public @NotNull StatusProviderRegistry statusProviderRegistry() {
         return delegate.statusProviderRegistry();
+    }
+
+    @Override
+    public @NotNull PulseDatapointPublisher pulseDatapointPublisher() {
+        return delegate.pulseDatapointPublisher();
     }
 
     @Override
