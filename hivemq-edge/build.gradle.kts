@@ -136,6 +136,7 @@ dependencies {
     api(libs.hivemq.extensionsdk)
     api(libs.hivemq.edge.extensionsdk)
     api(libs.hivemq.edge.adaptersdk)
+    api(libs.hivemq.edge.pulse.integration.api)
 
     // netty
     implementation(libs.netty.buffer)

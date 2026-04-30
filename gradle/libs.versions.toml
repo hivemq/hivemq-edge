@@ -21,6 +21,7 @@ guava = "33.6.0-jre"
 hikari = "6.3.3"
 hivemq-edge-adaptersdk = "2025.15"
 hivemq-edge-extensionsdk = "2025.15"
+hivemq-edge-pulse-integration-api = "2026.8-SNAPSHOT"
 hivemq-extensionsdk = "4.48.1"
 hivemq-mqtt-client = "1.3.13"
 jackson = "2.21.3"
@@ -105,6 +106,7 @@ guava = { module = "com.google.guava:guava", version.ref = "guava" }
 hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
 hivemq-edge-adaptersdk = { module = "com.hivemq:hivemq-edge-adapter-sdk", version.ref = "hivemq-edge-adaptersdk" }
 hivemq-edge-extensionsdk = { module = "com.hivemq:hivemq-edge-extension-sdk", version.ref = "hivemq-edge-extensionsdk" }
+hivemq-edge-pulse-integration-api = { module = "com.hivemq:hivemq-edge-pulse-integration-api", version.ref = "hivemq-edge-pulse-integration-api" }
 hivemq-extensionsdk = { module = "com.hivemq:hivemq-extension-sdk", version.ref = "hivemq-extensionsdk" }
 hivemq-mqtt-client = { module = "com.hivemq:hivemq-mqtt-client", version.ref = "hivemq-mqtt-client" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
