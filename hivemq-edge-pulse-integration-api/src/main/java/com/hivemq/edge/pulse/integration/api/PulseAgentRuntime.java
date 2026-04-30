@@ -49,4 +49,6 @@ public interface PulseAgentRuntime {
     void supplyPulseDatapointProcessor(int prio, @NotNull PulseDatapointProcessor processor);
 
     void registerRestComponent(@NotNull Object component);
+
+    void registerModuleInformation(@NotNull String id, @NotNull String name, @NotNull String version);
 }
