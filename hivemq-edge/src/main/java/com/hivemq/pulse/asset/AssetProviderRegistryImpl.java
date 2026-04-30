@@ -22,17 +22,19 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import org.jetbrains.annotations.NotNull;
 
 @Singleton
-public class AssetProviderRegistry {
+public class AssetProviderRegistryImpl implements AssetProviderRegistry {
 
     private final @NotNull Set<ExternalAssetProvider> assetProviders = new CopyOnWriteArraySet<>();
 
     @Inject
-    public AssetProviderRegistry() {}
+    public AssetProviderRegistryImpl() {}
 
+    @Override
     public void registerAssetProvider(final @NotNull ExternalAssetProvider assetProvider) {
         assetProviders.add(assetProvider);
     }
 
+    @Override
     public @NotNull Set<ExternalAssetProvider> getAssetProviders() {
         return Set.copyOf(assetProviders);
     }

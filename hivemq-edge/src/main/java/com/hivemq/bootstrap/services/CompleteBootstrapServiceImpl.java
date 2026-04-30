@@ -31,6 +31,7 @@ import com.hivemq.extensions.core.RestComponentsService;
 import com.hivemq.mqtt.services.InternalPublishService;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.pulse.asset.AssetProviderRegistry;
+import com.hivemq.pulse.asset.AssetProviderRegistryImpl;
 import com.hivemq.pulse.integration.PulseDatapointPublisherImpl;
 import com.hivemq.pulse.status.StatusFactory;
 import com.hivemq.pulse.status.StatusFactoryImpl;
@@ -63,7 +64,7 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
             final @NotNull EventService eventService,
             final @NotNull PublishService publishService,
             final @NotNull InternalPublishService internalPublishService,
-            final @NotNull AssetProviderRegistry assetProviderRegistry,
+            final @NotNull AssetProviderRegistryImpl assetProviderRegistry,
             final @NotNull StatusProviderRegistry statusProviderRegistry,
             final @NotNull PulseDatapointPublisherImpl pulseDatapointPublisher,
             final @NotNull StatusFactoryImpl statusFactory) {
