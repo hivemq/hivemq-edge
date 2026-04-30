@@ -16,6 +16,10 @@
 package com.hivemq.edge.pulse.integration.api;
 
 import com.codahale.metrics.MetricRegistry;
+import com.hivemq.configuration.info.SystemInformation;
+import com.hivemq.pulse.asset.AssetProviderRegistry;
+import com.hivemq.pulse.status.StatusFactory;
+import com.hivemq.pulse.status.StatusProviderRegistry;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -26,4 +30,23 @@ public interface PulseAgentRuntime {
 
     @NotNull
     MetricRegistry metricRegistry();
+
+    @NotNull
+    SystemInformation systemInformation();
+
+    @NotNull
+    AssetProviderRegistry assetProviderRegistry();
+
+    @NotNull
+    StatusProviderRegistry statusProviderRegistry();
+
+    @NotNull
+    StatusFactory statusFactory();
+
+    @NotNull
+    PulseDatapointPublisher pulseDatapointPublisher();
+
+    void supplyPulseDatapointProcessor(int prio, @NotNull PulseDatapointProcessor processor);
+
+    void registerRestComponent(@NotNull Object component);
 }
