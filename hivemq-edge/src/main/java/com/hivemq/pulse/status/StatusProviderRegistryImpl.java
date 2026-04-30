@@ -15,6 +15,7 @@
  */
 package com.hivemq.pulse.status;
 
+import com.hivemq.edge.HiveMQCapabilityService;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Set;
@@ -25,12 +26,16 @@ import org.jetbrains.annotations.NotNull;
 public class StatusProviderRegistryImpl implements StatusProviderRegistry {
 
     private final @NotNull Set<StatusProvider> statusProviders = new CopyOnWriteArraySet<>();
+    private final @NotNull PulseAgentStatusChangedListener edgeListener;
 
     @Inject
-    public StatusProviderRegistryImpl() {}
+    public StatusProviderRegistryImpl(final @NotNull HiveMQCapabilityService capabilityService) {
+        this.edgeListener = new PulseAgentStatusChangedListener(capabilityService);
+    }
 
     @Override
     public void registerStatusProvider(final @NotNull StatusProvider statusProvider) {
+        statusProvider.addStatusChangedListener(edgeListener);
         statusProviders.add(statusProvider);
     }
 
