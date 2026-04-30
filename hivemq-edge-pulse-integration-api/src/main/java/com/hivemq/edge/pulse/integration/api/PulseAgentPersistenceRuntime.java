@@ -15,11 +15,34 @@
  */
 package com.hivemq.edge.pulse.integration.api;
 
+import com.hivemq.common.shutdown.HiveMQShutdownHook;
+import com.hivemq.configuration.info.SystemInformation;
+import com.hivemq.configuration.service.PersistenceMode;
+import java.util.Map;
+import java.util.Set;
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Context handed to {@link PulseAgentBootstrap#bootstrapPulsePersistences(PulseAgentPersistenceRuntime)}. Exposes the
  * services the Pulse Agent integration needs from HiveMQ Edge during the persistence bootstrap phase.
- *
- * <p>Methods are added in subsequent migration steps as each piece is moved off the loader's
- * {@code ExtendedPersistenceBootstrapService}.
  */
-public interface PulseAgentPersistenceRuntime {}
+public interface PulseAgentPersistenceRuntime {
+
+    @NotNull
+    SystemInformation systemInformation();
+
+    @NotNull
+    PersistenceMode persistenceMode();
+
+    /**
+     * Returns the values of the given internal-configuration keys that have been explicitly overridden, keyed by the
+     * input key. Keys without an override are absent from the returned map.
+     */
+    @NotNull
+    Map<String, String> internalConfigOverrides(@NotNull Set<String> keys);
+
+    @NotNull
+    Map<String, Object> commercialModuleConfigs();
+
+    void addShutdownHook(@NotNull HiveMQShutdownHook hook);
+}
