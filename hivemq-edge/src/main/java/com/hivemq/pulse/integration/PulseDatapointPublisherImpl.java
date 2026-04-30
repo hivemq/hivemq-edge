@@ -39,14 +39,32 @@ public final class PulseDatapointPublisherImpl implements PulseDatapointPublishe
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> publish(final @NotNull OutgoingDatapoint datapoint) {
+    public @NotNull OutgoingDatapointBuilder newDatapoint(final @NotNull String topic, final byte @NotNull [] payload) {
         final PublishBuilder builder = new PublishBuilderImpl(configurationService)
                 .qos(Qos.AT_LEAST_ONCE)
-                .topic(datapoint.topic())
-                .payload(ByteBuffer.wrap(datapoint.payload()));
-        for (final UserProperty property : datapoint.userProperties()) {
-            builder.userProperty(property.name(), property.value());
+                .topic(topic)
+                .payload(ByteBuffer.wrap(payload));
+        return new BuilderImpl(builder);
+    }
+
+    private final class BuilderImpl implements OutgoingDatapointBuilder {
+
+        private final @NotNull PublishBuilder publishBuilder;
+
+        private BuilderImpl(final @NotNull PublishBuilder publishBuilder) {
+            this.publishBuilder = publishBuilder;
         }
-        return publishService.publish(builder.build());
+
+        @Override
+        public @NotNull OutgoingDatapointBuilder addUserProperty(
+                final @NotNull String name, final @NotNull String value) {
+            publishBuilder.userProperty(name, value);
+            return this;
+        }
+
+        @Override
+        public @NotNull CompletableFuture<Void> publish() {
+            return publishService.publish(publishBuilder.build());
+        }
     }
 }

@@ -19,22 +19,16 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Represents an asset with an id, topic, name, description, and JSON schema.
+ * Constructs {@link Asset} instances. Provided by HiveMQ Edge to consumers that need to publish asset definitions
+ * but should not depend on the concrete {@code Asset} implementation.
  */
-public interface Asset {
+public interface AssetFactory {
 
     @NotNull
-    String id();
-
-    @NotNull
-    String topic();
-
-    @NotNull
-    String name();
-
-    @Nullable
-    String description();
-
-    @NotNull
-    String jsonSchema();
+    Asset create(
+            @NotNull String id,
+            @NotNull String topic,
+            @NotNull String name,
+            @Nullable String description,
+            @NotNull String jsonSchema);
 }

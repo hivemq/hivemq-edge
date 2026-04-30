@@ -49,7 +49,7 @@ public class PulseAgentAssetUtils {
     public static void resolveDiff(
             final @NotNull AssetMappingExtractor assetMappingExtractor,
             final @NotNull PulseExtractor pulseExtractor,
-            final @NotNull List<Asset> remoteAssets) {
+            final @NotNull List<? extends Asset> remoteAssets) {
         synchronized (pulseExtractor.getLock()) {
             final PulseEntity oldPulseEntity = pulseExtractor.getPulseEntity();
             final List<PulseAssetEntity> localAssets =

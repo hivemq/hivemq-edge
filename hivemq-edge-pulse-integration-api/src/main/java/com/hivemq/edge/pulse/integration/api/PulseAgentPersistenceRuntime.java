@@ -17,7 +17,6 @@ package com.hivemq.edge.pulse.integration.api;
 
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.configuration.info.SystemInformation;
-import com.hivemq.configuration.service.PersistenceMode;
 import java.util.Map;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
@@ -28,11 +27,17 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface PulseAgentPersistenceRuntime {
 
+    enum Mode {
+        IN_MEMORY,
+        FILE_NATIVE,
+        FILE
+    }
+
     @NotNull
     SystemInformation systemInformation();
 
     @NotNull
-    PersistenceMode persistenceMode();
+    Mode persistenceMode();
 
     /**
      * Returns the values of the given internal-configuration keys that have been explicitly overridden, keyed by the

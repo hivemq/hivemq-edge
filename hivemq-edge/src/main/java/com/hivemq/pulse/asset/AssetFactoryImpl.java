@@ -15,26 +15,24 @@
  */
 package com.hivemq.pulse.asset;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents an asset with an id, topic, name, description, and JSON schema.
- */
-public interface Asset {
+@Singleton
+public class AssetFactoryImpl implements AssetFactory {
 
-    @NotNull
-    String id();
+    @Inject
+    public AssetFactoryImpl() {}
 
-    @NotNull
-    String topic();
-
-    @NotNull
-    String name();
-
-    @Nullable
-    String description();
-
-    @NotNull
-    String jsonSchema();
+    @Override
+    public @NotNull Asset create(
+            final @NotNull String id,
+            final @NotNull String topic,
+            final @NotNull String name,
+            final @Nullable String description,
+            final @NotNull String jsonSchema) {
+        return new AssetImpl(id, topic, name, description, jsonSchema);
+    }
 }

@@ -30,6 +30,8 @@ import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.extensions.core.RestComponentsService;
 import com.hivemq.mqtt.services.InternalPublishService;
 import com.hivemq.persistence.connection.ConnectionPersistence;
+import com.hivemq.pulse.asset.AssetFactory;
+import com.hivemq.pulse.asset.AssetFactoryImpl;
 import com.hivemq.pulse.asset.AssetProviderRegistry;
 import com.hivemq.pulse.asset.AssetProviderRegistryImpl;
 import com.hivemq.pulse.integration.PulseDatapointPublisherImpl;
@@ -54,6 +56,7 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     private final @NotNull StatusProviderRegistry statusProviderRegistry;
     private final @NotNull PulseDatapointPublisher pulseDatapointPublisher;
     private final @NotNull StatusFactory statusFactory;
+    private final @NotNull AssetFactory assetFactory;
     private final @NotNull PersistenceBootstrapService delegate;
 
     @Inject
@@ -68,7 +71,8 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
             final @NotNull AssetProviderRegistryImpl assetProviderRegistry,
             final @NotNull StatusProviderRegistryImpl statusProviderRegistry,
             final @NotNull PulseDatapointPublisherImpl pulseDatapointPublisher,
-            final @NotNull StatusFactoryImpl statusFactory) {
+            final @NotNull StatusFactoryImpl statusFactory,
+            final @NotNull AssetFactoryImpl assetFactory) {
         this.delegate = delegate;
         this.persistences = persistences;
         this.restComponentsService = restComponentsService;
@@ -80,6 +84,7 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
         this.statusProviderRegistry = statusProviderRegistry;
         this.pulseDatapointPublisher = pulseDatapointPublisher;
         this.statusFactory = statusFactory;
+        this.assetFactory = assetFactory;
     }
 
     @Override
@@ -170,6 +175,11 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     @Override
     public @NotNull StatusFactory statusFactory() {
         return statusFactory;
+    }
+
+    @Override
+    public @NotNull AssetFactory assetFactory() {
+        return assetFactory;
     }
 
     @Override

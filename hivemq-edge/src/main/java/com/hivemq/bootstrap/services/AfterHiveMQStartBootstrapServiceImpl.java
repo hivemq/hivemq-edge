@@ -32,6 +32,7 @@ import com.hivemq.extensions.core.RestComponentsService;
 import com.hivemq.mqtt.services.InternalPublishService;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.protocols.ProtocolAdapterManager;
+import com.hivemq.pulse.asset.AssetFactory;
 import com.hivemq.pulse.asset.AssetProviderRegistry;
 import com.hivemq.pulse.status.StatusFactory;
 import com.hivemq.pulse.status.StatusProviderRegistry;
@@ -144,6 +145,11 @@ public class AfterHiveMQStartBootstrapServiceImpl implements AfterHiveMQStartBoo
     @Override
     public @NotNull StatusFactory statusFactory() {
         return delegate.statusFactory();
+    }
+
+    @Override
+    public @NotNull AssetFactory assetFactory() {
+        return delegate.assetFactory();
     }
 
     @Override

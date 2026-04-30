@@ -33,6 +33,7 @@ import com.hivemq.configuration.entity.pulse.PulseEntity;
 import com.hivemq.configuration.reader.AssetMappingExtractor;
 import com.hivemq.configuration.reader.PulseExtractor;
 import com.hivemq.pulse.asset.Asset;
+import com.hivemq.pulse.asset.AssetImpl;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.IntStream;
@@ -60,7 +61,7 @@ public class PulseAgentAssetUtilsTest {
     private @NotNull ArgumentCaptor<PulseEntity> pulseEntityArgumentCaptor;
 
     private @NotNull List<PulseAssetEntity> localAssets;
-    private @NotNull List<Asset> remoteAssets;
+    private @NotNull List<AssetImpl> remoteAssets;
 
     @BeforeEach
     public void setUp() {
@@ -86,8 +87,8 @@ public class PulseAgentAssetUtilsTest {
                 new PulseAssetMappingEntity(null, PulseAssetMappingStatus.UNMAPPED));
     }
 
-    private Asset createRemoteAsset(final int index) {
-        return new Asset(
+    private AssetImpl createRemoteAsset(final int index) {
+        return new AssetImpl(
                 "00000000-0000-0000-0000-"
                         + "0".repeat(12 - String.valueOf(index).length()) + index,
                 "topic/asset/" + index,

@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.pulse.integration.api;
 
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,12 +25,19 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface PulseDatapointPublisher {
 
+    /**
+     * Starts building a datapoint for the given topic and payload. Add user properties (if any) and call
+     * {@link OutgoingDatapointBuilder#publish()} to send it.
+     */
     @NotNull
-    CompletableFuture<Void> publish(@NotNull OutgoingDatapoint datapoint);
+    OutgoingDatapointBuilder newDatapoint(@NotNull String topic, byte @NotNull [] payload);
 
-    record OutgoingDatapoint(@NotNull String topic, byte @NotNull [] payload, @NotNull List<UserProperty> userProperties) {
-    }
+    interface OutgoingDatapointBuilder {
 
-    record UserProperty(@NotNull String name, @NotNull String value) {
+        @NotNull
+        OutgoingDatapointBuilder addUserProperty(@NotNull String name, @NotNull String value);
+
+        @NotNull
+        CompletableFuture<Void> publish();
     }
 }

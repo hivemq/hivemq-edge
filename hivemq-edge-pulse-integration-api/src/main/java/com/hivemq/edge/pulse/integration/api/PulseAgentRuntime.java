@@ -17,6 +17,7 @@ package com.hivemq.edge.pulse.integration.api;
 
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.configuration.info.SystemInformation;
+import com.hivemq.pulse.asset.AssetFactory;
 import com.hivemq.pulse.asset.AssetProviderRegistry;
 import com.hivemq.pulse.status.StatusFactory;
 import com.hivemq.pulse.status.StatusProviderRegistry;
@@ -42,6 +43,9 @@ public interface PulseAgentRuntime {
 
     @NotNull
     StatusFactory statusFactory();
+
+    @NotNull
+    AssetFactory assetFactory();
 
     @NotNull
     PulseDatapointPublisher pulseDatapointPublisher();
