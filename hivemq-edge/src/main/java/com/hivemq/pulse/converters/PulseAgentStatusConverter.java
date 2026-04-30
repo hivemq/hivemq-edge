@@ -18,6 +18,7 @@ package com.hivemq.pulse.converters;
 import com.hivemq.configuration.entity.EntityConverter;
 import com.hivemq.edge.api.model.PulseStatus;
 import com.hivemq.pulse.status.Status;
+import com.hivemq.pulse.status.StatusImpl;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,7 +29,7 @@ public class PulseAgentStatusConverter implements EntityConverter<PulseStatus, S
 
     @Override
     public @NotNull Status toInternalEntity(final @NotNull PulseStatus pulseStatus) {
-        return new Status(
+        return new StatusImpl(
                 PulseAgentActivationStatusConverter.INSTANCE.toInternalEntity(pulseStatus.getActivation()),
                 PulseAgentConnectionStatusConverter.INSTANCE.toInternalEntity(pulseStatus.getRuntime()),
                 List.of());

@@ -18,25 +18,13 @@ package com.hivemq.pulse.status;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
-public class Status {
-
-    public enum ActivationStatus {
-        ACTIVATED,
-        DEACTIVATED,
-        ERROR
-    }
-
-    public enum ConnectionStatus {
-        CONNECTED,
-        DISCONNECTED,
-        ERROR
-    }
+public class StatusImpl implements Status {
 
     private final @NotNull ActivationStatus activationStatus;
     private final @NotNull ConnectionStatus connectionStatus;
     private final @NotNull List<String> errorMessages;
 
-    public Status(
+    public StatusImpl(
             final @NotNull ActivationStatus activationStatus,
             final @NotNull ConnectionStatus connectionStatus,
             final @NotNull List<String> errorMessages) {
@@ -45,14 +33,17 @@ public class Status {
         this.errorMessages = errorMessages;
     }
 
+    @Override
     public @NotNull ActivationStatus activationStatus() {
         return activationStatus;
     }
 
+    @Override
     public @NotNull ConnectionStatus connectionStatus() {
         return connectionStatus;
     }
 
+    @Override
     public @NotNull List<String> errorMessages() {
         return errorMessages;
     }

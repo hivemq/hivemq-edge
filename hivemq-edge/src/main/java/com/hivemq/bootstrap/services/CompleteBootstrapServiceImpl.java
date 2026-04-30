@@ -32,6 +32,8 @@ import com.hivemq.mqtt.services.InternalPublishService;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.pulse.asset.AssetProviderRegistry;
 import com.hivemq.pulse.integration.PulseDatapointPublisherImpl;
+import com.hivemq.pulse.status.StatusFactory;
+import com.hivemq.pulse.status.StatusFactoryImpl;
 import com.hivemq.pulse.status.StatusProviderRegistry;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -49,6 +51,7 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     private final @NotNull AssetProviderRegistry assetProviderRegistry;
     private final @NotNull StatusProviderRegistry statusProviderRegistry;
     private final @NotNull PulseDatapointPublisher pulseDatapointPublisher;
+    private final @NotNull StatusFactory statusFactory;
     private final @NotNull PersistenceBootstrapService delegate;
 
     @Inject
@@ -62,7 +65,8 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
             final @NotNull InternalPublishService internalPublishService,
             final @NotNull AssetProviderRegistry assetProviderRegistry,
             final @NotNull StatusProviderRegistry statusProviderRegistry,
-            final @NotNull PulseDatapointPublisherImpl pulseDatapointPublisher) {
+            final @NotNull PulseDatapointPublisherImpl pulseDatapointPublisher,
+            final @NotNull StatusFactoryImpl statusFactory) {
         this.delegate = delegate;
         this.persistences = persistences;
         this.restComponentsService = restComponentsService;
@@ -73,6 +77,7 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
         this.assetProviderRegistry = assetProviderRegistry;
         this.statusProviderRegistry = statusProviderRegistry;
         this.pulseDatapointPublisher = pulseDatapointPublisher;
+        this.statusFactory = statusFactory;
     }
 
     @Override
@@ -158,6 +163,11 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     @Override
     public @NotNull PulseDatapointPublisher pulseDatapointPublisher() {
         return pulseDatapointPublisher;
+    }
+
+    @Override
+    public @NotNull StatusFactory statusFactory() {
+        return statusFactory;
     }
 
     @Override

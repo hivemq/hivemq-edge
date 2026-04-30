@@ -23,6 +23,7 @@ import com.hivemq.api.errors.InternalServerError;
 import com.hivemq.api.errors.pulse.ActivationTokenAlreadyDeletedError;
 import com.hivemq.api.errors.pulse.ActivationTokenNotDeletedError;
 import com.hivemq.pulse.status.Status;
+import com.hivemq.pulse.status.StatusImpl;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -31,7 +32,7 @@ public class PulseApiImplDeletePulseActivationTokenTest extends AbstractPulseApi
     @Test
     public void whenStatusIsDeactivated_thenReturnsActivationTokenAlreadyDeletedError() {
         when(statusProvider.getStatus())
-                .thenReturn(new Status(
+                .thenReturn(new StatusImpl(
                         Status.ActivationStatus.DEACTIVATED, Status.ConnectionStatus.DISCONNECTED, List.of()));
         try (final Response response = pulseApi.deletePulseActivationToken()) {
             assertThat(response.getStatus()).isEqualTo(409);
@@ -43,7 +44,7 @@ public class PulseApiImplDeletePulseActivationTokenTest extends AbstractPulseApi
     public void whenDeactivatePulseThrowsException_thenReturnsInternalServerError() {
         when(statusProvider.getStatus())
                 .thenReturn(
-                        new Status(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
+                        new StatusImpl(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
         doThrow(new RuntimeException("Test exception")).when(statusProvider).deactivatePulse();
         try (final Response response = pulseApi.deletePulseActivationToken()) {
             assertThat(response.getStatus()).isEqualTo(500);
@@ -55,7 +56,7 @@ public class PulseApiImplDeletePulseActivationTokenTest extends AbstractPulseApi
     public void whenStatusIsActivatedThenActivated_thenReturnsInternalServerError() {
         when(statusProvider.getStatus())
                 .thenReturn(
-                        new Status(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
+                        new StatusImpl(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
         try (final Response response = pulseApi.deletePulseActivationToken()) {
             assertThat(response.getStatus()).isEqualTo(500);
             assertThat(response.getEntity()).isInstanceOf(InternalServerError.class);
@@ -66,8 +67,8 @@ public class PulseApiImplDeletePulseActivationTokenTest extends AbstractPulseApi
     public void whenStatusIsActivatedThenDeactivated_thenReturnsOK() {
         when(statusProvider.getStatus())
                 .thenReturn(
-                        new Status(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()),
-                        new Status(
+                        new StatusImpl(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()),
+                        new StatusImpl(
                                 Status.ActivationStatus.DEACTIVATED, Status.ConnectionStatus.DISCONNECTED, List.of()));
         try (final Response response = pulseApi.deletePulseActivationToken()) {
             assertThat(response.getStatus()).isEqualTo(200);
@@ -78,8 +79,8 @@ public class PulseApiImplDeletePulseActivationTokenTest extends AbstractPulseApi
     public void whenStatusIsActivatedThenError_thenReturnsActivationTokenNotDeletedError() {
         when(statusProvider.getStatus())
                 .thenReturn(
-                        new Status(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()),
-                        new Status(Status.ActivationStatus.ERROR, Status.ConnectionStatus.ERROR, List.of()));
+                        new StatusImpl(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()),
+                        new StatusImpl(Status.ActivationStatus.ERROR, Status.ConnectionStatus.ERROR, List.of()));
         try (final Response response = pulseApi.deletePulseActivationToken()) {
             assertThat(response.getStatus()).isEqualTo(503);
             assertThat(response.getEntity()).isInstanceOf(ActivationTokenNotDeletedError.class);

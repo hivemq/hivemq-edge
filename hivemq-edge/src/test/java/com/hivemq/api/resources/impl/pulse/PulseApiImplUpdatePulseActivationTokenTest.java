@@ -24,6 +24,7 @@ import com.hivemq.api.errors.pulse.ActivationTokenInvalidError;
 import com.hivemq.api.errors.pulse.PulseAgentDeactivatedError;
 import com.hivemq.edge.api.model.PulseActivationToken;
 import com.hivemq.pulse.status.Status;
+import com.hivemq.pulse.status.StatusImpl;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -56,7 +57,7 @@ public class PulseApiImplUpdatePulseActivationTokenTest extends AbstractPulseApi
         when(statusProvider.activatePulse(anyString())).thenReturn(true);
         when(statusProvider.getStatus())
                 .thenReturn(
-                        new Status(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
+                        new StatusImpl(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
         try (final Response response = pulseApi.updatePulseActivationToken(new PulseActivationToken("1234567890"))) {
             assertThat(response.getStatus()).isEqualTo(200);
         }
@@ -66,7 +67,7 @@ public class PulseApiImplUpdatePulseActivationTokenTest extends AbstractPulseApi
     public void whenTokenIsValidAndStatusIsDeactivate_thenReturnsPulseAgentDeactivatedError() {
         when(statusProvider.activatePulse(anyString())).thenReturn(true);
         when(statusProvider.getStatus())
-                .thenReturn(new Status(
+                .thenReturn(new StatusImpl(
                         Status.ActivationStatus.DEACTIVATED, Status.ConnectionStatus.DISCONNECTED, List.of()));
         try (final Response response = pulseApi.updatePulseActivationToken(new PulseActivationToken("1234567890"))) {
             assertThat(response.getStatus()).isEqualTo(400);
@@ -78,7 +79,7 @@ public class PulseApiImplUpdatePulseActivationTokenTest extends AbstractPulseApi
     public void whenTokenIsValidAndStatusIsError_thenReturnsInternalServerError() {
         when(statusProvider.activatePulse(anyString())).thenReturn(true);
         when(statusProvider.getStatus())
-                .thenReturn(new Status(Status.ActivationStatus.ERROR, Status.ConnectionStatus.ERROR, List.of()));
+                .thenReturn(new StatusImpl(Status.ActivationStatus.ERROR, Status.ConnectionStatus.ERROR, List.of()));
         try (final Response response = pulseApi.updatePulseActivationToken(new PulseActivationToken("1234567890"))) {
             assertThat(response.getStatus()).isEqualTo(500);
             assertThat(response.getEntity()).isInstanceOf(InternalServerError.class);

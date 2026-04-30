@@ -23,6 +23,7 @@ import com.hivemq.edge.api.model.PulseStatus;
 import com.hivemq.pulse.converters.PulseAgentActivationStatusConverter;
 import com.hivemq.pulse.converters.PulseAgentConnectionStatusConverter;
 import com.hivemq.pulse.status.Status;
+import com.hivemq.pulse.status.StatusImpl;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.stream.Stream;
@@ -42,7 +43,7 @@ public class PulseApiImplGetPulseStatusTest extends AbstractPulseApiImplTest {
     public void whenAllKindsOfStatusAreProvided_thenReturnsStatus(
             final @NotNull Status.ActivationStatus activationStatus,
             final @NotNull Status.ConnectionStatus connectionStatus) {
-        when(statusProvider.getStatus()).thenReturn(new Status(activationStatus, connectionStatus, List.of()));
+        when(statusProvider.getStatus()).thenReturn(new StatusImpl(activationStatus, connectionStatus, List.of()));
         try (final Response response = pulseApi.getPulseStatus()) {
             assertThat(response.getStatus()).isEqualTo(200);
             assertThat(response.getEntity()).isInstanceOf(PulseStatus.class);
