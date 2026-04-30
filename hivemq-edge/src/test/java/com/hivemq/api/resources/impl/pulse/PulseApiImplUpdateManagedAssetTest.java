@@ -46,8 +46,8 @@ public class PulseApiImplUpdateManagedAssetTest extends AbstractPulseApiImplTest
     @Test
     public void whenConfigNotWritable_thenReturnsConfigWritingDisabledError() {
         when(statusProvider.getStatus())
-                .thenReturn(
-                        new StatusImpl(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
+                .thenReturn(new StatusImpl(
+                        Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
         when(systemInformation.isConfigWriteable()).thenReturn(false);
         final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder()
                 .id(UUID.randomUUID())
@@ -68,8 +68,8 @@ public class PulseApiImplUpdateManagedAssetTest extends AbstractPulseApiImplTest
     @Test
     public void whenAssetDoesNotExist_thenReturnsManagedAssetNotFoundError() {
         when(statusProvider.getStatus())
-                .thenReturn(
-                        new StatusImpl(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
+                .thenReturn(new StatusImpl(
+                        Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
         final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder()
                 .id(UUID.randomUUID())
                 .name("Test Asset")
@@ -89,8 +89,8 @@ public class PulseApiImplUpdateManagedAssetTest extends AbstractPulseApiImplTest
     @Test
     public void whenAssetExistsAndMappingIdsMismatch_thenReturnsInvalidManagedAssetMappingIdError() {
         when(statusProvider.getStatus())
-                .thenReturn(
-                        new StatusImpl(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
+                .thenReturn(new StatusImpl(
+                        Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
         final UUID id = UUID.randomUUID();
         final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder()
                 .id(id)
@@ -123,8 +123,8 @@ public class PulseApiImplUpdateManagedAssetTest extends AbstractPulseApiImplTest
     @Test
     public void whenMappingIdIsUsedByAsset_thenReturnsInvalidManagedAssetMappingIdError() {
         when(statusProvider.getStatus())
-                .thenReturn(
-                        new StatusImpl(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
+                .thenReturn(new StatusImpl(
+                        Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
         final UUID id = UUID.randomUUID();
         final UUID mappingId = UUID.randomUUID();
         final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder()
@@ -162,8 +162,8 @@ public class PulseApiImplUpdateManagedAssetTest extends AbstractPulseApiImplTest
     @Test
     public void whenMappingIdIsUsedByAssetMapper_thenReturnsInvalidManagedAssetMappingIdError() {
         when(statusProvider.getStatus())
-                .thenReturn(
-                        new StatusImpl(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
+                .thenReturn(new StatusImpl(
+                        Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
         final UUID id = UUID.randomUUID();
         final UUID mappingId = UUID.randomUUID();
         final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder()
@@ -198,8 +198,8 @@ public class PulseApiImplUpdateManagedAssetTest extends AbstractPulseApiImplTest
     @Test
     public void whenAssetExistsAndMappingDoesNotExist_thenReturnsOK() {
         when(statusProvider.getStatus())
-                .thenReturn(
-                        new StatusImpl(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
+                .thenReturn(new StatusImpl(
+                        Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
         final UUID id = UUID.randomUUID();
         final UUID mappingId = UUID.randomUUID();
         final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder()
@@ -251,8 +251,8 @@ public class PulseApiImplUpdateManagedAssetTest extends AbstractPulseApiImplTest
     @Test
     public void whenAssetExistsAndMappingIdIsNull_thenReturnsOK() {
         when(statusProvider.getStatus())
-                .thenReturn(
-                        new StatusImpl(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
+                .thenReturn(new StatusImpl(
+                        Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
         final List<UUID[]> testCases = List.of(
                 new UUID[] {null, null}, new UUID[] {null, UUID.randomUUID()}, new UUID[] {UUID.randomUUID(), null});
         testCases.forEach(uuids -> {
@@ -279,8 +279,8 @@ public class PulseApiImplUpdateManagedAssetTest extends AbstractPulseApiImplTest
     @Test
     public void whenAssetExistsAndMappingExists_thenReturnsOK() {
         when(statusProvider.getStatus())
-                .thenReturn(
-                        new StatusImpl(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
+                .thenReturn(new StatusImpl(
+                        Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
         final UUID id = UUID.randomUUID();
         final UUID mappingId = UUID.randomUUID();
         final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder()

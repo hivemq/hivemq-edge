@@ -56,8 +56,8 @@ public class PulseApiImplUpdatePulseActivationTokenTest extends AbstractPulseApi
     public void whenTokenIsValidAndStatusIsActivate_thenReturnsOK() {
         when(statusProvider.activatePulse(anyString())).thenReturn(true);
         when(statusProvider.getStatus())
-                .thenReturn(
-                        new StatusImpl(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
+                .thenReturn(new StatusImpl(
+                        Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
         try (final Response response = pulseApi.updatePulseActivationToken(new PulseActivationToken("1234567890"))) {
             assertThat(response.getStatus()).isEqualTo(200);
         }

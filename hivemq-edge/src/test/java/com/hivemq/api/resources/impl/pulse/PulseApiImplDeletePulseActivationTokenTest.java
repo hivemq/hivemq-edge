@@ -43,8 +43,8 @@ public class PulseApiImplDeletePulseActivationTokenTest extends AbstractPulseApi
     @Test
     public void whenDeactivatePulseThrowsException_thenReturnsInternalServerError() {
         when(statusProvider.getStatus())
-                .thenReturn(
-                        new StatusImpl(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
+                .thenReturn(new StatusImpl(
+                        Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
         doThrow(new RuntimeException("Test exception")).when(statusProvider).deactivatePulse();
         try (final Response response = pulseApi.deletePulseActivationToken()) {
             assertThat(response.getStatus()).isEqualTo(500);
@@ -55,8 +55,8 @@ public class PulseApiImplDeletePulseActivationTokenTest extends AbstractPulseApi
     @Test
     public void whenStatusIsActivatedThenActivated_thenReturnsInternalServerError() {
         when(statusProvider.getStatus())
-                .thenReturn(
-                        new StatusImpl(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
+                .thenReturn(new StatusImpl(
+                        Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
         try (final Response response = pulseApi.deletePulseActivationToken()) {
             assertThat(response.getStatus()).isEqualTo(500);
             assertThat(response.getEntity()).isInstanceOf(InternalServerError.class);

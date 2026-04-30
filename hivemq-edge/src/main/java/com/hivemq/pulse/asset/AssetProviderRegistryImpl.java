@@ -31,8 +31,7 @@ public class AssetProviderRegistryImpl implements AssetProviderRegistry {
 
     @Inject
     public AssetProviderRegistryImpl(
-            final @NotNull AssetMappingExtractor assetMappingExtractor,
-            final @NotNull PulseExtractor pulseExtractor) {
+            final @NotNull AssetMappingExtractor assetMappingExtractor, final @NotNull PulseExtractor pulseExtractor) {
         this.edgeListener = new PulseAgentAssetChangedListener(assetMappingExtractor, pulseExtractor);
     }
 

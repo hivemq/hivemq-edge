@@ -54,7 +54,8 @@ public class DataCombiningTransformationServiceProviderTest {
                 edgeCoreFactoryService, prePublishProcessorService, metricRegistry);
         statusChangedListener = new PulseAgentStatusChangedListener(capabilityService);
 
-        when(dataCombiningTransformationServiceFactory.build(any(PrePublishProcessorService.class), any(MetricRegistry.class)))
+        when(dataCombiningTransformationServiceFactory.build(
+                        any(PrePublishProcessorService.class), any(MetricRegistry.class)))
                 .thenReturn(dataCombiningTransformationService);
     }
 
@@ -66,14 +67,16 @@ public class DataCombiningTransformationServiceProviderTest {
                 status(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED));
         assertThat(edgeCoreFactoryService.getDataCombiningTransformationServiceFactory())
                 .isEqualTo(dataCombiningTransformationServiceFactory);
-        assertThat(dataCombiningTransformationServiceProvider.get()).isInstanceOf(DataCombiningTransformationService.class);
+        assertThat(dataCombiningTransformationServiceProvider.get())
+                .isInstanceOf(DataCombiningTransformationService.class);
     }
 
     @Test
     void whenPulseIsActivatedAndDataHubIsDeactivated_thenDataCombiningTransformationServiceIsVanilla() {
         statusChangedListener.onStatusChanged(
                 status(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED));
-        assertThat(edgeCoreFactoryService.getDataCombiningTransformationServiceFactory()).isNull();
+        assertThat(edgeCoreFactoryService.getDataCombiningTransformationServiceFactory())
+                .isNull();
         assertThat(dataCombiningTransformationServiceProvider.get())
                 .isInstanceOf(VanillaDataCombiningTransformationService.class);
     }
@@ -93,7 +96,8 @@ public class DataCombiningTransformationServiceProviderTest {
     void whenPulseIsDeactivatedAndDataHubIsDeactivated_thenDataCombiningTransformationServiceIsVanilla() {
         statusChangedListener.onStatusChanged(
                 status(Status.ActivationStatus.DEACTIVATED, Status.ConnectionStatus.DISCONNECTED));
-        assertThat(edgeCoreFactoryService.getDataCombiningTransformationServiceFactory()).isNull();
+        assertThat(edgeCoreFactoryService.getDataCombiningTransformationServiceFactory())
+                .isNull();
         assertThat(dataCombiningTransformationServiceProvider.get())
                 .isInstanceOf(VanillaDataCombiningTransformationService.class);
     }

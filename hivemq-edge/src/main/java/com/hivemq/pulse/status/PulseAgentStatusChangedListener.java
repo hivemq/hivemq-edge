@@ -30,7 +30,8 @@ public class PulseAgentStatusChangedListener implements StatusProvider.StatusCha
 
     public PulseAgentStatusChangedListener(final @NotNull HiveMQCapabilityService capabilityService) {
         this.capabilityService = capabilityService;
-        this.status = new StatusImpl(Status.ActivationStatus.DEACTIVATED, Status.ConnectionStatus.DISCONNECTED, List.of());
+        this.status =
+                new StatusImpl(Status.ActivationStatus.DEACTIVATED, Status.ConnectionStatus.DISCONNECTED, List.of());
     }
 
     public @NotNull Status getStatus() {

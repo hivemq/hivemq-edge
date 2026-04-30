@@ -24,7 +24,8 @@ public record AssetImpl(
         @NotNull String topic,
         @NotNull String name,
         @Nullable String description,
-        @NotNull String jsonSchema) implements Asset {
+        @NotNull String jsonSchema)
+        implements Asset {
 
     public static Builder builder() {
         return new Builder();
