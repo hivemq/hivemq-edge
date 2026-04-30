@@ -15,11 +15,15 @@
  */
 package com.hivemq.edge.pulse.integration.api;
 
+import com.codahale.metrics.MetricRegistry;
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Context handed to {@link PulseAgentBootstrap#afterPersistenceBootstrap(PulseAgentRuntime)}. Exposes the services
  * the Pulse Agent integration needs from HiveMQ Edge after persistence bootstrap is complete.
- *
- * <p>Methods are added in subsequent migration steps as each piece is moved off the loader's
- * {@code ExtendedCompleteBootstrapService}.
  */
-public interface PulseAgentRuntime {}
+public interface PulseAgentRuntime {
+
+    @NotNull
+    MetricRegistry metricRegistry();
+}
