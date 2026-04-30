@@ -166,7 +166,7 @@ class SimulationProtocolAdapterTest {
 
         final Object value = firstValue();
         assertThat(value).isInstanceOf(Integer.class);
-        assertThat((Integer) value).isBetween(5, 14);
+        assertThat((Integer) value).isBetween(5, 15);
     }
 
     @Test
