@@ -15,6 +15,8 @@
  */
 package com.hivemq.pulse.asset;
 
+import com.hivemq.configuration.reader.AssetMappingExtractor;
+import com.hivemq.configuration.reader.PulseExtractor;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Set;
@@ -25,12 +27,18 @@ import org.jetbrains.annotations.NotNull;
 public class AssetProviderRegistryImpl implements AssetProviderRegistry {
 
     private final @NotNull Set<ExternalAssetProvider> assetProviders = new CopyOnWriteArraySet<>();
+    private final @NotNull PulseAgentAssetChangedListener edgeListener;
 
     @Inject
-    public AssetProviderRegistryImpl() {}
+    public AssetProviderRegistryImpl(
+            final @NotNull AssetMappingExtractor assetMappingExtractor,
+            final @NotNull PulseExtractor pulseExtractor) {
+        this.edgeListener = new PulseAgentAssetChangedListener(assetMappingExtractor, pulseExtractor);
+    }
 
     @Override
     public void registerAssetProvider(final @NotNull ExternalAssetProvider assetProvider) {
+        assetProvider.addAssetChangedListener(edgeListener);
         assetProviders.add(assetProvider);
     }
 
