@@ -1,0 +1,27 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "hivemq-edge",
+  "description": "HiveMQ Edge is an MQTT gateway that enables interoperability between OT devices and IT systems. It translates diverse protocols into MQTT for streamlined communication and helps organize data into a unified namespace, making managing and streaming data across your infrastructure easier.",
+  "version": "1.0.0",
+  "author": {
+    "name": "HiveMQ"
+  },
+  "homepage": "https://github.com/hivemq/hivemq-edge",
+  "keywords": [
+    "ads",
+    "bacnet",
+    "data-governance",
+    "edge",
+    "ethernet-ip",
+    "http",
+    "java",
+    "javascript",
+    "modbus",
+    "mqtt",
+    "mqtt-sn",
+    "opc-ua",
+    "open-source",
+    "s7",
+    "transformation"
+  ]
+}
