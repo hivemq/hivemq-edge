@@ -4,7 +4,7 @@ plugins {
     id("com.hivemq.edge-version-updater")
     id("com.hivemq.repository-convention")
     id("com.hivemq.tools.oci-version-catalog") version "0.3.0"
-    id("io.github.sgtsilvio.gradle.oci") version "0.25.0"
+    id("io.github.sgtsilvio.gradle.oci") version "0.27.0"
     id("jacoco")
 }
 
