@@ -26,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Edge-side holder for the {@link PulseManagement} produced by the Pulse Agent integration during
- * {@code afterPersistenceBootstrap}. Other Edge components (e.g. the REST API) read it via {@link #get()}; the
+ * {@code bootstrapPulseAgent}. Other Edge components (e.g. the REST API) read it via {@link #get()}; the
  * commercial-modules loader publishes it via {@link #set(PulseManagement)}.
  */
 @Singleton

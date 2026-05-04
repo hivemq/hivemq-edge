@@ -18,11 +18,21 @@ package com.hivemq.edge.pulse.integration.api;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Sink supplied by HiveMQ Edge to receive the constructed {@link PulseManagement} once
- * {@link PulseAgentBootstrap#bootstrapPulseAgent(PulseAgentBootstrapInput, PulseAgentBootstrapOutput)} has
- * completed successfully.
+ * Sink supplied by HiveMQ Edge to receive the result of
+ * {@link PulseAgentBootstrap#bootstrapPulsePersistences(BootstrapPulsePersistencesInput, BootstrapPulsePersistencesOutput)}.
+ * Implementations must call exactly one of {@link #success()} or {@link #fatalFailure(Throwable)}.
  */
-public interface PulseAgentBootstrapOutput {
+public interface BootstrapPulsePersistencesOutput {
 
-    void success(@NotNull PulseManagement pulseManagement);
+    /**
+     * Signals that the persistence bootstrap completed successfully.
+     */
+    void success();
+
+    /**
+     * Signals that the persistence bootstrap failed with an unrecoverable error.
+     *
+     * @param cause the failure that prevented the persistences from starting
+     */
+    void fatalFailure(@NotNull Throwable cause);
 }

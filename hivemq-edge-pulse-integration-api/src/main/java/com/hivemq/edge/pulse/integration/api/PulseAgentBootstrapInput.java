@@ -23,7 +23,7 @@ import com.hivemq.pulse.status.StatusFactory;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Context handed to {@link PulseAgentBootstrap#afterPersistenceBootstrap(PulseAgentBootstrapInput, PulseAgentBootstrapOutput)}.
+ * Context handed to {@link PulseAgentBootstrap#bootstrapPulseAgent(PulseAgentBootstrapInput, PulseAgentBootstrapOutput)}.
  * Exposes the services the Pulse Agent integration needs from HiveMQ Edge after persistence bootstrap is complete.
  */
 public interface PulseAgentBootstrapInput {
