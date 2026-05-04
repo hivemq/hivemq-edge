@@ -114,39 +114,42 @@ public class SimulationProtocolAdapter implements BatchPollingProtocolAdapter, W
 
     @Override
     public void poll(final @NotNull BatchPollingInput pollingInput, final @NotNull BatchPollingOutput pollingOutput) {
-        final DataPointListBuilder publisher = pollingOutput.dataPointListPublisher();
-        for (final SimulationTag tag : tags) {
-            final int minDelay = adapterConfig.getMinDelay();
-            final int maxDelay = adapterConfig.getMaxDelay();
-            if (minDelay > maxDelay) {
-                pollingOutput.fail(String.format(
-                        "The configured min '%d' delay was bigger than the max delay '%d'. Simulator Adapter will not publish a value.",
-                        minDelay, maxDelay));
-                return;
-            }
-            if (minDelay == maxDelay && maxDelay > 0) {
-                try {
-                    timeWaiter.sleep(minDelay);
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    pollingOutput.fail("Thread was interrupted");
-                    return;
-                }
-            } else if (maxDelay > 0) {
-                final int sleepMS = minDelay + RANDOM.nextInt(maxDelay - minDelay);
-                try {
-                    timeWaiter.sleep(sleepMS);
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    pollingOutput.fail("Thread was interrupted");
-                    return;
-                }
-            }
-            final DataPointBuilder<DataPointListBuilder> b = publisher.addDataPoint(tag);
-            writeValue(b, tag);
-            b.endDataPoint();
-        }
-        publisher.publish();
+        new Thread(() -> {
+                    final DataPointListBuilder publisher = pollingOutput.dataPointListPublisher();
+                    for (final SimulationTag tag : tags) {
+                        final int minDelay = adapterConfig.getMinDelay();
+                        final int maxDelay = adapterConfig.getMaxDelay();
+                        if (minDelay > maxDelay) {
+                            pollingOutput.fail(String.format(
+                                    "The configured min '%d' delay was bigger than the max delay '%d'. Simulator Adapter will not publish a value.",
+                                    minDelay, maxDelay));
+                            return;
+                        }
+                        if (minDelay == maxDelay && maxDelay > 0) {
+                            try {
+                                timeWaiter.sleep(minDelay);
+                            } catch (final InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                pollingOutput.fail("Thread was interrupted");
+                                return;
+                            }
+                        } else if (maxDelay > 0) {
+                            final int sleepMS = minDelay + RANDOM.nextInt(maxDelay - minDelay);
+                            try {
+                                timeWaiter.sleep(sleepMS);
+                            } catch (final InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                pollingOutput.fail("Thread was interrupted");
+                                return;
+                            }
+                        }
+                        final DataPointBuilder<DataPointListBuilder> b = publisher.addDataPoint(tag);
+                        writeValue(b, tag);
+                        b.endDataPoint();
+                    }
+                    publisher.publish();
+                })
+                .start();
     }
 
     private void writeValue(final @NotNull DataPointBuilder<?> b, final @NotNull SimulationTag tag) {
