@@ -33,4 +33,11 @@ public interface PulseAgentBootstrap {
      * runtime components here.
      */
     void afterPersistenceBootstrap(@NotNull PulseAgentRuntime runtime);
+
+    /**
+     * Called by HiveMQ Edge during shutdown. Implementations should release any resources
+     * acquired during {@link #bootstrapPulsePersistences(PulseAgentPersistenceRuntime)} and
+     * {@link #afterPersistenceBootstrap(PulseAgentRuntime)}.
+     */
+    void shutdown();
 }

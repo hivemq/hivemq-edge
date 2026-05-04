@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.pulse.integration.api;
 
-import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.configuration.info.SystemInformation;
 import java.util.Map;
 import java.util.Set;
@@ -48,6 +47,4 @@ public interface PulseAgentPersistenceRuntime {
 
     @NotNull
     Map<String, Object> commercialModuleConfigs();
-
-    void addShutdownHook(@NotNull HiveMQShutdownHook hook);
 }
