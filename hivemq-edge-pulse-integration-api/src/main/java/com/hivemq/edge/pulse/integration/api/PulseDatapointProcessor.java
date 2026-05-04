@@ -37,5 +37,5 @@ public interface PulseDatapointProcessor {
      */
     @NotNull
     CompletableFuture<Void> process(
-            @NotNull IncomingDatapoint datapoint, @Nullable String sender, @NotNull ExecutorService executor);
+            @NotNull IncomingMessage datapoint, @Nullable String sender, @NotNull ExecutorService executor);
 }

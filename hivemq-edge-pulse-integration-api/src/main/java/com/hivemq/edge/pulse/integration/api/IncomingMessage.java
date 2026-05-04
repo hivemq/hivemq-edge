@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * A read-only view of an incoming MQTT publish handed to the Pulse Agent integration.
  */
-public interface IncomingDatapoint {
+public interface IncomingMessage {
 
     @NotNull
     String topic();

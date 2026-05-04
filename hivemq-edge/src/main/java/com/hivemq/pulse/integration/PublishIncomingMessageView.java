@@ -15,19 +15,19 @@
  */
 package com.hivemq.pulse.integration;
 
-import com.hivemq.edge.pulse.integration.api.IncomingDatapoint;
+import com.hivemq.edge.pulse.integration.api.IncomingMessage;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
-final class PublishIncomingDatapointView implements IncomingDatapoint {
+final class PublishIncomingMessageView implements IncomingMessage {
 
     private static final byte @NotNull [] EMPTY_PAYLOAD = new byte[0];
 
     private final @NotNull PUBLISH delegate;
 
-    PublishIncomingDatapointView(final @NotNull PUBLISH delegate) {
+    PublishIncomingMessageView(final @NotNull PUBLISH delegate) {
         this.delegate = delegate;
     }
 

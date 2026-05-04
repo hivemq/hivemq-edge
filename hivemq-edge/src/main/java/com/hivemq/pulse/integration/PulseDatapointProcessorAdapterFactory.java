@@ -72,7 +72,7 @@ public final class PulseDatapointProcessorAdapterFactory implements PrePublishPr
             final SettableFuture<HandlerResult> resultFuture = SettableFuture.create();
             try {
                 processor
-                        .process(new PublishIncomingDatapointView(originalPublish), sender, executorService)
+                        .process(new PublishIncomingMessageView(originalPublish), sender, executorService)
                         .whenCompleteAsync(
                                 (ignored, throwable) -> {
                                     if (throwable != null) {
