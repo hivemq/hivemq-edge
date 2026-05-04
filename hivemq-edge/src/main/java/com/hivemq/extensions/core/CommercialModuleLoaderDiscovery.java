@@ -22,6 +22,7 @@ import com.hivemq.bootstrap.services.GeneralBootstrapService;
 import com.hivemq.bootstrap.services.PersistenceBootstrapService;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.edge.pulse.integration.api.PulseManagement;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -60,9 +61,11 @@ public class CommercialModuleLoaderDiscovery {
         }
     }
 
-    public void persistenceBootstrap(final @NotNull PersistenceBootstrapService persistenceBootstrapService) {
+    public void persistenceBootstrap(
+            final @NotNull PersistenceBootstrapService persistenceBootstrapService,
+            final @NotNull CompletableFuture<Void> pulsePersistencesResult) {
         if (instance != null) {
-            instance.persistenceBootstrap(persistenceBootstrapService);
+            instance.persistenceBootstrap(persistenceBootstrapService, pulsePersistencesResult);
         }
     }
 

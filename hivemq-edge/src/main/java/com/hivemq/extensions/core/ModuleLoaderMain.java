@@ -20,6 +20,7 @@ import com.hivemq.bootstrap.services.CompleteBootstrapService;
 import com.hivemq.bootstrap.services.GeneralBootstrapService;
 import com.hivemq.bootstrap.services.PersistenceBootstrapService;
 import com.hivemq.edge.pulse.integration.api.PulseManagement;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,7 +28,9 @@ public interface ModuleLoaderMain {
 
     void generalBootstrap(@NotNull GeneralBootstrapService coreModuleService);
 
-    void persistenceBootstrap(@NotNull PersistenceBootstrapService coreModuleService);
+    void persistenceBootstrap(
+            @NotNull PersistenceBootstrapService coreModuleService,
+            @NotNull CompletableFuture<Void> pulsePersistencesResult);
 
     void afterPersistenceBootstrap(
             @NotNull CompleteBootstrapService completeBootstrapService,
