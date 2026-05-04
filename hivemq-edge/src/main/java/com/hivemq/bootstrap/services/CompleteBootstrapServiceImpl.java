@@ -23,7 +23,7 @@ import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQCapabilityService;
-import com.hivemq.edge.pulse.integration.api.PulseDatapointPublisher;
+import com.hivemq.edge.pulse.integration.api.PulseMessagePublisher;
 import com.hivemq.extension.sdk.api.services.publish.PublishService;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.extensions.core.PersistencesService;
@@ -34,7 +34,7 @@ import com.hivemq.pulse.asset.AssetFactory;
 import com.hivemq.pulse.asset.AssetFactoryImpl;
 import com.hivemq.pulse.asset.AssetProviderRegistry;
 import com.hivemq.pulse.asset.AssetProviderRegistryImpl;
-import com.hivemq.pulse.integration.PulseDatapointPublisherImpl;
+import com.hivemq.pulse.integration.PulseMessagePublisherImpl;
 import com.hivemq.pulse.status.StatusFactory;
 import com.hivemq.pulse.status.StatusFactoryImpl;
 import jakarta.inject.Inject;
@@ -51,7 +51,7 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     private final @NotNull PublishService publishService;
     private final @NotNull InternalPublishService internalPublishService;
     private final @NotNull AssetProviderRegistry assetProviderRegistry;
-    private final @NotNull PulseDatapointPublisher pulseDatapointPublisher;
+    private final @NotNull PulseMessagePublisher pulseMessagePublisher;
     private final @NotNull StatusFactory statusFactory;
     private final @NotNull AssetFactory assetFactory;
     private final @NotNull PersistenceBootstrapService delegate;
@@ -66,7 +66,7 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
             final @NotNull PublishService publishService,
             final @NotNull InternalPublishService internalPublishService,
             final @NotNull AssetProviderRegistryImpl assetProviderRegistry,
-            final @NotNull PulseDatapointPublisherImpl pulseDatapointPublisher,
+            final @NotNull PulseMessagePublisherImpl pulseMessagePublisher,
             final @NotNull StatusFactoryImpl statusFactory,
             final @NotNull AssetFactoryImpl assetFactory) {
         this.delegate = delegate;
@@ -77,7 +77,7 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
         this.publishService = publishService;
         this.internalPublishService = internalPublishService;
         this.assetProviderRegistry = assetProviderRegistry;
-        this.pulseDatapointPublisher = pulseDatapointPublisher;
+        this.pulseMessagePublisher = pulseMessagePublisher;
         this.statusFactory = statusFactory;
         this.assetFactory = assetFactory;
     }
@@ -158,8 +158,8 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     }
 
     @Override
-    public @NotNull PulseDatapointPublisher pulseDatapointPublisher() {
-        return pulseDatapointPublisher;
+    public @NotNull PulseMessagePublisher pulseMessagePublisher() {
+        return pulseMessagePublisher;
     }
 
     @Override

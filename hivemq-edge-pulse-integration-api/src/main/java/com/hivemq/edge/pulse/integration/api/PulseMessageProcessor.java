@@ -21,21 +21,21 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Processes incoming datapoints. Implemented by the Pulse Agent integration and registered with HiveMQ Edge so that
+ * Processes incoming messages. Implemented by the Pulse Agent integration and registered with HiveMQ Edge so that
  * each incoming publish is forwarded to the agent before being delivered.
  *
- * <p>The publish is always passed through unchanged — the implementation only observes the datapoint, it does not
+ * <p>The publish is always passed through unchanged — the implementation only observes the message, it does not
  * modify or drop it.
  */
-public interface PulseDatapointProcessor {
+public interface PulseMessageProcessor {
 
     /**
-     * @param datapoint the incoming datapoint
-     * @param sender    the MQTT client id of the sender, or {@code null} if unknown
-     * @param executor  an executor the implementation may use for asynchronous work
+     * @param message  the incoming message
+     * @param sender   the MQTT client id of the sender, or {@code null} if unknown
+     * @param executor an executor the implementation may use for asynchronous work
      * @return a future that completes when processing is finished
      */
     @NotNull
     CompletableFuture<Void> process(
-            @NotNull IncomingMessage datapoint, @Nullable String sender, @NotNull ExecutorService executor);
+            @NotNull IncomingMessage message, @Nullable String sender, @NotNull ExecutorService executor);
 }

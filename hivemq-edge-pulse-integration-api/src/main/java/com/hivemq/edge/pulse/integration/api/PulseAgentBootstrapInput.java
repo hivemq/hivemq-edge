@@ -48,9 +48,9 @@ public interface PulseAgentBootstrapInput {
     AssetFactory assetFactory();
 
     @NotNull
-    PulseDatapointPublisher pulseDatapointPublisher();
+    PulseMessagePublisher pulseMessagePublisher();
 
-    void supplyPulseDatapointProcessor(int prio, @NotNull PulseDatapointProcessor processor);
+    void supplyPulseMessageProcessor(int prio, @NotNull PulseMessageProcessor processor);
 
     void registerRestComponent(@NotNull Object component);
 

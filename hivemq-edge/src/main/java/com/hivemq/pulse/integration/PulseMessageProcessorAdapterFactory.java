@@ -21,7 +21,7 @@ import com.hivemq.bootstrap.factories.HandlerResult;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandling;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandlingFactory;
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.edge.pulse.integration.api.PulseDatapointProcessor;
+import com.hivemq.edge.pulse.integration.api.PulseMessageProcessor;
 import com.hivemq.mqtt.handler.connack.MqttConnacker;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.dropping.IncomingPublishDropper;
@@ -33,14 +33,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Adapts a {@link PulseDatapointProcessor} (the integration-api contract) to {@link PrePublishProcessorHandlingFactory}
+ * Adapts a {@link PulseMessageProcessor} (the integration-api contract) to {@link PrePublishProcessorHandlingFactory}
  * (the existing edge contract). The adapter always passes the publish through unchanged — Pulse only observes.
  */
-public final class PulseDatapointProcessorAdapterFactory implements PrePublishProcessorHandlingFactory {
+public final class PulseMessageProcessorAdapterFactory implements PrePublishProcessorHandlingFactory {
 
-    private final @NotNull PulseDatapointProcessor processor;
+    private final @NotNull PulseMessageProcessor processor;
 
-    public PulseDatapointProcessorAdapterFactory(final @NotNull PulseDatapointProcessor processor) {
+    public PulseMessageProcessorAdapterFactory(final @NotNull PulseMessageProcessor processor) {
         this.processor = processor;
     }
 
@@ -56,9 +56,9 @@ public final class PulseDatapointProcessorAdapterFactory implements PrePublishPr
 
     private static final class PassThroughHandling implements PrePublishProcessorHandling {
 
-        private final @NotNull PulseDatapointProcessor processor;
+        private final @NotNull PulseMessageProcessor processor;
 
-        private PassThroughHandling(final @NotNull PulseDatapointProcessor processor) {
+        private PassThroughHandling(final @NotNull PulseMessageProcessor processor) {
             this.processor = processor;
         }
 

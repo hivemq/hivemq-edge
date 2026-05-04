@@ -19,23 +19,23 @@ import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Publishes datapoints produced by the Pulse Agent integration back to the HiveMQ Edge broker.
+ * Publishes messages produced by the Pulse Agent integration back to the HiveMQ Edge broker.
  *
  * <p>Provided by HiveMQ Edge to the Pulse Agent integration; never implemented by integration code.
  */
-public interface PulseDatapointPublisher {
+public interface PulseMessagePublisher {
 
     /**
-     * Starts building a datapoint for the given topic and payload. Add user properties (if any) and call
-     * {@link OutgoingDatapointBuilder#publish()} to send it.
+     * Starts building a message for the given topic and payload. Add user properties (if any) and call
+     * {@link OutgoingMessageBuilder#publish()} to send it.
      */
     @NotNull
-    OutgoingDatapointBuilder newDatapoint(@NotNull String topic, byte @NotNull [] payload);
+    OutgoingMessageBuilder newMessage(@NotNull String topic, byte @NotNull [] payload);
 
-    interface OutgoingDatapointBuilder {
+    interface OutgoingMessageBuilder {
 
         @NotNull
-        OutgoingDatapointBuilder addUserProperty(@NotNull String name, @NotNull String value);
+        OutgoingMessageBuilder addUserProperty(@NotNull String name, @NotNull String value);
 
         @NotNull
         CompletableFuture<Void> publish();

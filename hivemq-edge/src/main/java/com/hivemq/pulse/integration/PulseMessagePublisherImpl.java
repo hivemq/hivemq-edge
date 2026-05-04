@@ -16,7 +16,7 @@
 package com.hivemq.pulse.integration;
 
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.edge.pulse.integration.api.PulseDatapointPublisher;
+import com.hivemq.edge.pulse.integration.api.PulseMessagePublisher;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.services.builder.PublishBuilder;
 import com.hivemq.extension.sdk.api.services.publish.PublishService;
@@ -26,20 +26,20 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
 
-public final class PulseDatapointPublisherImpl implements PulseDatapointPublisher {
+public final class PulseMessagePublisherImpl implements PulseMessagePublisher {
 
     private final @NotNull PublishService publishService;
     private final @NotNull ConfigurationService configurationService;
 
     @Inject
-    public PulseDatapointPublisherImpl(
+    public PulseMessagePublisherImpl(
             final @NotNull PublishService publishService, final @NotNull ConfigurationService configurationService) {
         this.publishService = publishService;
         this.configurationService = configurationService;
     }
 
     @Override
-    public @NotNull OutgoingDatapointBuilder newDatapoint(final @NotNull String topic, final byte @NotNull [] payload) {
+    public @NotNull OutgoingMessageBuilder newMessage(final @NotNull String topic, final byte @NotNull [] payload) {
         final PublishBuilder builder = new PublishBuilderImpl(configurationService)
                 .qos(Qos.AT_LEAST_ONCE)
                 .topic(topic)
@@ -47,7 +47,7 @@ public final class PulseDatapointPublisherImpl implements PulseDatapointPublishe
         return new BuilderImpl(builder);
     }
 
-    private final class BuilderImpl implements OutgoingDatapointBuilder {
+    private final class BuilderImpl implements OutgoingMessageBuilder {
 
         private final @NotNull PublishBuilder publishBuilder;
 
@@ -56,7 +56,7 @@ public final class PulseDatapointPublisherImpl implements PulseDatapointPublishe
         }
 
         @Override
-        public @NotNull OutgoingDatapointBuilder addUserProperty(
+        public @NotNull OutgoingMessageBuilder addUserProperty(
                 final @NotNull String name, final @NotNull String value) {
             publishBuilder.userProperty(name, value);
             return this;
