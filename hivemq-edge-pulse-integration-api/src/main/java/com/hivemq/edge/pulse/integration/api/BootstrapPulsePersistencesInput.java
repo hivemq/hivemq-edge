@@ -15,14 +15,15 @@
  */
 package com.hivemq.edge.pulse.integration.api;
 
-import com.hivemq.configuration.info.SystemInformation;
+import java.io.File;
 import java.util.Map;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
- * Context handed to {@link PulseAgentBootstrap#bootstrapPulsePersistences(BootstrapPulsePersistencesInput)}. Exposes
- * the services the Pulse Agent integration needs from HiveMQ Edge during the persistence bootstrap phase.
+ * Context handed to {@link PulseAgentBootstrap#bootstrapPulsePersistences(BootstrapPulsePersistencesInput, BootstrapPulsePersistencesOutput)}.
+ * Exposes the services the Pulse Agent integration needs from HiveMQ Edge during the persistence bootstrap phase.
  */
 public interface BootstrapPulsePersistencesInput {
 
@@ -32,8 +33,11 @@ public interface BootstrapPulsePersistencesInput {
         FILE
     }
 
-    @NotNull
-    SystemInformation systemInformation();
+    @Nullable
+    File dataFolder();
+
+    @Nullable
+    File pulseTokenFolder();
 
     @NotNull
     Mode persistenceMode();
