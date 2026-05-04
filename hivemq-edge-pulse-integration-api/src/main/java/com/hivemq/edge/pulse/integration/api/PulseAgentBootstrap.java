@@ -26,7 +26,7 @@ public interface PulseAgentBootstrap {
     /**
      * Called during the persistence bootstrap phase. The integration may set up persistence-related state here.
      */
-    void bootstrapPulsePersistences(@NotNull PulseAgentPersistenceRuntime runtime);
+    void bootstrapPulsePersistences(@NotNull BootstrapPulsePersistencesInput runtime);
 
     /**
      * Called after persistence bootstrap is complete. The integration may register processors, listeners, and
@@ -37,7 +37,7 @@ public interface PulseAgentBootstrap {
 
     /**
      * Called by HiveMQ Edge during shutdown. Implementations should release any resources
-     * acquired during {@link #bootstrapPulsePersistences(PulseAgentPersistenceRuntime)} and
+     * acquired during {@link #bootstrapPulsePersistences(BootstrapPulsePersistencesInput)} and
      * {@link #afterPersistenceBootstrap(PulseAgentBootstrapInput, PulseAgentBootstrapOutput)}.
      */
     void shutdown();

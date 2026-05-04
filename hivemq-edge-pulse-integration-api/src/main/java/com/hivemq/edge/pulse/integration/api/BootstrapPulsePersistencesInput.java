@@ -21,10 +21,10 @@ import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Context handed to {@link PulseAgentBootstrap#bootstrapPulsePersistences(PulseAgentPersistenceRuntime)}. Exposes the
- * services the Pulse Agent integration needs from HiveMQ Edge during the persistence bootstrap phase.
+ * Context handed to {@link PulseAgentBootstrap#bootstrapPulsePersistences(BootstrapPulsePersistencesInput)}. Exposes
+ * the services the Pulse Agent integration needs from HiveMQ Edge during the persistence bootstrap phase.
  */
-public interface PulseAgentPersistenceRuntime {
+public interface BootstrapPulsePersistencesInput {
 
     enum Mode {
         IN_MEMORY,
