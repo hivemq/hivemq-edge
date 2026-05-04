@@ -16,11 +16,12 @@
 package com.hivemq.edge.pulse.integration.api;
 
 import com.codahale.metrics.MetricRegistry;
-import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.pulse.asset.AssetFactory;
 import com.hivemq.pulse.asset.AssetProviderRegistry;
 import com.hivemq.pulse.status.StatusFactory;
+import java.io.File;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Context handed to {@link PulseAgentBootstrap#bootstrapPulseAgent(PulseAgentBootstrapInput, PulseAgentBootstrapOutput)}.
@@ -31,8 +32,11 @@ public interface PulseAgentBootstrapInput {
     @NotNull
     MetricRegistry metricRegistry();
 
-    @NotNull
-    SystemInformation systemInformation();
+    @Nullable
+    File configFolder();
+
+    @Nullable
+    String hiveMQVersion();
 
     @NotNull
     AssetProviderRegistry assetProviderRegistry();
