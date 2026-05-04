@@ -836,7 +836,7 @@ public class ProtocolAdapterWrapper {
     // ===== Adapter Invocation Helpers =====
 
     /**
-     * Invoke {@link ProtocolAdapter#start(ProtocolAdapterConnectionDirection, ProtocolAdapterStartInput, ProtocolAdapterStartOutput)}
+     * Invoke {@link ProtocolAdapter#start(ProtocolAdapterConnectionDirection, com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput, com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput)}
      * and block until the adapter signals success or failure via the output callbacks.
      *
      * @param direction the connection direction (northbound or southbound)
@@ -864,7 +864,7 @@ public class ProtocolAdapterWrapper {
     }
 
     /**
-     * Invoke {@link ProtocolAdapter#stop(ProtocolAdapterConnectionDirection, ProtocolAdapterStopInput, ProtocolAdapterStopOutput)}
+     * Invoke {@link ProtocolAdapter#stop(ProtocolAdapterConnectionDirection, com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput, com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput)}
      * and block until the adapter signals success or failure via the output callbacks.
      *
      * @param direction the connection direction (northbound or southbound)
@@ -915,9 +915,9 @@ public class ProtocolAdapterWrapper {
                 notifyProtocolAdapterStateChangeListeners(fromState, state);
             }
             case Failure ->
-                LOGGER.warn(
+                LOGGER.error(
                         "Protocol adapter '{}' failed to transition from {} to {}.", getAdapterId(), fromState, state);
-            case NotChanged -> LOGGER.warn("Protocol adapter '{}' state {} is unchanged.", getAdapterId(), state);
+            case NotChanged -> LOGGER.info("Protocol adapter '{}' state {} is unchanged.", getAdapterId(), state);
         }
         return response;
     }
@@ -980,7 +980,7 @@ public class ProtocolAdapterWrapper {
                         fromState,
                         northboundConnectionState);
             case NotChanged ->
-                LOGGER.warn(
+                LOGGER.info(
                         "Protocol adapter '{}' northbound connection state {} is unchanged.",
                         getAdapterId(),
                         northboundConnectionState);
@@ -994,7 +994,7 @@ public class ProtocolAdapterWrapper {
             try {
                 listener.onStateChanged(fromState, toState);
             } catch (final Exception e) {
-                LOGGER.warn(
+                LOGGER.error(
                         "State change listener threw exception for adapter '{}' ({} → {}).",
                         getAdapterId(),
                         fromState,
