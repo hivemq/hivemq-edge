@@ -230,7 +230,7 @@ public class HiveMQEdgeBootstrap {
 
         try {
             commercialModuleLoaderDiscovery.completeBootstrap(
-                    injector.completeBootstrapService(), injector.pulseManagementHolder());
+                    injector.completeBootstrapService(), injector.pulseManagementHolder()::set);
         } catch (final Exception e) {
             log.warn("Error on bootstraping persistences.", e);
             throw new HiveMQEdgeStartupException(e);

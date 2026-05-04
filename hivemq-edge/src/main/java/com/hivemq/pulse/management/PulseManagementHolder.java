@@ -16,7 +16,6 @@
 package com.hivemq.pulse.management;
 
 import com.hivemq.edge.HiveMQCapabilityService;
-import com.hivemq.edge.pulse.integration.api.PulseAgentBootstrapOutput;
 import com.hivemq.edge.pulse.integration.api.PulseManagement;
 import com.hivemq.pulse.status.PulseAgentStatusChangedListener;
 import jakarta.inject.Inject;
@@ -26,12 +25,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Edge-side {@link PulseAgentBootstrapOutput} sink that captures the {@link PulseManagement} produced by the Pulse
- * Agent integration during {@code afterPersistenceBootstrap} and exposes it to other Edge components (e.g. the REST
- * API).
+ * Edge-side holder for the {@link PulseManagement} produced by the Pulse Agent integration during
+ * {@code afterPersistenceBootstrap}. Other Edge components (e.g. the REST API) read it via {@link #get()}; the
+ * commercial-modules loader publishes it via {@link #set(PulseManagement)}.
  */
 @Singleton
-public class PulseManagementHolder implements PulseAgentBootstrapOutput {
+public class PulseManagementHolder {
 
     private final @NotNull AtomicReference<PulseManagement> managementRef = new AtomicReference<>();
     private final @NotNull PulseAgentStatusChangedListener edgeListener;
@@ -41,8 +40,7 @@ public class PulseManagementHolder implements PulseAgentBootstrapOutput {
         this.edgeListener = new PulseAgentStatusChangedListener(capabilityService);
     }
 
-    @Override
-    public void success(final @NotNull PulseManagement pulseManagement) {
+    public void set(final @NotNull PulseManagement pulseManagement) {
         pulseManagement.addStatusChangedListener(edgeListener);
         managementRef.set(pulseManagement);
     }

@@ -19,7 +19,8 @@ import com.hivemq.bootstrap.services.AfterHiveMQStartBootstrapService;
 import com.hivemq.bootstrap.services.CompleteBootstrapService;
 import com.hivemq.bootstrap.services.GeneralBootstrapService;
 import com.hivemq.bootstrap.services.PersistenceBootstrapService;
-import com.hivemq.edge.pulse.integration.api.PulseAgentBootstrapOutput;
+import com.hivemq.edge.pulse.integration.api.PulseManagement;
+import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 
 public interface ModuleLoaderMain {
@@ -30,7 +31,7 @@ public interface ModuleLoaderMain {
 
     void afterPersistenceBootstrap(
             @NotNull CompleteBootstrapService completeBootstrapService,
-            @NotNull PulseAgentBootstrapOutput pulseAgentBootstrapOutput);
+            @NotNull Consumer<PulseManagement> pulseManagementSink);
 
     void afterHiveMQStart(@NotNull AfterHiveMQStartBootstrapService afterHiveMQStartBootstrapService);
 }
