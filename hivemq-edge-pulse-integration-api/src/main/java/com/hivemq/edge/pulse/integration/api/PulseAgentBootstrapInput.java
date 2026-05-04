@@ -20,14 +20,13 @@ import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.pulse.asset.AssetFactory;
 import com.hivemq.pulse.asset.AssetProviderRegistry;
 import com.hivemq.pulse.status.StatusFactory;
-import com.hivemq.pulse.status.StatusProviderRegistry;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Context handed to {@link PulseAgentBootstrap#afterPersistenceBootstrap(PulseAgentRuntime)}. Exposes the services
- * the Pulse Agent integration needs from HiveMQ Edge after persistence bootstrap is complete.
+ * Context handed to {@link PulseAgentBootstrap#afterPersistenceBootstrap(PulseAgentBootstrapInput, PulseAgentBootstrapOutput)}.
+ * Exposes the services the Pulse Agent integration needs from HiveMQ Edge after persistence bootstrap is complete.
  */
-public interface PulseAgentRuntime {
+public interface PulseAgentBootstrapInput {
 
     @NotNull
     MetricRegistry metricRegistry();
@@ -37,9 +36,6 @@ public interface PulseAgentRuntime {
 
     @NotNull
     AssetProviderRegistry assetProviderRegistry();
-
-    @NotNull
-    StatusProviderRegistry statusProviderRegistry();
 
     @NotNull
     StatusFactory statusFactory();

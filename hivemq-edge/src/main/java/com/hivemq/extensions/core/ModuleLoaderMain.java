@@ -19,6 +19,7 @@ import com.hivemq.bootstrap.services.AfterHiveMQStartBootstrapService;
 import com.hivemq.bootstrap.services.CompleteBootstrapService;
 import com.hivemq.bootstrap.services.GeneralBootstrapService;
 import com.hivemq.bootstrap.services.PersistenceBootstrapService;
+import com.hivemq.edge.pulse.integration.api.PulseAgentBootstrapOutput;
 import org.jetbrains.annotations.NotNull;
 
 public interface ModuleLoaderMain {
@@ -27,7 +28,9 @@ public interface ModuleLoaderMain {
 
     void persistenceBootstrap(@NotNull PersistenceBootstrapService coreModuleService);
 
-    void afterPersistenceBootstrap(@NotNull CompleteBootstrapService completeBootstrapService);
+    void afterPersistenceBootstrap(
+            @NotNull CompleteBootstrapService completeBootstrapService,
+            @NotNull PulseAgentBootstrapOutput pulseAgentBootstrapOutput);
 
     void afterHiveMQStart(@NotNull AfterHiveMQStartBootstrapService afterHiveMQStartBootstrapService);
 }

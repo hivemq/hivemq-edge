@@ -25,7 +25,6 @@ import com.hivemq.mqtt.services.InternalPublishService;
 import com.hivemq.pulse.asset.AssetFactory;
 import com.hivemq.pulse.asset.AssetProviderRegistry;
 import com.hivemq.pulse.status.StatusFactory;
-import com.hivemq.pulse.status.StatusProviderRegistry;
 import org.jetbrains.annotations.NotNull;
 
 public interface CompleteBootstrapService extends PersistenceBootstrapService {
@@ -54,9 +53,6 @@ public interface CompleteBootstrapService extends PersistenceBootstrapService {
 
     @NotNull
     AssetProviderRegistry assetProviderRegistry();
-
-    @NotNull
-    StatusProviderRegistry statusProviderRegistry();
 
     @NotNull
     PulseDatapointPublisher pulseDatapointPublisher();

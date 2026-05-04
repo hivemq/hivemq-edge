@@ -21,6 +21,7 @@ import com.hivemq.bootstrap.services.CompleteBootstrapService;
 import com.hivemq.bootstrap.services.GeneralBootstrapService;
 import com.hivemq.bootstrap.services.PersistenceBootstrapService;
 import com.hivemq.edge.modules.ModuleLoader;
+import com.hivemq.edge.pulse.integration.api.PulseAgentBootstrapOutput;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -64,9 +65,11 @@ public class CommercialModuleLoaderDiscovery {
         }
     }
 
-    public void completeBootstrap(final @NotNull CompleteBootstrapService completeBootstrapService) {
+    public void completeBootstrap(
+            final @NotNull CompleteBootstrapService completeBootstrapService,
+            final @NotNull PulseAgentBootstrapOutput pulseAgentBootstrapOutput) {
         if (instance != null) {
-            instance.afterPersistenceBootstrap(completeBootstrapService);
+            instance.afterPersistenceBootstrap(completeBootstrapService, pulseAgentBootstrapOutput);
         }
     }
 

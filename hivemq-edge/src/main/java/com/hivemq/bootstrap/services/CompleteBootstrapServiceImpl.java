@@ -37,8 +37,6 @@ import com.hivemq.pulse.asset.AssetProviderRegistryImpl;
 import com.hivemq.pulse.integration.PulseDatapointPublisherImpl;
 import com.hivemq.pulse.status.StatusFactory;
 import com.hivemq.pulse.status.StatusFactoryImpl;
-import com.hivemq.pulse.status.StatusProviderRegistry;
-import com.hivemq.pulse.status.StatusProviderRegistryImpl;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
@@ -53,7 +51,6 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     private final @NotNull PublishService publishService;
     private final @NotNull InternalPublishService internalPublishService;
     private final @NotNull AssetProviderRegistry assetProviderRegistry;
-    private final @NotNull StatusProviderRegistry statusProviderRegistry;
     private final @NotNull PulseDatapointPublisher pulseDatapointPublisher;
     private final @NotNull StatusFactory statusFactory;
     private final @NotNull AssetFactory assetFactory;
@@ -69,7 +66,6 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
             final @NotNull PublishService publishService,
             final @NotNull InternalPublishService internalPublishService,
             final @NotNull AssetProviderRegistryImpl assetProviderRegistry,
-            final @NotNull StatusProviderRegistryImpl statusProviderRegistry,
             final @NotNull PulseDatapointPublisherImpl pulseDatapointPublisher,
             final @NotNull StatusFactoryImpl statusFactory,
             final @NotNull AssetFactoryImpl assetFactory) {
@@ -81,7 +77,6 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
         this.publishService = publishService;
         this.internalPublishService = internalPublishService;
         this.assetProviderRegistry = assetProviderRegistry;
-        this.statusProviderRegistry = statusProviderRegistry;
         this.pulseDatapointPublisher = pulseDatapointPublisher;
         this.statusFactory = statusFactory;
         this.assetFactory = assetFactory;
@@ -160,11 +155,6 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     @Override
     public @NotNull AssetProviderRegistry assetProviderRegistry() {
         return assetProviderRegistry;
-    }
-
-    @Override
-    public @NotNull StatusProviderRegistry statusProviderRegistry() {
-        return statusProviderRegistry;
     }
 
     @Override

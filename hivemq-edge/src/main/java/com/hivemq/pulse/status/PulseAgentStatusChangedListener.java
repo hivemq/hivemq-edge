@@ -17,10 +17,11 @@ package com.hivemq.pulse.status;
 
 import com.hivemq.api.model.capabilities.Capability;
 import com.hivemq.edge.HiveMQCapabilityService;
+import com.hivemq.edge.pulse.integration.api.PulseManagement;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
-public class PulseAgentStatusChangedListener implements StatusProvider.StatusChangedListener {
+public class PulseAgentStatusChangedListener implements PulseManagement.StatusChangedListener {
     private static final @NotNull Capability CAPABILITY = new Capability(
             "pulse-asset-management",
             "HiveMQ Pulse Agent Asset Management",

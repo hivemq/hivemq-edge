@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.pulse.status;
+package com.hivemq.edge.pulse.integration.api;
 
-import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
-public interface StatusProviderRegistry {
+/**
+ * Sink supplied by HiveMQ Edge to receive the constructed {@link PulseManagement} once
+ * {@link PulseAgentBootstrap#afterPersistenceBootstrap(PulseAgentBootstrapInput, PulseAgentBootstrapOutput)} has
+ * completed successfully.
+ */
+public interface PulseAgentBootstrapOutput {
 
-    void registerStatusProvider(@NotNull StatusProvider statusProvider);
-
-    @NotNull
-    Set<StatusProvider> getStatusProviders();
+    void success(@NotNull PulseManagement pulseManagement);
 }
