@@ -21,13 +21,13 @@ import com.hivemq.mqtt.message.publish.PUBLISH;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
-final class PublishIncomingMessageView implements IncomingMessage {
+final class PublishIncomingMessageImpl implements IncomingMessage {
 
     private static final byte @NotNull [] EMPTY_PAYLOAD = new byte[0];
 
     private final @NotNull PUBLISH delegate;
 
-    PublishIncomingMessageView(final @NotNull PUBLISH delegate) {
+    PublishIncomingMessageImpl(final @NotNull PUBLISH delegate) {
         this.delegate = delegate;
     }
 

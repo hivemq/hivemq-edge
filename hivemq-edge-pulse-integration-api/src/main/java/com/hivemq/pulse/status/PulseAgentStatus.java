@@ -18,6 +18,8 @@ package com.hivemq.pulse.status;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
+// TODO DISCUSS: This is a every general concept that should be in a more general api, not in the special pulse api
+
 public interface Status {
 
     enum ActivationStatus {
