@@ -904,9 +904,9 @@ public class ProtocolAdapterWrapper {
             final @NotNull ProtocolAdapterRuntimeState newState) {
         final ProtocolAdapterRuntimeState fromState = state;
         final ProtocolAdapterTransitionResponse response = fromState.transition(newState);
-        state = response.toState();
         switch (response.status()) {
             case Success -> {
+                state = response.toState();
                 LOGGER.debug(
                         "Protocol adapter '{}' transitioned from {} to {} successfully.",
                         getAdapterId(),
@@ -916,7 +916,10 @@ public class ProtocolAdapterWrapper {
             }
             case Failure ->
                 LOGGER.error(
-                        "Protocol adapter '{}' failed to transition from {} to {}.", getAdapterId(), fromState, state);
+                        "Protocol adapter '{}' failed to transition from {} to {}.",
+                        getAdapterId(),
+                        response.fromState(),
+                        response.toState());
             case NotChanged -> LOGGER.info("Protocol adapter '{}' state {} is unchanged.", getAdapterId(), state);
         }
         return response;
@@ -932,22 +935,23 @@ public class ProtocolAdapterWrapper {
             final @NotNull ProtocolAdapterConnectionState newState) {
         final ProtocolAdapterConnectionState fromState = southboundConnectionState;
         final ProtocolAdapterConnectionTransitionResponse response = fromState.transition(newState);
-        southboundConnectionState = response.toState();
         switch (response.status()) {
-            case Success ->
+            case Success -> {
+                southboundConnectionState = response.toState();
                 LOGGER.debug(
                         "Protocol adapter '{}' southbound connection transitioned from {} to {} successfully.",
                         getAdapterId(),
                         fromState,
                         southboundConnectionState);
+            }
             case Failure ->
                 LOGGER.error(
                         "Protocol adapter '{}' southbound connection failed to transition from {} to {}.",
                         getAdapterId(),
-                        fromState,
-                        southboundConnectionState);
+                        response.fromState(),
+                        response.toState());
             case NotChanged ->
-                LOGGER.warn(
+                LOGGER.info(
                         "Protocol adapter '{}' southbound connection state {} is unchanged.",
                         getAdapterId(),
                         southboundConnectionState);
@@ -965,20 +969,21 @@ public class ProtocolAdapterWrapper {
             final @NotNull ProtocolAdapterConnectionState newState) {
         final ProtocolAdapterConnectionState fromState = northboundConnectionState;
         final ProtocolAdapterConnectionTransitionResponse response = fromState.transition(newState);
-        northboundConnectionState = response.toState();
         switch (response.status()) {
-            case Success ->
+            case Success -> {
+                northboundConnectionState = response.toState();
                 LOGGER.debug(
                         "Protocol adapter '{}' northbound connection transitioned from {} to {} successfully.",
                         getAdapterId(),
                         fromState,
                         northboundConnectionState);
+            }
             case Failure ->
                 LOGGER.error(
                         "Protocol adapter '{}' northbound connection failed to transition from {} to {}.",
                         getAdapterId(),
-                        fromState,
-                        northboundConnectionState);
+                        response.fromState(),
+                        response.toState());
             case NotChanged ->
                 LOGGER.info(
                         "Protocol adapter '{}' northbound connection state {} is unchanged.",
