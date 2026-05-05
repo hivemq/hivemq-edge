@@ -18,6 +18,9 @@ package com.hivemq.pulse.asset;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+// TODO DISCUSS: This is a every general concept that should be in a more general api, not in the special pulse api
+
+
 /**
  * Represents an asset with an id, topic, name, description, and JSON schema.
  */

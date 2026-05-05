@@ -18,6 +18,8 @@ package com.hivemq.edge.pulse.integration.api;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
+// TODO DISCUSS: This is a every general concept that should be in a more general api, not in the special pulse api
+
 /**
  * A read-only view of an incoming MQTT publish handed to the Pulse Agent integration.
  */
