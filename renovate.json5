@@ -8,7 +8,7 @@
         'renovate-playground',
     ],
     useBaseBranchConfig: 'merge',
-    branchPrefix: 'renovate/hivemq-edge/',
+    branchPrefix: 'renovate/',
     addLabels: [
         'edge-team',
     ],
