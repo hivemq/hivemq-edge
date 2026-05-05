@@ -18,13 +18,13 @@ package com.hivemq.pulse.status;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
-public class StatusImpl implements Status {
+public class PulseAgentStatusImpl implements PulseAgentStatus {
 
     private final @NotNull ActivationStatus activationStatus;
     private final @NotNull ConnectionStatus connectionStatus;
     private final @NotNull List<String> errorMessages;
 
-    public StatusImpl(
+    public PulseAgentStatusImpl(
             final @NotNull ActivationStatus activationStatus,
             final @NotNull ConnectionStatus connectionStatus,
             final @NotNull List<String> errorMessages) {

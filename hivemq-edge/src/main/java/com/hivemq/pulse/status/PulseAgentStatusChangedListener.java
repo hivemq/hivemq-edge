@@ -27,22 +27,22 @@ public class PulseAgentStatusChangedListener implements PulseManagement.StatusCh
             "HiveMQ Pulse Agent Asset Management",
             "This enables HiveMQ Edge to be a HiveMQ Pulse Agent.");
     private final @NotNull HiveMQCapabilityService capabilityService;
-    private @NotNull Status status;
+    private @NotNull PulseAgentStatus status;
 
     public PulseAgentStatusChangedListener(final @NotNull HiveMQCapabilityService capabilityService) {
         this.capabilityService = capabilityService;
         this.status =
-                new StatusImpl(Status.ActivationStatus.DEACTIVATED, Status.ConnectionStatus.DISCONNECTED, List.of());
+                new PulseAgentStatusImpl(PulseAgentStatus.ActivationStatus.DEACTIVATED, PulseAgentStatus.ConnectionStatus.DISCONNECTED, List.of());
     }
 
-    public @NotNull Status getStatus() {
+    public @NotNull PulseAgentStatus getStatus() {
         return status;
     }
 
     @Override
-    public void onStatusChanged(@NotNull final Status status) {
+    public void onStatusChanged(@NotNull final PulseAgentStatus status) {
         this.status = status;
-        if (this.status.activationStatus() == Status.ActivationStatus.ACTIVATED) {
+        if (this.status.activationStatus() == PulseAgentStatus.ActivationStatus.ACTIVATED) {
             capabilityService.addCapability(CAPABILITY);
         } else {
             capabilityService.removeCapability(CAPABILITY);

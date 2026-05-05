@@ -27,8 +27,8 @@ import com.hivemq.combining.vanilla.VanillaDataCombiningTransformationService;
 import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.mqtt.services.PrePublishProcessorService;
 import com.hivemq.pulse.status.PulseAgentStatusChangedListener;
-import com.hivemq.pulse.status.Status;
-import com.hivemq.pulse.status.StatusImpl;
+import com.hivemq.pulse.status.PulseAgentStatus;
+import com.hivemq.pulse.status.PulseAgentStatusImpl;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -64,7 +64,7 @@ public class DataCombiningTransformationServiceProviderTest {
         edgeCoreFactoryService.provideDataCombiningTransformationServiceFactory(
                 dataCombiningTransformationServiceFactory);
         statusChangedListener.onStatusChanged(
-                status(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED));
+                status(PulseAgentStatus.ActivationStatus.ACTIVATED, PulseAgentStatus.ConnectionStatus.CONNECTED));
         assertThat(edgeCoreFactoryService.getDataCombiningTransformationServiceFactory())
                 .isEqualTo(dataCombiningTransformationServiceFactory);
         assertThat(dataCombiningTransformationServiceProvider.get())
@@ -74,7 +74,7 @@ public class DataCombiningTransformationServiceProviderTest {
     @Test
     void whenPulseIsActivatedAndDataHubIsDeactivated_thenDataCombiningTransformationServiceIsVanilla() {
         statusChangedListener.onStatusChanged(
-                status(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED));
+                status(PulseAgentStatus.ActivationStatus.ACTIVATED, PulseAgentStatus.ConnectionStatus.CONNECTED));
         assertThat(edgeCoreFactoryService.getDataCombiningTransformationServiceFactory())
                 .isNull();
         assertThat(dataCombiningTransformationServiceProvider.get())
@@ -86,7 +86,7 @@ public class DataCombiningTransformationServiceProviderTest {
         edgeCoreFactoryService.provideDataCombiningTransformationServiceFactory(
                 dataCombiningTransformationServiceFactory);
         statusChangedListener.onStatusChanged(
-                status(Status.ActivationStatus.DEACTIVATED, Status.ConnectionStatus.DISCONNECTED));
+                status(PulseAgentStatus.ActivationStatus.DEACTIVATED, PulseAgentStatus.ConnectionStatus.DISCONNECTED));
         assertThat(edgeCoreFactoryService.getDataCombiningTransformationServiceFactory())
                 .isEqualTo(dataCombiningTransformationServiceFactory);
         assertThat(dataCombiningTransformationServiceProvider.get()).isEqualTo(dataCombiningTransformationService);
@@ -95,14 +95,14 @@ public class DataCombiningTransformationServiceProviderTest {
     @Test
     void whenPulseIsDeactivatedAndDataHubIsDeactivated_thenDataCombiningTransformationServiceIsVanilla() {
         statusChangedListener.onStatusChanged(
-                status(Status.ActivationStatus.DEACTIVATED, Status.ConnectionStatus.DISCONNECTED));
+                status(PulseAgentStatus.ActivationStatus.DEACTIVATED, PulseAgentStatus.ConnectionStatus.DISCONNECTED));
         assertThat(edgeCoreFactoryService.getDataCombiningTransformationServiceFactory())
                 .isNull();
         assertThat(dataCombiningTransformationServiceProvider.get())
                 .isInstanceOf(VanillaDataCombiningTransformationService.class);
     }
 
-    private static Status status(final Status.ActivationStatus activation, final Status.ConnectionStatus connection) {
-        return new StatusImpl(activation, connection, List.of());
+    private static PulseAgentStatus status(final PulseAgentStatus.ActivationStatus activation, final PulseAgentStatus.ConnectionStatus connection) {
+        return new PulseAgentStatusImpl(activation, connection, List.of());
     }
 }

@@ -17,26 +17,26 @@ package com.hivemq.pulse.converters;
 
 import com.hivemq.configuration.entity.EntityConverter;
 import com.hivemq.edge.api.model.PulseStatus;
-import com.hivemq.pulse.status.Status;
+import com.hivemq.pulse.status.PulseAgentStatus;
 import org.jetbrains.annotations.NotNull;
 
 public final class PulseAgentActivationStatusConverter
-        implements EntityConverter<PulseStatus.ActivationEnum, Status.ActivationStatus> {
+        implements EntityConverter<PulseStatus.ActivationEnum, PulseAgentStatus.ActivationStatus> {
     public static final PulseAgentActivationStatusConverter INSTANCE = new PulseAgentActivationStatusConverter();
 
     private PulseAgentActivationStatusConverter() {}
 
     @Override
-    public @NotNull Status.ActivationStatus toInternalEntity(final @NotNull PulseStatus.ActivationEnum status) {
+    public @NotNull PulseAgentStatus.ActivationStatus toInternalEntity(final @NotNull PulseStatus.ActivationEnum status) {
         return switch (status) {
-            case ACTIVATED -> Status.ActivationStatus.ACTIVATED;
-            case DEACTIVATED -> Status.ActivationStatus.DEACTIVATED;
-            default -> Status.ActivationStatus.ERROR;
+            case ACTIVATED -> PulseAgentStatus.ActivationStatus.ACTIVATED;
+            case DEACTIVATED -> PulseAgentStatus.ActivationStatus.DEACTIVATED;
+            default -> PulseAgentStatus.ActivationStatus.ERROR;
         };
     }
 
     @Override
-    public @NotNull PulseStatus.ActivationEnum toRestEntity(final @NotNull Status.ActivationStatus status) {
+    public @NotNull PulseStatus.ActivationEnum toRestEntity(final @NotNull PulseAgentStatus.ActivationStatus status) {
         return switch (status) {
             case ACTIVATED -> PulseStatus.ActivationEnum.ACTIVATED;
             case DEACTIVATED -> PulseStatus.ActivationEnum.DEACTIVATED;

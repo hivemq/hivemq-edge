@@ -66,7 +66,7 @@ import com.hivemq.pulse.converters.PulseAgentAssetsConverter;
 import com.hivemq.pulse.converters.PulseAgentStatusConverter;
 import com.hivemq.edge.pulse.integration.api.PulseManagement;
 import com.hivemq.pulse.management.PulseManagementHolder;
-import com.hivemq.pulse.status.Status;
+import com.hivemq.pulse.status.PulseAgentStatus;
 import com.hivemq.pulse.utils.PulseAgentAssetUtils;
 import com.hivemq.util.ErrorResponseUtil;
 import jakarta.inject.Inject;
@@ -311,7 +311,7 @@ public class PulseApiImpl implements PulseApi {
             return ErrorResponseUtil.errorResponse(new InternalServerError(null));
         }
         final PulseManagement pulseManagement = optionalPulseManagement.get();
-        if (pulseManagement.getStatus().activationStatus() == Status.ActivationStatus.DEACTIVATED) {
+        if (pulseManagement.getStatus().activationStatus() == PulseAgentStatus.ActivationStatus.DEACTIVATED) {
             return ErrorResponseUtil.errorResponse(new ActivationTokenAlreadyDeletedError());
         }
         try {
@@ -410,7 +410,7 @@ public class PulseApiImpl implements PulseApi {
             return ErrorResponseUtil.errorResponse(new InternalServerError(null));
         }
         final PulseManagement pulseManagement = optionalPulseManagement.get();
-        final Status status = pulseManagement.getStatus();
+        final PulseAgentStatus status = pulseManagement.getStatus();
         final PulseStatus pulseStatus = PulseAgentStatusConverter.INSTANCE.toRestEntity(status);
         return Response.ok(pulseStatus).build();
     }

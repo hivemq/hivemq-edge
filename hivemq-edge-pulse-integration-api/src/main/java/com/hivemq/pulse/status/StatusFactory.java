@@ -19,20 +19,20 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Constructs {@link Status} instances. Provided by HiveMQ Edge to consumers that need to publish status updates
- * but should not depend on the concrete {@code Status} implementation.
+ * Constructs {@link PulseAgentStatus} instances. Provided by HiveMQ Edge to consumers that need to publish status updates
+ * but should not depend on the concrete {@code PulseAgentStatus} implementation.
  */
 public interface StatusFactory {
 
     @NotNull
-    Status create(
-            @NotNull Status.ActivationStatus activationStatus,
-            @NotNull Status.ConnectionStatus connectionStatus,
+    PulseAgentStatus create(
+            @NotNull PulseAgentStatus.ActivationStatus activationStatus,
+            @NotNull PulseAgentStatus.ConnectionStatus connectionStatus,
             @NotNull List<String> errorMessages);
 
-    default @NotNull Status create(
-            final @NotNull Status.ActivationStatus activationStatus,
-            final @NotNull Status.ConnectionStatus connectionStatus) {
+    default @NotNull PulseAgentStatus create(
+            final @NotNull PulseAgentStatus.ActivationStatus activationStatus,
+            final @NotNull PulseAgentStatus.ConnectionStatus connectionStatus) {
         return create(activationStatus, connectionStatus, List.of());
     }
 }

@@ -17,26 +17,26 @@ package com.hivemq.pulse.converters;
 
 import com.hivemq.configuration.entity.EntityConverter;
 import com.hivemq.edge.api.model.PulseStatus;
-import com.hivemq.pulse.status.Status;
-import com.hivemq.pulse.status.StatusImpl;
+import com.hivemq.pulse.status.PulseAgentStatus;
+import com.hivemq.pulse.status.PulseAgentStatusImpl;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
-public class PulseAgentStatusConverter implements EntityConverter<PulseStatus, Status> {
+public class PulseAgentStatusConverter implements EntityConverter<PulseStatus, PulseAgentStatus> {
     public static final PulseAgentStatusConverter INSTANCE = new PulseAgentStatusConverter();
 
     private PulseAgentStatusConverter() {}
 
     @Override
-    public @NotNull Status toInternalEntity(final @NotNull PulseStatus pulseStatus) {
-        return new StatusImpl(
+    public @NotNull PulseAgentStatus toInternalEntity(final @NotNull PulseStatus pulseStatus) {
+        return new PulseAgentStatusImpl(
                 PulseAgentActivationStatusConverter.INSTANCE.toInternalEntity(pulseStatus.getActivation()),
                 PulseAgentConnectionStatusConverter.INSTANCE.toInternalEntity(pulseStatus.getRuntime()),
                 List.of());
     }
 
     @Override
-    public @NotNull PulseStatus toRestEntity(final @NotNull Status status) {
+    public @NotNull PulseStatus toRestEntity(final @NotNull PulseAgentStatus status) {
         return PulseStatus.builder()
                 .activation(PulseAgentActivationStatusConverter.INSTANCE.toRestEntity(status.activationStatus()))
                 .runtime(PulseAgentConnectionStatusConverter.INSTANCE.toRestEntity(status.connectionStatus()))

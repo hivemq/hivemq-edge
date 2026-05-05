@@ -23,8 +23,8 @@ import com.hivemq.api.errors.InternalServerError;
 import com.hivemq.api.errors.pulse.ActivationTokenInvalidError;
 import com.hivemq.api.errors.pulse.PulseAgentDeactivatedError;
 import com.hivemq.edge.api.model.PulseActivationToken;
-import com.hivemq.pulse.status.Status;
-import com.hivemq.pulse.status.StatusImpl;
+import com.hivemq.pulse.status.PulseAgentStatus;
+import com.hivemq.pulse.status.PulseAgentStatusImpl;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -56,8 +56,8 @@ public class PulseApiImplUpdatePulseActivationTokenTest extends AbstractPulseApi
     public void whenTokenIsValidAndStatusIsActivate_thenReturnsOK() {
         when(statusProvider.activatePulse(anyString())).thenReturn(true);
         when(statusProvider.getStatus())
-                .thenReturn(new StatusImpl(
-                        Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
+                .thenReturn(new PulseAgentStatusImpl(
+                        PulseAgentStatus.ActivationStatus.ACTIVATED, PulseAgentStatus.ConnectionStatus.CONNECTED, List.of()));
         try (final Response response = pulseApi.updatePulseActivationToken(new PulseActivationToken("1234567890"))) {
             assertThat(response.getStatus()).isEqualTo(200);
         }
@@ -67,8 +67,8 @@ public class PulseApiImplUpdatePulseActivationTokenTest extends AbstractPulseApi
     public void whenTokenIsValidAndStatusIsDeactivate_thenReturnsPulseAgentDeactivatedError() {
         when(statusProvider.activatePulse(anyString())).thenReturn(true);
         when(statusProvider.getStatus())
-                .thenReturn(new StatusImpl(
-                        Status.ActivationStatus.DEACTIVATED, Status.ConnectionStatus.DISCONNECTED, List.of()));
+                .thenReturn(new PulseAgentStatusImpl(
+                        PulseAgentStatus.ActivationStatus.DEACTIVATED, PulseAgentStatus.ConnectionStatus.DISCONNECTED, List.of()));
         try (final Response response = pulseApi.updatePulseActivationToken(new PulseActivationToken("1234567890"))) {
             assertThat(response.getStatus()).isEqualTo(400);
             assertThat(response.getEntity()).isInstanceOf(PulseAgentDeactivatedError.class);
@@ -79,7 +79,7 @@ public class PulseApiImplUpdatePulseActivationTokenTest extends AbstractPulseApi
     public void whenTokenIsValidAndStatusIsError_thenReturnsInternalServerError() {
         when(statusProvider.activatePulse(anyString())).thenReturn(true);
         when(statusProvider.getStatus())
-                .thenReturn(new StatusImpl(Status.ActivationStatus.ERROR, Status.ConnectionStatus.ERROR, List.of()));
+                .thenReturn(new PulseAgentStatusImpl(PulseAgentStatus.ActivationStatus.ERROR, PulseAgentStatus.ConnectionStatus.ERROR, List.of()));
         try (final Response response = pulseApi.updatePulseActivationToken(new PulseActivationToken("1234567890"))) {
             assertThat(response.getStatus()).isEqualTo(500);
             assertThat(response.getEntity()).isInstanceOf(InternalServerError.class);

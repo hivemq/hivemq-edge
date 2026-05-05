@@ -17,27 +17,27 @@ package com.hivemq.pulse.converters;
 
 import com.hivemq.configuration.entity.EntityConverter;
 import com.hivemq.edge.api.model.PulseStatus;
-import com.hivemq.pulse.status.Status;
+import com.hivemq.pulse.status.PulseAgentStatus;
 import org.jetbrains.annotations.NotNull;
 
 public final class PulseAgentConnectionStatusConverter
-        implements EntityConverter<PulseStatus.RuntimeEnum, Status.ConnectionStatus> {
+        implements EntityConverter<PulseStatus.RuntimeEnum, PulseAgentStatus.ConnectionStatus> {
     public static final PulseAgentConnectionStatusConverter INSTANCE = new PulseAgentConnectionStatusConverter();
 
     private PulseAgentConnectionStatusConverter() {}
 
     @Override
-    public @NotNull Status.ConnectionStatus toInternalEntity(final @NotNull PulseStatus.RuntimeEnum status) {
+    public @NotNull PulseAgentStatus.ConnectionStatus toInternalEntity(final @NotNull PulseStatus.RuntimeEnum status) {
         return switch (status) {
-            case CONNECTED -> Status.ConnectionStatus.CONNECTED;
-            case DISCONNECTED -> Status.ConnectionStatus.DISCONNECTED;
-            case ERROR -> Status.ConnectionStatus.ERROR;
+            case CONNECTED -> PulseAgentStatus.ConnectionStatus.CONNECTED;
+            case DISCONNECTED -> PulseAgentStatus.ConnectionStatus.DISCONNECTED;
+            case ERROR -> PulseAgentStatus.ConnectionStatus.ERROR;
             default -> throw new IllegalArgumentException("Unknown pulse connection status " + status);
         };
     }
 
     @Override
-    public @NotNull PulseStatus.RuntimeEnum toRestEntity(final @NotNull Status.ConnectionStatus status) {
+    public @NotNull PulseStatus.RuntimeEnum toRestEntity(final @NotNull PulseAgentStatus.ConnectionStatus status) {
         return switch (status) {
             case CONNECTED -> PulseStatus.RuntimeEnum.CONNECTED;
             case DISCONNECTED -> PulseStatus.RuntimeEnum.DISCONNECTED;

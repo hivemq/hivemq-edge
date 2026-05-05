@@ -15,7 +15,7 @@
  */
 package com.hivemq.edge.pulse.integration.api;
 
-import com.hivemq.pulse.status.Status;
+import com.hivemq.pulse.status.PulseAgentStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -25,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
 public interface PulseManagement {
 
     @NotNull
-    Status getStatus();
+    PulseAgentStatus getStatus();
 
     /**
      * Adds a listener that will be notified when the status changes. Will be called once with the current state
@@ -51,6 +51,6 @@ public interface PulseManagement {
     void deactivatePulse();
 
     interface StatusChangedListener {
-        void onStatusChanged(@NotNull Status status);
+        void onStatusChanged(@NotNull PulseAgentStatus status);
     }
 }

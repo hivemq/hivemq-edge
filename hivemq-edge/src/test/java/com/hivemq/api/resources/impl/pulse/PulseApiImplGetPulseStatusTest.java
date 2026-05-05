@@ -22,8 +22,8 @@ import static org.mockito.Mockito.when;
 import com.hivemq.edge.api.model.PulseStatus;
 import com.hivemq.pulse.converters.PulseAgentActivationStatusConverter;
 import com.hivemq.pulse.converters.PulseAgentConnectionStatusConverter;
-import com.hivemq.pulse.status.Status;
-import com.hivemq.pulse.status.StatusImpl;
+import com.hivemq.pulse.status.PulseAgentStatus;
+import com.hivemq.pulse.status.PulseAgentStatusImpl;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.stream.Stream;
@@ -34,16 +34,16 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class PulseApiImplGetPulseStatusTest extends AbstractPulseApiImplTest {
     protected static @NotNull Stream<Arguments> statusProvider() {
-        return Stream.of(Status.ActivationStatus.values())
-                .flatMap(color -> Stream.of(Status.ConnectionStatus.values()).map(shape -> arguments(color, shape)));
+        return Stream.of(PulseAgentStatus.ActivationStatus.values())
+                .flatMap(color -> Stream.of(PulseAgentStatus.ConnectionStatus.values()).map(shape -> arguments(color, shape)));
     }
 
     @ParameterizedTest
     @MethodSource("statusProvider")
     public void whenAllKindsOfStatusAreProvided_thenReturnsStatus(
-            final @NotNull Status.ActivationStatus activationStatus,
-            final @NotNull Status.ConnectionStatus connectionStatus) {
-        when(statusProvider.getStatus()).thenReturn(new StatusImpl(activationStatus, connectionStatus, List.of()));
+            final @NotNull PulseAgentStatus.ActivationStatus activationStatus,
+            final @NotNull PulseAgentStatus.ConnectionStatus connectionStatus) {
+        when(statusProvider.getStatus()).thenReturn(new PulseAgentStatusImpl(activationStatus, connectionStatus, List.of()));
         try (final Response response = pulseApi.getPulseStatus()) {
             assertThat(response.getStatus()).isEqualTo(200);
             assertThat(response.getEntity()).isInstanceOf(PulseStatus.class);
