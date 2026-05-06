@@ -16,7 +16,7 @@
 package com.hivemq.pulse.integration;
 
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.edge.pulse.integration.api.message.PulseMessagePublisher;
+import com.hivemq.edge.integration.api.message.MessagePublisher;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.services.builder.PublishBuilder;
 import com.hivemq.extension.sdk.api.services.publish.PublishService;
@@ -26,7 +26,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
 
-public final class PulseMessagePublisherImpl implements PulseMessagePublisher {
+public final class PulseMessagePublisherImpl implements MessagePublisher {
 
     private final @NotNull PublishService publishService;
     private final @NotNull ConfigurationService configurationService;

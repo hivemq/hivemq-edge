@@ -13,37 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.pulse.integration.api.message;
+package com.hivemq.edge.integration.api.asset;
 
-import java.util.List;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-// TODO DISCUSS: This is a every general concept that should be in a more general api, not in the special pulse api
 
 /**
- * A read-only view of an incoming MQTT publish handed to the Pulse Agent integration.
+ * Represents an asset with an id, topic, name, description, and JSON schema.
  */
-public interface IncomingMessage {
+public interface Asset {
+
+    @NotNull
+    String id();
 
     @NotNull
     String topic();
 
-    byte @NotNull [] payload();
+    @NotNull
+    String name();
+
+    @Nullable
+    String description();
 
     @NotNull
-    String uniqueId();
-
-    long timestamp();
-
-    @NotNull
-    List<UserProperty> userProperties();
-
-    interface UserProperty {
-
-        @NotNull
-        String name();
-
-        @NotNull
-        String value();
-    }
+    String jsonSchema();
 }

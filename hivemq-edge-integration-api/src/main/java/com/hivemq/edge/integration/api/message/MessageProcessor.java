@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.pulse.integration.api.message;
+package com.hivemq.edge.integration.api.message;
 
+import com.hivemq.edge.integration.api.message.IncomingMessage;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import org.jetbrains.annotations.NotNull;
@@ -27,7 +28,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>The publish is always passed through unchanged — the implementation only observes the message, it does not
  * modify or drop it.
  */
-public interface PulseMessageProcessor {
+public interface MessageProcessor {
 
     /**
      * @param message  the incoming message

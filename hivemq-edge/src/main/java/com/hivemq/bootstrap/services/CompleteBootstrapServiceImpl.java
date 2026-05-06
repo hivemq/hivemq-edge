@@ -23,14 +23,14 @@ import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQCapabilityService;
-import com.hivemq.edge.pulse.integration.api.message.PulseMessagePublisher;
+import com.hivemq.edge.integration.api.message.MessagePublisher;
 import com.hivemq.extension.sdk.api.services.publish.PublishService;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.extensions.core.RestComponentsService;
 import com.hivemq.mqtt.services.InternalPublishService;
 import com.hivemq.persistence.connection.ConnectionPersistence;
-import com.hivemq.edge.pulse.integration.api.asset.AssetProviderRegistry;
+import com.hivemq.edge.integration.api.asset.AssetProviderRegistry;
 import com.hivemq.pulse.asset.AssetProviderRegistryImpl;
 import com.hivemq.pulse.integration.PulseMessagePublisherImpl;
 import jakarta.inject.Inject;
@@ -47,7 +47,7 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     private final @NotNull PublishService publishService;
     private final @NotNull InternalPublishService internalPublishService;
     private final @NotNull AssetProviderRegistry assetProviderRegistry;
-    private final @NotNull PulseMessagePublisher pulseMessagePublisher;
+    private final @NotNull MessagePublisher pulseMessagePublisher;
     private final @NotNull PersistenceBootstrapService delegate;
 
     @Inject
@@ -148,7 +148,7 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     }
 
     @Override
-    public @NotNull PulseMessagePublisher pulseMessagePublisher() {
+    public @NotNull MessagePublisher pulseMessagePublisher() {
         return pulseMessagePublisher;
     }
 

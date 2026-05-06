@@ -21,7 +21,7 @@ import com.hivemq.bootstrap.factories.HandlerResult;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandling;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandlingFactory;
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.edge.pulse.integration.api.message.PulseMessageProcessor;
+import com.hivemq.edge.integration.api.message.MessageProcessor;
 import com.hivemq.mqtt.handler.connack.MqttConnacker;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.dropping.IncomingPublishDropper;
@@ -33,14 +33,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Adapts a {@link PulseMessageProcessor} (the integration-api contract) to {@link PrePublishProcessorHandlingFactory}
+ * Adapts a {@link MessageProcessor} (the integration-api contract) to {@link PrePublishProcessorHandlingFactory}
  * (the existing edge contract). The adapter always passes the publish through unchanged — Pulse only observes.
  */
 public final class PulseMessageProcessorAdapterFactory implements PrePublishProcessorHandlingFactory {
 
-    private final @NotNull PulseMessageProcessor processor;
+    private final @NotNull MessageProcessor processor;
 
-    public PulseMessageProcessorAdapterFactory(final @NotNull PulseMessageProcessor processor) {
+    public PulseMessageProcessorAdapterFactory(final @NotNull MessageProcessor processor) {
         this.processor = processor;
     }
 
@@ -56,9 +56,9 @@ public final class PulseMessageProcessorAdapterFactory implements PrePublishProc
 
     private static final class PassThroughHandling implements PrePublishProcessorHandling {
 
-        private final @NotNull PulseMessageProcessor processor;
+        private final @NotNull MessageProcessor processor;
 
-        private PassThroughHandling(final @NotNull PulseMessageProcessor processor) {
+        private PassThroughHandling(final @NotNull MessageProcessor processor) {
             this.processor = processor;
         }
 
@@ -72,7 +72,7 @@ public final class PulseMessageProcessorAdapterFactory implements PrePublishProc
             final SettableFuture<HandlerResult> resultFuture = SettableFuture.create();
             try {
                 processor
-                        .process(new PublishIncomingMessageImpl(originalPublish), sender, executorService)
+                        .process(new IncomingMessageImpl(originalPublish), sender, executorService)
                         .whenCompleteAsync(
                                 (ignored, throwable) -> {
                                     if (throwable != null) {

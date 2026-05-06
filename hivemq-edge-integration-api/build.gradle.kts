@@ -20,16 +20,14 @@ plugins {
 }
 
 group = "com.hivemq"
-description = "API surface that hivemq-edge implements and the Pulse Agent integration consumes, so the integration does not need to depend on hivemq-edge internals."
+description = "General edge integration API surface — types shared by all integrations (assets, messages) that consumers can depend on without pulling in integration-specific contracts."
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    api(libs.hivemq.edge.integration.api)
     compileOnly("org.jetbrains:annotations:26.0.2")
-    compileOnly(libs.dropwizard.metrics)
 }
 
 java {

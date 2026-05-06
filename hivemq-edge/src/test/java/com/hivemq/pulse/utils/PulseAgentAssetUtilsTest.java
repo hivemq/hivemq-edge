@@ -32,7 +32,7 @@ import com.hivemq.configuration.entity.pulse.PulseAssetMappingStatus;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
 import com.hivemq.configuration.reader.AssetMappingExtractor;
 import com.hivemq.configuration.reader.PulseExtractor;
-import com.hivemq.edge.pulse.integration.api.asset.Asset;
+import com.hivemq.edge.integration.api.asset.Asset;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.IntStream;

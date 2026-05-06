@@ -24,7 +24,7 @@ import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.ModulesAndExtensionsService;
-import com.hivemq.edge.pulse.integration.api.message.PulseMessagePublisher;
+import com.hivemq.edge.integration.api.message.MessagePublisher;
 import com.hivemq.extension.sdk.api.services.publish.PublishService;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.extensions.core.PersistencesService;
@@ -32,7 +32,7 @@ import com.hivemq.extensions.core.RestComponentsService;
 import com.hivemq.mqtt.services.InternalPublishService;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.protocols.ProtocolAdapterManager;
-import com.hivemq.edge.pulse.integration.api.asset.AssetProviderRegistry;
+import com.hivemq.edge.integration.api.asset.AssetProviderRegistry;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
@@ -130,7 +130,7 @@ public class AfterHiveMQStartBootstrapServiceImpl implements AfterHiveMQStartBoo
     }
 
     @Override
-    public @NotNull PulseMessagePublisher pulseMessagePublisher() {
+    public @NotNull MessagePublisher pulseMessagePublisher() {
         return delegate.pulseMessagePublisher();
     }
 

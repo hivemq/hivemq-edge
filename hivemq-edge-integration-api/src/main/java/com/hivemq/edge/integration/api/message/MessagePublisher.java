@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.pulse.integration.api.message;
+package com.hivemq.edge.integration.api.message;
 
 import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
@@ -23,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * <p>Provided by HiveMQ Edge to the Pulse Agent integration; never implemented by integration code.
  */
-public interface PulseMessagePublisher {
+public interface MessagePublisher {
 
     /**
      * Starts building a message for the given topic and payload. Add user properties (if any) and call

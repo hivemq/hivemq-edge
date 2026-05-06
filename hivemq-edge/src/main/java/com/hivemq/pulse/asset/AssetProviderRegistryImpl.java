@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 package com.hivemq.pulse.asset;
-import com.hivemq.edge.pulse.integration.api.asset.AssetProviderRegistry;
-import com.hivemq.edge.pulse.integration.api.asset.ExternalAssetProvider;
+import com.hivemq.edge.integration.api.asset.AssetProviderRegistry;
+import com.hivemq.edge.integration.api.asset.ExternalAssetProvider;
 
 import com.hivemq.configuration.reader.AssetMappingExtractor;
 import com.hivemq.configuration.reader.PulseExtractor;

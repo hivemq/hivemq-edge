@@ -16,9 +16,9 @@
 package com.hivemq.edge.pulse.integration.api.bootstrap;
 
 import com.codahale.metrics.MetricRegistry;
-import com.hivemq.edge.pulse.integration.api.asset.AssetProviderRegistry;
-import com.hivemq.edge.pulse.integration.api.message.PulseMessageProcessor;
-import com.hivemq.edge.pulse.integration.api.message.PulseMessagePublisher;
+import com.hivemq.edge.integration.api.asset.AssetProviderRegistry;
+import com.hivemq.edge.integration.api.message.MessageProcessor;
+import com.hivemq.edge.integration.api.message.MessagePublisher;
 import java.io.File;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,9 +42,9 @@ public interface PulseAgentBootstrapInput {
     AssetProviderRegistry assetProviderRegistry();
 
     @NotNull
-    PulseMessagePublisher pulseMessagePublisher();
+    MessagePublisher pulseMessagePublisher();
 
-    void supplyPulseMessageProcessor(int prio, @NotNull PulseMessageProcessor processor);
+    void supplyPulseMessageProcessor(int prio, @NotNull MessageProcessor processor);
 
     void registerRestComponent(@NotNull Object component);
 

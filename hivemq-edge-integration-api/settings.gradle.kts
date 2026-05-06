@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-rootProject.name = "hivemq-edge-pulse-integration-api"
-
-includeBuild("../hivemq-edge-integration-api")
+rootProject.name = "hivemq-edge-integration-api"
 
 dependencyResolutionManagement {
     versionCatalogs {
