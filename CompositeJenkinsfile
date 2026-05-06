@@ -26,7 +26,6 @@ pipeline {
                             }
                         } finally {
                             cleanWs()
-                            build job: multiBranchJobPath, wait: false
                         }
                     }
                 }
