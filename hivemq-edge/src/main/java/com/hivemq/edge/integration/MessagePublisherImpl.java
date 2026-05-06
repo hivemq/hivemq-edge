@@ -39,7 +39,7 @@ public final class MessagePublisherImpl implements MessagePublisher {
     }
 
     @Override
-    public @NotNull OutgoingMessageBuilder newMessage(final @NotNull String topic, final byte @NotNull [] payload) {
+    public @NotNull MessageBuilder newMessage(final @NotNull String topic, final byte @NotNull [] payload) {
         final PublishBuilder builder = new PublishBuilderImpl(configurationService)
                 .qos(Qos.AT_LEAST_ONCE)
                 .topic(topic)
@@ -47,7 +47,7 @@ public final class MessagePublisherImpl implements MessagePublisher {
         return new BuilderImpl(builder);
     }
 
-    private final class BuilderImpl implements OutgoingMessageBuilder {
+    private final class BuilderImpl implements MessageBuilder {
 
         private final @NotNull PublishBuilder publishBuilder;
 
@@ -56,7 +56,7 @@ public final class MessagePublisherImpl implements MessagePublisher {
         }
 
         @Override
-        public @NotNull OutgoingMessageBuilder addUserProperty(
+        public @NotNull MessageBuilder addUserProperty(
                 final @NotNull String name, final @NotNull String value) {
             publishBuilder.userProperty(name, value);
             return this;

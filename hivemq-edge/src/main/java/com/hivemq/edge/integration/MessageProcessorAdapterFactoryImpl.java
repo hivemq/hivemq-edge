@@ -72,7 +72,7 @@ public final class MessageProcessorAdapterFactoryImpl implements PrePublishProce
             final SettableFuture<HandlerResult> resultFuture = SettableFuture.create();
             try {
                 processor
-                        .process(new IncomingMessageImpl(originalPublish), sender, executorService)
+                        .process(new MessageImpl(originalPublish), sender, executorService)
                         .whenCompleteAsync(
                                 (ignored, throwable) -> {
                                     if (throwable != null) {

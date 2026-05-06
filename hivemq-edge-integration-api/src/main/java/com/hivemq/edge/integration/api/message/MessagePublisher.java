@@ -27,15 +27,15 @@ public interface MessagePublisher {
 
     /**
      * Starts building a message for the given topic and payload. Add user properties (if any) and call
-     * {@link OutgoingMessageBuilder#publish()} to send it.
+     * {@link MessageBuilder#publish()} to send it.
      */
     @NotNull
-    OutgoingMessageBuilder newMessage(@NotNull String topic, byte @NotNull [] payload);
+    MessageBuilder newMessage(@NotNull String topic, byte @NotNull [] payload);
 
-    interface OutgoingMessageBuilder {
+    interface MessageBuilder {
 
         @NotNull
-        OutgoingMessageBuilder addUserProperty(@NotNull String name, @NotNull String value);
+        MessageBuilder addUserProperty(@NotNull String name, @NotNull String value);
 
         @NotNull
         CompletableFuture<Void> publish();

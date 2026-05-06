@@ -15,19 +15,19 @@
  */
 package com.hivemq.edge.integration;
 
-import com.hivemq.edge.integration.api.message.IncomingMessage;
+import com.hivemq.edge.integration.api.message.Message;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
-final class IncomingMessageImpl implements IncomingMessage {
+final class MessageImpl implements Message {
 
     private static final byte @NotNull [] EMPTY_PAYLOAD = new byte[0];
 
     private final @NotNull PUBLISH delegate;
 
-    IncomingMessageImpl(final @NotNull PUBLISH delegate) {
+    MessageImpl(final @NotNull PUBLISH delegate) {
         this.delegate = delegate;
     }
 

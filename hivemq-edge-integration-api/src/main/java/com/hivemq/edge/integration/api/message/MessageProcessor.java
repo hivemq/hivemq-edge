@@ -15,7 +15,7 @@
  */
 package com.hivemq.edge.integration.api.message;
 
-import com.hivemq.edge.integration.api.message.IncomingMessage;
+import com.hivemq.edge.integration.api.message.Message;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import org.jetbrains.annotations.NotNull;
@@ -38,5 +38,5 @@ public interface MessageProcessor {
      */
     @NotNull
     CompletableFuture<Void> process(
-            @NotNull IncomingMessage message, @Nullable String sender, @NotNull ExecutorService executor);
+            @NotNull Message message, @Nullable String sender, @NotNull ExecutorService executor);
 }
