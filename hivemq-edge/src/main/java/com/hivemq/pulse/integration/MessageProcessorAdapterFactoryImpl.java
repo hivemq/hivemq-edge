@@ -36,11 +36,11 @@ import org.jetbrains.annotations.Nullable;
  * Adapts a {@link MessageProcessor} (the integration-api contract) to {@link PrePublishProcessorHandlingFactory}
  * (the existing edge contract). The adapter always passes the publish through unchanged — Pulse only observes.
  */
-public final class PulseMessageProcessorAdapterFactory implements PrePublishProcessorHandlingFactory {
+public final class MessageProcessorAdapterFactoryImpl implements PrePublishProcessorHandlingFactory {
 
     private final @NotNull MessageProcessor processor;
 
-    public PulseMessageProcessorAdapterFactory(final @NotNull MessageProcessor processor) {
+    public MessageProcessorAdapterFactoryImpl(final @NotNull MessageProcessor processor) {
         this.processor = processor;
     }
 

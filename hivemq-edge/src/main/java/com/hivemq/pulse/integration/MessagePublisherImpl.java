@@ -26,13 +26,13 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
 
-public final class PulseMessagePublisherImpl implements MessagePublisher {
+public final class MessagePublisherImpl implements MessagePublisher {
 
     private final @NotNull PublishService publishService;
     private final @NotNull ConfigurationService configurationService;
 
     @Inject
-    public PulseMessagePublisherImpl(
+    public MessagePublisherImpl(
             final @NotNull PublishService publishService, final @NotNull ConfigurationService configurationService) {
         this.publishService = publishService;
         this.configurationService = configurationService;

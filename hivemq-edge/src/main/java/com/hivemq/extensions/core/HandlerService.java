@@ -18,7 +18,7 @@ package com.hivemq.extensions.core;
 import com.hivemq.bootstrap.factories.HandlerFactory;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandlingFactory;
 import com.hivemq.edge.integration.api.message.MessageProcessor;
-import com.hivemq.pulse.integration.PulseMessageProcessorAdapterFactory;
+import com.hivemq.pulse.integration.MessageProcessorAdapterFactoryImpl;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -61,7 +61,7 @@ public class HandlerService {
      * @param processor the processor implementation
      */
     public void supplyPulseMessageProcessor(final int prio, final @NotNull MessageProcessor processor) {
-        supplyPrePublishProcessorHandlingFactory(prio, new PulseMessageProcessorAdapterFactory(processor));
+        supplyPrePublishProcessorHandlingFactory(prio, new MessageProcessorAdapterFactoryImpl(processor));
     }
 
     public @Nullable HandlerFactory getHandlerFactory() {

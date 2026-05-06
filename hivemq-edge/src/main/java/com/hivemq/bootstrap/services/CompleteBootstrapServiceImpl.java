@@ -32,7 +32,7 @@ import com.hivemq.mqtt.services.InternalPublishService;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.edge.integration.api.asset.AssetProviderRegistry;
 import com.hivemq.pulse.asset.AssetProviderRegistryImpl;
-import com.hivemq.pulse.integration.PulseMessagePublisherImpl;
+import com.hivemq.pulse.integration.MessagePublisherImpl;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
@@ -60,7 +60,7 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
             final @NotNull PublishService publishService,
             final @NotNull InternalPublishService internalPublishService,
             final @NotNull AssetProviderRegistryImpl assetProviderRegistry,
-            final @NotNull PulseMessagePublisherImpl pulseMessagePublisher) {
+            final @NotNull MessagePublisherImpl pulseMessagePublisher) {
         this.delegate = delegate;
         this.persistences = persistences;
         this.restComponentsService = restComponentsService;
