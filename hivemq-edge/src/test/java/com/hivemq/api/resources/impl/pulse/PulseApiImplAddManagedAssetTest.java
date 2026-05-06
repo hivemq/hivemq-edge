@@ -30,12 +30,12 @@ import com.hivemq.edge.api.model.Combiner;
 import com.hivemq.edge.api.model.DataIdentifierReference;
 import com.hivemq.edge.api.model.EntityType;
 import com.hivemq.edge.api.model.ManagedAsset;
+import com.hivemq.edge.pulse.integration.api.management.PulseAgentStatus;
 import com.hivemq.pulse.asset.PulseAgentAsset;
 import com.hivemq.pulse.asset.PulseAgentAssetMapping;
 import com.hivemq.pulse.asset.PulseAgentAssetMappingStatus;
 import com.hivemq.pulse.converters.PulseAgentAssetConverter;
 import com.hivemq.pulse.converters.PulseAgentAssetMappingConverter;
-import com.hivemq.edge.pulse.integration.api.management.PulseAgentStatus;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.UUID;
@@ -48,8 +48,7 @@ import org.mockito.ArgumentCaptor;
 public class PulseApiImplAddManagedAssetTest extends AbstractPulseApiImplTest {
     @Test
     public void whenConfigNotWritable_thenReturnsConfigWritingDisabledError() {
-        when(statusProvider.getStatus())
-                .thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
         when(systemInformation.isConfigWriteable()).thenReturn(false);
         try (final Response response = pulseApi.addManagedAsset(ManagedAsset.builder()
                 .id(UUID.randomUUID())
@@ -68,8 +67,7 @@ public class PulseApiImplAddManagedAssetTest extends AbstractPulseApiImplTest {
 
     @Test
     public void whenMappingIdIsNull_thenReturnsInvalidManagedAssetMappingIdError() {
-        when(statusProvider.getStatus())
-                .thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of());
         try (final Response response = pulseApi.addManagedAsset(ManagedAsset.builder()
                 .id(UUID.randomUUID())
@@ -88,8 +86,7 @@ public class PulseApiImplAddManagedAssetTest extends AbstractPulseApiImplTest {
 
     @Test
     public void whenAssetDoesNotExist_thenReturnsManagedAssetNotFoundError() {
-        when(statusProvider.getStatus())
-                .thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of());
         try (final Response response = pulseApi.addManagedAsset(ManagedAsset.builder()
                 .id(UUID.randomUUID())
@@ -109,8 +106,7 @@ public class PulseApiImplAddManagedAssetTest extends AbstractPulseApiImplTest {
 
     @Test
     public void whenMappingIdExists_thenReturnsInvalidManagedAssetMappingIdError() {
-        when(statusProvider.getStatus())
-                .thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
         final UUID id = UUID.randomUUID();
         final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder()
                 .id(id)
@@ -133,8 +129,7 @@ public class PulseApiImplAddManagedAssetTest extends AbstractPulseApiImplTest {
 
     @Test
     public void whenAssetExistsAndMappingExists_thenReturnsManagedAssetAlreadyExistsError() {
-        when(statusProvider.getStatus())
-                .thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
         final UUID id = UUID.randomUUID();
         final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder()
                 .id(id)
@@ -159,8 +154,7 @@ public class PulseApiImplAddManagedAssetTest extends AbstractPulseApiImplTest {
     @EnumSource(PulseAgentAssetMappingStatus.class)
     public void whenAssetExistsAndMappingDoesNotExist_thenReturnsOK(
             final @NotNull PulseAgentAssetMappingStatus expectedStatus) {
-        when(statusProvider.getStatus())
-                .thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
         final UUID id = UUID.randomUUID();
         final UUID mappingId = UUID.randomUUID();
         final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder()

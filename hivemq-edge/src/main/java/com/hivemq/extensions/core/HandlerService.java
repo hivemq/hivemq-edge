@@ -17,8 +17,8 @@ package com.hivemq.extensions.core;
 
 import com.hivemq.bootstrap.factories.HandlerFactory;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandlingFactory;
-import com.hivemq.edge.integration.api.message.MessageProcessor;
 import com.hivemq.edge.integration.MessageProcessorAdapterFactoryImpl;
+import com.hivemq.edge.integration.api.message.MessageProcessor;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;

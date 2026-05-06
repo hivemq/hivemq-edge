@@ -51,14 +51,14 @@ public class PulseAgentStatusConverter implements EntityConverter<PulseStatus, P
     }
 
     private static @NotNull PulseAgentStatus.Status toStatus(
-            final @NotNull PulseStatus.ActivationEnum activation,
-            final @NotNull PulseStatus.RuntimeEnum runtime) {
+            final @NotNull PulseStatus.ActivationEnum activation, final @NotNull PulseStatus.RuntimeEnum runtime) {
         return switch (activation) {
-            case ACTIVATED -> switch (runtime) {
-                case CONNECTED -> PulseAgentStatus.Status.ACTIVATED_CONNECTED;
-                case DISCONNECTED -> PulseAgentStatus.Status.ACTIVATED_DISCONNECTED;
-                default -> PulseAgentStatus.Status.ERROR;
-            };
+            case ACTIVATED ->
+                switch (runtime) {
+                    case CONNECTED -> PulseAgentStatus.Status.ACTIVATED_CONNECTED;
+                    case DISCONNECTED -> PulseAgentStatus.Status.ACTIVATED_DISCONNECTED;
+                    default -> PulseAgentStatus.Status.ERROR;
+                };
             case DEACTIVATED -> PulseAgentStatus.Status.DEACTIVATED;
             default -> PulseAgentStatus.Status.ERROR;
         };

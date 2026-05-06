@@ -88,7 +88,8 @@ public class PulseAgentAssetUtilsTest {
 
     private Asset createRemoteAsset(final int index) {
         return asset(
-                "00000000-0000-0000-0000-" + "0".repeat(12 - String.valueOf(index).length()) + index,
+                "00000000-0000-0000-0000-"
+                        + "0".repeat(12 - String.valueOf(index).length()) + index,
                 "topic/asset/" + index,
                 "Name " + index,
                 "Description " + index,

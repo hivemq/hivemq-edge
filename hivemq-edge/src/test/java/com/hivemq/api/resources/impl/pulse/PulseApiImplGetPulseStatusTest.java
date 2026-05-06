@@ -41,7 +41,8 @@ public class PulseApiImplGetPulseStatusTest extends AbstractPulseApiImplTest {
         }
     }
 
-    private static @NotNull PulseStatus.ActivationEnum expectedActivation(final @NotNull PulseAgentStatus.Status status) {
+    private static @NotNull PulseStatus.ActivationEnum expectedActivation(
+            final @NotNull PulseAgentStatus.Status status) {
         return switch (status) {
             case ACTIVATED_CONNECTED, ACTIVATED_DISCONNECTED -> PulseStatus.ActivationEnum.ACTIVATED;
             case DEACTIVATED -> PulseStatus.ActivationEnum.DEACTIVATED;

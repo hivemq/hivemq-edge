@@ -23,10 +23,10 @@ import com.hivemq.api.errors.ConfigWritingDisabled;
 import com.hivemq.api.errors.pulse.AssetMapperReferencedError;
 import com.hivemq.api.errors.pulse.ManagedAssetNotFoundError;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
+import com.hivemq.edge.pulse.integration.api.management.PulseAgentStatus;
 import com.hivemq.pulse.asset.PulseAgentAsset;
 import com.hivemq.pulse.asset.PulseAgentAssetMapping;
 import com.hivemq.pulse.asset.PulseAgentAssetMappingStatus;
-import com.hivemq.edge.pulse.integration.api.management.PulseAgentStatus;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.Set;
@@ -37,8 +37,7 @@ import org.mockito.ArgumentCaptor;
 public class PulseApiImplDeleteManagedAssetTest extends AbstractPulseApiImplTest {
     @Test
     public void whenConfigNotWritable_thenReturnsConfigWritingDisabledError() {
-        when(statusProvider.getStatus())
-                .thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
         when(systemInformation.isConfigWriteable()).thenReturn(false);
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of());
         try (final Response response = pulseApi.deleteManagedAsset(UUID.randomUUID())) {
@@ -49,8 +48,7 @@ public class PulseApiImplDeleteManagedAssetTest extends AbstractPulseApiImplTest
 
     @Test
     public void whenAssetDoesNotExist_thenReturnsManagedAssetNotFoundError() {
-        when(statusProvider.getStatus())
-                .thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of());
         try (final Response response = pulseApi.deleteManagedAsset(UUID.randomUUID())) {
             assertThat(response.getStatus()).isEqualTo(404);
@@ -60,8 +58,7 @@ public class PulseApiImplDeleteManagedAssetTest extends AbstractPulseApiImplTest
 
     @Test
     public void whenAssetIsReferenced_thenReturnsAssetMapperReferencedError() {
-        when(statusProvider.getStatus())
-                .thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
         final UUID id = UUID.randomUUID();
         final UUID mappingId = UUID.randomUUID();
         final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder()
@@ -85,8 +82,7 @@ public class PulseApiImplDeleteManagedAssetTest extends AbstractPulseApiImplTest
 
     @Test
     public void whenAssetExistsButMappingDoesNotExist_thenReturnsOK() {
-        when(statusProvider.getStatus())
-                .thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
         final UUID id = UUID.randomUUID();
         final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder()
                 .id(id)
@@ -110,8 +106,7 @@ public class PulseApiImplDeleteManagedAssetTest extends AbstractPulseApiImplTest
 
     @Test
     public void whenAssetExistsAndMappingExists_thenReturnsOK() {
-        when(statusProvider.getStatus())
-                .thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
         final UUID id = UUID.randomUUID();
         final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder()
                 .id(id)

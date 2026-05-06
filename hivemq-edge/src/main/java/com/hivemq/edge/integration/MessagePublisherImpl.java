@@ -56,8 +56,7 @@ public final class MessagePublisherImpl implements MessagePublisher {
         }
 
         @Override
-        public @NotNull MessageBuilder addUserProperty(
-                final @NotNull String name, final @NotNull String value) {
+        public @NotNull MessageBuilder addUserProperty(final @NotNull String name, final @NotNull String value) {
             publishBuilder.userProperty(name, value);
             return this;
         }

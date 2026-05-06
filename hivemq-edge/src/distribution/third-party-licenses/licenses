@@ -9,16 +9,16 @@ HiveMQ Edge uses the following third party libraries:
  ch.qos.logback:logback-core                                                | 1.5.32                                    | EPL-2.0       | https://spdx.org/licenses/EPL-2.0.html
  com.ethlo.time:itu                                                         | 1.14.0                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  com.fasterxml.jackson.core:jackson-annotations                             | 2.21                                      | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- com.fasterxml.jackson.core:jackson-core                                    | 2.21.2                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- com.fasterxml.jackson.core:jackson-databind                                | 2.21.2                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- com.fasterxml.jackson.dataformat:jackson-dataformat-xml                    | 2.21.2                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- com.fasterxml.jackson.dataformat:jackson-dataformat-yaml                   | 2.21.2                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- com.fasterxml.jackson.datatype:jackson-datatype-jdk8                       | 2.21.2                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- com.fasterxml.jackson.datatype:jackson-datatype-jsr310                     | 2.21.2                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-base                   | 2.21.2                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-json-provider          | 2.21.2                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- com.fasterxml.jackson.module:jackson-module-jakarta-xmlbind-annotations    | 2.21.2                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- com.fasterxml.jackson:jackson-bom                                          | 2.21.2                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.fasterxml.jackson.core:jackson-core                                    | 2.21.3                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.fasterxml.jackson.core:jackson-databind                                | 2.21.3                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.fasterxml.jackson.dataformat:jackson-dataformat-xml                    | 2.21.3                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.fasterxml.jackson.dataformat:jackson-dataformat-yaml                   | 2.21.3                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.fasterxml.jackson.datatype:jackson-datatype-jdk8                       | 2.21.3                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.fasterxml.jackson.datatype:jackson-datatype-jsr310                     | 2.21.3                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-base                   | 2.21.3                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-json-provider          | 2.21.3                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.fasterxml.jackson.module:jackson-module-jakarta-xmlbind-annotations    | 2.21.3                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ com.fasterxml.jackson:jackson-bom                                          | 2.21.3                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  com.fasterxml.woodstox:woodstox-core                                       | 7.1.1                                     | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  com.fasterxml:classmate                                                    | 1.7.0                                     | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  com.github.simon622.mqtt-sn:mqtt-sn-codec                                  | 838f51d691                                | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
@@ -59,7 +59,7 @@ HiveMQ Edge uses the following third party libraries:
  io.netty:netty-transport                                                   | 4.2.12.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  io.netty:netty-transport-native-unix-common                                | 4.2.12.Final                              | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  io.reactivex.rxjava2:rxjava                                                | 2.2.21                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- io.swagger.core.v3:swagger-annotations                                     | 2.2.48                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
+ io.swagger.core.v3:swagger-annotations                                     | 2.2.49                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  io.swagger:swagger-annotations                                             | 1.6.16                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  io.swagger:swagger-core                                                    | 1.6.16                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
  io.swagger:swagger-jaxrs                                                   | 1.6.16                                    | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html

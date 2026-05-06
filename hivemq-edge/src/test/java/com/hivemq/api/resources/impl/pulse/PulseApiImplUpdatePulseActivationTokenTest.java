@@ -53,8 +53,7 @@ public class PulseApiImplUpdatePulseActivationTokenTest extends AbstractPulseApi
     @Test
     public void whenTokenIsValidAndStatusIsActivate_thenReturnsOK() {
         when(statusProvider.activatePulse(anyString())).thenReturn(true);
-        when(statusProvider.getStatus())
-                .thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
         try (final Response response = pulseApi.updatePulseActivationToken(new PulseActivationToken("1234567890"))) {
             assertThat(response.getStatus()).isEqualTo(200);
         }
@@ -63,8 +62,7 @@ public class PulseApiImplUpdatePulseActivationTokenTest extends AbstractPulseApi
     @Test
     public void whenTokenIsValidAndStatusIsDeactivate_thenReturnsPulseAgentDeactivatedError() {
         when(statusProvider.activatePulse(anyString())).thenReturn(true);
-        when(statusProvider.getStatus())
-                .thenReturn(pulseAgentStatus(PulseAgentStatus.Status.DEACTIVATED));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.DEACTIVATED));
         try (final Response response = pulseApi.updatePulseActivationToken(new PulseActivationToken("1234567890"))) {
             assertThat(response.getStatus()).isEqualTo(400);
             assertThat(response.getEntity()).isInstanceOf(PulseAgentDeactivatedError.class);
@@ -74,8 +72,7 @@ public class PulseApiImplUpdatePulseActivationTokenTest extends AbstractPulseApi
     @Test
     public void whenTokenIsValidAndStatusIsError_thenReturnsInternalServerError() {
         when(statusProvider.activatePulse(anyString())).thenReturn(true);
-        when(statusProvider.getStatus())
-                .thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ERROR));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ERROR));
         try (final Response response = pulseApi.updatePulseActivationToken(new PulseActivationToken("1234567890"))) {
             assertThat(response.getStatus()).isEqualTo(500);
             assertThat(response.getEntity()).isInstanceOf(InternalServerError.class);

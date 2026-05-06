@@ -29,8 +29,7 @@ import org.junit.jupiter.api.Test;
 public class PulseApiImplDeletePulseActivationTokenTest extends AbstractPulseApiImplTest {
     @Test
     public void whenStatusIsDeactivated_thenReturnsActivationTokenAlreadyDeletedError() {
-        when(statusProvider.getStatus())
-                .thenReturn(pulseAgentStatus(PulseAgentStatus.Status.DEACTIVATED));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.DEACTIVATED));
         try (final Response response = pulseApi.deletePulseActivationToken()) {
             assertThat(response.getStatus()).isEqualTo(409);
             assertThat(response.getEntity()).isInstanceOf(ActivationTokenAlreadyDeletedError.class);
@@ -39,8 +38,7 @@ public class PulseApiImplDeletePulseActivationTokenTest extends AbstractPulseApi
 
     @Test
     public void whenDeactivatePulseThrowsException_thenReturnsInternalServerError() {
-        when(statusProvider.getStatus())
-                .thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
         doThrow(new RuntimeException("Test exception")).when(statusProvider).deactivatePulse();
         try (final Response response = pulseApi.deletePulseActivationToken()) {
             assertThat(response.getStatus()).isEqualTo(500);
@@ -50,8 +48,7 @@ public class PulseApiImplDeletePulseActivationTokenTest extends AbstractPulseApi
 
     @Test
     public void whenStatusIsActivatedThenActivated_thenReturnsInternalServerError() {
-        when(statusProvider.getStatus())
-                .thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
         try (final Response response = pulseApi.deletePulseActivationToken()) {
             assertThat(response.getStatus()).isEqualTo(500);
             assertThat(response.getEntity()).isInstanceOf(InternalServerError.class);

@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 package com.hivemq.pulse.asset;
-import com.hivemq.edge.integration.api.asset.AssetProviderRegistry;
-import com.hivemq.edge.integration.api.asset.ExternalAssetProvider;
 
 import com.hivemq.configuration.reader.AssetMappingExtractor;
 import com.hivemq.configuration.reader.PulseExtractor;
+import com.hivemq.edge.integration.api.asset.AssetProviderRegistry;
+import com.hivemq.edge.integration.api.asset.ExternalAssetProvider;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Set;
