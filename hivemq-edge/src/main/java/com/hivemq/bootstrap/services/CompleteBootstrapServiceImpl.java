@@ -32,7 +32,7 @@ import com.hivemq.mqtt.services.InternalPublishService;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.edge.integration.api.asset.AssetProviderRegistry;
 import com.hivemq.pulse.asset.AssetProviderRegistryImpl;
-import com.hivemq.pulse.integration.MessagePublisherImpl;
+import com.hivemq.edge.integration.MessagePublisherImpl;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
