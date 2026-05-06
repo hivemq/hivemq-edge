@@ -66,6 +66,10 @@ public class CommercialModuleLoaderDiscovery {
             final @NotNull CompletableFuture<Void> pulsePersistencesResult) {
         if (instance != null) {
             instance.persistenceBootstrap(persistenceBootstrapService, pulsePersistencesResult);
+        } else {
+            // No commercial module loader on the classpath — there's nothing to bootstrap, signal completion
+            // so the edge waiter doesn't block.
+            pulsePersistencesResult.complete(null);
         }
     }
 
