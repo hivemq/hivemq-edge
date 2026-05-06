@@ -30,8 +30,6 @@ import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.extensions.core.RestComponentsService;
 import com.hivemq.mqtt.services.InternalPublishService;
 import com.hivemq.persistence.connection.ConnectionPersistence;
-import com.hivemq.edge.pulse.integration.api.asset.AssetFactory;
-import com.hivemq.pulse.asset.AssetFactoryImpl;
 import com.hivemq.edge.pulse.integration.api.asset.AssetProviderRegistry;
 import com.hivemq.pulse.asset.AssetProviderRegistryImpl;
 import com.hivemq.pulse.integration.PulseMessagePublisherImpl;
@@ -50,7 +48,6 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     private final @NotNull InternalPublishService internalPublishService;
     private final @NotNull AssetProviderRegistry assetProviderRegistry;
     private final @NotNull PulseMessagePublisher pulseMessagePublisher;
-    private final @NotNull AssetFactory assetFactory;
     private final @NotNull PersistenceBootstrapService delegate;
 
     @Inject
@@ -63,8 +60,7 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
             final @NotNull PublishService publishService,
             final @NotNull InternalPublishService internalPublishService,
             final @NotNull AssetProviderRegistryImpl assetProviderRegistry,
-            final @NotNull PulseMessagePublisherImpl pulseMessagePublisher,
-            final @NotNull AssetFactoryImpl assetFactory) {
+            final @NotNull PulseMessagePublisherImpl pulseMessagePublisher) {
         this.delegate = delegate;
         this.persistences = persistences;
         this.restComponentsService = restComponentsService;
@@ -74,7 +70,6 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
         this.internalPublishService = internalPublishService;
         this.assetProviderRegistry = assetProviderRegistry;
         this.pulseMessagePublisher = pulseMessagePublisher;
-        this.assetFactory = assetFactory;
     }
 
     @Override
@@ -155,11 +150,6 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     @Override
     public @NotNull PulseMessagePublisher pulseMessagePublisher() {
         return pulseMessagePublisher;
-    }
-
-    @Override
-    public @NotNull AssetFactory assetFactory() {
-        return assetFactory;
     }
 
     @Override

@@ -18,11 +18,47 @@ package com.hivemq.configuration.entity.pulse;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.hivemq.edge.pulse.integration.api.asset.Asset;
-import com.hivemq.pulse.asset.AssetImpl;
 import java.util.UUID;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 public class PulseAssetEntityTest {
+
+    private static @NotNull Asset asset(
+            final @NotNull String id,
+            final @NotNull String topic,
+            final @NotNull String name,
+            final @Nullable String description,
+            final @NotNull String jsonSchema) {
+        return new Asset() {
+            @Override
+            public @NotNull String id() {
+                return id;
+            }
+
+            @Override
+            public @NotNull String topic() {
+                return topic;
+            }
+
+            @Override
+            public @NotNull String name() {
+                return name;
+            }
+
+            @Override
+            public @Nullable String description() {
+                return description;
+            }
+
+            @Override
+            public @NotNull String jsonSchema() {
+                return jsonSchema;
+            }
+        };
+    }
+
     @Test
     public void whenAllPropertiesAreIdentical_thenEqualsReturnsTrue() {
         final PulseAssetEntity asset1 = PulseAssetEntity.builder()
@@ -33,7 +69,7 @@ public class PulseAssetEntityTest {
                 .schema("{ \"type\": \"object\" }")
                 .mapping(PulseAssetMappingEntity.builder().build())
                 .build();
-        final Asset asset2 = new AssetImpl(
+        final Asset asset2 = asset(
                 "123e4567-e89b-12d3-a456-426614174000",
                 "test/topic",
                 "Test Asset",
@@ -52,7 +88,7 @@ public class PulseAssetEntityTest {
                 .schema("{\"a\":1,\"b\":2}")
                 .mapping(PulseAssetMappingEntity.builder().build())
                 .build();
-        final Asset asset2 = new AssetImpl(
+        final Asset asset2 = asset(
                 "123e4567-e89b-12d3-a456-426614174000",
                 "test/topic",
                 "Test Asset",
@@ -71,7 +107,7 @@ public class PulseAssetEntityTest {
                 .schema("{\"a\":1,\"b\":2}")
                 .mapping(PulseAssetMappingEntity.builder().build())
                 .build();
-        final Asset asset2 = new AssetImpl(
+        final Asset asset2 = asset(
                 "123e4567-e89b-12d3-a456-426614174002",
                 "test/topic",
                 "Test Asset",
@@ -90,7 +126,7 @@ public class PulseAssetEntityTest {
                 .schema("{\"a\":1,\"b\":2}")
                 .mapping(PulseAssetMappingEntity.builder().build())
                 .build();
-        final Asset asset2 = new AssetImpl(
+        final Asset asset2 = asset(
                 "123e4567-e89b-12d3-a456-426614174000",
                 "test/topic",
                 "Test Asset 2",
@@ -109,7 +145,7 @@ public class PulseAssetEntityTest {
                 .schema("{\"a\":1,\"b\":2}")
                 .mapping(PulseAssetMappingEntity.builder().build())
                 .build();
-        final Asset asset2 = new AssetImpl(
+        final Asset asset2 = asset(
                 "123e4567-e89b-12d3-a456-426614174000",
                 "test/topic",
                 "Test Asset",
@@ -128,7 +164,7 @@ public class PulseAssetEntityTest {
                 .schema("{\"a\":1,\"b\":2}")
                 .mapping(PulseAssetMappingEntity.builder().build())
                 .build();
-        final Asset asset2 = new AssetImpl(
+        final Asset asset2 = asset(
                 "123e4567-e89b-12d3-a456-426614174000",
                 "test/topic/2",
                 "Test Asset",

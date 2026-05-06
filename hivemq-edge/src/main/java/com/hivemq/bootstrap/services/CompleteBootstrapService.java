@@ -22,7 +22,6 @@ import com.hivemq.extension.sdk.api.services.publish.PublishService;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.extensions.core.RestComponentsService;
 import com.hivemq.mqtt.services.InternalPublishService;
-import com.hivemq.edge.pulse.integration.api.asset.AssetFactory;
 import com.hivemq.edge.pulse.integration.api.asset.AssetProviderRegistry;
 import org.jetbrains.annotations.NotNull;
 
@@ -55,7 +54,4 @@ public interface CompleteBootstrapService extends PersistenceBootstrapService {
 
     @NotNull
     PulseMessagePublisher pulseMessagePublisher();
-
-    @NotNull
-    AssetFactory assetFactory();
 }

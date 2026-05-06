@@ -32,7 +32,6 @@ import com.hivemq.extensions.core.RestComponentsService;
 import com.hivemq.mqtt.services.InternalPublishService;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.protocols.ProtocolAdapterManager;
-import com.hivemq.edge.pulse.integration.api.asset.AssetFactory;
 import com.hivemq.edge.pulse.integration.api.asset.AssetProviderRegistry;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -133,11 +132,6 @@ public class AfterHiveMQStartBootstrapServiceImpl implements AfterHiveMQStartBoo
     @Override
     public @NotNull PulseMessagePublisher pulseMessagePublisher() {
         return delegate.pulseMessagePublisher();
-    }
-
-    @Override
-    public @NotNull AssetFactory assetFactory() {
-        return delegate.assetFactory();
     }
 
     @Override

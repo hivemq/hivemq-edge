@@ -16,7 +16,6 @@
 package com.hivemq.edge.pulse.integration.api.bootstrap;
 
 import com.codahale.metrics.MetricRegistry;
-import com.hivemq.edge.pulse.integration.api.asset.AssetFactory;
 import com.hivemq.edge.pulse.integration.api.asset.AssetProviderRegistry;
 import com.hivemq.edge.pulse.integration.api.message.PulseMessageProcessor;
 import com.hivemq.edge.pulse.integration.api.message.PulseMessagePublisher;
@@ -41,9 +40,6 @@ public interface PulseAgentBootstrapInput {
 
     @NotNull
     AssetProviderRegistry assetProviderRegistry();
-
-    @NotNull
-    AssetFactory assetFactory();
 
     @NotNull
     PulseMessagePublisher pulseMessagePublisher();
