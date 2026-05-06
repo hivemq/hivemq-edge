@@ -19,11 +19,23 @@ import com.hivemq.edge.pulse.integration.api.management.PulseManagement;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Sink supplied by HiveMQ Edge to receive the constructed {@link PulseManagement} once
- * {@link PulseAgentBootstrap#bootstrapPulseAgent(PulseAgentBootstrapInput, PulseAgentBootstrapOutput)} has
- * completed successfully.
+ * Sink supplied by HiveMQ Edge to receive the result of
+ * {@link PulseAgentBootstrap#bootstrapPulseAgent(PulseAgentBootstrapInput, PulseAgentBootstrapOutput)}.
+ * Implementations must call exactly one of {@link #success(PulseManagement)} or {@link #fatalFailure(Throwable)}.
  */
 public interface PulseAgentBootstrapOutput {
 
+    /**
+     * Signals that the agent bootstrap completed successfully and hands the constructed {@link PulseManagement}
+     * back to Edge.
+     */
     void success(@NotNull PulseManagement pulseManagement);
+
+    /**
+     * Signals that the agent bootstrap failed with an unrecoverable error. Edge will continue starting up
+     * without a Pulse Agent in this case; surface the failure to the operator via the Pulse REST API.
+     *
+     * @param cause the failure that prevented the agent from starting
+     */
+    void fatalFailure(@NotNull Throwable cause);
 }
