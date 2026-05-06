@@ -37,6 +37,7 @@ import com.hivemq.edge.api.model.EntityType;
 import com.hivemq.edge.api.model.Instruction;
 import com.hivemq.edge.pulse.integration.api.PulseManagement;
 import com.hivemq.pulse.management.PulseManagementHolder;
+import com.hivemq.pulse.status.PulseAgentStatus;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -79,6 +80,20 @@ public abstract class AbstractPulseApiImplTest {
     protected @NotNull PulseAssetsEntity pulseAssetsEntity;
 
     protected @NotNull PulseApi pulseApi;
+
+    protected static @NotNull PulseAgentStatus pulseAgentStatus(final @NotNull PulseAgentStatus.Status status) {
+        return new PulseAgentStatus() {
+            @Override
+            public @NotNull Status status() {
+                return status;
+            }
+
+            @Override
+            public @NotNull List<String> errorMessages() {
+                return List.of();
+            }
+        };
+    }
 
     protected static @NotNull Combiner createCombiner(
             final @NotNull EntityType entityType, final @NotNull DataIdentifierReference.TypeEnum type) {

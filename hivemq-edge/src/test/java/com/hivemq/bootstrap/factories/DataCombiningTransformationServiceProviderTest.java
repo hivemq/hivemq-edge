@@ -26,9 +26,8 @@ import com.hivemq.combining.mapping.DataCombiningTransformationService;
 import com.hivemq.combining.vanilla.VanillaDataCombiningTransformationService;
 import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.mqtt.services.PrePublishProcessorService;
-import com.hivemq.pulse.status.PulseAgentStatusChangedListener;
 import com.hivemq.pulse.status.PulseAgentStatus;
-import com.hivemq.pulse.status.PulseAgentStatusImpl;
+import com.hivemq.pulse.status.PulseAgentStatusChangedListener;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -102,7 +101,17 @@ public class DataCombiningTransformationServiceProviderTest {
                 .isInstanceOf(VanillaDataCombiningTransformationService.class);
     }
 
-    private static PulseAgentStatus status(final PulseAgentStatus.Status status) {
-        return new PulseAgentStatusImpl(status, List.of());
+    private static PulseAgentStatus status(final PulseAgentStatus.Status statusValue) {
+        return new PulseAgentStatus() {
+            @Override
+            public PulseAgentStatus.Status status() {
+                return statusValue;
+            }
+
+            @Override
+            public List<String> errorMessages() {
+                return List.of();
+            }
+        };
     }
 }

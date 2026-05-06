@@ -20,9 +20,7 @@ import static org.mockito.Mockito.when;
 
 import com.hivemq.edge.api.model.PulseStatus;
 import com.hivemq.pulse.status.PulseAgentStatus;
-import com.hivemq.pulse.status.PulseAgentStatusImpl;
 import jakarta.ws.rs.core.Response;
-import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -32,7 +30,7 @@ public class PulseApiImplGetPulseStatusTest extends AbstractPulseApiImplTest {
     @ParameterizedTest
     @EnumSource(PulseAgentStatus.Status.class)
     public void whenAllKindsOfStatusAreProvided_thenReturnsStatus(final @NotNull PulseAgentStatus.Status status) {
-        when(statusProvider.getStatus()).thenReturn(new PulseAgentStatusImpl(status, List.of()));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(status));
         try (final Response response = pulseApi.getPulseStatus()) {
             assertThat(response.getStatus()).isEqualTo(200);
             assertThat(response.getEntity()).isInstanceOf(PulseStatus.class);

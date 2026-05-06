@@ -18,7 +18,6 @@ package com.hivemq.edge.pulse.integration.api;
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.pulse.asset.AssetFactory;
 import com.hivemq.pulse.asset.AssetProviderRegistry;
-import com.hivemq.pulse.status.StatusFactory;
 import java.io.File;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,9 +39,6 @@ public interface PulseAgentBootstrapInput {
 
     @NotNull
     AssetProviderRegistry assetProviderRegistry();
-
-    @NotNull
-    StatusFactory statusFactory();
 
     @NotNull
     AssetFactory assetFactory();

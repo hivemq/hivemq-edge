@@ -34,7 +34,6 @@ import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.pulse.asset.AssetFactory;
 import com.hivemq.pulse.asset.AssetProviderRegistry;
-import com.hivemq.pulse.status.StatusFactory;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
@@ -134,11 +133,6 @@ public class AfterHiveMQStartBootstrapServiceImpl implements AfterHiveMQStartBoo
     @Override
     public @NotNull PulseMessagePublisher pulseMessagePublisher() {
         return delegate.pulseMessagePublisher();
-    }
-
-    @Override
-    public @NotNull StatusFactory statusFactory() {
-        return delegate.statusFactory();
     }
 
     @Override

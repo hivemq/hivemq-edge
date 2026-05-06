@@ -35,8 +35,6 @@ import com.hivemq.pulse.asset.AssetFactoryImpl;
 import com.hivemq.pulse.asset.AssetProviderRegistry;
 import com.hivemq.pulse.asset.AssetProviderRegistryImpl;
 import com.hivemq.pulse.integration.PulseMessagePublisherImpl;
-import com.hivemq.pulse.status.StatusFactory;
-import com.hivemq.pulse.status.StatusFactoryImpl;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
@@ -52,7 +50,6 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     private final @NotNull InternalPublishService internalPublishService;
     private final @NotNull AssetProviderRegistry assetProviderRegistry;
     private final @NotNull PulseMessagePublisher pulseMessagePublisher;
-    private final @NotNull StatusFactory statusFactory;
     private final @NotNull AssetFactory assetFactory;
     private final @NotNull PersistenceBootstrapService delegate;
 
@@ -67,7 +64,6 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
             final @NotNull InternalPublishService internalPublishService,
             final @NotNull AssetProviderRegistryImpl assetProviderRegistry,
             final @NotNull PulseMessagePublisherImpl pulseMessagePublisher,
-            final @NotNull StatusFactoryImpl statusFactory,
             final @NotNull AssetFactoryImpl assetFactory) {
         this.delegate = delegate;
         this.persistences = persistences;
@@ -78,7 +74,6 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
         this.internalPublishService = internalPublishService;
         this.assetProviderRegistry = assetProviderRegistry;
         this.pulseMessagePublisher = pulseMessagePublisher;
-        this.statusFactory = statusFactory;
         this.assetFactory = assetFactory;
     }
 
@@ -160,11 +155,6 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     @Override
     public @NotNull PulseMessagePublisher pulseMessagePublisher() {
         return pulseMessagePublisher;
-    }
-
-    @Override
-    public @NotNull StatusFactory statusFactory() {
-        return statusFactory;
     }
 
     @Override
