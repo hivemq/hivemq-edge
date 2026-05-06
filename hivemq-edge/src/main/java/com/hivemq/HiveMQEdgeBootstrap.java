@@ -48,6 +48,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -213,9 +216,21 @@ public class HiveMQEdgeBootstrap {
         Preconditions.checkNotNull(commercialModuleLoaderDiscovery);
         Preconditions.checkNotNull(injector);
 
+        final CompletableFuture<Void> pulsePersistencesResult = new CompletableFuture<>();
         try {
             final var persistenceBootstrapService = injector.persistenceBootstrapService();
-            commercialModuleLoaderDiscovery.persistenceBootstrap(persistenceBootstrapService, new CompletableFuture<>());
+            commercialModuleLoaderDiscovery.persistenceBootstrap(persistenceBootstrapService, pulsePersistencesResult);
+            pulsePersistencesResult.get(30, TimeUnit.SECONDS);
+        } catch (final ExecutionException e) {
+            final Throwable cause = e.getCause() != null ? e.getCause() : e;
+            log.warn("Pulse persistence bootstrap failed.", cause);
+            throw new HiveMQEdgeStartupException(cause instanceof Exception ex ? ex : e);
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new HiveMQEdgeStartupException(e);
+        } catch (final TimeoutException e) {
+            log.warn("Pulse persistence bootstrap did not complete within 30 seconds.", e);
+            throw new HiveMQEdgeStartupException(e);
         } catch (final Exception e) {
             log.warn("Error on bootstrapping persistences.", e);
             throw new HiveMQEdgeStartupException(e);
