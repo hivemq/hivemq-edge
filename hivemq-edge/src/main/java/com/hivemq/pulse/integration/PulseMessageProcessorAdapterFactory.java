@@ -21,7 +21,7 @@ import com.hivemq.bootstrap.factories.HandlerResult;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandling;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandlingFactory;
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.edge.pulse.integration.api.PulseMessageProcessor;
+import com.hivemq.edge.pulse.integration.api.message.PulseMessageProcessor;
 import com.hivemq.mqtt.handler.connack.MqttConnacker;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.dropping.IncomingPublishDropper;

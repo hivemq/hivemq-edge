@@ -16,7 +16,7 @@
 package com.hivemq.pulse.management;
 
 import com.hivemq.edge.HiveMQCapabilityService;
-import com.hivemq.edge.pulse.integration.api.PulseManagement;
+import com.hivemq.edge.pulse.integration.api.management.PulseManagement;
 import com.hivemq.pulse.status.PulseAgentStatusChangedListener;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;

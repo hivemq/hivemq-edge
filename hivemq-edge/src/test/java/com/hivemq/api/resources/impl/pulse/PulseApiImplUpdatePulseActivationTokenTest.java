@@ -23,7 +23,7 @@ import com.hivemq.api.errors.InternalServerError;
 import com.hivemq.api.errors.pulse.ActivationTokenInvalidError;
 import com.hivemq.api.errors.pulse.PulseAgentDeactivatedError;
 import com.hivemq.edge.api.model.PulseActivationToken;
-import com.hivemq.pulse.status.PulseAgentStatus;
+import com.hivemq.edge.pulse.integration.api.management.PulseAgentStatus;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 

@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import com.hivemq.edge.api.model.PulseStatus;
-import com.hivemq.pulse.status.PulseAgentStatus;
+import com.hivemq.edge.pulse.integration.api.management.PulseAgentStatus;
 import jakarta.ws.rs.core.Response;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.params.ParameterizedTest;

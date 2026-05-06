@@ -17,13 +17,13 @@ package com.hivemq.bootstrap.services;
 
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.bootstrap.ioc.Persistences;
-import com.hivemq.edge.pulse.integration.api.PulseMessagePublisher;
+import com.hivemq.edge.pulse.integration.api.message.PulseMessagePublisher;
 import com.hivemq.extension.sdk.api.services.publish.PublishService;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.extensions.core.RestComponentsService;
 import com.hivemq.mqtt.services.InternalPublishService;
-import com.hivemq.pulse.asset.AssetFactory;
-import com.hivemq.pulse.asset.AssetProviderRegistry;
+import com.hivemq.edge.pulse.integration.api.asset.AssetFactory;
+import com.hivemq.edge.pulse.integration.api.asset.AssetProviderRegistry;
 import org.jetbrains.annotations.NotNull;
 
 public interface CompleteBootstrapService extends PersistenceBootstrapService {

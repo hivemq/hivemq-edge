@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.pulse.integration.api;
+package com.hivemq.edge.pulse.integration.api.bootstrap;
 
+import com.hivemq.edge.pulse.integration.api.management.PulseManagement;
 import org.jetbrains.annotations.NotNull;
 
 /**

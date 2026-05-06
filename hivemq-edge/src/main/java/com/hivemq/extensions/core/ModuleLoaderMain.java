@@ -19,7 +19,7 @@ import com.hivemq.bootstrap.services.AfterHiveMQStartBootstrapService;
 import com.hivemq.bootstrap.services.CompleteBootstrapService;
 import com.hivemq.bootstrap.services.GeneralBootstrapService;
 import com.hivemq.bootstrap.services.PersistenceBootstrapService;
-import com.hivemq.edge.pulse.integration.api.PulseManagement;
+import com.hivemq.edge.pulse.integration.api.management.PulseManagement;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;

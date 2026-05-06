@@ -16,7 +16,7 @@
 package com.hivemq.pulse.integration;
 
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.edge.pulse.integration.api.PulseMessagePublisher;
+import com.hivemq.edge.pulse.integration.api.message.PulseMessagePublisher;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.services.builder.PublishBuilder;
 import com.hivemq.extension.sdk.api.services.publish.PublishService;

@@ -15,7 +15,7 @@
  */
 package com.hivemq.pulse.integration;
 
-import com.hivemq.edge.pulse.integration.api.IncomingMessage;
+import com.hivemq.edge.pulse.integration.api.message.IncomingMessage;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import java.util.List;

@@ -17,7 +17,7 @@ package com.hivemq.pulse.converters;
 
 import com.hivemq.configuration.entity.EntityConverter;
 import com.hivemq.edge.api.model.PulseStatus;
-import com.hivemq.pulse.status.PulseAgentStatus;
+import com.hivemq.edge.pulse.integration.api.management.PulseAgentStatus;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 

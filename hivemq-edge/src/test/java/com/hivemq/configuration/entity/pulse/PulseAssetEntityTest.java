@@ -17,7 +17,7 @@ package com.hivemq.configuration.entity.pulse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.hivemq.pulse.asset.Asset;
+import com.hivemq.edge.pulse.integration.api.asset.Asset;
 import com.hivemq.pulse.asset.AssetImpl;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;

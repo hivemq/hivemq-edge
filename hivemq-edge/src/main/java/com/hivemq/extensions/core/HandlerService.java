@@ -17,7 +17,7 @@ package com.hivemq.extensions.core;
 
 import com.hivemq.bootstrap.factories.HandlerFactory;
 import com.hivemq.bootstrap.factories.PrePublishProcessorHandlingFactory;
-import com.hivemq.edge.pulse.integration.api.PulseMessageProcessor;
+import com.hivemq.edge.pulse.integration.api.message.PulseMessageProcessor;
 import com.hivemq.pulse.integration.PulseMessageProcessorAdapterFactory;
 import java.util.List;
 import java.util.SortedMap;

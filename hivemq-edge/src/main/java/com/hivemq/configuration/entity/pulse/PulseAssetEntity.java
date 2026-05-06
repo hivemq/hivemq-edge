@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.configuration.entity.EntityValidatable;
 import com.hivemq.configuration.entity.UUIDAdapter;
-import com.hivemq.pulse.asset.Asset;
+import com.hivemq.edge.pulse.integration.api.asset.Asset;
 import com.hivemq.util.ObjectMapperUtil;
 import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.annotation.XmlAccessType;

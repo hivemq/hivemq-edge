@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package com.hivemq.pulse.asset;
+import com.hivemq.edge.pulse.integration.api.asset.Asset;
 
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;

@@ -26,7 +26,7 @@ import com.hivemq.combining.mapping.DataCombiningTransformationService;
 import com.hivemq.combining.vanilla.VanillaDataCombiningTransformationService;
 import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.mqtt.services.PrePublishProcessorService;
-import com.hivemq.pulse.status.PulseAgentStatus;
+import com.hivemq.edge.pulse.integration.api.management.PulseAgentStatus;
 import com.hivemq.pulse.status.PulseAgentStatusChangedListener;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;

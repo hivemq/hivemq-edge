@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 package com.hivemq.pulse.status;
+import com.hivemq.edge.pulse.integration.api.management.PulseAgentStatus;
 
 import com.hivemq.api.model.capabilities.Capability;
 import com.hivemq.edge.HiveMQCapabilityService;
-import com.hivemq.edge.pulse.integration.api.PulseManagement;
+import com.hivemq.edge.pulse.integration.api.management.PulseManagement;
 import org.jetbrains.annotations.NotNull;
 
 public class PulseAgentStatusChangedListener implements PulseManagement.StatusChangedListener {

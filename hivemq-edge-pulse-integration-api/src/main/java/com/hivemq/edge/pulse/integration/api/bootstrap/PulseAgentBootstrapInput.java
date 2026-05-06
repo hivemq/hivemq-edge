@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.pulse.integration.api;
+package com.hivemq.edge.pulse.integration.api.bootstrap;
 
 import com.codahale.metrics.MetricRegistry;
-import com.hivemq.pulse.asset.AssetFactory;
-import com.hivemq.pulse.asset.AssetProviderRegistry;
+import com.hivemq.edge.pulse.integration.api.asset.AssetFactory;
+import com.hivemq.edge.pulse.integration.api.asset.AssetProviderRegistry;
+import com.hivemq.edge.pulse.integration.api.message.PulseMessageProcessor;
+import com.hivemq.edge.pulse.integration.api.message.PulseMessagePublisher;
 import java.io.File;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

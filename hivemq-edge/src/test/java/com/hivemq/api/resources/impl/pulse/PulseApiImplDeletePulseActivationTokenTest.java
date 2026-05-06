@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
 import com.hivemq.api.errors.InternalServerError;
 import com.hivemq.api.errors.pulse.ActivationTokenAlreadyDeletedError;
 import com.hivemq.api.errors.pulse.ActivationTokenNotDeletedError;
-import com.hivemq.pulse.status.PulseAgentStatus;
+import com.hivemq.edge.pulse.integration.api.management.PulseAgentStatus;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 

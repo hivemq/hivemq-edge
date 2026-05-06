@@ -33,7 +33,7 @@ import com.hivemq.pulse.asset.PulseAgentAsset;
 import com.hivemq.pulse.asset.PulseAgentAssetMapping;
 import com.hivemq.pulse.asset.PulseAgentAssetMappingStatus;
 import com.hivemq.pulse.converters.PulseAgentAssetConverter;
-import com.hivemq.pulse.status.PulseAgentStatus;
+import com.hivemq.edge.pulse.integration.api.management.PulseAgentStatus;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.Set;
