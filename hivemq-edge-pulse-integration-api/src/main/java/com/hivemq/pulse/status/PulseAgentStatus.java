@@ -21,23 +21,15 @@ import org.jetbrains.annotations.NotNull;
 
 public interface PulseAgentStatus {
 
-    enum ActivationStatus {
-        ACTIVATED,
+    enum Status {
+        ACTIVATED_CONNECTED,
+        ACTIVATED_DISCONNECTED,
         DEACTIVATED,
         ERROR
     }
 
-    enum ConnectionStatus {
-        CONNECTED,
-        DISCONNECTED,
-        ERROR
-    }
-
     @NotNull
-    ActivationStatus activationStatus();
-
-    @NotNull
-    ConnectionStatus connectionStatus();
+    Status status();
 
     @NotNull
     List<String> errorMessages();

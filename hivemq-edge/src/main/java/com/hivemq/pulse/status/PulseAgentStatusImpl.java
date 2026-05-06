@@ -20,27 +20,17 @@ import org.jetbrains.annotations.NotNull;
 
 public class PulseAgentStatusImpl implements PulseAgentStatus {
 
-    private final @NotNull ActivationStatus activationStatus;
-    private final @NotNull ConnectionStatus connectionStatus;
+    private final @NotNull Status status;
     private final @NotNull List<String> errorMessages;
 
-    public PulseAgentStatusImpl(
-            final @NotNull ActivationStatus activationStatus,
-            final @NotNull ConnectionStatus connectionStatus,
-            final @NotNull List<String> errorMessages) {
-        this.activationStatus = activationStatus;
-        this.connectionStatus = connectionStatus;
+    public PulseAgentStatusImpl(final @NotNull Status status, final @NotNull List<String> errorMessages) {
+        this.status = status;
         this.errorMessages = errorMessages;
     }
 
     @Override
-    public @NotNull ActivationStatus activationStatus() {
-        return activationStatus;
-    }
-
-    @Override
-    public @NotNull ConnectionStatus connectionStatus() {
-        return connectionStatus;
+    public @NotNull Status status() {
+        return status;
     }
 
     @Override

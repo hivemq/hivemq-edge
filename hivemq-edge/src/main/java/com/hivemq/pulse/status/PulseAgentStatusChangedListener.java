@@ -31,8 +31,7 @@ public class PulseAgentStatusChangedListener implements PulseManagement.StatusCh
 
     public PulseAgentStatusChangedListener(final @NotNull HiveMQCapabilityService capabilityService) {
         this.capabilityService = capabilityService;
-        this.status =
-                new PulseAgentStatusImpl(PulseAgentStatus.ActivationStatus.DEACTIVATED, PulseAgentStatus.ConnectionStatus.DISCONNECTED, List.of());
+        this.status = new PulseAgentStatusImpl(PulseAgentStatus.Status.DEACTIVATED, List.of());
     }
 
     public @NotNull PulseAgentStatus getStatus() {
@@ -42,10 +41,9 @@ public class PulseAgentStatusChangedListener implements PulseManagement.StatusCh
     @Override
     public void onStatusChanged(@NotNull final PulseAgentStatus status) {
         this.status = status;
-        if (this.status.activationStatus() == PulseAgentStatus.ActivationStatus.ACTIVATED) {
-            capabilityService.addCapability(CAPABILITY);
-        } else {
-            capabilityService.removeCapability(CAPABILITY);
+        switch (this.status.status()) {
+            case ACTIVATED_CONNECTED, ACTIVATED_DISCONNECTED -> capabilityService.addCapability(CAPABILITY);
+            case DEACTIVATED, ERROR -> capabilityService.removeCapability(CAPABILITY);
         }
     }
 }

@@ -29,17 +29,44 @@ public class PulseAgentStatusConverter implements EntityConverter<PulseStatus, P
 
     @Override
     public @NotNull PulseAgentStatus toInternalEntity(final @NotNull PulseStatus pulseStatus) {
-        return new PulseAgentStatusImpl(
-                PulseAgentActivationStatusConverter.INSTANCE.toInternalEntity(pulseStatus.getActivation()),
-                PulseAgentConnectionStatusConverter.INSTANCE.toInternalEntity(pulseStatus.getRuntime()),
-                List.of());
+        return new PulseAgentStatusImpl(toStatus(pulseStatus.getActivation(), pulseStatus.getRuntime()), List.of());
     }
 
     @Override
     public @NotNull PulseStatus toRestEntity(final @NotNull PulseAgentStatus status) {
         return PulseStatus.builder()
-                .activation(PulseAgentActivationStatusConverter.INSTANCE.toRestEntity(status.activationStatus()))
-                .runtime(PulseAgentConnectionStatusConverter.INSTANCE.toRestEntity(status.connectionStatus()))
+                .activation(toActivationEnum(status.status()))
+                .runtime(toRuntimeEnum(status.status()))
                 .build();
+    }
+
+    private static @NotNull PulseAgentStatus.Status toStatus(
+            final @NotNull PulseStatus.ActivationEnum activation,
+            final @NotNull PulseStatus.RuntimeEnum runtime) {
+        return switch (activation) {
+            case ACTIVATED -> switch (runtime) {
+                case CONNECTED -> PulseAgentStatus.Status.ACTIVATED_CONNECTED;
+                case DISCONNECTED -> PulseAgentStatus.Status.ACTIVATED_DISCONNECTED;
+                default -> PulseAgentStatus.Status.ERROR;
+            };
+            case DEACTIVATED -> PulseAgentStatus.Status.DEACTIVATED;
+            default -> PulseAgentStatus.Status.ERROR;
+        };
+    }
+
+    private static @NotNull PulseStatus.ActivationEnum toActivationEnum(final @NotNull PulseAgentStatus.Status status) {
+        return switch (status) {
+            case ACTIVATED_CONNECTED, ACTIVATED_DISCONNECTED -> PulseStatus.ActivationEnum.ACTIVATED;
+            case DEACTIVATED -> PulseStatus.ActivationEnum.DEACTIVATED;
+            case ERROR -> PulseStatus.ActivationEnum.ERROR;
+        };
+    }
+
+    private static @NotNull PulseStatus.RuntimeEnum toRuntimeEnum(final @NotNull PulseAgentStatus.Status status) {
+        return switch (status) {
+            case ACTIVATED_CONNECTED -> PulseStatus.RuntimeEnum.CONNECTED;
+            case ACTIVATED_DISCONNECTED, DEACTIVATED -> PulseStatus.RuntimeEnum.DISCONNECTED;
+            case ERROR -> PulseStatus.RuntimeEnum.ERROR;
+        };
     }
 }

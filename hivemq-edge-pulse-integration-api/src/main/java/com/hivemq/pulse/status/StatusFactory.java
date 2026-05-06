@@ -25,14 +25,9 @@ import org.jetbrains.annotations.NotNull;
 public interface StatusFactory {
 
     @NotNull
-    PulseAgentStatus create(
-            @NotNull PulseAgentStatus.ActivationStatus activationStatus,
-            @NotNull PulseAgentStatus.ConnectionStatus connectionStatus,
-            @NotNull List<String> errorMessages);
+    PulseAgentStatus create(@NotNull PulseAgentStatus.Status status, @NotNull List<String> errorMessages);
 
-    default @NotNull PulseAgentStatus create(
-            final @NotNull PulseAgentStatus.ActivationStatus activationStatus,
-            final @NotNull PulseAgentStatus.ConnectionStatus connectionStatus) {
-        return create(activationStatus, connectionStatus, List.of());
+    default @NotNull PulseAgentStatus create(final @NotNull PulseAgentStatus.Status status) {
+        return create(status, List.of());
     }
 }

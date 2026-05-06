@@ -28,9 +28,8 @@ public class StatusFactoryImpl implements StatusFactory {
 
     @Override
     public @NotNull PulseAgentStatus create(
-            final @NotNull PulseAgentStatus.ActivationStatus activationStatus,
-            final @NotNull PulseAgentStatus.ConnectionStatus connectionStatus,
+            final @NotNull PulseAgentStatus.Status status,
             final @NotNull List<String> errorMessages) {
-        return new PulseAgentStatusImpl(activationStatus, connectionStatus, errorMessages);
+        return new PulseAgentStatusImpl(status, errorMessages);
     }
 }

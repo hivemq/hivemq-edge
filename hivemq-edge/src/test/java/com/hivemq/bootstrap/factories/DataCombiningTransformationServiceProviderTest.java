@@ -64,7 +64,7 @@ public class DataCombiningTransformationServiceProviderTest {
         edgeCoreFactoryService.provideDataCombiningTransformationServiceFactory(
                 dataCombiningTransformationServiceFactory);
         statusChangedListener.onStatusChanged(
-                status(PulseAgentStatus.ActivationStatus.ACTIVATED, PulseAgentStatus.ConnectionStatus.CONNECTED));
+                status(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
         assertThat(edgeCoreFactoryService.getDataCombiningTransformationServiceFactory())
                 .isEqualTo(dataCombiningTransformationServiceFactory);
         assertThat(dataCombiningTransformationServiceProvider.get())
@@ -74,7 +74,7 @@ public class DataCombiningTransformationServiceProviderTest {
     @Test
     void whenPulseIsActivatedAndDataHubIsDeactivated_thenDataCombiningTransformationServiceIsVanilla() {
         statusChangedListener.onStatusChanged(
-                status(PulseAgentStatus.ActivationStatus.ACTIVATED, PulseAgentStatus.ConnectionStatus.CONNECTED));
+                status(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
         assertThat(edgeCoreFactoryService.getDataCombiningTransformationServiceFactory())
                 .isNull();
         assertThat(dataCombiningTransformationServiceProvider.get())
@@ -86,7 +86,7 @@ public class DataCombiningTransformationServiceProviderTest {
         edgeCoreFactoryService.provideDataCombiningTransformationServiceFactory(
                 dataCombiningTransformationServiceFactory);
         statusChangedListener.onStatusChanged(
-                status(PulseAgentStatus.ActivationStatus.DEACTIVATED, PulseAgentStatus.ConnectionStatus.DISCONNECTED));
+                status(PulseAgentStatus.Status.DEACTIVATED));
         assertThat(edgeCoreFactoryService.getDataCombiningTransformationServiceFactory())
                 .isEqualTo(dataCombiningTransformationServiceFactory);
         assertThat(dataCombiningTransformationServiceProvider.get()).isEqualTo(dataCombiningTransformationService);
@@ -95,14 +95,14 @@ public class DataCombiningTransformationServiceProviderTest {
     @Test
     void whenPulseIsDeactivatedAndDataHubIsDeactivated_thenDataCombiningTransformationServiceIsVanilla() {
         statusChangedListener.onStatusChanged(
-                status(PulseAgentStatus.ActivationStatus.DEACTIVATED, PulseAgentStatus.ConnectionStatus.DISCONNECTED));
+                status(PulseAgentStatus.Status.DEACTIVATED));
         assertThat(edgeCoreFactoryService.getDataCombiningTransformationServiceFactory())
                 .isNull();
         assertThat(dataCombiningTransformationServiceProvider.get())
                 .isInstanceOf(VanillaDataCombiningTransformationService.class);
     }
 
-    private static PulseAgentStatus status(final PulseAgentStatus.ActivationStatus activation, final PulseAgentStatus.ConnectionStatus connection) {
-        return new PulseAgentStatusImpl(activation, connection, List.of());
+    private static PulseAgentStatus status(final PulseAgentStatus.Status status) {
+        return new PulseAgentStatusImpl(status, List.of());
     }
 }

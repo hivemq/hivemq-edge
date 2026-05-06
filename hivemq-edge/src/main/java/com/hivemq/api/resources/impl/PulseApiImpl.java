@@ -311,7 +311,7 @@ public class PulseApiImpl implements PulseApi {
             return ErrorResponseUtil.errorResponse(new InternalServerError(null));
         }
         final PulseManagement pulseManagement = optionalPulseManagement.get();
-        if (pulseManagement.getStatus().activationStatus() == PulseAgentStatus.ActivationStatus.DEACTIVATED) {
+        if (pulseManagement.getStatus().status() == PulseAgentStatus.Status.DEACTIVATED) {
             return ErrorResponseUtil.errorResponse(new ActivationTokenAlreadyDeletedError());
         }
         try {
@@ -319,7 +319,7 @@ public class PulseApiImpl implements PulseApi {
         } catch (final Exception e) {
             return ErrorResponseUtil.errorResponse(new InternalServerError(e.getMessage()));
         }
-        switch (pulseManagement.getStatus().activationStatus()) {
+        switch (pulseManagement.getStatus().status()) {
             case DEACTIVATED -> {
                 return Response.ok().build();
             }
@@ -553,8 +553,8 @@ public class PulseApiImpl implements PulseApi {
             if (!tokenValid) {
                 return ErrorResponseUtil.errorResponse(new ActivationTokenInvalidError());
             }
-            switch (pulseManagement.getStatus().activationStatus()) {
-                case ACTIVATED -> {
+            switch (pulseManagement.getStatus().status()) {
+                case ACTIVATED_CONNECTED, ACTIVATED_DISCONNECTED -> {
                     return Response.ok().build();
                 }
                 case DEACTIVATED -> {
@@ -586,19 +586,12 @@ public class PulseApiImpl implements PulseApi {
             return Optional.of(ErrorResponseUtil.errorResponse(new InternalServerError(null)));
         }
         final PulseManagement pulseManagement = optionalPulseManagement.get();
-        switch (pulseManagement.getStatus().activationStatus()) {
-            case ACTIVATED -> {
-                switch (pulseManagement.getStatus().connectionStatus()) {
-                    case CONNECTED -> {
-                        return Optional.empty();
-                    }
-                    case DISCONNECTED -> {
-                        return Optional.of(ErrorResponseUtil.errorResponse(new PulseAgentNotConnectedError()));
-                    }
-                    default -> {
-                        return Optional.of(ErrorResponseUtil.errorResponse(new InternalServerError(null)));
-                    }
-                }
+        switch (pulseManagement.getStatus().status()) {
+            case ACTIVATED_CONNECTED -> {
+                return Optional.empty();
+            }
+            case ACTIVATED_DISCONNECTED -> {
+                return Optional.of(ErrorResponseUtil.errorResponse(new PulseAgentNotConnectedError()));
             }
             case DEACTIVATED -> {
                 return Optional.of(ErrorResponseUtil.errorResponse(new PulseAgentDeactivatedError()));
