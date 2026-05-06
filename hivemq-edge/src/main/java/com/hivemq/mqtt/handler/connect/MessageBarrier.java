@@ -22,6 +22,7 @@ import com.hivemq.mqtt.message.Message;
 import com.hivemq.mqtt.message.auth.AUTH;
 import com.hivemq.mqtt.message.connack.CONNACK;
 import com.hivemq.mqtt.message.connect.CONNECT;
+import com.hivemq.mqtt.message.disconnect.DISCONNECT;
 import com.hivemq.mqtt.message.reason.Mqtt5ConnAckReasonCode;
 import io.netty.channel.*;
 import java.util.ArrayDeque;
@@ -63,16 +64,14 @@ public class MessageBarrier extends ChannelDuplexHandler {
         if (msg instanceof Message message) {
             if (msg instanceof CONNECT) {
                 connectReceived = true;
-                suspendRead(ctx.channel());
             } else if (!connectReceived) {
                 serverDisconnector.logAndClose(
                         ctx.channel(),
                         "A client (IP: {}) sent other message before CONNECT. Disconnecting client.",
                         "Sent other message before CONNECT");
                 return;
-            } else if (msg instanceof AUTH) {
+            } else if (!(msg instanceof AUTH) && !(msg instanceof DISCONNECT) && !connackSent) {
                 suspendRead(ctx.channel());
-            } else if (!connackSent) {
                 messageQueue.add(message);
                 return;
             }
