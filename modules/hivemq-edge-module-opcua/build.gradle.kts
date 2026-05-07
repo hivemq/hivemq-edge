@@ -58,6 +58,7 @@ dependencies {
     testImplementation(libs.milo.server)
     testImplementation(libs.assertj)
     testImplementation(libs.awaitility)
+    testImplementation(libs.logback.classic)
 }
 
 configurations {

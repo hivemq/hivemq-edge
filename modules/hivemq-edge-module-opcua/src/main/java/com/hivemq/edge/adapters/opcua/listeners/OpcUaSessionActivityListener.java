@@ -37,16 +37,22 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
     private final @NotNull EventService eventService;
     private final @NotNull String adapterId;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
+    private final boolean acceptAnyServerCertificate;
+    private final @NotNull String endpointUri;
 
     public OpcUaSessionActivityListener(
             @NotNull final ProtocolAdapterMetricsService protocolAdapterMetricsService,
             @NotNull final EventService eventService,
             @NotNull final String adapterId,
-            @NotNull final ProtocolAdapterState protocolAdapterState) {
+            @NotNull final ProtocolAdapterState protocolAdapterState,
+            final boolean acceptAnyServerCertificate,
+            @NotNull final String endpointUri) {
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.eventService = eventService;
         this.adapterId = adapterId;
         this.protocolAdapterState = protocolAdapterState;
+        this.acceptAnyServerCertificate = acceptAnyServerCertificate;
+        this.endpointUri = endpointUri;
     }
 
     @Override
@@ -67,5 +73,14 @@ public class OpcUaSessionActivityListener implements SessionActivityListener {
         protocolAdapterMetricsService.increment(Constants.METRIC_SESSION_ACTIVE_COUNT);
         protocolAdapterState.setConnectionStatus(CONNECTED);
         log.info("OPC UA client of protocol adapter '{}' connected: {}", adapterId, session);
+        if (acceptAnyServerCertificate) {
+            log.warn(
+                    "OPC UA adapter '{}' connected to '{}' with acceptAnyServerCertificate=true: "
+                            + "server certificate was accepted without chain validation. "
+                            + "This deployment is vulnerable to MITM and is intended for "
+                            + "self-signed / factory environments only.",
+                    adapterId,
+                    endpointUri);
+        }
     }
 }
