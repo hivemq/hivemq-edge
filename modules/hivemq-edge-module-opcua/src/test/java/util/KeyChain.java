@@ -144,6 +144,10 @@ public class KeyChain {
         return new GeneratedCert(cert, certKeyPair);
     }
 
+    public @NotNull X509Certificate getRootCertificate() {
+        return root.certificate();
+    }
+
     public @NotNull File wrapInKeyStoreWithPrivateKey(
             final @NotNull String filename,
             final @NotNull String cnName,
