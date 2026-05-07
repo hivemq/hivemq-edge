@@ -209,15 +209,19 @@ public class ProtocolAdapterManager {
     @VisibleForTesting
     public void shutdown() {
         protocolAdapterMap.values().forEach(wrapper -> {
+            if (wrapper.getState().isIdle()) {
+                if (!wrapper.isDestroyed()) {
+                    wrapper.destroy();
+                }
+                return;
+            }
             try {
                 wrapper.stopAsync(true).get(SHUTDOWN_STOP_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             } catch (final InterruptedException | ExecutionException | TimeoutException e) {
                 if (e instanceof InterruptedException) {
                     Thread.currentThread().interrupt();
                 }
-                if (!wrapper.getState().isIdle()) {
-                    LOGGER.error("Exception happened while shutting down adapter: ", e);
-                }
+                LOGGER.error("Exception happened while shutting down adapter: ", e);
             }
         });
     }
