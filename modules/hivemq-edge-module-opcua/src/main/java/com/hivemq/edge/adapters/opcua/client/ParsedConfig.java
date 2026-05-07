@@ -48,6 +48,7 @@ import org.slf4j.LoggerFactory;
 
 public record ParsedConfig(
         boolean tlsEnabled,
+        boolean acceptAnyServerCertificate,
         @Nullable KeystoreUtil.KeyPairWithChain keyPairWithChain,
         @Nullable CertificateValidator clientCertificateValidator,
         @NotNull IdentityProvider identityProvider,
@@ -57,18 +58,27 @@ public record ParsedConfig(
 
     public static Result<ParsedConfig, String> fromConfig(final OpcUaSpecificAdapterConfig adapterConfig) {
         final boolean tlsEnabled = adapterConfig.getTls().enabled();
+        final boolean acceptAnyServerCertificate = adapterConfig.getTls().acceptAnyServerCertificate();
 
         CertificateValidator certValidator = null;
         if (tlsEnabled) {
-            final var truststore = adapterConfig.getTls().truststore();
-            final var certOptional = getTrustedCerts(truststore)
-                    .map(trustedCerts -> createServerCertificateValidator(
-                            trustedCerts,
-                            Objects.requireNonNull(adapterConfig.getTls().tlsChecks())));
-            if (certOptional.isEmpty()) {
-                return Failure.of("Failed to create certificate validator, check truststore configuration");
+            if (acceptAnyServerCertificate) {
+                certValidator = new CertificateValidator.InsecureCertificateValidator();
+            } else {
+                final var truststore = adapterConfig.getTls().truststore();
+                final var trustedCertsOpt = getTrustedCerts(truststore);
+                if (trustedCertsOpt.isEmpty()) {
+                    // Reachable only when the user explicitly configured a truststore path that
+                    // is missing or unreadable. "No truststore configured" silently falls back
+                    // to JVM cacerts inside getTrustedCerts and does NOT land here.
+                    return Failure.of("Truststore is configured but the file is missing or unreadable. "
+                            + "Either correct the path, leave the truststore unset to use JVM cacerts, "
+                            + "or set acceptAnyServerCertificate=true to accept any server certificate.");
+                }
+                certValidator = createServerCertificateValidator(
+                        trustedCertsOpt.get(),
+                        Objects.requireNonNull(adapterConfig.getTls().tlsChecks()));
             }
-            certValidator = certOptional.get();
         }
 
         final Keystore keystore = adapterConfig.getTls().keystore();
@@ -106,8 +116,13 @@ public record ParsedConfig(
             }
         }
 
-        return Success.of(
-                new ParsedConfig(tlsEnabled, keyPairWithChain, certValidator, identityProvider.get(), applicationUri));
+        return Success.of(new ParsedConfig(
+                tlsEnabled,
+                acceptAnyServerCertificate,
+                keyPairWithChain,
+                certValidator,
+                identityProvider.get(),
+                applicationUri));
     }
 
     private static @NotNull Optional<List<X509Certificate>> getTrustedCerts(@Nullable final Truststore truststore) {
@@ -128,9 +143,9 @@ public record ParsedConfig(
             return Optional.of(KeystoreUtil.getCertificatesFromTruststore("JKS", trustStorePath, trustStorePassword));
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("Using default truststore");
-        }
+        log.info("OPC UA adapter has no user truststore configured; falling back to JVM cacerts. "
+                + "If the server presents a self-signed certificate that does not chain to a public CA, "
+                + "set acceptAnyServerCertificate=true to bypass chain validation.");
         return Optional.of(KeystoreUtil.getCertificatesFromDefaultTruststore());
     }
 

@@ -28,6 +28,8 @@ import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import java.io.File;
 import java.nio.file.Path;
 import org.eclipse.milo.opcua.sdk.client.identity.AnonymousProvider;
+import org.eclipse.milo.opcua.stack.core.security.CertificateValidator;
+import org.eclipse.milo.opcua.stack.core.security.DefaultClientCertificateValidator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import util.KeyChain;
@@ -287,7 +289,7 @@ class ParsedConfigTest {
 
     private OpcUaSpecificAdapterConfig createAdapterConfig(
             final boolean tlsEnabled, final String keystorePath, final String truststorePath) {
-        return createAdapterConfig(tlsEnabled, keystorePath, truststorePath, null);
+        return createAdapterConfig(tlsEnabled, keystorePath, truststorePath, null, false);
     }
 
     private OpcUaSpecificAdapterConfig createAdapterConfig(
@@ -295,13 +297,22 @@ class ParsedConfigTest {
             final String keystorePath,
             final String truststorePath,
             final String applicationUri) {
+        return createAdapterConfig(tlsEnabled, keystorePath, truststorePath, applicationUri, false);
+    }
+
+    private OpcUaSpecificAdapterConfig createAdapterConfig(
+            final boolean tlsEnabled,
+            final String keystorePath,
+            final String truststorePath,
+            final String applicationUri,
+            final boolean acceptAnyServerCertificate) {
 
         final Keystore keystore =
                 keystorePath != null ? new Keystore(keystorePath, KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD) : null;
 
         final Truststore truststore = truststorePath != null ? new Truststore(truststorePath, KEYSTORE_PASSWORD) : null;
 
-        final Tls tls = new Tls(tlsEnabled, TlsChecks.NONE, keystore, truststore);
+        final Tls tls = new Tls(tlsEnabled, TlsChecks.NONE, keystore, truststore, acceptAnyServerCertificate);
         final Security security = new Security(SecPolicy.NONE);
         final OpcUaToMqttConfig opcUaToMqttConfig = new OpcUaToMqttConfig(1, 1000);
 
@@ -314,5 +325,118 @@ class ParsedConfigTest {
                 opcUaToMqttConfig,
                 security,
                 null);
+    }
+
+    // ----- EDG-585: acceptAnyServerCertificate flag -----
+
+    @Test
+    void acceptAnyTrue_noTruststore_selectsInsecureValidator() {
+        // EDG-585 test #1 (config layer): acceptAny=true + no user truststore → InsecureValidator.
+        final OpcUaSpecificAdapterConfig adapterConfig = createAdapterConfig(true, null, null, null, true);
+
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
+
+        assertThat(result).isInstanceOf(Success.class);
+        final ParsedConfig parsedConfig = ((Success<ParsedConfig, String>) result).result();
+        assertThat(parsedConfig.acceptAnyServerCertificate()).isTrue();
+        assertThat(parsedConfig.clientCertificateValidator())
+                .isInstanceOf(CertificateValidator.InsecureCertificateValidator.class);
+    }
+
+    @Test
+    void acceptAnyTrue_truststorePresent_selectsInsecureValidator() throws Exception {
+        // EDG-585 test #2 (config layer): acceptAny=true + user truststore present → still InsecureValidator;
+        // tlsChecks is not consulted on this path.
+        final KeyChain keyChain = KeyChain.createKeyChain("ca");
+        final File truststoreFile = keyChain.wrapInKeyStoreWithPrivateKey(
+                tempDir.resolve("truststore-true").toString(), "ca", KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD);
+
+        final OpcUaSpecificAdapterConfig adapterConfig =
+                createAdapterConfig(true, null, truststoreFile.getAbsolutePath(), null, true);
+
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
+
+        assertThat(result).isInstanceOf(Success.class);
+        final ParsedConfig parsedConfig = ((Success<ParsedConfig, String>) result).result();
+        assertThat(parsedConfig.acceptAnyServerCertificate()).isTrue();
+        assertThat(parsedConfig.clientCertificateValidator())
+                .isInstanceOf(CertificateValidator.InsecureCertificateValidator.class);
+    }
+
+    @Test
+    void acceptAnyFalse_truststorePresent_selectsDefaultValidator() throws Exception {
+        // EDG-585 test #3 (config layer): default + truststore present → normal Milo validator.
+        final KeyChain keyChain = KeyChain.createKeyChain("ca");
+        final File truststoreFile = keyChain.wrapInKeyStoreWithPrivateKey(
+                tempDir.resolve("truststore-false").toString(), "ca", KEYSTORE_PASSWORD, PRIVATE_KEY_PASSWORD);
+
+        final OpcUaSpecificAdapterConfig adapterConfig =
+                createAdapterConfig(true, null, truststoreFile.getAbsolutePath(), null, false);
+
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
+
+        assertThat(result).isInstanceOf(Success.class);
+        final ParsedConfig parsedConfig = ((Success<ParsedConfig, String>) result).result();
+        assertThat(parsedConfig.acceptAnyServerCertificate()).isFalse();
+        assertThat(parsedConfig.clientCertificateValidator()).isInstanceOf(DefaultClientCertificateValidator.class);
+    }
+
+    @Test
+    void acceptAnyFalse_noTruststore_selectsDefaultValidatorWithCacerts() {
+        // EDG-585 test #4 (config layer): default + no user truststore → DefaultClientCertificateValidator
+        // backed by JVM cacerts. This is Jochen's case: empty/unconfigured user truststore must remain
+        // a valid configuration.
+        final OpcUaSpecificAdapterConfig adapterConfig = createAdapterConfig(true, null, null, null, false);
+
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
+
+        assertThat(result).isInstanceOf(Success.class);
+        final ParsedConfig parsedConfig = ((Success<ParsedConfig, String>) result).result();
+        assertThat(parsedConfig.acceptAnyServerCertificate()).isFalse();
+        assertThat(parsedConfig.clientCertificateValidator()).isInstanceOf(DefaultClientCertificateValidator.class);
+    }
+
+    @Test
+    void acceptAnyFalse_truststoreUnreadable_returnsFailureNamingTheFlag() {
+        // EDG-585 test #6 (config layer): default + configured-but-unreadable truststore → Failure.of(...)
+        // with a clear, actionable error message that names the flag as one of the resolutions.
+        final OpcUaSpecificAdapterConfig adapterConfig =
+                createAdapterConfig(true, null, "/path/that/does/not/exist/truststore.jks", null, false);
+
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
+
+        assertThat(result).isInstanceOf(Failure.class);
+        final String error = ((Failure<ParsedConfig, String>) result).failure();
+        assertThat(error)
+                .contains("Truststore is configured but the file is missing or unreadable")
+                .contains("acceptAnyServerCertificate=true");
+    }
+
+    @Test
+    void acceptAnyTrue_reconnectionsKeepInsecureValidator() {
+        // EDG-585 test #7 (config layer): with acceptAny=true, a fresh validator is produced on each
+        // re-parse; documents that the validator type is stable across reconfigurations.
+        final OpcUaSpecificAdapterConfig adapterConfig = createAdapterConfig(true, null, null, null, true);
+
+        final Result<ParsedConfig, String> first = ParsedConfig.fromConfig(adapterConfig);
+        final Result<ParsedConfig, String> second = ParsedConfig.fromConfig(adapterConfig);
+
+        assertThat(first).isInstanceOf(Success.class);
+        assertThat(second).isInstanceOf(Success.class);
+        assertThat(((Success<ParsedConfig, String>) first).result().clientCertificateValidator())
+                .isInstanceOf(CertificateValidator.InsecureCertificateValidator.class);
+        assertThat(((Success<ParsedConfig, String>) second).result().clientCertificateValidator())
+                .isInstanceOf(CertificateValidator.InsecureCertificateValidator.class);
+    }
+
+    @Test
+    void acceptAnyDefault_isFalse() {
+        // Default value of the new flag must be false (secure-by-default).
+        final OpcUaSpecificAdapterConfig adapterConfig = createAdapterConfig(false, null, null);
+        final Result<ParsedConfig, String> result = ParsedConfig.fromConfig(adapterConfig);
+
+        assertThat(result).isInstanceOf(Success.class);
+        assertThat(((Success<ParsedConfig, String>) result).result().acceptAnyServerCertificate())
+                .isFalse();
     }
 }

@@ -53,7 +53,7 @@ class OpcUaEndpointFilterTest {
                 false,
                 null,
                 null,
-                new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null),
+                new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null, false),
                 null,
                 null,
                 null);
@@ -123,7 +123,7 @@ class OpcUaEndpointFilterTest {
                 false,
                 null,
                 null,
-                new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null),
+                new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null, false),
                 null,
                 null,
                 null);
@@ -177,7 +177,7 @@ class OpcUaEndpointFilterTest {
                 false,
                 null,
                 null,
-                new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null),
+                new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null, false),
                 null,
                 null,
                 null);
@@ -218,7 +218,7 @@ class OpcUaEndpointFilterTest {
                 false,
                 null,
                 null,
-                new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null),
+                new Tls(true, TlsChecks.NONE, new Keystore("path", "pass", "passPriv"), null, false),
                 null,
                 null,
                 null);
