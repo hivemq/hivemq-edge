@@ -334,9 +334,9 @@ class ProtocolAdapterWrapperTest {
         }
 
         @Test
-        void stop_whenIdle_returnsFalse() {
-            // Idle -> Stopping is invalid, stop returns false
-            assertThat(wrapper.stop(false)).isFalse();
+        void stop_whenIdle_isIdempotent_returnsTrue() {
+            // stop() short-circuits when already Idle, treating the call as a no-op success.
+            assertThat(wrapper.stop(false)).isTrue();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
         }
 
@@ -804,13 +804,13 @@ class ProtocolAdapterWrapperTest {
     class StopIdempotency {
 
         @Test
-        void stop_calledTwice_secondReturnsFalse() {
+        void stop_calledTwice_isIdempotent() {
             wrapper.start();
             assertThat(wrapper.stop(false)).isTrue();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
 
-            // Second stop from Idle fails — Idle → Stopping is invalid
-            assertThat(wrapper.stop(false)).isFalse();
+            // Second stop from Idle short-circuits and reports success — no FSM transition attempted.
+            assertThat(wrapper.stop(false)).isTrue();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
         }
     }
@@ -857,7 +857,14 @@ class ProtocolAdapterWrapperTest {
     class AsyncCompatibility {
 
         @Test
-        void stopAsync_whenStopFails_completesExceptionally() {
+        void stopAsync_whenStopFails_completesExceptionally() throws ProtocolAdapterException {
+            // Force the underlying stop() to report failure: start the wrapper, then make
+            // northbound disconnect throw. stop() returns false → stopAsync propagates as exception.
+            wrapper.start();
+            doThrow(new RuntimeException("disconnect error"))
+                    .when(protocolAdapter)
+                    .stop(eq(ProtocolAdapterConnectionDirection.Northbound), any(), any());
+
             assertThatThrownBy(() -> wrapper.stopAsync(false).get(2, TimeUnit.SECONDS))
                     .isInstanceOf(java.util.concurrent.ExecutionException.class)
                     .hasCauseInstanceOf(RuntimeException.class)
