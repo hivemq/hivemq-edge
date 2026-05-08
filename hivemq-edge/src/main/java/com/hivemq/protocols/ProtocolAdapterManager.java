@@ -538,7 +538,8 @@ public class ProtocolAdapterManager {
                         perModule,
                         tagManager,
                         northboundConsumerFactory,
-                        protocolAdapterWritingService);
+                        protocolAdapterWritingService,
+                        adapterLifecycleExecutor);
                 protocolAdapterMetrics.increaseProtocolAdapterMetric(configProtocolId);
                 return wrapper;
             });
