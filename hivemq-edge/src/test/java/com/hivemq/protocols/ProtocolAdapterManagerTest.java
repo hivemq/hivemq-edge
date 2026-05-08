@@ -215,7 +215,8 @@ class ProtocolAdapterManagerTest {
                 moduleServicesMock,
                 tagManager,
                 northboundConsumerFactory,
-                writingService);
+                writingService,
+                Runnable::run);
         try {
             final var field = ProtocolAdapterManager.class.getDeclaredField("protocolAdapterMap");
             field.setAccessible(true);

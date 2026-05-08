@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -107,6 +108,10 @@ public class ProtocolAdapterWrapper {
     private final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService;
     private final @NotNull List<NorthboundTagConsumer> consumers = new ArrayList<>();
 
+    // Executor used by startAsync/stopAsync. Injected so the wrapper does not silently fall back to
+    // ForkJoinPool.commonPool() for blocking adapter lifecycle work — see fsm-patch-01.
+    private final @NotNull Executor lifecycleExecutor;
+
     /**
      * Full constructor with all context needed for production use.
      */
@@ -122,7 +127,8 @@ public class ProtocolAdapterWrapper {
             final @NotNull ModuleServices moduleServices,
             final @NotNull TagManager tagManager,
             final @NotNull NorthboundConsumerFactory northboundConsumerFactory,
-            final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService) {
+            final @NotNull InternalProtocolAdapterWritingService protocolAdapterWritingService,
+            final @NotNull Executor lifecycleExecutor) {
         this.adapter = adapter;
         this.config = config;
         this.adapterFactory = adapterFactory;
@@ -135,6 +141,7 @@ public class ProtocolAdapterWrapper {
         this.tagManager = tagManager;
         this.northboundConsumerFactory = northboundConsumerFactory;
         this.protocolAdapterWritingService = protocolAdapterWritingService;
+        this.lifecycleExecutor = lifecycleExecutor;
         this.northboundConnectionState = ProtocolAdapterConnectionState.Disconnected;
         this.southboundConnectionState = ProtocolAdapterConnectionState.Disconnected;
         this.state = ProtocolAdapterRuntimeState.Idle;
@@ -275,10 +282,9 @@ public class ProtocolAdapterWrapper {
     /**
      * Maps the connection state to the old ConnectionStatus enum.
      * <p>
-     * Delegates to {@link ProtocolAdapterStateImpl} when available, since old adapters
+     * Delegates to {@link ProtocolAdapterStateImpl} unconditionally, since adapters
      * update their connection status internally (e.g., OPC UA health check detects
      * connection loss and sets DISCONNECTED) without going through the wrapper's FSM.
-     * Falls back to the FSM northbound connection state for test-only wrappers.
      *
      * @return the connection status compatible with the old API
      */
@@ -353,12 +359,14 @@ public class ProtocolAdapterWrapper {
      * @return a future that completes when the adapter is started
      */
     public @NotNull CompletableFuture<Void> startAsync() {
-        return CompletableFuture.runAsync(() -> {
-            final boolean success = start();
-            if (!success) {
-                throw new RuntimeException("Failed to start adapter: " + getAdapterId());
-            }
-        });
+        return CompletableFuture.runAsync(
+                () -> {
+                    final boolean success = start();
+                    if (!success) {
+                        throw new RuntimeException("Failed to start adapter: " + getAdapterId());
+                    }
+                },
+                lifecycleExecutor);
     }
 
     /**
@@ -368,12 +376,14 @@ public class ProtocolAdapterWrapper {
      * @return a future that completes when the adapter is stopped, or completes exceptionally if stop fails
      */
     public @NotNull CompletableFuture<Void> stopAsync(final boolean destroy) {
-        return CompletableFuture.runAsync(() -> {
-            final boolean success = stop(destroy);
-            if (!success) {
-                throw new RuntimeException("Failed to stop adapter: " + getAdapterId());
-            }
-        });
+        return CompletableFuture.runAsync(
+                () -> {
+                    final boolean success = stop(destroy);
+                    if (!success) {
+                        throw new RuntimeException("Failed to stop adapter: " + getAdapterId());
+                    }
+                },
+                lifecycleExecutor);
     }
 
     // ===== Listener Management =====

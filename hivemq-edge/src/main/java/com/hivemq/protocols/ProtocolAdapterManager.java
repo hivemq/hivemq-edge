@@ -220,6 +220,17 @@ public class ProtocolAdapterManager {
                 }
             }
         });
+        // Release the manager-owned executor threads so embedded Edge instances (tests) don't
+        // leak parked threads across runs. The JVM-exit shutdown hook is kept as a fallback and
+        // is idempotent.
+        adapterLifecycleExecutor.shutdown();
+        executorService.shutdown();
+        try {
+            adapterLifecycleExecutor.awaitTermination(SHUTDOWN_STOP_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            executorService.awaitTermination(SHUTDOWN_STOP_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     // ===== Adapter Lookup =====
@@ -538,7 +549,8 @@ public class ProtocolAdapterManager {
                         perModule,
                         tagManager,
                         northboundConsumerFactory,
-                        protocolAdapterWritingService);
+                        protocolAdapterWritingService,
+                        adapterLifecycleExecutor);
                 protocolAdapterMetrics.increaseProtocolAdapterMetric(configProtocolId);
                 return wrapper;
             });

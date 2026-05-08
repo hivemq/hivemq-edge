@@ -145,7 +145,8 @@ class ProtocolAdapterWrapperTest {
                 moduleServices,
                 tagManager,
                 northboundConsumerFactory,
-                protocolAdapterWritingService);
+                protocolAdapterWritingService,
+                Runnable::run);
     }
 
     @Nested
@@ -581,7 +582,8 @@ class ProtocolAdapterWrapperTest {
                             moduleServices,
                             tagManager,
                             northboundConsumerFactory,
-                            protocolAdapterWritingService) {
+                            protocolAdapterWritingService,
+                            Runnable::run) {
                         @Override
                         protected void startPolling() {
                             pollingStarted = true;
@@ -670,7 +672,8 @@ class ProtocolAdapterWrapperTest {
                             moduleServices,
                             tagManager,
                             northboundConsumerFactory,
-                            protocolAdapterWritingService) {
+                            protocolAdapterWritingService,
+                            Runnable::run) {
                         @Override
                         protected void stopPolling() {
                             callOrder.add("stopPolling");
@@ -712,7 +715,8 @@ class ProtocolAdapterWrapperTest {
                             moduleServices,
                             tagManager,
                             northboundConsumerFactory,
-                            protocolAdapterWritingService) {
+                            protocolAdapterWritingService,
+                            Runnable::run) {
                         @Override
                         protected void startPolling() {
                             callOrder.add("startPolling");
@@ -904,7 +908,8 @@ class ProtocolAdapterWrapperTest {
                     moduleServices,
                     tagManager,
                     northboundConsumerFactory,
-                    protocolAdapterWritingService);
+                    protocolAdapterWritingService,
+                    Runnable::run);
 
             assertThat(writingWrapper.start()).isTrue();
             assertThat(writingWrapper.stop(false)).isTrue();
@@ -1010,7 +1015,8 @@ class ProtocolAdapterWrapperTest {
                         moduleServices,
                         tagManager,
                         northboundConsumerFactory,
-                        protocolAdapterWritingService);
+                        protocolAdapterWritingService,
+                        Runnable::run);
 
                 final CountDownLatch latch = new CountDownLatch(2);
 
@@ -1102,7 +1108,8 @@ class ProtocolAdapterWrapperTest {
                     moduleServices,
                     tagManager,
                     northboundConsumerFactory,
-                    protocolAdapterWritingService);
+                    protocolAdapterWritingService,
+                    Runnable::run);
         }
 
         @Test
@@ -1192,7 +1199,8 @@ class ProtocolAdapterWrapperTest {
                         moduleServices,
                         tagManager,
                         northboundConsumerFactory,
-                        protocolAdapterWritingService);
+                        protocolAdapterWritingService,
+                        Runnable::run);
 
                 iterationWrapper.start();
                 iterationState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
