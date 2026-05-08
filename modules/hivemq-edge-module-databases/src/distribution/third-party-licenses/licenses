@@ -7,8 +7,7 @@ hivemq-edge-module-databases uses the following third party libraries:
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  com.microsoft.sqlserver:mssql-jdbc                                         | 12.10.2.jre11                             | MIT           | https://spdx.org/licenses/MIT.html
  com.zaxxer:HikariCP                                                        | 6.3.3                                     | Apache-2.0    | https://spdx.org/licenses/Apache-2.0.html
- org.checkerframework:checker-qual                                          | 3.52.0                                    | MIT           | https://spdx.org/licenses/MIT.html
- org.postgresql:postgresql                                                  | 42.7.10                                   | BSD-2-Clause  | https://spdx.org/licenses/BSD-2-Clause.html
+ org.postgresql:postgresql                                                  | 42.7.11                                   | BSD-2-Clause  | https://spdx.org/licenses/BSD-2-Clause.html
  org.slf4j:slf4j-api                                                        | 2.0.17                                    | MIT           | https://spdx.org/licenses/MIT.html
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
