@@ -51,7 +51,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -86,7 +85,6 @@ public class ProtocolAdapterWrapper {
     private static final Logger LOGGER = LoggerFactory.getLogger(ProtocolAdapterWrapper.class);
 
     private final @NotNull ProtocolAdapter adapter;
-    private final @NotNull AtomicBoolean destroyed = new AtomicBoolean(false);
     private final @NotNull List<ProtocolAdapterStateChangeListener> stateChangeListeners = new CopyOnWriteArrayList<>();
     private volatile @NotNull ProtocolAdapterRuntimeState state;
     private volatile @NotNull ProtocolAdapterConnectionState northboundConnectionState;
@@ -518,7 +516,8 @@ public class ProtocolAdapterWrapper {
 
         if (state == ProtocolAdapterRuntimeState.Idle) {
             if (destroy) {
-                destroy();
+                LOGGER.info("Destroying adapter with id '{}'", getAdapterId());
+                adapter.destroy();
             }
             return true;
         }
@@ -544,7 +543,8 @@ public class ProtocolAdapterWrapper {
                 transitionTo(ProtocolAdapterRuntimeState.Idle).status().isSuccess();
         protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
         if (destroy) {
-            destroy();
+            LOGGER.info("Destroying adapter with id '{}'", getAdapterId());
+            adapter.destroy();
         }
         final boolean success = stateTransitionSuccess && southboundSuccess && northboundSuccess;
         if (success) {
@@ -553,23 +553,6 @@ public class ProtocolAdapterWrapper {
             LOGGER.error("Error stopping adapter with id {}", getAdapterId());
         }
         return success;
-    }
-
-    /**
-     * Destroy the adapter, releasing any resources held by the underlying {@link ProtocolAdapter}.
-     * Idempotent: subsequent calls are no-ops. Safe to call regardless of FSM state, but typically
-     * only invoked from {@link #stop(boolean)} (when {@code destroy=true}) or from shutdown when
-     * the adapter has been left in {@code Idle} without prior destroy.
-     */
-    public synchronized void destroy() {
-        if (destroyed.compareAndSet(false, true)) {
-            LOGGER.info("Destroying adapter with id '{}'", getAdapterId());
-            adapter.destroy();
-        }
-    }
-
-    public boolean isDestroyed() {
-        return destroyed.get();
     }
 
     // ===== Connection Management =====
