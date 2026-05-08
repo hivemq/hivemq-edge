@@ -24,7 +24,7 @@ jobs:
           token: ${{ secrets.JENKINS_GITHUB_TOKEN }}
 
       - name: Setup Snyk
-        uses: snyk/actions/setup@master
+        uses: snyk/actions/setup@9cf6ca713d71123d2d229cc3d7f145b96ea3c518 # master
 
       - name: Run Snyk monitor
         shell: bash
