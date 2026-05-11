@@ -425,6 +425,29 @@ class ProtocolAdapterWrapperTest {
             assertThat(wrapper.stop(false)).isTrue();
             assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Idle);
         }
+
+        @Test
+        void failedNorthboundStart_cleanupPreservesErrorConnectionStatus() throws ProtocolAdapterException {
+            // Northbound start fails (matches Modbus invalid-host: adapter signals failStart).
+            doAnswer(invocation -> {
+                        final ProtocolAdapterStartOutput output = invocation.getArgument(2);
+                        output.failStart(new RuntimeException("invalid host"), "invalid host");
+                        return null;
+                    })
+                    .when(protocolAdapter)
+                    .start(eq(ProtocolAdapterConnectionDirection.Northbound), any(), any());
+
+            assertThat(wrapper.start()).isFalse();
+            assertThat(wrapper.getState()).isEqualTo(ProtocolAdapterRuntimeState.Error);
+            // FSM must still drain back to Disconnected so the adapter can be restarted later.
+            assertThat(wrapper.getNorthboundConnectionState()).isEqualTo(ProtocolAdapterConnectionState.Disconnected);
+
+            // ERROR must have been set on the legacy ConnectionStatus during the failure.
+            verify(protocolAdapterState).setErrorConnectionStatus(any(), eq("invalid host"));
+            // ...and the post-failure cleanup must NOT have overwritten it back to DISCONNECTED.
+            verify(protocolAdapterState, never())
+                    .setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
+        }
     }
 
     @Nested
