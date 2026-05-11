@@ -644,6 +644,11 @@ public class ProtocolAdapterWrapper {
             return true;
         }
 
+        // Preserve ERROR on the legacy ConnectionStatus when draining the FSM out of Error
+        // (e.g. failed-start cleanup): the FSM must still walk Error → Disconnecting → Disconnected,
+        // but the user-visible status must keep reflecting the original failure.
+        final boolean wasError = northboundConnectionState.isError();
+
         LOGGER.info("Stopping northbound for protocol adapter '{}'.", getAdapterId());
 
         // current → Disconnecting
@@ -666,7 +671,7 @@ public class ProtocolAdapterWrapper {
         final boolean success = transitionNorthboundConnectionTo(ProtocolAdapterConnectionState.Disconnected)
                 .status()
                 .isSuccess();
-        if (success) {
+        if (success && !wasError) {
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
         }
         return disconnectSuccess && success;
