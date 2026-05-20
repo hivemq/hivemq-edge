@@ -261,7 +261,7 @@ describe('checkValiditySchema', () => {
         },
         id: 'node-id',
         schemaDefinition:
-          'CksKCnJvb3QucHJvdG8iNQoOR3BzQ29vcmRpbmF0ZXMSEQoJbG9uZ2l0dWRlGAEgASgFEhAKCGxhdGl0dWRlGAIgASgFYgZwcm90bzM=',
+          'ClMKCnJvb3QucHJvdG8iPQoOR3BzQ29vcmRpbmF0ZXMSFQoJbG9uZ2l0dWRlGAEgASgFQgIQABIUCghsYXRpdHVkZRgCIAEoBUICEABiBnByb3RvMw==',
         type: SchemaType.PROTOBUF,
       })
       expect(resources).toBeUndefined()
