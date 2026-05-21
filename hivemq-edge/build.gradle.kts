@@ -468,7 +468,7 @@ tasks.forbiddenApisTest { enabled = false }
 
 hivemqLicense {
     projectName.set("HiveMQ Edge")
-    thirdPartyLicenseDirectory.set(layout.projectDirectory.dir("src/distribution/third-party-licenses"))
+    thirdPartyLicenseDirectory.set(layout.buildDirectory.dir("reports/third-party-licenses"))
     ignoredGroupPrefixes.addAll("com.hivemq", "com.github.saasquatch")
 }
 

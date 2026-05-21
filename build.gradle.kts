@@ -34,6 +34,12 @@ tasks.register("license") {
     dependsOn(gradle.includedBuilds.filter { it.name != "hivemq-edge-frontend" }.filter { it.name != "edge-plugins" }.map { it.task(":updateThirdPartyLicenses") })
 }
 
+tasks.register("checkApprovedLicenses") {
+    group = "checkApprovedLicenses"
+
+    dependsOn(gradle.includedBuilds.filter { it.name != "hivemq-edge-frontend" }.filter { it.name != "edge-plugins" }.map { it.task(":checkApprovedLicenses") })
+}
+
 tasks.register("check") {
     group = "verification"
 
