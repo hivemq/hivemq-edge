@@ -87,6 +87,13 @@ class SpotlessConventionPlugin : Plugin<Project> {
             trimTrailingWhitespace()
             endWithNewline()
         }
+
+        // ktlint's embedded Kotlin compiler can fail to initialize when raced from parallel
+        // composite-build workers; caching that failure poisons every downstream builder that
+        // pulls the entry. Disable caching for the Kotlin Spotless tasks only.
+        project.tasks
+            .matching { it.name == "spotlessKotlin" || it.name == "spotlessKotlinGradle" }
+            .configureEach { outputs.cacheIf { false } }
     }
 
     /**
