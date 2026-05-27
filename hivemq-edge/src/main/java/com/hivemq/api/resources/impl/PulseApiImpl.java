@@ -57,6 +57,8 @@ import com.hivemq.edge.api.model.ManagedAsset;
 import com.hivemq.edge.api.model.ManagedAssetList;
 import com.hivemq.edge.api.model.PulseActivationToken;
 import com.hivemq.edge.api.model.PulseStatus;
+import com.hivemq.edge.pulse.integration.api.management.PulseAgentStatus;
+import com.hivemq.edge.pulse.integration.api.management.PulseManagement;
 import com.hivemq.pulse.asset.PulseAgentAsset;
 import com.hivemq.pulse.asset.PulseAgentAssetMapping;
 import com.hivemq.pulse.asset.PulseAgentAssets;
@@ -64,9 +66,7 @@ import com.hivemq.pulse.converters.PulseAgentAssetMappingStatusConverter;
 import com.hivemq.pulse.converters.PulseAgentAssetSchemaConverter;
 import com.hivemq.pulse.converters.PulseAgentAssetsConverter;
 import com.hivemq.pulse.converters.PulseAgentStatusConverter;
-import com.hivemq.pulse.status.Status;
-import com.hivemq.pulse.status.StatusProvider;
-import com.hivemq.pulse.status.StatusProviderRegistry;
+import com.hivemq.pulse.management.PulseManagementHolder;
 import com.hivemq.pulse.utils.PulseAgentAssetUtils;
 import com.hivemq.util.ErrorResponseUtil;
 import jakarta.inject.Inject;
@@ -100,7 +100,7 @@ public class PulseApiImpl implements PulseApi {
     private final @NotNull AssetMappingExtractor assetMappingExtractor;
     private final @NotNull PulseExtractor pulseExtractor;
     private final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor;
-    private final @NotNull StatusProviderRegistry statusProviderRegistry;
+    private final @NotNull PulseManagementHolder pulseManagementHolder;
     private final @NotNull SystemInformation systemInformation;
 
     @Inject
@@ -109,11 +109,11 @@ public class PulseApiImpl implements PulseApi {
             final @NotNull AssetMappingExtractor assetMappingExtractor,
             final @NotNull PulseExtractor pulseExtractor,
             final @NotNull ProtocolAdapterExtractor protocolAdapterExtractor,
-            final @NotNull StatusProviderRegistry statusProviderRegistry) {
+            final @NotNull PulseManagementHolder pulseManagementHolder) {
         this.assetMappingExtractor = assetMappingExtractor;
         this.pulseExtractor = pulseExtractor;
         this.protocolAdapterExtractor = protocolAdapterExtractor;
-        this.statusProviderRegistry = statusProviderRegistry;
+        this.pulseManagementHolder = pulseManagementHolder;
         this.systemInformation = systemInformation;
     }
 
@@ -306,21 +306,20 @@ public class PulseApiImpl implements PulseApi {
 
     @Override
     public synchronized @NotNull Response deletePulseActivationToken() {
-        final Optional<StatusProvider> optionalStatusProvider =
-                statusProviderRegistry.getStatusProviders().stream().findFirst();
-        if (optionalStatusProvider.isEmpty()) {
+        final Optional<PulseManagement> optionalPulseManagement = pulseManagementHolder.get();
+        if (optionalPulseManagement.isEmpty()) {
             return ErrorResponseUtil.errorResponse(new InternalServerError(null));
         }
-        final StatusProvider statusProvider = optionalStatusProvider.get();
-        if (statusProvider.getStatus().activationStatus() == Status.ActivationStatus.DEACTIVATED) {
+        final PulseManagement pulseManagement = optionalPulseManagement.get();
+        if (pulseManagement.getStatus().status() == PulseAgentStatus.Status.DEACTIVATED) {
             return ErrorResponseUtil.errorResponse(new ActivationTokenAlreadyDeletedError());
         }
         try {
-            statusProvider.deactivatePulse();
+            pulseManagement.deactivatePulse();
         } catch (final Exception e) {
             return ErrorResponseUtil.errorResponse(new InternalServerError(e.getMessage()));
         }
-        switch (statusProvider.getStatus().activationStatus()) {
+        switch (pulseManagement.getStatus().status()) {
             case DEACTIVATED -> {
                 return Response.ok().build();
             }
@@ -406,13 +405,12 @@ public class PulseApiImpl implements PulseApi {
 
     @Override
     public @NotNull Response getPulseStatus() {
-        final Optional<StatusProvider> optionalStatusProvider =
-                statusProviderRegistry.getStatusProviders().stream().findFirst();
-        if (optionalStatusProvider.isEmpty()) {
+        final Optional<PulseManagement> optionalPulseManagement = pulseManagementHolder.get();
+        if (optionalPulseManagement.isEmpty()) {
             return ErrorResponseUtil.errorResponse(new InternalServerError(null));
         }
-        final StatusProvider statusProvider = optionalStatusProvider.get();
-        final Status status = statusProvider.getStatus();
+        final PulseManagement pulseManagement = optionalPulseManagement.get();
+        final PulseAgentStatus status = pulseManagement.getStatus();
         final PulseStatus pulseStatus = PulseAgentStatusConverter.INSTANCE.toRestEntity(status);
         return Response.ok(pulseStatus).build();
     }
@@ -542,22 +540,21 @@ public class PulseApiImpl implements PulseApi {
             final @NotNull PulseActivationToken pulseActivationToken) {
         final String token = pulseActivationToken.getToken();
         try {
-            final Optional<StatusProvider> optionalStatusProvider =
-                    statusProviderRegistry.getStatusProviders().stream().findFirst();
-            if (optionalStatusProvider.isEmpty()) {
+            final Optional<PulseManagement> optionalPulseManagement = pulseManagementHolder.get();
+            if (optionalPulseManagement.isEmpty()) {
                 LOGGER.error(
-                        "Could not find status provider for pulse activation token. This is likely due to a missing pulse-module in the modules folder of the edge installation.");
+                        "Could not find pulse management for pulse activation token. This is likely due to a missing pulse-module in the modules folder of the edge installation.");
                 return ErrorResponseUtil.errorResponse(
                         new InternalServerError(
-                                "Could not find status provider for pulse activation token. This is likely due to a missing pulse-module in the modules folder of the edge installation."));
+                                "Could not find pulse management for pulse activation token. This is likely due to a missing pulse-module in the modules folder of the edge installation."));
             }
-            final StatusProvider statusProvider = optionalStatusProvider.get();
-            final boolean tokenValid = statusProvider.activatePulse(token);
+            final PulseManagement pulseManagement = optionalPulseManagement.get();
+            final boolean tokenValid = pulseManagement.activatePulse(token);
             if (!tokenValid) {
                 return ErrorResponseUtil.errorResponse(new ActivationTokenInvalidError());
             }
-            switch (statusProvider.getStatus().activationStatus()) {
-                case ACTIVATED -> {
+            switch (pulseManagement.getStatus().status()) {
+                case ACTIVATED_CONNECTED, ACTIVATED_DISCONNECTED -> {
                     return Response.ok().build();
                 }
                 case DEACTIVATED -> {
@@ -584,25 +581,17 @@ public class PulseApiImpl implements PulseApi {
     }
 
     private @NotNull Optional<Response> checkStatus() {
-        final Optional<StatusProvider> optionalStatusProvider =
-                statusProviderRegistry.getStatusProviders().stream().findFirst();
-        if (optionalStatusProvider.isEmpty()) {
+        final Optional<PulseManagement> optionalPulseManagement = pulseManagementHolder.get();
+        if (optionalPulseManagement.isEmpty()) {
             return Optional.of(ErrorResponseUtil.errorResponse(new InternalServerError(null)));
         }
-        final StatusProvider statusProvider = optionalStatusProvider.get();
-        switch (statusProvider.getStatus().activationStatus()) {
-            case ACTIVATED -> {
-                switch (statusProvider.getStatus().connectionStatus()) {
-                    case CONNECTED -> {
-                        return Optional.empty();
-                    }
-                    case DISCONNECTED -> {
-                        return Optional.of(ErrorResponseUtil.errorResponse(new PulseAgentNotConnectedError()));
-                    }
-                    default -> {
-                        return Optional.of(ErrorResponseUtil.errorResponse(new InternalServerError(null)));
-                    }
-                }
+        final PulseManagement pulseManagement = optionalPulseManagement.get();
+        switch (pulseManagement.getStatus().status()) {
+            case ACTIVATED_CONNECTED -> {
+                return Optional.empty();
+            }
+            case ACTIVATED_DISCONNECTED -> {
+                return Optional.of(ErrorResponseUtil.errorResponse(new PulseAgentNotConnectedError()));
             }
             case DEACTIVATED -> {
                 return Optional.of(ErrorResponseUtil.errorResponse(new PulseAgentDeactivatedError()));

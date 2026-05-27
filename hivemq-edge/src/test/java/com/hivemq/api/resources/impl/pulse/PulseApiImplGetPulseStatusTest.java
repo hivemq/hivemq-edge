@@ -16,42 +16,45 @@
 package com.hivemq.api.resources.impl.pulse;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.when;
 
 import com.hivemq.edge.api.model.PulseStatus;
-import com.hivemq.pulse.converters.PulseAgentActivationStatusConverter;
-import com.hivemq.pulse.converters.PulseAgentConnectionStatusConverter;
-import com.hivemq.pulse.status.Status;
+import com.hivemq.edge.pulse.integration.api.management.PulseAgentStatus;
 import jakarta.ws.rs.core.Response;
-import java.util.List;
-import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.EnumSource;
 
 public class PulseApiImplGetPulseStatusTest extends AbstractPulseApiImplTest {
-    protected static @NotNull Stream<Arguments> statusProvider() {
-        return Stream.of(Status.ActivationStatus.values())
-                .flatMap(color -> Stream.of(Status.ConnectionStatus.values()).map(shape -> arguments(color, shape)));
-    }
 
     @ParameterizedTest
-    @MethodSource("statusProvider")
-    public void whenAllKindsOfStatusAreProvided_thenReturnsStatus(
-            final @NotNull Status.ActivationStatus activationStatus,
-            final @NotNull Status.ConnectionStatus connectionStatus) {
-        when(statusProvider.getStatus()).thenReturn(new Status(activationStatus, connectionStatus, List.of()));
+    @EnumSource(PulseAgentStatus.Status.class)
+    public void whenAllKindsOfStatusAreProvided_thenReturnsStatus(final @NotNull PulseAgentStatus.Status status) {
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(status));
         try (final Response response = pulseApi.getPulseStatus()) {
             assertThat(response.getStatus()).isEqualTo(200);
             assertThat(response.getEntity()).isInstanceOf(PulseStatus.class);
             final PulseStatus pulseStatus = (PulseStatus) response.getEntity();
             assertThat(pulseStatus).isNotNull();
-            assertThat(pulseStatus.getActivation())
-                    .isEqualTo(PulseAgentActivationStatusConverter.INSTANCE.toRestEntity(activationStatus));
-            assertThat(pulseStatus.getRuntime())
-                    .isEqualTo(PulseAgentConnectionStatusConverter.INSTANCE.toRestEntity(connectionStatus));
+            assertThat(pulseStatus.getActivation()).isEqualTo(expectedActivation(status));
+            assertThat(pulseStatus.getRuntime()).isEqualTo(expectedRuntime(status));
         }
+    }
+
+    private static @NotNull PulseStatus.ActivationEnum expectedActivation(
+            final @NotNull PulseAgentStatus.Status status) {
+        return switch (status) {
+            case ACTIVATED_CONNECTED, ACTIVATED_DISCONNECTED -> PulseStatus.ActivationEnum.ACTIVATED;
+            case DEACTIVATED -> PulseStatus.ActivationEnum.DEACTIVATED;
+            case ERROR -> PulseStatus.ActivationEnum.ERROR;
+        };
+    }
+
+    private static @NotNull PulseStatus.RuntimeEnum expectedRuntime(final @NotNull PulseAgentStatus.Status status) {
+        return switch (status) {
+            case ACTIVATED_CONNECTED -> PulseStatus.RuntimeEnum.CONNECTED;
+            case ACTIVATED_DISCONNECTED, DEACTIVATED -> PulseStatus.RuntimeEnum.DISCONNECTED;
+            case ERROR -> PulseStatus.RuntimeEnum.ERROR;
+        };
     }
 }

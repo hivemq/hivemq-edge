@@ -13,18 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.pulse.status;
+package com.hivemq.edge.pulse.integration.api.management;
 
+import com.hivemq.edge.pulse.integration.api.management.PulseAgentStatus;
 import org.jetbrains.annotations.NotNull;
 
-public interface StatusProvider {
+/**
+ * Management surface for the Pulse Agent integration. Exposes the current activation status, lets callers observe
+ * status transitions, and allows them to activate or deactivate the agent.
+ */
+public interface PulseManagement {
 
     @NotNull
-    Status getStatus();
+    PulseAgentStatus getStatus();
 
     /**
-     * Adds a listener that will be notified when the status changes.
-     * Will be called once with current state when registered.
+     * Adds a listener that will be notified when the status changes. Will be called once with the current state
+     * when registered.
      *
      * @param listener the listener
      */
@@ -32,20 +37,20 @@ public interface StatusProvider {
 
     void removeStatusChangedListener(@NotNull StatusChangedListener listener);
 
-    interface StatusChangedListener {
-        void onStatusChanged(@NotNull Status status);
-    }
-
     /**
      * Activates pulse with the given connection string.
      *
      * @param connectionString the pulse connection string
      * @return if the connection string is valid and the pulse could be activated
      */
-    boolean activatePulse(final @NotNull String connectionString);
+    boolean activatePulse(@NotNull String connectionString);
 
     /**
-     * Deactivate pulse.
+     * Deactivates pulse.
      */
     void deactivatePulse();
+
+    interface StatusChangedListener {
+        void onStatusChanged(@NotNull PulseAgentStatus status);
+    }
 }

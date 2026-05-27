@@ -23,12 +23,12 @@ import com.hivemq.api.errors.pulse.PulseAgentDeactivatedError;
 import com.hivemq.api.errors.pulse.PulseAgentNotConnectedError;
 import com.hivemq.edge.api.model.ManagedAsset;
 import com.hivemq.edge.api.model.ManagedAssetList;
+import com.hivemq.edge.pulse.integration.api.management.PulseAgentStatus;
 import com.hivemq.pulse.asset.PulseAgentAsset;
 import com.hivemq.pulse.asset.PulseAgentAssetMapping;
 import com.hivemq.pulse.asset.PulseAgentAssetMappingStatus;
 import com.hivemq.pulse.converters.PulseAgentAssetMappingStatusConverter;
 import com.hivemq.pulse.converters.PulseAgentAssetSchemaConverter;
-import com.hivemq.pulse.status.Status;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.UUID;
@@ -37,9 +37,7 @@ import org.junit.jupiter.api.Test;
 public class PulseApiImplGetManagedAssetsTest extends AbstractPulseApiImplTest {
     @Test
     public void whenActivationStatusIsDeactivated_thenReturnsPulseAgentDeactivatedError() {
-        when(statusProvider.getStatus())
-                .thenReturn(
-                        new Status(Status.ActivationStatus.DEACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.DEACTIVATED));
         try (final Response response = pulseApi.getManagedAssets()) {
             assertThat(response.getStatus()).isEqualTo(400);
             assertThat(response.getEntity()).isInstanceOf(PulseAgentDeactivatedError.class);
@@ -48,8 +46,7 @@ public class PulseApiImplGetManagedAssetsTest extends AbstractPulseApiImplTest {
 
     @Test
     public void whenActivationStatusIsError_thenReturnsInternalServerError() {
-        when(statusProvider.getStatus())
-                .thenReturn(new Status(Status.ActivationStatus.ERROR, Status.ConnectionStatus.CONNECTED, List.of()));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ERROR));
         try (final Response response = pulseApi.getManagedAssets()) {
             assertThat(response.getStatus()).isEqualTo(500);
             assertThat(response.getEntity()).isInstanceOf(InternalServerError.class);
@@ -58,9 +55,7 @@ public class PulseApiImplGetManagedAssetsTest extends AbstractPulseApiImplTest {
 
     @Test
     public void whenConnectionStatusIsDisconnected_thenReturnsPulseAgentNotConnectedError() {
-        when(statusProvider.getStatus())
-                .thenReturn(
-                        new Status(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.DISCONNECTED, List.of()));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_DISCONNECTED));
         try (final Response response = pulseApi.getManagedAssets()) {
             assertThat(response.getStatus()).isEqualTo(503);
             assertThat(response.getEntity()).isInstanceOf(PulseAgentNotConnectedError.class);
@@ -69,8 +64,7 @@ public class PulseApiImplGetManagedAssetsTest extends AbstractPulseApiImplTest {
 
     @Test
     public void whenConnectionStatusIsError_thenReturnsInternalServerError() {
-        when(statusProvider.getStatus())
-                .thenReturn(new Status(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.ERROR, List.of()));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ERROR));
         try (final Response response = pulseApi.getManagedAssets()) {
             assertThat(response.getStatus()).isEqualTo(500);
             assertThat(response.getEntity()).isInstanceOf(InternalServerError.class);
@@ -79,9 +73,7 @@ public class PulseApiImplGetManagedAssetsTest extends AbstractPulseApiImplTest {
 
     @Test
     public void whenNoAssets_thenReturnsNoAssets() {
-        when(statusProvider.getStatus())
-                .thenReturn(
-                        new Status(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
         when(pulseAssetsEntity.getPulseAssetEntities()).thenReturn(List.of());
         try (final Response response = pulseApi.getManagedAssets()) {
             assertThat(response.getStatus()).isEqualTo(200);
@@ -94,9 +86,7 @@ public class PulseApiImplGetManagedAssetsTest extends AbstractPulseApiImplTest {
 
     @Test
     public void whenAssetsWithoutMappings_thenReturnsAssetsWithMappingStatusUnmapped() {
-        when(statusProvider.getStatus())
-                .thenReturn(
-                        new Status(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
         final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder()
                 .id(UUID.randomUUID())
                 .name("Test Asset")
@@ -132,9 +122,7 @@ public class PulseApiImplGetManagedAssetsTest extends AbstractPulseApiImplTest {
 
     @Test
     public void whenAssetsWithMappings_thenReturnsAssetsWithMappings() {
-        when(statusProvider.getStatus())
-                .thenReturn(
-                        new Status(Status.ActivationStatus.ACTIVATED, Status.ConnectionStatus.CONNECTED, List.of()));
+        when(statusProvider.getStatus()).thenReturn(pulseAgentStatus(PulseAgentStatus.Status.ACTIVATED_CONNECTED));
         final UUID id = UUID.randomUUID();
         final UUID mappingId = UUID.randomUUID();
         final PulseAgentAsset expectedAsset = new PulseAgentAsset.Builder()

@@ -13,27 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.pulse.asset;
+package com.hivemq.edge.integration.api.asset;
 
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 import org.jetbrains.annotations.NotNull;
 
-@Singleton
-public class AssetProviderRegistry {
+public interface AssetProviderRegistry {
 
-    private final @NotNull Set<ExternalAssetProvider> assetProviders = new CopyOnWriteArraySet<>();
+    void registerAssetProvider(@NotNull ExternalAssetProvider assetProvider);
 
-    @Inject
-    public AssetProviderRegistry() {}
-
-    public void registerAssetProvider(final @NotNull ExternalAssetProvider assetProvider) {
-        assetProviders.add(assetProvider);
-    }
-
-    public @NotNull Set<ExternalAssetProvider> getAssetProviders() {
-        return Set.copyOf(assetProviders);
-    }
+    @NotNull
+    Set<ExternalAssetProvider> getAssetProviders();
 }

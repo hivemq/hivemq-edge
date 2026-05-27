@@ -17,33 +17,26 @@ package com.hivemq.pulse.status;
 
 import com.hivemq.api.model.capabilities.Capability;
 import com.hivemq.edge.HiveMQCapabilityService;
-import java.util.List;
+import com.hivemq.edge.pulse.integration.api.management.PulseAgentStatus;
+import com.hivemq.edge.pulse.integration.api.management.PulseManagement;
 import org.jetbrains.annotations.NotNull;
 
-public class PulseAgentStatusChangedListener implements StatusProvider.StatusChangedListener {
+public class PulseAgentStatusChangedListener implements PulseManagement.StatusChangedListener {
     private static final @NotNull Capability CAPABILITY = new Capability(
             "pulse-asset-management",
             "HiveMQ Pulse Agent Asset Management",
             "This enables HiveMQ Edge to be a HiveMQ Pulse Agent.");
     private final @NotNull HiveMQCapabilityService capabilityService;
-    private @NotNull Status status;
 
     public PulseAgentStatusChangedListener(final @NotNull HiveMQCapabilityService capabilityService) {
         this.capabilityService = capabilityService;
-        this.status = new Status(Status.ActivationStatus.DEACTIVATED, Status.ConnectionStatus.DISCONNECTED, List.of());
-    }
-
-    public @NotNull Status getStatus() {
-        return status;
     }
 
     @Override
-    public void onStatusChanged(@NotNull final Status status) {
-        this.status = status;
-        if (this.status.activationStatus() == Status.ActivationStatus.ACTIVATED) {
-            capabilityService.addCapability(CAPABILITY);
-        } else {
-            capabilityService.removeCapability(CAPABILITY);
+    public void onStatusChanged(@NotNull final PulseAgentStatus status) {
+        switch (status.status()) {
+            case ACTIVATED_CONNECTED, ACTIVATED_DISCONNECTED -> capabilityService.addCapability(CAPABILITY);
+            case DEACTIVATED, ERROR -> capabilityService.removeCapability(CAPABILITY);
         }
     }
 }

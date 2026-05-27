@@ -13,27 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.pulse.status;
+package com.hivemq.edge.integration.api.message;
 
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
-@Singleton
-public class StatusProviderRegistry {
+/**
+ * A read-only view of an incoming MQTT publish handed to the Pulse Agent integration.
+ */
+public interface Message {
 
-    private final @NotNull Set<StatusProvider> statusProviders = new CopyOnWriteArraySet<>();
+    @NotNull
+    String topic();
 
-    @Inject
-    public StatusProviderRegistry() {}
+    byte @NotNull [] payload();
 
-    public void registerStatusProvider(final @NotNull StatusProvider statusProvider) {
-        statusProviders.add(statusProvider);
-    }
+    @NotNull
+    String uniqueId();
 
-    public @NotNull Set<StatusProvider> getStatusProviders() {
-        return Set.copyOf(statusProviders);
+    long timestamp();
+
+    @NotNull
+    List<UserProperty> userProperties();
+
+    interface UserProperty {
+
+        @NotNull
+        String name();
+
+        @NotNull
+        String value();
     }
 }

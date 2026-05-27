@@ -23,7 +23,7 @@ import com.hivemq.configuration.entity.pulse.PulseAssetsEntity;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
 import com.hivemq.configuration.reader.AssetMappingExtractor;
 import com.hivemq.configuration.reader.PulseExtractor;
-import com.hivemq.pulse.asset.Asset;
+import com.hivemq.edge.integration.api.asset.Asset;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -49,7 +49,7 @@ public class PulseAgentAssetUtils {
     public static void resolveDiff(
             final @NotNull AssetMappingExtractor assetMappingExtractor,
             final @NotNull PulseExtractor pulseExtractor,
-            final @NotNull List<Asset> remoteAssets) {
+            final @NotNull List<? extends Asset> remoteAssets) {
         synchronized (pulseExtractor.getLock()) {
             final PulseEntity oldPulseEntity = pulseExtractor.getPulseEntity();
             final List<PulseAssetEntity> localAssets =

@@ -21,6 +21,9 @@ import com.hivemq.bootstrap.services.CompleteBootstrapService;
 import com.hivemq.bootstrap.services.GeneralBootstrapService;
 import com.hivemq.bootstrap.services.PersistenceBootstrapService;
 import com.hivemq.edge.modules.ModuleLoader;
+import com.hivemq.edge.pulse.integration.api.management.PulseManagement;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -58,15 +61,23 @@ public class CommercialModuleLoaderDiscovery {
         }
     }
 
-    public void persistenceBootstrap(final @NotNull PersistenceBootstrapService persistenceBootstrapService) {
+    public void persistenceBootstrap(
+            final @NotNull PersistenceBootstrapService persistenceBootstrapService,
+            final @NotNull CompletableFuture<Void> pulsePersistencesResult) {
         if (instance != null) {
-            instance.persistenceBootstrap(persistenceBootstrapService);
+            instance.persistenceBootstrap(persistenceBootstrapService, pulsePersistencesResult);
+        } else {
+            // No commercial module loader on the classpath — there's nothing to bootstrap, signal completion
+            // so the edge waiter doesn't block.
+            pulsePersistencesResult.complete(null);
         }
     }
 
-    public void completeBootstrap(final @NotNull CompleteBootstrapService completeBootstrapService) {
+    public void completeBootstrap(
+            final @NotNull CompleteBootstrapService completeBootstrapService,
+            final @NotNull Consumer<PulseManagement> pulseManagementSink) {
         if (instance != null) {
-            instance.afterPersistenceBootstrap(completeBootstrapService);
+            instance.afterPersistenceBootstrap(completeBootstrapService, pulseManagementSink);
         }
     }
 

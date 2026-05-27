@@ -25,6 +25,10 @@ includeBuild("../hivemq-edge-frontend") {
     name = "hivemq-edge-frontend"
 }
 
+includeBuild("../hivemq-edge-integration-api")
+
+includeBuild("../hivemq-edge-pulse-integration-api")
+
 if (file("../../hivemq-edge-extension-sdk").exists()) {
     includeBuild("../../hivemq-edge-extension-sdk")
 } else {

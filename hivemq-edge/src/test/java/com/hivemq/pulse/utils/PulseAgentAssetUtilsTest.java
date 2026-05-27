@@ -32,7 +32,7 @@ import com.hivemq.configuration.entity.pulse.PulseAssetMappingStatus;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
 import com.hivemq.configuration.reader.AssetMappingExtractor;
 import com.hivemq.configuration.reader.PulseExtractor;
-import com.hivemq.pulse.asset.Asset;
+import com.hivemq.edge.integration.api.asset.Asset;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.IntStream;
@@ -87,13 +87,47 @@ public class PulseAgentAssetUtilsTest {
     }
 
     private Asset createRemoteAsset(final int index) {
-        return new Asset(
+        return asset(
                 "00000000-0000-0000-0000-"
                         + "0".repeat(12 - String.valueOf(index).length()) + index,
                 "topic/asset/" + index,
                 "Name " + index,
                 "Description " + index,
                 "{ \"name\": \"Name " + index + "\" }");
+    }
+
+    private static Asset asset(
+            final @NotNull String id,
+            final @NotNull String topic,
+            final @NotNull String name,
+            final @NotNull String description,
+            final @NotNull String jsonSchema) {
+        return new Asset() {
+            @Override
+            public @NotNull String id() {
+                return id;
+            }
+
+            @Override
+            public @NotNull String topic() {
+                return topic;
+            }
+
+            @Override
+            public @NotNull String name() {
+                return name;
+            }
+
+            @Override
+            public @NotNull String description() {
+                return description;
+            }
+
+            @Override
+            public @NotNull String jsonSchema() {
+                return jsonSchema;
+            }
+        };
     }
 
     @Test
@@ -160,12 +194,12 @@ public class PulseAgentAssetUtilsTest {
         PulseAgentAssetUtils.resolveDiff(
                 assetMappingExtractor,
                 pulseExtractor,
-                List.of(remoteAssets
-                        .getFirst()
-                        .withName("Updated Name")
-                        .withDescription("Updated Description")
-                        .withTopic("updated/topic")
-                        .withJsonSchema("{ \"name\": \"Updated Name\" }")));
+                List.of(asset(
+                        remoteAssets.getFirst().id(),
+                        "updated/topic",
+                        "Updated Name",
+                        "Updated Description",
+                        "{ \"name\": \"Updated Name\" }")));
         verify(pulseExtractor).setPulseEntity(pulseEntityArgumentCaptor.capture());
         final PulseEntity newPulseEntity = pulseEntityArgumentCaptor.getValue();
         assertThat(newPulseEntity.getPulseAssetsEntity().getPulseAssetEntities())
@@ -292,11 +326,12 @@ public class PulseAgentAssetUtilsTest {
             PulseAgentAssetUtils.resolveDiff(
                     assetMappingExtractor,
                     pulseExtractor,
-                    List.of(remoteAssets
-                            .getFirst()
-                            .withName("Updated Name")
-                            .withTopic("updated/topic")
-                            .withJsonSchema("{ \"name\": \"Updated Name\" }")));
+                    List.of(asset(
+                            remoteAssets.getFirst().id(),
+                            "updated/topic",
+                            "Updated Name",
+                            remoteAssets.getFirst().description(),
+                            "{ \"name\": \"Updated Name\" }")));
             verify(pulseExtractor, times(i + 1)).setPulseEntity(pulseEntityArgumentCaptor.capture());
             final PulseEntity newPulseEntity = pulseEntityArgumentCaptor.getValue();
             assertThat(newPulseEntity.getPulseAssetsEntity().getPulseAssetEntities())

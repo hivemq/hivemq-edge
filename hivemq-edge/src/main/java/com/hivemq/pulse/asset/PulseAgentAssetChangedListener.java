@@ -17,6 +17,8 @@ package com.hivemq.pulse.asset;
 
 import com.hivemq.configuration.reader.AssetMappingExtractor;
 import com.hivemq.configuration.reader.PulseExtractor;
+import com.hivemq.edge.integration.api.asset.Asset;
+import com.hivemq.edge.integration.api.asset.ExternalAssetProvider;
 import com.hivemq.pulse.utils.PulseAgentAssetUtils;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
