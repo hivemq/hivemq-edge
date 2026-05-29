@@ -45,7 +45,7 @@ logback = "1.5.32"
 mariadb = "3.5.8"
 milo = "1.1.3"
 mockito = "5.23.0"
-mqtt-sn-codec = "838f51d691"
+mqtt-sn-codec = "0.2.2-1+hivemq"
 mssql = "12.10.2.jre11"
 mtconnect-protocol = "1.0.0"
 netty = "4.2.14.Final"
@@ -143,7 +143,7 @@ milo-encoding-xml = { module = "org.eclipse.milo:milo-encoding-xml", version.ref
 milo-server = { module = "org.eclipse.milo:milo-sdk-server", version.ref = "milo" }
 milo-stack-core = { module = "org.eclipse.milo:milo-stack-core", version.ref = "milo" }
 mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
-mqtt-sn-codec = { module = "com.github.simon622.mqtt-sn:mqtt-sn-codec", version.ref = "mqtt-sn-codec" }
+mqtt-sn-codec = { module = "org.mqtt-sn:mqtt-sn-codec", version.ref = "mqtt-sn-codec" }
 mssql = { module = "com.microsoft.sqlserver:mssql-jdbc", version.ref = "mssql" }
 mtconnect-protocol = { module = "com.hivemq:hivemq-mtconnect-protocol", version.ref = "mtconnect-protocol"}
 nullaway = { module = "com.uber.nullaway:nullaway", version.ref = "nullaway" }

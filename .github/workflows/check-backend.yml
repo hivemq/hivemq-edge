@@ -2,6 +2,9 @@ name: CI Check
 
 on:
   workflow_call:
+    secrets:
+      HIVEMQ_EDGE_BOT_TOKEN:
+        required: true
 
 jobs:
   check:
@@ -36,6 +39,9 @@ jobs:
         with:
           arguments: :test :hivemq-edge:forbiddenApis :hivemqEdgeZip :jacocoMergedReport
           gradle-version: wrapper
+        env:
+          ORG_GRADLE_PROJECT_hivemqCommonsUsername: "hivemq-edge-bot"
+          ORG_GRADLE_PROJECT_hivemqCommonsPassword: ${{ secrets.HIVEMQ_EDGE_BOT_TOKEN }}
 
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@f3a4c8ee80460c780d2932e55fb914138ecaca2c

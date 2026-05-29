@@ -85,6 +85,8 @@ jobs:
     needs: check-for-changes
     uses: ./.github/workflows/check-backend.yml
     if: needs.check-for-changes.outputs.backend-changed == 'true'
+    secrets:
+      HIVEMQ_EDGE_BOT_TOKEN: ${{ secrets.HIVEMQ_EDGE_BOT_TOKEN }}
 
 
   check:
