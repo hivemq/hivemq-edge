@@ -88,6 +88,8 @@ jobs:
     permissions:
       contents: read
       packages: read
+      checks: write
+      pull-requests: write
 
 
   check:

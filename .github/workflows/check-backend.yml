@@ -5,7 +5,9 @@ on:
 
 permissions:
   contents: read
-  packages: read
+  packages: read      # read MQTT-SN artifacts from GitHub Packages
+  checks: write        # publish-unit-test-result-action creates a check run
+  pull-requests: write # jacoco-report / test-results post a PR comment
 
 jobs:
   check:
