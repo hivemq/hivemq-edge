@@ -2,9 +2,10 @@ name: CI Check
 
 on:
   workflow_call:
-    secrets:
-      HIVEMQ_EDGE_BOT_TOKEN:
-        required: true
+
+permissions:
+  contents: read
+  packages: read
 
 jobs:
   check:
@@ -40,8 +41,11 @@ jobs:
           arguments: :test :hivemq-edge:forbiddenApis :hivemqEdgeZip :jacocoMergedReport
           gradle-version: wrapper
         env:
-          ORG_GRADLE_PROJECT_hivemqCommonsUsername: "hivemq-edge-bot"
-          ORG_GRADLE_PROJECT_hivemqCommonsPassword: ${{ secrets.HIVEMQ_EDGE_BOT_TOKEN }}
+          # hivemq-edge-mqtt-sn is a public repo; an authenticated GITHUB_TOKEN
+          # with packages:read can read its GitHub Packages Maven artifacts
+          # cross-repo, so no managed PAT/secret is required here.
+          ORG_GRADLE_PROJECT_hivemqCommonsUsername: ${{ github.actor }}
+          ORG_GRADLE_PROJECT_hivemqCommonsPassword: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@f3a4c8ee80460c780d2932e55fb914138ecaca2c
