@@ -30,12 +30,17 @@ repositories {
     exclusiveContent {
         forRepository {
             maven {
-                url = uri("https://jitpack.io")
+                name = "hivemqEdgeMqttSn"
+                url = uri("https://maven.pkg.github.com/hivemq/hivemq-edge-mqtt-sn")
+                credentials {
+                    username = providers.gradleProperty("hivemqCommonsUsername").orNull
+                    password = providers.gradleProperty("hivemqCommonsPassword").orNull
+                }
             }
         }
         filter {
-            includeGroup("com.github.simon622.mqtt-sn")
-            includeGroup("com.github.simon622")
+            includeGroup("org.mqtt-sn")
+            includeGroup("org.slj")
         }
     }
 }

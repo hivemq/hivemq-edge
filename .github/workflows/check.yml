@@ -85,6 +85,11 @@ jobs:
     needs: check-for-changes
     uses: ./.github/workflows/check-backend.yml
     if: needs.check-for-changes.outputs.backend-changed == 'true'
+    permissions:
+      contents: read
+      packages: read
+      checks: write
+      pull-requests: write
 
 
   check:

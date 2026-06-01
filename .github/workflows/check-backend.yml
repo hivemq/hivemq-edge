@@ -3,6 +3,12 @@ name: CI Check
 on:
   workflow_call:
 
+permissions:
+  contents: read
+  packages: read      # read MQTT-SN artifacts from GitHub Packages
+  checks: write        # publish-unit-test-result-action creates a check run
+  pull-requests: write # jacoco-report / test-results post a PR comment
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -36,6 +42,12 @@ jobs:
         with:
           arguments: :test :hivemq-edge:forbiddenApis :hivemqEdgeZip :jacocoMergedReport
           gradle-version: wrapper
+        env:
+          # hivemq-edge-mqtt-sn is a public repo; an authenticated GITHUB_TOKEN
+          # with packages:read can read its GitHub Packages Maven artifacts
+          # cross-repo, so no managed PAT/secret is required here.
+          ORG_GRADLE_PROJECT_hivemqCommonsUsername: ${{ github.actor }}
+          ORG_GRADLE_PROJECT_hivemqCommonsPassword: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@f3a4c8ee80460c780d2932e55fb914138ecaca2c
