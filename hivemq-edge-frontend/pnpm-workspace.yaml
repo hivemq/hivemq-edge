@@ -5,6 +5,12 @@
 #   `pnpm install --frozen-lockfile` fails with ERR_PNPM_LOCKFILE_CONFIG_MISMATCH.
 # - `allowBuilds` approves the dependency build scripts we trust to run; without it
 #   `pnpm install` fails with ERR_PNPM_IGNORED_BUILDS under pnpm 11.
+# - `minimumReleaseAge: 0` disables the 1-day dependency quarantine that pnpm 11 enables
+#   by default. That quarantine is incompatible with our Renovate workflow: every bump
+#   resolves packages that were just published, so CI would fail with
+#   ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION until the packages age past the cutoff. pnpm 10
+#   had no such check; this restores that behaviour.
+minimumReleaseAge: 0
 allowBuilds:
   '@parcel/watcher': true
   '@percy/core': true
