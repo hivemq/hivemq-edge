@@ -12,3 +12,8 @@ dist/
 public/
 src/api/__generated__
 .gradle/
+
+# Agent working notes and Markdown docs (not product source)
+.tasks/
+.claude/
+README.md

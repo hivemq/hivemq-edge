@@ -66,7 +66,7 @@ export class CombinerFormPage extends RJSFormField {
       },
       get options() {
         workspaceCombinerPanel.mappingEditor.form.within(() => {
-          cy.get('#react-select-entity-listbox > [role="listbox"] > [role="option"]').as('options')
+          cy.get('#react-select-entity-listbox > [role="option"]').as('options')
         })
         return cy.get('@options')
       },

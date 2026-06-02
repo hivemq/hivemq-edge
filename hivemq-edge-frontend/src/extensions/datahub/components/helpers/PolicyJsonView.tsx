@@ -18,7 +18,7 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
-import { LuCode2 } from 'react-icons/lu'
+import { LuCodeXml } from 'react-icons/lu'
 
 import type { PolicyPayload } from '@datahub/types.ts'
 import CopyButton from './CopyButton.tsx'
@@ -47,7 +47,7 @@ export const PolicyJsonView: FC<PolicyJsonViewProps> = ({ payload }) => {
         <h2>
           <AccordionButton data-testid="json-toggle-button">
             <HStack flex="1" textAlign="left">
-              <Icon as={LuCode2} />
+              <Icon as={LuCodeXml} />
               <Text>{t('workspace.dryRun.report.success.details.json.expand')}</Text>
             </HStack>
             <AccordionIcon />
