@@ -6,8 +6,10 @@ import { Handle, useNodeId } from '@xyflow/react'
 import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
 import { isNodeHandleConnectable } from '@datahub/utils/node.utils.ts'
 
-interface CustomHandleProps
-  extends Omit<HandleProps & Pick<HTMLAttributes<HTMLDivElement>, 'style' | 'className'>, 'isConnectable'> {
+interface CustomHandleProps extends Omit<
+  HandleProps & Pick<HTMLAttributes<HTMLDivElement>, 'style' | 'className'>,
+  'isConnectable'
+> {
   isConnectable?: boolean | number
 }
 

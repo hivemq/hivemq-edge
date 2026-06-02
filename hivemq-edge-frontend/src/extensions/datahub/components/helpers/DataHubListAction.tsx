@@ -2,7 +2,7 @@ import type { FC, MouseEventHandler } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { ButtonGroup, HStack } from '@chakra-ui/react'
-import { LuFileEdit, LuTrash2, LuFileSearch, LuDownload } from 'react-icons/lu'
+import { LuFilePen, LuTrash2, LuFileSearch, LuDownload } from 'react-icons/lu'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import { type CombinedPolicy, DesignerStatus, DesignerPolicyType } from '@datahub/types.ts'
@@ -40,7 +40,7 @@ const DataHubListAction: FC<DataHubListActionProps> = ({
             data-testid="list-action-edit"
             onClick={onEdit}
             aria-label={t('Listings.action.edit')}
-            icon={<LuFileEdit />}
+            icon={<LuFilePen />}
           />
         )}
         {canDownload && (
@@ -74,7 +74,7 @@ const DataHubListAction: FC<DataHubListActionProps> = ({
             navigate(`/datahub/${DesignerPolicyType.CREATE_POLICY}`)
           }}
           aria-label={t('Listings.policy.action.draft')}
-          icon={<LuFileEdit />}
+          icon={<LuFilePen />}
         />
         <IconButton
           data-testid="list-action-delete"

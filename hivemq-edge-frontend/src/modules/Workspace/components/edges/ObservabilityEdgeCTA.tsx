@@ -1,5 +1,5 @@
 import type { CSSProperties, FC } from 'react'
-import { LuBarChartBig } from 'react-icons/lu'
+import { LuChartColumnBig } from 'react-icons/lu'
 import { useTranslation } from 'react-i18next'
 import { ButtonGroup, Icon, useColorMode } from '@chakra-ui/react'
 
@@ -21,7 +21,7 @@ const ObservabilityEdgeCTA: FC<ObservabilityEdgeCtaProps> = ({ source, style, on
         data-testid="observability-panel-trigger"
         aria-label={t('workspace.observability.aria-label', { device: source })}
         variant={colorMode === 'light' ? 'outline' : 'solid'}
-        icon={<Icon as={LuBarChartBig} boxSize={6} />}
+        icon={<Icon as={LuChartColumnBig} boxSize={6} />}
         backgroundColor={colorMode === 'light' ? 'white' : 'gray.700'}
         color={style?.stroke}
         onClick={onClick}
