@@ -1,0 +1,6 @@
+# pnpm 11 no longer reads build-script approvals from the package.json "pnpm" field
+# and requires them here as an `allowBuilds` map. Without this, `pnpm install` fails
+# with ERR_PNPM_IGNORED_BUILDS for the @redocly/cli transitive dependencies below.
+allowBuilds:
+  core-js: true
+  protobufjs: true

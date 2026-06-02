@@ -195,42 +195,11 @@
   },
   "engines": {
     "node": "22",
-    "pnpm": "10"
+    "pnpm": "11"
   },
   "overrides": {
     "js-yaml": "4.2.0",
     "ajv": "^8.20.0"
   },
-  "pnpm": {
-    "overrides": {
-      "minimatch@3": "3.1.5",
-      "minimatch@8": "8.0.7",
-      "minimatch@9": "9.0.9",
-      "minimatch@10": "10.2.5",
-      "flatted": "3.4.2",
-      "ajv@>=8 <9": "^8.20.0",
-      "immutable": "^5.1.5",
-      "brace-expansion@^1": "^1.1.14",
-      "brace-expansion@^2": "^2.0.3",
-      "lodash": "^4.18.0",
-      "lodash-es": "^4.18.0",
-      "picomatch@^4": "^4.0.4",
-      "qs@^6": "^6.15.2",
-      "rollup@^4": "^4.57.1",
-      "dompurify@>=3 <4": "^3.4.1",
-      "markdown-it": "^14.1.1",
-      "postcss@^8": "^8.5.12",
-      "yaml@^1": "^1.10.3",
-      "yaml@^2": "^2.8.3",
-      "follow-redirects": "^1.16.0",
-      "ws@^8": "^8.20.1",
-      "fast-uri@^3": "^3.1.2",
-      "systeminformation@^5": "^5.31.6",
-      "ip-address": "^10.1.1",
-      "@protobufjs/utf8": "^1.1.1",
-      "@protobufjs/codegen": "^2.0.5",
-      "uuid@^11": "^11.1.1"
-    }
-  },
-  "packageManager": "pnpm@10.34.1+sha512.b58fbde6dca66a929538021581f648b4570b6ca19b18e7cbd7f2c07a7b24454155388dacdf08f2af3678e88a6d1fe04f9d609df24bf51735a060ea041b374ab7"
+  "packageManager": "pnpm@11.5.1+sha512.93f7b57422ea7068257235b4c16eb60762eb68e1dc23723199cc739043ea9be2c4143274a399d8c6defa2b1176226d9ca1c4b63482d6200c1a8fbaa78c1d1485"
 }
