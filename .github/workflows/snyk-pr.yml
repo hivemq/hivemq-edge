@@ -44,6 +44,15 @@ jobs:
         with:
           node-version: '20.13.1'
 
+      # Snyk only needs pnpm-lock.yaml (overrides are already resolved into it). When a
+      # pnpm-workspace.yaml sits next to the lockfile, the Snyk pnpm plugin treats the dir
+      # as a workspace and refuses to scan unless --all-projects is passed, but that flag
+      # makes Snyk emit a JSON array which the composite action's single-project parser
+      # (jq '.org') cannot read. Removing the (settings-only) workspace file from this
+      # throwaway CI checkout lets Snyk auto-detect the single pnpm project again.
+      - name: Hide pnpm-workspace.yaml from the Snyk pnpm scan
+        run: rm -f hivemq-edge/hivemq-edge-frontend/pnpm-workspace.yaml
+
       - name: Check for new issues (hivemq-edge-frontend)
         uses: hivemq/hivemq-snyk-composite-action@1c18f39e10e7b1d35fa121b91b99c0445b7a4a56 # v2.3.6
         with:

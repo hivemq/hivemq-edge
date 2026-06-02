@@ -157,7 +157,6 @@ jobs:
         uses: ./.github/actions/setup_node
         with:
           working-directory: ./hivemq-edge-frontend/
-          run-install: true
 
       - name: Download artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
@@ -166,7 +165,7 @@ jobs:
           path: ./hivemq-edge-frontend/dist
 
       - name: 🧪 Run Cypress suite
-        uses: cypress-io/github-action@v6
+        uses: cypress-io/github-action@948d67d3074f1bbb6379c8bdbb04e95d2f8e593f # v7.4.0
         with:
           component: ${{ matrix.cypress.component }}
           spec: ${{ matrix.cypress.spec }}
@@ -216,7 +215,7 @@ jobs:
           ls -R ./coverage-combined
           ls -R **/**/*.info
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2 # v7
+        uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v8
         with:
           projectBaseDir: hivemq-edge-frontend
           args: >
