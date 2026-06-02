@@ -53,8 +53,11 @@ describe('SubscriptionsPanel', () => {
     cy.mountWithProviders(<TestingComponent onSubmit={cy.stub} defaultValues={mockBridge} />)
     cy.getByTestId('bridge-subscription-add').click()
     cy.getByTestId('bridge-subscription-add').click()
-    cy.getByTestId(`${MOCK_TYPE}.0.advanced`).click()
-    cy.getByTestId(`${MOCK_TYPE}.0.maxQoS`).should('be.visible')
+    // "Add" prepends an empty (invalid) subscription, so indexes 0 and 1 are the new empty entries
+    // whose advanced accordion is disabled (isDisabled is driven by validation errors). The original
+    // valid subscription from mockBridge is therefore at index 2 and is the only expandable one.
+    cy.getByTestId(`${MOCK_TYPE}.2.advanced`).click()
+    cy.getByTestId(`${MOCK_TYPE}.2.maxQoS`).should('be.visible')
 
     cy.checkAccessibility(undefined, {
       rules: {

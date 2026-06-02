@@ -77,7 +77,7 @@ describe('AssetMapperWizard', () => {
     })
 
     cy.getByTestId('wizard-mapper-selector-container').click()
-    cy.get('#react-select-mapper-listbox [role="listbox"]').within(() => {
+    cy.get('#react-select-mapper-listbox').within(() => {
       cy.get('[role="option"]').should('have.length', 1)
       cy.get('[role="option"]').within(() => {
         cy.getByTestId('node-name').should('have.text', 'my-combiner-for-asset')
@@ -113,7 +113,7 @@ describe('AssetMapperWizard', () => {
 
     cy.getByTestId('wizard-mapper-selector-container').click()
     cy.getByTestId('wizard-mapper-selector-container').type('12343')
-    cy.get('#react-select-mapper-listbox [role="listbox"]').within(() => {
+    cy.get('#react-select-mapper-listbox').within(() => {
       cy.get('[role="option"]').should('have.length', 1)
       cy.get('[role="option"]').should('have.text', 'Create a new mapper: 12343')
       cy.get('[role="option"]').click()

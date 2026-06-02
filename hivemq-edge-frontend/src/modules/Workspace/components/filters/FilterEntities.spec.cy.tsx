@@ -43,7 +43,7 @@ describe('FilterEntities', () => {
     cy.get('[role="group"] label#workspace-filter-entities-label').should('have.text', 'Entities')
     cy.get('[role="group"] #react-select-entities-placeholder').should('have.text', 'Select entities to filter ...')
     cy.get('[role="group"] #workspace-filter-entities-trigger').click()
-    cy.get('#react-select-entities-listbox [role="listbox"]').within(() => {
+    cy.get('#react-select-entities-listbox').within(() => {
       cy.get('[role="option"]').should('have.length', 3)
       cy.get('[role="option"]').eq(0).should('have.text', 'Adapters')
       cy.get('[role="option"]').eq(1).should('have.text', 'Devices')
@@ -103,7 +103,7 @@ describe('FilterEntities', () => {
     cy.get('[role="group"]').should('have.attr', 'data-disabled', '')
 
     cy.get('[role="group"] #workspace-filter-entities-trigger').click({ force: true })
-    cy.get('#react-select-entities-listbox [role="listbox"]').should('not.exist')
+    cy.get('#react-select-entities-listbox').should('not.exist')
 
     cy.get('@onChange').should('not.have.been.called')
   })
