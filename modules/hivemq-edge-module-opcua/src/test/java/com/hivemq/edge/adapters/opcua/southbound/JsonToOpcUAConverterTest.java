@@ -119,4 +119,30 @@ class JsonToOpcUAConverterTest {
         final float value = JsonToOpcUAConverterUtil.extractFloat(DoubleNode.valueOf(12.2));
         assertEquals(12.2, value, 0.0001);
     }
+
+    @Test
+    void extractLong_fromIntNode() {
+        // A small JSON integer such as 290 is parsed by Jackson as an IntNode, but must still convert
+        // to an Int64 (a JSON integer maps to OPC UA Int64).
+        final long value = JsonToOpcUAConverterUtil.extractLong(IntNode.valueOf(290));
+        assertEquals(290L, value);
+    }
+
+    @Test
+    void extractLong_fromLongNode() {
+        final long value = JsonToOpcUAConverterUtil.extractLong(LongNode.valueOf(5_000_000_000L));
+        assertEquals(5_000_000_000L, value);
+    }
+
+    @Test
+    void extractUnsignedLong_fromIntNode() {
+        final var value = JsonToOpcUAConverterUtil.extractUnsignedLong(IntNode.valueOf(290));
+        assertEquals(290L, value.longValue());
+    }
+
+    @Test
+    void extractUnsignedLong_fromLongNode() {
+        final var value = JsonToOpcUAConverterUtil.extractUnsignedLong(LongNode.valueOf(5_000_000_000L));
+        assertEquals(5_000_000_000L, value.longValue());
+    }
 }
