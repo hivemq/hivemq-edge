@@ -68,7 +68,7 @@ Practical how-to guides for common development tasks and patterns.
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [Onboarding Guide](./guides/ONBOARDING.md) | Prerequisites (Node 22, pnpm 10), repository setup, `.env.local` configuration, first run, access | ✅ Complete |
+| [Onboarding Guide](./guides/ONBOARDING.md) | Prerequisites (Node 24, pnpm 11), repository setup, `.env.local` configuration, first run, access | ✅ Complete |
 | [Testing Guide](./guides/TESTING_GUIDE.md) | Testing patterns, E2E structure, Page Object pattern, `cy_interceptCoreE2E`, accessibility | ✅ Complete |
 | [Design Guide](./guides/DESIGN_GUIDE.md) | UI component patterns and button variants | ✅ Complete |
 | [Cypress Guide](./guides/CYPRESS_GUIDE.md) | Cypress rules, selectors, custom commands, Page Objects reference, debugging | ✅ Complete |
