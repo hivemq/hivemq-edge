@@ -20,6 +20,7 @@ import static com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter.MET
 import static com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter.METADATA_SOURCE_PICOSECONDS;
 import static com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter.METADATA_SOURCE_TIMESTAMP;
 import static com.hivemq.edge.adapters.opcua.northbound.OpcUaToJsonConverter.METADATA_STATUS_CODE;
+import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 import com.hivemq.adapter.sdk.api.schema.ItemSchemaBuilder;
 import com.hivemq.adapter.sdk.api.schema.ObjectSchemaBuilder;
@@ -48,6 +49,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.eclipse.milo.opcua.stack.core.types.structured.EnumDefinition;
 import org.eclipse.milo.opcua.stack.core.types.structured.StructureDefinition;
+import org.eclipse.milo.opcua.stack.core.types.structured.StructureField;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -177,7 +179,8 @@ public class JsonSchemaGenerator {
                                 // Scalar-mappable builtin -> carry the OpcUaDataType. Enumerations,
                                 // abstract and unresolvable types resolve to Variant/DataValue/
                                 // DiagnosticInfo, which are not scalar-mappable; a null dataType makes
-                                // the schema render as "any".
+                                // the schema render as "any". A field that is itself an array
+                                // (ValueRank >= 1) keeps its dimensions so it renders as an array.
                                 final OpcUaDataType scalarType = isScalarMappable(builtinType) ? builtinType : null;
                                 return new FieldInformation(
                                         fieldName,
@@ -185,7 +188,7 @@ public class JsonSchemaGenerator {
                                         scalarType,
                                         null,
                                         false,
-                                        null,
+                                        arrayDimensionsOf(field),
                                         isRequired,
                                         readable,
                                         writable,
@@ -483,6 +486,26 @@ public class JsonSchemaGenerator {
     }
 
     // ── Type mapping ─────────────────────────────────────────────────────────
+
+    /**
+     * Returns the array dimensions of a struct field that is itself an array ({@code ValueRank >= 1}),
+     * or {@code null} for a scalar field. When the server declares an array but leaves the dimensions
+     * unspecified, one unbounded dimension per rank is synthesized so the field is still rendered as an
+     * array rather than flattened to a scalar.
+     */
+    private static UInteger @Nullable [] arrayDimensionsOf(final @NotNull StructureField field) {
+        final Integer valueRank = field.getValueRank();
+        if (valueRank == null || valueRank < 1) {
+            return null;
+        }
+        final UInteger[] dimensions = field.getArrayDimensions();
+        if (dimensions != null && dimensions.length > 0) {
+            return dimensions;
+        }
+        final UInteger[] synthesized = new UInteger[valueRank];
+        Arrays.fill(synthesized, uint(0));
+        return synthesized;
+    }
 
     /**
      * Returns {@code true} when the given builtin type can be represented as a JSON scalar by
