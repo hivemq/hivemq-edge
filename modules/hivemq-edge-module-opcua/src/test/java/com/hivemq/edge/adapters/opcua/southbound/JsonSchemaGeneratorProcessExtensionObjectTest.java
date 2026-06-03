@@ -72,6 +72,16 @@ class JsonSchemaGeneratorProcessExtensionObjectTest {
                 name, LocalizedText.NULL_VALUE, dataType, ValueRanks.Scalar, null, uint(0), false);
     }
 
+    private static StructureField arrayField(final String name, final NodeId elementType, final int... dimensions) {
+        final org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger[] arrayDimensions =
+                new org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger[dimensions.length];
+        for (int i = 0; i < dimensions.length; i++) {
+            arrayDimensions[i] = uint(dimensions[i]);
+        }
+        return new StructureField(
+                name, LocalizedText.NULL_VALUE, elementType, dimensions.length, arrayDimensions, uint(0), false);
+    }
+
     private static DataType structDataType(final String browseName, final StructureField... fields) {
         final DataType dataType = mock(DataType.class);
         when(dataType.getBrowseName()).thenReturn(new QualifiedName(0, browseName));
@@ -151,6 +161,27 @@ class JsonSchemaGeneratorProcessExtensionObjectTest {
         final FieldInformation nested = fieldNamed(info, "nested");
         assertThat(nested.nestedFields()).hasSize(1);
         assertThat(fieldNamed(nested, "inner").dataType()).isEqualTo(OpcUaDataType.Boolean);
+    }
+
+    @Test
+    void processExtensionObject_arrayField_isModelledAsArray() throws Exception {
+        // A struct field that is itself an array (e.g. Int16[10], ValueRank 1) must keep its array
+        // dimensions so it renders as an array of integers, not a scalar.
+        final StructureField scalarInt = scalarField("scalarInt", NodeIds.Int32);
+        final StructureField intArr = arrayField("intArr", NodeIds.Int16, 10);
+
+        when(tree.getBuiltinType(NodeIds.Int32)).thenReturn(OpcUaDataType.Int32);
+        when(tree.getBuiltinType(NodeIds.Int16)).thenReturn(OpcUaDataType.Int16);
+
+        final FieldInformation info = newGenerator()
+                .processExtensionObject(structDataType("Root", scalarInt, intArr), true, true, true, "root");
+
+        assertThat(fieldNamed(info, "scalarInt").dataType()).isEqualTo(OpcUaDataType.Int32);
+        assertThat(fieldNamed(info, "scalarInt").arrayDimensions()).isNull();
+
+        final FieldInformation arrayInfo = fieldNamed(info, "intArr");
+        assertThat(arrayInfo.dataType()).isEqualTo(OpcUaDataType.Int16);
+        assertThat(arrayInfo.arrayDimensions()).containsExactly(uint(10));
     }
 
     @Test
