@@ -5,7 +5,7 @@ This directory contains practical how-to guides for common development tasks and
 ## Documents
 
 - **[ONBOARDING.md](./ONBOARDING.md)** - New developer onboarding
-  - Prerequisites: Node.js 22, pnpm 10, NVM
+  - Prerequisites: Node.js 24, pnpm 11, NVM
   - Repository structure (monorepo context)
   - `.env.local` minimum configuration (required before first run)
   - Mock mode (running without the Java backend)
