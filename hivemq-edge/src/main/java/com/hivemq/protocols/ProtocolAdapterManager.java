@@ -215,9 +215,7 @@ public class ProtocolAdapterManager {
                 if (e instanceof InterruptedException) {
                     Thread.currentThread().interrupt();
                 }
-                if (!wrapper.getState().isIdle()) {
-                    LOGGER.error("Exception happened while shutting down adapter: ", e);
-                }
+                LOGGER.error("Exception happened while shutting down adapter: ", e);
             }
         });
         // Release the manager-owned executor threads so embedded Edge instances (tests) don't

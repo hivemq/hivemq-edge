@@ -524,6 +524,14 @@ public class ProtocolAdapterWrapper {
     public synchronized boolean stop(final boolean destroy) {
         LOGGER.info("Stopping protocol adapter '{}'.", getAdapterId());
 
+        if (state == ProtocolAdapterRuntimeState.Idle) {
+            if (destroy) {
+                LOGGER.info("Destroying adapter with id '{}'", getAdapterId());
+                adapter.destroy();
+            }
+            return true;
+        }
+
         // Step 1: Working → Stopping (or Error → Stopping)
         if (!transitionTo(ProtocolAdapterRuntimeState.Stopping).status().isSuccess()) {
             return false;
