@@ -141,44 +141,55 @@ public class JsonSchemaGenerator {
                 if (structureDefinition.getFields() != null) {
                     final var properties = Arrays.stream(structureDefinition.getFields())
                             .map(field -> {
-                                final String localPart;
-                                final DataType extractedDataType;
-                                try {
-                                    extractedDataType = client.getDataTypeTree().getDataType(field.getDataType());
-                                    if (extractedDataType == null) {
-                                        throw new RuntimeException(
-                                                "Unsupported type definition: " + dataTypeDefinition);
-                                    }
-                                    localPart =
-                                            extractedDataType.getBrowseName().name();
-                                } catch (final UaException e) {
-                                    throw new RuntimeException(e);
-                                }
                                 final var fieldName = field.getName();
                                 final var isRequired = !field.getIsOptional();
                                 final var namespaceUri = field.getDataType()
                                         .expanded(client.getNamespaceTable())
                                         .getNamespaceUri();
-                                final boolean isStandard =
-                                        namespaceUri != null && namespaceUri.startsWith("http://opcfoundation.org/");
-                                final var opcUaType = isStandard ? OpcUaDataType.valueOf(localPart) : null;
 
-                                if (isStandard) {
-                                    return new FieldInformation(
-                                            fieldName,
-                                            namespaceUri,
-                                            opcUaType,
-                                            null,
-                                            false,
-                                            null,
-                                            isRequired,
-                                            readable,
-                                            writable,
-                                            List.of());
-                                } else {
+                                // Resolve the underlying builtin type by walking the HasSubtype chain.
+                                // Never null and declares no checked exceptions. This correctly handles
+                                // simple subtypes of builtins (e.g. a custom String alias -> String) and
+                                // custom-namespace types, instead of guessing from the namespace prefix.
+                                final OpcUaDataType builtinType = tree.getBuiltinType(field.getDataType());
+
+                                if (builtinType == OpcUaDataType.ExtensionObject) {
+                                    // Genuine nested structure -> recurse.
+                                    final DataType extractedDataType = tree.getDataType(field.getDataType());
+                                    if (extractedDataType == null) {
+                                        // Unresolvable nested struct type: degrade to "any" rather than fail.
+                                        return new FieldInformation(
+                                                fieldName,
+                                                namespaceUri,
+                                                null,
+                                                null,
+                                                false,
+                                                null,
+                                                isRequired,
+                                                readable,
+                                                writable,
+                                                List.of());
+                                    }
                                     return processExtensionObject(
                                             extractedDataType, isRequired, readable, writable, fieldName);
                                 }
+
+                                // Scalar-mappable builtin -> carry the OpcUaDataType. Enumerations,
+                                // abstract and unresolvable types resolve to Variant/DataValue/
+                                // DiagnosticInfo, which are not scalar-mappable; a null dataType makes
+                                // the schema render as "any".
+                                final OpcUaDataType scalarType = isScalarMappable(builtinType) ? builtinType : null;
+                                return new FieldInformation(
+                                        fieldName,
+                                        namespaceUri,
+                                        scalarType,
+                                        null,
+                                        false,
+                                        null,
+                                        isRequired,
+                                        readable,
+                                        writable,
+                                        List.of());
                             })
                             .toList();
 
@@ -211,7 +222,20 @@ public class JsonSchemaGenerator {
             } else if (dataTypeDefinition instanceof EnumDefinition) {
                 throw new RuntimeException("Enums not implemented yet");
             } else {
-                throw new RuntimeException("Unsupported type definition: " + dataTypeDefinition);
+                // Complex type with an unknown/null DataTypeDefinition: degrade gracefully to "any"
+                // (dataType == null, no nested fields) instead of failing the whole schema with a 500.
+                return new FieldInformation(
+                        name,
+                        client.getNamespaceTable()
+                                .get(dataType.getBrowseName().getNamespaceIndex()),
+                        null,
+                        dataType,
+                        false,
+                        null,
+                        required,
+                        readable,
+                        writable,
+                        List.of());
             }
         } catch (final Exception e) {
             throw new RuntimeException(e);
@@ -263,12 +287,16 @@ public class JsonSchemaGenerator {
                     final boolean writable = access.writable();
 
                     if (builtinType != OpcUaDataType.ExtensionObject) {
+                        // Enumerations, abstract and unresolvable types resolve to Variant/DataValue/
+                        // DiagnosticInfo, which are not scalar-mappable; a null dataType renders as "any"
+                        // instead of throwing later in mapOpcUaToScalarType.
+                        final OpcUaDataType scalarType = isScalarMappable(builtinType) ? builtinType : null;
                         return new FieldInformation(
                                 null,
                                 dataType.getNodeId()
                                         .expanded(client.getNamespaceTable())
                                         .getNamespaceUri(),
-                                builtinType,
+                                scalarType,
                                 null,
                                 false,
                                 dimensions,
@@ -455,6 +483,20 @@ public class JsonSchemaGenerator {
     }
 
     // ── Type mapping ─────────────────────────────────────────────────────────
+
+    /**
+     * Returns {@code true} when the given builtin type can be represented as a JSON scalar by
+     * {@link #mapOpcUaToScalarType(OpcUaDataType)}. The four non-scalar types
+     * ({@code ExtensionObject}, {@code Variant}, {@code DataValue}, {@code DiagnosticInfo}) — which
+     * also cover enumerations, abstract and unresolvable types once resolved to {@code Variant} — must
+     * be rendered as {@code any} instead of being forced through the scalar path.
+     */
+    private static boolean isScalarMappable(final @NotNull OpcUaDataType type) {
+        return type != OpcUaDataType.ExtensionObject
+                && type != OpcUaDataType.Variant
+                && type != OpcUaDataType.DataValue
+                && type != OpcUaDataType.DiagnosticInfo;
+    }
 
     static @NotNull ScalarType mapOpcUaToScalarType(final @NotNull OpcUaDataType opcUaType) {
         return switch (opcUaType) {
