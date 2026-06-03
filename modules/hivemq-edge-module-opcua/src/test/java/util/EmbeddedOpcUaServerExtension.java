@@ -220,6 +220,10 @@ public class EmbeddedOpcUaServerExtension implements BeforeEachCallback, AfterEa
         return testNamespace;
     }
 
+    public @Nullable OpcUaServer getOpcUaServer() {
+        return opcUaServer;
+    }
+
     private @NotNull Set<EndpointConfig> createEndpointConfigs(final @NotNull X509Certificate certificate) {
         final EndpointConfig.Builder builder = EndpointConfig.newBuilder()
                 .setTransportProfile(TransportProfile.TCP_UASC_UABINARY)
