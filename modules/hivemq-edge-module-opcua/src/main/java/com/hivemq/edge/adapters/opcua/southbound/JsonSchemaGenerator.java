@@ -229,8 +229,7 @@ public class JsonSchemaGenerator {
                 // (dataType == null, no nested fields) instead of failing the whole schema with a 500.
                 return new FieldInformation(
                         name,
-                        client.getNamespaceTable()
-                                .get(dataType.getBrowseName().getNamespaceIndex()),
+                        client.getNamespaceTable().get(dataType.getBrowseName().getNamespaceIndex()),
                         null,
                         dataType,
                         false,

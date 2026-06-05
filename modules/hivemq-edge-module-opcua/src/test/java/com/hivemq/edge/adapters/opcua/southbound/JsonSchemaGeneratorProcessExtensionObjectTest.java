@@ -22,7 +22,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.hivemq.edge.adapters.opcua.southbound.JsonSchemaGenerator.FieldInformation;
-import java.util.List;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
 import org.eclipse.milo.opcua.sdk.core.typetree.DataType;
@@ -68,8 +67,7 @@ class JsonSchemaGeneratorProcessExtensionObjectTest {
     }
 
     private static StructureField scalarField(final String name, final NodeId dataType) {
-        return new StructureField(
-                name, LocalizedText.NULL_VALUE, dataType, ValueRanks.Scalar, null, uint(0), false);
+        return new StructureField(name, LocalizedText.NULL_VALUE, dataType, ValueRanks.Scalar, null, uint(0), false);
     }
 
     private static StructureField arrayField(final String name, final NodeId elementType, final int... dimensions) {
@@ -86,8 +84,8 @@ class JsonSchemaGeneratorProcessExtensionObjectTest {
         final DataType dataType = mock(DataType.class);
         when(dataType.getBrowseName()).thenReturn(new QualifiedName(0, browseName));
         when(dataType.getDataTypeDefinition())
-                .thenReturn(new StructureDefinition(
-                        NodeId.NULL_VALUE, NodeIds.Structure, StructureType.Structure, fields));
+                .thenReturn(
+                        new StructureDefinition(NodeId.NULL_VALUE, NodeIds.Structure, StructureType.Structure, fields));
         return dataType;
     }
 
@@ -110,8 +108,8 @@ class JsonSchemaGeneratorProcessExtensionObjectTest {
         when(tree.getBuiltinType(NodeIds.UInt32)).thenReturn(OpcUaDataType.UInt32);
         when(tree.getBuiltinType(NodeIds.Boolean)).thenReturn(OpcUaDataType.Boolean);
 
-        final FieldInformation info =
-                newGenerator().processExtensionObject(structDataType("Root", alias, bar, baz), true, true, true, "root");
+        final FieldInformation info = newGenerator()
+                .processExtensionObject(structDataType("Root", alias, bar, baz), true, true, true, "root");
 
         assertThat(info.nestedFields()).hasSize(3);
         // The custom String subtype is resolved to a string scalar (previously this threw).
@@ -155,8 +153,7 @@ class JsonSchemaGeneratorProcessExtensionObjectTest {
         when(tree.getBuiltinType(NodeIds.Boolean)).thenReturn(OpcUaDataType.Boolean);
         when(tree.getDataType(nestedType)).thenReturn(nestedDataType);
 
-        final FieldInformation info =
-                newGenerator().processExtensionObject(rootDataType, true, true, true, "root");
+        final FieldInformation info = newGenerator().processExtensionObject(rootDataType, true, true, true, "root");
 
         final FieldInformation nested = fieldNamed(info, "nested");
         assertThat(nested.nestedFields()).hasSize(1);
