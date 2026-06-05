@@ -17,23 +17,42 @@ Welcome to the HiveMQ Edge frontend team. This guide takes you from zero to a ru
 
 ## Table of Contents
 
-- [The Repository](#the-repository)
-- [Prerequisites](#prerequisites)
-  - [Node.js 22](#nodejs-22)
-  - [pnpm 10](#pnpm-10)
-  - [Java Backend (Optional)](#java-backend-optional)
-- [Getting the Code](#getting-the-code)
-- [Install Dependencies](#install-dependencies)
-- [Configure Your Local Environment](#configure-your-local-environment)
-  - [Minimum Configuration](#minimum-configuration)
-  - [Running Without the Java Backend (Mock Mode)](#running-without-the-java-backend-mock-mode)
-  - [Monitoring Keys (Optional)](#monitoring-keys-optional)
-- [Start the Dev Server](#start-the-dev-server)
-- [Verify the Setup](#verify-the-setup)
-- [Running Tests](#running-tests)
-- [Getting Access to External Services](#getting-access-to-external-services)
-- [Understanding the Codebase](#understanding-the-codebase)
-- [Day One Checklist](#day-one-checklist)
+- [Onboarding Guide](#onboarding-guide)
+  - [Table of Contents](#table-of-contents)
+  - [The Repository](#the-repository)
+    - [Branching Convention](#branching-convention)
+  - [Prerequisites](#prerequisites)
+    - [Node.js 24](#nodejs-24)
+    - [pnpm 11](#pnpm-11)
+    - [Java Backend (Optional)](#java-backend-optional)
+  - [Getting the Code](#getting-the-code)
+  - [Install Dependencies](#install-dependencies)
+  - [Configure Your Local Environment](#configure-your-local-environment)
+    - [Minimum Configuration](#minimum-configuration)
+    - [Running Without the Java Backend (Mock Mode)](#running-without-the-java-backend-mock-mode)
+    - [Monitoring Keys (Optional)](#monitoring-keys-optional)
+  - [Start the Dev Server](#start-the-dev-server)
+  - [Verify the Setup](#verify-the-setup)
+  - [Running Tests](#running-tests)
+    - [Cypress (Component Tests)](#cypress-component-tests)
+    - [Cypress (E2E Tests)](#cypress-e2e-tests)
+    - [Vitest (Unit Tests)](#vitest-unit-tests)
+  - [Getting Access to External Services](#getting-access-to-external-services)
+  - [Understanding the Codebase](#understanding-the-codebase)
+    - [Key Directories](#key-directories)
+    - [How Data Flows](#how-data-flows)
+    - [The `config` Singleton](#the-config-singleton)
+    - [Path Aliases](#path-aliases)
+    - [Code commenting style](#code-commenting-style)
+    - [External Product Documentation](#external-product-documentation)
+    - [Recommended Reading Order](#recommended-reading-order)
+  - [Day One Checklist](#day-one-checklist)
+  - [Troubleshooting](#troubleshooting)
+    - [`pnpm install` fails with "Unsupported engine"](#pnpm-install-fails-with-unsupported-engine)
+    - [`pnpm dev` starts but the UI shows "failed to fetch"](#pnpm-dev-starts-but-the-ui-shows-failed-to-fetch)
+    - [`.env.local` changes have no effect](#envlocal-changes-have-no-effect)
+    - [Cypress tests fail immediately with "cannot connect to server"](#cypress-tests-fail-immediately-with-cannot-connect-to-server)
+    - [`nvm install` fails or `nvm` command not found](#nvm-install-fails-or-nvm-command-not-found)
 
 ---
 
@@ -69,11 +88,11 @@ Branch names follow the pattern `feat/{LINEAR-ID}/{description}`. Example: `feat
 
 ## Prerequisites
 
-You need two things installed before anything else: **Node.js 22** and **pnpm 10**. Both version requirements are enforced — the wrong versions cause `pnpm install` to fail with a clear error.
+You need two things installed before anything else: **Node.js 24** and **pnpm 11**. Both version requirements are enforced — the wrong versions cause `pnpm install` to fail with a clear error.
 
-### Node.js 22
+### Node.js 24
 
-The project uses **Node.js 22** (LTS). The exact version is pinned in `.nvmrc`.
+The project uses **Node.js 24** (LTS). The exact version is pinned in `.nvmrc`.
 
 The recommended approach is [NVM (Node Version Manager)](https://github.com/nvm-sh/nvm), which lets you switch Node versions per project:
 
@@ -93,7 +112,7 @@ cd hivemq-edge/hivemq-edge-frontend
 nvm install
 
 # Confirm the right version is active
-node --version   # Should print v22.x.x
+node --version   # Should print v24.x.x
 ```
 
 > [!TIP]
@@ -102,12 +121,12 @@ node --version   # Should print v22.x.x
 **Alternative — macOS without NVM:**
 
 ```bash
-brew install node@22
+brew install node@24
 ```
 
-### pnpm 10
+### pnpm 11
 
-The project uses **pnpm 10** as its package manager. npm and yarn do not work — the lockfile format is incompatible.
+The project uses **pnpm 11** as its package manager. npm and yarn do not work — the lockfile format is incompatible.
 
 **Install pnpm:**
 
@@ -146,7 +165,7 @@ cd hivemq-edge/hivemq-edge-frontend
 If you're using NVM, switch to the correct Node version now:
 
 ```bash
-nvm install   # Reads .nvmrc and installs v22.x.x if not already present
+nvm install   # Reads .nvmrc and installs v24.x.x if not already present
 nvm use       # Activates it for this shell
 ```
 
@@ -417,8 +436,8 @@ After getting the dev server running, read these in order:
 
 ## Day One Checklist
 
-- [ ] Node.js 22 installed (`node --version` prints `v22.x.x`)
-- [ ] pnpm 10 installed (`pnpm --version` prints `10.x.x`)
+- [ ] Node.js 24 installed (`node --version` prints `v24.x.x`)
+- [ ] pnpm 11 installed (`pnpm --version` prints `11.x.x`)
 - [ ] Repository cloned and you're working inside `hivemq-edge-frontend/`
 - [ ] `pnpm install` completed without errors
 - [ ] `.env.local` created with `VITE_API_BASE_URL=http://localhost:8080`
