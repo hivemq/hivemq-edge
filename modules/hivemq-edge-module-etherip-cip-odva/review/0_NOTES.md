@@ -57,4 +57,27 @@ The device does not ensure the datatypes, one broken tag breaks the read.
 - **Across multiple addresses:** each address is an independent request with no spanning transaction → **partial failure**; already-written attributes stay written, no rollback of earlier groups.
 - **Currently:** write reports success while doing nothing (silent data loss).
 
+### Implications of write errors
+There isn't a good answer to handling errors, and the following is true for pretty much all PLCs with the excpeiton of OPC UA based itnegrations.
+
+Multi tag writes are an important feature for performance and atomicity. But they are prone to fail and we have to think about several failure scenarios:
+- What should we do if a write can't be performed right now? (e.g. target PLC offline, transient network issue, etc.)
+- What if during writing we discover that tag 3 out 5 is refused because the format is wrong (chnage to the memory on the PLC)
+- What if the 3rd write of 5 writes request fails because of a connection-hickup?
+
+For all these cases the only reliable information is that we got a failure.
+The reason might be well hidden and even device dependent:
+- Timeouts because of network trouble
+- Timeout because of wrong format which causes a PLC side problem
+- Timeout, but the value still got written
+
+For all these cases we can attempt to report the error, but the solution is highly application depndent:
+- Customer doesn't care if 1 out 10 writes fails
+- Failed write requires business side intervention (stopping the factory, sending a new payload, ...)
+- We have to retry úntil success (stubborn device, ...)
+
+
+
+
+
 
