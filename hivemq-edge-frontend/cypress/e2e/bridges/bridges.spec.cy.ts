@@ -7,6 +7,14 @@ import { bridgePage, loginPage, rjsf, workspacePage } from 'cypress/pages'
 import { workspaceBridgePanel } from '../../pages/Workspace/BridgeFormPage.ts'
 import { MOCK_TOPIC_FILTER } from '@/api/hooks/useTopicFilters/__handlers__'
 
+const TOP_RIGHT_TOAST = '[role="region"][aria-label="Notifications-top-right"] [role="status"]'
+
+const cy_CloseBridgeCreationToast = () => {
+  cy.get(`${TOP_RIGHT_TOAST} [data-status="success"]`).should('be.visible')
+  cy.get(`${TOP_RIGHT_TOAST} [aria-label="Close"]`).click()
+  cy.get(TOP_RIGHT_TOAST).should('not.exist')
+}
+
 const cy_AddNewBridge = (id: string, host: string, clientId: string) => {
   bridgePage.addNewBridge.click()
 
@@ -16,7 +24,7 @@ const cy_AddNewBridge = (id: string, host: string, clientId: string) => {
 
   bridgePage.config.submitButton.click()
 
-  bridgePage.toast.close()
+  cy_CloseBridgeCreationToast()
 }
 
 describe('Bridges', () => {
