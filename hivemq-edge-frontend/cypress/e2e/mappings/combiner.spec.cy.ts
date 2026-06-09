@@ -9,13 +9,6 @@ import { cy_interceptCoreE2E } from 'cypress/utils/intercept.utils.ts'
 import { workspaceCombinerPanel } from '../../pages/Workspace/CombinerFormPage.ts'
 
 const COMBINER_ID = '9e975b62-6f8d-410f-9007-3f83719aec6f'
-const TOP_RIGHT_TOAST = '[role="region"][aria-label="Notifications-top-right"] [role="status"]'
-
-const closeCombinerToast = () => {
-  cy.get(`${TOP_RIGHT_TOAST} [data-status="success"]`).should('be.visible')
-  cy.get(`${TOP_RIGHT_TOAST} [aria-label="Close"]`).click()
-  cy.get(TOP_RIGHT_TOAST).should('not.exist')
-}
 
 describe('Combiner', () => {
   // Creating a mock storage for Combiner
@@ -130,7 +123,7 @@ describe('Combiner', () => {
 
     cy.wait('@getCombiners')
 
-    closeCombinerToast()
+    workspacePage.dismissAllToasts()
 
     workspacePage.combinerNode(COMBINER_ID).should('be.visible').should('contain.text', 'unnamed combiner')
 
@@ -197,7 +190,7 @@ describe('Combiner', () => {
     // workspacePage.toast.error
     //   .should('contain.text', 'There was a problem trying to update the combiner')
     workspacePage.toast.success.should('contain.text', "We've successfully updated the combiner for you")
-    closeCombinerToast()
+    workspacePage.dismissAllToasts()
 
     workspacePage.combinerNode(COMBINER_ID).should('be.visible').should('contain.text', 'my adapter')
   })
@@ -221,7 +214,7 @@ describe('Combiner', () => {
 
     cy.wait('@getCombiners')
 
-    workspacePage.closeToast.click()
+    workspacePage.dismissAllToasts()
 
     workspacePage.combinerNode(COMBINER_ID).should('be.visible').should('contain.text', 'unnamed combiner')
 
@@ -243,7 +236,7 @@ describe('Combiner', () => {
 
     cy.wait('@getCombiners')
 
-    closeCombinerToast()
+    workspacePage.dismissAllToasts()
   })
 
   it('should be accessible', { tags: ['@percy'] }, () => {
@@ -259,7 +252,7 @@ describe('Combiner', () => {
     cy.wait('@postCombiner')
     cy.wait('@getCombiners')
 
-    closeCombinerToast()
+    workspacePage.dismissAllToasts()
 
     workspacePage.combinerNode(COMBINER_ID).should('be.visible').should('contain.text', 'unnamed combiner')
 
