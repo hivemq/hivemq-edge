@@ -36,7 +36,7 @@ jobs:
       pr-number: ${{ fromJson(needs.resolve.outputs.pr-number) }}
       post-comment: ${{ fromJson(needs.resolve.outputs.post-comment) }}
     secrets:
-      PI_OPENAI_API_KEY: ${{ secrets.PI_OPENAI_API_KEY }}
-      PI_OPENROUTER_API_KEY: ${{ secrets.PI_OPENROUTER_API_KEY }}
-      PI_ANTHROPIC_API_KEY: ${{ secrets.PI_ANTHROPIC_API_KEY }}
-      PI_DEEPSEEK_API_KEY: ${{ secrets.PI_DEEPSEEK_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.PI_OPENAI_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.PI_OPENROUTER_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.PI_ANTHROPIC_API_KEY }}
+      DEEPSEEK_API_KEY: ${{ secrets.PI_DEEPSEEK_API_KEY }}
