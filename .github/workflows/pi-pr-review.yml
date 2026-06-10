@@ -26,7 +26,7 @@ jobs:
       post-comment: ${{ steps.resolve.outputs.post-comment }}
     steps:
       - id: resolve
-        uses: hivemq/hivemq-pi-review-action@v1
+        uses: hivemq/hivemq-pi-review-action@v1.3.0
 
   review:
     needs: resolve
