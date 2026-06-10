@@ -22,7 +22,6 @@ import com.hivemq.configuration.service.DynamicConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.ModuleConfigurationService;
 import com.hivemq.configuration.service.MqttConfigurationService;
-import com.hivemq.configuration.service.MqttsnConfigurationService;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
@@ -32,7 +31,6 @@ import com.hivemq.configuration.service.impl.GatewayConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.ModuleConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.MqttConfigurationServiceImpl;
-import com.hivemq.configuration.service.impl.MqttsnConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.PersistenceConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.RestrictionsConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.SecurityConfigurationServiceImpl;
@@ -54,7 +52,6 @@ public class AbstractConfigurationTest {
     File xmlFile;
     ConfigFileReaderWriter reader;
     MqttConfigurationService mqttConfigurationService;
-    MqttsnConfigurationService mqttsnConfigurationService;
     RestrictionsConfigurationService restrictionsConfigurationService;
     SecurityConfigurationService securityConfigurationService;
     SystemInformation systemInformation;
@@ -75,7 +72,6 @@ public class AbstractConfigurationTest {
         xmlFile = new File(temporaryFolder, "config.xml");
         securityConfigurationService = new SecurityConfigurationServiceImpl();
         mqttConfigurationService = new MqttConfigurationServiceImpl();
-        mqttsnConfigurationService = new MqttsnConfigurationServiceImpl();
         restrictionsConfigurationService = new RestrictionsConfigurationServiceImpl();
         systemInformation = new SystemInformationImpl(false);
         persistenceConfigurationService = new PersistenceConfigurationServiceImpl();
@@ -94,7 +90,7 @@ public class AbstractConfigurationTest {
                         new MqttConfigurator(mqttConfigurationService),
                         new ListenerConfigurator(listenerConfigurationService, systemInformation),
                         new PersistenceConfigurator(persistenceConfigurationService),
-                        new MqttsnConfigurator(mqttsnConfigurationService),
+                        new MqttsnConfigurator(),
                         new ApiConfigurator(apiConfigurationService),
                         new DynamicConfigConfigurator(dynamicConfigurationService),
                         new UsageTrackingConfigurator(usageTrackingConfigurationService),

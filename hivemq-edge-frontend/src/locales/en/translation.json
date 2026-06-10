@@ -134,7 +134,7 @@
       "connectDevice": {
         "header": "From Devices To HiveMQ Edge",
         "readMore": {
-          "title": "Connect MQTT or MQTT-SN devices to the broker",
+          "title": "Connect MQTT devices to the broker",
           "label": "Read more"
         },
         "protocolAdapter": {

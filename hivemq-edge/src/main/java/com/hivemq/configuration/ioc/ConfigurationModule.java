@@ -26,7 +26,6 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.DynamicConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.MqttConfigurationService;
-import com.hivemq.configuration.service.MqttsnConfigurationService;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
@@ -51,13 +50,6 @@ public class ConfigurationModule {
     static @NotNull MqttConfigurationService mqttConfigurationService(
             final @NotNull ConfigurationService configurationService) {
         return configurationService.mqttConfiguration();
-    }
-
-    @Provides
-    @Singleton
-    static @NotNull MqttsnConfigurationService mqttsnConfigurationService(
-            final @NotNull ConfigurationService configurationService) {
-        return configurationService.mqttsnConfiguration();
     }
 
     @Provides

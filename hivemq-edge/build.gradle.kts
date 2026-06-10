@@ -193,8 +193,6 @@ dependencies {
     implementation(libs.zeroallocationhashing)
     implementation(libs.jctools)
 
-    // mqtt-sn codec
-    implementation(libs.mqtt.sn.codec)
     implementation(libs.hivemq.mqtt.client)
 
     // JAX-RS + Http Connector + Serializers

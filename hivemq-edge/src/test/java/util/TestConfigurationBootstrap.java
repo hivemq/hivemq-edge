@@ -29,7 +29,6 @@ import com.hivemq.configuration.service.impl.GatewayConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.ModuleConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.MqttConfigurationServiceImpl;
-import com.hivemq.configuration.service.impl.MqttsnConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.PersistenceConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.RestrictionsConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.SecurityConfigurationServiceImpl;
@@ -44,7 +43,6 @@ public class TestConfigurationBootstrap {
 
     private @NotNull ListenerConfigurationServiceImpl listenerConfigurationService;
     private @NotNull MqttConfigurationServiceImpl mqttConfigurationService;
-    private @NotNull MqttsnConfigurationServiceImpl mqttsnConfigurationService;
     private @NotNull RestrictionsConfigurationServiceImpl restrictionsConfigurationService;
     private final @NotNull SecurityConfigurationServiceImpl securityConfigurationService;
     private @NotNull ConfigurationServiceImpl configurationService;
@@ -59,7 +57,6 @@ public class TestConfigurationBootstrap {
     public TestConfigurationBootstrap() {
         listenerConfigurationService = new ListenerConfigurationServiceImpl();
         mqttConfigurationService = new MqttConfigurationServiceImpl();
-        mqttsnConfigurationService = new MqttsnConfigurationServiceImpl();
         restrictionsConfigurationService = new RestrictionsConfigurationServiceImpl();
         securityConfigurationService = new SecurityConfigurationServiceImpl();
         persistenceConfigurationService = new PersistenceConfigurationServiceImpl();
@@ -81,7 +78,6 @@ public class TestConfigurationBootstrap {
                 restrictionsConfigurationService,
                 securityConfigurationService,
                 persistenceConfigurationService,
-                mqttsnConfigurationService,
                 apiConfigurationService,
                 dynamicConfigurationService,
                 usageTrackingConfigurationService,
@@ -129,15 +125,6 @@ public class TestConfigurationBootstrap {
 
     public @NotNull PersistenceConfigurationService getPersistenceConfigurationService() {
         return persistenceConfigurationService;
-    }
-
-    public @NotNull MqttsnConfigurationServiceImpl getMqttsnConfigurationService() {
-        return mqttsnConfigurationService;
-    }
-
-    public void setMqttsnConfigurationService(
-            final @NotNull MqttsnConfigurationServiceImpl mqttsnConfigurationService) {
-        this.mqttsnConfigurationService = mqttsnConfigurationService;
     }
 
     public @NotNull ApiConfigurationService getApiConfigurationService() {

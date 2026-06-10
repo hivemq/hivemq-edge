@@ -60,14 +60,6 @@ public interface ConfigurationService {
     RestrictionsConfigurationService restrictionsConfiguration();
 
     /**
-     * Returns the configuration service for MQTTSN configuration
-     *
-     * @return the mqttsn configuration service
-     */
-    @NotNull
-    MqttsnConfigurationService mqttsnConfiguration();
-
-    /**
      * Returns the configuration service for Api configuration
      *
      * @return the api configuration service

@@ -15,8 +15,6 @@
  */
 package com.hivemq.mqtt.handler.subscribe;
 
-import static com.hivemq.mqtt.message.ProtocolVersion.MQTTSNv1_2;
-import static com.hivemq.mqtt.message.ProtocolVersion.MQTTSNv2_0;
 import static com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode.UNSPECIFIED_ERROR;
 import static com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode.fromCode;
 
@@ -42,9 +40,6 @@ import com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode;
 import com.hivemq.mqtt.message.suback.SUBACK;
 import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;
 import com.hivemq.mqtt.message.subscribe.Topic;
-import com.hivemq.mqttsn.IMqttsnTopicRegistry;
-import com.hivemq.mqttsn.MqttsnProtocolException;
-import com.hivemq.mqttsn.MqttsnTopicAlias;
 import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence;
 import com.hivemq.persistence.clientsession.SharedSubscriptionService;
 import com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl.SharedSubscription;
@@ -61,9 +56,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slj.mqtt.sn.MqttsnConstants;
-import org.slj.mqtt.sn.codec.MqttsnCodecs;
-import org.slj.mqtt.sn.spi.IMqttsnMessage;
 
 /**
  * The service which is responsible for handling the subscriptions of MQTT clients
@@ -92,7 +84,6 @@ public class IncomingSubscribeService {
     private final @NotNull MqttConfigurationService mqttConfigurationService;
     private final @NotNull RestrictionsConfigurationService restrictionsConfigurationService;
     private final @NotNull MqttServerDisconnector mqttServerDisconnector;
-    private final @NotNull IMqttsnTopicRegistry mqttsnTopicRegistry;
 
     @Inject
     protected IncomingSubscribeService(
@@ -102,8 +93,7 @@ public class IncomingSubscribeService {
             final @NotNull RetainedMessagesSender retainedMessagesSender,
             final @NotNull MqttConfigurationService mqttConfigurationService,
             final @NotNull RestrictionsConfigurationService restrictionsConfigurationService,
-            final @NotNull MqttServerDisconnector mqttServerDisconnector,
-            final @NotNull IMqttsnTopicRegistry mqttsnTopicRegistry) {
+            final @NotNull MqttServerDisconnector mqttServerDisconnector) {
 
         this.clientSessionSubscriptionPersistence = clientSessionSubscriptionPersistence;
         this.retainedMessagePersistence = retainedMessagePersistence;
@@ -112,7 +102,6 @@ public class IncomingSubscribeService {
         this.mqttConfigurationService = mqttConfigurationService;
         this.restrictionsConfigurationService = restrictionsConfigurationService;
         this.mqttServerDisconnector = mqttServerDisconnector;
-        this.mqttsnTopicRegistry = mqttsnTopicRegistry;
     }
 
     public void processSubscribe(
@@ -315,7 +304,6 @@ public class IncomingSubscribeService {
 
         ListenableFuture<ImmutableList<SubscriptionResult>> batchedFuture = null;
         if (batch(cleanedSubscriptions)) {
-            // this should never happen for MQTT-SN
             cleanedSubscriptions.removeAll(ignoredTopics);
             batchedFuture = persistBatchedSubscriptions(clientId, msg, cleanedSubscriptions, mqttVersion, answerCodes);
             futureCount++;
@@ -331,21 +319,8 @@ public class IncomingSubscribeService {
                 singleAddFutures.add(settableFuture);
                 futureCount++;
 
-                // allow this to be hooked
-                ListenableFuture<SubscriptionResult> addSubscriptionFuture;
-                if (mqttVersion == MQTTSNv1_2 || mqttVersion == MQTTSNv2_0) {
-                    try {
-                        final Optional<MqttsnTopicAlias> alias =
-                                mqttsnTopicRegistry.readTopicAlias(clientId, topic.getTopic());
-                        if (alias.isEmpty()) {
-                            mqttsnTopicRegistry.register(clientId, topic.getTopic());
-                        }
-                    } catch (final MqttsnProtocolException e) {
-                        log.error("error registering alias", e);
-                        addSubscriptionFuture = Futures.immediateFailedFuture(e);
-                    }
-                }
-                addSubscriptionFuture = clientSessionSubscriptionPersistence.addSubscription(clientId, topic);
+                final ListenableFuture<SubscriptionResult> addSubscriptionFuture =
+                        clientSessionSubscriptionPersistence.addSubscription(clientId, topic);
 
                 Futures.addCallback(
                         addSubscriptionFuture,
@@ -357,16 +332,8 @@ public class IncomingSubscribeService {
         log.trace("Applied all subscriptions for client [{}]", clientId);
         if (futureCount == 0) {
             // we don't need to check for retained messages here, because we did not persist any of the subscriptions
-            final Object out = createSuback(
-                    clientId,
-                    msg.getTopics(),
-                    msg.getPacketIdentifier(),
-                    ImmutableList.copyOf(answerCodes),
-                    reasonString,
-                    mqttVersion);
-            if (out != null) {
-                ctx.channel().writeAndFlush(out);
-            }
+            final SUBACK out = createSuback(msg.getPacketIdentifier(), ImmutableList.copyOf(answerCodes), reasonString);
+            ctx.channel().writeAndFlush(out);
             return;
         }
 
@@ -378,19 +345,16 @@ public class IncomingSubscribeService {
             addResultsFuture.setFuture(Futures.allAsList(singleAddFutures.build()));
         }
 
-        sendSubackAndRetainedMessages(
-                clientId, ctx, msg, answerCodes, addResultsFuture, ignoredTopics, reasonString, mqttVersion);
+        sendSubackAndRetainedMessages(ctx, msg, answerCodes, addResultsFuture, ignoredTopics, reasonString);
     }
 
     private void sendSubackAndRetainedMessages(
-            final String clientId,
             final ChannelHandlerContext ctx,
             final @NotNull SUBSCRIBE msg,
             final @NotNull Mqtt5SubAckReasonCode[] answerCodes,
             final @NotNull SettableFuture<List<SubscriptionResult>> addResultsFuture,
             final @NotNull Set<Topic> ignoredTopics,
-            final @Nullable String reasonString,
-            final @NotNull ProtocolVersion mqttVersion) {
+            final @Nullable String reasonString) {
 
         Futures.addCallback(
                 addResultsFuture,
@@ -398,24 +362,17 @@ public class IncomingSubscribeService {
                     @Override
                     public void onSuccess(final @Nullable List<SubscriptionResult> subscriptionResults) {
 
-                        final Object out = createSuback(
-                                clientId,
-                                msg.getTopics(),
-                                msg.getPacketIdentifier(),
-                                ImmutableList.copyOf(answerCodes),
-                                reasonString,
-                                mqttVersion);
-                        if (out != null) {
-                            final ChannelFuture future = ctx.channel().writeAndFlush(out);
-                            // actually the ignoredTopics are unnecessary in this case, as the batching logic already
-                            // applies the filtering
-                            if (subscriptionResults != null) {
-                                future.addListener(new SendRetainedMessagesListener(
-                                        subscriptionResults,
-                                        ignoredTopics,
-                                        retainedMessagePersistence,
-                                        retainedMessagesSender));
-                            }
+                        final SUBACK out = createSuback(
+                                msg.getPacketIdentifier(), ImmutableList.copyOf(answerCodes), reasonString);
+                        final ChannelFuture future = ctx.channel().writeAndFlush(out);
+                        // actually the ignoredTopics are unnecessary in this case, as the batching logic already
+                        // applies the filtering
+                        if (subscriptionResults != null) {
+                            future.addListener(new SendRetainedMessagesListener(
+                                    subscriptionResults,
+                                    ignoredTopics,
+                                    retainedMessagePersistence,
+                                    retainedMessagesSender));
                         }
                     }
 
@@ -496,66 +453,11 @@ public class IncomingSubscribeService {
                 null);
     }
 
-    /**
-     * Hook method to allow the subscription handler to be used in non MQTT contexts
-     */
-    protected @Nullable Object createSuback(
-            final @NotNull String clientId,
-            final @NotNull List<Topic> topics,
+    private @NotNull SUBACK createSuback(
             final @NotNull Integer packetIdentifier,
             final @NotNull List<Mqtt5SubAckReasonCode> codes,
-            final @Nullable String reasonString,
-            final @NotNull ProtocolVersion protocolVersion) {
-
-        // MQTT-SN
-        if (protocolVersion == MQTTSNv1_2 || protocolVersion == MQTTSNv2_0) {
-            return createMqttsnSuback(clientId, topics, packetIdentifier, codes, protocolVersion);
-        }
-
-        // MQTT
+            final @Nullable String reasonString) {
         return new SUBACK(packetIdentifier, codes, reasonString);
-    }
-
-    @Nullable
-    private IMqttsnMessage createMqttsnSuback(
-            final @NotNull String clientId,
-            final @NotNull List<Topic> topics,
-            final @NotNull Integer packetIdentifier,
-            final @NotNull List<Mqtt5SubAckReasonCode> codes,
-            final @NotNull ProtocolVersion protocolVersion) {
-        try {
-            int returnCode = MqttsnConstants.RETURN_CODE_ACCEPTED;
-
-            final Optional<MqttsnTopicAlias> alias =
-                    mqttsnTopicRegistry.readTopicAlias(clientId, topics.get(0).getTopic());
-            final int topicId = alias.get().getAlias();
-            int grantedQos = 0;
-
-            if (!codes.isEmpty()) {
-                final Mqtt5SubAckReasonCode code = codes.get(0);
-                if (!code.isError()) {
-                    grantedQos = code.getCode();
-                } else {
-                    returnCode = MqttsnConstants.RETURN_CODE_INVALID_TOPIC_ID;
-                }
-            }
-
-            final IMqttsnMessage msg;
-            if (protocolVersion == MQTTSNv1_2) {
-                msg = MqttsnCodecs.MQTTSN_CODEC_VERSION_1_2
-                        .createMessageFactory()
-                        .createSuback(grantedQos, topicId, returnCode);
-            } else {
-                msg = MqttsnCodecs.MQTTSN_CODEC_VERSION_2_0
-                        .createMessageFactory()
-                        .createSuback(grantedQos, topicId, returnCode);
-            }
-            msg.setId(packetIdentifier);
-            return msg;
-        } catch (final MqttsnProtocolException e) {
-            log.error("error reading from the topic registry", e);
-            return null;
-        }
     }
 
     private static class SubscribePersistenceBatchedCallback
