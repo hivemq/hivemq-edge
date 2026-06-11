@@ -62,6 +62,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -78,6 +80,11 @@ public class DeviceTagImporter {
 
     private final @NotNull ProtocolAdapterExtractor adapterExtractor;
     private final @NotNull DataCombiningExtractor combiningExtractor;
+
+    // Per-adapter locks so concurrent imports on different adapters can proceed in parallel.
+    // Previously the entire import serialized on the shared adapterExtractor monitor, which
+    // was stricter than needed — TOCTOU protection is per-adapter, not global.
+    private final @NotNull ConcurrentMap<String, Object> perAdapterLocks = new ConcurrentHashMap<>();
 
     @Inject
     public DeviceTagImporter(
@@ -116,10 +123,12 @@ public class DeviceTagImporter {
             final @NotNull String adapterId,
             final @Nullable BulkTagBrowser browser)
             throws DeviceTagImporterException {
-        // Synchronize the entire read-compute-write cycle on the same intrinsic lock used by
-        // ProtocolAdapterExtractor's synchronized methods to prevent TOCTOU races between
-        // concurrent imports (e.g., two OVERWRITE operations reading the same stale state).
-        synchronized (adapterExtractor) {
+        // Per-adapter lock: two imports on the same adapter still serialize (preventing TOCTOU
+        // between concurrent OVERWRITE operations on the same adapter), but imports on
+        // different adapters can proceed in parallel. This matters for multi-adapter
+        // scripted-provisioning workflows where a global lock was a needless bottleneck.
+        final Object lock = perAdapterLocks.computeIfAbsent(adapterId, id -> new Object());
+        synchronized (lock) {
             return doImportLocked(rows, mode, adapterId, browser);
         }
     }
@@ -158,6 +167,23 @@ public class DeviceTagImporter {
 
         // if there was no validation error, now is the time to execute the plan
         final ProtocolAdapterEntity fac = finalAdapterConfiguration(adapter, twmsFinal);
+        // Classify the change so future work can skip the adapter restart for additive-only
+        // imports. Today ProtocolAdapterExtractor.updateAdapter always triggers a full-entity
+        // replacement; the registered consumer then restarts the adapter. A lighter-weight
+        // "addTagsAndMappings" path on the extractor (and a corresponding handler on the
+        // consumer) would let additive-only imports avoid disrupting the running data flow.
+        // Tracked as future optimisation — intentionally not gated here.
+        final boolean additiveOnly =
+                stats.tagsDeleted == 0 && stats.tagsUpdated == 0 && stats.nbDeleted == 0 && stats.sbDeleted == 0;
+        if (additiveOnly && log.isDebugEnabled()) {
+            log.debug(
+                    "Import for adapter '{}' is additive-only ({} tags created, {} NB, {} SB) — "
+                            + "eligible for no-restart path once the extractor supports it",
+                    adapterId,
+                    stats.tagsCreated,
+                    stats.nbCreated,
+                    stats.sbCreated);
+        }
         final boolean success = adapterExtractor.updateAdapter(fac);
         if (!success) {
             throw new DeviceTagImporterException(List.of(new ValidationError(

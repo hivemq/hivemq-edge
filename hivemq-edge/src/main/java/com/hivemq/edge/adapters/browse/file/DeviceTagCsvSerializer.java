@@ -19,6 +19,7 @@ import com.hivemq.edge.adapters.browse.model.DeviceTagRow;
 import com.hivemq.edge.adapters.browse.model.FieldMappingInstruction;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -236,7 +237,10 @@ public class DeviceTagCsvSerializer {
 
     public void serialize(final @NotNull Iterable<DeviceTagRow> rows, final @NotNull OutputStream out)
             throws IOException {
-        try (final OutputStreamWriter writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
+        // BufferedWriter avoids per-row flushes on the HTTP OutputStream — fewer chunks on the wire,
+        // fewer syscalls, measurable on large browses over slow networks.
+        try (final OutputStreamWriter osw = new OutputStreamWriter(out, StandardCharsets.UTF_8);
+                final BufferedWriter writer = new BufferedWriter(osw);
                 final CSVPrinter printer = new CSVPrinter(
                         writer,
                         CSVFormat.RFC4180
