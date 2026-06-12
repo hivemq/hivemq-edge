@@ -39,7 +39,7 @@ jobs:
 
       - name: Run Snyk Frontend monitor
         shell: bash
-        run: snyk monitor --file=pnpm-lock.yaml --target-reference=${{ github.ref_name }} --org=hivemq-releases --project-name=hivemq-edge-frontend --remote-repo-url=hivemq-edge-frontend --project-lifecycle=production -d hivemq-edge/hivemq-edge-frontend
+        run: snyk monitor --all-projects --target-reference=${{ github.ref_name }} --org=hivemq-releases --project-name=hivemq-edge-frontend --remote-repo-url=hivemq-edge-frontend --project-lifecycle=production -d hivemq-edge/hivemq-edge-frontend
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.JENKINS_GITHUB_TOKEN }}

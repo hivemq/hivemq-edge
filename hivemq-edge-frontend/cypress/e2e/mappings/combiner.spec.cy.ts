@@ -123,7 +123,7 @@ describe('Combiner', () => {
 
     cy.wait('@getCombiners')
 
-    workspacePage.closeToast.click()
+    workspacePage.dismissAllToasts()
 
     workspacePage.combinerNode(COMBINER_ID).should('be.visible').should('contain.text', 'unnamed combiner')
 
@@ -190,7 +190,7 @@ describe('Combiner', () => {
     // workspacePage.toast.error
     //   .should('contain.text', 'There was a problem trying to update the combiner')
     workspacePage.toast.success.should('contain.text', "We've successfully updated the combiner for you")
-    workspacePage.closeToast.click()
+    workspacePage.dismissAllToasts()
 
     workspacePage.combinerNode(COMBINER_ID).should('be.visible').should('contain.text', 'my adapter')
   })
@@ -214,7 +214,7 @@ describe('Combiner', () => {
 
     cy.wait('@getCombiners')
 
-    workspacePage.closeToast.click()
+    workspacePage.dismissAllToasts()
 
     workspacePage.combinerNode(COMBINER_ID).should('be.visible').should('contain.text', 'unnamed combiner')
 
@@ -236,7 +236,7 @@ describe('Combiner', () => {
 
     cy.wait('@getCombiners')
 
-    workspacePage.closeToast.click()
+    workspacePage.dismissAllToasts()
   })
 
   it('should be accessible', { tags: ['@percy'] }, () => {
@@ -252,7 +252,7 @@ describe('Combiner', () => {
     cy.wait('@postCombiner')
     cy.wait('@getCombiners')
 
-    workspacePage.closeToast.click()
+    workspacePage.dismissAllToasts()
 
     workspacePage.combinerNode(COMBINER_ID).should('be.visible').should('contain.text', 'unnamed combiner')
 
