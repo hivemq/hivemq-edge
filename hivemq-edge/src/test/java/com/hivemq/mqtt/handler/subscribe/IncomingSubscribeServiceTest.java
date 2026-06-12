@@ -40,7 +40,6 @@ import com.hivemq.mqtt.message.reason.Mqtt5SubAckReasonCode;
 import com.hivemq.mqtt.message.suback.SUBACK;
 import com.hivemq.mqtt.message.subscribe.SUBSCRIBE;
 import com.hivemq.mqtt.message.subscribe.Topic;
-import com.hivemq.mqttsn.IMqttsnTopicRegistry;
 import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence;
 import com.hivemq.persistence.clientsession.SharedSubscriptionService;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
@@ -105,8 +104,7 @@ public class IncomingSubscribeServiceTest {
                 retainedMessagesSender,
                 mqttConfigurationService,
                 restrictionsConfigurationService,
-                new MqttServerDisconnectorImpl(eventLog),
-                mock(IMqttsnTopicRegistry.class));
+                new MqttServerDisconnectorImpl(eventLog));
 
         channel = new EmbeddedChannel();
         clientConnection = new ClientConnection(channel, null);

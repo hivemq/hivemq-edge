@@ -44,8 +44,7 @@ public class ListenerConfigurationServiceImpl implements ListenerConfigurationSe
         if (listener.getClass().equals(MqttTcpListener.class)
                 || listener.getClass().equals(MqttTlsTcpListener.class)
                 || listener.getClass().equals(MqttWebsocketListener.class)
-                || listener.getClass().equals(MqttTlsWebsocketListener.class)
-                || listener.getClass().equals(MqttsnUdpListener.class)) {
+                || listener.getClass().equals(MqttTlsWebsocketListener.class)) {
 
             log.debug(
                     "Adding {} on bind address {} and port {}. Name: {}.",
@@ -86,11 +85,6 @@ public class ListenerConfigurationServiceImpl implements ListenerConfigurationSe
     @Override
     public @NotNull ImmutableList<MqttTlsWebsocketListener> getTlsWebsocketListeners() {
         return filterListeners(MqttTlsWebsocketListener.class);
-    }
-
-    @Override
-    public @NotNull ImmutableList<MqttsnUdpListener> getUdpListeners() {
-        return filterListeners(MqttsnUdpListener.class);
     }
 
     @Override

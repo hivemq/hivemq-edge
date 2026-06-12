@@ -42,12 +42,6 @@
         </tls-tcp-listener>
         ${IF:HIVEMQ_MQTTS_CLIENTAUTH_ENABLED}
     </mqtt-listeners>
-    <mqtt-sn-listeners>
-        <udp-listener>
-            <port>2442</port>
-            <bind-address>0.0.0.0</bind-address>
-        </udp-listener>
-    </mqtt-sn-listeners>
     <admin-api>
         <enabled>true</enabled>
         ${IF:HIVEMQ_PRE_LOGIN_NOTICE_ENABLED}

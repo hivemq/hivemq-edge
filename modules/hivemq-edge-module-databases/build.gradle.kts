@@ -27,22 +27,6 @@ java {
 repositories {
     mavenCentral()
     maven { url = uri("https://jitpack.io") }
-    exclusiveContent {
-        forRepository {
-            maven {
-                name = "hivemqEdgeMqttSn"
-                url = uri("https://maven.pkg.github.com/hivemq/hivemq-edge-mqtt-sn")
-                credentials {
-                    username = providers.gradleProperty("hivemqCommonsUsername").orNull
-                    password = providers.gradleProperty("hivemqCommonsPassword").orNull
-                }
-            }
-        }
-        filter {
-            includeGroup("org.mqtt-sn")
-            includeGroup("org.slj")
-        }
-    }
 }
 
 dependencies {

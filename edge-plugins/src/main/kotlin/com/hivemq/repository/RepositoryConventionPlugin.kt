@@ -12,30 +12,11 @@ import java.net.URI
  */
 class RepositoryConventionPlugin : Plugin<Project> {
     override fun apply(project: Project) {
-        project.repositories.applyRepositorySettings(project)
+        project.repositories.applyRepositorySettings()
     }
 
-    private fun RepositoryHandler.applyRepositorySettings(project: Project) {
+    private fun RepositoryHandler.applyRepositorySettings() {
         mavenCentral()
         maven { url = URI.create("https://jitpack.io") }
-        exclusiveContent {
-            forRepository {
-                maven {
-                    name = "hivemqEdgeMqttSn"
-                    url = URI.create("https://maven.pkg.github.com/hivemq/hivemq-edge-mqtt-sn")
-                    credentials {
-                        // findProperty -> null when absent, so configuration never fails for
-                        // projects that don't resolve mqtt-sn; resolution fails clearly only when
-                        // an org.slj / org.mqtt-sn artifact is actually requested without creds.
-                        username = project.findProperty("hivemqCommonsUsername") as String?
-                        password = project.findProperty("hivemqCommonsPassword") as String?
-                    }
-                }
-            }
-            filter {
-                includeGroup("org.mqtt-sn")
-                includeGroup("org.slj")
-            }
-        }
     }
 }

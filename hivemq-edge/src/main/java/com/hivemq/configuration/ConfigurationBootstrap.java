@@ -38,7 +38,6 @@ import com.hivemq.configuration.service.impl.GatewayConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.ModuleConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.MqttConfigurationServiceImpl;
-import com.hivemq.configuration.service.impl.MqttsnConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.PersistenceConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.RestrictionsConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.SecurityConfigurationServiceImpl;
@@ -60,7 +59,6 @@ public class ConfigurationBootstrap {
                 new RestrictionsConfigurationServiceImpl(),
                 new SecurityConfigurationServiceImpl(),
                 new PersistenceConfigurationServiceImpl(),
-                new MqttsnConfigurationServiceImpl(),
                 new ApiConfigurationServiceImpl(),
                 new GatewayConfigurationServiceImpl(),
                 new UsageTrackingConfigurationServiceImpl(),
@@ -78,7 +76,7 @@ public class ConfigurationBootstrap {
                         new MqttConfigurator(configurationService.mqttConfiguration()),
                         new ListenerConfigurator(configurationService.listenerConfiguration(), systemInformation),
                         new PersistenceConfigurator(configurationService.persistenceConfigurationService()),
-                        new MqttsnConfigurator(configurationService.mqttsnConfiguration()),
+                        new MqttsnConfigurator(),
                         new ApiConfigurator(configurationService.apiConfiguration()),
                         new DynamicConfigConfigurator(configurationService.gatewayConfiguration()),
                         new UsageTrackingConfigurator(configurationService.usageTrackingConfiguration()),
