@@ -26,12 +26,12 @@ jobs:
       post-comment: ${{ steps.resolve.outputs.post-comment }}
     steps:
       - id: resolve
-        uses: hivemq/hivemq-pi-review-action@v1.3.0
+        uses: hivemq/hivemq-pi-review-action@e83d061cf2ef1b3ce0fd09c83b60474f7aa338ce # v1.3.0
 
   review:
     needs: resolve
     if: needs.resolve.outputs.should-run == 'true'
-    uses: hivemq/hivemq-pi-review-action/.github/workflows/pi-pr-review.yml@v1.3.0
+    uses: hivemq/hivemq-pi-review-action/.github/workflows/pi-pr-review.yml@e83d061cf2ef1b3ce0fd09c83b60474f7aa338ce # v1.3.0
     with:
       pr-number: ${{ fromJson(needs.resolve.outputs.pr-number) }}
       post-comment: ${{ fromJson(needs.resolve.outputs.post-comment) }}
