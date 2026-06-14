@@ -215,7 +215,7 @@ jobs:
           ls -R ./coverage-combined
           ls -R **/**/*.info
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v8
+        uses: SonarSource/sonarqube-scan-action@713881670b6b3676cda39549040e2d88c70d582e # v8
         with:
           projectBaseDir: hivemq-edge-frontend
           args: >
