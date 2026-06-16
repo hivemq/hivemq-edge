@@ -55,15 +55,16 @@ class ReuseNoForkTest {
             "NodeType",
             "ProtocolAdapterCategory",
             "ProtocolAdapterTag",
+            "ProtocolSpecificAdapterConfig",
             // api2 contracts (SDK v2)
-            "Message",
-            "MessagePriority",
+            "MailboxMessage",
+            "MailboxMessagePriority",
             "MailboxSender",
             "Mailbox",
             "DefaultMailbox",
-            "Actor",
-            "Dispatcher",
-            "ActorHandle",
+            "MessageHandler",
+            "MessageDispatcher",
+            "MessageDispatcherHandle",
             "Node",
             "Tag2",
             "NodeTagPair",
@@ -76,12 +77,13 @@ class ReuseNoForkTest {
             "ErrorScope",
             "VerifyOutcome",
             "ProtocolAdapter2",
-            "ProtocolAdapterCallbacks",
+            "ProtocolAdapterOutput2",
             "ProtocolAdapterCapability2",
             "ProtocolAdapterInformation2",
             "ProtocolAdapterFactory2",
             "ProtocolAdapterInput2",
-            "ProtocolAdapterServices2");
+            "ProtocolAdapterService",
+            "AdapterConfigSchema");
 
     /**
      * Architectural shorthands that must never appear in code identifiers (naming rule N2).
