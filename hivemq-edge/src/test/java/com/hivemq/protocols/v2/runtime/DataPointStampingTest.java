@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.protocols2.runtime;
+package com.hivemq.protocols.v2.runtime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,10 +22,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.schema.ScalarSchema;
 import com.hivemq.adapter.sdk.api.schema.ScalarType;
-import com.hivemq.adapter.sdk.api2.node.Node;
-import com.hivemq.adapter.sdk.api2.node.NodeProperty;
-import com.hivemq.adapter.sdk.api2.node.NodeTagPair;
-import com.hivemq.adapter.sdk.api2.node.Tag2;
+import com.hivemq.adapter.sdk.api.v2.node.Node;
+import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
+import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
+import com.hivemq.adapter.sdk.api.v2.node.Tag;
 import com.hivemq.datapoint.DataPointWithMetadata;
 import java.util.EnumSet;
 import org.jetbrains.annotations.NotNull;
@@ -71,7 +71,7 @@ class DataPointStampingTest {
         }
     }
 
-    private static @NotNull Tag2 temperatureTag() {
+    private static @NotNull Tag temperatureTag() {
         final NodeTagPair pair = NodeTagPair.create(
                 new TestNode(),
                 "temperature",
