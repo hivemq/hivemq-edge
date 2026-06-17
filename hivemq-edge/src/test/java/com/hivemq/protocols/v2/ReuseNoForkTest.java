@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.protocols2;
+package com.hivemq.protocols.v2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -26,18 +26,19 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 /**
- * The reuse boundary (decision D2) for the framework side: {@code protocols2} depends on the reused v1 SDK
- * types and the new {@code api2} contracts — it never forks them into a parallel copy. The naming rules
- * (N1/N2) govern every new {@code protocols2} identifier.
+ * The reuse boundary (decision D2) for the framework side: {@code protocols.v2} depends on the reused v1 SDK
+ * types and the new {@code api.v2} contracts — it never forks them into a parallel copy. Naming rule N2 governs
+ * every new {@code protocols.v2} identifier; the package name carries the version, so no identifier takes a
+ * {@code 2} suffix.
  */
 class ReuseNoForkTest {
 
-    private static final Path PROTOCOLS2_SOURCE_DIRECTORY =
-            Path.of("src", "main", "java", "com", "hivemq", "protocols2");
+    private static final Path PROTOCOLS_V2_SOURCE_DIRECTORY =
+            Path.of("src", "main", "java", "com", "hivemq", "protocols", "v2");
 
     /**
-     * Simple names of reused v1 SDK types and of the {@code api2} contracts — a same-named type under
-     * {@code protocols2} would be a fork.
+     * Simple names of reused v1 SDK types and of the {@code api.v2} contracts — a same-named type under
+     * {@code protocols.v2} would be a fork.
      */
     private static final Set<String> NO_FORK_TYPE_SIMPLE_NAMES = Set.of(
             // reused v1 SDK subset
@@ -56,7 +57,7 @@ class ReuseNoForkTest {
             "ProtocolAdapterCategory",
             "ProtocolAdapterTag",
             "ProtocolSpecificAdapterConfig",
-            // api2 contracts (SDK v2)
+            // api.v2 contracts (SDK v2)
             "MailboxMessage",
             "MailboxMessagePriority",
             "MailboxSender",
@@ -66,7 +67,7 @@ class ReuseNoForkTest {
             "MessageDispatcher",
             "MessageDispatcherHandle",
             "Node",
-            "Tag2",
+            "Tag",
             "NodeTagPair",
             "NodeProperty",
             "AccessTriState",
@@ -76,14 +77,13 @@ class ReuseNoForkTest {
             "BrowseResultEntry",
             "ErrorScope",
             "VerifyOutcome",
-            "ProtocolAdapter2",
-            "ProtocolAdapterOutput2",
-            "ProtocolAdapterCapability2",
-            "ProtocolAdapterInformation2",
-            "ProtocolAdapterFactory2",
-            "ProtocolAdapterInput2",
-            "ProtocolAdapterService",
-            "AdapterConfigSchema");
+            "ProtocolAdapter",
+            "ProtocolAdapterOutput",
+            "ProtocolAdapterCapability",
+            "ProtocolAdapterInformation",
+            "ProtocolAdapterFactory",
+            "ProtocolAdapterInput",
+            "ProtocolAdapterService");
 
     /**
      * Architectural shorthands that must never appear in code identifiers (naming rule N2).
@@ -92,28 +92,17 @@ class ReuseNoForkTest {
             Set.of("Paw", "Pam", "Paf", "Fsm", "Ctx", "Cfg", "Ack", "Mgr");
 
     @Test
-    void protocols2_doesNotForkAnyReusedType() throws IOException {
-        for (final String typeName : protocols2TopLevelTypeNames()) {
+    void protocolsV2_doesNotForkAnyReusedType() throws IOException {
+        for (final String typeName : protocolsV2TopLevelTypeNames()) {
             assertThat(NO_FORK_TYPE_SIMPLE_NAMES)
-                    .as("protocols2 type %s must not fork a reused type", typeName)
+                    .as("protocols.v2 type %s must not fork a reused type", typeName)
                     .doesNotContain(typeName);
         }
     }
 
     @Test
-    void namingRuleN1_twoIsASuffixNeverAnInfix() throws IOException {
-        for (final String typeName : protocols2TopLevelTypeNames()) {
-            if (typeName.indexOf('2') >= 0) {
-                assertThat(typeName)
-                        .as("identifier %s must carry '2' only as a suffix (naming rule N1)", typeName)
-                        .matches("[A-Za-z]+2");
-            }
-        }
-    }
-
-    @Test
     void namingRuleN2_noAbbreviationsInTypeNames() throws IOException {
-        for (final String typeName : protocols2TopLevelTypeNames()) {
+        for (final String typeName : protocolsV2TopLevelTypeNames()) {
             for (final String abbreviation : FORBIDDEN_ABBREVIATIONS) {
                 assertThat(typeName)
                         .as(
@@ -124,11 +113,11 @@ class ReuseNoForkTest {
         }
     }
 
-    private static List<String> protocols2TopLevelTypeNames() throws IOException {
-        assertThat(PROTOCOLS2_SOURCE_DIRECTORY)
+    private static List<String> protocolsV2TopLevelTypeNames() throws IOException {
+        assertThat(PROTOCOLS_V2_SOURCE_DIRECTORY)
                 .as("the test must run with the project directory as its working directory")
                 .exists();
-        try (final Stream<Path> paths = Files.walk(PROTOCOLS2_SOURCE_DIRECTORY)) {
+        try (final Stream<Path> paths = Files.walk(PROTOCOLS_V2_SOURCE_DIRECTORY)) {
             return paths.filter(path -> path.getFileName().toString().endsWith(".java"))
                     .map(path -> path.getFileName().toString().replace(".java", ""))
                     .filter(typeName -> !typeName.equals("package-info"))
