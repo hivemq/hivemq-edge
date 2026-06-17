@@ -164,11 +164,9 @@ public class SimulationProtocolAdapter implements BatchPollingProtocolAdapter, W
                 final RandomValueConfig rv = Objects.requireNonNull(def.getRandomValue());
                 switch (rv.getValueType()) {
                     case INT ->
-                        b.value(ThreadLocalRandom.current()
-                                .nextInt((int) rv.getMinValue(), (int) rv.getMaxValue() + 1));
+                        b.value(ThreadLocalRandom.current().nextInt((int) rv.getMinValue(), (int) rv.getMaxValue()));
                     case LONG ->
-                        b.value(ThreadLocalRandom.current()
-                                .nextLong((long) rv.getMinValue(), (long) rv.getMaxValue() + 1));
+                        b.value(ThreadLocalRandom.current().nextLong((long) rv.getMinValue(), (long) rv.getMaxValue()));
                     case DOUBLE -> b.value(ThreadLocalRandom.current().nextDouble(rv.getMinValue(), rv.getMaxValue()));
                     case STRING ->
                         throw new IllegalStateException(
