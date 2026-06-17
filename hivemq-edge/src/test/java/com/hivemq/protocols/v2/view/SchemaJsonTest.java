@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.protocols2.view;
+package com.hivemq.protocols.v2.view;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
