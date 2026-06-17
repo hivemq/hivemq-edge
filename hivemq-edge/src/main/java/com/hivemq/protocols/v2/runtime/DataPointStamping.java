@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.protocols2.runtime;
+package com.hivemq.protocols.v2.runtime;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.adapter.sdk.api2.node.Node;
-import com.hivemq.adapter.sdk.api2.node.Tag2;
+import com.hivemq.adapter.sdk.api.v2.node.Node;
+import com.hivemq.adapter.sdk.api.v2.node.Tag;
 import com.hivemq.datapoint.DataPointWithMetadata;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import org.jetbrains.annotations.NotNull;
@@ -50,7 +50,7 @@ public final class DataPointStamping {
      * @return a new data point carrying the tag's name and the adapter id, with the payload intact.
      */
     public static @NotNull DataPoint stamp(
-            final @NotNull DataPoint dataPoint, final @NotNull Tag2 tag, final @NotNull String adapterId) {
+            final @NotNull DataPoint dataPoint, final @NotNull Tag tag, final @NotNull String adapterId) {
         if (dataPoint instanceof final DataPointWithMetadata dataPointWithMetadata) {
             final ObjectNode stampedEnvelope =
                     dataPointWithMetadata.getJsonNode().deepCopy();
