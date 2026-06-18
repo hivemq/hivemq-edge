@@ -18,11 +18,7 @@ package com.hivemq.edge.adapters.opcua.conformance;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
-import com.hivemq.adapter.sdk.api.v2.messaging.Mailbox;
-import com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessage;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcher;
-import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcherHandle;
-import com.hivemq.adapter.sdk.api.v2.messaging.MessageHandler;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
 import com.hivemq.adapter.sdk.api.v2.model.ErrorScope;
@@ -48,6 +44,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -58,16 +55,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class OpcUaFoundationConformanceTest {
 
-    @RegisterExtension
-    final EmbeddedOpcUaServerExtension server = new EmbeddedOpcUaServerExtension();
-
     // Embedded TestNamespace nodes register at ns=1 (see TestNamespace#addDynamicNodes).
     private static final @NotNull OpcUaConformanceNode INT32_NODE = new OpcUaConformanceNode("ns=1;i=11");
     private static final @NotNull OpcUaConformanceNode DOUBLE_NODE = new OpcUaConformanceNode("ns=1;i=13");
     // the standard OPC-UA Objects folder — the browse root.
     private static final @NotNull OpcUaConformanceNode OBJECTS_FOLDER = new OpcUaConformanceNode("ns=0;i=85");
-
-    private final ConformanceDataPointFactory dataPointFactory = new ConformanceDataPointFactory();
+    @RegisterExtension
+    final @NotNull EmbeddedOpcUaServerExtension server = new EmbeddedOpcUaServerExtension();
+    private final @NotNull ConformanceDataPointFactory dataPointFactory = new ConformanceDataPointFactory();
 
     @Test
     void connectVerifyPoll_carryThroughTheFoundationModel() {
@@ -79,8 +74,7 @@ class OpcUaFoundationConformanceTest {
         adapter.verifyBatch(nodes);
         dispatcher.drainAll();
         assertThat(output.verifyOutcomes.keySet()).containsExactlyInAnyOrderElementsOf(nodes);
-        assertThat(output.verifyOutcomes.values())
-                .as("every declared node verifies as Success against the device")
+        assertThat(output.verifyOutcomes.values()).as("every declared node verifies as Success against the device")
                 .allMatch(outcome -> outcome instanceof VerifyOutcome.Success);
 
         adapter.pollBatch(nodes);
@@ -90,8 +84,10 @@ class OpcUaFoundationConformanceTest {
         assertThat(output.dataPoints.get(INT32_NODE).getTagValue()).isInstanceOf(Number.class);
         assertThat(output.dataPoints.get(DOUBLE_NODE).getTagValue()).isInstanceOf(Number.class);
 
+        adapter.disconnect();
         adapter.stop();
         dispatcher.drainAll();
+        assertThat(output.disconnected).as("disconnected()").isTrue();
         assertThat(output.stopped).as("stopped() after stop()").isTrue();
     }
 
@@ -109,8 +105,7 @@ class OpcUaFoundationConformanceTest {
         // the anonymous session, so the device itself declines the write — correct device behaviour, asserted
         // here as a returned result rather than a forced success (a read-back cannot reflect a write on these
         // synthetic nodes either, since reads return a random callback value).
-        assertThat(output.writeResults)
-                .as("southbound write round-trips to a writeResult through the foundation model")
+        assertThat(output.writeResults).as("southbound write round-trips to a writeResult through the foundation model")
                 .containsKey(INT32_NODE);
     }
 
@@ -126,14 +121,17 @@ class OpcUaFoundationConformanceTest {
         adapter.addSubscriptionBatch(List.of(DOUBLE_NODE));
         dispatcher.drainAll();
 
-        assertThat(output.awaitDataPoint(INT32_NODE, TimeUnit.SECONDS.toMillis(10)))
-                .as("a pushed value arrives for the first-subscribed node").isTrue();
-        assertThat(output.awaitDataPoint(DOUBLE_NODE, TimeUnit.SECONDS.toMillis(10)))
-                .as("the second incremental subscription also delivers — the first was not reset").isTrue();
+        assertThat(output.awaitDataPoint(INT32_NODE, TimeUnit.SECONDS.toMillis(10))).as(
+                "a pushed value arrives for the first-subscribed node").isTrue();
+        assertThat(output.awaitDataPoint(DOUBLE_NODE, TimeUnit.SECONDS.toMillis(10))).as(
+                "the second incremental subscription also delivers — the first was not reset").isTrue();
         assertThat(output.dataPoints.get(INT32_NODE).getTagValue()).isInstanceOf(Number.class);
 
+        adapter.disconnect();
         adapter.stop();
         dispatcher.drainAll();
+        assertThat(output.disconnected).as("disconnected()").isTrue();
+        assertThat(output.stopped).as("stopped() after stop()").isTrue();
     }
 
     @Test
@@ -146,23 +144,25 @@ class OpcUaFoundationConformanceTest {
         dispatcher.drainAll();
 
         assertThat(output.browseResults).as("browse produced a result").isNotNull();
-        final var discoveredNodeIds = output.browseResults.stream()
+        final var discoveredNodeIds = requireNonNull(output.browseResults).stream()
                 .map(entry -> entry.node().nodeId())
                 .collect(Collectors.toSet());
-        assertThat(discoveredNodeIds)
-                .as("the recursive, paginated browse surfaced the test variables")
+        assertThat(discoveredNodeIds).as("the recursive, paginated browse surfaced the test variables")
                 .contains(INT32_NODE.nodeId(), DOUBLE_NODE.nodeId());
         assertThat(output.browseResults).allMatch(BrowseResultEntry::selectable);
 
+        adapter.disconnect();
         adapter.stop();
         dispatcher.drainAll();
+        assertThat(output.disconnected).as("disconnected()").isTrue();
+        assertThat(output.stopped).as("stopped() after stop()").isTrue();
     }
 
     private @NotNull OpcUaConformanceAdapter connectedAdapter(
-            final @NotNull DrainOnCallDispatcher dispatcher, final @NotNull RecordingOutput output) {
-        final ProtocolAdapterInput input = ConformanceInput.create("opcua-conformance", dispatcher);
-        final OpcUaConformanceAdapter adapter =
-                new OpcUaConformanceAdapter(input, output, server.getServerUri());
+            final @NotNull DrainOnCallDispatcher dispatcher,
+            final @NotNull RecordingOutput output) {
+        final ProtocolAdapterInput input = ConformanceInput.create(dispatcher);
+        final OpcUaConformanceAdapter adapter = new OpcUaConformanceAdapter(input, output, server.getServerUri());
         adapter.start();
         dispatcher.drainAll();
         assertThat(output.started).as("started()").isTrue();
@@ -172,8 +172,6 @@ class OpcUaFoundationConformanceTest {
         assertThat(output.connected).as("connected()").isTrue();
         return adapter;
     }
-
-    // ── a concrete OPC-UA node: its identity is the parseable NodeId string ──────────────────────────
 
     private static final class OpcUaConformanceNode extends Node {
         private final @NotNull String parseableNodeId;
@@ -198,57 +196,17 @@ class OpcUaFoundationConformanceTest {
         }
     }
 
-    // ── a deterministic dispatcher: drains on the calling thread (mirrors the SDK's ManualDispatcher) ─
-
-    private static final class DrainOnCallDispatcher implements MessageDispatcher {
-        private final @NotNull List<Binding<?>> bindings = new ArrayList<>();
-
-        @Override
-        public <MessageType extends MailboxMessage> @NotNull MessageDispatcherHandle attach(
-                final @NotNull Mailbox<MessageType> mailbox, final @NotNull MessageHandler<MessageType> handler) {
-            final Binding<MessageType> binding = new Binding<>(mailbox, handler);
-            bindings.add(binding);
-            return () -> bindings.remove(binding);
-        }
-
-        void drainAll() {
-            boolean drainedSomething = true;
-            while (drainedSomething) {
-                drainedSomething = false;
-                for (final Binding<?> binding : List.copyOf(bindings)) {
-                    while (binding.drainOne()) {
-                        drainedSomething = true;
-                    }
-                }
-            }
-        }
-
-        private record Binding<MessageType extends MailboxMessage>(
-                @NotNull Mailbox<MessageType> mailbox, @NotNull MessageHandler<MessageType> handler) {
-            boolean drainOne() {
-                final @Nullable MessageType message = mailbox.poll();
-                if (message == null) {
-                    return false;
-                }
-                handler.receive(message);
-                return true;
-            }
-        }
-    }
-
-    // ── a thread-safe recording output (subscription pushes arrive on a Milo thread) ─────────────────
-
     private static final class RecordingOutput implements ProtocolAdapterOutput {
         private final @NotNull Object lock = new Object();
-        private volatile boolean started;
-        private volatile boolean stopped;
-        private volatile boolean connected;
-        private volatile boolean disconnected;
         private final @NotNull List<String> errors = new ArrayList<>();
         private final @NotNull List<String> nodeErrors = new ArrayList<>();
         private final @NotNull Map<Node, VerifyOutcome> verifyOutcomes = new LinkedHashMap<>();
         private final @NotNull Map<Node, DataPoint> dataPoints = new LinkedHashMap<>();
         private final @NotNull Map<Node, Boolean> writeResults = new LinkedHashMap<>();
+        private volatile boolean started;
+        private volatile boolean stopped;
+        private volatile boolean connected;
+        private volatile boolean disconnected;
         private volatile @Nullable List<BrowseResultEntry> browseResults;
 
         @Override
@@ -327,19 +285,14 @@ class OpcUaFoundationConformanceTest {
         }
     }
 
-    // ── minimal construction input + services + datapoint factory ────────────────────────────────
-
-    private record ConformanceInput(
-            @NotNull String adapterId,
-            @NotNull DataPoint adapterConfig,
-            @NotNull List<NodeTagPair> nodes,
-            @NotNull ProtocolAdapterService services) implements ProtocolAdapterInput {
+    private record ConformanceInput(@NotNull String adapterId, @NotNull DataPoint adapterConfig,
+                                    @NotNull List<NodeTagPair> nodes, @NotNull ProtocolAdapterService services)
+            implements ProtocolAdapterInput {
 
         static @NotNull ConformanceInput create(
-                final @NotNull String adapterId, final @NotNull MessageDispatcher dispatcher) {
+                final @NotNull MessageDispatcher dispatcher) {
             final ConformanceDataPointFactory factory = new ConformanceDataPointFactory();
-            return new ConformanceInput(
-                    adapterId,
+            return new ConformanceInput("opcua-conformance",
                     factory.createJsonDataPoint("adapterConfig", JsonNodeFactory.instance.objectNode()),
                     List.of(),
                     new ConformanceService(factory, dispatcher));
@@ -351,6 +304,16 @@ class OpcUaFoundationConformanceTest {
     }
 
     private static final class ConformanceDataPointFactory implements DataPointFactory {
+        @Override
+        public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
+            return new SimpleDataPoint(tagName, tagValue, false);
+        }
+
+        @Override
+        public @NotNull DataPoint createJsonDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {
+            return new SimpleDataPoint(tagName, tagValue, true);
+        }
+
         private record SimpleDataPoint(@NotNull String tagName, @NotNull Object tagValue, boolean json)
                 implements DataPoint {
             @Override
@@ -367,16 +330,6 @@ class OpcUaFoundationConformanceTest {
             public @NotNull String getTagName() {
                 return tagName;
             }
-        }
-
-        @Override
-        public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
-            return new SimpleDataPoint(tagName, tagValue, false);
-        }
-
-        @Override
-        public @NotNull DataPoint createJsonDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {
-            return new SimpleDataPoint(tagName, tagValue, true);
         }
     }
 }
