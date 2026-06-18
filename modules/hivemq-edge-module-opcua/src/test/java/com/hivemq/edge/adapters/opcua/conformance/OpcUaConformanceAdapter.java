@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.opcua.conformance;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
 import com.hivemq.adapter.sdk.api.v2.model.ErrorScope;
@@ -33,7 +34,9 @@ import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.NamespaceTable;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
@@ -45,19 +48,17 @@ import org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseResult;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
+import org.eclipse.milo.opcua.stack.core.types.structured.ViewDescription;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Deque;
+import java.util.Base64;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -85,6 +86,7 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
     private final @NotNull Map<NodeId, Node> subscribedNodes;
     private @Nullable OpcUaClient client;
     private @Nullable OpcUaSubscription subscription;
+    private long pageDelayMillis;
 
     OpcUaConformanceAdapter(
             final @NotNull ProtocolAdapterInput input,
@@ -203,73 +205,84 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
         }
     }
 
+    /** Simulate a slow device: each browse page waits this long before being reported. */
+    void pageDelay(final long millis) {
+        this.pageDelayMillis = millis;
+    }
+
     /**
-     * Recursive, paginated browse below the filter node — done entirely on the dispatch thread (EDG-737
-     * Finding B: the single-shot contract pushes continuation-point draining and recursion onto the PA, and
-     * this walk starves polls for its whole duration). Bounded to the filter node's subtree plus the test
-     * namespace to keep the conformance walk finite.
+     * One page of a paginated browse below the filter node (EDG-737 Finding B fix). The adapter does a single
+     * server round-trip and reports one page via {@code browsePage} — with a {@link BrowseContinuation} when
+     * more remain — instead of walking the whole address space in one command. Each page is a separate mailbox
+     * round-trip, so the framework interleaves {@code CONTROL} commands and polls between pages.
      */
     @Override
-    protected void doBrowse(final @NotNull BrowseFilter filter) {
+    protected void doBrowse(final int requestId, final @NotNull BrowseFilter filter, final int maxReferences) {
         try {
-            final NamespaceTable namespaceTable = requireNonNull(client).getNamespaceTable();
-            final NodeId root = NodeId.parse(filter.filterNode().nodeId());
-            final List<BrowseResultEntry> entries = new ArrayList<>();
-            final Set<NodeId> visited = new HashSet<>();
-            final Deque<NodeId> frontier = new ArrayDeque<>();
-            frontier.add(root);
-            while (!frontier.isEmpty()) {
-                final NodeId current = frontier.poll();
-                if (!visited.add(current)) {
-                    continue;
-                }
-                for (final ReferenceDescription reference : browseAll(current)) {
-                    final Optional<NodeId> childId = reference.getNodeId().toNodeId(namespaceTable);
-                    if (childId.isEmpty()) {
-                        continue;
-                    }
-                    final NodeId nodeId = childId.get();
-                    if (reference.getNodeClass() == NodeClass.Variable) {
-                        entries.add(new BrowseResultEntry(new BrowsedNode(nodeId.toParseableString()),
-                                NodeType.VALUE,
-                                true));
-                    } else if (reference.getNodeClass() == NodeClass.Object &&
-                            nodeId.getNamespaceIndex().intValue() == 1) {
-                        frontier.add(nodeId);
-                    }
-                }
-            }
-            output.browseResult(entries);
-        } catch (final Exception failure) {
-            output.browseResult(List.of());
+            final BrowseDescription browseDescription = new BrowseDescription(NodeId.parse(filter.filterNode().nodeId()),
+                    BrowseDirection.Forward,
+                    NodeIds.HierarchicalReferences,
+                    true,
+                    uint(0),
+                    uint(BrowseResultMask.All.getValue()));
+            final ViewDescription view = new ViewDescription(NodeId.NULL_VALUE, DateTime.MIN_VALUE, uint(0));
+            final BrowseResult result = requireNonNull(client).browseAsync(view,
+                            uint(Math.max(0, maxReferences)),
+                            List.of(browseDescription))
+                    .get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    .getResults()[0];
+            emitPage(requestId, result);
+        } catch (final @NotNull Exception failure) {
+            output.browseError(requestId, String.valueOf(failure.getMessage()));
+        }
+    }
+
+    @Override
+    protected void doBrowseNext(final int requestId, final @NotNull BrowseContinuation continuation) {
+        try {
+            final ByteString continuationPoint = ByteString.of(Base64.getDecoder().decode(continuation.token()));
+            final BrowseResult result = requireNonNull(client).browseNextAsync(false, List.of(continuationPoint))
+                    .get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    .getResults()[0];
+            emitPage(requestId, result);
+        } catch (final @NotNull Exception failure) {
+            output.browseError(requestId, String.valueOf(failure.getMessage()));
         }
     }
 
     /**
-     * Browse one node, draining every continuation page — the work the framework leaves to the PA.
+     * Build one page from a {@link BrowseResult} and report it — after an optional per-page delay simulating a
+     * slow device, so the framework's interleaving between pages is observable.
      */
-    private @NotNull List<ReferenceDescription> browseAll(final @NotNull NodeId nodeId) throws Exception {
-        final List<ReferenceDescription> references = new ArrayList<>();
-        BrowseResult result = requireNonNull(client).browseAsync(new BrowseDescription(nodeId,
-                BrowseDirection.Forward,
-                NodeIds.HierarchicalReferences,
-                true,
-                uint(0),
-                uint(BrowseResultMask.All.getValue()))).get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        while (true) {
-            if (result.getReferences() != null) {
-                references.addAll(Arrays.asList(result.getReferences()));
+    private void emitPage(final int requestId, final @NotNull BrowseResult result) {
+        if (pageDelayMillis > 0L) {
+            try {
+                Thread.sleep(pageDelayMillis);
+            } catch (final InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
             }
-            final var continuationPoint = result.getContinuationPoint();
-            if (continuationPoint == null ||
-                    continuationPoint.bytes() == null ||
-                    continuationPoint.bytes().length == 0) {
-                return references;
-            }
-            result = requireNonNull(requireNonNull(client).browseNextAsync(false, List.of(continuationPoint))
-                    .get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                    .getResults())[0];
         }
+        final NamespaceTable namespaceTable = requireNonNull(client).getNamespaceTable();
+        final List<BrowseResultEntry> entries = new ArrayList<>();
+        if (result.getReferences() != null) {
+            for (final ReferenceDescription reference : result.getReferences()) {
+                final Optional<NodeId> childId = reference.getNodeId().toNodeId(namespaceTable);
+                if (childId.isEmpty()) {
+                    continue;
+                }
+                final boolean isVariable = reference.getNodeClass() == NodeClass.Variable;
+                entries.add(new BrowseResultEntry(new BrowsedNode(childId.get().toParseableString()),
+                        isVariable ? NodeType.VALUE : NodeType.OBJECT,
+                        isVariable));
+            }
+        }
+        final ByteString continuationPoint = result.getContinuationPoint();
+        final BrowseContinuation continuation = (continuationPoint != null &&
+                continuationPoint.bytes() != null &&
+                continuationPoint.bytes().length > 0)
+                ? new BrowseContinuation(Base64.getEncoder().encodeToString(continuationPoint.bytes()))
+                : null;
+        output.browsePage(requestId, entries, continuation);
     }
 
     @Override

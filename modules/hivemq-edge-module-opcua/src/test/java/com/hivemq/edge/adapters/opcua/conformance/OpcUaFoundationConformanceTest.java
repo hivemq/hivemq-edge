@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcher;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
 import com.hivemq.adapter.sdk.api.v2.model.ErrorScope;
@@ -38,11 +39,12 @@ import util.EmbeddedOpcUaServerExtension;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -135,27 +137,88 @@ class OpcUaFoundationConformanceTest {
     }
 
     @Test
-    void browse_returnsTheDeviceVariables_throughTheFoundationModel() {
+    void browse_paginates_assemblingAllVariablesAcrossPages() {
         final DrainOnCallDispatcher dispatcher = new DrainOnCallDispatcher();
         final RecordingOutput output = new RecordingOutput();
         final OpcUaConformanceAdapter adapter = connectedAdapter(dispatcher, output);
+        adapter.pageDelay(15); // simulate a slow device — pages must still assemble correctly
 
-        adapter.browse(new BrowseFilter(OBJECTS_FOLDER));
-        dispatcher.drainAll();
+        // discover the namespace-1 folders directly under Objects (one page, server-decided size)
+        final List<Node> testFolders = browseAllPages(adapter, dispatcher, output, OBJECTS_FOLDER, 0).stream()
+                .filter(entry -> !entry.selectable()) // folders are Objects, not selectable variables
+                .map(BrowseResultEntry::node)
+                .filter(node -> node.nodeId().startsWith("ns=1;"))
+                .toList();
+        assertThat(testFolders).as("the test-namespace folder is discoverable under Objects").isNotEmpty();
 
-        assertThat(output.browseResults).as("browse produced a result").isNotNull();
-        final var discoveredNodeIds = requireNonNull(output.browseResults).stream()
-                .map(entry -> entry.node().nodeId())
-                .collect(Collectors.toSet());
-        assertThat(discoveredNodeIds).as("the recursive, paginated browse surfaced the test variables")
+        // browse each ns=1 folder with maxReferences=1 -> forces continuation-point pagination
+        final int pagesBeforeVariables = output.browsePageCount();
+        final Set<String> variableNodeIds = new HashSet<>();
+        for (final Node folder : testFolders) {
+            for (final BrowseResultEntry entry : browseAllPages(adapter, dispatcher, output, folder, 1)) {
+                if (entry.selectable()) {
+                    variableNodeIds.add(entry.node().nodeId());
+                }
+            }
+        }
+
+        assertThat(variableNodeIds).as("the paginated browse assembled the test variables across pages")
                 .contains(INT32_NODE.nodeId(), DOUBLE_NODE.nodeId());
-        assertThat(output.browseResults).allMatch(BrowseResultEntry::selectable);
+        assertThat(output.browsePageCount() - pagesBeforeVariables)
+                .as("maxReferences=1 forced multi-page pagination (continuation points)").isGreaterThan(1);
 
         adapter.disconnect();
         adapter.stop();
         dispatcher.drainAll();
-        assertThat(output.disconnected).as("disconnected()").isTrue();
         assertThat(output.stopped).as("stopped() after stop()").isTrue();
+    }
+
+    @Test
+    void controlCommand_firedMidBrowse_preemptsTheQueuedNextPage() {
+        final DrainOnCallDispatcher dispatcher = new DrainOnCallDispatcher();
+        final RecordingOutput output = new RecordingOutput();
+        final OpcUaConformanceAdapter adapter = connectedAdapter(dispatcher, output);
+
+        // take the first page of a paginated browse — it leaves a continuation (more pages pending)
+        adapter.browse(9, new BrowseFilter(OBJECTS_FOLDER), 1);
+        dispatcher.drainAll();
+        final BrowseContinuation continuation = output.lastContinuation();
+        assertThat(continuation).as("first page left a continuation").isNotNull();
+
+        // queue the next page (DATA band) AND a disconnect (CONTROL band) together, then drain once
+        adapter.browseNext(9, requireNonNull(continuation)); // DATA
+        adapter.disconnect();                                // CONTROL
+        dispatcher.drainAll();
+
+        // CONTROL outranks DATA in the priority mailbox: the disconnect runs before the queued browse page
+        // (which then fails because the client is gone) — pagination created the interleave point.
+        assertThat(output.eventLog())
+                .as("a CONTROL command fired mid-browse preempts the queued next page")
+                .containsSubsequence("disconnected", "browseError");
+    }
+
+    /**
+     * Drive a full paginated browse of one node to completion (browse + browseNext until no continuation),
+     * returning every entry assembled across its pages — the orchestration the framework's PAW will own.
+     */
+    private static @NotNull List<BrowseResultEntry> browseAllPages(
+            final @NotNull OpcUaConformanceAdapter adapter,
+            final @NotNull DrainOnCallDispatcher dispatcher,
+            final @NotNull RecordingOutput output,
+            final @NotNull Node node,
+            final int maxReferences) {
+        final int firstPageIndex = output.browsePageCount();
+        adapter.browse(1, new BrowseFilter(node), maxReferences);
+        dispatcher.drainAll();
+        BrowseContinuation continuation = output.lastContinuation();
+        while (continuation != null) {
+            adapter.browseNext(1, continuation);
+            dispatcher.drainAll();
+            continuation = output.lastContinuation();
+        }
+        final List<BrowseResultEntry> entries = new ArrayList<>();
+        output.pagesFrom(firstPageIndex).forEach(page -> entries.addAll(page));
+        return entries;
     }
 
     private @NotNull OpcUaConformanceAdapter connectedAdapter(
@@ -203,30 +266,42 @@ class OpcUaFoundationConformanceTest {
         private final @NotNull Map<Node, VerifyOutcome> verifyOutcomes = new LinkedHashMap<>();
         private final @NotNull Map<Node, DataPoint> dataPoints = new LinkedHashMap<>();
         private final @NotNull Map<Node, Boolean> writeResults = new LinkedHashMap<>();
+        private final @NotNull List<String> eventLog = new ArrayList<>();
+        private final @NotNull List<List<BrowseResultEntry>> browsePages = new ArrayList<>();
         private volatile boolean started;
         private volatile boolean stopped;
         private volatile boolean connected;
         private volatile boolean disconnected;
-        private volatile @Nullable List<BrowseResultEntry> browseResults;
+        private volatile @Nullable BrowseContinuation lastContinuation;
+
+        private void event(final @NotNull String name) {
+            synchronized (lock) {
+                eventLog.add(name);
+            }
+        }
 
         @Override
         public void started() {
             started = true;
+            event("started");
         }
 
         @Override
         public void stopped() {
             stopped = true;
+            event("stopped");
         }
 
         @Override
         public void connected() {
             connected = true;
+            event("connected");
         }
 
         @Override
         public void disconnected() {
             disconnected = true;
+            event("disconnected");
         }
 
         @Override
@@ -266,8 +341,42 @@ class OpcUaFoundationConformanceTest {
         }
 
         @Override
-        public void browseResult(final @NotNull List<BrowseResultEntry> entries) {
-            browseResults = entries;
+        public void browsePage(
+                final int requestId,
+                final @NotNull List<BrowseResultEntry> entries,
+                final @Nullable BrowseContinuation continuation) {
+            synchronized (lock) {
+                browsePages.add(entries);
+                lastContinuation = continuation;
+                eventLog.add("browsePage");
+            }
+        }
+
+        @Override
+        public void browseError(final int requestId, final @NotNull String reason) {
+            event("browseError");
+        }
+
+        @NotNull List<String> eventLog() {
+            synchronized (lock) {
+                return List.copyOf(eventLog);
+            }
+        }
+
+        @Nullable BrowseContinuation lastContinuation() {
+            return lastContinuation;
+        }
+
+        int browsePageCount() {
+            synchronized (lock) {
+                return browsePages.size();
+            }
+        }
+
+        @NotNull List<List<BrowseResultEntry>> pagesFrom(final int fromIndex) {
+            synchronized (lock) {
+                return List.copyOf(browsePages.subList(fromIndex, browsePages.size()));
+            }
         }
 
         boolean awaitDataPoint(final @NotNull Node node, final long timeoutMillis) throws InterruptedException {
