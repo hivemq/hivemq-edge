@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.protocols.v2.statemachine;
+package com.hivemq.protocols.v2.fsm;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -28,7 +28,7 @@ import org.jetbrains.annotations.NotNull;
  * @param <ContextType> the machine's context.
  */
 @FunctionalInterface
-public interface Guard<StateType extends StateMachineState, EventType extends StateMachineEvent, ContextType> {
+public interface FSMGuard<StateType extends FSMState, EventType extends FSMEvent, ContextType> {
 
     /**
      * @param current the current machine state.

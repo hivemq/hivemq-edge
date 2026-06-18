@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.protocols.v2.statemachine;
+package com.hivemq.protocols.v2.fsm;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,16 +26,16 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * The declarative transition table at the heart of the SOLID state-machine engine (design §4): a set of
- * {@link Transition} rows plus a mandatory {@code unmatched} action (the defensive-reset slot). New machines
+ * {@link FSMTransition} rows plus a mandatory {@code unmatched} action (the defensive-reset slot). New machines
  * are new tables, not new engine code.
  * <p>
- * {@link #dispatch(StateMachineState, StateMachineEvent, Object)} looks up the rows for the current state and
+ * {@link #dispatch(FSMState, FSMEvent, Object)} looks up the rows for the current state and
  * the event's exact runtime type, evaluates their guards in registration order, and runs the first whose
  * guard passes. A single guardless row for that key is the catch-all, tried only after every guarded row for
  * the key has failed. When nothing matches — no row for the {@code (state, eventType)} key, or every guarded
  * row failed and there is no guardless row — the {@code unmatched} action runs; for the adapter machine that
  * is the defensive reset (§6.4). Goal mutations never reach this table: they go through
- * {@link StateMachine#onGoalChange(Runnable)} and so can never trigger the defensive reset (§4).
+ * {@link FSM#onGoalChange(Runnable)} and so can never trigger the defensive reset (§4).
  * <p>
  * A table is immutable once {@link Builder#build()} returns. The builder fails fast on an ambiguous table
  * (more than one guardless row for the same {@code (state, eventType)} key) and on a missing {@code unmatched}
@@ -45,15 +45,14 @@ import org.jetbrains.annotations.Nullable;
  * @param <EventType>   the machine's event type.
  * @param <ContextType> the machine's context.
  */
-public final class TransitionTable<
-        StateType extends StateMachineState, EventType extends StateMachineEvent, ContextType> {
+public final class FSMTransitionTable<StateType extends FSMState, EventType extends FSMEvent, ContextType> {
 
-    private final @NotNull Map<StateType, List<Transition<StateType, EventType, ContextType>>> rowsByState;
-    private final @NotNull Action<StateType, EventType, ContextType> unmatched;
+    private final @NotNull Map<StateType, List<FSMTransition<StateType, EventType, ContextType>>> rowsByState;
+    private final @NotNull FSMAction<StateType, EventType, ContextType> unmatched;
 
-    private TransitionTable(
-            final @NotNull Map<StateType, List<Transition<StateType, EventType, ContextType>>> rowsByState,
-            final @NotNull Action<StateType, EventType, ContextType> unmatched) {
+    private FSMTransitionTable(
+            final @NotNull Map<StateType, List<FSMTransition<StateType, EventType, ContextType>>> rowsByState,
+            final @NotNull FSMAction<StateType, EventType, ContextType> unmatched) {
         this.rowsByState = rowsByState;
         this.unmatched = unmatched;
     }
@@ -64,7 +63,7 @@ public final class TransitionTable<
      * @param <ContextType> the machine's context.
      * @return a fresh builder for a table over the given state, event, and context types.
      */
-    public static <StateType extends StateMachineState, EventType extends StateMachineEvent, ContextType> @NotNull
+    public static <StateType extends FSMState, EventType extends FSMEvent, ContextType> @NotNull
             Builder<StateType, EventType, ContextType> builder() {
         return new Builder<>();
     }
@@ -80,14 +79,14 @@ public final class TransitionTable<
      */
     public @NotNull StateType dispatch(
             final @NotNull StateType current, final @NotNull EventType event, final @NotNull ContextType context) {
-        final List<Transition<StateType, EventType, ContextType>> rows = rowsByState.get(current);
+        final List<FSMTransition<StateType, EventType, ContextType>> rows = rowsByState.get(current);
         if (rows != null) {
-            Transition<StateType, EventType, ContextType> guardless = null;
-            for (final Transition<StateType, EventType, ContextType> row : rows) {
+            FSMTransition<StateType, EventType, ContextType> guardless = null;
+            for (final FSMTransition<StateType, EventType, ContextType> row : rows) {
                 if (!row.eventType().equals(event.getClass())) {
                     continue;
                 }
-                final Guard<StateType, EventType, ContextType> guard = row.guard();
+                final FSMGuard<StateType, EventType, ContextType> guard = row.guard();
                 if (guard == null) {
                     guardless = row;
                 } else if (guard.test(current, event, context)) {
@@ -102,23 +101,22 @@ public final class TransitionTable<
     }
 
     /**
-     * Fluent builder for a {@link TransitionTable}. Not thread-safe — build once at construction time.
+     * Fluent builder for a {@link FSMTransitionTable}. Not thread-safe — build once at construction time.
      *
      * @param <StateType>   the machine's state type.
      * @param <EventType>   the machine's event type.
      * @param <ContextType> the machine's context.
      */
-    public static final class Builder<
-            StateType extends StateMachineState, EventType extends StateMachineEvent, ContextType> {
+    public static final class Builder<StateType extends FSMState, EventType extends FSMEvent, ContextType> {
 
-        private final @NotNull List<Transition<StateType, EventType, ContextType>> rows = new ArrayList<>();
-        private @Nullable Action<StateType, EventType, ContextType> unmatched;
+        private final @NotNull List<FSMTransition<StateType, EventType, ContextType>> rows = new ArrayList<>();
+        private @Nullable FSMAction<StateType, EventType, ContextType> unmatched;
 
         private Builder() {}
 
         /**
-         * Begin a row for {@code (state, eventType)}. Continue with {@link OnClause#when(Guard)} for a guarded
-         * row, or {@link OnClause#then(Action)} / {@link OnClause#otherwise(Action)} for the unconditional
+         * Begin a row for {@code (state, eventType)}. Continue with {@link OnClause#when(FSMGuard)} for a guarded
+         * row, or {@link OnClause#then(FSMAction)} / {@link OnClause#otherwise(FSMAction)} for the unconditional
          * row.
          *
          * @param state     the state the row applies in.
@@ -137,7 +135,7 @@ public final class TransitionTable<
          * @return this builder.
          */
         public @NotNull Builder<StateType, EventType, ContextType> unmatched(
-                final @NotNull Action<StateType, EventType, ContextType> action) {
+                final @NotNull FSMAction<StateType, EventType, ContextType> action) {
             this.unmatched = action;
             return this;
         }
@@ -147,15 +145,15 @@ public final class TransitionTable<
          * @throws IllegalStateException if no {@code unmatched} action was set, or the table is ambiguous —
          *                               more than one guardless row for one {@code (state, eventType)} key.
          */
-        public @NotNull TransitionTable<StateType, EventType, ContextType> build() {
-            final Action<StateType, EventType, ContextType> resolvedUnmatched = unmatched;
+        public @NotNull FSMTransitionTable<StateType, EventType, ContextType> build() {
+            final FSMAction<StateType, EventType, ContextType> resolvedUnmatched = unmatched;
             if (resolvedUnmatched == null) {
                 throw new IllegalStateException(
-                        "a TransitionTable requires an unmatched action (the defensive-reset slot)");
+                        "a FSMTransitionTable requires an unmatched action (the defensive-reset slot)");
             }
             final Map<StateType, Set<Class<? extends EventType>>> guardlessSeen = new HashMap<>();
-            final Map<StateType, List<Transition<StateType, EventType, ContextType>>> byState = new HashMap<>();
-            for (final Transition<StateType, EventType, ContextType> row : rows) {
+            final Map<StateType, List<FSMTransition<StateType, EventType, ContextType>>> byState = new HashMap<>();
+            for (final FSMTransition<StateType, EventType, ContextType> row : rows) {
                 if (!row.guarded()
                         && !guardlessSeen
                                 .computeIfAbsent(row.from(), key -> new HashSet<>())
@@ -168,24 +166,23 @@ public final class TransitionTable<
                 }
                 byState.computeIfAbsent(row.from(), key -> new ArrayList<>()).add(row);
             }
-            return new TransitionTable<>(byState, resolvedUnmatched);
+            return new FSMTransitionTable<>(byState, resolvedUnmatched);
         }
 
-        private void add(final @NotNull Transition<StateType, EventType, ContextType> row) {
+        private void add(final @NotNull FSMTransition<StateType, EventType, ContextType> row) {
             rows.add(row);
         }
     }
 
     /**
-     * The clause returned by {@link Builder#on}: gate the row with {@link #when(Guard)}, or register the
-     * unconditional row with {@link #then(Action)} / {@link #otherwise(Action)}.
+     * The clause returned by {@link Builder#on}: gate the row with {@link #when(FSMGuard)}, or register the
+     * unconditional row with {@link #then(FSMAction)} / {@link #otherwise(FSMAction)}.
      *
      * @param <StateType>   the machine's state type.
      * @param <EventType>   the machine's event type.
      * @param <ContextType> the machine's context.
      */
-    public static final class OnClause<
-            StateType extends StateMachineState, EventType extends StateMachineEvent, ContextType> {
+    public static final class OnClause<StateType extends FSMState, EventType extends FSMEvent, ContextType> {
 
         private final @NotNull Builder<StateType, EventType, ContextType> builder;
         private final @NotNull StateType state;
@@ -201,13 +198,13 @@ public final class TransitionTable<
         }
 
         /**
-         * Gate this row; complete it with {@link GuardedClause#then(Action)}.
+         * Gate this row; complete it with {@link GuardedClause#then(FSMAction)}.
          *
          * @param guard the gating condition.
          * @return the guarded clause.
          */
         public @NotNull GuardedClause<StateType, EventType, ContextType> when(
-                final @NotNull Guard<StateType, EventType, ContextType> guard) {
+                final @NotNull FSMGuard<StateType, EventType, ContextType> guard) {
             return new GuardedClause<>(builder, state, eventType, guard);
         }
 
@@ -218,43 +215,42 @@ public final class TransitionTable<
          * @return the builder.
          */
         public @NotNull Builder<StateType, EventType, ContextType> then(
-                final @NotNull Action<StateType, EventType, ContextType> action) {
-            builder.add(new Transition<>(state, eventType, null, action));
+                final @NotNull FSMAction<StateType, EventType, ContextType> action) {
+            builder.add(new FSMTransition<>(state, eventType, null, action));
             return builder;
         }
 
         /**
-         * Alias of {@link #then(Action)} that reads as the explicit default when guarded rows precede it.
+         * Alias of {@link #then(FSMAction)} that reads as the explicit default when guarded rows precede it.
          *
          * @param action the behavior that runs and returns the next state.
          * @return the builder.
          */
         public @NotNull Builder<StateType, EventType, ContextType> otherwise(
-                final @NotNull Action<StateType, EventType, ContextType> action) {
+                final @NotNull FSMAction<StateType, EventType, ContextType> action) {
             return then(action);
         }
     }
 
     /**
-     * The clause returned by {@link OnClause#when}: complete the guarded row with {@link #then(Action)}.
+     * The clause returned by {@link OnClause#when}: complete the guarded row with {@link #then(FSMAction)}.
      *
      * @param <StateType>   the machine's state type.
      * @param <EventType>   the machine's event type.
      * @param <ContextType> the machine's context.
      */
-    public static final class GuardedClause<
-            StateType extends StateMachineState, EventType extends StateMachineEvent, ContextType> {
+    public static final class GuardedClause<StateType extends FSMState, EventType extends FSMEvent, ContextType> {
 
         private final @NotNull Builder<StateType, EventType, ContextType> builder;
         private final @NotNull StateType state;
         private final @NotNull Class<? extends EventType> eventType;
-        private final @NotNull Guard<StateType, EventType, ContextType> guard;
+        private final @NotNull FSMGuard<StateType, EventType, ContextType> guard;
 
         private GuardedClause(
                 final @NotNull Builder<StateType, EventType, ContextType> builder,
                 final @NotNull StateType state,
                 final @NotNull Class<? extends EventType> eventType,
-                final @NotNull Guard<StateType, EventType, ContextType> guard) {
+                final @NotNull FSMGuard<StateType, EventType, ContextType> guard) {
             this.builder = builder;
             this.state = state;
             this.eventType = eventType;
@@ -268,8 +264,8 @@ public final class TransitionTable<
          * @return the builder.
          */
         public @NotNull Builder<StateType, EventType, ContextType> then(
-                final @NotNull Action<StateType, EventType, ContextType> action) {
-            builder.add(new Transition<>(state, eventType, guard, action));
+                final @NotNull FSMAction<StateType, EventType, ContextType> action) {
+            builder.add(new FSMTransition<>(state, eventType, guard, action));
             return builder;
         }
     }

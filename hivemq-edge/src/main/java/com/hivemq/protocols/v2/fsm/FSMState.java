@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.protocols.v2.statemachine;
+package com.hivemq.protocols.v2.fsm;
 
 /**
- * Marker for an event fed to a {@link StateMachine} through {@link StateMachine#onEvent(StateMachineEvent)}
- * (design §4). Events — protocol-adapter acknowledgments, errors, and timer expiries — are the only inputs
- * that flow through the {@link TransitionTable}; goal mutations bypass the table via
- * {@link StateMachine#onGoalChange(Runnable)} and can never trigger the defensive reset.
+ * Marker for a state in a {@link FSM} (design §4). Implemented by the enum that enumerates a
+ * machine's states — for example the adapter machine's {@code ProtocolAdapterWrapperState} or a tag aspect's
+ * state enum. The engine treats states opaquely; the meaning lives entirely in the {@link FSMTransitionTable}.
  */
-public interface StateMachineEvent {}
+public interface FSMState {}

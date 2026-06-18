@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.protocols.v2.statemachine;
+package com.hivemq.protocols.v2.fsm;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -23,18 +23,18 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
-class TransitionTableTest {
+class FSMTransitionTableTest {
 
-    private enum DemoState implements StateMachineState {
+    private enum DemoState implements FSMState {
         A,
         B,
         C,
         RESET
     }
 
-    private record Advance() implements StateMachineEvent {}
+    private record Advance() implements FSMEvent {}
 
-    private record Other() implements StateMachineEvent {}
+    private record Other() implements FSMEvent {}
 
     private static final class Recorder {
         private final List<String> actions = new ArrayList<>();
@@ -44,8 +44,8 @@ class TransitionTableTest {
     @Test
     void matchedTransition_runsActionAndReturnsNextState() {
         final Recorder context = new Recorder();
-        final TransitionTable<DemoState, StateMachineEvent, Recorder> table =
-                TransitionTable.<DemoState, StateMachineEvent, Recorder>builder()
+        final FSMTransitionTable<DemoState, FSMEvent, Recorder> table =
+                FSMTransitionTable.<DemoState, FSMEvent, Recorder>builder()
                         .on(DemoState.A, Advance.class)
                         .then((current, event, recorder) -> {
                             recorder.actions.add("a->b");
@@ -65,7 +65,7 @@ class TransitionTableTest {
 
     @Test
     void passingGuard_isChosenOverTheUnconditionalFallback() {
-        final TransitionTable<DemoState, StateMachineEvent, Recorder> table = guardedTable();
+        final FSMTransitionTable<DemoState, FSMEvent, Recorder> table = guardedTable();
 
         final Recorder context = new Recorder();
         context.flag = true;
@@ -78,7 +78,7 @@ class TransitionTableTest {
 
     @Test
     void failingGuard_fallsThroughToTheUnconditionalRow() {
-        final TransitionTable<DemoState, StateMachineEvent, Recorder> table = guardedTable();
+        final FSMTransitionTable<DemoState, FSMEvent, Recorder> table = guardedTable();
 
         final Recorder context = new Recorder();
         context.flag = false;
@@ -92,8 +92,8 @@ class TransitionTableTest {
     @Test
     void guardedRowsAreEvaluatedInRegistrationOrder() {
         final Recorder context = new Recorder();
-        final TransitionTable<DemoState, StateMachineEvent, Recorder> table =
-                TransitionTable.<DemoState, StateMachineEvent, Recorder>builder()
+        final FSMTransitionTable<DemoState, FSMEvent, Recorder> table =
+                FSMTransitionTable.<DemoState, FSMEvent, Recorder>builder()
                         .on(DemoState.A, Advance.class)
                         .when((current, event, recorder) -> true)
                         .then((current, event, recorder) -> {
@@ -118,8 +118,8 @@ class TransitionTableTest {
     @Test
     void unknownEventForTheState_triggersTheUnmatchedAction() {
         final Recorder context = new Recorder();
-        final TransitionTable<DemoState, StateMachineEvent, Recorder> table =
-                TransitionTable.<DemoState, StateMachineEvent, Recorder>builder()
+        final FSMTransitionTable<DemoState, FSMEvent, Recorder> table =
+                FSMTransitionTable.<DemoState, FSMEvent, Recorder>builder()
                         .on(DemoState.A, Advance.class)
                         .then((current, event, recorder) -> DemoState.B)
                         .unmatched((current, event, recorder) -> {
@@ -137,8 +137,8 @@ class TransitionTableTest {
     @Test
     void everyGuardFailsAndNoFallback_triggersTheUnmatchedAction() {
         final Recorder context = new Recorder();
-        final TransitionTable<DemoState, StateMachineEvent, Recorder> table =
-                TransitionTable.<DemoState, StateMachineEvent, Recorder>builder()
+        final FSMTransitionTable<DemoState, FSMEvent, Recorder> table =
+                FSMTransitionTable.<DemoState, FSMEvent, Recorder>builder()
                         .on(DemoState.A, Advance.class)
                         .when((current, event, recorder) -> false)
                         .then((current, event, recorder) -> DemoState.B)
@@ -156,7 +156,7 @@ class TransitionTableTest {
 
     @Test
     void moreThanOneUnconditionalRowForOneKey_isRejectedAtBuild() {
-        assertThatThrownBy(() -> TransitionTable.<DemoState, StateMachineEvent, Recorder>builder()
+        assertThatThrownBy(() -> FSMTransitionTable.<DemoState, FSMEvent, Recorder>builder()
                         .on(DemoState.A, Advance.class)
                         .then((current, event, recorder) -> DemoState.B)
                         .on(DemoState.A, Advance.class)
@@ -169,7 +169,7 @@ class TransitionTableTest {
 
     @Test
     void missingUnmatchedAction_isRejectedAtBuild() {
-        assertThatThrownBy(() -> TransitionTable.<DemoState, StateMachineEvent, Recorder>builder()
+        assertThatThrownBy(() -> FSMTransitionTable.<DemoState, FSMEvent, Recorder>builder()
                         .on(DemoState.A, Advance.class)
                         .then((current, event, recorder) -> DemoState.B)
                         .build())
@@ -177,8 +177,8 @@ class TransitionTableTest {
                 .hasMessageContaining("unmatched");
     }
 
-    private static @NotNull TransitionTable<DemoState, StateMachineEvent, Recorder> guardedTable() {
-        return TransitionTable.<DemoState, StateMachineEvent, Recorder>builder()
+    private static @NotNull FSMTransitionTable<DemoState, FSMEvent, Recorder> guardedTable() {
+        return FSMTransitionTable.<DemoState, FSMEvent, Recorder>builder()
                 .on(DemoState.A, Advance.class)
                 .when((current, event, recorder) -> recorder.flag)
                 .then((current, event, recorder) -> {
