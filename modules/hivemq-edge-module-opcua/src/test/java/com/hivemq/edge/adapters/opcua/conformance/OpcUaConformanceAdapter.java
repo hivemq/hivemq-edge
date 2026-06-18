@@ -15,36 +15,70 @@
  */
 package com.hivemq.edge.adapters.opcua.conformance;
 
+import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.discovery.NodeType;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
+import com.hivemq.adapter.sdk.api.v2.model.ErrorScope;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.template.AbstractProtocolAdapter;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaMonitoredItem;
+import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
 import org.eclipse.milo.opcua.stack.core.AttributeId;
+import org.eclipse.milo.opcua.stack.core.NamespaceTable;
+import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseDirection;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseResultMask;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.NodeClass;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
+import org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;
+import org.eclipse.milo.opcua.stack.core.types.structured.BrowseResult;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
+import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+
+import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 /**
  * EDG-737 — a minimal real OPC-UA protocol adapter written against the SDK v2 contract
  * ({@link AbstractProtocolAdapter}) and a real Milo client, used only to verify that the foundation model
- * carries real OPC-UA interactions (connect / verify / poll) against an embedded server. Test scope; never
- * shipped. Subscription, browse, and write are covered by later conformance scenarios.
+ * carries real OPC-UA interactions against an embedded server. Test scope; never shipped.
+ * <p>
+ * Scenarios: 1 connect/verify/poll, 2 write, 3 subscribe (incremental-add shadow set), 4 browse (paginated,
+ * recursive — done entirely inside the PA, demonstrating EDG-737 Finding B).
  */
-final class OpcUaConformanceAdapter extends AbstractProtocolAdapter {
+final class OpcUaConformanceAdapter extends AbstractProtocolAdapter
+        implements OpcUaSubscription.SubscriptionListener {
 
     private static final long REQUEST_TIMEOUT_SECONDS = 5L;
+    private static final double SAMPLING_INTERVAL_MILLIS = 200.0;
 
     private final @NotNull String endpointUrl;
     private @NotNull OpcUaClient client;
+    private @NotNull OpcUaSubscription subscription;
+    // the PA's shadow set of subscribed nodes — the incremental-add contract (PR #97)
+    private final @NotNull Map<NodeId, Node> subscribedNodes = new ConcurrentHashMap<>();
 
     OpcUaConformanceAdapter(
             final @NotNull ProtocolAdapterInput input,
@@ -61,13 +95,7 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter {
 
     @Override
     protected void doStop() {
-        if (client != null) {
-            try {
-                client.disconnect();
-            } catch (final Exception ignored) {
-                // teardown failure does not change the outcome — stop() always acks stopped()
-            }
-        }
+        closeClientQuietly();
         output.stopped();
     }
 
@@ -84,19 +112,13 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter {
             client.connect();
             output.connected();
         } catch (final Exception connectFailure) {
-            output.error(com.hivemq.adapter.sdk.api.v2.model.ErrorScope.CONNECTION, connectFailure.getMessage());
+            output.error(ErrorScope.CONNECTION, String.valueOf(connectFailure.getMessage()));
         }
     }
 
     @Override
     protected void doDisconnect() {
-        try {
-            if (client != null) {
-                client.disconnect();
-            }
-        } catch (final Exception ignored) {
-            // best effort
-        }
+        closeClientQuietly();
         output.disconnected();
     }
 
@@ -116,7 +138,7 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter {
                     ? new VerifyOutcome.Success()
                     : new VerifyOutcome.PermanentFailure("declared node not readable on device: " + node.nodeId()));
         } catch (final Exception failure) {
-            output.verifyResult(node, new VerifyOutcome.TransientFailure(failure.getMessage()));
+            output.verifyResult(node, new VerifyOutcome.TransientFailure(String.valueOf(failure.getMessage())));
         }
     }
 
@@ -136,19 +158,169 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter {
                 output.nodeError(node, "bad read status for " + node.nodeId(), false);
             }
         } catch (final Exception failure) {
-            output.nodeError(node, failure.getMessage(), false);
+            output.nodeError(node, String.valueOf(failure.getMessage()), false);
         }
     }
 
     @Override
     protected void doAddSubscription(final @NotNull Node node) {
-        // Real monitored-item subscription is conformance scenario 3 (EDG-737). Not exercised by scenario 1.
-        throw new UnsupportedOperationException("subscription scenario not yet implemented");
+        try {
+            if (subscription == null) {
+                subscription = new OpcUaSubscription(client);
+                subscription.setPublishingInterval(SAMPLING_INTERVAL_MILLIS);
+                subscription.create();
+                subscription.setSubscriptionListener(this);
+            }
+            final NodeId nodeId = NodeId.parse(node.nodeId());
+            // incremental add: only this node is touched; existing monitored items are untouched
+            final OpcUaMonitoredItem monitoredItem = OpcUaMonitoredItem.newDataItem(nodeId);
+            monitoredItem.setSamplingInterval(SAMPLING_INTERVAL_MILLIS);
+            subscription.addMonitoredItem(monitoredItem);
+            subscription.synchronizeMonitoredItems();
+            subscribedNodes.put(nodeId, node);
+        } catch (final Exception failure) {
+            output.nodeError(node, String.valueOf(failure.getMessage()), false);
+        }
     }
 
     @Override
-    protected void doWrite(final @NotNull Node node, final @NotNull com.hivemq.adapter.sdk.api.data.DataPoint value) {
-        // Southbound write is conformance scenario 2 (EDG-737). Not exercised by scenario 1.
-        throw new UnsupportedOperationException("write scenario not yet implemented");
+    protected void doWrite(final @NotNull Node node, final @NotNull DataPoint value) {
+        try {
+            final NodeId nodeId = NodeId.parse(node.nodeId());
+            final List<StatusCode> statusCodes = client.writeValuesAsync(
+                            List.of(nodeId),
+                            List.of(new DataValue(Variant.of(value.getTagValue()), StatusCode.GOOD, null)))
+                    .get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            final Optional<StatusCode> bad = statusCodes.stream().filter(StatusCode::isBad).findFirst();
+            output.writeResult(node, bad.isEmpty(), bad.map(StatusCode::toString).orElse(null));
+        } catch (final Exception failure) {
+            output.writeResult(node, false, String.valueOf(failure.getMessage()));
+        }
+    }
+
+    /**
+     * Recursive, paginated browse below the filter node — done entirely on the dispatch thread (EDG-737
+     * Finding B: the single-shot contract pushes continuation-point draining and recursion onto the PA, and
+     * this walk starves polls for its whole duration). Bounded to the filter node's subtree plus the test
+     * namespace to keep the conformance walk finite.
+     */
+    @Override
+    protected void doBrowse(final @NotNull BrowseFilter filter) {
+        try {
+            final NamespaceTable namespaceTable = client.getNamespaceTable();
+            final NodeId root = NodeId.parse(filter.filterNode().nodeId());
+            final List<BrowseResultEntry> entries = new ArrayList<>();
+            final Set<NodeId> visited = new HashSet<>();
+            final Deque<NodeId> frontier = new ArrayDeque<>();
+            frontier.add(root);
+            while (!frontier.isEmpty()) {
+                final NodeId current = frontier.poll();
+                if (!visited.add(current)) {
+                    continue;
+                }
+                for (final ReferenceDescription reference : browseAll(current)) {
+                    final Optional<NodeId> childId = reference.getNodeId().toNodeId(namespaceTable);
+                    if (childId.isEmpty()) {
+                        continue;
+                    }
+                    final NodeId nodeId = childId.get();
+                    if (reference.getNodeClass() == NodeClass.Variable) {
+                        entries.add(new BrowseResultEntry(
+                                new BrowsedNode(nodeId.toParseableString()), NodeType.VALUE, true));
+                    } else if (reference.getNodeClass() == NodeClass.Object
+                            && nodeId.getNamespaceIndex().intValue() == 1) {
+                        frontier.add(nodeId);
+                    }
+                }
+            }
+            output.browseResult(entries);
+        } catch (final Exception failure) {
+            output.browseResult(List.of());
+        }
+    }
+
+    /**
+     * Browse one node, draining every continuation page — the work the framework leaves to the PA.
+     */
+    private @NotNull List<ReferenceDescription> browseAll(final @NotNull NodeId nodeId) throws Exception {
+        final List<ReferenceDescription> references = new ArrayList<>();
+        BrowseResult result = client.browseAsync(new BrowseDescription(
+                        nodeId,
+                        BrowseDirection.Forward,
+                        NodeIds.HierarchicalReferences,
+                        true,
+                        uint(0),
+                        uint(BrowseResultMask.All.getValue())))
+                .get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        while (true) {
+            if (result.getReferences() != null) {
+                references.addAll(Arrays.asList(result.getReferences()));
+            }
+            final var continuationPoint = result.getContinuationPoint();
+            if (continuationPoint == null || continuationPoint.bytes() == null
+                    || continuationPoint.bytes().length == 0) {
+                return references;
+            }
+            result = client.browseNextAsync(false, List.of(continuationPoint))
+                    .get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    .getResults()[0];
+        }
+    }
+
+    // ── OpcUaSubscription.SubscriptionListener — pushed values arrive on a Milo thread ───────────────
+
+    @Override
+    public void onDataReceived(
+            final @NotNull OpcUaSubscription subscription,
+            final @NotNull List<OpcUaMonitoredItem> items,
+            final @NotNull List<DataValue> values) {
+        for (int i = 0; i < items.size(); i++) {
+            final NodeId nodeId = items.get(i).getReadValueId().getNodeId();
+            final Node node = subscribedNodes.get(nodeId);
+            final Object value = values.get(i).getValue().getValue();
+            if (node != null && value != null) {
+                output.dataPoint(node, dataPointFactory.create(node.nodeId(), value));
+            }
+        }
+    }
+
+    private void closeClientQuietly() {
+        try {
+            if (client != null) {
+                client.disconnect();
+            }
+        } catch (final Exception ignored) {
+            // teardown failure does not change the outcome
+        }
+        subscription = null;
+        subscribedNodes.clear();
+    }
+
+    /**
+     * A node materialised from a browse result — its identity is its parseable OPC-UA NodeId.
+     */
+    private static final class BrowsedNode extends Node {
+        private final @NotNull String parseableNodeId;
+
+        private BrowsedNode(final @NotNull String parseableNodeId) {
+            this.parseableNodeId = parseableNodeId;
+        }
+
+        @Override
+        public @NotNull String nodeId() {
+            return parseableNodeId;
+        }
+
+        @Override
+        public @NotNull String nodeString() {
+            return "{\"nodeId\":\"" + parseableNodeId + "\"}";
+        }
+
+        @Override
+        public @NotNull java.util.EnumSet<com.hivemq.adapter.sdk.api.v2.node.NodeProperty> properties() {
+            return java.util.EnumSet.of(
+                    com.hivemq.adapter.sdk.api.v2.node.NodeProperty.UNIQUE,
+                    com.hivemq.adapter.sdk.api.v2.node.NodeProperty.TYPED);
+        }
     }
 }
