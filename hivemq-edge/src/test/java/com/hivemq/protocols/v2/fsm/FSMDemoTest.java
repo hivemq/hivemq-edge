@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.protocols.v2.statemachine;
+package com.hivemq.protocols.v2.fsm;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -29,21 +29,21 @@ import org.junit.jupiter.api.Test;
  * ({@code STOPPED → WAITING_FOR_STARTED} through {@code stepTowardGoal}); the acknowledgment event drives the
  * next through the table. A goal flip mid-wait is absorbed when the acknowledgment lands (stop intent).
  */
-class StateMachineDemoTest {
+class FSMDemoTest {
 
-    private enum DemoState implements StateMachineState {
+    private enum DemoState implements FSMState {
         STOPPED,
         WAITING_FOR_STARTED,
         RUNNING
     }
 
-    private record Started() implements StateMachineEvent {}
+    private record Started() implements FSMEvent {}
 
     private static final class Context {
         private boolean wantRunning;
         private final List<String> commands = new ArrayList<>();
 
-        private void stepTowardGoal(final @NotNull StateMachine<DemoState, StateMachineEvent, Context> machine) {
+        private void stepTowardGoal(final @NotNull FSM<DemoState, FSMEvent, Context> machine) {
             if (machine.state() == DemoState.STOPPED && wantRunning) {
                 commands.add("start");
                 machine.transitionTo(DemoState.WAITING_FOR_STARTED);
@@ -51,8 +51,8 @@ class StateMachineDemoTest {
         }
     }
 
-    private static @NotNull TransitionTable<DemoState, StateMachineEvent, Context> demoTable() {
-        return TransitionTable.<DemoState, StateMachineEvent, Context>builder()
+    private static @NotNull FSMTransitionTable<DemoState, FSMEvent, Context> demoTable() {
+        return FSMTransitionTable.<DemoState, FSMEvent, Context>builder()
                 .on(DemoState.WAITING_FOR_STARTED, Started.class)
                 .when((current, event, context) -> context.wantRunning)
                 .then((current, event, context) -> {
@@ -68,8 +68,7 @@ class StateMachineDemoTest {
     @Test
     void reachesTheGoalInTwoSteps_oneCommandPerStep() {
         final Context context = new Context();
-        final StateMachine<DemoState, StateMachineEvent, Context> machine =
-                new StateMachine<>(DemoState.STOPPED, demoTable(), context);
+        final FSM<DemoState, FSMEvent, Context> machine = new FSM<>(DemoState.STOPPED, demoTable(), context);
 
         // Step 1: the goal becomes "running" — a goal command, bypassing the table; stepTowardGoal issues start().
         machine.onGoalChange(() -> {
@@ -88,8 +87,7 @@ class StateMachineDemoTest {
     @Test
     void goalFlipMidWait_isAbsorbedWhenTheAcknowledgmentLands() {
         final Context context = new Context();
-        final StateMachine<DemoState, StateMachineEvent, Context> machine =
-                new StateMachine<>(DemoState.STOPPED, demoTable(), context);
+        final FSM<DemoState, FSMEvent, Context> machine = new FSM<>(DemoState.STOPPED, demoTable(), context);
 
         machine.onGoalChange(() -> {
             context.wantRunning = true;

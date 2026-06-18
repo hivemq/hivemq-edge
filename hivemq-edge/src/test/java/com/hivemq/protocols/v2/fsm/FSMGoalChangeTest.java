@@ -13,27 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.protocols.v2.statemachine;
+package com.hivemq.protocols.v2.fsm;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
 /**
- * The goal-command bypass (design §4): {@link StateMachine#onGoalChange(Runnable)} mutations apply in
+ * The goal-command bypass (design §4): {@link FSM#onGoalChange(Runnable)} mutations apply in
  * <em>every</em> state without consulting the table, so a goal command never triggers the defensive reset —
  * in contrast to an unhandled event, which does.
  */
-class StateMachineGoalChangeTest {
+class FSMGoalChangeTest {
 
-    private enum DemoState implements StateMachineState {
+    private enum DemoState implements FSMState {
         S1,
         S2,
         S3,
         ERROR
     }
 
-    private record SomeEvent() implements StateMachineEvent {}
+    private record SomeEvent() implements FSMEvent {}
 
     private static final class Context {
         private String goal = "stop";
@@ -44,15 +44,14 @@ class StateMachineGoalChangeTest {
     void goalChangeAppliesInEveryStateAndNeverTriggersTheDefensiveReset() {
         final Context context = new Context();
         // A table with NO event rows: any event would hit the unmatched (defensive reset) slot.
-        final TransitionTable<DemoState, StateMachineEvent, Context> table =
-                TransitionTable.<DemoState, StateMachineEvent, Context>builder()
+        final FSMTransitionTable<DemoState, FSMEvent, Context> table =
+                FSMTransitionTable.<DemoState, FSMEvent, Context>builder()
                         .unmatched((current, event, ctx) -> {
                             ctx.defensiveResets++;
                             return DemoState.ERROR;
                         })
                         .build();
-        final StateMachine<DemoState, StateMachineEvent, Context> machine =
-                new StateMachine<>(DemoState.S1, table, context);
+        final FSM<DemoState, FSMEvent, Context> machine = new FSM<>(DemoState.S1, table, context);
 
         for (final DemoState start : DemoState.values()) {
             machine.transitionTo(start);
@@ -71,15 +70,14 @@ class StateMachineGoalChangeTest {
     @Test
     void unhandledEvent_triggersTheDefensiveReset() {
         final Context context = new Context();
-        final TransitionTable<DemoState, StateMachineEvent, Context> table =
-                TransitionTable.<DemoState, StateMachineEvent, Context>builder()
+        final FSMTransitionTable<DemoState, FSMEvent, Context> table =
+                FSMTransitionTable.<DemoState, FSMEvent, Context>builder()
                         .unmatched((current, event, ctx) -> {
                             ctx.defensiveResets++;
                             return DemoState.ERROR;
                         })
                         .build();
-        final StateMachine<DemoState, StateMachineEvent, Context> machine =
-                new StateMachine<>(DemoState.S1, table, context);
+        final FSM<DemoState, FSMEvent, Context> machine = new FSM<>(DemoState.S1, table, context);
 
         machine.onEvent(new SomeEvent());
 

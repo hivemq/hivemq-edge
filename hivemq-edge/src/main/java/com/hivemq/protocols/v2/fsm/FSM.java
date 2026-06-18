@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.protocols.v2.statemachine;
+package com.hivemq.protocols.v2.fsm;
 
 import org.jetbrains.annotations.NotNull;
 
 /**
  * The reusable state-machine engine (design §4). It owns the current state and drives it two ways:
  * <ul>
- * <li>{@link #onEvent(StateMachineEvent)} — table-driven. A protocol-adapter event or timer expiry runs
- * through the {@link TransitionTable}; an event with no matching row runs the table's {@code unmatched} action
+ * <li>{@link #onEvent(FSMEvent)} — table-driven. A protocol-adapter event or timer expiry runs
+ * through the {@link FSMTransitionTable}; an event with no matching row runs the table's {@code unmatched} action
  * (the defensive reset).</li>
  * <li>{@link #onGoalChange(Runnable)} — the goal-command bypass. Activation, stop, tag-set updates, and retry
  * are goal mutations, valid in <em>every</em> state; they run a caller-supplied mutation (mutate the goal,
@@ -29,27 +29,27 @@ import org.jetbrains.annotations.NotNull;
  * reset (§4).</li>
  * </ul>
  * {@code stepTowardGoal} lives in the machine's context and advances the current state one step toward the
- * goal through {@link #transitionTo(StateMachineState)}. All methods run on the actor's single dispatch
+ * goal through {@link #transitionTo(FSMState)}. All methods run on the actor's single dispatch
  * thread; the machine holds no locks.
  *
  * @param <StateType>   the machine's state type.
  * @param <EventType>   the machine's event type.
  * @param <ContextType> the machine's context.
  */
-public final class StateMachine<StateType extends StateMachineState, EventType extends StateMachineEvent, ContextType> {
+public final class FSM<StateType extends FSMState, EventType extends FSMEvent, ContextType> {
 
-    private final @NotNull TransitionTable<StateType, EventType, ContextType> table;
+    private final @NotNull FSMTransitionTable<StateType, EventType, ContextType> table;
     private final @NotNull ContextType context;
     private @NotNull StateType state;
 
     /**
      * @param initial the starting state.
-     * @param table   the transition table that drives {@link #onEvent(StateMachineEvent)}.
+     * @param table   the transition table that drives {@link #onEvent(FSMEvent)}.
      * @param context the context the table's guards and actions act through.
      */
-    public StateMachine(
+    public FSM(
             final @NotNull StateType initial,
-            final @NotNull TransitionTable<StateType, EventType, ContextType> table,
+            final @NotNull FSMTransitionTable<StateType, EventType, ContextType> table,
             final @NotNull ContextType context) {
         this.state = initial;
         this.table = table;
@@ -76,7 +76,7 @@ public final class StateMachine<StateType extends StateMachineState, EventType e
     /**
      * Run a goal mutation that bypasses the transition table. The runnable mutates the goal (and aspect
      * goals) and then calls {@code stepTowardGoal}, which may advance the current state through
-     * {@link #transitionTo(StateMachineState)}. Because it never consults the table, a goal command is valid
+     * {@link #transitionTo(FSMState)}. Because it never consults the table, a goal command is valid
      * in every state and can never trigger the defensive reset.
      *
      * @param mutateGoalThenStep the goal mutation followed by {@code stepTowardGoal}.
