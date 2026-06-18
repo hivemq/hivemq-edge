@@ -24,6 +24,7 @@ import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
+import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
 import com.hivemq.adapter.sdk.api.v2.template.AbstractProtocolAdapter;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaMonitoredItem;
@@ -45,11 +46,13 @@ import org.eclipse.milo.opcua.stack.core.types.structured.BrowseResult;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +61,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Objects.requireNonNull;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 /**
@@ -65,20 +69,22 @@ import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.
  * ({@link AbstractProtocolAdapter}) and a real Milo client, used only to verify that the foundation model
  * carries real OPC-UA interactions against an embedded server. Test scope; never shipped.
  * <p>
- * Scenarios: 1 connect/verify/poll, 2 write, 3 subscribe (incremental-add shadow set), 4 browse (paginated,
- * recursive — done entirely inside the PA, demonstrating EDG-737 Finding B).
+ * Scenarios:
+ * 1. connect/verify/poll,
+ * 2. write,
+ * 3. subscribe (incremental-add shadow set),
+ * 4. browse (paginated, recursive — done entirely inside the PA, demonstrating EDG-737 Finding B).
  */
-final class OpcUaConformanceAdapter extends AbstractProtocolAdapter
-        implements OpcUaSubscription.SubscriptionListener {
+final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements OpcUaSubscription.SubscriptionListener {
 
     private static final long REQUEST_TIMEOUT_SECONDS = 5L;
     private static final double SAMPLING_INTERVAL_MILLIS = 200.0;
 
     private final @NotNull String endpointUrl;
-    private @NotNull OpcUaClient client;
-    private @NotNull OpcUaSubscription subscription;
     // the PA's shadow set of subscribed nodes — the incremental-add contract (PR #97)
-    private final @NotNull Map<NodeId, Node> subscribedNodes = new ConcurrentHashMap<>();
+    private final @NotNull Map<NodeId, Node> subscribedNodes;
+    private @Nullable OpcUaClient client;
+    private @Nullable OpcUaSubscription subscription;
 
     OpcUaConformanceAdapter(
             final @NotNull ProtocolAdapterInput input,
@@ -86,6 +92,7 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter
             final @NotNull String endpointUrl) {
         super(input, output);
         this.endpointUrl = endpointUrl;
+        this.subscribedNodes = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -102,16 +109,15 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter
     @Override
     protected void doConnect() {
         try {
-            client = OpcUaClient.create(
-                    endpointUrl,
+            client = OpcUaClient.create(endpointUrl,
                     endpoints -> endpoints.stream()
                             .filter(endpoint -> SecurityPolicy.None.getUri().equals(endpoint.getSecurityPolicyUri()))
                             .findFirst(),
-                    transportConfig -> {},
-                    clientConfig -> {});
+                    _ -> {},
+                    _ -> {});
             client.connect();
             output.connected();
-        } catch (final Exception connectFailure) {
+        } catch (final @NotNull Exception connectFailure) {
             output.error(ErrorScope.CONNECTION, String.valueOf(connectFailure.getMessage()));
         }
     }
@@ -126,18 +132,19 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter
     protected void doVerifyNode(final @NotNull Node node) {
         try {
             final NodeId nodeId = NodeId.parse(node.nodeId());
-            final List<ReadValueId> reads = List.of(
-                    new ReadValueId(nodeId, AttributeId.DataType.uid(), null, null),
+            final List<ReadValueId> reads = List.of(new ReadValueId(nodeId, AttributeId.DataType.uid(), null, null),
                     new ReadValueId(nodeId, AttributeId.AccessLevel.uid(), null, null));
-            final DataValue[] results = client.readAsync(0.0, TimestampsToReturn.Neither, reads)
+            final DataValue[] results = requireNonNull(client).readAsync(0.0, TimestampsToReturn.Neither, reads)
                     .get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                     .getResults();
-            final boolean good = results != null &&
-                    Arrays.stream(results).allMatch(value -> value.getStatusCode().isGood());
-            output.verifyResult(node, good
-                    ? new VerifyOutcome.Success()
-                    : new VerifyOutcome.PermanentFailure("declared node not readable on device: " + node.nodeId()));
-        } catch (final Exception failure) {
+            final boolean good =
+                    results != null && Arrays.stream(results).allMatch(value -> value.getStatusCode().isGood());
+            output.verifyResult(node,
+                    good ?
+                            new VerifyOutcome.Success() :
+                            new VerifyOutcome.PermanentFailure("declared node not readable on device: " +
+                                    node.nodeId()));
+        } catch (final @NotNull Exception failure) {
             output.verifyResult(node, new VerifyOutcome.TransientFailure(String.valueOf(failure.getMessage())));
         }
     }
@@ -146,18 +153,17 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter
     protected void doPoll(final @NotNull Node node) {
         try {
             final NodeId nodeId = NodeId.parse(node.nodeId());
-            final DataValue value = client.readAsync(
-                            0.0,
+            final DataValue value = requireNonNull(requireNonNull(client).readAsync(0.0,
                             TimestampsToReturn.Both,
                             List.of(new ReadValueId(nodeId, AttributeId.Value.uid(), null, null)))
                     .get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                    .getResults()[0];
+                    .getResults())[0];
             if (value.getStatusCode().isGood() && value.getValue().getValue() != null) {
                 output.dataPoint(node, dataPointFactory.create(node.nodeId(), value.getValue().getValue()));
             } else {
                 output.nodeError(node, "bad read status for " + node.nodeId(), false);
             }
-        } catch (final Exception failure) {
+        } catch (final @NotNull Exception failure) {
             output.nodeError(node, String.valueOf(failure.getMessage()), false);
         }
     }
@@ -166,7 +172,7 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter
     protected void doAddSubscription(final @NotNull Node node) {
         try {
             if (subscription == null) {
-                subscription = new OpcUaSubscription(client);
+                subscription = new OpcUaSubscription(requireNonNull(client));
                 subscription.setPublishingInterval(SAMPLING_INTERVAL_MILLIS);
                 subscription.create();
                 subscription.setSubscriptionListener(this);
@@ -178,7 +184,7 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter
             subscription.addMonitoredItem(monitoredItem);
             subscription.synchronizeMonitoredItems();
             subscribedNodes.put(nodeId, node);
-        } catch (final Exception failure) {
+        } catch (final @NotNull Exception failure) {
             output.nodeError(node, String.valueOf(failure.getMessage()), false);
         }
     }
@@ -187,13 +193,12 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter
     protected void doWrite(final @NotNull Node node, final @NotNull DataPoint value) {
         try {
             final NodeId nodeId = NodeId.parse(node.nodeId());
-            final List<StatusCode> statusCodes = client.writeValuesAsync(
-                            List.of(nodeId),
+            final List<StatusCode> statusCodes = requireNonNull(client).writeValuesAsync(List.of(nodeId),
                             List.of(new DataValue(Variant.of(value.getTagValue()), StatusCode.GOOD, null)))
                     .get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             final Optional<StatusCode> bad = statusCodes.stream().filter(StatusCode::isBad).findFirst();
             output.writeResult(node, bad.isEmpty(), bad.map(StatusCode::toString).orElse(null));
-        } catch (final Exception failure) {
+        } catch (final @NotNull Exception failure) {
             output.writeResult(node, false, String.valueOf(failure.getMessage()));
         }
     }
@@ -207,7 +212,7 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter
     @Override
     protected void doBrowse(final @NotNull BrowseFilter filter) {
         try {
-            final NamespaceTable namespaceTable = client.getNamespaceTable();
+            final NamespaceTable namespaceTable = requireNonNull(client).getNamespaceTable();
             final NodeId root = NodeId.parse(filter.filterNode().nodeId());
             final List<BrowseResultEntry> entries = new ArrayList<>();
             final Set<NodeId> visited = new HashSet<>();
@@ -225,10 +230,11 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter
                     }
                     final NodeId nodeId = childId.get();
                     if (reference.getNodeClass() == NodeClass.Variable) {
-                        entries.add(new BrowseResultEntry(
-                                new BrowsedNode(nodeId.toParseableString()), NodeType.VALUE, true));
-                    } else if (reference.getNodeClass() == NodeClass.Object
-                            && nodeId.getNamespaceIndex().intValue() == 1) {
+                        entries.add(new BrowseResultEntry(new BrowsedNode(nodeId.toParseableString()),
+                                NodeType.VALUE,
+                                true));
+                    } else if (reference.getNodeClass() == NodeClass.Object &&
+                            nodeId.getNamespaceIndex().intValue() == 1) {
                         frontier.add(nodeId);
                     }
                 }
@@ -244,30 +250,27 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter
      */
     private @NotNull List<ReferenceDescription> browseAll(final @NotNull NodeId nodeId) throws Exception {
         final List<ReferenceDescription> references = new ArrayList<>();
-        BrowseResult result = client.browseAsync(new BrowseDescription(
-                        nodeId,
-                        BrowseDirection.Forward,
-                        NodeIds.HierarchicalReferences,
-                        true,
-                        uint(0),
-                        uint(BrowseResultMask.All.getValue())))
-                .get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        BrowseResult result = requireNonNull(client).browseAsync(new BrowseDescription(nodeId,
+                BrowseDirection.Forward,
+                NodeIds.HierarchicalReferences,
+                true,
+                uint(0),
+                uint(BrowseResultMask.All.getValue()))).get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         while (true) {
             if (result.getReferences() != null) {
                 references.addAll(Arrays.asList(result.getReferences()));
             }
             final var continuationPoint = result.getContinuationPoint();
-            if (continuationPoint == null || continuationPoint.bytes() == null
-                    || continuationPoint.bytes().length == 0) {
+            if (continuationPoint == null ||
+                    continuationPoint.bytes() == null ||
+                    continuationPoint.bytes().length == 0) {
                 return references;
             }
-            result = client.browseNextAsync(false, List.of(continuationPoint))
+            result = requireNonNull(requireNonNull(client).browseNextAsync(false, List.of(continuationPoint))
                     .get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                    .getResults()[0];
+                    .getResults())[0];
         }
     }
-
-    // ── OpcUaSubscription.SubscriptionListener — pushed values arrive on a Milo thread ───────────────
 
     @Override
     public void onDataReceived(
@@ -289,9 +292,10 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter
             if (client != null) {
                 client.disconnect();
             }
-        } catch (final Exception ignored) {
+        } catch (final @NotNull Exception ignored) {
             // teardown failure does not change the outcome
         }
+        client = null;
         subscription = null;
         subscribedNodes.clear();
     }
@@ -317,10 +321,8 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter
         }
 
         @Override
-        public @NotNull java.util.EnumSet<com.hivemq.adapter.sdk.api.v2.node.NodeProperty> properties() {
-            return java.util.EnumSet.of(
-                    com.hivemq.adapter.sdk.api.v2.node.NodeProperty.UNIQUE,
-                    com.hivemq.adapter.sdk.api.v2.node.NodeProperty.TYPED);
+        public @NotNull EnumSet<NodeProperty> properties() {
+            return EnumSet.of(NodeProperty.UNIQUE, NodeProperty.TYPED);
         }
     }
 }
