@@ -15,11 +15,10 @@
  */
 package com.hivemq.edge.adapters.opcua.conformance;
 
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
 
 /**
  * EDG-737 — pure unit checks for the {@link ReferenceBrowseEngine}'s tag-name policy: the path→default-tag-name

@@ -20,11 +20,10 @@ import com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessage;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcher;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcherHandle;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageHandler;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 final class DrainOnCallDispatcher implements MessageDispatcher {
     private final @NotNull List<Binding<?>> bindings;
@@ -35,8 +34,7 @@ final class DrainOnCallDispatcher implements MessageDispatcher {
 
     @Override
     public <MessageType extends MailboxMessage> @NotNull MessageDispatcherHandle attach(
-            final @NotNull Mailbox<MessageType> mailbox,
-            final @NotNull MessageHandler<MessageType> handler) {
+            final @NotNull Mailbox<MessageType> mailbox, final @NotNull MessageHandler<MessageType> handler) {
         final Binding<MessageType> binding = new Binding<>(mailbox, handler);
         bindings.add(binding);
         return () -> bindings.remove(binding);
@@ -54,8 +52,8 @@ final class DrainOnCallDispatcher implements MessageDispatcher {
         } while (drained > 0);
     }
 
-
-    private record Binding<T extends MailboxMessage>(@NotNull Mailbox<T> mailbox, @NotNull MessageHandler<T> handler) {
+    private record Binding<T extends MailboxMessage>(
+            @NotNull Mailbox<T> mailbox, @NotNull MessageHandler<T> handler) {
         boolean drainOne() {
             final @Nullable T msg = mailbox.poll();
             if (msg == null) {
