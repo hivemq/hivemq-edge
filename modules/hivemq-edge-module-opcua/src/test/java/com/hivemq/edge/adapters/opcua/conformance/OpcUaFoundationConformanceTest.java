@@ -25,12 +25,15 @@ import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
 import com.hivemq.adapter.sdk.api.v2.model.ErrorScope;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
+import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
+import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.adapter.sdk.api.v2.services.ProtocolAdapterService;
+import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -45,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -174,6 +178,53 @@ class OpcUaFoundationConformanceTest {
     }
 
     @Test
+    void browse_thenResolve_resolvesDeclaredAttributesOfDiscoveredVariables() {
+        final DrainOnCallDispatcher dispatcher = new DrainOnCallDispatcher();
+        final RecordingOutput output = new RecordingOutput();
+        final OpcUaConformanceAdapter adapter = connectedAdapter(dispatcher, output);
+
+        // DISCOVER: walk the ns=1 folders under Objects and collect their selectable variables
+        final List<Node> variables = new ArrayList<>();
+        for (final BrowseResultEntry folder : browseAllPages(adapter, dispatcher, output, OBJECTS_FOLDER, 0)) {
+            if (folder.selectable() || !folder.node().nodeId().startsWith("ns=1;")) {
+                continue; // only the test-namespace folders
+            }
+            for (final BrowseResultEntry entry : browseAllPages(adapter, dispatcher, output, folder.node(), 0)) {
+                if (entry.selectable()) {
+                    variables.add(entry.node());
+                }
+            }
+        }
+        assertThat(variables).as("browse discovered the test variables to resolve").isNotEmpty();
+
+        // RESOLVE: one batched round-trip reads every discovered variable's attributes, reported once
+        adapter.readNodeAttributes(7, variables);
+        dispatcher.drainAll();
+
+        final List<ResolvedAttributes> resolved = output.resolvedAttributes();
+        assertThat(resolved).as("one ResolvedAttributes per discovered variable, reported once for the batch")
+                .hasSize(variables.size());
+        assertThat(resolved).as("every variable resolves a non-empty datatype and is readable")
+                .allSatisfy(attr -> {
+                    assertThat(attr.dataType()).isNotEmpty();
+                    assertThat(attr.access().readable()).isEqualTo(AccessTriState.YES);
+                });
+
+        // conformance: the known Int32 / Double nodes resolve to their declared OPC-UA datatype ids
+        final Map<String, String> dataTypeByNodeId = resolved.stream()
+                .collect(Collectors.toMap(attr -> attr.node().nodeId(), ResolvedAttributes::dataType, (a, _) -> a));
+        assertThat(dataTypeByNodeId.get(INT32_NODE.nodeId()))
+                .as("the Int32 variable resolves the Int32 datatype").isEqualTo(NodeIds.Int32.toParseableString());
+        assertThat(dataTypeByNodeId.get(DOUBLE_NODE.nodeId()))
+                .as("the Double variable resolves the Double datatype").isEqualTo(NodeIds.Double.toParseableString());
+
+        adapter.disconnect();
+        adapter.stop();
+        dispatcher.drainAll();
+        assertThat(output.stopped).as("stopped() after stop()").isTrue();
+    }
+
+    @Test
     void controlCommand_firedMidBrowse_preemptsTheQueuedNextPage() {
         final DrainOnCallDispatcher dispatcher = new DrainOnCallDispatcher();
         final RecordingOutput output = new RecordingOutput();
@@ -217,7 +268,7 @@ class OpcUaFoundationConformanceTest {
             continuation = output.lastContinuation();
         }
         final List<BrowseResultEntry> entries = new ArrayList<>();
-        output.pagesFrom(firstPageIndex).forEach(page -> entries.addAll(page));
+        output.pagesFrom(firstPageIndex).forEach(entries::addAll);
         return entries;
     }
 
@@ -268,6 +319,7 @@ class OpcUaFoundationConformanceTest {
         private final @NotNull Map<Node, Boolean> writeResults = new LinkedHashMap<>();
         private final @NotNull List<String> eventLog = new ArrayList<>();
         private final @NotNull List<List<BrowseResultEntry>> browsePages = new ArrayList<>();
+        private final @NotNull List<ResolvedAttributes> resolvedAttributes = new ArrayList<>();
         private volatile boolean started;
         private volatile boolean stopped;
         private volatile boolean connected;
@@ -353,8 +405,23 @@ class OpcUaFoundationConformanceTest {
         }
 
         @Override
+        public void readAttributesResult(
+                final int requestId, final @NotNull List<ResolvedAttributes> attributes) {
+            synchronized (lock) {
+                resolvedAttributes.addAll(attributes);
+                eventLog.add("readAttributesResult");
+            }
+        }
+
+        @Override
         public void browseError(final int requestId, final @NotNull String reason) {
             event("browseError");
+        }
+
+        @NotNull List<ResolvedAttributes> resolvedAttributes() {
+            synchronized (lock) {
+                return List.copyOf(resolvedAttributes);
+            }
         }
 
         @NotNull List<String> eventLog() {

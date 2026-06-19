@@ -23,7 +23,10 @@ import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
 import com.hivemq.adapter.sdk.api.v2.model.ErrorScope;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.v2.model.ProtocolAdapterOutput;
+import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
+import com.hivemq.adapter.sdk.api.v2.node.AccessFlags;
+import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
 import com.hivemq.adapter.sdk.api.v2.template.AbstractProtocolAdapter;
@@ -37,9 +40,11 @@ import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
+import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseDirection;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseResultMask;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.NodeClass;
@@ -63,6 +68,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElse;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 /**
@@ -74,7 +80,8 @@ import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.
  * 1. connect/verify/poll,
  * 2. write,
  * 3. subscribe (incremental-add shadow set),
- * 4. browse (paginated, recursive — done entirely inside the PA, demonstrating EDG-737 Finding B).
+ * 4. browse (paginated — one page per command, demonstrating EDG-737 Finding B),
+ * 5. resolve (read discovered nodes' DataType/AccessLevel/Description — the RESOLVE step of browse).
  */
 final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements OpcUaSubscription.SubscriptionListener {
 
@@ -95,6 +102,40 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
         super(input, output);
         this.endpointUrl = endpointUrl;
         this.subscribedNodes = new ConcurrentHashMap<>();
+    }
+
+    /**
+     * Map one node's three attribute reads into the SDK's protocol-agnostic {@link ResolvedAttributes}.
+     */
+    private static @NotNull ResolvedAttributes resolveOne(
+            final @NotNull Node node,
+            final @NotNull DataValue dataTypeValue,
+            final @NotNull DataValue accessLevelValue,
+            final @NotNull DataValue descriptionValue) {
+        final Object dataType = dataTypeValue.getValue().getValue();
+        final String dataTypeId = (dataTypeValue.getStatusCode().isGood() && dataType instanceof final NodeId nodeId) ?
+                nodeId.toParseableString() :
+                "";
+        final Object accessLevel = accessLevelValue.getValue().getValue();
+        final int accessBits = (accessLevelValue.getStatusCode().isGood() && accessLevel instanceof final UByte uByte) ?
+                uByte.intValue() :
+                0;
+        final Object description = descriptionValue.getValue().getValue();
+        final String descriptionText = (descriptionValue.getStatusCode().isGood() &&
+                description instanceof final LocalizedText localizedText) ?
+                requireNonNullElse(localizedText.getText(), "") :
+                "";
+        return new ResolvedAttributes(node, dataTypeId, accessFlags(accessBits), descriptionText);
+    }
+
+    /**
+     * OPC-UA AccessLevel bitmask (bit0 CurrentRead, bit1 CurrentWrite) → the SDK's {@link AccessFlags}.
+     */
+    private static @NotNull AccessFlags accessFlags(final int accessBits) {
+        final AccessTriState readable = (accessBits & 0x01) != 0 ? AccessTriState.YES : AccessTriState.NO;
+        final AccessTriState writable = (accessBits & 0x02) != 0 ? AccessTriState.YES : AccessTriState.NO;
+        // a readable OPC-UA variable is both pollable and subscribable; an unreadable one is neither
+        return new AccessFlags(readable, writable, readable, readable);
     }
 
     @Override
@@ -205,7 +246,9 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
         }
     }
 
-    /** Simulate a slow device: each browse page waits this long before being reported. */
+    /**
+     * Simulate a slow device: each browse page waits this long before being reported.
+     */
     void pageDelay(final long millis) {
         this.pageDelayMillis = millis;
     }
@@ -219,18 +262,17 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
     @Override
     protected void doBrowse(final int requestId, final @NotNull BrowseFilter filter, final int maxReferences) {
         try {
-            final BrowseDescription browseDescription = new BrowseDescription(NodeId.parse(filter.filterNode().nodeId()),
-                    BrowseDirection.Forward,
-                    NodeIds.HierarchicalReferences,
-                    true,
-                    uint(0),
-                    uint(BrowseResultMask.All.getValue()));
+            final BrowseDescription browseDescription =
+                    new BrowseDescription(NodeId.parse(filter.filterNode().nodeId()),
+                            BrowseDirection.Forward,
+                            NodeIds.HierarchicalReferences,
+                            true,
+                            uint(0),
+                            uint(BrowseResultMask.All.getValue()));
             final ViewDescription view = new ViewDescription(NodeId.NULL_VALUE, DateTime.MIN_VALUE, uint(0));
-            final BrowseResult result = requireNonNull(client).browseAsync(view,
-                            uint(Math.max(0, maxReferences)),
-                            List.of(browseDescription))
-                    .get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                    .getResults()[0];
+            final BrowseResult result = requireNonNull(requireNonNull(client).browseAsync(view,
+                    uint(Math.max(0, maxReferences)),
+                    List.of(browseDescription)).get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS).getResults())[0];
             emitPage(requestId, result);
         } catch (final @NotNull Exception failure) {
             output.browseError(requestId, String.valueOf(failure.getMessage()));
@@ -241,9 +283,10 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
     protected void doBrowseNext(final int requestId, final @NotNull BrowseContinuation continuation) {
         try {
             final ByteString continuationPoint = ByteString.of(Base64.getDecoder().decode(continuation.token()));
-            final BrowseResult result = requireNonNull(client).browseNextAsync(false, List.of(continuationPoint))
-                    .get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                    .getResults()[0];
+            final BrowseResult result =
+                    requireNonNull(requireNonNull(client).browseNextAsync(false, List.of(continuationPoint))
+                            .get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                            .getResults())[0];
             emitPage(requestId, result);
         } catch (final @NotNull Exception failure) {
             output.browseError(requestId, String.valueOf(failure.getMessage()));
@@ -258,7 +301,7 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
         if (pageDelayMillis > 0L) {
             try {
                 Thread.sleep(pageDelayMillis);
-            } catch (final InterruptedException interrupted) {
+            } catch (final @NotNull InterruptedException interrupted) {
                 Thread.currentThread().interrupt();
             }
         }
@@ -271,18 +314,55 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
                     continue;
                 }
                 final boolean isVariable = reference.getNodeClass() == NodeClass.Variable;
+                final String browseName = reference.getBrowseName() != null ?
+                        requireNonNullElse(reference.getBrowseName().getName(), "") :
+                        "";
                 entries.add(new BrowseResultEntry(new BrowsedNode(childId.get().toParseableString()),
                         isVariable ? NodeType.VALUE : NodeType.OBJECT,
-                        isVariable));
+                        isVariable,
+                        browseName));
             }
         }
         final ByteString continuationPoint = result.getContinuationPoint();
         final BrowseContinuation continuation = (continuationPoint != null &&
                 continuationPoint.bytes() != null &&
-                continuationPoint.bytes().length > 0)
-                ? new BrowseContinuation(Base64.getEncoder().encodeToString(continuationPoint.bytes()))
-                : null;
+                continuationPoint.bytes().length > 0) ?
+                new BrowseContinuation(Base64.getEncoder().encodeToString(continuationPoint.bytes())) :
+                null;
         output.browsePage(requestId, entries, continuation);
+    }
+
+    /**
+     * RESOLVE step (EDG-737): read each discovered node's DataType, AccessLevel and Description in a single
+     * batched {@code readAsync} round-trip and report them as one {@code readAttributesResult}. This is the same
+     * mechanism as {@link #doVerifyNode(Node)} (which reads DataType + AccessLevel to verify), generalised to
+     * return the resolved values the framework's PAW needs to build typed tag definitions. One round-trip per
+     * batch keeps RESOLVE on the same paginated, interleavable footing as browse.
+     */
+    @Override
+    protected void doReadNodeAttributes(final int requestId, final @NotNull List<Node> nodes) {
+        try {
+            final List<ReadValueId> reads = new ArrayList<>(nodes.size() * 3);
+            for (final Node node : nodes) {
+                final NodeId nodeId = NodeId.parse(node.nodeId());
+                reads.add(new ReadValueId(nodeId, AttributeId.DataType.uid(), null, null));
+                reads.add(new ReadValueId(nodeId, AttributeId.AccessLevel.uid(), null, null));
+                reads.add(new ReadValueId(nodeId, AttributeId.Description.uid(), null, null));
+            }
+            final DataValue[] results = requireNonNull(client).readAsync(0.0, TimestampsToReturn.Neither, reads)
+                    .get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    .getResults();
+            final List<ResolvedAttributes> resolved = new ArrayList<>(nodes.size());
+            for (int i = 0; i < nodes.size(); i++) {
+                resolved.add(resolveOne(nodes.get(i),
+                        requireNonNull(results)[i * 3],
+                        results[i * 3 + 1],
+                        results[i * 3 + 2]));
+            }
+            output.readAttributesResult(requestId, resolved);
+        } catch (final @NotNull Exception failure) {
+            output.browseError(requestId, String.valueOf(failure.getMessage()));
+        }
     }
 
     @Override
