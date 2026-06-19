@@ -89,8 +89,11 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
     /**
      * Route one event (design §6.3). In {@code ERROR} every event is fed to the machine so the named absorb rows
      * can swallow it (design §6.4). Otherwise lifecycle events and the gate signal drive the machine, while
-     * verification, data, write, and browse events are routed to the tag plane; aspect-timer events are consumed by
-     * the aspect machines (a later task) and none are scheduled yet.
+     * verification, data, write, and browse events are routed to the tag plane. The wrapper-level aspect-timer
+     * events ({@code PollTimerFired} etc.) are never produced: each aspect schedules its own poll,
+     * verification-retry, and subscription-retry timers on the actor's single timer queue and feeds its own
+     * machine directly (design §5.5), so these remain only as part of the sealed hierarchy and its {@code ERROR}
+     * absorb rows.
      */
     private void handleEvent(final @NotNull ProtocolAdapterWrapperEvent event) {
         if (machine.state() == ProtocolAdapterWrapperState.ERROR) {
@@ -127,13 +130,13 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
                 // The browse REST bridge is a later task; nothing consumes browse results yet.
             }
             case ProtocolAdapterWrapperEvent.PollTimerFired ignored -> {
-                // Consumed by the read aspect machines (a later task); none are scheduled yet.
+                // Unused: aspects schedule and fire their own timers on the actor's single timer queue (§5.5).
             }
             case ProtocolAdapterWrapperEvent.VerificationRetryTimerFired ignored -> {
-                // Consumed by the aspect machines (a later task); none are scheduled yet.
+                // Unused: aspects schedule and fire their own timers on the actor's single timer queue (§5.5).
             }
             case ProtocolAdapterWrapperEvent.SubscriptionRetryTimerFired ignored -> {
-                // Consumed by the read aspect machines (a later task); none are scheduled yet.
+                // Unused: aspects schedule and fire their own timers on the actor's single timer queue (§5.5).
             }
         }
     }

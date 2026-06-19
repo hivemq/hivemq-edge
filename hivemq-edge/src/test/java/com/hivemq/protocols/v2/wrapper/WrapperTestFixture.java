@@ -18,12 +18,17 @@ package com.hivemq.protocols.v2.wrapper;
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.adapter.sdk.api.v2.messaging.DefaultMailbox;
 import com.hivemq.adapter.sdk.api.v2.messaging.Mailbox;
+import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.protocols.v2.runtime.FakeClock;
 import com.hivemq.protocols.v2.runtime.ManualDispatcher;
 import com.hivemq.protocols.v2.runtime.NevskyMetrics;
 import com.hivemq.protocols.v2.runtime.RetryPolicy;
+import com.hivemq.protocols.v2.tag.TagAspectCoordinator;
+import com.hivemq.protocols.v2.tag.TagAspectRuntimeCoordinator;
+import com.hivemq.protocols.v2.tag.TagAspectSnapshotOnlyCoordinator;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
+import com.hivemq.protocols.v2.view.TagStatusSnapshot;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -52,6 +57,7 @@ final class WrapperTestFixture {
     final @NotNull RecordingProtocolAdapterWrapperEventListener health;
     final @NotNull AtomicReference<AdapterStatusSnapshot> snapshotReference;
     final @NotNull ProtocolAdapterWrapper wrapper;
+    final @NotNull List<NodeTagPair> nodes;
 
     private WrapperTestFixture(final @NotNull Builder builder) {
         this.adapterId = builder.adapterId;
@@ -62,6 +68,7 @@ final class WrapperTestFixture {
         this.output = new ProtocolAdapterOutputFacade(mailbox);
         this.adapter = new MockProtocolAdapter(adapterId, output);
         this.health = new RecordingProtocolAdapterWrapperEventListener();
+        this.nodes = builder.nodes;
 
         final Map<String, TagAspectActivationPreference> activation =
                 builder.activation != null ? builder.activation : defaultActivation(builder.nodes);
@@ -69,8 +76,25 @@ final class WrapperTestFixture {
         final Set<String> writeUsed = builder.writeUsed != null ? builder.writeUsed : new HashSet<>();
 
         final NevskyMetrics metrics = new NevskyMetrics(metricRegistry, adapterId, mailbox::size);
-        final SnapshotOnlyTagAspectCoordinator tagPlane =
-                new SnapshotOnlyTagAspectCoordinator(builder.nodes, activation, readUsed, writeUsed);
+        // The default tag plane is the snapshot-only stand-in (adapter-machine tests); opt in to the running
+        // coordinator to exercise the read aspect machines.
+        final TagAspectCoordinator tagPlane;
+        final TagAspectRuntimeCoordinator runningTagPlane;
+        if (builder.runningCoordinator) {
+            runningTagPlane = new TagAspectRuntimeCoordinator(
+                    adapterId,
+                    builder.nodes,
+                    activation,
+                    readUsed,
+                    writeUsed,
+                    builder.initialGoal,
+                    builder.pollIntervalMillis,
+                    builder.retryPolicy);
+            tagPlane = runningTagPlane;
+        } else {
+            tagPlane = new TagAspectSnapshotOnlyCoordinator(builder.nodes, activation, readUsed, writeUsed);
+            runningTagPlane = null;
+        }
         final ProtocolAdapterWrapperContext context = new ProtocolAdapterWrapperContext(
                 adapterId,
                 adapter,
@@ -85,6 +109,14 @@ final class WrapperTestFixture {
                 tagPlane,
                 health,
                 metrics);
+        if (runningTagPlane != null) {
+            runningTagPlane.bindRuntime(
+                    context.clock(),
+                    context.timers(),
+                    context.batches(),
+                    context.metrics(),
+                    context.protocolAdapter()::verifyBatch);
+        }
         this.snapshotReference = new AtomicReference<>();
         this.wrapper = new ProtocolAdapterWrapper(context, snapshotReference);
         dispatcher.attach(mailbox, wrapper);
@@ -159,6 +191,40 @@ final class WrapperTestFixture {
         return adapter.commands;
     }
 
+    /**
+     * @return the protocol node behind the given tag — for injecting per-node values and errors via {@link #output}.
+     */
+    @NotNull
+    Node nodeFor(final @NotNull String tagName) {
+        for (final NodeTagPair pair : nodes) {
+            if (pair.tag().name().equals(tagName)) {
+                return pair.node();
+            }
+        }
+        throw new IllegalArgumentException("no node for tag " + tagName);
+    }
+
+    /**
+     * @return the published per-tag status for the given tag.
+     */
+    @NotNull
+    TagStatusSnapshot tag(final @NotNull String tagName) {
+        for (final TagStatusSnapshot tag : snapshot().tags()) {
+            if (tag.tagName().equals(tagName)) {
+                return tag;
+            }
+        }
+        throw new IllegalArgumentException("no tag status for " + tagName);
+    }
+
+    /**
+     * @return the read aspect's current state name for the given tag, read from the published snapshot.
+     */
+    @NotNull
+    String readState(final @NotNull String tagName) {
+        return tag(tagName).readAspectStateName();
+    }
+
     long defensiveResets() {
         return metricRegistry
                 .counter(NevskyMetrics.ADAPTER_PREFIX + adapterId + ".defensive.resets")
@@ -197,6 +263,8 @@ final class WrapperTestFixture {
         private long watchdogTimeoutMillis = 1000;
         private boolean skipVerification;
         private long tickPeriodMillis = 100;
+        private boolean runningCoordinator;
+        private long pollIntervalMillis = 1000;
         private @Nullable Map<String, TagAspectActivationPreference> activation;
         private @Nullable Set<String> readUsed;
         private @Nullable Set<String> writeUsed;
@@ -240,6 +308,22 @@ final class WrapperTestFixture {
         @NotNull
         Builder tickPeriodMillis(final long tickPeriodMillis) {
             this.tickPeriodMillis = tickPeriodMillis;
+            return this;
+        }
+
+        /**
+         * Drive the real read-aspect machines through a {@link TagAspectRuntimeCoordinator} instead of the
+         * snapshot-only stand-in.
+         */
+        @NotNull
+        Builder runningCoordinator() {
+            this.runningCoordinator = true;
+            return this;
+        }
+
+        @NotNull
+        Builder pollIntervalMillis(final long pollIntervalMillis) {
+            this.pollIntervalMillis = pollIntervalMillis;
             return this;
         }
 

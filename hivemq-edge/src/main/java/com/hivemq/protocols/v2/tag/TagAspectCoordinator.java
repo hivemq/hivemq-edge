@@ -13,13 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.protocols.v2.wrapper;
+package com.hivemq.protocols.v2.tag;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.protocols.v2.view.TagStatusSnapshot;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterGoalState;
+import com.hivemq.protocols.v2.wrapper.TagAspectActivationPreference;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,21 +29,29 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The wrapper's view of all its tag aspect machines — the seam between the adapter machine (this task) and the
- * per-tag read/write aspect machines (later tasks). The wrapper invokes these hooks at the points where aspects
- * react: it never reaches into aspect internals.
+ * The wrapper's view of all of an adapter's tag aspect machines — the seam between the adapter machine (the
+ * {@code wrapper} package) and the per-tag read/write aspect machines (this {@code tag} package). The wrapper
+ * invokes these hooks at the points where aspects react; it never reaches into aspect internals.
  * <p>
- * This task ships {@link SnapshotOnlyTagAspectCoordinator}, a minimal implementation that holds the tag set and activation but runs
- * no aspect machines. A later task supplies a real {@code TagAspectCoordinator} backed by per-tag aspect runtimes; the
- * adapter machine and snapshot publication built here do not change. The hook set is therefore deliberately the
- * full wrapper-to-aspect contract, even though most hooks are no-ops for now.
+ * {@link TagAspectSnapshotOnlyCoordinator} is the minimal stand-in — tag set and activation only, no aspect
+ * machines — that the adapter-machine tests use; {@link TagAspectRuntimeCoordinator} is the running implementation
+ * backed by per-tag {@link TagRuntime}s. The hook set is the full wrapper-to-aspect contract.
  * <p>
  * Every method runs on the wrapper's single dispatch thread.
  */
 public interface TagAspectCoordinator {
 
     /**
-     * The adapter reached {@code CONNECTED}: aspects may begin verifying and operating (design §7.2).
+     * The adapter began verifying its nodes (design §6.3): active aspects waiting for the adapter move into
+     * verification so they consume the connect-time {@code verifyResult}s the wrapper routes to them — the single
+     * verify stream feeds both the adapter gate and the aspects (design §6.3).
+     */
+    void onAdapterVerifying();
+
+    /**
+     * The adapter reached {@code CONNECTED} (design §7.2). When verification was skipped, aspects still waiting for
+     * the adapter treat the connection as verified and begin operating; otherwise they have already advanced
+     * through verification on the routed results and this is a no-op for them.
      */
     void onAdapterReady();
 
@@ -85,14 +95,6 @@ public interface TagAspectCoordinator {
      * @param reason  the failure reason, or {@code null} on success.
      */
     void routeWriteResult(@NotNull Node node, boolean success, @Nullable String reason);
-
-    /**
-     * A tick elapsed: aspects post their due work (polls, subscription retries) to the batch collector before it
-     * is dispatched (design §5.7, §7.3).
-     *
-     * @param nowMillis the tick's logical time, in milliseconds.
-     */
-    void onTick(long nowMillis);
 
     /**
      * Apply changed activation flags atomically — the activation-only transition (design §8.2). Recomputes aspect
