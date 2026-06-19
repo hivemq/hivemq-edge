@@ -30,7 +30,6 @@ import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
-import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.protocols.v2.fsm.FSM;
 import com.hivemq.protocols.v2.runtime.Backoff;
 import com.hivemq.protocols.v2.runtime.BatchCollector;
@@ -41,12 +40,8 @@ import com.hivemq.protocols.v2.runtime.RetryPolicy;
 import com.hivemq.protocols.v2.runtime.TimerHandle;
 import com.hivemq.protocols.v2.tag.TagAspectCoordinator;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -60,11 +55,11 @@ import org.slf4j.LoggerFactory;
  * holds no locks.
  * <p>
  * The {@link TagAspectCoordinator} (in the {@code tag} package) is the wrapper's view of the tag aspect machines.
- * The <b>verification gate</b> here is a node-counting precursor of the
- * verification coordinator (design §7.6): on entry to {@code WAITING_FOR_VERIFICATION} it verifies every
- * configured node and synthesizes {@link ProtocolAdapterWrapperEvent.AllVerified} once each has reported any
- * outcome (failures do not block {@code CONNECTED}, design §6.3); a later task widens it to select nodes from the
- * aspects that need verification and to fan each result out to those aspects.
+ * The <b>verification gate</b> is owned by the shared verification authority behind that coordinator (design §7.6):
+ * on entry to {@code WAITING_FOR_VERIFICATION} the coordinator verifies the nodes its active aspects need as one
+ * batch, and the wrapper synthesizes {@link ProtocolAdapterWrapperEvent.AllVerified} once the coordinator reports
+ * {@code allReported()} — every node in the batch has reported some outcome (failures do not block
+ * {@code CONNECTED}, design §6.3). The single verify stream feeds both this gate and the per-tag aspects.
  * <p>
  * The machine is bound after construction through {@link #bindMachine(FSM)} because the machine's
  * constructor needs this context — the cycle is closed once, before any message is handled. {@code stepTowardGoal}
@@ -87,10 +82,7 @@ public final class ProtocolAdapterWrapperContext {
     private final @NotNull ProtocolAdapterWrapperEventListener healthListener;
     private final @NotNull NevskyMetrics metrics;
 
-    private final @NotNull Set<Node> pendingVerification = new LinkedHashSet<>();
-
     private @NotNull ProtocolAdapterGoalState goal;
-    private @NotNull List<NodeTagPair> nodes;
     private @NotNull Map<String, TagAspectActivationPreference> activation;
     private long lastTransitionAtMillis;
     private @Nullable String lastErrorReason;
@@ -111,7 +103,6 @@ public final class ProtocolAdapterWrapperContext {
      * @param skipVerification      whether to skip verification and reach {@code CONNECTED} straight from
      *                              {@code WAITING_FOR_CONNECTED}.
      * @param initialGoal           the initial direction goal (from the configuration).
-     * @param nodes                 the configured node/tag pairs.
      * @param activation            the per-tag activation preferences.
      * @param tagPlane              the wrapper's view of the tag aspect machines.
      * @param healthListener        the supervisor notification seam.
@@ -126,7 +117,6 @@ public final class ProtocolAdapterWrapperContext {
             final long watchdogTimeoutMillis,
             final boolean skipVerification,
             final @NotNull ProtocolAdapterGoalState initialGoal,
-            final @NotNull List<NodeTagPair> nodes,
             final @NotNull Map<String, TagAspectActivationPreference> activation,
             final @NotNull TagAspectCoordinator tagPlane,
             final @NotNull ProtocolAdapterWrapperEventListener healthListener,
@@ -139,7 +129,6 @@ public final class ProtocolAdapterWrapperContext {
         this.watchdogTimeoutMillis = watchdogTimeoutMillis;
         this.skipVerification = skipVerification;
         this.goal = initialGoal;
-        this.nodes = List.copyOf(nodes);
         this.activation = Map.copyOf(activation);
         this.tagPlane = tagPlane;
         this.healthListener = healthListener;
@@ -224,7 +213,6 @@ public final class ProtocolAdapterWrapperContext {
                 tagPlane.applyActivation(goal, activation);
             }
             case ProtocolAdapterWrapperCommand.UpdateTagSet update -> {
-                nodes = List.copyOf(update.nodes());
                 activation = Map.copyOf(update.activation());
                 tagPlane.updateTagSet(
                         update.nodes(), update.activation(), update.readUsedTagNames(), update.writeUsedTagNames());
@@ -261,8 +249,15 @@ public final class ProtocolAdapterWrapperContext {
     @NotNull
     ProtocolAdapterWrapperState verifyStep() {
         clearTimers();
+        // Move active aspects into verification and issue the nodes they need as one verifyBatch through the
+        // shared verification authority (design §6.3, §7.6).
         tagPlane.onAdapterVerifying();
-        beginVerification();
+        if (tagPlane.allReported()) {
+            // No aspect needs verification — connect straight away.
+            synthesizeAllVerified();
+        } else {
+            armWatchdog();
+        }
         return WAITING_FOR_VERIFICATION;
     }
 
@@ -407,47 +402,28 @@ public final class ProtocolAdapterWrapperContext {
     }
 
     // ──────────────────────────────────────────────────────────────────────────────────────────────────────────
-    //  Verification gate (precursor of the verification coordinator, design §6.3, §7.6)
+    //  Verification gate (owned by the shared verification authority, design §6.3, §7.6)
     // ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-    private void beginVerification() {
-        pendingVerification.clear();
-        final List<Node> nodesToVerify = distinctNodes();
-        if (nodesToVerify.isEmpty()) {
-            synthesizeAllVerified();
-            return;
-        }
-        pendingVerification.addAll(nodesToVerify);
-        protocolAdapter.verifyBatch(nodesToVerify);
-        armWatchdog();
-    }
-
-    /**
-     * Record one node's verification outcome against the adapter gate (design §6.3). When every node in the batch
-     * has reported any outcome, synthesize {@link ProtocolAdapterWrapperEvent.AllVerified}. Routing the outcome to
-     * the node's aspects is the tag plane's job and happens separately.
-     *
-     * @param node the node that reported.
-     */
-    public void recordVerifyResult(final @NotNull Node node) {
-        if (pendingVerification.remove(node) && pendingVerification.isEmpty()) {
-            synthesizeAllVerified();
-        }
-    }
-
     private void clearVerification() {
-        pendingVerification.clear();
+        tagPlane.resetVerificationGate();
     }
 
     /**
-     * Route one node's verification outcome to its tag aspects (design §6.3) — the fan-out the wrapper performs
-     * for every {@code verifyResult}, independent of the adapter gate's counting.
+     * Handle one node's verification outcome (design §6.3): fan it out to the node's aspects through the shared
+     * verification authority — which also clears the connect-gate count — then, while the machine is still gating
+     * in {@code WAITING_FOR_VERIFICATION}, synthesize {@link ProtocolAdapterWrapperEvent.AllVerified} once every
+     * node in the batch has reported some outcome. The single verify stream feeds both consumers (the adapter gate
+     * and the per-tag aspects), on the one dispatch thread.
      *
      * @param node    the verified node.
      * @param outcome the verification outcome.
      */
-    public void routeVerifyResultToTags(final @NotNull Node node, final @NotNull VerifyOutcome outcome) {
+    public void onVerifyResultReceived(final @NotNull Node node, final @NotNull VerifyOutcome outcome) {
         tagPlane.routeVerifyResult(node, outcome);
+        if (machine().state() == WAITING_FOR_VERIFICATION && tagPlane.allReported()) {
+            synthesizeAllVerified();
+        }
     }
 
     /**
@@ -483,16 +459,18 @@ public final class ProtocolAdapterWrapperContext {
         tagPlane.routeWriteResult(node, success, reason);
     }
 
-    private void synthesizeAllVerified() {
-        selfSender.tell(new ProtocolAdapterWrapperEvent.AllVerified());
+    /**
+     * Route a southbound write request to its write aspect (design §7.5) — the "write arrives" trigger.
+     *
+     * @param node  the node to write to.
+     * @param value the reused v1 value to write.
+     */
+    public void routeWriteRequestToTags(final @NotNull Node node, final @NotNull DataPoint value) {
+        tagPlane.submitWrite(node, value);
     }
 
-    private @NotNull List<Node> distinctNodes() {
-        final Set<Node> distinct = new LinkedHashSet<>();
-        for (final NodeTagPair pair : nodes) {
-            distinct.add(pair.node());
-        }
-        return new ArrayList<>(distinct);
+    private void synthesizeAllVerified() {
+        selfSender.tell(new ProtocolAdapterWrapperEvent.AllVerified());
     }
 
     // ──────────────────────────────────────────────────────────────────────────────────────────────────────────

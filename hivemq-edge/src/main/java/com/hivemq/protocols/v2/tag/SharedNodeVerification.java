@@ -17,6 +17,7 @@ package com.hivemq.protocols.v2.tag;
 
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -25,19 +26,22 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Shared verification bookkeeping for a single adapter's tags (design §7.6). One node's verification serves all of
- * that node's aspects: if both the read and write aspect of a tag need to verify, the coordinator issues
- * <b>one</b> {@code verifyBatch} entry and fans the single {@link VerifyOutcome} out to every aspect of the node.
+ * Shared verification bookkeeping for a single adapter's tags (design §7.6) — <b>the single verification
+ * authority</b> that both the connect-time adapter gate (design §6.3) and the per-aspect re-verifications run
+ * through. One node's verification serves all of that node's aspects: if both the read and write aspect of a tag
+ * need to verify, exactly <b>one</b> {@code verifyBatch} entry is issued and the single {@link VerifyOutcome} is
+ * fanned out to every aspect of the node.
  * <p>
- * In this task only read aspects exist, so the fan-out reaches the read aspect; the write aspect joins in a later
- * task with no change here. The coordinator owns the de-duplication: a node already in flight is not re-requested
- * ({@link #needsVerify(Node)}), which is what keeps a read-and-write tag to a single verify.
+ * It owns the de-duplication and the counting: a node already in flight is not re-requested
+ * ({@link #needsVerify(Node)}), which is what keeps a read-and-write tag to a single verify, and
+ * {@link #allReported()} is the signal the wrapper uses to leave {@code WAITING_FOR_VERIFICATION} for
+ * {@code CONNECTED} once every node in the connect batch has reported some outcome (design §6.3).
  * <p>
- * The initial connect verification is issued by the wrapper's adapter gate (design §6.3), which also counts for
- * the {@code CONNECTED} transition; those results flow through {@link #onVerifyResult(Node, VerifyOutcome)} for
- * fan-out but are not tracked here. This coordinator issues only the post-connect re-verifications an aspect asks
- * for — a verification retry or a tag retry (design §7.6). {@link #allReported()} reports whether the
- * coordinator-issued requests have all come back; a later task wires it to the gate counting.
+ * Two entry points feed it: {@link #beginConnectVerification(List)} — the connect gate issues the aspects' nodes
+ * as <b>one</b> batch — and {@link #requestVerification(Node)} — a single post-connect re-verification an aspect
+ * asks for after a verification-retry or a tag retry (design §7.6). {@link #reset()} drops any outstanding
+ * in-flight nodes when verification is abandoned (a disconnect or stop). Every reported outcome flows through
+ * {@link #onVerifyResult(Node, VerifyOutcome)}, which both clears the count and fans out to the aspects.
  * <p>
  * Owned by one adapter wrapper and used only on its single dispatch thread; it holds no locks.
  */
@@ -82,6 +86,34 @@ public final class SharedNodeVerification {
     }
 
     /**
+     * Begin the connect-time verification (design §6.3): register every given node as in flight (de-duplicated)
+     * and issue them as <b>one</b> {@code verifyBatch} — a read-and-write tag therefore yields a single entry.
+     * {@link #allReported()} then gates the {@code CONNECTED} transition. An empty list issues nothing and leaves
+     * {@link #allReported()} {@code true}, so an adapter with no aspect needing verification connects immediately.
+     *
+     * @param nodes the nodes whose aspects need verifying on connect.
+     */
+    public void beginConnectVerification(final @NotNull List<Node> nodes) {
+        final List<Node> toVerify = new ArrayList<>(nodes.size());
+        for (final Node node : nodes) {
+            if (inFlight.add(node)) {
+                toVerify.add(node);
+            }
+        }
+        if (!toVerify.isEmpty()) {
+            nodeVerifier.verify(toVerify);
+        }
+    }
+
+    /**
+     * Drop every outstanding in-flight node — called when verification is abandoned (the adapter disconnected,
+     * errored, or stopped), so a stale request can never linger into the next connect gate (design §6.3).
+     */
+    public void reset() {
+        inFlight.clear();
+    }
+
+    /**
      * Fan one node's verification outcome out to its aspects and clear it from the in-flight set (design §7.6). A
      * result for a node this coordinator did not request — an initial connect verification issued by the adapter
      * gate — is fanned out all the same; the in-flight removal is then a no-op.
@@ -98,8 +130,8 @@ public final class SharedNodeVerification {
     }
 
     /**
-     * @return {@code true} when every coordinator-issued verification has reported — the signal a later task
-     *         feeds into the adapter gate (design §6.3).
+     * @return {@code true} when no verification is outstanding — the signal the wrapper uses to leave
+     *         {@code WAITING_FOR_VERIFICATION} for {@code CONNECTED} (the adapter gate, design §6.3).
      */
     public boolean allReported() {
         return inFlight.isEmpty();

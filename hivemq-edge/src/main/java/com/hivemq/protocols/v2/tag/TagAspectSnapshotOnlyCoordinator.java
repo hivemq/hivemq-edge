@@ -27,19 +27,23 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * The minimal {@link TagAspectCoordinator} stand-in: it holds the tag set, activation preferences, and
- * {@code used} derivation, and publishes a minimal per-tag snapshot, but runs no aspect machines. Every routing
- * and lifecycle hook is a no-op. The aspect state names it reports are always {@code DEACTIVATED}, which is
- * honest: with no aspect machines running, every aspect is at rest.
+ * {@code used} derivation, and publishes a minimal per-tag snapshot, but runs <b>no</b> aspect machines. The
+ * aspect state names it reports are always {@code DEACTIVATED} and every per-aspect flag is {@code false}, which
+ * is honest: with no aspect machines running, every aspect is at rest.
  * <p>
- * It lets the adapter machine and snapshot publication be exercised on their own (the adapter-machine tests use
- * it); {@link TagAspectRuntimeCoordinator} is the running implementation that drives real aspect machines, with no
- * change to the wrapper.
+ * It does still drive the adapter's connect-time verification gate (design §6.3) so the adapter machine and
+ * snapshot publication can be exercised on their own (the adapter-machine tests use it): on connect it verifies
+ * <b>all</b> configured nodes through a {@link SharedNodeVerification} with a no-op fan-out (there are no aspects
+ * to route results to), and {@link #allReported()} gates {@code CONNECTED}. It must be bound to the adapter's
+ * verify seam through {@link #bindVerifier(NodeVerifier)} before the first connect. {@link TagAspectRuntimeCoordinator}
+ * is the running implementation that drives real aspect machines, with no change to the wrapper.
  */
 public final class TagAspectSnapshotOnlyCoordinator implements TagAspectCoordinator {
 
@@ -49,6 +53,7 @@ public final class TagAspectSnapshotOnlyCoordinator implements TagAspectCoordina
     private @NotNull Map<String, TagAspectActivationPreference> activation;
     private @NotNull Set<String> readUsedTagNames;
     private @NotNull Set<String> writeUsedTagNames;
+    private @Nullable SharedNodeVerification verification;
 
     /**
      * @param nodes             the initial node/tag pairs.
@@ -67,24 +72,51 @@ public final class TagAspectSnapshotOnlyCoordinator implements TagAspectCoordina
         this.writeUsedTagNames = new HashSet<>(writeUsedTagNames);
     }
 
+    /**
+     * Bind the adapter's verify seam so the connect gate can issue {@code verifyBatch} (design §6.3). Called once,
+     * before the first connect — mirroring {@link TagAspectRuntimeCoordinator#bindRuntime}. The fan-out is a no-op
+     * because there are no aspect machines; the verification authority is used purely for the gate count.
+     *
+     * @param nodeVerifier the adapter's {@code verifyBatch} seam.
+     */
+    public void bindVerifier(final @NotNull NodeVerifier nodeVerifier) {
+        this.verification = new SharedNodeVerification(nodeVerifier, node -> null);
+    }
+
     @Override
     public void onAdapterVerifying() {
-        // No aspect machines yet; nothing to verify.
+        // No aspect machines: verify every configured node so the adapter machine's verification flow is exercised.
+        final List<Node> toVerify = new ArrayList<>(nodes.size());
+        for (final NodeTagPair pair : nodes) {
+            toVerify.add(pair.node());
+        }
+        verification().beginConnectVerification(toVerify);
+    }
+
+    @Override
+    public boolean allReported() {
+        return verification().allReported();
+    }
+
+    @Override
+    public void resetVerificationGate() {
+        verification().reset();
     }
 
     @Override
     public void onAdapterReady() {
-        // No aspect machines yet; nothing to start.
+        // No aspect machines; nothing to start.
     }
 
     @Override
     public void onAdapterUnavailable() {
-        // No aspect machines yet; nothing to suspend.
+        verification().reset();
     }
 
     @Override
     public void routeVerifyResult(final @NotNull Node node, final @NotNull VerifyOutcome outcome) {
-        // No aspect machines yet; the adapter gate's counting is handled by the wrapper.
+        // No aspects to fan out to; decrement the connect gate so allReported() advances the adapter to CONNECTED.
+        verification().onVerifyResult(node, outcome);
     }
 
     @Override
@@ -98,8 +130,13 @@ public final class TagAspectSnapshotOnlyCoordinator implements TagAspectCoordina
     }
 
     @Override
+    public void submitWrite(final @NotNull Node node, final @NotNull DataPoint value) {
+        // No write aspect; the write is absorbed.
+    }
+
+    @Override
     public void routeWriteResult(final @NotNull Node node, final boolean success, final @Nullable String reason) {
-        // No write aspect yet; the acknowledgment is absorbed.
+        // No write aspect; the acknowledgment is absorbed.
     }
 
     @Override
@@ -141,10 +178,21 @@ public final class TagAspectSnapshotOnlyCoordinator implements TagAspectCoordina
                     writeUsedTagNames.contains(tagName),
                     AT_REST_ASPECT_STATE,
                     AT_REST_ASPECT_STATE,
+                    false, // readAspectGoalActive — no aspect machine, so never active
+                    false, // writeAspectGoalActive
+                    false, // readAspectOperating
+                    false, // writeAspectOperating
+                    false, // readAspectPermanentFailure
+                    false, // writeAspectPermanentFailure
                     0,
                     null,
                     0L));
         }
         return snapshots;
+    }
+
+    private @NotNull SharedNodeVerification verification() {
+        return Objects.requireNonNull(
+                verification, "bindVerifier() must be called before the snapshot-only coordinator is used");
     }
 }

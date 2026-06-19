@@ -43,10 +43,24 @@ public interface TagAspectCoordinator {
 
     /**
      * The adapter began verifying its nodes (design §6.3): active aspects waiting for the adapter move into
-     * verification so they consume the connect-time {@code verifyResult}s the wrapper routes to them — the single
-     * verify stream feeds both the adapter gate and the aspects (design §6.3).
+     * verification, and the coordinator issues the nodes those aspects need verified as <b>one</b>
+     * {@code verifyBatch} through the shared verification authority. The single verify stream then feeds both the
+     * adapter gate (via {@link #allReported()}) and the aspects (via {@link #routeVerifyResult}).
      */
     void onAdapterVerifying();
+
+    /**
+     * @return {@code true} when no connect-time verification is outstanding — the signal the wrapper uses to leave
+     *         {@code WAITING_FOR_VERIFICATION} for {@code CONNECTED} (the adapter gate, design §6.3).
+     */
+    boolean allReported();
+
+    /**
+     * Drop any outstanding connect-time verification — called when verification is abandoned (the adapter
+     * disconnected, errored, or stopped), so a stale request never lingers into the next connect gate (design
+     * §6.3).
+     */
+    void resetVerificationGate();
 
     /**
      * The adapter reached {@code CONNECTED} (design §7.2). When verification was skipped, aspects still waiting for
@@ -86,6 +100,14 @@ public interface TagAspectCoordinator {
      * @param spontaneous whether the failure arrived outside a command-response exchange.
      */
     void routeNodeError(@NotNull Node node, @NotNull String reason, boolean spontaneous);
+
+    /**
+     * Submit a southbound write to the node's write aspect (design §7.5) — the "write arrives" trigger.
+     *
+     * @param node  the node to write to.
+     * @param value the reused v1 value to write.
+     */
+    void submitWrite(@NotNull Node node, @NotNull DataPoint value);
 
     /**
      * Route a write acknowledgment to the node's write aspect (design §7.5).

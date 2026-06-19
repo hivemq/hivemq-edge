@@ -34,7 +34,9 @@ import org.jetbrains.annotations.NotNull;
  * <li>a {@link ProtocolAdapterWrapperEvent} is routed: protocol-adapter lifecycle events and the synthesized
  * {@code AllVerified} drive the transition table, while verification, data, write, and browse events are routed
  * to the tag plane (design §6.3). In {@code ERROR} every event is fed to the machine so the absorb rows can swallow
- * it (design §6.4).</li>
+ * it (design §6.4);</li>
+ * <li>a {@link ProtocolAdapterWrapperWriteRequest} routes a southbound write to the node's write aspect (design
+ * §7.5) — it changes no adapter goal or machine state.</li>
  * </ul>
  * After every message it publishes an immutable {@link AdapterStatusSnapshot} (design §6.6) — the only state that
  * crosses the actor boundary outward. {@code receive} runs on the actor's single dispatch thread; the wrapper
@@ -79,6 +81,10 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
                 handleEvent(event);
                 context.stepTowardGoal();
             }
+            case ProtocolAdapterWrapperWriteRequest write ->
+                // A southbound write: route it to the node's write aspect (design §7.5). It changes no adapter
+                // goal or machine state, so no stepTowardGoal — only the write aspect (and the snapshot) move.
+                context.routeWriteRequestToTags(write.node(), write.value());
         }
         if (machine.state() != before) {
             context.recordTransition();
@@ -114,12 +120,8 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
                 }
                 // Otherwise the gate result is stale (verification was abandoned); ignore it.
             }
-            case ProtocolAdapterWrapperEvent.VerifyResultReceived verify -> {
-                context.routeVerifyResultToTags(verify.node(), verify.outcome());
-                if (machine.state() == WAITING_FOR_VERIFICATION) {
-                    context.recordVerifyResult(verify.node());
-                }
-            }
+            case ProtocolAdapterWrapperEvent.VerifyResultReceived verify ->
+                context.onVerifyResultReceived(verify.node(), verify.outcome());
             case ProtocolAdapterWrapperEvent.DataPointReceived data ->
                 context.routeDataPointToTags(data.node(), data.value());
             case ProtocolAdapterWrapperEvent.NodeErrorReceived nodeError ->
