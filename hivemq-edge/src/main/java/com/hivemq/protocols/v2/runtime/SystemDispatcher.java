@@ -30,8 +30,9 @@ import org.jetbrains.annotations.Nullable;
  * a time, in priority-band order. A parked thread consumes no CPU — it is woken by a {@code tell}, not by polling.
  * <p>
  * {@link MessageDispatcherHandle#close()} stops the loop and interrupts the thread; an in-flight {@code receive}
- * always completes first (the interrupt is observed only at the next {@code awaitNextMessage}, or as a set flag
- * the loop checks once {@code receive} returns).
+ * always completes first. The stop flag is observed either as the interrupt thrown by {@code awaitNextMessage}, or
+ * — when a {@code tell} races in and {@code awaitNextMessage} returns that message instead of throwing — by the
+ * re-check after the fetch, so a message arriving alongside {@code close()} is never delivered.
  */
 public final class SystemDispatcher implements MessageDispatcher {
 
@@ -76,6 +77,11 @@ public final class SystemDispatcher implements MessageDispatcher {
                 } catch (final InterruptedException interrupted) {
                     // close() is the only interrupter; restore the flag and let the thread end.
                     Thread.currentThread().interrupt();
+                    break;
+                }
+                if (!running) {
+                    // close() raced with an arriving message: awaitNextMessage returned it instead of throwing the
+                    // interrupt. The loop is stopping, so the post-close message is dropped, not delivered.
                     break;
                 }
                 if (message != null) {
