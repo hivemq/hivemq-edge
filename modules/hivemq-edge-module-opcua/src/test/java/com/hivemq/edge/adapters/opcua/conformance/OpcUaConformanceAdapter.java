@@ -32,12 +32,10 @@ import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.node.AccessFlags;
 import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
-import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
 import com.hivemq.adapter.sdk.api.v2.template.AbstractProtocolAdapter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -134,7 +132,14 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
         final AccessTriState readable = (accessBits & 0x01) != 0 ? AccessTriState.YES : AccessTriState.NO;
         final AccessTriState writable = (accessBits & 0x02) != 0 ? AccessTriState.YES : AccessTriState.NO;
         // a readable OPC-UA variable is both pollable and subscribable; an unreadable one is neither
-        return new AccessFlags(readable, writable, readable, readable);
+        final AccessTriState pollable = readable;
+        final AccessTriState subscribable = readable;
+        return AccessFlags.builder()
+                .readable(readable)
+                .writable(writable)
+                .pollable(pollable)
+                .subscribable(subscribable)
+                .build();
     }
 
     @Override
@@ -332,7 +337,7 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
                         ? requireNonNullElse(reference.getBrowseName().getName(), "")
                         : "";
                 entries.add(new BrowseResultEntry(
-                        new BrowsedNode(childId.get().toParseableString()),
+                        new ConformanceNode(childId.get().toParseableString()),
                         isVariable ? NodeType.VALUE : NodeType.OBJECT,
                         isVariable,
                         browseName));
@@ -404,31 +409,5 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
         client = null;
         subscription = null;
         subscribedNodes.clear();
-    }
-
-    /**
-     * A node materialised from a browse result — its identity is its parseable OPC-UA NodeId.
-     */
-    private static final class BrowsedNode extends Node {
-        private final @NotNull String parseableNodeId;
-
-        private BrowsedNode(final @NotNull String parseableNodeId) {
-            this.parseableNodeId = parseableNodeId;
-        }
-
-        @Override
-        public @NotNull String nodeId() {
-            return parseableNodeId;
-        }
-
-        @Override
-        public @NotNull String nodeString() {
-            return "{\"nodeId\":\"" + parseableNodeId + "\"}";
-        }
-
-        @Override
-        public @NotNull EnumSet<NodeProperty> properties() {
-            return EnumSet.of(NodeProperty.UNIQUE, NodeProperty.TYPED);
-        }
     }
 }
