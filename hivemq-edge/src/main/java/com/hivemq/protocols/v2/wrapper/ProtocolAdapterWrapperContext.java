@@ -39,6 +39,7 @@ import com.hivemq.protocols.v2.runtime.NevskyMetrics;
 import com.hivemq.protocols.v2.runtime.PriorityTimerQueue;
 import com.hivemq.protocols.v2.runtime.RetryPolicy;
 import com.hivemq.protocols.v2.runtime.TimerHandle;
+import com.hivemq.protocols.v2.tag.TagAspectCoordinator;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -58,8 +59,8 @@ import org.slf4j.LoggerFactory;
  * the timers, and the tag plane only through here. Everything runs on the wrapper's single dispatch thread, so it
  * holds no locks.
  * <p>
- * Two pieces are seams for later tasks. The {@link TagAspectCoordinator} is the wrapper's view of the tag aspect machines
- * (this task ships {@link SnapshotOnlyTagAspectCoordinator}). The <b>verification gate</b> here is a node-counting precursor of the
+ * The {@link TagAspectCoordinator} (in the {@code tag} package) is the wrapper's view of the tag aspect machines.
+ * The <b>verification gate</b> here is a node-counting precursor of the
  * verification coordinator (design §7.6): on entry to {@code WAITING_FOR_VERIFICATION} it verifies every
  * configured node and synthesizes {@link ProtocolAdapterWrapperEvent.AllVerified} once each has reported any
  * outcome (failures do not block {@code CONNECTED}, design §6.3); a later task widens it to select nodes from the
@@ -260,6 +261,7 @@ public final class ProtocolAdapterWrapperContext {
     @NotNull
     ProtocolAdapterWrapperState verifyStep() {
         clearTimers();
+        tagPlane.onAdapterVerifying();
         beginVerification();
         return WAITING_FOR_VERIFICATION;
     }
@@ -527,8 +529,9 @@ public final class ProtocolAdapterWrapperContext {
     // ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 
     /**
-     * Handle a tick on the dispatch thread (design §5.5, §6.1): record the tick lag, fire every due timer (each
-     * feeds an event straight to the machine), let the tag plane post its due work, then dispatch the pending
+     * Handle a tick on the dispatch thread (design §5.5, §6.1): record the tick lag, fire every due timer — the
+     * adapter machine's watchdog and backoff, and every aspect's poll, verification-retry, and subscription-retry
+     * timers, each feeding an event straight to its machine and posting any due work — then dispatch the pending
      * batches to the adapter.
      *
      * @param tickMillis the tick's logical time, in milliseconds.
@@ -536,7 +539,6 @@ public final class ProtocolAdapterWrapperContext {
     public void onTick(final long tickMillis) {
         metrics.recordTickLag(clock.nowMillis() - tickMillis);
         timers.fireDue(tickMillis);
-        tagPlane.onTick(tickMillis);
         batches.dispatch(protocolAdapter);
     }
 
@@ -578,5 +580,44 @@ public final class ProtocolAdapterWrapperContext {
      */
     public boolean skipVerification() {
         return skipVerification;
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+    //  Runtime accessors — the per-actor primitives shared with the tag plane (design §5.5, §5.7, §6.1)
+    // ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+    /**
+     * @return the actor clock the timers are scheduled against.
+     */
+    public @NotNull Clock clock() {
+        return clock;
+    }
+
+    /**
+     * @return the actor's single timer queue — shared by the adapter machine and the tag aspects (design §5.5).
+     */
+    public @NotNull PriorityTimerQueue timers() {
+        return timers;
+    }
+
+    /**
+     * @return the actor's batch collector — where the tag aspects post poll and subscription requests (design §5.7).
+     */
+    public @NotNull BatchCollector batches() {
+        return batches;
+    }
+
+    /**
+     * @return the per-adapter metrics — the source of the per-tag failure counters.
+     */
+    public @NotNull NevskyMetrics metrics() {
+        return metrics;
+    }
+
+    /**
+     * @return the protocol adapter the machine commands — the verify seam the tag plane re-verifies through.
+     */
+    public @NotNull ProtocolAdapter protocolAdapter() {
+        return protocolAdapter;
     }
 }

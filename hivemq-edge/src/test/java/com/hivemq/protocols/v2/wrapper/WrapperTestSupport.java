@@ -43,6 +43,11 @@ final class WrapperTestSupport {
         return NodeTagPair.create(new TestNode(tagName), tagName, schema, true, false);
     }
 
+    static @NotNull NodeTagPair subscribablePair(final @NotNull String tagName) {
+        final Schema schema = new ScalarSchema(ScalarType.STRING, null, null, null, null, false, true, false);
+        return NodeTagPair.create(new TestNode(tagName), tagName, schema, false, true);
+    }
+
     static @NotNull DataPoint dataPoint(final @NotNull String tagName, final @NotNull Object value) {
         return new TestDataPoint(tagName, value);
     }

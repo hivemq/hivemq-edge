@@ -13,13 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.protocols.v2.wrapper;
+package com.hivemq.protocols.v2.tag;
 
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.protocols.v2.view.TagStatusSnapshot;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterGoalState;
+import com.hivemq.protocols.v2.wrapper.TagAspectActivationPreference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,16 +32,16 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The {@link TagAspectCoordinator} this task ships: it holds the tag set, activation preferences, and {@code used}
- * derivation, and publishes a minimal per-tag snapshot, but runs no aspect machines. Every routing and lifecycle
- * hook is a no-op — the read and write aspect machines that consume them are later tasks. The aspect state names
- * it reports are always {@code DEACTIVATED}, which is honest: with no aspect machines running, every aspect is at
- * rest.
+ * The minimal {@link TagAspectCoordinator} stand-in: it holds the tag set, activation preferences, and
+ * {@code used} derivation, and publishes a minimal per-tag snapshot, but runs no aspect machines. Every routing
+ * and lifecycle hook is a no-op. The aspect state names it reports are always {@code DEACTIVATED}, which is
+ * honest: with no aspect machines running, every aspect is at rest.
  * <p>
- * It exists so the adapter machine and snapshot publication can be built and tested in full now; a later task
- * replaces it with a real tag plane without changing the wrapper.
+ * It lets the adapter machine and snapshot publication be exercised on their own (the adapter-machine tests use
+ * it); {@link TagAspectRuntimeCoordinator} is the running implementation that drives real aspect machines, with no
+ * change to the wrapper.
  */
-public final class SnapshotOnlyTagAspectCoordinator implements TagAspectCoordinator {
+public final class TagAspectSnapshotOnlyCoordinator implements TagAspectCoordinator {
 
     private static final @NotNull String AT_REST_ASPECT_STATE = "DEACTIVATED";
 
@@ -54,7 +56,7 @@ public final class SnapshotOnlyTagAspectCoordinator implements TagAspectCoordina
      * @param readUsedTagNames  the tags consumed by a northbound mapping.
      * @param writeUsedTagNames the tags produced to by a southbound mapping.
      */
-    public SnapshotOnlyTagAspectCoordinator(
+    public TagAspectSnapshotOnlyCoordinator(
             final @NotNull List<NodeTagPair> nodes,
             final @NotNull Map<String, TagAspectActivationPreference> activation,
             final @NotNull Set<String> readUsedTagNames,
@@ -63,6 +65,11 @@ public final class SnapshotOnlyTagAspectCoordinator implements TagAspectCoordina
         this.activation = new HashMap<>(activation);
         this.readUsedTagNames = new HashSet<>(readUsedTagNames);
         this.writeUsedTagNames = new HashSet<>(writeUsedTagNames);
+    }
+
+    @Override
+    public void onAdapterVerifying() {
+        // No aspect machines yet; nothing to verify.
     }
 
     @Override
@@ -93,11 +100,6 @@ public final class SnapshotOnlyTagAspectCoordinator implements TagAspectCoordina
     @Override
     public void routeWriteResult(final @NotNull Node node, final boolean success, final @Nullable String reason) {
         // No write aspect yet; the acknowledgment is absorbed.
-    }
-
-    @Override
-    public void onTick(final long nowMillis) {
-        // No aspect machines yet; nothing to schedule.
     }
 
     @Override
