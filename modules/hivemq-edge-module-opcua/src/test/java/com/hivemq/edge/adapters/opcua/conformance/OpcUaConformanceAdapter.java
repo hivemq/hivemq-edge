@@ -15,6 +15,10 @@
  */
 package com.hivemq.edge.adapters.opcua.conformance;
 
+import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElse;
+import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
+
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
@@ -30,6 +34,15 @@ import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
 import com.hivemq.adapter.sdk.api.v2.template.AbstractProtocolAdapter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
@@ -56,20 +69,6 @@ import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.ViewDescription;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-
-import static java.util.Objects.requireNonNull;
-import static java.util.Objects.requireNonNullElse;
-import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 /**
  * EDG-737 — a minimal real OPC-UA protocol adapter written against the SDK v2 contract
@@ -113,18 +112,18 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
             final @NotNull DataValue accessLevelValue,
             final @NotNull DataValue descriptionValue) {
         final Object dataType = dataTypeValue.getValue().getValue();
-        final String dataTypeId = (dataTypeValue.getStatusCode().isGood() && dataType instanceof final NodeId nodeId) ?
-                nodeId.toParseableString() :
-                "";
+        final String dataTypeId = (dataTypeValue.getStatusCode().isGood() && dataType instanceof final NodeId nodeId)
+                ? nodeId.toParseableString()
+                : "";
         final Object accessLevel = accessLevelValue.getValue().getValue();
-        final int accessBits = (accessLevelValue.getStatusCode().isGood() && accessLevel instanceof final UByte uByte) ?
-                uByte.intValue() :
-                0;
+        final int accessBits = (accessLevelValue.getStatusCode().isGood() && accessLevel instanceof final UByte uByte)
+                ? uByte.intValue()
+                : 0;
         final Object description = descriptionValue.getValue().getValue();
-        final String descriptionText = (descriptionValue.getStatusCode().isGood() &&
-                description instanceof final LocalizedText localizedText) ?
-                requireNonNullElse(localizedText.getText(), "") :
-                "";
+        final String descriptionText =
+                (descriptionValue.getStatusCode().isGood() && description instanceof final LocalizedText localizedText)
+                        ? requireNonNullElse(localizedText.getText(), "")
+                        : "";
         return new ResolvedAttributes(node, dataTypeId, accessFlags(accessBits), descriptionText);
     }
 
@@ -152,7 +151,8 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
     @Override
     protected void doConnect() {
         try {
-            client = OpcUaClient.create(endpointUrl,
+            client = OpcUaClient.create(
+                    endpointUrl,
                     endpoints -> endpoints.stream()
                             .filter(endpoint -> SecurityPolicy.None.getUri().equals(endpoint.getSecurityPolicyUri()))
                             .findFirst(),
@@ -175,18 +175,22 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
     protected void doVerifyNode(final @NotNull Node node) {
         try {
             final NodeId nodeId = NodeId.parse(node.nodeId());
-            final List<ReadValueId> reads = List.of(new ReadValueId(nodeId, AttributeId.DataType.uid(), null, null),
+            final List<ReadValueId> reads = List.of(
+                    new ReadValueId(nodeId, AttributeId.DataType.uid(), null, null),
                     new ReadValueId(nodeId, AttributeId.AccessLevel.uid(), null, null));
-            final DataValue[] results = requireNonNull(client).readAsync(0.0, TimestampsToReturn.Neither, reads)
+            final DataValue[] results = requireNonNull(client)
+                    .readAsync(0.0, TimestampsToReturn.Neither, reads)
                     .get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                     .getResults();
-            final boolean good =
-                    results != null && Arrays.stream(results).allMatch(value -> value.getStatusCode().isGood());
-            output.verifyResult(node,
-                    good ?
-                            new VerifyOutcome.Success() :
-                            new VerifyOutcome.PermanentFailure("declared node not readable on device: " +
-                                    node.nodeId()));
+            final boolean good = results != null
+                    && Arrays.stream(results)
+                            .allMatch(value -> value.getStatusCode().isGood());
+            output.verifyResult(
+                    node,
+                    good
+                            ? new VerifyOutcome.Success()
+                            : new VerifyOutcome.PermanentFailure(
+                                    "declared node not readable on device: " + node.nodeId()));
         } catch (final @NotNull Exception failure) {
             output.verifyResult(node, new VerifyOutcome.TransientFailure(String.valueOf(failure.getMessage())));
         }
@@ -196,13 +200,17 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
     protected void doPoll(final @NotNull Node node) {
         try {
             final NodeId nodeId = NodeId.parse(node.nodeId());
-            final DataValue value = requireNonNull(requireNonNull(client).readAsync(0.0,
+            final DataValue value = requireNonNull(requireNonNull(client)
+                    .readAsync(
+                            0.0,
                             TimestampsToReturn.Both,
                             List.of(new ReadValueId(nodeId, AttributeId.Value.uid(), null, null)))
                     .get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                     .getResults())[0];
             if (value.getStatusCode().isGood() && value.getValue().getValue() != null) {
-                output.dataPoint(node, dataPointFactory.create(node.nodeId(), value.getValue().getValue()));
+                output.dataPoint(
+                        node,
+                        dataPointFactory.create(node.nodeId(), value.getValue().getValue()));
             } else {
                 output.nodeError(node, "bad read status for " + node.nodeId(), false);
             }
@@ -236,11 +244,15 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
     protected void doWrite(final @NotNull Node node, final @NotNull DataPoint value) {
         try {
             final NodeId nodeId = NodeId.parse(node.nodeId());
-            final List<StatusCode> statusCodes = requireNonNull(client).writeValuesAsync(List.of(nodeId),
+            final List<StatusCode> statusCodes = requireNonNull(client)
+                    .writeValuesAsync(
+                            List.of(nodeId),
                             List.of(new DataValue(Variant.of(value.getTagValue()), StatusCode.GOOD, null)))
                     .get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            final Optional<StatusCode> bad = statusCodes.stream().filter(StatusCode::isBad).findFirst();
-            output.writeResult(node, bad.isEmpty(), bad.map(StatusCode::toString).orElse(null));
+            final Optional<StatusCode> bad =
+                    statusCodes.stream().filter(StatusCode::isBad).findFirst();
+            output.writeResult(
+                    node, bad.isEmpty(), bad.map(StatusCode::toString).orElse(null));
         } catch (final @NotNull Exception failure) {
             output.writeResult(node, false, String.valueOf(failure.getMessage()));
         }
@@ -262,17 +274,18 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
     @Override
     protected void doBrowse(final int requestId, final @NotNull BrowseFilter filter, final int maxReferences) {
         try {
-            final BrowseDescription browseDescription =
-                    new BrowseDescription(NodeId.parse(filter.filterNode().nodeId()),
-                            BrowseDirection.Forward,
-                            NodeIds.HierarchicalReferences,
-                            true,
-                            uint(0),
-                            uint(BrowseResultMask.All.getValue()));
+            final BrowseDescription browseDescription = new BrowseDescription(
+                    NodeId.parse(filter.filterNode().nodeId()),
+                    BrowseDirection.Forward,
+                    NodeIds.HierarchicalReferences,
+                    true,
+                    uint(0),
+                    uint(BrowseResultMask.All.getValue()));
             final ViewDescription view = new ViewDescription(NodeId.NULL_VALUE, DateTime.MIN_VALUE, uint(0));
-            final BrowseResult result = requireNonNull(requireNonNull(client).browseAsync(view,
-                    uint(Math.max(0, maxReferences)),
-                    List.of(browseDescription)).get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS).getResults())[0];
+            final BrowseResult result = requireNonNull(requireNonNull(client)
+                    .browseAsync(view, uint(Math.max(0, maxReferences)), List.of(browseDescription))
+                    .get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    .getResults())[0];
             emitPage(requestId, result);
         } catch (final @NotNull Exception failure) {
             output.browseError(requestId, String.valueOf(failure.getMessage()));
@@ -282,11 +295,12 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
     @Override
     protected void doBrowseNext(final int requestId, final @NotNull BrowseContinuation continuation) {
         try {
-            final ByteString continuationPoint = ByteString.of(Base64.getDecoder().decode(continuation.token()));
-            final BrowseResult result =
-                    requireNonNull(requireNonNull(client).browseNextAsync(false, List.of(continuationPoint))
-                            .get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                            .getResults())[0];
+            final ByteString continuationPoint =
+                    ByteString.of(Base64.getDecoder().decode(continuation.token()));
+            final BrowseResult result = requireNonNull(requireNonNull(client)
+                    .browseNextAsync(false, List.of(continuationPoint))
+                    .get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    .getResults())[0];
             emitPage(requestId, result);
         } catch (final @NotNull Exception failure) {
             output.browseError(requestId, String.valueOf(failure.getMessage()));
@@ -314,21 +328,21 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
                     continue;
                 }
                 final boolean isVariable = reference.getNodeClass() == NodeClass.Variable;
-                final String browseName = reference.getBrowseName() != null ?
-                        requireNonNullElse(reference.getBrowseName().getName(), "") :
-                        "";
-                entries.add(new BrowseResultEntry(new BrowsedNode(childId.get().toParseableString()),
+                final String browseName = reference.getBrowseName() != null
+                        ? requireNonNullElse(reference.getBrowseName().getName(), "")
+                        : "";
+                entries.add(new BrowseResultEntry(
+                        new BrowsedNode(childId.get().toParseableString()),
                         isVariable ? NodeType.VALUE : NodeType.OBJECT,
                         isVariable,
                         browseName));
             }
         }
         final ByteString continuationPoint = result.getContinuationPoint();
-        final BrowseContinuation continuation = (continuationPoint != null &&
-                continuationPoint.bytes() != null &&
-                continuationPoint.bytes().length > 0) ?
-                new BrowseContinuation(Base64.getEncoder().encodeToString(continuationPoint.bytes())) :
-                null;
+        final BrowseContinuation continuation =
+                (continuationPoint != null && continuationPoint.bytes() != null && continuationPoint.bytes().length > 0)
+                        ? new BrowseContinuation(Base64.getEncoder().encodeToString(continuationPoint.bytes()))
+                        : null;
         output.browsePage(requestId, entries, continuation);
     }
 
@@ -349,15 +363,14 @@ final class OpcUaConformanceAdapter extends AbstractProtocolAdapter implements O
                 reads.add(new ReadValueId(nodeId, AttributeId.AccessLevel.uid(), null, null));
                 reads.add(new ReadValueId(nodeId, AttributeId.Description.uid(), null, null));
             }
-            final DataValue[] results = requireNonNull(client).readAsync(0.0, TimestampsToReturn.Neither, reads)
+            final DataValue[] results = requireNonNull(client)
+                    .readAsync(0.0, TimestampsToReturn.Neither, reads)
                     .get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                     .getResults();
             final List<ResolvedAttributes> resolved = new ArrayList<>(nodes.size());
             for (int i = 0; i < nodes.size(); i++) {
-                resolved.add(resolveOne(nodes.get(i),
-                        requireNonNull(results)[i * 3],
-                        results[i * 3 + 1],
-                        results[i * 3 + 2]));
+                resolved.add(resolveOne(
+                        nodes.get(i), requireNonNull(results)[i * 3], results[i * 3 + 1], results[i * 3 + 2]));
             }
             output.readAttributesResult(requestId, resolved);
         } catch (final @NotNull Exception failure) {

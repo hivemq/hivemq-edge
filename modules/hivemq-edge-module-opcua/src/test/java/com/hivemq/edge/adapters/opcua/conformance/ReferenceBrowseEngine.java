@@ -21,9 +21,6 @@ import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
 import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -33,6 +30,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * EDG-737 — the <b>reference</b> browse engine: the traversal policy the framework's PAW will own, written
@@ -63,12 +62,16 @@ final class ReferenceBrowseEngine {
     /** Discovered variables are attribute-read in batches of this size, as the production engine will. */
     static final int RESOLVE_BATCH = 100;
 
-    private enum Phase {IDLE, DISCOVERING, RESOLVING}
+    private enum Phase {
+        IDLE,
+        DISCOVERING,
+        RESOLVING
+    }
 
     // ---- counters, observable by the test (pagination / batch assertions) ---------------------------- //
-    int browseCommands;       // browse(...) issued — one per frontier node
-    int browseNextCommands;   // browseNext(...) issued — one per drained continuation page
-    int resolveBatches;       // readNodeAttributes(...) issued — one per attribute batch
+    int browseCommands; // browse(...) issued — one per frontier node
+    int browseNextCommands; // browseNext(...) issued — one per drained continuation page
+    int resolveBatches; // readNodeAttributes(...) issued — one per attribute batch
 
     private @Nullable ProtocolAdapter adapter;
     private @Nullable BrowseOutcome outcome;
@@ -150,7 +153,8 @@ final class ReferenceBrowseEngine {
      * @param maxReferences max entries per page ({@code 0} = server decides, {@code >0} forces pagination).
      * @param maxDepth      levels below the root to descend ({@code 0} = unlimited).
      */
-    @NotNull BrowseOutcome start(
+    @NotNull
+    BrowseOutcome start(
             final @NotNull ProtocolAdapter adapter,
             final @NotNull Node root,
             final int maxReferences,
@@ -177,16 +181,16 @@ final class ReferenceBrowseEngine {
 
     /** Take the single correct step: drain the open continuation, else browse the next frontier node, else resolve. */
     private void issueNext() {
-        if (activeContinuation != null) {                 // drain THIS node's pages before any sibling
+        if (activeContinuation != null) { // drain THIS node's pages before any sibling
             browseNextCommands++;
             requireAdapter().browseNext(requestId, activeContinuation);
-        } else if (!frontier.isEmpty()) {                 // browse the next frontier node
+        } else if (!frontier.isEmpty()) { // browse the next frontier node
             final FrontierEntry entry = frontier.removeFirst();
             activePath = entry.path();
             activeDepth = entry.remainingDepth();
             browseCommands++;
             requireAdapter().browse(requestId, new BrowseFilter(entry.node()), maxReferences);
-        } else {                                          // DISCOVER complete
+        } else { // DISCOVER complete
             enterResolve();
         }
     }
@@ -203,11 +207,11 @@ final class ReferenceBrowseEngine {
         for (final BrowseResultEntry entry : entries) {
             final String nodeId = entry.node().nodeId();
             final String childPath = activePath + "/" + entry.browseName();
-            if (entry.selectable()) {                                  // a variable
+            if (entry.selectable()) { // a variable
                 if (visited.add(nodeId)) {
                     discovered.add(new DiscoveredVariable(entry.node(), childPath));
                 }
-            } else if (activeDepth > 1 && visited.add(nodeId)) {       // a folder/object — recurse if depth remains
+            } else if (activeDepth > 1 && visited.add(nodeId)) { // a folder/object — recurse if depth remains
                 frontier.addLast(new FrontierEntry(entry.node(), childPath, activeDepth - 1));
             }
         }
@@ -294,15 +298,17 @@ final class ReferenceBrowseEngine {
         return outcome;
     }
 
-    private record FrontierEntry(@NotNull Node node, @NotNull String path, int remainingDepth) {
-    }
+    private record FrontierEntry(
+            @NotNull Node node, @NotNull String path, int remainingDepth) {}
 
-    private record DiscoveredVariable(@NotNull Node node, @NotNull String path) {
-    }
+    private record DiscoveredVariable(
+            @NotNull Node node, @NotNull String path) {}
 
     /** One assembled result: the device-resolved attributes, the node's path, and its default tag name. */
-    record BrowsedTag(@NotNull ResolvedAttributes attributes, @NotNull String path, @NotNull String tagName) {
-    }
+    record BrowsedTag(
+            @NotNull ResolvedAttributes attributes,
+            @NotNull String path,
+            @NotNull String tagName) {}
 
     /** The completion handle: after a {@code drainAll()} the walk has finished and this is done. */
     static final class BrowseOutcome {
@@ -330,11 +336,13 @@ final class ReferenceBrowseEngine {
             return ok;
         }
 
-        @Nullable String failure() {
+        @Nullable
+        String failure() {
             return failure;
         }
 
-        @NotNull List<BrowsedTag> result() {
+        @NotNull
+        List<BrowsedTag> result() {
             return result;
         }
     }

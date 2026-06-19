@@ -15,6 +15,13 @@
  */
 package util;
 
+import static java.util.Objects.requireNonNull;
+import static util.EmbeddedOpcUaServerExtension.NS_URI;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.function.Supplier;
 import org.eclipse.milo.opcua.sdk.core.AccessLevel;
 import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.server.ManagedNamespaceWithLifecycle;
@@ -35,18 +42,11 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.function.Supplier;
-
-import static java.util.Objects.requireNonNull;
-import static util.EmbeddedOpcUaServerExtension.NS_URI;
-
 public class TestNamespace extends ManagedNamespaceWithLifecycle {
 
-    private static final @NotNull NodeId[] LARGE_TREE_DATA_TYPES =
-            {NodeIds.Boolean, NodeIds.Int32, NodeIds.Int64, NodeIds.Double, NodeIds.String};
+    private static final @NotNull NodeId[] LARGE_TREE_DATA_TYPES = {
+        NodeIds.Boolean, NodeIds.Int32, NodeIds.Int64, NodeIds.Double, NodeIds.String
+    };
     private final @NotNull SubscriptionModel subscriptionModel;
     private @Nullable UaFolderNode dynamicFolder;
     private @Nullable UaFolderNode testFolder;
@@ -59,7 +59,8 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
             // Create a "HelloWorld" folder and add it to the node manager
             final NodeId folderNodeId = newNodeId("TestFolder");
 
-            dynamicFolder = new UaFolderNode(getNodeContext(),
+            dynamicFolder = new UaFolderNode(
+                    getNodeContext(),
                     folderNodeId,
                     newQualifiedName("DynamicFolder"),
                     LocalizedText.english("DynamicFolder"));
@@ -67,12 +68,11 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
             getNodeManager().addNode(dynamicFolder);
 
             // Make sure our new folder shows up under the server's Objects folder.
-            dynamicFolder.addReference(new Reference(dynamicFolder.getNodeId(),
-                    NodeIds.Organizes,
-                    NodeIds.ObjectsFolder.expanded(),
-                    false));
+            dynamicFolder.addReference(new Reference(
+                    dynamicFolder.getNodeId(), NodeIds.Organizes, NodeIds.ObjectsFolder.expanded(), false));
 
-            testFolder = new UaFolderNode(getNodeContext(),
+            testFolder = new UaFolderNode(
+                    getNodeContext(),
                     folderNodeId,
                     newQualifiedName("TestFolder"),
                     LocalizedText.english("TestFolder"));
@@ -80,10 +80,8 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
             getNodeManager().addNode(testFolder);
 
             // Make sure our new folder shows up under the server's Objects folder.
-            testFolder.addReference(new Reference(testFolder.getNodeId(),
-                    NodeIds.Organizes,
-                    NodeIds.ObjectsFolder.expanded(),
-                    false));
+            testFolder.addReference(
+                    new Reference(testFolder.getNodeId(), NodeIds.Organizes, NodeIds.ObjectsFolder.expanded(), false));
 
             addDynamicNodes();
         });
@@ -124,7 +122,8 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
             final @NotNull Object initialValue,
             final @NotNull Supplier<Object> valueCallback,
             final @NotNull NodeId nodeId) {
-        final UaVariableNode node = new UaVariableNode.UaVariableNodeBuilder(getNodeContext()).setNodeId(nodeId)
+        final UaVariableNode node = new UaVariableNode.UaVariableNodeBuilder(getNodeContext())
+                .setNodeId(nodeId)
                 .setAccessLevel(AccessLevel.READ_WRITE)
                 .setBrowseName(newQualifiedName(name))
                 .setDisplayName(LocalizedText.english(name))
@@ -134,8 +133,7 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
 
         node.setValue(new DataValue(new Variant(initialValue)));
 
-        node.getFilterChain()
-                .addLast(AttributeFilters.getValue(_ -> new DataValue(new Variant(valueCallback.get()))));
+        node.getFilterChain().addLast(AttributeFilters.getValue(_ -> new DataValue(new Variant(valueCallback.get()))));
 
         getNodeManager().addNode(node);
         requireNonNull(dynamicFolder).addOrganizes(node);
@@ -146,7 +144,8 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
             final @NotNull NodeId typeId,
             final @NotNull Supplier<Object> valueCallback,
             final @NotNull NodeId nodeId) {
-        final UaVariableNode node = new UaVariableNode.UaVariableNodeBuilder(getNodeContext()).setNodeId(nodeId)
+        final UaVariableNode node = new UaVariableNode.UaVariableNodeBuilder(getNodeContext())
+                .setNodeId(nodeId)
                 .setAccessLevel(AccessLevel.READ_WRITE)
                 .setBrowseName(newQualifiedName(name))
                 .setDisplayName(LocalizedText.english(name))
@@ -156,8 +155,7 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
 
         node.setValue(new DataValue(new Variant(null)));
 
-        node.getFilterChain()
-                .addLast(AttributeFilters.getValue(_ -> new DataValue(new Variant(valueCallback.get()))));
+        node.getFilterChain().addLast(AttributeFilters.getValue(_ -> new DataValue(new Variant(valueCallback.get()))));
 
         getNodeManager().addNode(node);
         requireNonNull(dynamicFolder).addOrganizes(node);
@@ -171,19 +169,19 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
             final @NotNull Supplier<Object> valueCallback,
             final @NotNull NodeId nodeId,
             final int dimension) {
-        final UaVariableNode node = new UaVariableNode.UaVariableNodeBuilder(getNodeContext()).setNodeId(nodeId)
+        final UaVariableNode node = new UaVariableNode.UaVariableNodeBuilder(getNodeContext())
+                .setNodeId(nodeId)
                 .setAccessLevel(AccessLevel.READ_WRITE)
                 .setBrowseName(newQualifiedName(name))
                 .setDisplayName(LocalizedText.english(name))
                 .setDataType(typeId)
-                .setArrayDimensions(new UInteger[]{UInteger.valueOf(dimension)})
+                .setArrayDimensions(new UInteger[] {UInteger.valueOf(dimension)})
                 .setTypeDefinition(NodeIds.BaseDataVariableType)
                 .build();
 
         node.setValue(new DataValue(new Variant(null)));
 
-        node.getFilterChain()
-                .addLast(AttributeFilters.getValue(_ -> new DataValue(new Variant(valueCallback.get()))));
+        node.getFilterChain().addLast(AttributeFilters.getValue(_ -> new DataValue(new Variant(valueCallback.get()))));
 
         getNodeManager().addNode(node);
         requireNonNull(dynamicFolder).addOrganizes(node);
@@ -242,10 +240,8 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
         final UaFolderNode last = folders.getLast();
         last.addReference(new Reference(last.getNodeId(), NodeIds.Organizes, rootId.expanded(), true));
 
-        return new LargeTree(rootId.toParseableString(),
-                List.copyOf(variables),
-                sharedId.toParseableString(),
-                folders.size());
+        return new LargeTree(
+                rootId.toParseableString(), List.copyOf(variables), sharedId.toParseableString(), folders.size());
     }
 
     private void buildLevel(
@@ -291,7 +287,8 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
             final @NotNull String name,
             final @NotNull NodeId typeId,
             final @NotNull UaFolderNode parent) {
-        final UaVariableNode node = new UaVariableNode.UaVariableNodeBuilder(getNodeContext()).setNodeId(nodeId)
+        final UaVariableNode node = new UaVariableNode.UaVariableNodeBuilder(getNodeContext())
+                .setNodeId(nodeId)
                 .setAccessLevel(AccessLevel.READ_WRITE)
                 .setBrowseName(newQualifiedName(name))
                 .setDisplayName(LocalizedText.english(name))
@@ -308,13 +305,17 @@ public class TestNamespace extends ManagedNamespaceWithLifecycle {
      * One expected variable: its parseable node id, the parseable id of its declared datatype, and its path
      * (assembled from browse names, root contributing no segment — e.g. {@code "/f3/v17"}).
      */
-    public record ExpectedVar(@NotNull String nodeId, @NotNull String dataTypeId, @NotNull String path) {
-    }
+    public record ExpectedVar(
+            @NotNull String nodeId,
+            @NotNull String dataTypeId,
+            @NotNull String path) {}
 
     /**
      * The expected shape of a {@link #growLargeTree} address space.
      */
-    public record LargeTree(@NotNull String rootNodeId, @NotNull List<ExpectedVar> variables,
-                            @NotNull String sharedNodeId, int folderCount) {
-    }
+    public record LargeTree(
+            @NotNull String rootNodeId,
+            @NotNull List<ExpectedVar> variables,
+            @NotNull String sharedNodeId,
+            int folderCount) {}
 }
