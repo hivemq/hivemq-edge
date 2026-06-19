@@ -22,9 +22,10 @@ import org.jetbrains.annotations.NotNull;
 /**
  * The read-aspect transition tables (design §7.3, §7.4) — direct encodings of the polled and subscribed state
  * diagrams. The five shared pre-operating rows (verification success / transient failure / permanent failure /
- * verification retry) are built once by {@link #addPreOperatingRows} and parameterized by each variant's state
- * constants, so engine reuse is achieved without a shared state enum (design §7.2). The role-specific rows — the
- * poll cycle and the subscription cycle — are added per variant.
+ * verification retry) are built once by {@link TagAspectPreOperatingTransitions} — the same builder the write
+ * table uses — parameterized by each variant's state constants, so engine reuse is achieved without a shared
+ * state enum (design §7.2). The role-specific rows — the poll cycle and the subscription cycle — are added per
+ * variant.
  * <p>
  * Each table is built once and shared by every aspect of that variant; an action acts through the
  * {@link TagAspectRead} passed as the machine context. Goal and adapter-readiness changes never reach these tables —
@@ -58,7 +59,7 @@ public final class TagAspectReadTransitions {
     private static @NotNull FSMTransitionTable<TagAspectState, TagAspectEvent, TagAspectRead> buildPolledTable() {
         final FSMTransitionTable.Builder<TagAspectState, TagAspectEvent, TagAspectRead> builder =
                 FSMTransitionTable.builder();
-        addPreOperatingRows(
+        TagAspectPreOperatingTransitions.addPreOperatingRows(
                 builder,
                 TagAspectReadPolledState.WAITING_FOR_VERIFICATION,
                 TagAspectReadPolledState.WAITING_FOR_VERIFICATION_RETRY,
@@ -79,7 +80,7 @@ public final class TagAspectReadTransitions {
                 // A poll failed: count it, schedule the next poll. The next scheduled poll IS the retry (§7.3).
                 .on(TagAspectReadPolledState.WAITING_FOR_POLL_DATAPOINT, TagAspectEvent.NodeFailed.class)
                 .then((current, event, aspect) -> {
-                    aspect.onPollFailure(reasonOf(event));
+                    aspect.onPollFailure(TagAspectPreOperatingTransitions.reasonOf(event));
                     return TagAspectReadPolledState.WAITING_FOR_POLL_INTERVAL;
                 })
                 .unmatched((current, event, aspect) -> {
@@ -94,7 +95,7 @@ public final class TagAspectReadTransitions {
                 event instanceof final TagAspectEvent.NodeFailed failed && failed.spontaneous();
         final FSMTransitionTable.Builder<TagAspectState, TagAspectEvent, TagAspectRead> builder =
                 FSMTransitionTable.builder();
-        addPreOperatingRows(
+        TagAspectPreOperatingTransitions.addPreOperatingRows(
                 builder,
                 TagAspectReadSubscribedState.WAITING_FOR_VERIFICATION,
                 TagAspectReadSubscribedState.WAITING_FOR_VERIFICATION_RETRY,
@@ -109,7 +110,7 @@ public final class TagAspectReadTransitions {
                 // The add-subscription request failed: back off and re-add (command-response loss, §7.4).
                 .on(TagAspectReadSubscribedState.WAITING_FOR_SUBSCRIPTION, TagAspectEvent.NodeFailed.class)
                 .then((current, event, aspect) -> {
-                    aspect.onSubscriptionFailure(reasonOf(event));
+                    aspect.onSubscriptionFailure(TagAspectPreOperatingTransitions.reasonOf(event));
                     return TagAspectReadSubscribedState.WAITING_FOR_SUBSCRIPTION_RETRY;
                 })
                 // Subsequent pushed values keep the subscription operating.
@@ -119,13 +120,13 @@ public final class TagAspectReadTransitions {
                 .on(TagAspectReadSubscribedState.SUBSCRIBED, TagAspectEvent.NodeFailed.class)
                 .when(spontaneous)
                 .then((current, event, aspect) -> {
-                    aspect.onSpontaneousSubscriptionLoss(reasonOf(event));
+                    aspect.onSpontaneousSubscriptionLoss(TagAspectPreOperatingTransitions.reasonOf(event));
                     return TagAspectReadSubscribedState.WAITING_FOR_VERIFICATION;
                 })
                 // A command-response loss backs off and re-adds (design §7.4).
                 .on(TagAspectReadSubscribedState.SUBSCRIBED, TagAspectEvent.NodeFailed.class)
                 .otherwise((current, event, aspect) -> {
-                    aspect.onSubscriptionFailure(reasonOf(event));
+                    aspect.onSubscriptionFailure(TagAspectPreOperatingTransitions.reasonOf(event));
                     return TagAspectReadSubscribedState.WAITING_FOR_SUBSCRIPTION_RETRY;
                 })
                 // The backoff elapsed: re-add the subscription (design §7.4).
@@ -141,47 +142,5 @@ public final class TagAspectReadTransitions {
                     return current;
                 })
                 .build();
-    }
-
-    /**
-     * Add the five shared pre-operating rows (design §7.2), parameterized by the variant's "verified" target — the
-     * state the aspect begins operating in. Success enters that state through {@link TagAspectRead#enterVerified()},
-     * which performs the role-specific kickoff (schedule a poll or request a subscription).
-     */
-    private static void addPreOperatingRows(
-            final @NotNull FSMTransitionTable.Builder<TagAspectState, TagAspectEvent, TagAspectRead> builder,
-            final @NotNull TagAspectState waitingForVerification,
-            final @NotNull TagAspectState waitingForVerificationRetry,
-            final @NotNull TagAspectState errorPermanent) {
-        builder.on(waitingForVerification, TagAspectEvent.VerifySucceeded.class)
-                .then((current, event, aspect) -> aspect.enterVerified());
-        builder.on(waitingForVerification, TagAspectEvent.VerifyTransientlyFailed.class)
-                .then((current, event, aspect) -> {
-                    aspect.onTransientVerificationFailure(reasonOf(event));
-                    return waitingForVerificationRetry;
-                });
-        builder.on(waitingForVerification, TagAspectEvent.VerifyPermanentlyFailed.class)
-                .then((current, event, aspect) -> {
-                    aspect.onPermanentVerificationFailure(reasonOf(event));
-                    return errorPermanent;
-                });
-        builder.on(waitingForVerificationRetry, TagAspectEvent.VerificationRetryElapsed.class)
-                .then((current, event, aspect) -> {
-                    aspect.requestVerification();
-                    return waitingForVerification;
-                });
-    }
-
-    private static @NotNull String reasonOf(final @NotNull TagAspectEvent event) {
-        if (event instanceof final TagAspectEvent.VerifyTransientlyFailed transientlyFailed) {
-            return transientlyFailed.reason();
-        }
-        if (event instanceof final TagAspectEvent.VerifyPermanentlyFailed permanent) {
-            return permanent.reason();
-        }
-        if (event instanceof final TagAspectEvent.NodeFailed failed) {
-            return failed.reason();
-        }
-        return "failure";
     }
 }

@@ -19,17 +19,22 @@ import com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessage;
 
 /**
  * The single mailbox message type of the {@link ProtocolAdapterWrapper} actor (design §6.1). Everything the
- * wrapper consumes arrives as one of these three:
+ * wrapper consumes arrives as one of these four:
  * <ul>
  * <li>{@link ProtocolAdapterWrapperCommand} — goal and lifecycle commands ({@code CONTROL} band) handled via the
  * goal-command bypass, valid in every state;</li>
  * <li>{@link ProtocolAdapterWrapperEvent} — protocol-adapter events and timer expiries, the only messages that
  * flow through the transition table;</li>
- * <li>{@link ProtocolAdapterWrapperTick} — time, delivered as a message ({@code TICK} band).</li>
+ * <li>{@link ProtocolAdapterWrapperTick} — time, delivered as a message ({@code TICK} band);</li>
+ * <li>{@link ProtocolAdapterWrapperWriteRequest} — a southbound write to route to a tag's write aspect
+ * ({@code DATA} band, design §7.5), neither a goal command nor a transition-table event.</li>
  * </ul>
- * Sealed because all three permitted subtypes live in this package (a sealed interface and its {@code permits}
- * must share a package); the generic {@link MailboxMessage} marker is the non-sealed bridge that lets each
- * extend it across packages.
+ * Sealed because all permitted subtypes live in this package (a sealed interface and its {@code permits} must
+ * share a package); the generic {@link MailboxMessage} marker is the non-sealed bridge that lets each extend it
+ * across packages.
  */
 public sealed interface ProtocolAdapterWrapperMessage extends MailboxMessage
-        permits ProtocolAdapterWrapperCommand, ProtocolAdapterWrapperEvent, ProtocolAdapterWrapperTick {}
+        permits ProtocolAdapterWrapperCommand,
+                ProtocolAdapterWrapperEvent,
+                ProtocolAdapterWrapperTick,
+                ProtocolAdapterWrapperWriteRequest {}

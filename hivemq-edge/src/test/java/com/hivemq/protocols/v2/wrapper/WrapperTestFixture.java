@@ -16,6 +16,7 @@
 package com.hivemq.protocols.v2.wrapper;
 
 import com.codahale.metrics.MetricRegistry;
+import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.v2.messaging.DefaultMailbox;
 import com.hivemq.adapter.sdk.api.v2.messaging.Mailbox;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
@@ -28,6 +29,7 @@ import com.hivemq.protocols.v2.tag.TagAspectCoordinator;
 import com.hivemq.protocols.v2.tag.TagAspectRuntimeCoordinator;
 import com.hivemq.protocols.v2.tag.TagAspectSnapshotOnlyCoordinator;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
+import com.hivemq.protocols.v2.view.TagStatus;
 import com.hivemq.protocols.v2.view.TagStatusSnapshot;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -77,9 +79,10 @@ final class WrapperTestFixture {
 
         final NevskyMetrics metrics = new NevskyMetrics(metricRegistry, adapterId, mailbox::size);
         // The default tag plane is the snapshot-only stand-in (adapter-machine tests); opt in to the running
-        // coordinator to exercise the read aspect machines.
+        // coordinator to exercise the read and write aspect machines.
         final TagAspectCoordinator tagPlane;
         final TagAspectRuntimeCoordinator runningTagPlane;
+        final TagAspectSnapshotOnlyCoordinator snapshotOnlyTagPlane;
         if (builder.runningCoordinator) {
             runningTagPlane = new TagAspectRuntimeCoordinator(
                     adapterId,
@@ -90,10 +93,12 @@ final class WrapperTestFixture {
                     builder.initialGoal,
                     builder.pollIntervalMillis,
                     builder.retryPolicy);
+            snapshotOnlyTagPlane = null;
             tagPlane = runningTagPlane;
         } else {
-            tagPlane = new TagAspectSnapshotOnlyCoordinator(builder.nodes, activation, readUsed, writeUsed);
+            snapshotOnlyTagPlane = new TagAspectSnapshotOnlyCoordinator(builder.nodes, activation, readUsed, writeUsed);
             runningTagPlane = null;
+            tagPlane = snapshotOnlyTagPlane;
         }
         final ProtocolAdapterWrapperContext context = new ProtocolAdapterWrapperContext(
                 adapterId,
@@ -104,7 +109,6 @@ final class WrapperTestFixture {
                 builder.watchdogTimeoutMillis,
                 builder.skipVerification,
                 builder.initialGoal,
-                builder.nodes,
                 activation,
                 tagPlane,
                 health,
@@ -116,6 +120,11 @@ final class WrapperTestFixture {
                     context.batches(),
                     context.metrics(),
                     context.protocolAdapter()::verifyBatch);
+        }
+        if (snapshotOnlyTagPlane != null) {
+            // The connect gate runs through the shared verification authority even with no aspect machines; bind
+            // it to the adapter's verify seam so the adapter-machine tests still exercise the verification flow.
+            snapshotOnlyTagPlane.bindVerifier(context.protocolAdapter()::verifyBatch);
         }
         this.snapshotReference = new AtomicReference<>();
         this.wrapper = new ProtocolAdapterWrapper(context, snapshotReference);
@@ -174,6 +183,17 @@ final class WrapperTestFixture {
         send(new ProtocolAdapterWrapperCommand.StopAdapter());
     }
 
+    void retryTag(final @NotNull String tagName) {
+        send(new ProtocolAdapterWrapperCommand.RetryTag(tagName));
+    }
+
+    /**
+     * Submit a southbound write to a tag's write aspect — the "write arrives" trigger (design §7.5).
+     */
+    void submitWrite(final @NotNull String tagName, final @NotNull DataPoint value) {
+        send(new ProtocolAdapterWrapperWriteRequest(nodeFor(tagName), value));
+    }
+
     // ── observation (snapshot-only, per the actor model) ─────────────────────────────────────────────────────
 
     @NotNull
@@ -223,6 +243,22 @@ final class WrapperTestFixture {
     @NotNull
     String readState(final @NotNull String tagName) {
         return tag(tagName).readAspectStateName();
+    }
+
+    /**
+     * @return the write aspect's current state name for the given tag, read from the published snapshot.
+     */
+    @NotNull
+    String writeState(final @NotNull String tagName) {
+        return tag(tagName).writeAspectStateName();
+    }
+
+    /**
+     * @return the externally visible {@link TagStatus} folded from the given tag's published snapshot.
+     */
+    @NotNull
+    TagStatus tagStatus(final @NotNull String tagName) {
+        return TagStatus.of(tag(tagName));
     }
 
     long defensiveResets() {

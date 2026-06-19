@@ -36,7 +36,10 @@ public sealed interface TagAspectEvent extends com.hivemq.protocols.v2.fsm.FSMEv
                 TagAspectEvent.PollIntervalElapsed,
                 TagAspectEvent.ValueReceived,
                 TagAspectEvent.NodeFailed,
-                TagAspectEvent.SubscriptionRetryElapsed {
+                TagAspectEvent.SubscriptionRetryElapsed,
+                TagAspectEvent.WriteRequested,
+                TagAspectEvent.WriteSucceeded,
+                TagAspectEvent.WriteFailed {
 
     /**
      * The node verified successfully (design §7.2).
@@ -88,4 +91,27 @@ public sealed interface TagAspectEvent extends com.hivemq.protocols.v2.fsm.FSMEv
      * handler.
      */
     record SubscriptionRetryElapsed() implements TagAspectEvent {}
+
+    /**
+     * A southbound write arrived for the tag — request the write (design §7.5). Consumed only by the write
+     * aspect; the read aspect's table ignores it. The carried value is the reused v1 value to write.
+     *
+     * @param value the reused v1 value to write.
+     */
+    record WriteRequested(@NotNull DataPoint value) implements TagAspectEvent {}
+
+    /**
+     * The protocol adapter acknowledged the in-flight write successfully (design §7.5). Consumed only by the
+     * write aspect.
+     */
+    record WriteSucceeded() implements TagAspectEvent {}
+
+    /**
+     * The protocol adapter reported the in-flight write as failed (design §7.5) — logged and counted, the
+     * aspect returns to {@code WAITING_FOR_WRITE_REQUEST} without flapping to {@code ERROR}. Consumed only by the
+     * write aspect.
+     *
+     * @param reason a human-readable description of the failure.
+     */
+    record WriteFailed(@NotNull String reason) implements TagAspectEvent {}
 }

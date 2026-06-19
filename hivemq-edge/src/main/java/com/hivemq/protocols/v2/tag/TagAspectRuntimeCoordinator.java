@@ -129,9 +129,26 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
 
     @Override
     public void onAdapterVerifying() {
+        // Move active aspects into verification, then issue the nodes they need as ONE connect-verification batch
+        // through the shared authority — a read-and-write tag therefore yields a single verifyBatch entry (§6.3).
+        final List<Node> toVerify = new ArrayList<>();
         for (final TagRuntime tagRuntime : tagRuntimes) {
             tagRuntime.onAdapterVerifying();
+            if (tagRuntime.needsConnectVerification()) {
+                toVerify.add(tagRuntime.node());
+            }
         }
+        runtime().sharedNodeVerification().beginConnectVerification(toVerify);
+    }
+
+    @Override
+    public boolean allReported() {
+        return runtime().sharedNodeVerification().allReported();
+    }
+
+    @Override
+    public void resetVerificationGate() {
+        runtime().sharedNodeVerification().reset();
     }
 
     @Override
@@ -143,6 +160,7 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
 
     @Override
     public void onAdapterUnavailable() {
+        runtime().sharedNodeVerification().reset();
         for (final TagRuntime tagRuntime : tagRuntimes) {
             tagRuntime.onAdapterUnavailable();
         }
@@ -172,8 +190,19 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
     }
 
     @Override
+    public void submitWrite(final @NotNull Node node, final @NotNull DataPoint value) {
+        final TagRuntime tagRuntime = findTagRuntime(node);
+        if (tagRuntime != null) {
+            tagRuntime.submitWrite(value);
+        }
+    }
+
+    @Override
     public void routeWriteResult(final @NotNull Node node, final boolean success, final @Nullable String reason) {
-        // The write aspect joins in a later task; nothing consumes write acknowledgments yet.
+        final TagRuntime tagRuntime = findTagRuntime(node);
+        if (tagRuntime != null) {
+            tagRuntime.onWriteResult(success, reason);
+        }
     }
 
     // ── configuration transitions (design §8.2) ─────────────────────────────────────────────────────────────────
@@ -268,6 +297,7 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
                     activation.getOrDefault(tagName, TagAspectActivationPreference.defaults());
             tagRuntime.applyActivation(
                     goal.northboundActivated(),
+                    goal.southboundActivated(),
                     preference.readActivated(),
                     preference.writeActivated(),
                     readUsedTagNames.contains(tagName),

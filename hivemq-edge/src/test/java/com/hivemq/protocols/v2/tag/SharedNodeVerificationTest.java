@@ -103,4 +103,47 @@ class SharedNodeVerificationTest {
         coordinator.onVerifyResult(second, new VerifyOutcome.TransientFailure("retry"));
         assertThat(coordinator.allReported()).isTrue();
     }
+
+    @Test
+    void beginConnectVerification_issuesOneBatchForAllNodes_andGatesUntilEachReports() {
+        final List<List<Node>> requests = new ArrayList<>();
+        final SharedNodeVerification coordinator = new SharedNodeVerification(requests::add, node -> null);
+        final Node first = new CountingNode("a");
+        final Node second = new CountingNode("b");
+
+        coordinator.beginConnectVerification(List.of(first, second));
+
+        // The connect gate issues a single verifyBatch carrying every node (design §6.3, §7.6).
+        assertThat(requests).hasSize(1);
+        assertThat(requests.get(0)).containsExactly(first, second);
+        assertThat(coordinator.allReported()).isFalse();
+
+        coordinator.onVerifyResult(first, new VerifyOutcome.Success());
+        assertThat(coordinator.allReported()).isFalse();
+        coordinator.onVerifyResult(second, new VerifyOutcome.PermanentFailure("unknown"));
+        assertThat(coordinator.allReported()).isTrue(); // any outcome counts toward the gate
+    }
+
+    @Test
+    void beginConnectVerification_withNoNodes_issuesNothing_andReportsAllReported() {
+        final List<List<Node>> requests = new ArrayList<>();
+        final SharedNodeVerification coordinator = new SharedNodeVerification(requests::add, node -> null);
+
+        coordinator.beginConnectVerification(List.of());
+
+        assertThat(requests).isEmpty();
+        assertThat(coordinator.allReported()).isTrue();
+    }
+
+    @Test
+    void reset_dropsOutstandingInFlightSoTheGateDoesNotLinger() {
+        final List<List<Node>> requests = new ArrayList<>();
+        final SharedNodeVerification coordinator = new SharedNodeVerification(requests::add, node -> null);
+        coordinator.requestVerification(new CountingNode("a"));
+        assertThat(coordinator.allReported()).isFalse();
+
+        coordinator.reset();
+
+        assertThat(coordinator.allReported()).isTrue();
+    }
 }
