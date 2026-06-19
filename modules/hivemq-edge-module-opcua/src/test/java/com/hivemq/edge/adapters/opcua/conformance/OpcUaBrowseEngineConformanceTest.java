@@ -18,10 +18,7 @@ package com.hivemq.edge.adapters.opcua.conformance;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
-import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcher;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
 import com.hivemq.adapter.sdk.api.v2.model.ErrorScope;
@@ -31,10 +28,6 @@ import com.hivemq.adapter.sdk.api.v2.model.ResolvedAttributes;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
-import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
-import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
-import com.hivemq.adapter.sdk.api.v2.services.ProtocolAdapterService;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -79,7 +72,7 @@ class OpcUaBrowseEngineConformanceTest {
 
         // walk the model through DISCOVER -> RESOLVE; with the synchronous dispatcher one drain runs it all
         final ReferenceBrowseEngine.BrowseOutcome outcome =
-                engine.start(adapter, new OpcUaConformanceNode(tree.rootNodeId()), maxReferences, 0);
+                engine.start(adapter, new ConformanceNode(tree.rootNodeId()), maxReferences, 0);
         dispatcher.drainAll();
 
         assertThat(outcome.isDone())
@@ -161,7 +154,7 @@ class OpcUaBrowseEngineConformanceTest {
 
     private @NotNull OpcUaConformanceAdapter connectedAdapter(
             final @NotNull DrainOnCallDispatcher dispatcher, final @NotNull EngineOutput output) {
-        final ProtocolAdapterInput input = ConformanceInput.create(dispatcher);
+        final ProtocolAdapterInput input = ConformanceHarness.input(dispatcher);
         final OpcUaConformanceAdapter adapter = new OpcUaConformanceAdapter(input, output, server.getServerUri());
         adapter.start();
         dispatcher.drainAll();
@@ -170,30 +163,6 @@ class OpcUaBrowseEngineConformanceTest {
         dispatcher.drainAll();
         assertThat(output.connected).as("connected()").isTrue();
         return adapter;
-    }
-
-    /** Minimal {@link Node}: identity is its parseable OPC-UA node id — enough to seed a browse root. */
-    private static final class OpcUaConformanceNode extends Node {
-        private final @NotNull String parseableNodeId;
-
-        private OpcUaConformanceNode(final @NotNull String parseableNodeId) {
-            this.parseableNodeId = parseableNodeId;
-        }
-
-        @Override
-        public @NotNull String nodeId() {
-            return parseableNodeId;
-        }
-
-        @Override
-        public @NotNull String nodeString() {
-            return "{\"nodeId\":\"" + parseableNodeId + "\"}";
-        }
-
-        @Override
-        public @NotNull EnumSet<NodeProperty> properties() {
-            return EnumSet.of(NodeProperty.UNIQUE, NodeProperty.TYPED);
-        }
     }
 
     /**
@@ -262,57 +231,6 @@ class OpcUaBrowseEngineConformanceTest {
         @Override
         public void browseError(final int requestId, final @NotNull String reason) {
             engine.onBrowseError(requestId, reason);
-        }
-    }
-
-    private record ConformanceInput(
-            @NotNull String adapterId,
-            @NotNull DataPoint adapterConfig,
-            @NotNull List<NodeTagPair> nodes,
-            @NotNull ProtocolAdapterService services)
-            implements ProtocolAdapterInput {
-
-        static @NotNull ConformanceInput create(final @NotNull MessageDispatcher dispatcher) {
-            final ConformanceDataPointFactory factory = new ConformanceDataPointFactory();
-            return new ConformanceInput(
-                    "opcua-browse-engine-conformance",
-                    factory.createJsonDataPoint("adapterConfig", JsonNodeFactory.instance.objectNode()),
-                    List.of(),
-                    new ConformanceService(factory, dispatcher));
-        }
-    }
-
-    private record ConformanceService(
-            @NotNull DataPointFactory dataPointFactory,
-            @NotNull MessageDispatcher dispatcher) implements ProtocolAdapterService {}
-
-    private static final class ConformanceDataPointFactory implements DataPointFactory {
-        @Override
-        public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
-            return new SimpleDataPoint(tagName, tagValue, false);
-        }
-
-        @Override
-        public @NotNull DataPoint createJsonDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {
-            return new SimpleDataPoint(tagName, tagValue, true);
-        }
-
-        private record SimpleDataPoint(
-                @NotNull String tagName, @NotNull Object tagValue, boolean json) implements DataPoint {
-            @Override
-            public @NotNull Object getTagValue() {
-                return tagValue;
-            }
-
-            @Override
-            public boolean treatTagValueAsJson() {
-                return json;
-            }
-
-            @Override
-            public @NotNull String getTagName() {
-                return tagName;
-            }
         }
     }
 }

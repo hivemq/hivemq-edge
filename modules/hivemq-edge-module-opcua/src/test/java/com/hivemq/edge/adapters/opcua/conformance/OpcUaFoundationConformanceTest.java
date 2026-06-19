@@ -18,10 +18,8 @@ package com.hivemq.edge.adapters.opcua.conformance;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
-import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcher;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseContinuation;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
@@ -33,11 +31,7 @@ import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.model.WriteEntry;
 import com.hivemq.adapter.sdk.api.v2.node.AccessTriState;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
-import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
-import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
-import com.hivemq.adapter.sdk.api.v2.services.ProtocolAdapterService;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -61,15 +55,15 @@ import util.EmbeddedOpcUaServerExtension;
 class OpcUaFoundationConformanceTest {
 
     // Embedded TestNamespace nodes register at ns=1 (see TestNamespace#addDynamicNodes).
-    private static final @NotNull OpcUaConformanceNode INT32_NODE = new OpcUaConformanceNode("ns=1;i=11");
-    private static final @NotNull OpcUaConformanceNode DOUBLE_NODE = new OpcUaConformanceNode("ns=1;i=13");
+    private static final @NotNull ConformanceNode INT32_NODE = new ConformanceNode("ns=1;i=11");
+    private static final @NotNull ConformanceNode DOUBLE_NODE = new ConformanceNode("ns=1;i=13");
     // the standard OPC-UA Objects folder — the browse root.
-    private static final @NotNull OpcUaConformanceNode OBJECTS_FOLDER = new OpcUaConformanceNode("ns=0;i=85");
+    private static final @NotNull ConformanceNode OBJECTS_FOLDER = new ConformanceNode("ns=0;i=85");
 
     @RegisterExtension
     final @NotNull EmbeddedOpcUaServerExtension server = new EmbeddedOpcUaServerExtension();
 
-    private final @NotNull ConformanceDataPointFactory dataPointFactory = new ConformanceDataPointFactory();
+    private final @NotNull DataPointFactory dataPointFactory = ConformanceHarness.dataPointFactory();
 
     @Test
     void connectVerifyPoll_carryThroughTheFoundationModel() {
@@ -289,7 +283,7 @@ class OpcUaFoundationConformanceTest {
 
     private @NotNull OpcUaConformanceAdapter connectedAdapter(
             final @NotNull DrainOnCallDispatcher dispatcher, final @NotNull RecordingOutput output) {
-        final ProtocolAdapterInput input = ConformanceInput.create(dispatcher);
+        final ProtocolAdapterInput input = ConformanceHarness.input(dispatcher);
         final OpcUaConformanceAdapter adapter = new OpcUaConformanceAdapter(input, output, server.getServerUri());
         adapter.start();
         dispatcher.drainAll();
@@ -299,29 +293,6 @@ class OpcUaFoundationConformanceTest {
         assertThat(output.errors).as("no connection error").isEmpty();
         assertThat(output.connected).as("connected()").isTrue();
         return adapter;
-    }
-
-    private static final class OpcUaConformanceNode extends Node {
-        private final @NotNull String parseableNodeId;
-
-        private OpcUaConformanceNode(final @NotNull String parseableNodeId) {
-            this.parseableNodeId = parseableNodeId;
-        }
-
-        @Override
-        public @NotNull String nodeId() {
-            return parseableNodeId;
-        }
-
-        @Override
-        public @NotNull String nodeString() {
-            return "{\"nodeId\":\"" + parseableNodeId + "\"}";
-        }
-
-        @Override
-        public @NotNull EnumSet<NodeProperty> properties() {
-            return EnumSet.of(NodeProperty.UNIQUE, NodeProperty.TYPED);
-        }
     }
 
     private static final class RecordingOutput implements ProtocolAdapterOutput {
@@ -474,57 +445,6 @@ class OpcUaFoundationConformanceTest {
                     lock.wait(remainingMillis);
                 }
                 return true;
-            }
-        }
-    }
-
-    private record ConformanceInput(
-            @NotNull String adapterId,
-            @NotNull DataPoint adapterConfig,
-            @NotNull List<NodeTagPair> nodes,
-            @NotNull ProtocolAdapterService services)
-            implements ProtocolAdapterInput {
-
-        static @NotNull ConformanceInput create(final @NotNull MessageDispatcher dispatcher) {
-            final ConformanceDataPointFactory factory = new ConformanceDataPointFactory();
-            return new ConformanceInput(
-                    "opcua-conformance",
-                    factory.createJsonDataPoint("adapterConfig", JsonNodeFactory.instance.objectNode()),
-                    List.of(),
-                    new ConformanceService(factory, dispatcher));
-        }
-    }
-
-    private record ConformanceService(
-            @NotNull DataPointFactory dataPointFactory,
-            @NotNull MessageDispatcher dispatcher) implements ProtocolAdapterService {}
-
-    private static final class ConformanceDataPointFactory implements DataPointFactory {
-        @Override
-        public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
-            return new SimpleDataPoint(tagName, tagValue, false);
-        }
-
-        @Override
-        public @NotNull DataPoint createJsonDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {
-            return new SimpleDataPoint(tagName, tagValue, true);
-        }
-
-        private record SimpleDataPoint(
-                @NotNull String tagName, @NotNull Object tagValue, boolean json) implements DataPoint {
-            @Override
-            public @NotNull Object getTagValue() {
-                return tagValue;
-            }
-
-            @Override
-            public boolean treatTagValueAsJson() {
-                return json;
-            }
-
-            @Override
-            public @NotNull String getTagName() {
-                return tagName;
             }
         }
     }

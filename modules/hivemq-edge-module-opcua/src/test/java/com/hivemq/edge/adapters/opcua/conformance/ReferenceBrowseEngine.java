@@ -130,16 +130,33 @@ final class ReferenceBrowseEngine {
         return String.join("-", parts);
     }
 
-    /** Append a numeric suffix on collision: name, name-2, name-3, … */
+    /**
+     * Append a numeric suffix until the name is unique: name, name-2, name-3, … A generated suffix is itself
+     * re-checked, so a generated {@code name-2} cannot collide with an <i>organically</i> present {@code name-2}
+     * (it advances to {@code name-2-2}). Real address spaces produce exactly that shape.
+     */
     static @NotNull List<String> dedupDefaults(final @NotNull List<String> defaults) {
-        final Map<String, Integer> seen = new HashMap<>();
-        final List<String> result = new ArrayList<>();
+        final Set<String> used = new HashSet<>();
+        final List<String> result = new ArrayList<>(defaults.size());
         for (final String base : defaults) {
-            final int n = seen.getOrDefault(base, 0) + 1;
-            seen.put(base, n);
-            result.add(n == 1 ? base : base + "-" + n);
+            String candidate = base;
+            int suffix = 1;
+            while (!used.add(candidate)) {
+                suffix++;
+                candidate = base + "-" + suffix;
+            }
+            result.add(candidate);
         }
         return result;
+    }
+
+    /**
+     * A browse name becomes one path segment, and {@link #tagNameDefault(String)} later splits the path on
+     * {@code '/'} — so a browse name that itself contains {@code '/'} (OPC-UA permits it) would forge spurious
+     * path levels. Collapse any embedded separator to {@code '_'} so each browse name stays a single segment.
+     */
+    static @NotNull String pathSegment(final @NotNull String browseName) {
+        return browseName.indexOf('/') < 0 ? browseName : browseName.replace('/', '_');
     }
 
     boolean isActive() {
@@ -206,7 +223,7 @@ final class ReferenceBrowseEngine {
         }
         for (final BrowseResultEntry entry : entries) {
             final String nodeId = entry.node().nodeId();
-            final String childPath = activePath + "/" + entry.browseName();
+            final String childPath = activePath + "/" + pathSegment(entry.browseName());
             if (entry.selectable()) { // a variable
                 if (visited.add(nodeId)) {
                     discovered.add(new DiscoveredVariable(entry.node(), childPath));
