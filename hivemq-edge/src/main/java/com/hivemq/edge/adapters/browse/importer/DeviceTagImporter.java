@@ -158,6 +158,20 @@ public class DeviceTagImporter {
 
         // if there was no validation error, now is the time to execute the plan
         final ProtocolAdapterEntity fac = finalAdapterConfiguration(adapter, twmsFinal);
+
+        // EDG-493: classify the import as additive-only — nothing deleted, nothing updated, only creations. Such
+        // an import does not need the full adapter restart that updateAdapter triggers; for now we only surface
+        // how often the condition holds so the skip-restart follow-up can be prioritised on real workloads.
+        if (stats.isAdditiveOnly() && log.isDebugEnabled()) {
+            log.debug(
+                    "Import for adapter '{}' is additive-only ({} tags, {} northbound, {} southbound created; "
+                            + "no updates or deletions) — eligible for the future skip-restart optimisation (EDG-493)",
+                    adapterId,
+                    stats.tagsCreated,
+                    stats.nbCreated,
+                    stats.sbCreated);
+        }
+
         final boolean success = adapterExtractor.updateAdapter(fac);
         if (!success) {
             throw new DeviceTagImporterException(List.of(new ValidationError(
@@ -950,6 +964,15 @@ public class DeviceTagImporter {
             tagsCreated = tagsUpdated = tagsDeleted = 0;
             nbCreated = nbDeleted = 0;
             sbCreated = sbDeleted = 0;
+        }
+
+        /**
+         * An import is additive-only when it neither updates nor deletes anything — no tag updated or deleted and
+         * no north-/southbound mapping deleted. Pure creations leave every existing tag and subscription intact,
+         * which is what makes the adapter restart skippable (EDG-493).
+         */
+        boolean isAdditiveOnly() {
+            return tagsUpdated == 0 && tagsDeleted == 0 && nbDeleted == 0 && sbDeleted == 0;
         }
     }
 
