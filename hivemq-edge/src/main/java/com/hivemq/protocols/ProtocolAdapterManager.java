@@ -588,9 +588,7 @@ public class ProtocolAdapterManager {
      * protocol exist.
      */
     private void updateProtocolAdapterAtomically(
-            final @NotNull String adapterId,
-            final @NotNull ProtocolAdapterConfig config,
-            final @NotNull String version)
+            final @NotNull String adapterId, final @NotNull ProtocolAdapterConfig config, final @NotNull String version)
             throws ProtocolAdapterException {
         final ProtocolAdapterWrapper newWrapper = buildProtocolAdapterWrapper(config, version);
         final ProtocolAdapterWrapper previous = protocolAdapterMap.put(adapterId, newWrapper);
