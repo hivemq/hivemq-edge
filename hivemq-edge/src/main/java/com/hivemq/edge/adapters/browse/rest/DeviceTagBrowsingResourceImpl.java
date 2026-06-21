@@ -126,6 +126,19 @@ public class DeviceTagBrowsingResourceImpl extends AbstractApi implements Device
                     Response.Status.CONFLICT, "Adapter '" + adapterId + "' does not support bulk tag browsing");
         }
 
+        // EDG-577: the adapter may be CONNECTED but still loading its address-space metadata, during which a
+        // browse would be non-deterministic. Answer 503 with Retry-After so the caller retries once it is ready.
+        if (!browser.isBrowseReady()) {
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                    .header("Retry-After", "2")
+                    .entity(errorBody(
+                            Response.Status.SERVICE_UNAVAILABLE.getReasonPhrase(),
+                            "Adapter '" + adapterId
+                                    + "' is connected but still loading device metadata; retry shortly"))
+                    .type(APPLICATION_JSON)
+                    .build();
+        }
+
         // Browse
         if (maxDepth != null && maxDepth < 0) {
             return errorResponse(Response.Status.BAD_REQUEST, "maxDepth must be >= 0 (0 = unlimited)");

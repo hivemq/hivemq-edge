@@ -118,6 +118,18 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     static final int MAX_CONCURRENT_BROWSES = 1;
     private final @NotNull Semaphore browseConcurrency = new Semaphore(MAX_CONCURRENT_BROWSES);
 
+    // EDG-577: browse-readiness is tracked separately from CONNECTED. The Milo session reports CONNECTED the
+    // moment it activates, before the namespace table and data-type tree are hydrated; a browse in that window
+    // is non-deterministic. Kept OPC-UA-local (not on the shared SDK ConnectionStatus enum). Reset to WARMING_UP
+    // on every (re)connect attempt and flipped to BROWSE_READY once the warm-up has loaded the metadata.
+    private enum ReadinessStatus {
+        WARMING_UP,
+        BROWSE_READY
+    }
+
+    private final @NotNull AtomicReference<ReadinessStatus> browseReadiness =
+            new AtomicReference<>(ReadinessStatus.WARMING_UP);
+
     // Flag to prevent scheduling after stop
     private volatile boolean stopped = false;
 
@@ -588,6 +600,12 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     }
 
     @Override
+    public boolean isBrowseReady() {
+        // Connected AND the address-space metadata has been hydrated by the post-connect warm-up (EDG-577).
+        return !stopped && browseReadiness.get() == ReadinessStatus.BROWSE_READY;
+    }
+
+    @Override
     public @NotNull String resolveNodeId(final @NotNull String nodeId, final @Nullable String namespaceUri) {
         if (namespaceUri == null || namespaceUri.isEmpty()) {
             return nodeId;
@@ -743,6 +761,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
             final @NotNull ParsedConfig parsedConfig,
             final @NotNull ProtocolAdapterStartInput input) {
 
+        // EDG-577: a fresh (re)connect is not browse-ready until its warm-up completes.
+        browseReadiness.set(ReadinessStatus.WARMING_UP);
+
         @SuppressWarnings("unused")
         final var unused = CompletableFuture.supplyAsync(() -> conn.start(parsedConfig))
                 .whenComplete((success, throwable) -> {
@@ -757,6 +778,9 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                         reconnectAttempts.set(0);
                         // Update browse client snapshot so browse works during future restarts
                         conn.client().ifPresent(browseClient::set);
+                        // EDG-577: CONNECTED has fired, but the address-space metadata still needs hydrating
+                        // before a deterministic browse — warm it up, then flip to BROWSE_READY.
+                        conn.client().ifPresent(this::warmUpBrowseReadiness);
                         // Connection succeeded - cancel any pending retries and start health check
                         cancelRetry();
                         scheduleHealthCheck();
@@ -782,6 +806,34 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
                         scheduleRetry(input);
                     }
                 });
+    }
+
+    /**
+     * EDG-577: one-shot async warm-up run after a successful (re)connect. The Milo session reports CONNECTED as
+     * soon as it activates, but the namespace table and data-type tree a deterministic browse depends on may not
+     * be populated yet. Force-load them off the connection thread, then flip the adapter to BROWSE_READY so the
+     * REST browse endpoint stops answering 503. A failure leaves the adapter not-ready; the next reconnect (or a
+     * later browse) re-warms.
+     */
+    private void warmUpBrowseReadiness(final @NotNull OpcUaClient client) {
+        @SuppressWarnings("unused")
+        final var unused = CompletableFuture.runAsync(() -> {
+            try {
+                client.getNamespaceTable(); // ensure the namespace table is read from the server
+                client.getDataTypeTree(); // build the data-type tree (feeds the EDG-488 cache when that lands)
+                if (!stopped) {
+                    browseReadiness.set(ReadinessStatus.BROWSE_READY);
+                    log.info(
+                            "OPC UA adapter '{}' is browse-ready (namespace table and data-type tree hydrated)",
+                            adapterId);
+                }
+            } catch (final @NotNull Exception e) {
+                log.warn(
+                        "OPC UA adapter '{}' browse warm-up failed; adapter stays not browse-ready until the next reconnect",
+                        adapterId,
+                        e);
+            }
+        });
     }
 
     /**

@@ -85,6 +85,7 @@ class DeviceTagBrowsingResourceImplTest {
         when(adapterManager.getProtocolAdapterWrapperByAdapterId(ADAPTER_ID)).thenReturn(Optional.of(wrapper));
         when(wrapper.getAdapter()).thenReturn(adapter);
         when(adapter.browse(any(), anyInt())).thenReturn(Stream.of(testNode()));
+        when(adapter.isBrowseReady()).thenReturn(true);
 
         importer = mock(DeviceTagImporter.class);
         resource = new DeviceTagBrowsingResourceImpl(
@@ -248,11 +249,31 @@ class DeviceTagBrowsingResourceImplTest {
     }
 
     @Test
+    void browse_adapterConnectedButNotBrowseReady_returns503WithRetryAfter() throws BrowseException {
+        // EDG-577: a browsable adapter that is connected but still loading its metadata must answer 503 with a
+        // Retry-After hint, not serve a degraded browse.
+        final ProtocolAdapterWrapper wrapper = mock(ProtocolAdapterWrapper.class);
+        final BrowsableAdapter warmingUpAdapter = mock(BrowsableAdapter.class);
+        when(adapterManager.getProtocolAdapterWrapperByAdapterId("warming-up")).thenReturn(Optional.of(wrapper));
+        when(wrapper.getAdapter()).thenReturn(warmingUpAdapter);
+        when(warmingUpAdapter.isBrowseReady()).thenReturn(false);
+
+        when(httpHeaders.getHeaderString("Accept")).thenReturn("application/json");
+        final Response response = resource.browseDeviceTags("warming-up", null, null);
+
+        assertThat(response.getStatus()).isEqualTo(503);
+        assertThat(response.getHeaderString("Retry-After")).isEqualTo("2");
+        // the browse itself must never be attempted while not ready
+        verify(warmingUpAdapter, org.mockito.Mockito.never()).browse(any(), anyInt());
+    }
+
+    @Test
     void browse_browseException_returns409() throws BrowseException {
         final ProtocolAdapterWrapper wrapper = mock(ProtocolAdapterWrapper.class);
         final BrowsableAdapter failingAdapter = mock(BrowsableAdapter.class);
         when(adapterManager.getProtocolAdapterWrapperByAdapterId("failing")).thenReturn(Optional.of(wrapper));
         when(wrapper.getAdapter()).thenReturn(failingAdapter);
+        when(failingAdapter.isBrowseReady()).thenReturn(true);
         when(failingAdapter.browse(any(), anyInt())).thenThrow(new BrowseException("Server error"));
 
         when(httpHeaders.getHeaderString("Accept")).thenReturn("application/json");
@@ -266,6 +287,7 @@ class DeviceTagBrowsingResourceImplTest {
         final BrowsableAdapter failingAdapter = mock(BrowsableAdapter.class);
         when(adapterManager.getProtocolAdapterWrapperByAdapterId("timeout")).thenReturn(Optional.of(wrapper));
         when(wrapper.getAdapter()).thenReturn(failingAdapter);
+        when(failingAdapter.isBrowseReady()).thenReturn(true);
         when(failingAdapter.browse(any(), anyInt())).thenThrow(new BrowseException("Operation timed out after 30s"));
 
         when(httpHeaders.getHeaderString("Accept")).thenReturn("application/json");
@@ -279,6 +301,7 @@ class DeviceTagBrowsingResourceImplTest {
         final BrowsableAdapter failingAdapter = mock(BrowsableAdapter.class);
         when(adapterManager.getProtocolAdapterWrapperByAdapterId("null-msg")).thenReturn(Optional.of(wrapper));
         when(wrapper.getAdapter()).thenReturn(failingAdapter);
+        when(failingAdapter.isBrowseReady()).thenReturn(true);
         when(failingAdapter.browse(any(), anyInt())).thenThrow(new BrowseException("Browse failed", null));
 
         when(httpHeaders.getHeaderString("Accept")).thenReturn("application/json");
