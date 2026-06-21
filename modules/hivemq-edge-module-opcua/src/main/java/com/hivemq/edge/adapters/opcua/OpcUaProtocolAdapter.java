@@ -57,6 +57,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -109,6 +110,13 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
     // Last-known-good client reference for browse operations during adapter restarts.
     // Set when a connection succeeds, cleared only on explicit stop (not during reconnect).
     private final @NotNull AtomicReference<OpcUaClient> browseClient = new AtomicReference<>();
+
+    // Serialise all browse operations against this adapter to one at a time. Every REST browse call shares a
+    // single Milo OpcUaClient against one physical device; resource-constrained PLCs (e.g. S7-1500) return
+    // non-deterministic node counts when browseAsync/browseNext requests overlap. Owning the permit here makes
+    // the serialisation effective across concurrent calls, not just within a single browse (EDG-576).
+    static final int MAX_CONCURRENT_BROWSES = 1;
+    private final @NotNull Semaphore browseConcurrency = new Semaphore(MAX_CONCURRENT_BROWSES);
 
     // Flag to prevent scheduling after stop
     private volatile boolean stopped = false;
@@ -576,7 +584,7 @@ public class OpcUaProtocolAdapter implements WritingProtocolAdapter, BulkTagBrow
         if (client == null) {
             throw new BrowseException("Browse failed: Client not connected");
         }
-        return new OpcUaNodeBrowser(client, adapterId).browse(rootId, maxDepth);
+        return new OpcUaNodeBrowser(client, adapterId, 0, browseConcurrency).browse(rootId, maxDepth);
     }
 
     @Override

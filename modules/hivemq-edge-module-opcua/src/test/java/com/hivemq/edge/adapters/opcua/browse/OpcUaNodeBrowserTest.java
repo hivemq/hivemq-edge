@@ -24,6 +24,11 @@ import static org.mockito.Mockito.when;
 import com.hivemq.edge.adapters.browse.BrowseException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
@@ -68,6 +73,46 @@ class OpcUaNodeBrowserTest {
         final OpcUaNodeBrowser browser = new OpcUaNodeBrowser(client, "test-adapter");
 
         assertThat(browser.browse(null, 0).count()).isEqualTo(0);
+    }
+
+    // --- adapter-scoped browse serialisation (EDG-576) ---
+
+    @Test
+    void browse_sharedSemaphore_serialisesBrowseAsyncAcrossBrowsers() throws Exception {
+        // EDG-576: two distinct browsers sharing the adapter-owned permit must never have their browseAsync
+        // calls overlap on the shared client. The peak in-flight count therefore stays at 1.
+        final OpcUaClient client = mock(OpcUaClient.class);
+        final AtomicInteger inFlight = new AtomicInteger();
+        final AtomicInteger peak = new AtomicInteger();
+        final BrowseResult empty =
+                new BrowseResult(StatusCode.GOOD, ByteString.NULL_VALUE, new ReferenceDescription[0]);
+        when(client.browseAsync(any(BrowseDescription.class))).thenAnswer(invocation -> {
+            peak.accumulateAndGet(inFlight.incrementAndGet(), Math::max);
+            try {
+                Thread.sleep(100); // hold the permit long enough that an overlap would be observable
+            } finally {
+                inFlight.decrementAndGet();
+            }
+            return CompletableFuture.completedFuture(empty);
+        });
+
+        final Semaphore shared = new Semaphore(1);
+        final OpcUaNodeBrowser first = new OpcUaNodeBrowser(client, "adapter", 0, shared);
+        final OpcUaNodeBrowser second = new OpcUaNodeBrowser(client, "adapter", 0, shared);
+
+        final ExecutorService pool = Executors.newFixedThreadPool(2);
+        try {
+            final var f1 = pool.submit(() -> first.browse(null, 0).count());
+            final var f2 = pool.submit(() -> second.browse(null, 0).count());
+            f1.get(10, TimeUnit.SECONDS);
+            f2.get(10, TimeUnit.SECONDS);
+        } finally {
+            pool.shutdownNow();
+        }
+
+        assertThat(peak.get())
+                .as("the shared adapter-scoped permit serialises browseAsync across concurrent browsers")
+                .isEqualTo(1);
     }
 
     // --- sanitize() ---

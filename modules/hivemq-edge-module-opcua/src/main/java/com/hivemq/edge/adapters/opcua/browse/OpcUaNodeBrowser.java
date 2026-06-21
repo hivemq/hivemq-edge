@@ -77,15 +77,14 @@ public class OpcUaNodeBrowser {
 
     private static final long TIMEOUT_SECONDS = 120;
     private static final int READ_BATCH_SIZE = 100;
-    // Serialise all browse operations (including continuation-point requests) to avoid
-    // server-side throttling on resource-constrained PLCs (e.g. S7-1500). Even at
-    // concurrency 4 the S7-1500 produced non-deterministic results because browseNext
-    // requests bypassed the semaphore and overlapped with new browseAsync calls.
-    private static final int MAX_CONCURRENT_BROWSES = 1;
 
     private final @NotNull OpcUaClient client;
     private final @NotNull String adapterId;
     private final int maxReferencesPerNode;
+    // Serialise all browse operations (including continuation-point requests) so they never overlap on the
+    // shared client. In production this permit is owned by the OpcUaProtocolAdapter and shared across every
+    // browse call against the device (EDG-576); standalone/test callers get their own single permit.
+    private final @NotNull Semaphore concurrency;
 
     public OpcUaNodeBrowser(final @NotNull OpcUaClient client, final @NotNull String adapterId) {
         this(client, adapterId, 0);
@@ -98,9 +97,26 @@ public class OpcUaNodeBrowser {
      */
     public OpcUaNodeBrowser(
             final @NotNull OpcUaClient client, final @NotNull String adapterId, final int maxReferencesPerNode) {
+        // Standalone default: one permit private to this browser. Production uses the constructor below to share
+        // the adapter-scoped permit so concurrent browses against the same device are serialised too (EDG-576).
+        this(client, adapterId, maxReferencesPerNode, new Semaphore(1));
+    }
+
+    /**
+     * @param maxReferencesPerNode maximum references the server should return per browse request (0 =
+     *                             server-decides).
+     * @param concurrency          permit that serialises browse operations; pass the adapter-owned semaphore to
+     *                             serialise across concurrent browse calls sharing one client (EDG-576).
+     */
+    public OpcUaNodeBrowser(
+            final @NotNull OpcUaClient client,
+            final @NotNull String adapterId,
+            final int maxReferencesPerNode,
+            final @NotNull Semaphore concurrency) {
         this.client = client;
         this.adapterId = adapterId;
         this.maxReferencesPerNode = maxReferencesPerNode;
+        this.concurrency = concurrency;
     }
 
     /**
@@ -136,7 +152,6 @@ public class OpcUaNodeBrowser {
             // The visited set deduplicates nodes reachable via multiple paths in the OPC UA graph.
             final List<DiscoveredVariable> variables = new CopyOnWriteArrayList<>();
             final Set<NodeId> visited = ConcurrentHashMap.newKeySet();
-            final Semaphore concurrency = new Semaphore(MAX_CONCURRENT_BROWSES);
             browseRecursive(
                             browseRoot,
                             "",
