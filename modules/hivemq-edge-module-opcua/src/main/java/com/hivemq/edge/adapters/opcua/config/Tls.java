@@ -56,7 +56,19 @@ public record Tls(
                 title = "Truststore",
                 description = "Truststore which contains the trusted server certificates or trusted intermediates.")
         @Nullable
-        Truststore truststore) {
+        Truststore truststore,
+
+        @JsonProperty("acceptAnyServerCertificate")
+        @ModuleConfigField(
+                title = "Accept any server certificate",
+                description =
+                        "WARNING: when true, the adapter accepts any server certificate without chain validation. "
+                                + "Intended for environments without a CA (e.g. factories with self-signed per-machine certs "
+                                + "that do not chain to any trust anchor in cacerts or in a configured truststore). "
+                                + "Independent of tlsChecks. Deployments with this enabled are vulnerable to MITM. "
+                                + "Production deployments should use a configured truststore.",
+                defaultValue = "false")
+        boolean acceptAnyServerCertificate) {
 
     @JsonCreator
     public Tls {
@@ -64,6 +76,6 @@ public record Tls(
     }
 
     public static @NotNull Tls defaultTls() {
-        return new Tls(false, TlsChecks.STANDARD, null, null);
+        return new Tls(false, TlsChecks.STANDARD, null, null, false);
     }
 }
