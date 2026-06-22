@@ -97,6 +97,13 @@ public class HiveMQConfigEntity {
     @XmlElement(name = "protocol-adapter")
     private @NotNull List<ProtocolAdapterEntity> protocolAdapterConfig = new ArrayList<>();
 
+    // Nevsky side-by-side config section (design §9, §13.1 touchpoint 1): additive and disjoint from the legacy
+    // <protocol-adapters> above. Absent ⇒ empty list, so old configs parse unchanged.
+    @XmlElementWrapper(name = "v2-protocol-adapters")
+    @XmlElement(name = "v2-protocol-adapter")
+    private @NotNull List<com.hivemq.protocols.v2.config.ProtocolAdapterEntity> v2ProtocolAdapterConfig =
+            new ArrayList<>();
+
     @XmlElementWrapper(name = "data-combiners")
     @XmlElement(name = "data-combiner")
     private @NotNull List<DataCombinerEntity> dataCombinerEntities = new ArrayList<>();
@@ -193,6 +200,10 @@ public class HiveMQConfigEntity {
 
     public @NotNull List<ProtocolAdapterEntity> getProtocolAdapterConfig() {
         return protocolAdapterConfig;
+    }
+
+    public @NotNull List<com.hivemq.protocols.v2.config.ProtocolAdapterEntity> getV2ProtocolAdapterConfig() {
+        return v2ProtocolAdapterConfig;
     }
 
     public @NotNull Map<String, Object> getModuleConfigs() {
