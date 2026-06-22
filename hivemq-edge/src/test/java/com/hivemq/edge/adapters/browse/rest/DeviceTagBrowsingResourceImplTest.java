@@ -263,6 +263,8 @@ class DeviceTagBrowsingResourceImplTest {
 
         assertThat(response.getStatus()).isEqualTo(503);
         assertThat(response.getHeaderString("Retry-After")).isEqualTo("2");
+        // the error is returned as a ProblemDetails entity (application/problem+json), not an ad-hoc body
+        assertThat(response.getMediaType().toString()).contains("application/problem+json");
         // the browse itself must never be attempted while not ready
         verify(warmingUpAdapter, org.mockito.Mockito.never()).browse(any(), anyInt());
     }
