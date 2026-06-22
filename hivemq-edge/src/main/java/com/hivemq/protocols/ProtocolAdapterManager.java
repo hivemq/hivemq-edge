@@ -349,10 +349,8 @@ public class ProtocolAdapterManager {
     }
 
     private void updateAdapter(final @NotNull ProtocolAdapterConfig config) {
-        deleteProtocolAdapterByAdapterId(config.getAdapterId());
-        createProtocolAdapter(config, versionProvider.getVersion());
         try {
-            start(config.getAdapterId());
+            updateProtocolAdapterAtomically(config.getAdapterId(), config, versionProvider.getVersion());
         } catch (final ProtocolAdapterException e) {
             final Throwable cause = e.getCause();
             if (cause instanceof InterruptedException) {
@@ -421,14 +419,24 @@ public class ProtocolAdapterManager {
      * @throws ProtocolAdapterException if the adapter is not found
      */
     public void stop(final @NotNull String adapterId, final boolean destroy) throws ProtocolAdapterException {
-        LOGGER.info("Stopping protocol-adapter '{}'.", adapterId);
         final var optionalWrapper = getProtocolAdapterWrapperByAdapterId(adapterId);
         if (optionalWrapper.isEmpty()) {
             throw new ProtocolAdapterException(
                     I18nProtocolAdapterMessage.PROTOCOL_ADAPTER_MANAGER_PROTOCOL_ADAPTER_NOT_FOUND.get(
                             Map.of(ADAPTER_ID, adapterId)));
         }
-        final ProtocolAdapterWrapper wrapper = optionalWrapper.get();
+        stopWrapper(optionalWrapper.get(), adapterId, destroy);
+    }
+
+    /**
+     * Stop (and optionally destroy) a specific wrapper instance and fire the corresponding adapter event. Unlike
+     * {@link #stop(String, boolean)} this acts on the given instance rather than re-resolving it from the map,
+     * which {@link #updateProtocolAdapterAtomically} relies on: by the time the displaced wrapper is stopped the
+     * map already points at its replacement.
+     */
+    private void stopWrapper(
+            final @NotNull ProtocolAdapterWrapper wrapper, final @NotNull String adapterId, final boolean destroy) {
+        LOGGER.info("Stopping protocol-adapter '{}'.", adapterId);
         final String protocolId = wrapper.getProtocolAdapterInformation().getProtocolId();
         final boolean success = wrapper.stop(destroy);
 
@@ -493,68 +501,103 @@ public class ProtocolAdapterManager {
         Preconditions.checkNotNull(config);
         final String adapterId = config.getAdapterId();
         protocolAdapterMap.computeIfAbsent(adapterId, ignored -> {
-            final String configProtocolId = config.getProtocolId();
-            // legacy handling, hardcoded here, to not add legacy stuff into the adapter-sdk
-            final String adapterType =
-                    switch (configProtocolId) {
-                        case "ethernet-ip" -> "eip";
-                        case "opc-ua-client" -> "opcua";
-                        case "file_input" -> "file";
-                        default -> configProtocolId;
-                    };
-
-            final Optional<ProtocolAdapterFactory<?>> maybeFactory = protocolAdapterFactoryManager.get(adapterType);
-            if (maybeFactory.isEmpty()) {
-                throw new IllegalArgumentException("Protocol adapter for config " + adapterType + " not found.");
-            }
-            final ProtocolAdapterFactory<?> factory = maybeFactory.get();
-
-            LOGGER.info("Found configuration for adapter {} / {}", config.getAdapterId(), adapterType);
-            config.missingTags().ifPresent(missingTag -> {
-                throw new IllegalArgumentException(
-                        "Tags used in mappings but not configured in adapter " + adapterType + ": " + missingTag);
-            });
-
-            return runWithContextLoader(factory.getClass().getClassLoader(), () -> {
-                final ProtocolAdapterMetricsService metricsService =
-                        new ProtocolAdapterMetricsServiceImpl(configProtocolId, config.getAdapterId(), metricRegistry);
-                final ProtocolAdapterStateImpl state =
-                        new ProtocolAdapterStateImpl(eventService, config.getAdapterId(), configProtocolId);
-                final var streamingService = new ProtocolAdapterTagStreamingServiceImpl(
-                        config.getAdapterId(), tagManager, dataPointBuilder -> {});
-                final ModuleServicesPerModuleImpl perModule = new ModuleServicesPerModuleImpl(
-                        adapterPublishService, eventService, protocolAdapterWritingService, streamingService);
-                final ProtocolAdapter protocolAdapter = factory.createAdapter(
-                        factory.getInformation(),
-                        new ProtocolAdapterInputImpl(
-                                config.getAdapterId(),
-                                config.getAdapterConfig(),
-                                config.getTags(),
-                                config.getNorthboundMappings(),
-                                version,
-                                state,
-                                perModule,
-                                metricsService));
-                // hen-egg problem. Rather solve this here as have not final fields in the adapter.
-                perModule.setAdapter(protocolAdapter);
-                final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(
-                        protocolAdapter,
-                        config,
-                        factory,
-                        factory.getInformation(),
-                        metricsService,
-                        state,
-                        protocolAdapterPollingService,
-                        eventService,
-                        perModule,
-                        tagManager,
-                        northboundConsumerFactory,
-                        protocolAdapterWritingService,
-                        adapterLifecycleExecutor);
-                protocolAdapterMetrics.increaseProtocolAdapterMetric(configProtocolId);
-                return wrapper;
-            });
+            final ProtocolAdapterWrapper wrapper = buildProtocolAdapterWrapper(config, version);
+            protocolAdapterMetrics.increaseProtocolAdapterMetric(config.getProtocolId());
+            return wrapper;
         });
+    }
+
+    /**
+     * Build a fully-wired {@link ProtocolAdapterWrapper} for {@code config} without inserting it into
+     * {@link #protocolAdapterMap} or mutating adapter metrics. Keeping construction side-effect free is what
+     * lets an update build the replacement <i>before</i> evicting the old instance, so the adapter id is never
+     * momentarily absent from the map — see {@link #updateProtocolAdapterAtomically} (EDG-602).
+     */
+    private @NotNull ProtocolAdapterWrapper buildProtocolAdapterWrapper(
+            final @NotNull ProtocolAdapterConfig config, final @NotNull String version) {
+        final String configProtocolId = config.getProtocolId();
+        // legacy handling, hardcoded here, to not add legacy stuff into the adapter-sdk
+        final String adapterType =
+                switch (configProtocolId) {
+                    case "ethernet-ip" -> "eip";
+                    case "opc-ua-client" -> "opcua";
+                    case "file_input" -> "file";
+                    default -> configProtocolId;
+                };
+
+        final Optional<ProtocolAdapterFactory<?>> maybeFactory = protocolAdapterFactoryManager.get(adapterType);
+        if (maybeFactory.isEmpty()) {
+            throw new IllegalArgumentException("Protocol adapter for config " + adapterType + " not found.");
+        }
+        final ProtocolAdapterFactory<?> factory = maybeFactory.get();
+
+        LOGGER.info("Found configuration for adapter {} / {}", config.getAdapterId(), adapterType);
+        config.missingTags().ifPresent(missingTag -> {
+            throw new IllegalArgumentException(
+                    "Tags used in mappings but not configured in adapter " + adapterType + ": " + missingTag);
+        });
+
+        return runWithContextLoader(factory.getClass().getClassLoader(), () -> {
+            final ProtocolAdapterMetricsService metricsService =
+                    new ProtocolAdapterMetricsServiceImpl(configProtocolId, config.getAdapterId(), metricRegistry);
+            final ProtocolAdapterStateImpl state =
+                    new ProtocolAdapterStateImpl(eventService, config.getAdapterId(), configProtocolId);
+            final var streamingService = new ProtocolAdapterTagStreamingServiceImpl(
+                    config.getAdapterId(), tagManager, dataPointBuilder -> {});
+            final ModuleServicesPerModuleImpl perModule = new ModuleServicesPerModuleImpl(
+                    adapterPublishService, eventService, protocolAdapterWritingService, streamingService);
+            final ProtocolAdapter protocolAdapter = factory.createAdapter(
+                    factory.getInformation(),
+                    new ProtocolAdapterInputImpl(
+                            config.getAdapterId(),
+                            config.getAdapterConfig(),
+                            config.getTags(),
+                            config.getNorthboundMappings(),
+                            version,
+                            state,
+                            perModule,
+                            metricsService));
+            // hen-egg problem. Rather solve this here as have not final fields in the adapter.
+            perModule.setAdapter(protocolAdapter);
+            return new ProtocolAdapterWrapper(
+                    protocolAdapter,
+                    config,
+                    factory,
+                    factory.getInformation(),
+                    metricsService,
+                    state,
+                    protocolAdapterPollingService,
+                    eventService,
+                    perModule,
+                    tagManager,
+                    northboundConsumerFactory,
+                    protocolAdapterWritingService,
+                    adapterLifecycleExecutor);
+        });
+    }
+
+    /**
+     * Replace a running adapter's wrapper with one built from {@code config} without ever removing the adapter
+     * id from {@link #protocolAdapterMap}. The replacement is constructed first, then swapped in with a single
+     * {@code put}; only afterwards is the displaced instance stopped and destroyed. A concurrent REST read
+     * therefore always resolves a wrapper — the old tags before the swap, the new tags after — and never the
+     * 404 that the previous delete-then-recreate sequence exposed (EDG-602). If construction fails the old
+     * wrapper is left untouched and running, and the throw is surfaced to the caller as an update failure.
+     * <p>
+     * The adapter metric is intentionally left untouched: an update does not change how many adapters of this
+     * protocol exist.
+     */
+    private void updateProtocolAdapterAtomically(
+            final @NotNull String adapterId, final @NotNull ProtocolAdapterConfig config, final @NotNull String version)
+            throws ProtocolAdapterException {
+        final ProtocolAdapterWrapper newWrapper = buildProtocolAdapterWrapper(config, version);
+        final ProtocolAdapterWrapper previous = protocolAdapterMap.put(adapterId, newWrapper);
+        if (previous != null) {
+            // The displaced instance is no longer reachable through the map; stop and destroy it by reference so
+            // stop(adapterId, ...) cannot act on the freshly-installed wrapper instead.
+            stopWrapper(previous, adapterId, true);
+        }
+        start(adapterId);
     }
 
     protected @NotNull Optional<ProtocolAdapterWrapper> deleteProtocolAdapterWrapperByAdapterId(
@@ -734,10 +777,10 @@ public class ProtocolAdapterManager {
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Updating adapter '{}'", adapterId);
                 }
-                stop(adapterId, true);
-                deleteProtocolAdapterByAdapterId(adapterId);
-                createProtocolAdapter(protocolAdapterConfig, versionProvider.getVersion());
-                start(adapterId);
+                // Swap the wrapper in place: build the replacement, atomically replace the map entry, then stop
+                // the displaced instance. The adapter id stays resolvable throughout, so a concurrent REST read
+                // never observes the transient 404 the old delete-then-recreate sequence could expose (EDG-602).
+                updateProtocolAdapterAtomically(adapterId, protocolAdapterConfig, versionProvider.getVersion());
             } catch (final Exception e) {
                 failedAdapterSet.add(adapterId);
                 if (e.getCause() instanceof InterruptedException) {
