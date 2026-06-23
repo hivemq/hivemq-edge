@@ -28,6 +28,8 @@ import static com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState.WAITIN
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.v2.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
+import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
 import com.hivemq.adapter.sdk.api.v2.model.VerifyOutcome;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.protocols.v2.fsm.FSM;
@@ -40,8 +42,10 @@ import com.hivemq.protocols.v2.runtime.RetryPolicy;
 import com.hivemq.protocols.v2.runtime.TimerHandle;
 import com.hivemq.protocols.v2.tag.TagAspectCoordinator;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -69,6 +73,13 @@ public final class ProtocolAdapterWrapperContext {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdapterWrapperContext.class);
 
+    /**
+     * The actor-side browse deadline (design §11.4). The REST request timeout is the primary service-level bound
+     * (it returns {@code 504}); this deadline is the backstop that guarantees the future always completes and the
+     * single in-flight browse slot is released even when the protocol adapter never reports a result.
+     */
+    private static final long BROWSE_DEADLINE_MILLIS = 60_000L;
+
     private final @NotNull String adapterId;
     private final @NotNull ProtocolAdapter protocolAdapter;
     private final @NotNull MailboxSender<ProtocolAdapterWrapperMessage> selfSender;
@@ -89,6 +100,7 @@ public final class ProtocolAdapterWrapperContext {
 
     private @Nullable TimerHandle watchdog;
     private @Nullable TimerHandle backoffTimer;
+    private @Nullable PendingBrowse pendingBrowse;
     private @Nullable FSM<ProtocolAdapterWrapperState, ProtocolAdapterWrapperEvent, ProtocolAdapterWrapperContext>
             machine;
 
@@ -281,6 +293,7 @@ public final class ProtocolAdapterWrapperContext {
     @NotNull
     ProtocolAdapterWrapperState connectionRetryFromConnectedStep() {
         tagPlane.onAdapterUnavailable();
+        failPendingBrowse();
         return enterConnectionRetry();
     }
 
@@ -296,6 +309,7 @@ public final class ProtocolAdapterWrapperContext {
     @NotNull
     ProtocolAdapterWrapperState disconnectBeforeReconnectFromConnectedStep() {
         tagPlane.onAdapterUnavailable();
+        failPendingBrowse();
         return disconnectBeforeReconnectStep();
     }
 
@@ -304,6 +318,7 @@ public final class ProtocolAdapterWrapperContext {
         clearTimers();
         clearVerification();
         tagPlane.onAdapterUnavailable();
+        failPendingBrowse();
         protocolAdapter.disconnect();
         armWatchdog();
         return WAITING_FOR_DISCONNECTED;
@@ -385,6 +400,7 @@ public final class ProtocolAdapterWrapperContext {
         }
         lastErrorReason = reason;
         tagPlane.onAdapterUnavailable();
+        failPendingBrowse();
         healthListener.wrapperError(adapterId, reason);
         return ERROR;
     }
@@ -471,6 +487,81 @@ public final class ProtocolAdapterWrapperContext {
 
     private void synthesizeAllVerified() {
         selfSender.tell(new ProtocolAdapterWrapperEvent.AllVerified());
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+    //  Browse bridge (design §11.4) — one in-flight browse per adapter, completed from the result or the deadline
+    // ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Bridge a REST browse to the protocol adapter (design §11.4), on the dispatch thread. A browse runs only when
+     * the adapter is {@code CONNECTED} and no browse is already in flight; otherwise the future is failed with a
+     * {@link BrowseRejectedException} the resource maps to {@code 409}. On acceptance, one {@code browse(filter)} is
+     * issued, the future is stashed, and a deadline timer is armed so the slot is always released — the matching
+     * {@link ProtocolAdapterWrapperEvent.BrowseResultReceived} completes it through {@link #completeBrowse(List)}.
+     *
+     * @param filter     the browse filter.
+     * @param completion the future the REST thread awaits.
+     */
+    public void handleBrowseRequest(
+            final @NotNull BrowseFilter filter, final @NotNull CompletableFuture<List<BrowseResultEntry>> completion) {
+        if (machine().state() != CONNECTED) {
+            completion.completeExceptionally(new BrowseRejectedException(
+                    BrowseRejectedException.Reason.NOT_CONNECTED,
+                    "adapter '" + adapterId + "' is not connected (" + machine().state() + ")"));
+            return;
+        }
+        if (pendingBrowse != null) {
+            completion.completeExceptionally(new BrowseRejectedException(
+                    BrowseRejectedException.Reason.ALREADY_IN_FLIGHT,
+                    "a browse is already in flight on adapter '" + adapterId + "'"));
+            return;
+        }
+        final TimerHandle deadline =
+                timers.schedule(clock.nowMillis() + BROWSE_DEADLINE_MILLIS, this::onBrowseDeadline);
+        pendingBrowse = new PendingBrowse(completion, deadline);
+        protocolAdapter.browse(filter);
+    }
+
+    /**
+     * Complete the pending browse with its results (design §11.4). A result arriving with nothing waiting — a stale
+     * or duplicate {@code browseResult} — is dropped.
+     *
+     * @param entries the browse result entries.
+     */
+    public void completeBrowse(final @NotNull List<BrowseResultEntry> entries) {
+        final PendingBrowse pending = pendingBrowse;
+        if (pending == null) {
+            return;
+        }
+        pendingBrowse = null;
+        timers.cancel(pending.deadline());
+        pending.completion().complete(List.copyOf(entries));
+    }
+
+    private void onBrowseDeadline() {
+        final PendingBrowse pending = pendingBrowse;
+        if (pending == null) {
+            return;
+        }
+        pendingBrowse = null;
+        pending.completion()
+                .completeExceptionally(new BrowseRejectedException(
+                        BrowseRejectedException.Reason.TIMED_OUT,
+                        "browse on adapter '" + adapterId + "' did not complete before the deadline"));
+    }
+
+    private void failPendingBrowse() {
+        final PendingBrowse pending = pendingBrowse;
+        if (pending == null) {
+            return;
+        }
+        pendingBrowse = null;
+        timers.cancel(pending.deadline());
+        pending.completion()
+                .completeExceptionally(new BrowseRejectedException(
+                        BrowseRejectedException.Reason.NOT_CONNECTED,
+                        "adapter '" + adapterId + "' lost its connection before the browse completed"));
     }
 
     // ──────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -598,4 +689,15 @@ public final class ProtocolAdapterWrapperContext {
     public @NotNull ProtocolAdapter protocolAdapter() {
         return protocolAdapter;
     }
+
+    /**
+     * The single in-flight browse: the future the REST thread awaits and the deadline timer that releases the slot
+     * if the protocol adapter never reports a result (design §11.4).
+     *
+     * @param completion the future to complete with the browse result or a {@link BrowseRejectedException}.
+     * @param deadline   the deadline timer, canceled when the browse completes.
+     */
+    private record PendingBrowse(
+            @NotNull CompletableFuture<List<BrowseResultEntry>> completion,
+            @NotNull TimerHandle deadline) {}
 }

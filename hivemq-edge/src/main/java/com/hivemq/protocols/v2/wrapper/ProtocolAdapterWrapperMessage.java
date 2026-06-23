@@ -27,7 +27,9 @@ import com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessage;
  * flow through the transition table;</li>
  * <li>{@link ProtocolAdapterWrapperTick} — time, delivered as a message ({@code TICK} band);</li>
  * <li>{@link ProtocolAdapterWrapperWriteRequest} — a southbound write to route to a tag's write aspect
- * ({@code DATA} band, design §7.5), neither a goal command nor a transition-table event.</li>
+ * ({@code DATA} band, design §7.5), neither a goal command nor a transition-table event;</li>
+ * <li>{@link ProtocolAdapterWrapperBrowseRequest} — a REST browse request to bridge to the protocol adapter
+ * ({@code CONTROL} band, design §11.4), carrying the completion future; neither a goal command nor an event.</li>
  * </ul>
  * Sealed because all permitted subtypes live in this package (a sealed interface and its {@code permits} must
  * share a package); the generic {@link MailboxMessage} marker is the non-sealed bridge that lets each extend it
@@ -37,4 +39,5 @@ public sealed interface ProtocolAdapterWrapperMessage extends MailboxMessage
         permits ProtocolAdapterWrapperCommand,
                 ProtocolAdapterWrapperEvent,
                 ProtocolAdapterWrapperTick,
-                ProtocolAdapterWrapperWriteRequest {}
+                ProtocolAdapterWrapperWriteRequest,
+                ProtocolAdapterWrapperBrowseRequest {}

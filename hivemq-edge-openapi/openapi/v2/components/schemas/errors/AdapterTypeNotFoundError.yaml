@@ -1,0 +1,17 @@
+allOf:
+  - $ref: "./ApiProblemDetails.yaml"
+  - type: object
+    properties:
+      adapterId:
+        type: string
+        description: The id of the adapter whose type schema is unavailable.
+        example: "my-adapter"
+    required:
+      - adapterId
+example:
+  general:
+    status: 404
+    title: "Adapter Type Not Available"
+    detail: "No adapter type schema is available for the adapter 'my-adapter'."
+    adapterId: "my-adapter"
+    type: "https://hivemq.com/edge/api/v2/model/AdapterTypeNotFoundError"

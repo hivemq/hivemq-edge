@@ -1,0 +1,8 @@
+type: object
+description: A tag whose retry was skipped, with the machine-readable reason.
+properties:
+  tagName:
+    type: string
+  reason:
+    type: string
+    description: Why the retry was skipped (for example "aspect is not in an error state").

@@ -16,7 +16,9 @@
 package com.hivemq.protocols.v2.manager;
 
 import com.hivemq.adapter.sdk.api.v2.factories.ProtocolAdapterFactory;
+import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -56,5 +58,13 @@ public final class ProtocolAdapterFactoryRegistry {
      */
     public @NotNull Optional<ProtocolAdapterFactory> findByProtocolId(final @NotNull String protocolId) {
         return Optional.ofNullable(factoryMap.get(protocolId));
+    }
+
+    /**
+     * @return all registered factories, in registration order — the source of the v2 {@code GET /types} listing.
+     *         Empty in production wiring (D8), so {@code GET /types} is empty until a real adapter type is ported.
+     */
+    public @NotNull Collection<ProtocolAdapterFactory> all() {
+        return List.copyOf(factoryMap.values());
     }
 }

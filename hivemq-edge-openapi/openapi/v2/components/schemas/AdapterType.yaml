@@ -1,0 +1,41 @@
+type: object
+description: A registered Nevsky adapter type, with its capabilities and schema projections.
+required:
+  - id
+properties:
+  id:
+    type: string
+    description: The protocol id (the type identifier).
+  protocolId:
+    type: string
+  displayName:
+    type: string
+  description:
+    type: string
+  version:
+    type: string
+  logoUrl:
+    type: string
+  author:
+    type: string
+  category:
+    type: string
+  searchTags:
+    type: array
+    items:
+      type: string
+  capabilities:
+    type: array
+    items:
+      type: string
+      enum:
+        - SUBSCRIPTIONS
+        - WRITE
+        - BROWSE
+  configVersion:
+    type: integer
+    format: int32
+  nodeSchema:
+    $ref: ../../../components/schemas/JsonNode.yaml
+  adapterSchema:
+    $ref: ../../../components/schemas/JsonNode.yaml

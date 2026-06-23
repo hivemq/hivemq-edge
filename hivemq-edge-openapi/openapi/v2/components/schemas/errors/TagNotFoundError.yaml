@@ -1,0 +1,23 @@
+allOf:
+  - $ref: "./ApiProblemDetails.yaml"
+  - type: object
+    properties:
+      adapterId:
+        type: string
+        description: The id of the adapter the tag was looked up on.
+        example: "my-adapter"
+      tagName:
+        type: string
+        description: The name of the tag that was not found.
+        example: "temperature"
+    required:
+      - adapterId
+      - tagName
+example:
+  general:
+    status: 404
+    title: "Tag Not Found"
+    detail: "No tag 'temperature' is present on the protocol adapter 'my-adapter'."
+    adapterId: "my-adapter"
+    tagName: "temperature"
+    type: "https://hivemq.com/edge/api/v2/model/TagNotFoundError"

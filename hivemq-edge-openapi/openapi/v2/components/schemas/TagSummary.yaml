@@ -1,0 +1,27 @@
+type: object
+description: A summary of a Nevsky adapter's tags, counted by externally visible status.
+properties:
+  total:
+    type: integer
+    format: int32
+    description: The total number of tags configured on the adapter.
+  northboundAndSouthbound:
+    type: integer
+    format: int32
+    description: The number of tags active on both directions.
+  northboundOnly:
+    type: integer
+    format: int32
+    description: The number of tags active northbound only.
+  southboundOnly:
+    type: integer
+    format: int32
+    description: The number of tags active southbound only.
+  deactivated:
+    type: integer
+    format: int32
+    description: The number of fully deactivated tags.
+  error:
+    type: integer
+    format: int32
+    description: The number of tags in error.
