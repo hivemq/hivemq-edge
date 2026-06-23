@@ -1,0 +1,37 @@
+post:
+  description: >-
+    Retry a permanently-failed tag of a Nevsky (v2) adapter (runtime-only; EDG-462). Each aspect of the tag that
+    is in a permanent verification failure re-verifies; aspects in any other state are skipped with a reason.
+    Never touches configuration.
+  operationId: retryTag
+  x-roles-allowed:
+    - admin
+  parameters:
+    - description: The adapter id.
+      in: path
+      name: adapterId
+      required: true
+      schema:
+        type: string
+    - description: The tag name.
+      in: path
+      name: tagName
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/TagRetryResult.yaml
+      description: Success
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Adapter or tag not found
+  summary: Retry a permanently-failed tag
+  tags:
+    - Protocol Adapters

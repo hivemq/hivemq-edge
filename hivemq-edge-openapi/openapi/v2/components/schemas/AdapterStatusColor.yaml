@@ -1,0 +1,10 @@
+type: string
+description: >-
+  The externally visible color of a Nevsky (v2) protocol adapter, derived purely from its state machine state.
+enum:
+  - GREY_STOPPED
+  - YELLOW_CONNECTING
+  - GREEN_CONNECTED
+  - AMBER_RETRYING
+  - YELLOW_STOPPING
+  - RED_ERROR

@@ -1,0 +1,55 @@
+post:
+  description: >-
+    Browse a Nevsky (v2) adapter's device address space below a filter node. The request blocks until the adapter
+    returns the result or the request times out. Single in-flight browse per adapter.
+  operationId: browseAdapter
+  x-roles-allowed:
+    - admin
+  parameters:
+    - description: The adapter id.
+      in: path
+      name: adapterId
+      required: true
+      schema:
+        type: string
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/BrowseCommand.yaml
+    description: The browse filter; omit the node to browse from the root.
+    required: false
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/BrowseResult.yaml
+      description: Success
+    '400':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: The adapter type does not support browsing, or the filter is invalid
+    '404':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: Adapter not found
+    '409':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: The adapter is not connected, or a browse is already in flight
+    '504':
+      content:
+        application/json:
+          schema:
+            $ref: ../../components/schemas/ProblemDetails.yaml
+      description: The adapter did not return a browse result before the timeout
+  summary: Browse a Nevsky adapter's address space
+  tags:
+    - Protocol Adapters

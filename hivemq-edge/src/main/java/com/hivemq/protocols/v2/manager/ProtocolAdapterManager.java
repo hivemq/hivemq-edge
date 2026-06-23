@@ -32,6 +32,8 @@ import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperStar
 import com.hivemq.protocols.v2.manager.ProtocolAdapterManagerMessage.WrapperStopped;
 import com.hivemq.protocols.v2.runtime.Clock;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
+import com.hivemq.protocols.v2.wrapper.BrowseRejectedException;
+import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperBrowseRequest;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperCommand;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperMessage;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState;
@@ -354,21 +356,29 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
         log.warn("v2 adapter '{}' entered ERROR: {}", adapterId, reason);
     }
 
-    // ── browse bridge (design §11.4 — completed in the OpenAPI/resource task) ────────────────────────────────────
+    // ── browse bridge (design §11.4) ─────────────────────────────────────────────────────────────────────────────
 
     private void handleBrowse(final @NotNull BrowseRequested browse) {
         final ProtocolAdapterHandle handle = registry.find(browse.adapterId());
         if (handle == null) {
+            // A race: the adapter was removed after the resource's own 404 check. The resource maps this to 404.
             browse.completion()
                     .completeExceptionally(new IllegalArgumentException("no v2 adapter [" + browse.adapterId() + "]"));
             return;
         }
-        // The wrapper→adapter browse bridge (capability and connection checks, the forward, and the request
-        // timeout) is wired in the OpenAPI/resource task; the message and its completion future are part of the
-        // sealed hierarchy now so that task only adds the forward.
-        browse.completion()
-                .completeExceptionally(new UnsupportedOperationException(
-                        "the v2 browse bridge for adapter [" + browse.adapterId() + "] is not wired yet"));
+        // The capability check (400) is the resource's — it holds the factory. The manager checks the connection
+        // (409) on the snapshot and forwards to the wrapper, which (on its own dispatch thread) rechecks it is
+        // CONNECTED with no browse in flight, issues browse(filter), and completes the future from the result or
+        // the deadline (design §11.4).
+        final AdapterStatusSnapshot snapshot = handle.snapshot().get();
+        if (snapshot == null || snapshot.machineState() != ProtocolAdapterWrapperState.CONNECTED) {
+            browse.completion()
+                    .completeExceptionally(new BrowseRejectedException(
+                            BrowseRejectedException.Reason.NOT_CONNECTED,
+                            "adapter '" + browse.adapterId() + "' is not connected"));
+            return;
+        }
+        handle.wrapperSender().tell(new ProtocolAdapterWrapperBrowseRequest(browse.filter(), browse.completion()));
     }
 
     // ── health summary (design §8.3) ────────────────────────────────────────────────────────────────────────────

@@ -350,11 +350,38 @@ tasks.register<GenerateTask>("genJaxRs") {
     )
 }
 
+// The Nevsky (v2) REST surface is generated from its own bundled spec into its own package, so it is fully
+// isolated from the v1 API and from the SDK types of the same name (the package carries the version, rule N1).
+tasks.register<GenerateTask>("genJaxRsV2") {
+    inputSpec.set("$projectDir/../ext/hivemq-edge-openapi-v2.yaml")
+    outputDir.set("$buildDirectory/generated/openapi/v2")
+    templateDir.set("$projectDir/../hivemq-edge-openapi/openapi/templates/Java")
+    generatorName.set("jaxrs-spec")
+    apiPackage.set("com.hivemq.edge.api.v2")
+    modelPackage.set("com.hivemq.edge.api.v2.model")
+    invokerPackage.set("com.hivemq.edge.api.v2")
+    generateApiTests.set(false)
+    configOptions.set(
+        hashMapOf(
+            "useJakartaEe" to "true",
+            "dateLibrary" to "java8",
+            "generateBuilders" to "true",
+            "generatePom" to "false",
+            "interfaceOnly" to "true",
+            "useTags" to "true",
+            "returnResponse" to "true",
+            "openApiNullable" to "false"
+        )
+    )
+}
+
 sourceSets {
     main {
         java {
             srcDirs("$buildDirectory/generated/openapi/src/gen/java")
             srcDirs("$buildDirectory/generated/openapi/src/main/java")
+            srcDirs("$buildDirectory/generated/openapi/v2/src/gen/java")
+            srcDirs("$buildDirectory/generated/openapi/v2/src/main/java")
         }
     }
 }
@@ -385,10 +412,12 @@ tasks.jar {
 
 tasks.compileJava {
     dependsOn(tasks.named("genJaxRs"))
+    dependsOn(tasks.named("genJaxRsV2"))
 }
 
 tasks.named("sourcesJar") {
     dependsOn(tasks.named("genJaxRs"))
+    dependsOn(tasks.named("genJaxRsV2"))
 }
 
 tasks.shadowJar {

@@ -32,11 +32,13 @@ import org.jetbrains.annotations.NotNull;
  * <li>a {@link ProtocolAdapterWrapperCommand} runs through the goal-command bypass (mutate the goal, then
  * {@code stepTowardGoal}), so it is valid in every state and never triggers a defensive reset;</li>
  * <li>a {@link ProtocolAdapterWrapperEvent} is routed: protocol-adapter lifecycle events and the synthesized
- * {@code AllVerified} drive the transition table, while verification, data, write, and browse events are routed
- * to the tag plane (design §6.3). In {@code ERROR} every event is fed to the machine so the absorb rows can swallow
- * it (design §6.4);</li>
+ * {@code AllVerified} drive the transition table, while verification, data, and write events are routed to the tag
+ * plane and a browse result completes the pending browse future (design §6.3, §11.4). In {@code ERROR} every event
+ * is fed to the machine so the absorb rows can swallow it (design §6.4);</li>
  * <li>a {@link ProtocolAdapterWrapperWriteRequest} routes a southbound write to the node's write aspect (design
- * §7.5) — it changes no adapter goal or machine state.</li>
+ * §7.5) — it changes no adapter goal or machine state;</li>
+ * <li>a {@link ProtocolAdapterWrapperBrowseRequest} bridges a REST browse to the protocol adapter (design §11.4) —
+ * it changes no adapter goal or machine state.</li>
  * </ul>
  * After every message it publishes an immutable {@link AdapterStatusSnapshot} (design §6.6) — the only state that
  * crosses the actor boundary outward. {@code receive} runs on the actor's single dispatch thread; the wrapper
@@ -85,6 +87,10 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
                 // A southbound write: route it to the node's write aspect (design §7.5). It changes no adapter
                 // goal or machine state, so no stepTowardGoal — only the write aspect (and the snapshot) move.
                 context.routeWriteRequestToTags(write.node(), write.value());
+            case ProtocolAdapterWrapperBrowseRequest browse ->
+                // A REST browse request: bridge it to the protocol adapter (design §11.4). It changes no adapter
+                // goal or machine state — it issues one browse() when CONNECTED and stashes the future.
+                context.handleBrowseRequest(browse.filter(), browse.completion());
         }
         if (machine.state() != before) {
             context.recordTransition();
@@ -95,7 +101,8 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
     /**
      * Route one event (design §6.3). In {@code ERROR} every event is fed to the machine so the named absorb rows
      * can swallow it (design §6.4). Otherwise lifecycle events and the gate signal drive the machine, while
-     * verification, data, write, and browse events are routed to the tag plane. The wrapper-level aspect-timer
+     * verification, data, and write events are routed to the tag plane and a browse result completes the pending
+     * browse future (design §11.4). The wrapper-level aspect-timer
      * events ({@code PollTimerFired} etc.) are never produced: each aspect schedules its own poll,
      * verification-retry, and subscription-retry timers on the actor's single timer queue and feeds its own
      * machine directly (design §5.5), so these remain only as part of the sealed hierarchy and its {@code ERROR}
@@ -128,9 +135,9 @@ public final class ProtocolAdapterWrapper implements MessageHandler<ProtocolAdap
                 context.routeNodeErrorToTags(nodeError.node(), nodeError.reason(), nodeError.spontaneous());
             case ProtocolAdapterWrapperEvent.WriteResultReceived write ->
                 context.routeWriteResultToTags(write.node(), write.success(), write.reason());
-            case ProtocolAdapterWrapperEvent.BrowseResultReceived ignored -> {
-                // The browse REST bridge is a later task; nothing consumes browse results yet.
-            }
+            case ProtocolAdapterWrapperEvent.BrowseResultReceived browse ->
+                // Complete the pending browse future (design §11.4); a stale result with nothing waiting is dropped.
+                context.completeBrowse(browse.entries());
             case ProtocolAdapterWrapperEvent.PollTimerFired ignored -> {
                 // Unused: aspects schedule and fire their own timers on the actor's single timer queue (§5.5).
             }
