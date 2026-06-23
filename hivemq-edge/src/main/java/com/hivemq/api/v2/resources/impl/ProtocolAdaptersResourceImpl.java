@@ -26,6 +26,7 @@ import com.hivemq.adapter.sdk.api.v2.model.BrowseFilter;
 import com.hivemq.adapter.sdk.api.v2.model.BrowseResultEntry;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.api.AbstractApi;
+import com.hivemq.api.v2.errors.ProtocolAdapterV2ErrorFactory;
 import com.hivemq.edge.api.v2.ProtocolAdaptersApi;
 import com.hivemq.edge.api.v2.model.AccessFlags;
 import com.hivemq.edge.api.v2.model.AdapterActivation;
@@ -43,7 +44,6 @@ import com.hivemq.edge.api.v2.model.TagRetryRequest;
 import com.hivemq.edge.api.v2.model.TagRetryResult;
 import com.hivemq.edge.api.v2.model.TagStatusDetail;
 import com.hivemq.edge.api.v2.model.TagSummary;
-import com.hivemq.http.error.ProblemDetails;
 import com.hivemq.protocols.v2.config.AccessFlagsEntity;
 import com.hivemq.protocols.v2.config.NorthboundMappingEntity;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
@@ -70,7 +70,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -270,7 +269,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public @NotNull Response setAdapterActivation(
             final @NotNull String adapterId, final @NotNull AdapterActivation body) {
         if (body.getDirection() == null || body.getActivated() == null) {
-            return problem(400, "ActivationInvalid", "direction and activated are required");
+            return ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.adapterActivationInvalidError());
         }
         if (registry.find(adapterId) == null) {
             return adapterNotFound(adapterId);
@@ -318,7 +317,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final Optional<ProtocolAdapterFactory> factory = factoryFor(adapterId);
         if (factory.isEmpty()
                 || !factory.get().information().capabilities().contains(ProtocolAdapterCapability.BROWSE)) {
-            return problem(400, "BrowseUnsupported", "adapter '" + adapterId + "' does not support browsing");
+            return ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.browseNotSupportedError(adapterId));
         }
         final String nodeString = (body == null
                         || body.getNodeString() == null
@@ -330,7 +329,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             filterNode = objectMapper.readValue(
                     nodeString, factory.get().information().nodeClass());
         } catch (final JsonProcessingException exception) {
-            return problem(400, "BrowseFilterInvalid", "invalid browse filter node: " + exception.getOriginalMessage());
+            return ErrorResponseUtil.errorResponse(
+                    ProtocolAdapterV2ErrorFactory.browseFilterInvalidError(adapterId, exception.getOriginalMessage()));
         }
 
         final CompletableFuture<List<BrowseResultEntry>> completion = new CompletableFuture<>();
@@ -340,10 +340,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             final List<BrowseResultEntry> entries = completion.get(browseTimeoutMillis, TimeUnit.MILLISECONDS);
             return Response.ok(toBrowseResult(entries)).build();
         } catch (final TimeoutException exception) {
-            return problem(504, "BrowseTimeout", "browse on adapter '" + adapterId + "' timed out");
+            return ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.browseTimeoutError(adapterId));
         } catch (final InterruptedException exception) {
             Thread.currentThread().interrupt();
-            return problem(503, "BrowseInterrupted", "browse on adapter '" + adapterId + "' was interrupted");
+            return ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.browseInterruptedError(adapterId));
         } catch (final ExecutionException exception) {
             return browseFailure(adapterId, exception.getCause());
         }
@@ -351,17 +351,21 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     private @NotNull Response browseFailure(final @NotNull String adapterId, final @Nullable Throwable cause) {
         if (cause instanceof final BrowseRejectedException rejected) {
-            final String message = Objects.requireNonNullElse(rejected.getMessage(), "browse rejected");
             return switch (rejected.reason()) {
-                case NOT_CONNECTED, ALREADY_IN_FLIGHT -> problem(409, "BrowseConflict", message);
-                case UNSUPPORTED -> problem(400, "BrowseUnsupported", message);
-                case TIMED_OUT -> problem(504, "BrowseTimeout", message);
+                case NOT_CONNECTED ->
+                    ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.adapterNotConnectedError(adapterId));
+                case ALREADY_IN_FLIGHT ->
+                    ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.browseInProgressError(adapterId));
+                case UNSUPPORTED ->
+                    ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.browseNotSupportedError(adapterId));
+                case TIMED_OUT ->
+                    ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.browseTimeoutError(adapterId));
             };
         }
         if (cause instanceof IllegalArgumentException) {
             return adapterNotFound(adapterId);
         }
-        return problem(500, "BrowseFailed", "browse on adapter '" + adapterId + "' failed");
+        return ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.browseFailedError(adapterId));
     }
 
     // ── DTO assembly (pure functions) ────────────────────────────────────────────────────────────────────────────
@@ -615,19 +619,14 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     private static @NotNull Response adapterNotFound(final @NotNull String adapterId) {
-        return problem(404, "AdapterNotFound", "no v2 adapter found with id: " + adapterId);
+        return ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.adapterNotFoundError(adapterId));
     }
 
     private static @NotNull Response adapterTypeUnavailable(final @NotNull String adapterId) {
-        return problem(404, "AdapterTypeUnavailable", "no adapter type schema available for adapter: " + adapterId);
+        return ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.adapterTypeNotFoundError(adapterId));
     }
 
     private static @NotNull Response tagNotFound(final @NotNull String adapterId, final @NotNull String tagName) {
-        return problem(404, "TagNotFound", "no tag '" + tagName + "' on v2 adapter '" + adapterId + "'");
-    }
-
-    private static @NotNull Response problem(
-            final int status, final @NotNull String code, final @NotNull String message) {
-        return ErrorResponseUtil.errorResponse(new ProblemDetails(code, message, message, status, List.of()));
+        return ErrorResponseUtil.errorResponse(ProtocolAdapterV2ErrorFactory.tagNotFoundError(adapterId, tagName));
     }
 }

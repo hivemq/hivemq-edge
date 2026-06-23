@@ -28,9 +28,16 @@ post:
       description: Success
     '404':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../../components/schemas/ProblemDetails.yaml
+            oneOf:
+              - $ref: ../components/schemas/errors/AdapterNotFoundError.yaml
+              - $ref: ../components/schemas/errors/TagNotFoundError.yaml
+            discriminator:
+              propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/v2/model/AdapterNotFoundError: "../components/schemas/errors/AdapterNotFoundError.yaml"
+                https://hivemq.com/edge/api/v2/model/TagNotFoundError: "../components/schemas/errors/TagNotFoundError.yaml"
       description: Adapter or tag not found
   summary: Retry a permanently-failed tag
   tags:

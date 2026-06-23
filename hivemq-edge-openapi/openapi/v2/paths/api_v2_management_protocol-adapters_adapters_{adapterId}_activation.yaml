@@ -22,11 +22,17 @@ post:
   responses:
     '200':
       description: Success
+    '400':
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../components/schemas/errors/AdapterActivationInvalidError.yaml
+      description: The activation request body is invalid
     '404':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../../components/schemas/ProblemDetails.yaml
+            $ref: ../components/schemas/errors/AdapterNotFoundError.yaml
       description: Adapter not found
   summary: Set a Nevsky adapter's direction activation
   tags:

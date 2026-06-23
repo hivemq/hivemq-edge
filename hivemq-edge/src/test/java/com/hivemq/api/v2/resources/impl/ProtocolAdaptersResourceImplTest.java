@@ -37,15 +37,20 @@ import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
 import com.hivemq.edge.api.v2.ProtocolAdaptersApi;
 import com.hivemq.edge.api.v2.model.AdapterActivation;
+import com.hivemq.edge.api.v2.model.AdapterActivationInvalidError;
 import com.hivemq.edge.api.v2.model.AdapterDirection;
+import com.hivemq.edge.api.v2.model.AdapterNotConnectedError;
+import com.hivemq.edge.api.v2.model.AdapterNotFoundError;
 import com.hivemq.edge.api.v2.model.AdapterStatus;
 import com.hivemq.edge.api.v2.model.AdapterStatusColor;
 import com.hivemq.edge.api.v2.model.AdapterType;
 import com.hivemq.edge.api.v2.model.BrowseCommand;
 import com.hivemq.edge.api.v2.model.BrowseResult;
+import com.hivemq.edge.api.v2.model.BrowseTimeoutError;
 import com.hivemq.edge.api.v2.model.Mapping;
 import com.hivemq.edge.api.v2.model.MappingStatus;
 import com.hivemq.edge.api.v2.model.NodeTagPair;
+import com.hivemq.edge.api.v2.model.TagNotFoundError;
 import com.hivemq.edge.api.v2.model.TagRetryRequest;
 import com.hivemq.edge.api.v2.model.TagRetryResult;
 import com.hivemq.edge.api.v2.model.TagStatus;
@@ -472,6 +477,72 @@ class ProtocolAdaptersResourceImplTest {
     void browse_unknownAdapter_is404() {
         assertThat(resource().browseAdapter("missing", new BrowseCommand()).getStatus())
                 .isEqualTo(404);
+    }
+
+    // ── error bodies are typed v2 problem details (design §11, DataHub-style) ────────────────────────────────────
+
+    @Test
+    void adapterNotFound_bodyIsTypedProblemDetail() {
+        final Response response = resource().getAdapterStatus("missing");
+
+        assertThat(response.getStatus()).isEqualTo(404);
+        assertThat(response.getMediaType().toString()).startsWith("application/problem+json");
+        final AdapterNotFoundError error = (AdapterNotFoundError) response.getEntity();
+        assertThat(error.getType()).hasToString("https://hivemq.com/edge/api/v2/model/AdapterNotFoundError");
+        assertThat(error.getStatus()).isEqualTo(404);
+        assertThat(error.getTitle()).isEqualTo("Adapter Not Found");
+        assertThat(error.getAdapterId()).isEqualTo("missing");
+        assertThat(error.getDetail()).contains("missing");
+    }
+
+    @Test
+    void tagNotFound_bodyCarriesAdapterAndTag() {
+        register("a", snapshot("a", ProtocolAdapterWrapperState.CONNECTED, List.of(), true, false, null));
+
+        final TagNotFoundError error =
+                (TagNotFoundError) resource().getTagStatus("a", "ghost").getEntity();
+        assertThat(error.getType()).hasToString("https://hivemq.com/edge/api/v2/model/TagNotFoundError");
+        assertThat(error.getAdapterId()).isEqualTo("a");
+        assertThat(error.getTagName()).isEqualTo("ghost");
+    }
+
+    @Test
+    void activationInvalid_bodyIsTyped() {
+        register("a", snapshot("a", ProtocolAdapterWrapperState.CONNECTED, List.of(), true, false, null));
+
+        final AdapterActivationInvalidError error = (AdapterActivationInvalidError)
+                resource().setAdapterActivation("a", new AdapterActivation()).getEntity();
+        assertThat(error.getType()).hasToString("https://hivemq.com/edge/api/v2/model/AdapterActivationInvalidError");
+        assertThat(error.getStatus()).isEqualTo(400);
+    }
+
+    @Test
+    void browseRejection_mapsToTypedProblemDetail() {
+        final ProtocolAdapterFactoryRegistry factories = browseCapableFactories();
+        when(configExtractor.getAdapterByAdapterId("a")).thenReturn(Optional.of(entity("a", "chaos")));
+        register("a", snapshot("a", ProtocolAdapterWrapperState.STOPPED, List.of(), false, false, null));
+        manager.browseHandler = request -> request.completion()
+                .completeExceptionally(
+                        new BrowseRejectedException(BrowseRejectedException.Reason.NOT_CONNECTED, "down"));
+
+        final Response response = resource(factories).browseAdapter("a", new BrowseCommand());
+        assertThat(response.getStatus()).isEqualTo(409);
+        final AdapterNotConnectedError error = (AdapterNotConnectedError) response.getEntity();
+        assertThat(error.getType()).hasToString("https://hivemq.com/edge/api/v2/model/AdapterNotConnectedError");
+        assertThat(error.getAdapterId()).isEqualTo("a");
+    }
+
+    @Test
+    void browseTimeout_bodyIsTyped() {
+        final ProtocolAdapterFactoryRegistry factories = browseCapableFactories();
+        when(configExtractor.getAdapterByAdapterId("a")).thenReturn(Optional.of(entity("a", "chaos")));
+        register("a", snapshot("a", ProtocolAdapterWrapperState.CONNECTED, List.of(), true, false, null));
+        // no browseHandler — the future never completes, so the request times out
+
+        final Response response = resource(factories).browseAdapter("a", new BrowseCommand());
+        assertThat(response.getStatus()).isEqualTo(504);
+        assertThat(((BrowseTimeoutError) response.getEntity()).getType())
+                .hasToString("https://hivemq.com/edge/api/v2/model/BrowseTimeoutError");
     }
 
     // ── the v2 surface writes no configuration ──────────────────────────────────────────────────────────────────

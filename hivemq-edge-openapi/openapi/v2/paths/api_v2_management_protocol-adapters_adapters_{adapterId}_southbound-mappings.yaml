@@ -23,9 +23,9 @@ get:
       description: Success
     '404':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../../components/schemas/ProblemDetails.yaml
+            $ref: ../components/schemas/errors/AdapterNotFoundError.yaml
       description: Adapter not found
   summary: List a Nevsky adapter's southbound mappings
   tags:

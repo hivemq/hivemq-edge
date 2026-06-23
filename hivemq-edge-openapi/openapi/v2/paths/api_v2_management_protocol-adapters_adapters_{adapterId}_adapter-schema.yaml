@@ -23,10 +23,10 @@ get:
       description: Success
     '404':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../../components/schemas/ProblemDetails.yaml
-      description: Adapter not found
+            $ref: ../components/schemas/errors/AdapterTypeNotFoundError.yaml
+      description: Adapter type schema not available
   summary: Obtain a Nevsky adapter's configuration schema
   tags:
     - Protocol Adapters

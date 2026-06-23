@@ -28,27 +28,53 @@ post:
       description: Success
     '400':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../../components/schemas/ProblemDetails.yaml
+            oneOf:
+              - $ref: ../components/schemas/errors/BrowseNotSupportedError.yaml
+              - $ref: ../components/schemas/errors/BrowseFilterInvalidError.yaml
+            discriminator:
+              propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/v2/model/BrowseNotSupportedError: "../components/schemas/errors/BrowseNotSupportedError.yaml"
+                https://hivemq.com/edge/api/v2/model/BrowseFilterInvalidError: "../components/schemas/errors/BrowseFilterInvalidError.yaml"
       description: The adapter type does not support browsing, or the filter is invalid
     '404':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../../components/schemas/ProblemDetails.yaml
+            $ref: ../components/schemas/errors/AdapterNotFoundError.yaml
       description: Adapter not found
     '409':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../../components/schemas/ProblemDetails.yaml
+            oneOf:
+              - $ref: ../components/schemas/errors/AdapterNotConnectedError.yaml
+              - $ref: ../components/schemas/errors/BrowseInProgressError.yaml
+            discriminator:
+              propertyName: type
+              mapping:
+                https://hivemq.com/edge/api/v2/model/AdapterNotConnectedError: "../components/schemas/errors/AdapterNotConnectedError.yaml"
+                https://hivemq.com/edge/api/v2/model/BrowseInProgressError: "../components/schemas/errors/BrowseInProgressError.yaml"
       description: The adapter is not connected, or a browse is already in flight
+    '500':
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../components/schemas/errors/BrowseFailedError.yaml
+      description: The browse failed unexpectedly
+    '503':
+      content:
+        application/problem+json:
+          schema:
+            $ref: ../components/schemas/errors/BrowseInterruptedError.yaml
+      description: The browse was interrupted
     '504':
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: ../../components/schemas/ProblemDetails.yaml
+            $ref: ../components/schemas/errors/BrowseTimeoutError.yaml
       description: The adapter did not return a browse result before the timeout
   summary: Browse a Nevsky adapter's address space
   tags:

@@ -1,0 +1,17 @@
+allOf:
+  - $ref: "./ApiProblemDetails.yaml"
+  - type: object
+    properties:
+      adapterId:
+        type: string
+        description: The id of the adapter whose browse timed out.
+        example: "my-adapter"
+    required:
+      - adapterId
+example:
+  general:
+    status: 504
+    title: "Browse Timed Out"
+    detail: "The browse operation on the protocol adapter 'my-adapter' timed out."
+    adapterId: "my-adapter"
+    type: "https://hivemq.com/edge/api/v2/model/BrowseTimeoutError"
