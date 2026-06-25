@@ -33,7 +33,7 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Builds the Nevsky (v2) protocol-adapter REST error objects (design §11). Each method returns a generated, typed
+ * Builds the v2 protocol-adapter REST error objects. Each method returns a generated, typed
  * {@code ApiProblemDetails} subtype with its {@code type} URI derived from the class name (so it matches the
  * OpenAPI discriminator) and its {@code title}/{@code detail} assembled from the {@link I18nProtocolAdapterV2Error}
  * catalog. The resource hands the result to {@code ErrorResponseUtil.errorResponse(...)}, which serializes it as

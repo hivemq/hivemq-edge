@@ -31,7 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * The REST-readable registry (design §6.6, §8): basic lifecycle, and — with real threads and Awaitility, never
+ * The REST-readable registry: basic lifecycle, and — with real threads and Awaitility, never
  * {@code Thread.sleep} — that handles and their published snapshots are safely readable from a foreign thread while
  * the (single) writer mutates the registry, honoring the actor model's snapshot-only read path.
  */

@@ -29,12 +29,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The scriptable test simulator (design §10). It implements {@link ProtocolAdapter} directly and answers every
+ * The scriptable test simulator. It implements {@link ProtocolAdapter} directly and answers every
  * command by consulting a {@link ChaosScript}, reporting back through the {@link ProtocolAdapterOutput} tell-façade
  * exactly as a real adapter would — so its replies travel back through the wrapper mailbox. It records every
  * command for sequence assertions.
  * <p>
- * <b>Time contract (design §10.2).</b> The simulator holds no timers of its own. Immediate behaviors
+ * <b>Time contract.</b> The simulator holds no timers of its own. Immediate behaviors
  * ({@link ChaosBehavior#succeed()}, a {@link PollBehavior.Value}, …) report within the command call; deferred
  * behaviors ({@link ChaosBehavior.Delay}, the global acknowledgment latency, a {@link SubscriptionBehavior.LoseAfter}
  * loss, a browse duration, and {@link ChaosScript#injectedEvents() injected events}) are queued against a tick
@@ -73,7 +73,7 @@ public final class ChaosProtocolAdapter implements ProtocolAdapter {
         }
     }
 
-    // ── ProtocolAdapter (design §3.6) ───────────────────────────────────────────────────────────────────────────
+    // ── ProtocolAdapter ───────────────────────────────────────────────────────────────────────────
 
     @Override
     public @NotNull String adapterId() {
@@ -155,13 +155,13 @@ public final class ChaosProtocolAdapter implements ProtocolAdapter {
         }
     }
 
-    // ── harness-driven time (design §10.2) ──────────────────────────────────────────────────────────────────────
+    // ── harness-driven time ──────────────────────────────────────────────────────────────────────
 
     /**
      * Advance the simulator one harness tick and fire every deferred behavior that has come due. Called by the
      * harness once per advanced tick, after the clock told the wrapper its tick and before the dispatcher drains —
      * so a due acknowledgment ({@code EVENT}) is enqueued alongside the wrapper tick ({@code TICK}) and, by the
-     * priority ladder, processed first (design §5.1, S24).
+     * priority ladder, processed first (S24).
      */
     public void onTick() {
         currentTick++;
@@ -182,7 +182,7 @@ public final class ChaosProtocolAdapter implements ProtocolAdapter {
     }
 
     /**
-     * @return the commands the wrapper has issued, in order — the source of {@code assertSequence} (design §10.3).
+     * @return the commands the wrapper has issued, in order — the source of {@code assertSequence}.
      */
     public @NotNull List<String> commands() {
         return commands;
@@ -233,14 +233,14 @@ public final class ChaosProtocolAdapter implements ProtocolAdapter {
             case PollBehavior.Value value -> output.dataPoint(node, value.value());
             case PollBehavior.NodeErrorResponse error -> output.nodeError(node, error.reason(), false);
             case PollBehavior.NoResponse ignored -> {
-                // The poll never returns; the read aspect waits and the next scheduled poll is the retry (§7.3).
+                // The poll never returns; the read aspect waits and the next scheduled poll is the retry.
             }
         }
     }
 
     private void applySubscription(final @NotNull Node node, final @Nullable SubscriptionBehavior behavior) {
         if (behavior == null) {
-            // Unscripted subscribe: silent, leaving the read aspect in WAITING_FOR_SUBSCRIPTION (design §7.4).
+            // Unscripted subscribe: silent, leaving the read aspect in WAITING_FOR_SUBSCRIPTION.
             return;
         }
         switch (behavior) {

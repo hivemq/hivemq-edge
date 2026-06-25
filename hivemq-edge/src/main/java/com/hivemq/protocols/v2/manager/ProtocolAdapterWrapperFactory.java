@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Builds a fully-wired, dispatcher-attached {@link com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapper} from one
- * read-only {@link ProtocolAdapterEntity} and its type's {@link ProtocolAdapterFactory} (design §8.2). The seam the
+ * read-only {@link ProtocolAdapterEntity} and its type's {@link ProtocolAdapterFactory}. The seam the
  * manager depends on so its supervision logic is testable without the full actor stack: production wiring uses
  * {@link DefaultProtocolAdapterWrapperFactory}; the manager tests inject a recording double.
  */
@@ -33,7 +33,7 @@ public interface ProtocolAdapterWrapperFactory {
     /**
      * Construct, wire, and attach a wrapper/adapter pair for the given configuration. The returned adapter is
      * <b>not yet started</b> — the manager brings it to its config-declared goal with an explicit activation
-     * command (design §9.3). Implementations must not perform I/O or connect.
+     * command. Implementations must not perform I/O or connect.
      *
      * @param entity         the adapter configuration to instantiate.
      * @param factory        the factory of the configuration's protocol-adapter type.
@@ -52,7 +52,7 @@ public interface ProtocolAdapterWrapperFactory {
 
     /**
      * Translate the configuration's tags into the runtime node/tag pairs — the payload of an in-place
-     * {@link com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperCommand.UpdateTagSet} (design §8.2). Shares the
+     * {@link com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperCommand.UpdateTagSet}. Shares the
      * exact node-string deserialization {@link #create} uses, so a tags-only reload builds the same pairs the
      * adapter was created with.
      *

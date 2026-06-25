@@ -25,7 +25,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /**
- * The config-difference classifier (design §8.2): every transition class, the layering that lets the more
+ * The config-difference classifier: every transition class, the layering that lets the more
  * disruptive change win, and the adapter-direction predicate the manager uses to compose a tags-only transition.
  */
 class ProtocolAdapterConfigDiffUtilsTest {

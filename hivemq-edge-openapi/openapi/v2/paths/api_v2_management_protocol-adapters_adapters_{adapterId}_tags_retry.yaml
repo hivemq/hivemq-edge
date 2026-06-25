@@ -1,6 +1,6 @@
 post:
   description: >-
-    Bulk-retry permanently-failed tags of a Nevsky (v2) adapter (runtime-only; EDG-462). The body may list the
+    Bulk-retry permanently-failed tags of a v2 adapter (runtime-only). The body may list the
     tag names to retry; omit it to retry every permanently-failed tag. Never touches configuration.
   operationId: retryTags
   x-roles-allowed:

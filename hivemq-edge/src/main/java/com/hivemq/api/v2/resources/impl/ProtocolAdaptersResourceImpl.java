@@ -79,7 +79,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The Nevsky (v2) protocol-adapters REST resource (design §11). It is <b>state-only</b>: it serves read-only views
+ * The v2 protocol-adapters REST resource. It is <b>state-only</b>: it serves read-only views
  * folded purely from the immutable snapshots the adapter wrappers publish and from the externally-generated
  * configuration section, and it issues runtime-state commands (direction activation, tag retry, browse) by
  * {@code tell}ing the manager — it never touches actor state and never writes configuration.
@@ -96,7 +96,7 @@ import org.jetbrains.annotations.Nullable;
 public class ProtocolAdaptersResourceImpl extends AbstractApi implements ProtocolAdaptersApi {
 
     /**
-     * The browse request timeout (design §11.4): the JAX-RS request thread is the only thread that blocks, and it
+     * The browse request timeout: the JAX-RS request thread is the only thread that blocks, and it
      * gives up after this long with {@code 504}. The wrapper's own browse deadline is the backstop that releases
      * the in-flight slot.
      */
@@ -307,7 +307,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         return Response.ok(retryResult(adapterId, snapshot, requested)).build();
     }
 
-    // ── browse bridge (design §11.4) ─────────────────────────────────────────────────────────────────────────────
+    // ── browse bridge ─────────────────────────────────────────────────────────────────────────────
 
     @Override
     public @NotNull Response browseAdapter(final @NotNull String adapterId, final @Nullable BrowseCommand body) {

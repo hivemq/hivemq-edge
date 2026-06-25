@@ -28,7 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * JAXB parsing of the {@code <v2-protocol-adapters>} section (design §9.1): the section parses, the documented defaults
+ * JAXB parsing of the {@code <v2-protocol-adapters>} section: the section parses, the documented defaults
  * apply when elements are omitted, and an old config carrying no section is unaffected. Uses a self-contained JAXB
  * context (the closed {@code config.xsd} {@code <xs:all>} is extended to admit {@code <v2-protocol-adapters>} when the
  * extractor is wired into the reader, a later task).
@@ -134,7 +134,7 @@ class V2ProtocolAdaptersParsingTest {
         assertThat(entity.getRetryPolicy()).isEqualTo(new RetryPolicyEntity());
 
         final TagEntity tag = entity.getTags().getFirst();
-        // missing read-activated / write-activated default to true (design §9.1)
+        // missing read-activated / write-activated default to true
         assertThat(tag.isReadActivated()).isTrue();
         assertThat(tag.isWriteActivated()).isTrue();
         assertThat(tag.getAccess().getReadable()).isEqualTo(AccessTriState.NO);
@@ -142,7 +142,7 @@ class V2ProtocolAdaptersParsingTest {
 
     @Test
     void aConfigWithoutTheSection_yieldsAnEmptyList() {
-        // touchpoint 1: absent ⇒ empty list, so old configs parse unchanged (design §13.1)
+        // touchpoint 1: absent ⇒ empty list, so old configs parse unchanged
         assertThat(new HiveMQConfigEntity().getV2ProtocolAdapterConfig()).isEmpty();
     }
 

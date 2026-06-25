@@ -37,7 +37,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * Mailbox thread-safety under the real actor runtime (design §5.1, §15 S23): many producer threads {@code tell}
+ * Mailbox thread-safety under the real actor runtime (S23): many producer threads {@code tell}
  * one mailbox while a single {@link SystemDispatcher} thread drains it. Proven with real threads and Awaitility —
  * never {@code Thread.sleep}. Every message is processed exactly once and sequentially (one {@code receive} at a
  * time), each producer's messages keep their order within each priority band, and a {@code CONTROL} message told

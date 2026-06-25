@@ -18,7 +18,7 @@ package com.hivemq.protocols.v2.wrapper;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The way the browse bridge fails a browse {@code CompletableFuture} (design §11.4). The manager and the wrapper
+ * The way the browse bridge fails a browse {@code CompletableFuture}. The manager and the wrapper
  * complete the future exceptionally with one of these when a browse cannot run; the REST resource maps the
  * {@link Reason} onto the HTTP status code (the only place the actor model touches HTTP). It lives in the wrapper
  * package — the lowest layer both the manager (which depends on the wrapper) and the resource share — so neither

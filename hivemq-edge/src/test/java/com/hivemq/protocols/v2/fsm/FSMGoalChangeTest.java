@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 
 /**
- * The goal-command bypass (design §4): {@link FSM#onGoalChange(Runnable)} mutations apply in
+ * The goal-command bypass: {@link FSM#onGoalChange(Runnable)} mutations apply in
  * <em>every</em> state without consulting the table, so a goal command never triggers the defensive reset —
  * in contrast to an unhandled event, which does.
  */

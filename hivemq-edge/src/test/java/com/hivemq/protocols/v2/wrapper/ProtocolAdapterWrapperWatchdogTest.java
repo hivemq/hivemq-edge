@@ -27,7 +27,7 @@ import com.hivemq.protocols.v2.runtime.RetryPolicy;
 import org.junit.jupiter.api.Test;
 
 /**
- * Watchdog policy (design §6.3; scenario S8 at unit level): every acknowledgment-waiting state arms a watchdog;
+ * Watchdog policy (scenario S8 at unit level): every acknowledgment-waiting state arms a watchdog;
  * the standard response is a reset to {@code ERROR}, while the verification watchdog is the named exception that
  * disconnects to reconnect; and {@code WAITING_FOR_CONNECTION_RETRY} arms no watchdog at all.
  */

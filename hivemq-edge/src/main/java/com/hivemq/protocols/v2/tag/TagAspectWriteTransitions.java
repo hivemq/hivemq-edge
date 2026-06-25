@@ -19,18 +19,17 @@ import com.hivemq.protocols.v2.fsm.FSMTransitionTable;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The write-aspect transition table (design §7.5) — a direct encoding of the write state diagram. The five shared
+ * The write-aspect transition table — a direct encoding of the write state diagram. The five shared
  * pre-operating rows are built by {@link TagAspectPreOperatingTransitions} (the same builder the read tables use);
  * the role-specific rows are the write cycle: a write arriving while the aspect rests at
  * {@code WAITING_FOR_WRITE_REQUEST} requests it and moves to {@code WAITING_FOR_WRITE_RESULT}; the acknowledgment
- * returns it to the request state (a failure is logged and counted but does <b>not</b> flap to {@code ERROR},
- * design §7.7).
+ * returns it to the request state (a failure is logged and counted but does <b>not</b> flap to {@code ERROR}).
  * <p>
  * The table is built once and shared by every write aspect; an action acts through the {@link TagAspectWrite}
  * passed as the machine context. Goal and adapter-readiness changes never reach it — they are applied directly by
- * {@link TagAspectWrite} (design §7.1, §7.2). The mandatory {@code unmatched} slot is lenient: an unexpected event
+ * {@link TagAspectWrite}. The mandatory {@code unmatched} slot is lenient: an unexpected event
  * (a stale acknowledgment, or a second write while one is in flight) is logged and ignored, never a reset — this
- * is what enforces the single-in-flight-write rule (design §7.5, §14).
+ * is what enforces the single-in-flight-write rule.
  */
 public final class TagAspectWriteTransitions {
 
@@ -40,7 +39,7 @@ public final class TagAspectWriteTransitions {
             buildTable();
 
     /**
-     * @return the write-aspect transition table (design §7.5).
+     * @return the write-aspect transition table.
      */
     public static @NotNull FSMTransitionTable<TagAspectState, TagAspectEvent, TagAspectWrite> table() {
         return TABLE;
@@ -55,16 +54,16 @@ public final class TagAspectWriteTransitions {
                 TagAspectWriteState.WAITING_FOR_VERIFICATION_RETRY,
                 TagAspectWriteState.ERROR_PERMANENT_VERIFICATION_FAILURE);
         return builder
-                // A southbound write arrived while resting ready: request it and wait for the acknowledgment (§7.5).
+                // A southbound write arrived while resting ready: request it and wait for the acknowledgment.
                 .on(TagAspectWriteState.WAITING_FOR_WRITE_REQUEST, TagAspectEvent.WriteRequested.class)
                 .then((current, event, aspect) -> {
                     aspect.requestWrite(((TagAspectEvent.WriteRequested) event).value());
                     return TagAspectWriteState.WAITING_FOR_WRITE_RESULT;
                 })
-                // The write was acknowledged successfully: return to the resting goal state (§7.5).
+                // The write was acknowledged successfully: return to the resting goal state.
                 .on(TagAspectWriteState.WAITING_FOR_WRITE_RESULT, TagAspectEvent.WriteSucceeded.class)
                 .then((current, event, aspect) -> TagAspectWriteState.WAITING_FOR_WRITE_REQUEST)
-                // The write failed: log and count, return to the resting goal state — no flap to ERROR (§7.7).
+                // The write failed: log and count, return to the resting goal state — no flap to ERROR.
                 .on(TagAspectWriteState.WAITING_FOR_WRITE_RESULT, TagAspectEvent.WriteFailed.class)
                 .then((current, event, aspect) -> {
                     aspect.onWriteFailure(TagAspectPreOperatingTransitions.reasonOf(event));

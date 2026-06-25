@@ -18,7 +18,7 @@ package com.hivemq.protocols.v2.manager;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcherHandle;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterHandleRegistry.ProtocolAdapterHandle;
-import com.hivemq.protocols.v2.runtime.NevskyMetrics;
+import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
  * One adapter the manager owns: its REST-readable {@link ProtocolAdapterHandle} plus the teardown resources the
  * manager must close when the adapter is discarded or recreated — the dispatcher binding, the periodic tick, and
  * the per-adapter metrics. The last-applied configuration is held here too, so the manager can diff a reload
- * against the configuration actually running rather than against the live (REST-mutated) goal (design §8.2).
+ * against the configuration actually running rather than against the live (REST-mutated) goal.
  * <p>
  * An adapter whose {@code protocol-id} has no registered factory, or whose configuration cannot be instantiated, is
  * represented as an {@link #unknown(ProtocolAdapterHandle, ProtocolAdapterEntity) unknown} managed adapter: it
@@ -43,7 +43,7 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
     private final @NotNull ProtocolAdapterHandle handle;
     private final @Nullable MessageDispatcherHandle dispatcherHandle;
     private final @Nullable AutoCloseable tickHandle;
-    private final @Nullable NevskyMetrics metrics;
+    private final @Nullable ProtocolAdapterMetrics metrics;
     private @NotNull ProtocolAdapterEntity appliedEntity;
 
     /**
@@ -59,7 +59,7 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
             final @NotNull ProtocolAdapterHandle handle,
             final @NotNull MessageDispatcherHandle dispatcherHandle,
             final @NotNull AutoCloseable tickHandle,
-            final @NotNull NevskyMetrics metrics,
+            final @NotNull ProtocolAdapterMetrics metrics,
             final @NotNull ProtocolAdapterEntity appliedEntity) {
         this.handle = handle;
         this.dispatcherHandle = dispatcherHandle;
@@ -79,7 +79,7 @@ public final class ProtocolAdapterContainer implements AutoCloseable {
 
     /**
      * Create a managed adapter with no running wrapper — the representation of an unknown adapter type or an
-     * un-instantiable configuration (design §8.2).
+     * un-instantiable configuration.
      *
      * @param handle the {@code ERROR} handle.
      * @param entity the configuration that could not be run.

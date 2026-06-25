@@ -21,8 +21,8 @@ import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.protocols.v2.runtime.BatchCollector;
 import com.hivemq.protocols.v2.runtime.Clock;
-import com.hivemq.protocols.v2.runtime.NevskyMetrics;
 import com.hivemq.protocols.v2.runtime.PriorityTimerQueue;
+import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.runtime.RetryPolicy;
 import com.hivemq.protocols.v2.view.TagStatusSnapshot;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterGoalState;
@@ -38,7 +38,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The running {@link TagAspectCoordinator} (design §7) — the wrapper's view of an adapter's tag aspect machines,
+ * The running {@link TagAspectCoordinator} — the wrapper's view of an adapter's tag aspect machines,
  * backed by a live {@link TagRuntime} per tag. It replaces the snapshot-only stand-in once aspects come online:
  * it routes the events the wrapper hands it to the owning tag, drives every aspect's three-condition goal, and
  * publishes a per-tag snapshot reflecting the real aspect states.
@@ -54,7 +54,7 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
             @NotNull Clock clock,
             @NotNull PriorityTimerQueue timers,
             @NotNull BatchCollector batches,
-            @NotNull NevskyMetrics metrics,
+            @NotNull ProtocolAdapterMetrics metrics,
             @NotNull SharedNodeVerification sharedNodeVerification) {}
 
     private final @NotNull String adapterId;
@@ -107,8 +107,8 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
      * {@code bindMachine}).
      *
      * @param clock           the actor clock the aspect timers are scheduled against.
-     * @param timers          the actor's single timer queue (design §5.5).
-     * @param batches         the actor's batch collector (design §5.7).
+     * @param timers          the actor's single timer queue.
+     * @param batches         the actor's batch collector.
      * @param metrics         the per-adapter metrics.
      * @param nodeVerifier the seam re-verifications are issued through — the adapter's {@code verifyBatch}.
      */
@@ -116,7 +116,7 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
             final @NotNull Clock clock,
             final @NotNull PriorityTimerQueue timers,
             final @NotNull BatchCollector batches,
-            final @NotNull NevskyMetrics metrics,
+            final @NotNull ProtocolAdapterMetrics metrics,
             final @NotNull NodeVerifier nodeVerifier) {
         final SharedNodeVerification sharedNodeVerification =
                 new SharedNodeVerification(nodeVerifier, this::findTagRuntime);
@@ -125,12 +125,12 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
         applyGoalToAll();
     }
 
-    // ── adapter-readiness coupling (design §6.3, §7.2) ──────────────────────────────────────────────────────────
+    // ── adapter-readiness coupling ──────────────────────────────────────────────────────────
 
     @Override
     public void onAdapterVerifying() {
         // Move active aspects into verification, then issue the nodes they need as ONE connect-verification batch
-        // through the shared authority — a read-and-write tag therefore yields a single verifyBatch entry (§6.3).
+        // through the shared authority — a read-and-write tag therefore yields a single verifyBatch entry.
         final List<Node> toVerify = new ArrayList<>();
         for (final TagRuntime tagRuntime : tagRuntimes) {
             tagRuntime.onAdapterVerifying();
@@ -166,7 +166,7 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
         }
     }
 
-    // ── routed events (design §7) ───────────────────────────────────────────────────────────────────────────────
+    // ── routed events ───────────────────────────────────────────────────────────────────────────────
 
     @Override
     public void routeVerifyResult(final @NotNull Node node, final @NotNull VerifyOutcome outcome) {
@@ -205,7 +205,7 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
         }
     }
 
-    // ── configuration transitions (design §8.2) ─────────────────────────────────────────────────────────────────
+    // ── configuration transitions ─────────────────────────────────────────────────────────────────
 
     @Override
     public void applyActivation(
@@ -224,7 +224,7 @@ public final class TagAspectRuntimeCoordinator implements TagAspectCoordinator {
             final @NotNull Set<String> newWriteUsedTagNames) {
         // Tear down the current aspects (cancel their timers, drop subscriptions) before rebuilding, so no timer
         // outlives its tag. Preserving surviving tags untouched is a gentlest-transition refinement for the PAM
-        // task; here a tags-only change re-verifies the new set without ever reconnecting the adapter (design §8.2).
+        // task; here a tags-only change re-verifies the new set without ever reconnecting the adapter.
         deactivateAll();
         this.nodes = List.copyOf(newNodes);
         this.activation = new HashMap<>(newActivation);

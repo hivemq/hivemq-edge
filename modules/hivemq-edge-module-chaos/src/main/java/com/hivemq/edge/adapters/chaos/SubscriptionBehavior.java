@@ -19,8 +19,8 @@ import com.hivemq.adapter.sdk.api.data.DataPoint;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * How the {@link ChaosProtocolAdapter} answers an add-subscription for a node (design §10.2): {@link Accept} the
- * subscription and immediately push the first value (which confirms {@code SUBSCRIBED}, design §7.4); {@link Fail}
+ * How the {@link ChaosProtocolAdapter} answers an add-subscription for a node: {@link Accept} the
+ * subscription and immediately push the first value (which confirms {@code SUBSCRIBED}); {@link Fail}
  * it with a node error; or {@link LoseAfter} a number of harness ticks, modelling a subscription that drops — as a
  * command-response loss ({@code spontaneous=false}, a backoff + re-add) or a spontaneous loss
  * ({@code spontaneous=true}, a full power-cycle through verification).

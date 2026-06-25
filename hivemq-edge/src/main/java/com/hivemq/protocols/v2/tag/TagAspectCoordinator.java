@@ -42,7 +42,7 @@ import org.jetbrains.annotations.Nullable;
 public interface TagAspectCoordinator {
 
     /**
-     * The adapter began verifying its nodes (design §6.3): active aspects waiting for the adapter move into
+     * The adapter began verifying its nodes: active aspects waiting for the adapter move into
      * verification, and the coordinator issues the nodes those aspects need verified as <b>one</b>
      * {@code verifyBatch} through the shared verification authority. The single verify stream then feeds both the
      * adapter gate (via {@link #allReported()}) and the aspects (via {@link #routeVerifyResult}).
@@ -51,19 +51,18 @@ public interface TagAspectCoordinator {
 
     /**
      * @return {@code true} when no connect-time verification is outstanding — the signal the wrapper uses to leave
-     *         {@code WAITING_FOR_VERIFICATION} for {@code CONNECTED} (the adapter gate, design §6.3).
+     *         {@code WAITING_FOR_VERIFICATION} for {@code CONNECTED} (the adapter gate).
      */
     boolean allReported();
 
     /**
      * Drop any outstanding connect-time verification — called when verification is abandoned (the adapter
-     * disconnected, errored, or stopped), so a stale request never lingers into the next connect gate (design
-     * §6.3).
+     * disconnected, errored, or stopped), so a stale request never lingers into the next connect gate.
      */
     void resetVerificationGate();
 
     /**
-     * The adapter reached {@code CONNECTED} (design §7.2). When verification was skipped, aspects still waiting for
+     * The adapter reached {@code CONNECTED}. When verification was skipped, aspects still waiting for
      * the adapter treat the connection as verified and begin operating; otherwise they have already advanced
      * through verification on the routed results and this is a no-op for them.
      */
@@ -71,12 +70,12 @@ public interface TagAspectCoordinator {
 
     /**
      * The adapter is no longer connected (disconnect, connection loss, stop, or error): all non-deactivated
-     * aspects return to waiting for the adapter (design §7.2).
+     * aspects return to waiting for the adapter.
      */
     void onAdapterUnavailable();
 
     /**
-     * Route one node's verification outcome to that node's aspects (design §6.3). The adapter gate's counting is
+     * Route one node's verification outcome to that node's aspects. The adapter gate's counting is
      * separate and lives in the wrapper.
      *
      * @param node    the verified node.
@@ -85,7 +84,7 @@ public interface TagAspectCoordinator {
     void routeVerifyResult(@NotNull Node node, @NotNull VerifyOutcome outcome);
 
     /**
-     * Route one value to the node's read aspect (design §7.3, §7.4).
+     * Route one value to the node's read aspect.
      *
      * @param node  the node the value belongs to.
      * @param value the reused v1 value.
@@ -93,7 +92,7 @@ public interface TagAspectCoordinator {
     void routeDataPoint(@NotNull Node node, @NotNull DataPoint value);
 
     /**
-     * Route a per-node failure to the node's read aspect (design §7.4).
+     * Route a per-node failure to the node's read aspect.
      *
      * @param node        the node the failure belongs to.
      * @param reason      a human-readable description.
@@ -102,7 +101,7 @@ public interface TagAspectCoordinator {
     void routeNodeError(@NotNull Node node, @NotNull String reason, boolean spontaneous);
 
     /**
-     * Submit a southbound write to the node's write aspect (design §7.5) — the "write arrives" trigger.
+     * Submit a southbound write to the node's write aspect — the "write arrives" trigger.
      *
      * @param node  the node to write to.
      * @param value the reused v1 value to write.
@@ -110,7 +109,7 @@ public interface TagAspectCoordinator {
     void submitWrite(@NotNull Node node, @NotNull DataPoint value);
 
     /**
-     * Route a write acknowledgment to the node's write aspect (design §7.5).
+     * Route a write acknowledgment to the node's write aspect.
      *
      * @param node    the node the write targeted.
      * @param success whether the write succeeded.
@@ -119,7 +118,7 @@ public interface TagAspectCoordinator {
     void routeWriteResult(@NotNull Node node, boolean success, @Nullable String reason);
 
     /**
-     * Apply changed activation flags atomically — the activation-only transition (design §8.2). Recomputes aspect
+     * Apply changed activation flags atomically — the activation-only transition. Recomputes aspect
      * goals without reconnecting or re-verifying unaffected aspects.
      *
      * @param adapterDirections the new adapter direction goal.
@@ -130,7 +129,7 @@ public interface TagAspectCoordinator {
             @NotNull Map<String, TagAspectActivationPreference> tagActivation);
 
     /**
-     * Replace the tag set in place — the tags-only transition (design §8.2). Never reconnects.
+     * Replace the tag set in place — the tags-only transition. Never reconnects.
      *
      * @param nodes             the new node/tag pairs.
      * @param activation        the per-tag activation preferences.
@@ -144,7 +143,7 @@ public interface TagAspectCoordinator {
             @NotNull Set<String> writeUsedTagNames);
 
     /**
-     * Retry a permanently-failed tag (design §7.6, EDG-462): each of its aspects in permanent verification
+     * Retry a permanently-failed tag: each of its aspects in permanent verification
      * failure resets and re-verifies; other aspects are skipped.
      *
      * @param tagName the tag to retry.
@@ -152,7 +151,7 @@ public interface TagAspectCoordinator {
     void retryTag(@NotNull String tagName);
 
     /**
-     * @return the per-tag status snapshots for publication (design §6.6), one per tag in the current set.
+     * @return the per-tag status snapshots for publication, one per tag in the current set.
      */
     @NotNull
     List<TagStatusSnapshot> tagSnapshots();

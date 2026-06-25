@@ -3,7 +3,7 @@ info:
   contact:
     url: https://www.hivemq.com
   description: >
-    The Nevsky (v2) protocol-adapter REST API of HiveMQ Edge — state-only runtime views and commands
+    The v2 protocol-adapter REST API of HiveMQ Edge — state-only runtime views and commands
     (direction activation, tag retry, browse). No endpoint creates, modifies, or deletes configuration;
     configuration is produced by an external tool and only read by Edge.
   title: HiveMQ Edge REST API — Protocol Adapters v2
@@ -12,7 +12,7 @@ info:
     url: https://www.hivemq.com/img/svg/hivemq-bee.svg
 tags:
   - description: >-
-      Interact with Nevsky (v2) protocol adapters: state-only runtime views and commands (direction activation,
+      Interact with v2 protocol adapters: state-only runtime views and commands (direction activation,
       tag retry, browse). No endpoint creates, modifies, or deletes configuration.
     name: Protocol Adapters
 paths:

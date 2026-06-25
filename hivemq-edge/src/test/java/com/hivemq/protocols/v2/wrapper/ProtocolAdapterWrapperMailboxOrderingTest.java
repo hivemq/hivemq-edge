@@ -24,7 +24,7 @@ import com.hivemq.adapter.sdk.api.v2.node.Node;
 import org.junit.jupiter.api.Test;
 
 /**
- * The mailbox priority ladder seen through the wrapper (design §5.1, §6.3; scenario S24 at unit level): an
+ * The mailbox priority ladder seen through the wrapper (scenario S24 at unit level): an
  * acknowledgment ({@code EVENT}) enqueued alongside a due tick ({@code TICK}) is processed first, so the watchdog
  * it cancels never fires; and a goal command ({@code CONTROL}) jumps ahead of a backlog of data points
  * ({@code DATA}).

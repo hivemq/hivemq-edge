@@ -19,7 +19,7 @@ import com.hivemq.adapter.sdk.api.data.DataPoint;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * How the {@link ChaosProtocolAdapter} answers a poll for a node (design §10.2): deliver a {@link Value} (a reused
+ * How the {@link ChaosProtocolAdapter} answers a poll for a node: deliver a {@link Value} (a reused
  * v1 {@link DataPoint}), report a {@link NodeErrorResponse} (a failed poll, counted by the read aspect), or stay
  * silent with {@link NoResponse} (the aspect parks in {@code WAITING_FOR_POLL_DATAPOINT} until the next event).
  */
@@ -56,7 +56,7 @@ public sealed interface PollBehavior {
     record Value(@NotNull DataPoint value) implements PollBehavior {}
 
     /**
-     * Report a per-node read failure (the poll's own retry, design §7.3).
+     * Report a per-node read failure (the poll's own retry).
      *
      * @param reason the failure reason.
      */

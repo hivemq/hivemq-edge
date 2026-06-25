@@ -18,7 +18,7 @@ package com.hivemq.protocols.v2.view;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The externally visible status of a tag (design §7.7): a distinct value per direction-activation combination,
+ * The externally visible status of a tag: a distinct value per direction-activation combination,
  * plus deactivated and error. It is a <b>pure function of the {@link TagStatusSnapshot}</b> computed by
  * {@link #of(TagStatusSnapshot)} — no tag owns this state.
  * <p>
@@ -57,7 +57,7 @@ public enum TagStatus {
     ERROR;
 
     /**
-     * Fold a tag's snapshot into its externally visible status (design §7.7).
+     * Fold a tag's snapshot into its externally visible status.
      *
      * @param tag the per-tag snapshot.
      * @return the tag status.

@@ -52,6 +52,8 @@ import com.hivemq.persistence.PersistenceStartup;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.persistence.ioc.PersistenceModule;
 import com.hivemq.protocols.ProtocolAdapterManager;
+import com.hivemq.protocols.v2.wiring.ProtocolAdapterLifecycle;
+import com.hivemq.protocols.v2.wiring.ProtocolAdapterModule;
 import com.hivemq.security.ioc.SecurityModule;
 import com.hivemq.throttling.ioc.ThrottlingModule;
 import com.hivemq.uns.ioc.UnsServiceModule;
@@ -81,6 +83,7 @@ import java.util.Set;
             RemoteServiceModule.class,
             BootstrapServicesModule.class,
             AdapterModule.class,
+            ProtocolAdapterModule.class,
             CombiningModule.class,
             PulseModule.class
         })
@@ -116,6 +119,8 @@ public interface Injector {
     AfterHiveMQStartBootstrapService afterHiveMQStartBootstrapService();
 
     ProtocolAdapterManager protocolAdapterManager();
+
+    ProtocolAdapterLifecycle protocolAdapterLifecycle();
 
     EventService eventService();
 

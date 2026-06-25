@@ -18,7 +18,7 @@ package com.hivemq.protocols.v2.runtime;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Stateful exponential backoff over a {@link RetryPolicy} (design §5.6). It is owned and stepped by a single
+ * Stateful exponential backoff over a {@link RetryPolicy}. It is owned and stepped by a single
  * actor on its dispatch thread; it does no scheduling itself — the caller schedules a timer for
  * {@link #nextDelayMillis()} on the actor's {@link PriorityTimerQueue}.
  * <p>

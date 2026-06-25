@@ -41,7 +41,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * The supervisor actor (design §8) driven through its mailbox on a {@link ManualDispatcher}: configuration
+ * The supervisor actor driven through its mailbox on a {@link ManualDispatcher}: configuration
  * add/remove, the four gentlest transitions, REST live-goal and retry routing, unknown-type handling, manual-only
  * recovery, and the health summary. The wrapper is the {@link RecordingWrapperFactory} double so these tests prove
  * the manager's own logic; the real wrapper wiring has its own test.
@@ -76,7 +76,7 @@ class ProtocolAdapterManagerTest {
 
         assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a");
         assertThat(registry.find("a")).isNotNull();
-        // The config-declared activation is applied to bring the freshly-created wrapper to its goal (design §9.3).
+        // The config-declared activation is applied to bring the freshly-created wrapper to its goal.
         assertThat(wrapperFactory.commands("a"))
                 .last()
                 .isInstanceOf(ProtocolAdapterWrapperCommand.ApplyActivation.class);

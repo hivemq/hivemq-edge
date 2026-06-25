@@ -26,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * The polled read aspect (design §7.3; scenarios S1, S3, S4, S5, S12 at unit level). The aspect verifies on
+ * The polled read aspect (scenarios S1, S3, S4, S5, S12 at unit level). The aspect verifies on
  * connect, then polls on a cadence; a poll failure is its own retry; transient verification failures retry on a
  * timer, permanent ones suspend; an adapter loss parks the aspect and re-verifies on reconnect. All driven on
  * {@code FakeClock} + {@code ManualDispatcher} through the running coordinator, observed only through the
@@ -70,7 +70,7 @@ class TagAspectReadPolledTest {
         fixture.output.nodeError(fixture.nodeFor("temperature"), "read timeout", false);
         fixture.drain();
 
-        // The next scheduled poll is the retry — no new state (design §7.3), only the counter advances.
+        // The next scheduled poll is the retry — no new state, only the counter advances.
         assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
         assertThat(fixture.tag("temperature").failureCount()).isEqualTo(1);
         assertThat(fixture.tag("temperature").lastFailureReason()).isEqualTo("read timeout");
@@ -83,7 +83,7 @@ class TagAspectReadPolledTest {
 
         fixture.activate(ProtocolAdapterDirection.NORTHBOUND);
 
-        // The gate still reaches CONNECTED (any outcome counts, §6.3); the aspect schedules a verification retry.
+        // The gate still reaches CONNECTED (any outcome counts); the aspect schedules a verification retry.
         assertThat(fixture.state()).isEqualTo(CONNECTED);
         assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_VERIFICATION_RETRY");
 
@@ -99,7 +99,7 @@ class TagAspectReadPolledTest {
 
         fixture.activate(ProtocolAdapterDirection.NORTHBOUND);
 
-        assertThat(fixture.state()).isEqualTo(CONNECTED); // the adapter does not reconnect (design §7.6, S4)
+        assertThat(fixture.state()).isEqualTo(CONNECTED); // the adapter does not reconnect (S4)
         assertThat(fixture.readState("temperature")).isEqualTo("ERROR_PERMANENT_VERIFICATION_FAILURE");
 
         fixture.advance(10_000); // no retry timer — a permanent failure stays put without a user-commanded retry
@@ -112,7 +112,7 @@ class TagAspectReadPolledTest {
         fixture.activate(ProtocolAdapterDirection.NORTHBOUND);
         assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
 
-        fixture.output.disconnected(); // a spontaneous loss while CONNECTED (design §7.2, S5)
+        fixture.output.disconnected(); // a spontaneous loss while CONNECTED (S5)
         fixture.drain();
         assertThat(fixture.state()).isEqualTo(WAITING_FOR_CONNECTION_RETRY);
         assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_ADAPTER_READY");

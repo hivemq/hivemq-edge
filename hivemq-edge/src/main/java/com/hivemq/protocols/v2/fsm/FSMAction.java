@@ -18,7 +18,7 @@ package com.hivemq.protocols.v2.fsm;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The behavior a matched transition runs (design §4). An action may issue commands and arm or cancel timers
+ * The behavior a matched transition runs. An action may issue commands and arm or cancel timers
  * through the context, and returns the machine's next state. It runs on the actor's single dispatch thread.
  *
  * @param <StateType>   the machine's state type.

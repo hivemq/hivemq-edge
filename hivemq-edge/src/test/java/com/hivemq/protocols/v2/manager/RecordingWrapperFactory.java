@@ -21,7 +21,7 @@ import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterHandleRegistry.ProtocolAdapterHandle;
-import com.hivemq.protocols.v2.runtime.NevskyMetrics;
+import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEventListener;
 import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperMessage;
@@ -67,7 +67,7 @@ final class RecordingWrapperFactory implements ProtocolAdapterWrapperFactory {
 
         final MailboxSender<ProtocolAdapterWrapperMessage> sender = commands::add;
         final ProtocolAdapterHandle handle = new ProtocolAdapterHandle(adapterId, sender, snapshot);
-        final NevskyMetrics metrics = new NevskyMetrics(new MetricRegistry(), adapterId, () -> 0);
+        final ProtocolAdapterMetrics metrics = new ProtocolAdapterMetrics(new MetricRegistry(), adapterId, () -> 0);
         return new ProtocolAdapterContainer(handle, () -> {}, () -> {}, metrics, entity);
     }
 

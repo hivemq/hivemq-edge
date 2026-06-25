@@ -28,7 +28,7 @@ import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The factory for the {@link ChaosProtocolAdapter} type (design §10.1). Tests add it to the constructor-injected
+ * The factory for the {@link ChaosProtocolAdapter} type. Tests add it to the constructor-injected
  * factory set of the {@code ProtocolAdapterFactoryRegistry} (the production set is empty, D8); the wired end-to-end
  * suite (a later task) drives the simulator through the full manager → wrapper → adapter stack.
  * <p>

@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 
 /**
- * Defensive tolerance and the {@code ERROR} absorption rule (design §6.4; scenarios S9, S25 at unit level). An
+ * Defensive tolerance and the {@code ERROR} absorption rule (scenarios S9, S25 at unit level). An
  * unexpected event resets once — stop best-effort, notify the supervisor, enter {@code ERROR}. The
  * {@code stopped()} / {@code disconnected()} that the reset's own {@code stop()} provokes are then absorbed in
  * {@code ERROR}: no second {@code stop()}, no reset loop, exactly one reset counted.

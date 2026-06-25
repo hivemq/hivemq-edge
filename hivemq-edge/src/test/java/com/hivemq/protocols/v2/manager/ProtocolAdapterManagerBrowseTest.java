@@ -38,7 +38,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * The manager half of the browse bridge (design §11.4): the manager checks the snapshot is {@code CONNECTED} and
+ * The manager half of the browse bridge: the manager checks the snapshot is {@code CONNECTED} and
  * forwards the request to the wrapper, fails it for a disconnected adapter, and fails it for an unknown adapter.
  * The {@link RecordingWrapperFactory} captures what is forwarded to the wrapper.
  */

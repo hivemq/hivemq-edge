@@ -1,5 +1,5 @@
 type: object
-description: A registered Nevsky adapter type, with its capabilities and schema projections.
+description: A registered v2 adapter type, with its capabilities and schema projections.
 required:
   - id
 properties:

@@ -27,9 +27,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A northbound mapping in the {@code <v2-protocol-adapters>} section (design §9.1): it routes a tag's polled or
- * subscribed values to an MQTT topic. The Nevsky config section carries only the {@code tag-name} / {@code topic}
- * pair — exactly what {@link ProtocolAdapterEntity#getReadUsedTagNames() read-used derivation} (§9.2) needs; the full
+ * A northbound mapping in the {@code <v2-protocol-adapters>} section: it routes a tag's polled or
+ * subscribed values to an MQTT topic. The v2 config section carries only the {@code tag-name} / {@code topic}
+ * pair — exactly what {@link ProtocolAdapterEntity#getReadUsedTagNames() read-used derivation} needs; the full
  * northbound message-handling detail belongs to the routing layer and is out of this section's scope. Edge only reads
  * it.
  */

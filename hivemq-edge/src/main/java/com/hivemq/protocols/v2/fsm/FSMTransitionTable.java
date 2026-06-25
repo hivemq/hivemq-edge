@@ -25,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The declarative transition table at the heart of the SOLID state-machine engine (design §4): a set of
+ * The declarative transition table at the heart of the SOLID state-machine engine: a set of
  * {@link FSMTransition} rows plus a mandatory {@code unmatched} action (the defensive-reset slot). New machines
  * are new tables, not new engine code.
  * <p>
@@ -34,8 +34,8 @@ import org.jetbrains.annotations.Nullable;
  * guard passes. A single guardless row for that key is the catch-all, tried only after every guarded row for
  * the key has failed. When nothing matches — no row for the {@code (state, eventType)} key, or every guarded
  * row failed and there is no guardless row — the {@code unmatched} action runs; for the adapter machine that
- * is the defensive reset (§6.4). Goal mutations never reach this table: they go through
- * {@link FSM#onGoalChange(Runnable)} and so can never trigger the defensive reset (§4).
+ * is the defensive reset. Goal mutations never reach this table: they go through
+ * {@link FSM#onGoalChange(Runnable)} and so can never trigger the defensive reset.
  * <p>
  * A table is immutable once {@link Builder#build()} returns. The builder fails fast on an ambiguous table
  * (more than one guardless row for the same {@code (state, eventType)} key) and on a missing {@code unmatched}

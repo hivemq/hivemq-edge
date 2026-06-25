@@ -16,7 +16,7 @@
 package com.hivemq.edge.adapters.chaos.harness;
 
 /**
- * Selects which aspect(s) of a tag a harness operation targets (design §10.3): the read aspect, the write aspect,
+ * Selects which aspect(s) of a tag a harness operation targets: the read aspect, the write aspect,
  * or both. Used by {@link ProtocolAdapterWrapperTestHarness#applyTagActivation} to simulate a config reload that
  * flips a tag's {@code read-activated} / {@code write-activated} preference.
  */

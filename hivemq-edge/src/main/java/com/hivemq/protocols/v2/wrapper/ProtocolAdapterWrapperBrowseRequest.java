@@ -23,7 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * A browse request the manager forwards to the wrapper on behalf of a REST thread (design §11.4) — the wrapper
+ * A browse request the manager forwards to the wrapper on behalf of a REST thread — the wrapper
  * half of the browse bridge. It carries the {@link BrowseFilter} and the completion future the REST thread blocks
  * on. On the dispatch thread the wrapper issues a single {@code browse(filter)} to the protocol adapter when it is
  * {@code CONNECTED} with no browse already in flight, and completes the future from the matching
@@ -31,7 +31,7 @@ import org.jetbrains.annotations.NotNull;
  * {@link BrowseRejectedException}).
  * <p>
  * Band: {@link MailboxMessagePriority#CONTROL} — like the goal and lifecycle commands it is operator-initiated and
- * never starved by device traffic (design §5.1). It is its own kind of {@link ProtocolAdapterWrapperMessage}: it is
+ * never starved by device traffic. It is its own kind of {@link ProtocolAdapterWrapperMessage}: it is
  * not a goal command (it mutates no goal and bypasses {@code onGoalChange}), not a transition-table event, and not
  * a tick. The future is the one mutable thing that crosses the boundary, the standard request/response bridge.
  *

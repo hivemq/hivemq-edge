@@ -27,7 +27,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The framework's implementation of {@link ProtocolAdapterOutput} (design §3.7, §6.1): a tell-façade that turns
+ * The framework's implementation of {@link ProtocolAdapterOutput}: a tell-façade that turns
  * each protocol-adapter callback into one immutable {@link ProtocolAdapterWrapperEvent} told onto the wrapper's
  * mailbox. Because {@link MailboxSender#tell(com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessage)} is
  * thread-safe and non-blocking, an adapter may call any callback from any thread (library callbacks, receive

@@ -24,7 +24,7 @@ java {
     }
 }
 
-// The ChaosProtocolAdapter is a hidden, test-only Nevsky (SDK v2) adapter (design §10): it is NOT shipped and not
+// The ChaosProtocolAdapter is a hidden, test-only SDK v2 adapter: it is NOT shipped and not
 // loaded via the module loader, so this module produces a plain library jar — no shadow distribution. It is shared
 // by `hivemq-edge-test`, which injects the factory into the constructor-injected ProtocolAdapterFactoryRegistry as
 // a hidden type (the production registry stays empty, D8). The deterministic scenario matrix, the harness, and the

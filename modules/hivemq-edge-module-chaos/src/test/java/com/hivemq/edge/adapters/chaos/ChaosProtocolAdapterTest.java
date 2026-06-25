@@ -33,7 +33,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 /**
- * The scriptable simulator in isolation (design §10; plan T10 {@code ChaosProtocolAdapterTest}). Each scripted
+ * The scriptable simulator in isolation (plan T10 {@code ChaosProtocolAdapterTest}). Each scripted
  * behavior produces the right callback at the right tick: immediate behaviors report within the command call, and
  * deferred ones ({@code acknowledgmentLatencyTicks}, {@link ChaosBehavior.Delay}, a subscription loss, a browse
  * duration, injected events) fire only when {@link ChaosProtocolAdapter#onTick()} reaches their tick — the

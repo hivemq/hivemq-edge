@@ -25,9 +25,9 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The {@link ProtocolAdapterInformation} of the {@link ChaosProtocolAdapter} type (design §10.1). It declares the
+ * The {@link ProtocolAdapterInformation} of the {@link ChaosProtocolAdapter} type. It declares the
  * scriptable capabilities the simulator should advertise — the framework gates subscription, write, and browse
- * behavior on this set (design §3.5) — and reports a {@code config-version} of {@code 2}, marking it a v2 type.
+ * behavior on this set — and reports a {@code config-version} of {@code 2}, marking it a v2 type.
  */
 public final class ChaosProtocolAdapterInformation implements ProtocolAdapterInformation {
 
@@ -56,7 +56,7 @@ public final class ChaosProtocolAdapterInformation implements ProtocolAdapterInf
 
     @Override
     public @NotNull String description() {
-        return "A scriptable test simulator for the Nevsky protocol-adapter framework.";
+        return "A scriptable test simulator for the v2 protocol-adapter framework.";
     }
 
     @Override

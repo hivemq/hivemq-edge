@@ -21,7 +21,7 @@ import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState;
 import org.junit.jupiter.api.Test;
 
 /**
- * The derived mapping-status fold (design §11.3): adapter connection, the three-condition goal, operating, and
+ * The derived mapping-status fold: adapter connection, the three-condition goal, operating, and
  * permanent failure resolve to one of the four statuses, with a deactivated aspect taking precedence over an
  * adapter that is down.
  */

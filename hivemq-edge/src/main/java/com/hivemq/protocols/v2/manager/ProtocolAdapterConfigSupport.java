@@ -24,7 +24,7 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Pure translations from the read-only {@code <v2-protocol-adapters>} configuration entities (design §9) into the
+ * Pure translations from the read-only {@code <v2-protocol-adapters>} configuration entities into the
  * runtime value types the wrapper consumes — the parts that need no protocol-specific deserialization (node-string
  * &rarr; {@code Node} translation needs the adapter type's {@code nodeClass} and lives in the wrapper factory).
  * Shared by the manager and the wrapper factory so the config-declared goal and per-tag activation are derived in
@@ -36,7 +36,7 @@ public final class ProtocolAdapterConfigSupport {
 
     /**
      * The config-declared adapter direction goal — the initial goal at startup and the authoritative goal again
-     * after a reload that touches the activation flags (design §8.2, §9.3).
+     * after a reload that touches the activation flags.
      *
      * @param entity the adapter configuration.
      * @return the goal carrying the entity's {@code northbound-activated} / {@code southbound-activated} flags.
@@ -46,7 +46,7 @@ public final class ProtocolAdapterConfigSupport {
     }
 
     /**
-     * The persisted per-aspect activation preferences keyed by tag name (design §7.1, EDG-462).
+     * The persisted per-aspect activation preferences keyed by tag name.
      *
      * @param entity the adapter configuration.
      * @return a map of tag name to its {@code read-activated} / {@code write-activated} preference, in declaration
@@ -63,7 +63,7 @@ public final class ProtocolAdapterConfigSupport {
     }
 
     /**
-     * The single poll cadence the running tag coordinator applies to every polled aspect (design §7.3). The
+     * The single poll cadence the running tag coordinator applies to every polled aspect. The
      * coordinator currently takes one interval per adapter; the configuration carries one per tag, so this reduces
      * them conservatively to the <b>shortest</b> declared interval — no tag then polls slower than its configuration
      * asks, though tags with a longer configured interval poll faster than declared. A per-tag poll cadence is a

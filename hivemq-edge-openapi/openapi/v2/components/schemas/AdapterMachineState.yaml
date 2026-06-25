@@ -1,5 +1,5 @@
 type: string
-description: The Nevsky (v2) protocol adapter state machine state.
+description: The v2 protocol adapter state machine state.
 enum:
   - STOPPED
   - WAITING_FOR_STARTED

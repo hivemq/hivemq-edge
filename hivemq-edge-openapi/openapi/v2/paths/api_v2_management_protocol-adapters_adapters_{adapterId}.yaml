@@ -1,5 +1,5 @@
 get:
-  description: Obtain the read-only configured definition of a Nevsky (v2) adapter.
+  description: Obtain the read-only configured definition of a v2 adapter.
   operationId: getAdapter
   x-roles-allowed:
     - admin
@@ -25,6 +25,6 @@ get:
           schema:
             $ref: ../components/schemas/errors/AdapterNotFoundError.yaml
       description: Adapter not found
-  summary: Obtain a Nevsky adapter's configured definition
+  summary: Obtain a v2 adapter's configured definition
   tags:
     - Protocol Adapters

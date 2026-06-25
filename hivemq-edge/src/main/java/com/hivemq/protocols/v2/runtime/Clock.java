@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Time, abstracted so the framework can be driven deterministically in tests (design §5.4).
+ * Time, abstracted so the framework can be driven deterministically in tests.
  * <p>
  * Time enters an actor as a <b>message</b>, never as a callback that touches actor state: the clock's only job is
  * to {@link MailboxSender#tell(MailboxMessage) tell} a tick to the actor's mailbox every period. The actor then

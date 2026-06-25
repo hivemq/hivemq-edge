@@ -92,7 +92,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 /**
- * The Nevsky (v2) protocol-adapters resource (design §11): every endpoint reads from the snapshot/config and tells
+ * The v2 protocol-adapters resource: every endpoint reads from the snapshot/config and tells
  * the manager correctly, the status DTOs are pure folds of the snapshot, the schema endpoints serve the reused
  * Schema projection (S22), tag retry reports accepted/skipped (S29 REST half), mappings derive their status, the
  * browse bridge maps the rejection/timeout reasons to HTTP status codes (S31 REST half), and the v2 surface has no
@@ -479,7 +479,7 @@ class ProtocolAdaptersResourceImplTest {
                 .isEqualTo(404);
     }
 
-    // ── error bodies are typed v2 problem details (design §11, DataHub-style) ────────────────────────────────────
+    // ── error bodies are typed v2 problem details (DataHub-style) ────────────────────────────────────
 
     @Test
     void adapterNotFound_bodyIsTypedProblemDetail() {

@@ -23,10 +23,10 @@ import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * A goal or lifecycle command (design §6.1). Commands are valid in <em>every</em> state: the wrapper handles them
+ * A goal or lifecycle command. Commands are valid in <em>every</em> state: the wrapper handles them
  * through {@link com.hivemq.protocols.v2.fsm.FSM#onGoalChange(Runnable)} — mutate the goal,
  * then {@code stepTowardGoal} — so they never reach the transition table and can never trigger a defensive reset
- * (design §4).
+ *.
  * <p>
  * Band: {@link MailboxMessagePriority#CONTROL} — delivered ahead of events, ticks, and data. Jumping the queue is
  * always safe precisely because a command bypasses the table.
@@ -62,7 +62,7 @@ public sealed interface ProtocolAdapterWrapperCommand extends ProtocolAdapterWra
     record StopAdapter() implements ProtocolAdapterWrapperCommand {}
 
     /**
-     * Replace the tag set in place — the atomic tags-only transition (design §8.2). Never reconnects.
+     * Replace the tag set in place — the atomic tags-only transition. Never reconnects.
      *
      * @param nodes             the new node/tag pairs.
      * @param activation        the per-tag activation preferences from the configuration.
@@ -79,7 +79,7 @@ public sealed interface ProtocolAdapterWrapperCommand extends ProtocolAdapterWra
             implements ProtocolAdapterWrapperCommand {}
 
     /**
-     * Apply changed activation flags atomically — the activation-only transition (design §8.2). Never reconnects
+     * Apply changed activation flags atomically — the activation-only transition. Never reconnects
      * and never re-verifies unaffected aspects.
      *
      * @param adapterDirections the new adapter direction goal.
@@ -91,7 +91,7 @@ public sealed interface ProtocolAdapterWrapperCommand extends ProtocolAdapterWra
             implements ProtocolAdapterWrapperCommand {}
 
     /**
-     * Retry a permanently-failed tag (REST origin, EDG-462) — a runtime-only command out of permanent
+     * Retry a permanently-failed tag (REST origin) — a runtime-only command out of permanent
      * verification failure; never touches configuration.
      *
      * @param tagName the tag to retry.

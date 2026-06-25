@@ -20,7 +20,7 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The i18n catalog for the Nevsky (v2) protocol-adapter REST API errors (design §11). Each error object served by the
+ * The i18n catalog for the v2 protocol-adapter REST API errors (design §11). Each error object served by the
  * v2 surface assembles its {@code title} and {@code detail} from this catalog so the strings are localizable; the
  * {@code .detail.with.*} variants carry FreeMarker parameters ({@code ${adapterId}}, {@code ${tagName}},
  * {@code ${reason}}). The backing resource bundle is {@code templates/adapters-v2-errors-<locale>.properties}.

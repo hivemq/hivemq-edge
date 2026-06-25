@@ -97,7 +97,7 @@ public class HiveMQConfigEntity {
     @XmlElement(name = "protocol-adapter")
     private @NotNull List<ProtocolAdapterEntity> protocolAdapterConfig = new ArrayList<>();
 
-    // Nevsky side-by-side config section (design §9, §13.1 touchpoint 1): additive and disjoint from the legacy
+    // v2 side-by-side config section (touchpoint 1): additive and disjoint from the legacy
     // <protocol-adapters> above. Absent ⇒ empty list, so old configs parse unchanged.
     @XmlElementWrapper(name = "v2-protocol-adapters")
     @XmlElement(name = "v2-protocol-adapter")

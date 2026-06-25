@@ -23,7 +23,7 @@ import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.protocols.v2.runtime.FakeClock;
 import com.hivemq.protocols.v2.runtime.ManualDispatcher;
-import com.hivemq.protocols.v2.runtime.NevskyMetrics;
+import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.runtime.RetryPolicy;
 import com.hivemq.protocols.v2.tag.TagAspectCoordinator;
 import com.hivemq.protocols.v2.tag.TagAspectRuntimeCoordinator;
@@ -42,7 +42,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Wires a real {@link ProtocolAdapterWrapper} against a {@link MockProtocolAdapter} on a {@link FakeClock} and a
- * {@link ManualDispatcher} (design §6 test plan) — the deterministic, sleep-free rig the adapter-machine tests
+ * {@link ManualDispatcher} (test plan) — the deterministic, sleep-free rig the adapter-machine tests
  * drive. Commands and injected events are told to the wrapper mailbox; {@link #drain()} delivers them in
  * priority-band order; {@link #advance(long)} moves time forward and delivers the resulting ticks. State is read
  * only through the published snapshot, honoring the actor model even in tests.
@@ -77,7 +77,7 @@ final class WrapperTestFixture {
         final Set<String> readUsed = builder.readUsed != null ? builder.readUsed : allTagNames(builder.nodes);
         final Set<String> writeUsed = builder.writeUsed != null ? builder.writeUsed : new HashSet<>();
 
-        final NevskyMetrics metrics = new NevskyMetrics(metricRegistry, adapterId, mailbox::size);
+        final ProtocolAdapterMetrics metrics = new ProtocolAdapterMetrics(metricRegistry, adapterId, mailbox::size);
         // The default tag plane is the snapshot-only stand-in (adapter-machine tests); opt in to the running
         // coordinator to exercise the read and write aspect machines.
         final TagAspectCoordinator tagPlane;
@@ -188,7 +188,7 @@ final class WrapperTestFixture {
     }
 
     /**
-     * Submit a southbound write to a tag's write aspect — the "write arrives" trigger (design §7.5).
+     * Submit a southbound write to a tag's write aspect — the "write arrives" trigger.
      */
     void submitWrite(final @NotNull String tagName, final @NotNull DataPoint value) {
         send(new ProtocolAdapterWrapperWriteRequest(nodeFor(tagName), value));
@@ -263,13 +263,13 @@ final class WrapperTestFixture {
 
     long defensiveResets() {
         return metricRegistry
-                .counter(NevskyMetrics.ADAPTER_PREFIX + adapterId + ".defensive.resets")
+                .counter(ProtocolAdapterMetrics.ADAPTER_PREFIX + adapterId + ".defensive.resets")
                 .getCount();
     }
 
     long stateTransitions() {
         return metricRegistry
-                .counter(NevskyMetrics.ADAPTER_PREFIX + adapterId + ".state.transitions")
+                .counter(ProtocolAdapterMetrics.ADAPTER_PREFIX + adapterId + ".state.transitions")
                 .getCount();
     }
 

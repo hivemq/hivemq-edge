@@ -19,7 +19,7 @@ import java.util.PriorityQueue;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The single timer queue an actor owns (design §5.5): every time-based event — connection backoff, per-node poll
+ * The single timer queue an actor owns: every time-based event — connection backoff, per-node poll
  * schedule, subscription retry, verification retry, watchdog — is one entry sorted by fire time. On a tick the
  * actor calls {@link #fireDue(long)} on its <b>own dispatch thread</b>; each due timer runs its callback, which
  * feeds a typed event to the state machine.

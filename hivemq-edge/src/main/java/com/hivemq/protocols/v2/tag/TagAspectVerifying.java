@@ -18,7 +18,7 @@ package com.hivemq.protocols.v2.tag;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The verification-lifecycle actions every tag aspect exposes (design §7.2) — the seam the <b>shared pre-operating
+ * The verification-lifecycle actions every tag aspect exposes — the seam the <b>shared pre-operating
  * transition rows</b> act through. Because both the read aspect ({@link TagAspectRead}) and the write aspect
  * ({@link TagAspectWrite}) move through the same five pre-operating states (verifying, retrying, permanently
  * failed), those rows are built <b>once</b> by {@link TagAspectPreOperatingTransitions} and parameterized by each
@@ -52,7 +52,7 @@ interface TagAspectVerifying {
 
     /**
      * A permanent verification failure: count it; the aspect is suspended until a user-commanded tag retry
-     * (design §7.6).
+     *.
      *
      * @param reason a human-readable description of the failure.
      */

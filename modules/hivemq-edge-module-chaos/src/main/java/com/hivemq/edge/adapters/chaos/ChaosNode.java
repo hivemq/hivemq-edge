@@ -21,8 +21,7 @@ import java.util.EnumSet;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The {@link ChaosProtocolAdapter}'s protocol node — a minimal {@link Node} identified by a single id (design
- * §10.1). It is {@link NodeProperty#UNIQUE} (and therefore {@link NodeProperty#TYPED}, by the property implication
+ * The {@link ChaosProtocolAdapter}'s protocol node — a minimal {@link Node} identified by a single id. It is {@link NodeProperty#UNIQUE} (and therefore {@link NodeProperty#TYPED}, by the property implication
  * the protocol carries), so a scripted {@link NodeMatcher#byId(String)} can correlate behaviors to nodes. The
  * wrapper never inspects more than the {@link Node} reference, so a single id is all the simulator needs.
  */

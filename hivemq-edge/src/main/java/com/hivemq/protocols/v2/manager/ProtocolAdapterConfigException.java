@@ -19,9 +19,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Thrown by the wrapper factory when an otherwise well-formed adapter configuration cannot be turned into a running
- * wrapper — for example a {@code node-string} that does not deserialize into the adapter type's node class (design
- * §9.1). The manager catches it and surfaces the adapter as an {@code ERROR} registry handle with the message,
- * rather than failing the whole reload (design §8.2).
+ * wrapper — for example a {@code node-string} that does not deserialize into the adapter type's node class. The manager catches it and surfaces the adapter as an {@code ERROR} registry handle with the message,
+ * rather than failing the whole reload.
  */
 public class ProtocolAdapterConfigException extends RuntimeException {
 

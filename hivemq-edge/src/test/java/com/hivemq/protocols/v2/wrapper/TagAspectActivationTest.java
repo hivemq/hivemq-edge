@@ -25,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * The three-condition rule applied to the read aspect through the running coordinator (design §7.1; scenario S27
+ * The three-condition rule applied to the read aspect through the running coordinator (scenario S27
  * at unit level — the read-side gate and the direction master switch; the write-side rows land in a later task).
  * Deactivating the read aspect's preference keeps it off while the adapter runs; a config-origin
  * {@code ApplyActivation} flips the preference atomically and the aspect verifies <b>without reconnecting</b>;
@@ -62,7 +62,7 @@ class TagAspectActivationTest {
         assertThat(fixture.readState("temperature")).isEqualTo("DEACTIVATED");
         assertThat(connectCount(fixture)).isEqualTo(1);
 
-        // Config reload flips read-activated on — an ACTIVATION_ONLY transition (design §8.2).
+        // Config reload flips read-activated on — an ACTIVATION_ONLY transition.
         fixture.send(new ProtocolAdapterWrapperCommand.ApplyActivation(
                 new ProtocolAdapterGoalState(true, false),
                 Map.of("temperature", TagAspectActivationPreference.defaults())));

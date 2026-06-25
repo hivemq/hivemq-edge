@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 class ProtocolAdapterEntityTest {
 
     @Test
-    void defaults_matchTheNevskyConfigContract() {
+    void defaults_matchTheV2ConfigContract() {
         final ProtocolAdapterEntity entity = new ProtocolAdapterEntity();
 
         assertThat(entity.getConfigVersion()).isEqualTo(ProtocolAdapterEntity.DEFAULT_CONFIG_VERSION);
@@ -100,7 +100,7 @@ class ProtocolAdapterEntityTest {
         assertThat(validate(entity)).isEmpty();
     }
 
-    // S32: the watchdog must be strictly greater than the PA command timeout (design §6.3).
+    // S32: the watchdog must be strictly greater than the PA command timeout.
     @Test
     void watchdogNotGreaterThanCommandTimeout_isRejected() {
         assertThat(messages(withTimeouts(10_000, 10_000)))

@@ -23,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * The {@code used} derivation (design §9.2): {@code readUsed} = referenced by a northbound mapping; {@code writeUsed} =
+ * The {@code used} derivation: {@code readUsed} = referenced by a northbound mapping; {@code writeUsed} =
  * referenced by a southbound mapping. A pure scan of this adapter's mappings, feeding S16.
  */
 class UsedDerivationTest {

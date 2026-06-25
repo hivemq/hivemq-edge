@@ -1,5 +1,5 @@
 get:
-  description: Obtain the status and per-aspect detail of one tag of a Nevsky (v2) adapter.
+  description: Obtain the status and per-aspect detail of one tag of a v2 adapter.
   operationId: getTagStatus
   x-roles-allowed:
     - admin

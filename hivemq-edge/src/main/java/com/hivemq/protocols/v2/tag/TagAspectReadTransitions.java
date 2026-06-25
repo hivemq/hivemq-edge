@@ -20,16 +20,16 @@ import com.hivemq.protocols.v2.fsm.FSMTransitionTable;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The read-aspect transition tables (design §7.3, §7.4) — direct encodings of the polled and subscribed state
+ * The read-aspect transition tables — direct encodings of the polled and subscribed state
  * diagrams. The five shared pre-operating rows (verification success / transient failure / permanent failure /
  * verification retry) are built once by {@link TagAspectPreOperatingTransitions} — the same builder the write
  * table uses — parameterized by each variant's state constants, so engine reuse is achieved without a shared
- * state enum (design §7.2). The role-specific rows — the poll cycle and the subscription cycle — are added per
+ * state enum. The role-specific rows — the poll cycle and the subscription cycle — are added per
  * variant.
  * <p>
  * Each table is built once and shared by every aspect of that variant; an action acts through the
  * {@link TagAspectRead} passed as the machine context. Goal and adapter-readiness changes never reach these tables —
- * they are applied directly by {@link TagAspectRead} (design §7.1, §7.2). The mandatory {@code unmatched} slot is
+ * they are applied directly by {@link TagAspectRead}. The mandatory {@code unmatched} slot is
  * lenient: an unexpected event (a stale value, a late acknowledgment) is logged and ignored, never a reset — a
  * stray data point must not kill a tag.
  */
@@ -43,14 +43,14 @@ public final class TagAspectReadTransitions {
             buildSubscribedTable();
 
     /**
-     * @return the polled read-aspect transition table (design §7.3).
+     * @return the polled read-aspect transition table.
      */
     public static @NotNull FSMTransitionTable<TagAspectState, TagAspectEvent, TagAspectRead> polledTable() {
         return POLLED;
     }
 
     /**
-     * @return the subscribed read-aspect transition table (design §7.4).
+     * @return the subscribed read-aspect transition table.
      */
     public static @NotNull FSMTransitionTable<TagAspectState, TagAspectEvent, TagAspectRead> subscribedTable() {
         return SUBSCRIBED;
@@ -65,7 +65,7 @@ public final class TagAspectReadTransitions {
                 TagAspectReadPolledState.WAITING_FOR_VERIFICATION_RETRY,
                 TagAspectReadPolledState.ERROR_PERMANENT_VERIFICATION_FAILURE);
         return builder
-                // The poll interval elapsed: request the next poll (design §7.3).
+                // The poll interval elapsed: request the next poll.
                 .on(TagAspectReadPolledState.WAITING_FOR_POLL_INTERVAL, TagAspectEvent.PollIntervalElapsed.class)
                 .then((current, event, aspect) -> {
                     aspect.requestPoll();
@@ -77,7 +77,7 @@ public final class TagAspectReadTransitions {
                     aspect.scheduleNextPoll();
                     return TagAspectReadPolledState.WAITING_FOR_POLL_INTERVAL;
                 })
-                // A poll failed: count it, schedule the next poll. The next scheduled poll IS the retry (§7.3).
+                // A poll failed: count it, schedule the next poll. The next scheduled poll IS the retry.
                 .on(TagAspectReadPolledState.WAITING_FOR_POLL_DATAPOINT, TagAspectEvent.NodeFailed.class)
                 .then((current, event, aspect) -> {
                     aspect.onPollFailure(TagAspectPreOperatingTransitions.reasonOf(event));
@@ -101,13 +101,13 @@ public final class TagAspectReadTransitions {
                 TagAspectReadSubscribedState.WAITING_FOR_VERIFICATION_RETRY,
                 TagAspectReadSubscribedState.ERROR_PERMANENT_VERIFICATION_FAILURE);
         return builder
-                // The first pushed value confirms the subscription (design §7.4).
+                // The first pushed value confirms the subscription.
                 .on(TagAspectReadSubscribedState.WAITING_FOR_SUBSCRIPTION, TagAspectEvent.ValueReceived.class)
                 .then((current, event, aspect) -> {
                     aspect.confirmSubscription();
                     return TagAspectReadSubscribedState.SUBSCRIBED;
                 })
-                // The add-subscription request failed: back off and re-add (command-response loss, §7.4).
+                // The add-subscription request failed: back off and re-add (command-response loss).
                 .on(TagAspectReadSubscribedState.WAITING_FOR_SUBSCRIPTION, TagAspectEvent.NodeFailed.class)
                 .then((current, event, aspect) -> {
                     aspect.onSubscriptionFailure(TagAspectPreOperatingTransitions.reasonOf(event));
@@ -116,20 +116,20 @@ public final class TagAspectReadTransitions {
                 // Subsequent pushed values keep the subscription operating.
                 .on(TagAspectReadSubscribedState.SUBSCRIBED, TagAspectEvent.ValueReceived.class)
                 .then((current, event, aspect) -> TagAspectReadSubscribedState.SUBSCRIBED)
-                // A spontaneous loss power-cycles through verification (design §7.4).
+                // A spontaneous loss power-cycles through verification.
                 .on(TagAspectReadSubscribedState.SUBSCRIBED, TagAspectEvent.NodeFailed.class)
                 .when(spontaneous)
                 .then((current, event, aspect) -> {
                     aspect.onSpontaneousSubscriptionLoss(TagAspectPreOperatingTransitions.reasonOf(event));
                     return TagAspectReadSubscribedState.WAITING_FOR_VERIFICATION;
                 })
-                // A command-response loss backs off and re-adds (design §7.4).
+                // A command-response loss backs off and re-adds.
                 .on(TagAspectReadSubscribedState.SUBSCRIBED, TagAspectEvent.NodeFailed.class)
                 .otherwise((current, event, aspect) -> {
                     aspect.onSubscriptionFailure(TagAspectPreOperatingTransitions.reasonOf(event));
                     return TagAspectReadSubscribedState.WAITING_FOR_SUBSCRIPTION_RETRY;
                 })
-                // The backoff elapsed: re-add the subscription (design §7.4).
+                // The backoff elapsed: re-add the subscription.
                 .on(
                         TagAspectReadSubscribedState.WAITING_FOR_SUBSCRIPTION_RETRY,
                         TagAspectEvent.SubscriptionRetryElapsed.class)

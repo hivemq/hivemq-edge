@@ -19,7 +19,7 @@ import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperState;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The externally visible color of an adapter — a <b>pure function of the adapter machine state</b> (design §11.2)
+ * The externally visible color of an adapter — a <b>pure function of the adapter machine state</b>
  * computed by {@link #of(ProtocolAdapterWrapperState)}. The ten machine states collapse onto six colors that the
  * REST surface and any UI render directly; no adapter owns this value.
  */
@@ -43,11 +43,11 @@ public enum AdapterStatusColor {
      */
     YELLOW_STOPPING,
 
-    /** {@code ERROR}: the adapter is in its terminal error state and needs manual recovery (design §6.4, §8.3). */
+    /** {@code ERROR}: the adapter is in its terminal error state and needs manual recovery. */
     RED_ERROR;
 
     /**
-     * Fold an adapter machine state into its externally visible color (design §11.2).
+     * Fold an adapter machine state into its externally visible color.
      *
      * @param state the adapter machine state.
      * @return the color.

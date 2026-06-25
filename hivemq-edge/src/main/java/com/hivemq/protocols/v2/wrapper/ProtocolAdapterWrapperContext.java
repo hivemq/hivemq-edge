@@ -36,8 +36,8 @@ import com.hivemq.protocols.v2.fsm.FSM;
 import com.hivemq.protocols.v2.runtime.Backoff;
 import com.hivemq.protocols.v2.runtime.BatchCollector;
 import com.hivemq.protocols.v2.runtime.Clock;
-import com.hivemq.protocols.v2.runtime.NevskyMetrics;
 import com.hivemq.protocols.v2.runtime.PriorityTimerQueue;
+import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.runtime.RetryPolicy;
 import com.hivemq.protocols.v2.runtime.TimerHandle;
 import com.hivemq.protocols.v2.tag.TagAspectCoordinator;
@@ -52,18 +52,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The collaborators and machinery the adapter machine acts through (design §6) — the bag named in the design's
+ * The collaborators and machinery the adapter machine acts through — the bag named in the design's
  * package layout. It owns the goal, the timer queue, the batch collector, the backoff, the verification gate, and
  * the centralized {@code stepTowardGoal}; the transition table's guards and actions reach the protocol adapter,
  * the timers, and the tag plane only through here. Everything runs on the wrapper's single dispatch thread, so it
  * holds no locks.
  * <p>
  * The {@link TagAspectCoordinator} (in the {@code tag} package) is the wrapper's view of the tag aspect machines.
- * The <b>verification gate</b> is owned by the shared verification authority behind that coordinator (design §7.6):
+ * The <b>verification gate</b> is owned by the shared verification authority behind that coordinator:
  * on entry to {@code WAITING_FOR_VERIFICATION} the coordinator verifies the nodes its active aspects need as one
  * batch, and the wrapper synthesizes {@link ProtocolAdapterWrapperEvent.AllVerified} once the coordinator reports
  * {@code allReported()} — every node in the batch has reported some outcome (failures do not block
- * {@code CONNECTED}, design §6.3). The single verify stream feeds both this gate and the per-tag aspects.
+ * {@code CONNECTED}). The single verify stream feeds both this gate and the per-tag aspects.
  * <p>
  * The machine is bound after construction through {@link #bindMachine(FSM)} because the machine's
  * constructor needs this context — the cycle is closed once, before any message is handled. {@code stepTowardGoal}
@@ -74,7 +74,7 @@ public final class ProtocolAdapterWrapperContext {
     private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdapterWrapperContext.class);
 
     /**
-     * The actor-side browse deadline (design §11.4). The REST request timeout is the primary service-level bound
+     * The actor-side browse deadline. The REST request timeout is the primary service-level bound
      * (it returns {@code 504}); this deadline is the backstop that guarantees the future always completes and the
      * single in-flight browse slot is released even when the protocol adapter never reports a result.
      */
@@ -91,7 +91,7 @@ public final class ProtocolAdapterWrapperContext {
     private final boolean skipVerification;
     private final @NotNull TagAspectCoordinator tagPlane;
     private final @NotNull ProtocolAdapterWrapperEventListener healthListener;
-    private final @NotNull NevskyMetrics metrics;
+    private final @NotNull ProtocolAdapterMetrics metrics;
 
     private @NotNull ProtocolAdapterGoalState goal;
     private @NotNull Map<String, TagAspectActivationPreference> activation;
@@ -132,7 +132,7 @@ public final class ProtocolAdapterWrapperContext {
             final @NotNull Map<String, TagAspectActivationPreference> activation,
             final @NotNull TagAspectCoordinator tagPlane,
             final @NotNull ProtocolAdapterWrapperEventListener healthListener,
-            final @NotNull NevskyMetrics metrics) {
+            final @NotNull ProtocolAdapterMetrics metrics) {
         this.adapterId = adapterId;
         this.protocolAdapter = protocolAdapter;
         this.selfSender = selfSender;
@@ -165,11 +165,11 @@ public final class ProtocolAdapterWrapperContext {
     }
 
     // ──────────────────────────────────────────────────────────────────────────────────────────────────────────
-    //  Goal seeking — the single piece of non-trivial logic (design §1, §6.5)
+    //  Goal seeking — the single piece of non-trivial logic
     // ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 
     /**
-     * Take the one step the current state allows toward the goal (design §1). Called after every message: on a
+     * Take the one step the current state allows toward the goal. Called after every message: on a
      * goal command it issues the next command immediately; on an event it catches up when an acknowledgment landed
      * in a resting state whose goal had changed while the machine was waiting. In a state that is awaiting an
      * acknowledgment it does nothing — the goal is consulted when that acknowledgment arrives, through the table.
@@ -204,7 +204,7 @@ public final class ProtocolAdapterWrapperContext {
     }
 
     /**
-     * Apply a goal or lifecycle command (design §6.1). Mutates the goal and tag-set state; the subsequent
+     * Apply a goal or lifecycle command. Mutates the goal and tag-set state; the subsequent
      * {@link #stepTowardGoal()} issues any command the new goal calls for. Never consults the transition table, so
      * a command is valid in every state and can never trigger a defensive reset.
      *
@@ -262,7 +262,7 @@ public final class ProtocolAdapterWrapperContext {
     ProtocolAdapterWrapperState verifyStep() {
         clearTimers();
         // Move active aspects into verification and issue the nodes they need as one verifyBatch through the
-        // shared verification authority (design §6.3, §7.6).
+        // shared verification authority.
         tagPlane.onAdapterVerifying();
         if (tagPlane.allReported()) {
             // No aspect needs verification — connect straight away.
@@ -370,7 +370,7 @@ public final class ProtocolAdapterWrapperContext {
 
     /**
      * The mandatory {@code unmatched} action: an event with no listed transition means the wrapper and adapter are
-     * no longer consistent (design §6.4). Log it, count it, stop best-effort, notify the supervisor, and enter
+     * no longer consistent. Log it, count it, stop best-effort, notify the supervisor, and enter
      * {@code ERROR} — where the resulting acknowledgments are absorbed so the reset fires at most once.
      */
     @NotNull
@@ -383,7 +383,7 @@ public final class ProtocolAdapterWrapperContext {
     }
 
     /**
-     * An {@code ERROR} absorb row: log at debug, stay in {@code ERROR}, take no action (design §6.4).
+     * An {@code ERROR} absorb row: log at debug, stay in {@code ERROR}, take no action.
      */
     @NotNull
     ProtocolAdapterWrapperState absorbInError(final @NotNull ProtocolAdapterWrapperEvent event) {
@@ -418,7 +418,7 @@ public final class ProtocolAdapterWrapperContext {
     }
 
     // ──────────────────────────────────────────────────────────────────────────────────────────────────────────
-    //  Verification gate (owned by the shared verification authority, design §6.3, §7.6)
+    //  Verification gate (owned by the shared verification authority)
     // ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 
     private void clearVerification() {
@@ -426,7 +426,7 @@ public final class ProtocolAdapterWrapperContext {
     }
 
     /**
-     * Handle one node's verification outcome (design §6.3): fan it out to the node's aspects through the shared
+     * Handle one node's verification outcome: fan it out to the node's aspects through the shared
      * verification authority — which also clears the connect-gate count — then, while the machine is still gating
      * in {@code WAITING_FOR_VERIFICATION}, synthesize {@link ProtocolAdapterWrapperEvent.AllVerified} once every
      * node in the batch has reported some outcome. The single verify stream feeds both consumers (the adapter gate
@@ -443,7 +443,7 @@ public final class ProtocolAdapterWrapperContext {
     }
 
     /**
-     * Route one value to its read aspect (design §7.3, §7.4).
+     * Route one value to its read aspect.
      *
      * @param node  the node the value belongs to.
      * @param value the reused v1 value.
@@ -453,7 +453,7 @@ public final class ProtocolAdapterWrapperContext {
     }
 
     /**
-     * Route a per-node failure to its read aspect (design §7.4).
+     * Route a per-node failure to its read aspect.
      *
      * @param node        the node the failure belongs to.
      * @param reason      a human-readable description.
@@ -465,7 +465,7 @@ public final class ProtocolAdapterWrapperContext {
     }
 
     /**
-     * Route a write acknowledgment to its write aspect (design §7.5).
+     * Route a write acknowledgment to its write aspect.
      *
      * @param node    the node the write targeted.
      * @param success whether the write succeeded.
@@ -476,7 +476,7 @@ public final class ProtocolAdapterWrapperContext {
     }
 
     /**
-     * Route a southbound write request to its write aspect (design §7.5) — the "write arrives" trigger.
+     * Route a southbound write request to its write aspect — the "write arrives" trigger.
      *
      * @param node  the node to write to.
      * @param value the reused v1 value to write.
@@ -490,11 +490,11 @@ public final class ProtocolAdapterWrapperContext {
     }
 
     // ──────────────────────────────────────────────────────────────────────────────────────────────────────────
-    //  Browse bridge (design §11.4) — one in-flight browse per adapter, completed from the result or the deadline
+    //  Browse bridge — one in-flight browse per adapter, completed from the result or the deadline
     // ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 
     /**
-     * Bridge a REST browse to the protocol adapter (design §11.4), on the dispatch thread. A browse runs only when
+     * Bridge a REST browse to the protocol adapter, on the dispatch thread. A browse runs only when
      * the adapter is {@code CONNECTED} and no browse is already in flight; otherwise the future is failed with a
      * {@link BrowseRejectedException} the resource maps to {@code 409}. On acceptance, one {@code browse(filter)} is
      * issued, the future is stashed, and a deadline timer is armed so the slot is always released — the matching
@@ -524,7 +524,7 @@ public final class ProtocolAdapterWrapperContext {
     }
 
     /**
-     * Complete the pending browse with its results (design §11.4). A result arriving with nothing waiting — a stale
+     * Complete the pending browse with its results. A result arriving with nothing waiting — a stale
      * or duplicate {@code browseResult} — is dropped.
      *
      * @param entries the browse result entries.
@@ -598,7 +598,7 @@ public final class ProtocolAdapterWrapperContext {
     // ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 
     /**
-     * Handle a tick on the dispatch thread (design §5.5, §6.1): record the tick lag, fire every due timer — the
+     * Handle a tick on the dispatch thread: record the tick lag, fire every due timer — the
      * adapter machine's watchdog and backoff, and every aspect's poll, verification-retry, and subscription-retry
      * timers, each feeding an event straight to its machine and posting any due work — then dispatch the pending
      * batches to the adapter.
@@ -612,8 +612,7 @@ public final class ProtocolAdapterWrapperContext {
     }
 
     /**
-     * Record that the machine transitioned: stamp the transition time from the clock and count it (design §5.8,
-     * §6.6). Called once per message that changed the state.
+     * Record that the machine transitioned: stamp the transition time from the clock and count it. Called once per message that changed the state.
      */
     public void recordTransition() {
         lastTransitionAtMillis = clock.nowMillis();
@@ -621,7 +620,7 @@ public final class ProtocolAdapterWrapperContext {
     }
 
     /**
-     * Build the immutable status snapshot for the given machine state (design §6.6).
+     * Build the immutable status snapshot for the given machine state.
      *
      * @param state the current machine state.
      * @return the snapshot to publish.
@@ -652,7 +651,7 @@ public final class ProtocolAdapterWrapperContext {
     }
 
     // ──────────────────────────────────────────────────────────────────────────────────────────────────────────
-    //  Runtime accessors — the per-actor primitives shared with the tag plane (design §5.5, §5.7, §6.1)
+    //  Runtime accessors — the per-actor primitives shared with the tag plane
     // ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 
     /**
@@ -663,14 +662,14 @@ public final class ProtocolAdapterWrapperContext {
     }
 
     /**
-     * @return the actor's single timer queue — shared by the adapter machine and the tag aspects (design §5.5).
+     * @return the actor's single timer queue — shared by the adapter machine and the tag aspects.
      */
     public @NotNull PriorityTimerQueue timers() {
         return timers;
     }
 
     /**
-     * @return the actor's batch collector — where the tag aspects post poll and subscription requests (design §5.7).
+     * @return the actor's batch collector — where the tag aspects post poll and subscription requests.
      */
     public @NotNull BatchCollector batches() {
         return batches;
@@ -679,7 +678,7 @@ public final class ProtocolAdapterWrapperContext {
     /**
      * @return the per-adapter metrics — the source of the per-tag failure counters.
      */
-    public @NotNull NevskyMetrics metrics() {
+    public @NotNull ProtocolAdapterMetrics metrics() {
         return metrics;
     }
 
@@ -692,7 +691,7 @@ public final class ProtocolAdapterWrapperContext {
 
     /**
      * The single in-flight browse: the future the REST thread awaits and the deadline timer that releases the slot
-     * if the protocol adapter never reports a result (design §11.4).
+     * if the protocol adapter never reports a result.
      *
      * @param completion the future to complete with the browse result or a {@link BrowseRejectedException}.
      * @param deadline   the deadline timer, canceled when the browse completes.

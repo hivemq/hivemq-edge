@@ -27,7 +27,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 /**
- * Snapshot publication (design §6.6) and the goal-command bypass (design §4). The wrapper publishes an immutable
+ * Snapshot publication and the goal-command bypass. The wrapper publishes an immutable
  * snapshot after every message, matching the machine state and carrying the per-tag status; and goal commands —
  * valid in every state — never reach the table, so they never trigger a defensive reset.
  */

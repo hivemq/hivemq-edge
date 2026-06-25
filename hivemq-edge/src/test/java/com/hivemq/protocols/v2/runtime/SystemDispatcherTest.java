@@ -55,7 +55,7 @@ class SystemDispatcherTest {
 
             assertThat(handler.labels()).containsExactly("m0", "m1", "m2", "m3", "m4");
             assertThat(handler.threadNames()).hasSize(1);
-            assertThat(handler.threadNames().iterator().next()).startsWith("nevsky-dispatcher-");
+            assertThat(handler.threadNames().iterator().next()).startsWith("protocol-adapter-dispatcher-");
         }
     }
 
