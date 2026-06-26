@@ -226,6 +226,20 @@ class ChaosProtocolAdapterTest {
     }
 
     @Test
+    void writeNoResponse_recordsTheCommandButStaysSilent() {
+        final RecordingOutput output = new RecordingOutput();
+        final ChaosProtocolAdapter adapter = new ChaosProtocolAdapter(
+                "a",
+                output,
+                ChaosScript.builder().writeNoResponse(NodeMatcher.all()).build());
+
+        adapter.writeBatch(List.of(new WriteEntry(NODE_A, VALUE)));
+
+        assertThat(output.events).isEmpty();
+        assertThat(adapter.commands()).containsExactly("writeBatch");
+    }
+
+    @Test
     void browseImmediate_reportsTheResultWithinTheCall() {
         final RecordingOutput output = new RecordingOutput();
         final List<BrowseResultEntry> entries = List.of(new BrowseResultEntry(NODE_A, NodeType.VALUE, true));

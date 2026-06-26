@@ -25,10 +25,10 @@ java {
 }
 
 // The ChaosProtocolAdapter is a hidden, test-only SDK v2 adapter: it is NOT shipped and not
-// loaded via the module loader, so this module produces a plain library jar — no shadow distribution. It is shared
-// by `hivemq-edge-test`, which injects the factory into the constructor-injected ProtocolAdapterFactoryRegistry as
-// a hidden type (the production registry stays empty, D8). The deterministic scenario matrix, the harness, and the
-// simulator's own unit tests all live in this module's test sources.
+// loaded via the module loader, so this module produces a plain library jar — no shadow distribution. It is
+// consumed as a plain library by the tests that drive it, which inject the factory into the constructor-injected
+// ProtocolAdapterFactoryRegistry as a hidden type (the production registry stays empty, D8). The deterministic
+// scenario matrix, the harness, and the simulator's own unit tests all live in this module's test sources.
 
 dependencies {
     compileOnly(libs.hivemq.edge.adaptersdk)

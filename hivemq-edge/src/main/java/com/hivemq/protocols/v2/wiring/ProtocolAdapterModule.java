@@ -41,8 +41,8 @@ import org.jetbrains.annotations.NotNull;
  * The single additive Dagger module that wires the v2 protocol-adapter subsystem into Edge <b>beside</b> the legacy
  * framework (touchpoint 4). It contributes only new bindings — it edits nothing the legacy path depends
  * on — and its production factory registry is <b>empty</b> (D8): no demo or simulation adapter ships, so
- * {@code GET /api/v2/.../types} is empty until a real adapter type is ported. {@code hivemq-edge-test} drives a
- * {@code ChaosProtocolAdapter} only through its own constructor-built registry, never through this production graph.
+ * {@code GET /api/v2/.../types} is empty until a real adapter type is ported. Tests that exercise a
+ * {@code ChaosProtocolAdapter} build their own constructor-injected registry, never through this production graph.
  * <p>
  * The module provides the actor-runtime singletons (one production {@link SystemClock} and one {@link SystemDispatcher}
  * shared by the manager and every wrapper), the two registries, the wrapper-assembly seam, the supervisor
@@ -81,7 +81,7 @@ public abstract class ProtocolAdapterModule {
     @Singleton
     static @NotNull ProtocolAdapterFactoryRegistry factoryRegistry() {
         // D8: empty in production. No real adapter is ported in this project and no simulation adapter ships; the
-        // hidden ChaosProtocolAdapterFactory is injected only by hivemq-edge-test, into its own registry.
+        // hidden ChaosProtocolAdapterFactory is injected only by tests, into their own registry.
         return new ProtocolAdapterFactoryRegistry(Set.of());
     }
 

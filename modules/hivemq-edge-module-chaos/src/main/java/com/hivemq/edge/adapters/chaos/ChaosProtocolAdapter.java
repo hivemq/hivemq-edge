@@ -139,8 +139,8 @@ public final class ChaosProtocolAdapter implements ProtocolAdapter {
     public void writeBatch(final @NotNull List<WriteEntry> entries) {
         commands.add("writeBatch");
         for (final WriteEntry entry : entries) {
-            final ChaosScript.WriteOutcome outcome = script.writeOutcomeFor(entry.node());
-            output.writeResult(entry.node(), outcome.success(), outcome.reason());
+            script.writeOutcomeFor(entry.node())
+                    .ifPresent(outcome -> output.writeResult(entry.node(), outcome.success(), outcome.reason()));
         }
     }
 
@@ -262,7 +262,8 @@ public final class ChaosProtocolAdapter implements ProtocolAdapter {
             case final ChaosEvent.Disconnect ignored -> output.disconnected();
             case final ChaosEvent.ErrorReport error -> output.error(error.scope(), error.reason());
             case final ChaosEvent.DataPointPush push -> output.dataPoint(push.node(), push.value());
-            case final ChaosEvent.NodeErrorPush push -> output.nodeError(push.node(), push.reason(), push.spontaneous());
+            case final ChaosEvent.NodeErrorPush push ->
+                output.nodeError(push.node(), push.reason(), push.spontaneous());
         }
     }
 

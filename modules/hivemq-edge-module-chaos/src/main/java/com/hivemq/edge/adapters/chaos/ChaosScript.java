@@ -120,8 +120,7 @@ public final class ChaosScript {
     public @NotNull Optional<VerifyOutcome> verifyResponseFor(final @NotNull Node node, final int attempt) {
         for (final VerifyRule rule : verifyRules) {
             if (rule.matcher().matches(node)) {
-                final int index =
-                        Math.clamp(attempt, 1, rule.responses().size()) - 1;
+                final int index = Math.clamp(attempt, 1, rule.responses().size()) - 1;
                 return rule.responses().get(index);
             }
         }
@@ -157,15 +156,17 @@ public final class ChaosScript {
 
     /**
      * @param node the node being written.
-     * @return the first matching write outcome, or a success when none matches.
+     * @return the first matching write outcome — present with the scripted result, or empty for a
+     *         {@code writeNoResponse} rule (the adapter records the write but never acknowledges it, so the write
+     *         aspect parks in {@code WAITING_FOR_WRITE_RESULT}). When no rule matches, a success is returned.
      */
-    public @NotNull WriteOutcome writeOutcomeFor(final @NotNull Node node) {
+    public @NotNull Optional<WriteOutcome> writeOutcomeFor(final @NotNull Node node) {
         for (final WriteRule rule : writeRules) {
             if (rule.matcher().matches(node)) {
-                return new WriteOutcome(rule.success(), rule.reason());
+                return Optional.ofNullable(rule.outcome());
             }
         }
-        return new WriteOutcome(true, null);
+        return Optional.of(new WriteOutcome(true, null));
     }
 
     /**
@@ -231,9 +232,7 @@ public final class ChaosScript {
             @NotNull NodeMatcher matcher, @NotNull SubscriptionBehavior behavior) {}
 
     private record WriteRule(
-            @NotNull NodeMatcher matcher,
-            boolean success,
-            @Nullable String reason) {}
+            @NotNull NodeMatcher matcher, @Nullable WriteOutcome outcome) {}
 
     private record BrowseRule(
             @NotNull NodeMatcher matcher, @NotNull List<BrowseResultEntry> results, int durationTicks) {}
@@ -384,7 +383,20 @@ public final class ChaosScript {
          */
         public @NotNull Builder write(
                 final @NotNull NodeMatcher matcher, final boolean success, final @Nullable String reason) {
-            writeRules.add(new WriteRule(matcher, success, reason));
+            writeRules.add(new WriteRule(matcher, new WriteOutcome(success, reason)));
+            return this;
+        }
+
+        /**
+         * Make a write stay silent for matching nodes: the adapter records the {@code writeBatch} but never reports a
+         * write result, so the tag's write aspect parks in {@code WAITING_FOR_WRITE_RESULT} until the next event —
+         * the write-side mirror of {@link #verifyNoResponse(NodeMatcher)} and {@link PollBehavior#noResponse()}.
+         *
+         * @param matcher the nodes whose write is never acknowledged.
+         * @return this builder.
+         */
+        public @NotNull Builder writeNoResponse(final @NotNull NodeMatcher matcher) {
+            writeRules.add(new WriteRule(matcher, null));
             return this;
         }
 

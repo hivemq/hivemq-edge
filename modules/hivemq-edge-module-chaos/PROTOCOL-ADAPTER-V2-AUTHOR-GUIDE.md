@@ -94,8 +94,9 @@ The framework deserializes each tag's `node-string` into your `nodeClass()`
 with Jackson, so your `Node` subclass must round-trip:
 `nodeString()` produces the JSON, and the class must be Jackson-deserializable
 from it (a public field + no-arg constructor, or a `@JsonCreator`).
-`ChaosNode` is intentionally minimal — see the note in `ProtocolAdapterV2EndToEndTest`,
-which supplies a deserializer because `ChaosNode` is immutable with no creator.
+`ChaosNode` is intentionally minimal and immutable with no Jackson creator, so a
+wired runtime that loads it from configuration registers a deserializer for it
+(a real adapter's node class would instead carry a `@JsonCreator`).
 
 ## 4. Capabilities, registration, and visibility
 
@@ -106,8 +107,8 @@ A `ProtocolAdapterFactory` is placed into the constructor-injected
 - **hidden** types are resolvable by `protocol-id` (a configured instance runs
   like any other) but are excluded from `/types`.
 
-`ChaosProtocolAdapter` ships as a **hidden** type, injected only by
-`hivemq-edge-test`. The production registry is empty (no demo adapter ships).
+`ChaosProtocolAdapter` ships as a **hidden** type, injected only by the tests
+that drive it. The production registry is empty (no demo adapter ships).
 
 ## 5. Status the REST surface derives
 
@@ -145,7 +146,8 @@ configuration, applied at startup and on reload without reconnecting.
 
 `ChaosProtocolAdapter` (+ `ChaosProtocolAdapterFactory`,
 `ChaosProtocolAdapterInformation`, `ChaosNode`, `ChaosDataPoint`) is a complete
-SDK-v2 adapter. `ProtocolAdapterV2EndToEndTest` (in `hivemq-edge-test`) shows it loaded
-from configuration, connected, polled, retried, and reloaded through the wired
-runtime; the deterministic scenario matrix in this module's `src/test` drives
-the same adapter on a `FakeClock` for exhaustive state-machine coverage.
+SDK-v2 adapter. A wired end-to-end suite loads it from configuration and
+exercises every state of the adapter, read, and write machines through the real
+runtime — real threads, the manager's reconciliation, and the v2 REST resource;
+the deterministic scenario matrix in this module's `src/test` drives the same
+adapter on a `FakeClock` for the same exhaustive state-machine coverage.

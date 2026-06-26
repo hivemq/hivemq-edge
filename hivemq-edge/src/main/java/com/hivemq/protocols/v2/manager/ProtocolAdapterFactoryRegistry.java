@@ -28,7 +28,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * The set of protocol-adapter type factories the manager can instantiate, keyed by {@code protocol-id} (D8). The factory set is <b>constructor-injected</b> and is <b>empty in production wiring</b> — no real adapter is
  * ported in this project. The {@code ChaosProtocolAdapterFactory} lives in its own {@code hivemq-edge-module-chaos}
- * module and is injected only by {@code hivemq-edge-test} (and the module's own tests), as a <b>hidden</b> type. An
+ * module and is injected only by tests, as a <b>hidden</b> type. An
  * adapter whose {@code protocol-id} has no factory here is surfaced as an {@code ERROR} registry handle with no
  * wrapper created.
  * <p>
