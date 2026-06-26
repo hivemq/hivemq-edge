@@ -53,8 +53,7 @@ class MailboxConcurrencyTest {
         final Mailbox<Counted> mailbox = new DefaultMailbox<>();
         final RecordingHandler handler = new RecordingHandler();
         final SystemDispatcher dispatcher = new SystemDispatcher();
-        final MessageDispatcherHandle handle = dispatcher.attach(mailbox, handler);
-        try {
+        try (final MessageDispatcherHandle _ = dispatcher.attach(mailbox, handler)) {
             final CountDownLatch start = new CountDownLatch(1);
             final List<Thread> producers = new ArrayList<>();
             for (int producer = 0; producer < PRODUCERS; producer++) {
@@ -89,8 +88,6 @@ class MailboxConcurrencyTest {
                 assertMonotonicWithinBand(handler.received, producer, MailboxMessagePriority.DATA);
                 assertMonotonicWithinBand(handler.received, producer, MailboxMessagePriority.EVENT);
             }
-        } finally {
-            handle.close();
         }
     }
 
@@ -121,7 +118,7 @@ class MailboxConcurrencyTest {
 
     private static void awaitQuietly(final @NotNull CountDownLatch latch) {
         try {
-            latch.await(30, TimeUnit.SECONDS);
+            final boolean ignored = latch.await(30, TimeUnit.SECONDS);
         } catch (final InterruptedException interrupted) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("interrupted while waiting to start", interrupted);

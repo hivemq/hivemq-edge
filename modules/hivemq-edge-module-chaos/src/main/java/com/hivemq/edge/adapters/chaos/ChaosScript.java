@@ -92,7 +92,7 @@ public final class ChaosScript {
      *         further attempt, so a single {@link Builder#onConnect(ChaosBehavior)} applies to every attempt.
      */
     public @NotNull ChaosBehavior connectBehaviorFor(final int attempt) {
-        final int index = Math.min(Math.max(attempt, 1), connectBehaviors.size()) - 1;
+        final int index = Math.clamp(attempt, 1, connectBehaviors.size()) - 1;
         return connectBehaviors.get(index);
     }
 
@@ -121,7 +121,7 @@ public final class ChaosScript {
         for (final VerifyRule rule : verifyRules) {
             if (rule.matcher().matches(node)) {
                 final int index =
-                        Math.min(Math.max(attempt, 1), rule.responses().size()) - 1;
+                        Math.clamp(attempt, 1, rule.responses().size()) - 1;
                 return rule.responses().get(index);
             }
         }
