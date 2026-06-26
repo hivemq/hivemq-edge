@@ -35,7 +35,7 @@ import com.hivemq.protocols.v2.config.ProtocolAdapterEntity;
 import com.hivemq.protocols.v2.config.TagEntity;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterHandleRegistry.ProtocolAdapterHandle;
 import com.hivemq.protocols.v2.runtime.Clock;
-import com.hivemq.protocols.v2.runtime.NevskyMetrics;
+import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.runtime.RetryPolicy;
 import com.hivemq.protocols.v2.tag.TagAspectRuntimeCoordinator;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
@@ -56,7 +56,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Production {@link ProtocolAdapterWrapperFactory}: assembles the full wrapper/adapter actor for one configuration
- * (design §6, §8.2), exactly as the wrapper test rig does but driven from the read-only configuration and the
+ *, exactly as the wrapper test rig does but driven from the read-only configuration and the
  * injected runtime. For each adapter it
  * <ol>
  * <li>creates the wrapper mailbox and the tell-façade the protocol adapter reports through;</li>
@@ -122,7 +122,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
         final ProtocolAdapterInput input = new WrapperInput(adapterId, adapterConfig, nodes, services);
         final ProtocolAdapter protocolAdapter = factory.createAdapter(input, output);
 
-        final NevskyMetrics metrics = new NevskyMetrics(metricRegistry, adapterId, mailbox::size);
+        final ProtocolAdapterMetrics metrics = new ProtocolAdapterMetrics(metricRegistry, adapterId, mailbox::size);
         final ProtocolAdapterGoalState goal = ProtocolAdapterConfigSupport.goalOf(entity);
         final Map<String, TagAspectActivationPreference> activation = ProtocolAdapterConfigSupport.activationOf(entity);
         final Set<String> readUsed = entity.getReadUsedTagNames();
@@ -194,7 +194,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
     }
 
     /**
-     * The framework services handed to a constructed adapter (design §3.8): the reused v1 value factory and the
+     * The framework services handed to a constructed adapter: the reused v1 value factory and the
      * dispatcher its mailbox attaches to.
      */
     private record WrapperServices(
@@ -202,7 +202,7 @@ public final class DefaultProtocolAdapterWrapperFactory implements ProtocolAdapt
             @NotNull MessageDispatcher dispatcher) implements ProtocolAdapterService {}
 
     /**
-     * Everything one adapter instance is constructed from (design §3.8): its id, the reused v1 configuration value,
+     * Everything one adapter instance is constructed from: its id, the reused v1 configuration value,
      * the node/tag pairs it serves, and the framework services.
      */
     private record WrapperInput(

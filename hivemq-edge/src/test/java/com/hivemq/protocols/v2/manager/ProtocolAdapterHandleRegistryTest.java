@@ -31,7 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * The REST-readable registry (design §6.6, §8): basic lifecycle, and — with real threads and Awaitility, never
+ * The REST-readable registry: basic lifecycle, and — with real threads and Awaitility, never
  * {@code Thread.sleep} — that handles and their published snapshots are safely readable from a foreign thread while
  * the (single) writer mutates the registry, honoring the actor model's snapshot-only read path.
  */
@@ -42,36 +42,36 @@ class ProtocolAdapterHandleRegistryTest {
 
     @Test
     void registerFindAndUnregister() {
-        final ProtocolAdapterHandleRegistry registry = new ProtocolAdapterHandleRegistry();
+        final ProtocolAdapterHandleRegistry handleRegistry = new ProtocolAdapterHandleRegistry();
         final ProtocolAdapterHandle handle = handle("a", ProtocolAdapterWrapperState.STOPPED);
 
-        registry.register(handle);
+        handleRegistry.register(handle);
 
-        assertThat(registry.find("a")).isSameAs(handle);
-        assertThat(registry.all()).containsExactly(handle);
+        assertThat(handleRegistry.find("a")).isSameAs(handle);
+        assertThat(handleRegistry.all()).containsExactly(handle);
 
-        registry.unregister("a");
+        handleRegistry.unregister("a");
 
-        assertThat(registry.find("a")).isNull();
-        assertThat(registry.all()).isEmpty();
+        assertThat(handleRegistry.find("a")).isNull();
+        assertThat(handleRegistry.all()).isEmpty();
     }
 
     @Test
     void publishedSnapshotIsVisibleFromAForeignThread() throws InterruptedException {
-        final ProtocolAdapterHandleRegistry registry = new ProtocolAdapterHandleRegistry();
+        final ProtocolAdapterHandleRegistry handleRegistry = new ProtocolAdapterHandleRegistry();
         final AtomicReference<AdapterStatusSnapshot> snapshot =
                 new AtomicReference<>(snapshot("a", ProtocolAdapterWrapperState.WAITING_FOR_CONNECTED));
-        registry.register(new ProtocolAdapterHandle("a", NO_OP_SENDER, snapshot));
+        handleRegistry.register(new ProtocolAdapterHandle("a", NO_OP_SENDER, snapshot));
 
         final CountDownLatch reading = new CountDownLatch(1);
         final AtomicReference<ProtocolAdapterWrapperState> seen = new AtomicReference<>();
         final Thread reader = new Thread(() -> {
             reading.countDown();
             await().atMost(TIMEOUT).until(() -> {
-                final ProtocolAdapterHandle found = registry.find("a");
+                final ProtocolAdapterHandle found = handleRegistry.find("a");
                 return found != null && found.snapshot().get().machineState() == ProtocolAdapterWrapperState.CONNECTED;
             });
-            final ProtocolAdapterHandle found = registry.find("a");
+            final ProtocolAdapterHandle found = handleRegistry.find("a");
             seen.set(found == null ? null : found.snapshot().get().machineState());
         });
         reader.start();
@@ -86,7 +86,7 @@ class ProtocolAdapterHandleRegistryTest {
 
     @Test
     void concurrentRegistrationsAreAllVisible() {
-        final ProtocolAdapterHandleRegistry registry = new ProtocolAdapterHandleRegistry();
+        final ProtocolAdapterHandleRegistry handleRegistry = new ProtocolAdapterHandleRegistry();
         final int writers = 8;
         final int perWriter = 50;
         final List<Thread> threads = new java.util.ArrayList<>(writers);
@@ -94,15 +94,15 @@ class ProtocolAdapterHandleRegistryTest {
             final int base = writer * perWriter;
             threads.add(new Thread(() -> {
                 for (int i = 0; i < perWriter; i++) {
-                    registry.register(handle("adapter-" + (base + i), ProtocolAdapterWrapperState.STOPPED));
+                    handleRegistry.register(handle("adapter-" + (base + i), ProtocolAdapterWrapperState.STOPPED));
                 }
             }));
         }
         threads.forEach(Thread::start);
 
-        await().atMost(TIMEOUT).until(() -> registry.all().size() == writers * perWriter);
+        await().atMost(TIMEOUT).until(() -> handleRegistry.all().size() == writers * perWriter);
 
-        assertThat(registry.all()).hasSize(writers * perWriter);
+        assertThat(handleRegistry.all()).hasSize(writers * perWriter);
     }
 
     private static @NotNull ProtocolAdapterHandle handle(

@@ -17,7 +17,7 @@ package com.hivemq.protocols.v2.fsm;
 
 /**
  * Marker for an event fed to a {@link FSM} through {@link FSM#onEvent(FSMEvent)}
- * (design §4). Events — protocol-adapter acknowledgments, errors, and timer expiries — are the only inputs
+ *. Events — protocol-adapter acknowledgments, errors, and timer expiries — are the only inputs
  * that flow through the {@link FSMTransitionTable}; goal mutations bypass the table via
  * {@link FSM#onGoalChange(Runnable)} and can never trigger the defensive reset.
  */

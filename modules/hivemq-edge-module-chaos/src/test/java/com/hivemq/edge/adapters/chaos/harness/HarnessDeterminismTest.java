@@ -28,7 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * The harness is deterministic (design §10.3 test plan): the same immutable {@link ChaosScript} driven through the
+ * The harness is deterministic (test plan): the same immutable {@link ChaosScript} driven through the
  * same operations produces byte-for-byte identical command and event traces across runs — the property the whole
  * deterministic matrix relies on. Because {@code ChaosScript} is immutable and stateless, the very same script
  * instance drives every run; all per-run state lives in the simulator and the actor, both rebuilt fresh.

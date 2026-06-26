@@ -21,18 +21,18 @@ import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeTagPair;
 import com.hivemq.protocols.v2.runtime.BatchCollector;
 import com.hivemq.protocols.v2.runtime.Clock;
-import com.hivemq.protocols.v2.runtime.NevskyMetrics;
 import com.hivemq.protocols.v2.runtime.PriorityTimerQueue;
+import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.runtime.RetryPolicy;
 import com.hivemq.protocols.v2.view.TagStatusSnapshot;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * One tag's runtime — both aspects of a tag plus their shared bookkeeping (design §7). A tag has an independent
+ * One tag's runtime — both aspects of a tag plus their shared bookkeeping. A tag has an independent
  * {@link TagAspectRead read aspect} and {@link TagAspectWrite write aspect} sharing the Node/Tag pair but otherwise
  * orthogonal. The runtime forwards the events the wrapper routes to the right aspect, applies each aspect's
- * three-condition goal, and folds the two aspects into the published per-tag snapshot (design §6.6, §7.7).
+ * three-condition goal, and folds the two aspects into the published per-tag snapshot.
  * <p>
  * Created and used only on the wrapper's single dispatch thread.
  */
@@ -64,7 +64,7 @@ public final class TagRuntime {
             final @NotNull Clock clock,
             final @NotNull PriorityTimerQueue timers,
             final @NotNull BatchCollector batches,
-            final @NotNull NevskyMetrics metrics,
+            final @NotNull ProtocolAdapterMetrics metrics,
             final @NotNull SharedNodeVerification sharedNodeVerification,
             final long pollIntervalMillis,
             final @NotNull RetryPolicy retryPolicy) {
@@ -114,18 +114,17 @@ public final class TagRuntime {
     }
 
     /**
-     * @return whether either aspect is awaiting the connect-time verification (design §6.3) — used by the
+     * @return whether either aspect is awaiting the connect-time verification — used by the
      *         coordinator to select this node for the single connect verification batch.
      */
     public boolean needsConnectVerification() {
         return readAspect.awaitingVerification() || writeAspect.awaitingVerification();
     }
 
-    // ── goal and lifecycle (design §7.1, §7.2) ──────────────────────────────────────────────────────────────────
+    // ── goal and lifecycle ──────────────────────────────────────────────────────────────────
 
     /**
-     * Apply the tag's activation and usage to its aspects atomically — the activation-only transition (design
-     * §8.2). Recomputes each aspect's three-condition goal (read on northbound, write on southbound) and applies
+     * Apply the tag's activation and usage to its aspects atomically — the activation-only transition. Recomputes each aspect's three-condition goal (read on northbound, write on southbound) and applies
      * it; never reconnects.
      *
      * @param northboundActivated the read direction (northbound) goal.
@@ -151,7 +150,7 @@ public final class TagRuntime {
     }
 
     /**
-     * Forward the adapter's entry into verification to both aspects (design §6.3).
+     * Forward the adapter's entry into verification to both aspects.
      */
     public void onAdapterVerifying() {
         readAspect.onAdapterVerifying();
@@ -159,7 +158,7 @@ public final class TagRuntime {
     }
 
     /**
-     * Forward the adapter reaching {@code CONNECTED} to both aspects (design §7.2).
+     * Forward the adapter reaching {@code CONNECTED} to both aspects.
      */
     public void onAdapterReady() {
         readAspect.onAdapterReady();
@@ -167,7 +166,7 @@ public final class TagRuntime {
     }
 
     /**
-     * Forward the loss of the adapter connection to both aspects (design §7.2).
+     * Forward the loss of the adapter connection to both aspects.
      */
     public void onAdapterUnavailable() {
         readAspect.onAdapterUnavailable();
@@ -175,7 +174,7 @@ public final class TagRuntime {
     }
 
     /**
-     * Retry the tag after a permanent verification failure (design §7.6): each aspect in permanent verification
+     * Retry the tag after a permanent verification failure: each aspect in permanent verification
      * failure resets and re-verifies; an aspect in any other state is left untouched.
      */
     public void retry() {
@@ -185,7 +184,7 @@ public final class TagRuntime {
 
     /**
      * Force both aspects to {@code DEACTIVATED}, cancelling timers and dropping subscriptions — used when the tag
-     * is being removed from the set (design §8.2). Never reconnects the adapter.
+     * is being removed from the set. Never reconnects the adapter.
      */
     public void deactivate() {
         readActivated = false;
@@ -196,10 +195,10 @@ public final class TagRuntime {
         writeAspect.applyGoal(TagAspectGoal.inactive());
     }
 
-    // ── routed events (design §7) ───────────────────────────────────────────────────────────────────────────────
+    // ── routed events ───────────────────────────────────────────────────────────────────────────────
 
     /**
-     * Fan a verification outcome to both of the tag's aspects (design §7.6) — the single result serves the read
+     * Fan a verification outcome to both of the tag's aspects — the single result serves the read
      * and write aspect alike.
      *
      * @param outcome the verification outcome.
@@ -210,7 +209,7 @@ public final class TagRuntime {
     }
 
     /**
-     * Route a received value to the read aspect (design §7.3, §7.4).
+     * Route a received value to the read aspect.
      *
      * @param value the reused v1 value.
      */
@@ -219,7 +218,7 @@ public final class TagRuntime {
     }
 
     /**
-     * Route a per-node failure to the read aspect (design §7.3, §7.4).
+     * Route a per-node failure to the read aspect.
      *
      * @param reason      a human-readable description.
      * @param spontaneous whether the failure arrived outside a command-response exchange.
@@ -229,7 +228,7 @@ public final class TagRuntime {
     }
 
     /**
-     * Route a southbound write request to the write aspect (design §7.5).
+     * Route a southbound write request to the write aspect.
      *
      * @param value the reused v1 value to write.
      */
@@ -238,7 +237,7 @@ public final class TagRuntime {
     }
 
     /**
-     * Route a write acknowledgment to the write aspect (design §7.5).
+     * Route a write acknowledgment to the write aspect.
      *
      * @param success whether the write succeeded.
      * @param reason  the failure reason, or {@code null} on success.
@@ -247,11 +246,11 @@ public final class TagRuntime {
         writeAspect.onWriteResult(success, reason);
     }
 
-    // ── snapshot (design §6.6, §7.7) ────────────────────────────────────────────────────────────────────────────
+    // ── snapshot ────────────────────────────────────────────────────────────────────────────
 
     /**
      * @return the immutable per-tag status for publication, folding both aspects' live state, goal activation,
-     *         operating status, permanent-failure flag, and failure counters (design §6.6, §7.7).
+     *         operating status, permanent-failure flag, and failure counters.
      */
     public @NotNull TagStatusSnapshot snapshot() {
         final int totalFailureCount = readAspect.failureCount() + writeAspect.failureCount();

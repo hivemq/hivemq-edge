@@ -92,6 +92,9 @@ public interface ConfigurationService {
     ProtocolAdapterExtractor protocolAdapterExtractor();
 
     @NotNull
+    com.hivemq.protocols.v2.config.ProtocolAdapterExtractor v2ProtocolAdapterExtractor();
+
+    @NotNull
     DataCombiningExtractor dataCombiningExtractor();
 
     @NotNull

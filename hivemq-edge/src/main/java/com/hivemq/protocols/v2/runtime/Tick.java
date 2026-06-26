@@ -20,7 +20,7 @@ import com.hivemq.adapter.sdk.api.v2.messaging.MailboxMessagePriority;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * A generic tick — time delivered as a message (D6 / design §5.4). The {@link Clock} tells one of these (or an
+ * A generic tick — time delivered as a message (D6). The {@link Clock} tells one of these (or an
  * actor-specific tick) to an actor's mailbox every period; the actor drains its {@link PriorityTimerQueue} from
  * its own dispatch thread when it handles the tick.
  * <p>

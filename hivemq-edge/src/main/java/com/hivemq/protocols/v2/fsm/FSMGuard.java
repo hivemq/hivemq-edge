@@ -18,7 +18,7 @@ package com.hivemq.protocols.v2.fsm;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The condition that gates a transition (design §4). Several guarded rows may share one
+ * The condition that gates a transition. Several guarded rows may share one
  * {@code (state, eventType)} key; the table evaluates them in registration order and runs the first whose
  * guard passes. A guard must be side-effect free — it runs on the actor's dispatch thread and may be tested
  * without being chosen.

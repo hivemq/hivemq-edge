@@ -25,7 +25,7 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The per-tick batch collector (design §5.7). Tag aspects post requests during a tick by appending to one of
+ * The per-tick batch collector. Tag aspects post requests during a tick by appending to one of
  * four pending batches; after the timer drain the tick handler calls {@link #dispatch(ProtocolAdapter)}, which
  * sends each non-empty batch as one command to the adapter in a fixed order and then clears.
  * <p>

@@ -26,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * The shared verification model and tag retry for a read-and-write tag (design §7.6; scenarios S29 and the
+ * The shared verification model and tag retry for a read-and-write tag (scenarios S29 and the
  * verification optimization at unit level). One {@code verifyBatch} entry serves both aspects; one {@code Success}
  * advances both, one {@code PermanentFailure} suspends both; and a runtime tag retry re-verifies a permanently
  * failed tag and resets its counters without touching configuration.
@@ -54,7 +54,7 @@ class TagVerificationAndRetryTest {
         fixture.activate(ProtocolAdapterDirection.BOTH);
 
         assertThat(fixture.state()).isEqualTo(CONNECTED);
-        // Exactly one verifyBatch for the connect gate — the single result served both aspects (design §7.6).
+        // Exactly one verifyBatch for the connect gate — the single result served both aspects.
         assertThat(verifyBatchCount(fixture)).isEqualTo(1);
         assertThat(fixture.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
         assertThat(fixture.writeState("temperature")).isEqualTo("WAITING_FOR_WRITE_REQUEST");
@@ -84,7 +84,7 @@ class TagVerificationAndRetryTest {
         assertThat(fixture.writeState("temperature")).isEqualTo("ERROR_PERMANENT_VERIFICATION_FAILURE");
         assertThat(fixture.tag("temperature").failureCount()).isEqualTo(2); // read + write each counted once
 
-        // The device is fixed; a runtime tag retry re-verifies the tag (design §7.6, EDG-462).
+        // The device is fixed; a runtime tag retry re-verifies the tag.
         fixture.adapter.verifyOutcome = new VerifyOutcome.Success();
         fixture.retryTag("temperature");
 

@@ -15,16 +15,21 @@
  */
 package com.hivemq.edge.adapters.chaos;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.v2.node.Node;
 import com.hivemq.adapter.sdk.api.v2.node.NodeProperty;
 import java.util.EnumSet;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The {@link ChaosProtocolAdapter}'s protocol node — a minimal {@link Node} identified by a single id (design
- * §10.1). It is {@link NodeProperty#UNIQUE} (and therefore {@link NodeProperty#TYPED}, by the property implication
+ * The {@link ChaosProtocolAdapter}'s protocol node — a minimal {@link Node} identified by a single id. It is {@link NodeProperty#UNIQUE} (and therefore {@link NodeProperty#TYPED}, by the property implication
  * the protocol carries), so a scripted {@link NodeMatcher#byId(String)} can correlate behaviors to nodes. The
  * wrapper never inspects more than the {@link Node} reference, so a single id is all the simulator needs.
+ * <p>
+ * The {@code identifier} carries a Jackson creator so the framework's own {@code ObjectMapper} deserializes this node
+ * from its {@link #nodeString()} when an Edge runtime loads a configured chaos adapter — exactly as a real adapter's
+ * node class would.
  */
 public final class ChaosNode extends Node {
 
@@ -34,7 +39,8 @@ public final class ChaosNode extends Node {
      * @param identifier the node's stable identity, used by {@link NodeMatcher#byId(String)} and the
      *                   {@code nodeString} serialization.
      */
-    public ChaosNode(final @NotNull String identifier) {
+    @JsonCreator
+    public ChaosNode(final @JsonProperty("identifier") @NotNull String identifier) {
         this.identifier = identifier;
     }
 

@@ -59,14 +59,20 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
-            <!-- Nevsky side-by-side config section (design §9); lenient like protocol-adapters above -
+            <!-- v2 side-by-side config container; lenient like protocol-adapters above -
                  the JAXB binding and the v2 ProtocolAdapterExtractor do the real validation. -->
-            <xs:element name="v2-protocol-adapters" minOccurs="0">
+            <xs:element name="v2" minOccurs="0">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:choice minOccurs="0" maxOccurs="unbounded">
-                            <xs:any processContents="skip"/>
-                        </xs:choice>
+                        <xs:element name="protocol-adapters" minOccurs="0">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:choice minOccurs="0" maxOccurs="unbounded">
+                                        <xs:any processContents="skip"/>
+                                    </xs:choice>
+                                </xs:sequence>
+                            </xs:complexType>
+                        </xs:element>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>

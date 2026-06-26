@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * The five-value tag-status fold (design §7.7) — a pure function of the {@link TagStatusSnapshot}. Each
+ * The five-value tag-status fold — a pure function of the {@link TagStatusSnapshot}. Each
  * direction-activation combination maps to its own value; an active-but-not-operating aspect or a permanent
  * failure is {@code ERROR}; and a healthy write-only tag folds to {@code SOUTHBOUND_ONLY}, not {@code ERROR} (the
  * S30 regression the v01 fold got wrong).

@@ -19,10 +19,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The immutable per-tag status the wrapper publishes for readers (design §6.6). Part of an
+ * The immutable per-tag status the wrapper publishes for readers. Part of an
  * {@link AdapterStatusSnapshot}; produced by the actor on its own dispatch thread, read by REST threads. All
  * read-side views ({@link TagStatus} fold, mapping status — a later task) are pure functions of these fields; the
- * per-aspect booleans carry exactly what the five-value {@link TagStatus} fold needs (design §7.7), so the fold
+ * per-aspect booleans carry exactly what the five-value {@link TagStatus} fold needs, so the fold
  * stays a pure function of one snapshot.
  *
  * @param tagName                     the tag name.

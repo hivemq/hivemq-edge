@@ -26,8 +26,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Shared verification bookkeeping for a single adapter's tags (design §7.6) — <b>the single verification
- * authority</b> that both the connect-time adapter gate (design §6.3) and the per-aspect re-verifications run
+ * Shared verification bookkeeping for a single adapter's tags — <b>the single verification
+ * authority</b> that both the connect-time adapter gate and the per-aspect re-verifications run
  * through. One node's verification serves all of that node's aspects: if both the read and write aspect of a tag
  * need to verify, exactly <b>one</b> {@code verifyBatch} entry is issued and the single {@link VerifyOutcome} is
  * fanned out to every aspect of the node.
@@ -35,11 +35,11 @@ import org.jetbrains.annotations.Nullable;
  * It owns the de-duplication and the counting: a node already in flight is not re-requested
  * ({@link #needsVerify(Node)}), which is what keeps a read-and-write tag to a single verify, and
  * {@link #allReported()} is the signal the wrapper uses to leave {@code WAITING_FOR_VERIFICATION} for
- * {@code CONNECTED} once every node in the connect batch has reported some outcome (design §6.3).
+ * {@code CONNECTED} once every node in the connect batch has reported some outcome.
  * <p>
  * Two entry points feed it: {@link #beginConnectVerification(List)} — the connect gate issues the aspects' nodes
  * as <b>one</b> batch — and {@link #requestVerification(Node)} — a single post-connect re-verification an aspect
- * asks for after a verification-retry or a tag retry (design §7.6). {@link #reset()} drops any outstanding
+ * asks for after a verification-retry or a tag retry. {@link #reset()} drops any outstanding
  * in-flight nodes when verification is abandoned (a disconnect or stop). Every reported outcome flows through
  * {@link #onVerifyResult(Node, VerifyOutcome)}, which both clears the count and fans out to the aspects.
  * <p>
@@ -74,7 +74,7 @@ public final class SharedNodeVerification {
     /**
      * Request a re-verification of the node, de-duplicated: if the node is already in flight (another aspect of
      * the same tag asked first, or a request is outstanding) nothing is issued, so the single result serves all
-     * of the node's aspects (design §7.6).
+     * of the node's aspects.
      *
      * @param node the node to verify.
      */
@@ -86,7 +86,7 @@ public final class SharedNodeVerification {
     }
 
     /**
-     * Begin the connect-time verification (design §6.3): register every given node as in flight (de-duplicated)
+     * Begin the connect-time verification: register every given node as in flight (de-duplicated)
      * and issue them as <b>one</b> {@code verifyBatch} — a read-and-write tag therefore yields a single entry.
      * {@link #allReported()} then gates the {@code CONNECTED} transition. An empty list issues nothing and leaves
      * {@link #allReported()} {@code true}, so an adapter with no aspect needing verification connects immediately.
@@ -107,14 +107,14 @@ public final class SharedNodeVerification {
 
     /**
      * Drop every outstanding in-flight node — called when verification is abandoned (the adapter disconnected,
-     * errored, or stopped), so a stale request can never linger into the next connect gate (design §6.3).
+     * errored, or stopped), so a stale request can never linger into the next connect gate.
      */
     public void reset() {
         inFlight.clear();
     }
 
     /**
-     * Fan one node's verification outcome out to its aspects and clear it from the in-flight set (design §7.6). A
+     * Fan one node's verification outcome out to its aspects and clear it from the in-flight set. A
      * result for a node this coordinator did not request — an initial connect verification issued by the adapter
      * gate — is fanned out all the same; the in-flight removal is then a no-op.
      *
@@ -131,7 +131,7 @@ public final class SharedNodeVerification {
 
     /**
      * @return {@code true} when no verification is outstanding — the signal the wrapper uses to leave
-     *         {@code WAITING_FOR_VERIFICATION} for {@code CONNECTED} (the adapter gate, design §6.3).
+     *         {@code WAITING_FOR_VERIFICATION} for {@code CONNECTED} (the adapter gate).
      */
     public boolean allReported() {
         return inFlight.isEmpty();

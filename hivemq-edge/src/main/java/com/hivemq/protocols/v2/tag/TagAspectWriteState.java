@@ -16,12 +16,12 @@
 package com.hivemq.protocols.v2.tag;
 
 /**
- * The states of a tag's <b>write</b> aspect (design §7.5): the five shared pre-operating states plus the two
+ * The states of a tag's <b>write</b> aspect: the five shared pre-operating states plus the two
  * write-cycle states. {@link #WAITING_FOR_WRITE_REQUEST} is the healthy <b>goal</b> state — verified and ready to
  * accept southbound writes; a write arriving there requests the write and moves to
  * {@link #WAITING_FOR_WRITE_RESULT}, which returns to the request state on the acknowledgment (success or failure;
  * a failure is logged and counted but does <b>not</b> flap the aspect to {@code ERROR}). One write is in flight at
- * a time; multi-write ordering and back-pressure are a reserved extension point (design §7.5, §14).
+ * a time; multi-write ordering and back-pressure are a reserved extension point.
  */
 public enum TagAspectWriteState implements TagAspectState {
 
@@ -46,7 +46,7 @@ public enum TagAspectWriteState implements TagAspectState {
     WAITING_FOR_VERIFICATION_RETRY,
 
     /**
-     * Verification failed permanently; suspended until a user-commanded tag retry (design §7.6).
+     * Verification failed permanently; suspended until a user-commanded tag retry.
      */
     ERROR_PERMANENT_VERIFICATION_FAILURE,
 
@@ -57,7 +57,7 @@ public enum TagAspectWriteState implements TagAspectState {
 
     /**
      * A write was requested; waiting for the adapter's write acknowledgment (still operating — a normal write
-     * round-trip does not flap the tag to {@code ERROR}, design §7.7).
+     * round-trip does not flap the tag to {@code ERROR}).
      */
     WAITING_FOR_WRITE_RESULT;
 

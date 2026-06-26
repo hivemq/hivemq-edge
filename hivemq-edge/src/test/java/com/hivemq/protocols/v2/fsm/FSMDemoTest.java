@@ -23,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * A small goal-seeking demo that mirrors the adapter machine's central principle (design §1, §6.5): an
+ * A small goal-seeking demo that mirrors the adapter machine's central principle: an
  * external actor sets a goal, the machine takes <em>one</em> step toward it per message — issuing exactly one
  * command each step — and reaches the goal in N steps. The goal change drives the first step
  * ({@code STOPPED → WAITING_FOR_STARTED} through {@code stepTowardGoal}); the acknowledgment event drives the

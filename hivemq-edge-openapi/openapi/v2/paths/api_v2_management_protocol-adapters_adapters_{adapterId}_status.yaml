@@ -1,5 +1,5 @@
 get:
-  description: Obtain the runtime status of a Nevsky (v2) adapter (machine state, color, and tag summary).
+  description: Obtain the runtime status of a v2 adapter (machine state, color, and tag summary).
   operationId: getAdapterStatus
   x-roles-allowed:
     - admin
@@ -25,6 +25,6 @@ get:
           schema:
             $ref: ../components/schemas/errors/AdapterNotFoundError.yaml
       description: Adapter not found
-  summary: Obtain a Nevsky adapter's runtime status
+  summary: Obtain a v2 adapter's runtime status
   tags:
     - Protocol Adapters

@@ -50,7 +50,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * The deterministic scenario matrix (design §15), driven through the {@link ProtocolAdapterWrapperTestHarness}: a
+ * The deterministic scenario matrix, driven through the {@link ProtocolAdapterWrapperTestHarness}: a
  * real wrapper actor and its tag-aspect machines, fed by a scripted {@link com.hivemq.edge.adapters.chaos
  * .ChaosProtocolAdapter ChaosProtocolAdapter} on a {@code FakeClock} + {@code ManualDispatcher}. This is the
  * single, consolidated re-expression of the per-class wrapper tests through the chaos simulator — proving the
@@ -131,7 +131,7 @@ class ProtocolAdapterWrapperScenarioMatrixTest {
                 .build());
 
         harness.activateNorthbound();
-        // The connect gate reaches CONNECTED on any outcome (design §6.3); the aspect schedules a verify retry.
+        // The connect gate reaches CONNECTED on any outcome; the aspect schedules a verify retry.
         assertThat(harness.wrapperState()).isEqualTo(CONNECTED);
         assertThat(harness.readState("temperature")).isEqualTo("WAITING_FOR_VERIFICATION_RETRY");
 
@@ -149,7 +149,7 @@ class ProtocolAdapterWrapperScenarioMatrixTest {
 
         harness.activateNorthbound();
 
-        assertThat(harness.wrapperState()).isEqualTo(CONNECTED); // the adapter does not reconnect (design §7.6)
+        assertThat(harness.wrapperState()).isEqualTo(CONNECTED); // the adapter does not reconnect
         assertThat(harness.readState("temperature")).isEqualTo("ERROR_PERMANENT_VERIFICATION_FAILURE");
         assertThat(harness.tagStatus("temperature")).isEqualTo(ERROR);
 
@@ -388,7 +388,7 @@ class ProtocolAdapterWrapperScenarioMatrixTest {
         harness.updateTags(Set.of("temperature"), Set.of()); // a tags-only reload of the same set
 
         // The gentlest transition for a tags-only change: the tag set is re-applied in place and the adapter is
-        // NEVER reconnected (design §8.2). (The rebuilt aspects re-couple to the adapter on its next readiness
+        // NEVER reconnected. (The rebuilt aspects re-couple to the adapter on its next readiness
         // signal; the no-reconnect invariant is the guarantee asserted here.)
         assertThat(harness.wrapperState()).isEqualTo(CONNECTED);
         assertThat(count(harness, "connect")).isEqualTo(1);
@@ -424,7 +424,7 @@ class ProtocolAdapterWrapperScenarioMatrixTest {
         harness.activateBoth();
 
         assertThat(harness.wrapperState()).isEqualTo(CONNECTED);
-        assertThat(count(harness, "verifyBatch")).isEqualTo(1); // one batch served both aspects (design §7.6)
+        assertThat(count(harness, "verifyBatch")).isEqualTo(1); // one batch served both aspects
         assertThat(harness.readState("temperature")).isEqualTo("WAITING_FOR_POLL_INTERVAL");
         assertThat(harness.writeState("temperature")).isEqualTo("WAITING_FOR_WRITE_REQUEST");
         assertThat(harness.tagStatus("temperature")).isEqualTo(NORTHBOUND_AND_SOUTHBOUND);
@@ -481,7 +481,7 @@ class ProtocolAdapterWrapperScenarioMatrixTest {
     @Test
     void s24_acknowledgmentEnqueuedAlongsideADueTick_isProcessedFirst_noSpuriousWatchdog() {
         // The acknowledgment latency lands each ack on the same tick its watchdog would fire. Because EVENT
-        // outranks TICK (§5.1), the ack is processed first and cancels the watchdog, so no spurious watchdog fires
+        // outranks TICK, the ack is processed first and cancels the watchdog, so no spurious watchdog fires
         // and the adapter reaches CONNECTED without a single supervisor error notification.
         final ProtocolAdapterWrapperTestHarness harness =
                 harness(ChaosScript.builder().acknowledgmentLatencyTicks(1).build());

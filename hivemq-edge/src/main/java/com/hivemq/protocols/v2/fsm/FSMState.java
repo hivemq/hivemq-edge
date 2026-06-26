@@ -16,7 +16,7 @@
 package com.hivemq.protocols.v2.fsm;
 
 /**
- * Marker for a state in a {@link FSM} (design §4). Implemented by the enum that enumerates a
+ * Marker for a state in a {@link FSM}. Implemented by the enum that enumerates a
  * machine's states — for example the adapter machine's {@code ProtocolAdapterWrapperState} or a tag aspect's
  * state enum. The engine treats states opaquely; the meaning lives entirely in the {@link FSMTransitionTable}.
  */

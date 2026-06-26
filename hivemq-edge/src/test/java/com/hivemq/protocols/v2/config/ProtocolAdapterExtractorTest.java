@@ -97,11 +97,11 @@ class ProtocolAdapterExtractorTest {
         extractor.updateConfig(config(adapter("chaos-1")));
 
         final HiveMQConfigEntity target = new HiveMQConfigEntity();
-        target.getV2ProtocolAdapterConfig().add(adapter("stale"));
+        target.getV2().getProtocolAdapters().add(adapter("stale"));
         extractor.sync(target);
 
-        assertThat(target.getV2ProtocolAdapterConfig()).hasSize(1);
-        assertThat(target.getV2ProtocolAdapterConfig().getFirst().getAdapterId())
+        assertThat(target.getV2().getProtocolAdapters()).hasSize(1);
+        assertThat(target.getV2().getProtocolAdapters().getFirst().getAdapterId())
                 .isEqualTo("chaos-1");
     }
 
@@ -113,7 +113,7 @@ class ProtocolAdapterExtractorTest {
 
     private static @NotNull HiveMQConfigEntity config(final @NotNull ProtocolAdapterEntity... adapters) {
         final HiveMQConfigEntity entity = new HiveMQConfigEntity();
-        entity.getV2ProtocolAdapterConfig().addAll(List.of(adapters));
+        entity.getV2().getProtocolAdapters().addAll(List.of(adapters));
         return entity;
     }
 

@@ -1,6 +1,6 @@
 type: string
 description: >-
-  The externally visible color of a Nevsky (v2) protocol adapter, derived purely from its state machine state.
+  The externally visible color of a v2 protocol adapter, derived purely from its state machine state.
 enum:
   - GREY_STOPPED
   - YELLOW_CONNECTING

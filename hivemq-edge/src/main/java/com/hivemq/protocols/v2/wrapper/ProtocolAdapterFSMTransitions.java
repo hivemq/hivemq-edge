@@ -48,17 +48,17 @@ import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEvent.WriteResultRe
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The adapter machine's transition table — a direct, reviewable encoding of the design's state diagram (§6.2)
- * plus the {@code ERROR} absorb rows (§6.4). Every row maps to one labeled edge in the diagram; the mandatory
+ * The adapter machine's transition table — a direct, reviewable encoding of the design's state diagram
+ * plus the {@code ERROR} absorb rows. Every row maps to one labeled edge in the diagram; the mandatory
  * {@code unmatched} slot is the defensive reset for any event with no listed transition.
  * <p>
  * Goal-driven edges (every {@code goal→STOPPED} edge, and {@code STOPPED → WAITING_FOR_STARTED}) are <b>not</b>
- * here: they are handled by {@code stepTowardGoal} through the goal-command bypass, never the table (design §4).
+ * here: they are handled by {@code stepTowardGoal} through the goal-command bypass, never the table.
  * The table carries only the event-driven edges: acknowledgments, the synthesized {@link AllVerified} gate
  * signal, connection errors and losses, and the watchdog/backoff timer expiries.
  * <p>
  * {@code ERROR} absorbs every protocol-adapter event as a named row so the defensive reset — which itself issues
- * {@code stop()} — cannot loop on the resulting {@code stopped()}/{@code disconnected()} (design §6.4). Verify,
+ * {@code stop()} — cannot loop on the resulting {@code stopped()}/{@code disconnected()}. Verify,
  * data, write, browse, and aspect-timer events never reach the table in non-{@code ERROR} states (the wrapper
  * routes them to the tag plane); they appear below only as {@code ERROR} absorb rows, where the wrapper does feed
  * every event to the machine.
@@ -96,7 +96,7 @@ public final class ProtocolAdapterFSMTransitions {
                 .when((current, event, context) -> context.goalWantsConnected())
                 .then((current, event, context) -> context.connectStep())
                 .on(WAITING_FOR_STARTED, Started.class)
-                .otherwise((current, event, context) -> context.stopStep()) // stop intent (design §6.5)
+                .otherwise((current, event, context) -> context.stopStep()) // stop intent
                 .on(WAITING_FOR_STARTED, ErrorEvent.class)
                 .when(adapterScope)
                 .then(adapterToError)
@@ -163,7 +163,7 @@ public final class ProtocolAdapterFSMTransitions {
                 .on(WAITING_FOR_STOPPED, WatchdogFired.class)
                 .then(watchdogToError)
 
-                // ── ERROR absorbs every protocol-adapter event and timer expiry (design §6.4) ────────────────────
+                // ── ERROR absorbs every protocol-adapter event and timer expiry ────────────────────
                 .on(ERROR, Started.class)
                 .then(absorb)
                 .on(ERROR, Stopped.class)
@@ -197,7 +197,7 @@ public final class ProtocolAdapterFSMTransitions {
                 .on(ERROR, SubscriptionRetryTimerFired.class)
                 .then(absorb)
 
-                // ── Defensive reset for any event with no listed transition (design §6.4) ─────────────────────────
+                // ── Defensive reset for any event with no listed transition ─────────────────────────
                 .unmatched((current, event, context) -> context.defensiveReset(current, event))
                 .build();
     }

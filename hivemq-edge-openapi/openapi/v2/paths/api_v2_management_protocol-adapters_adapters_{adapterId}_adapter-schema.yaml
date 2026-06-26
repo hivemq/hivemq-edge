@@ -1,6 +1,6 @@
 get:
   description: >-
-    Obtain the JSON-Schema projection of a Nevsky (v2) adapter type's adapter-configuration schema (the reused
+    Obtain the JSON-Schema projection of a v2 adapter type's adapter-configuration schema (the reused
     adapter Schema).
   operationId: getAdapterSchema
   x-roles-allowed:
@@ -27,6 +27,6 @@ get:
           schema:
             $ref: ../components/schemas/errors/AdapterTypeNotFoundError.yaml
       description: Adapter type schema not available
-  summary: Obtain a Nevsky adapter's configuration schema
+  summary: Obtain a v2 adapter's configuration schema
   tags:
     - Protocol Adapters

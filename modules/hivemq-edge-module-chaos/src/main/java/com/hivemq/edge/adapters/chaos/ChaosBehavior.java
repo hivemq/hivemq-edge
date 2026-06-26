@@ -19,18 +19,18 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * How the {@link ChaosProtocolAdapter} answers a lifecycle command ({@code start} / {@code connect} /
- * {@code disconnect} / {@code stop}, design §10.2):
+ * {@code disconnect} / {@code stop}):
  * <ul>
  * <li>{@link Succeed} — acknowledge successfully (e.g. {@code output.started()});</li>
  * <li>{@link FailAdapter} — report {@code error(ADAPTER, reason)};</li>
  * <li>{@link FailConnection} — report {@code error(CONNECTION, reason)};</li>
  * <li>{@link Drop} / {@link NoResponse} — stay silent, so the wrapper parks in the waiting state until its
- *     watchdog fires (design §6.3);</li>
+ *     watchdog fires;</li>
  * <li>{@link Delay} — apply the inner behavior {@code ticks} harness ticks later, exercising the slow-but-normal
  *     and watchdog-tripping paths.</li>
  * </ul>
  * Behaviors are immutable; the simulator holds no timers — the harness drives every deferral by advancing the
- * shared {@code FakeClock} (design §10.2).
+ * shared {@code FakeClock}.
  */
 public sealed interface ChaosBehavior {
 

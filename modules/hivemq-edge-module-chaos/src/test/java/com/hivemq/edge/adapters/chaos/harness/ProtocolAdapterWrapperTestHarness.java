@@ -35,7 +35,7 @@ import com.hivemq.edge.adapters.chaos.ChaosProtocolAdapter;
 import com.hivemq.edge.adapters.chaos.ChaosScript;
 import com.hivemq.protocols.v2.runtime.FakeClock;
 import com.hivemq.protocols.v2.runtime.ManualDispatcher;
-import com.hivemq.protocols.v2.runtime.NevskyMetrics;
+import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.runtime.RetryPolicy;
 import com.hivemq.protocols.v2.tag.TagAspectRuntimeCoordinator;
 import com.hivemq.protocols.v2.view.AdapterStatusSnapshot;
@@ -65,7 +65,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Wires a real {@link ProtocolAdapterWrapper} actor — with the running tag-aspect coordinator — against a
- * {@link ChaosProtocolAdapter} on a {@link FakeClock} and a {@link ManualDispatcher} (design §10.3). It is the
+ * {@link ChaosProtocolAdapter} on a {@link FakeClock} and a {@link ManualDispatcher}. It is the
  * deterministic, sleep-free rig the scenario matrix drives: commands and the simulator's scripted replies travel
  * through the wrapper mailbox exactly as in production, time advances one tick at a time, and the wrapper's state
  * is observed only through the published snapshot — honoring the actor model even in tests.
@@ -74,7 +74,7 @@ import org.jetbrains.annotations.Nullable;
  * actor is built lazily on the first driving call, after which configuration is frozen. Each <em>tick</em>
  * ({@link #advance(int)}) is one {@code tickPeriodMillis} window: the clock tells the wrapper its tick, the
  * simulator fires any deferred behavior due at that tick (enqueued alongside the wrapper tick, so an
- * acknowledgment {@code EVENT} is delivered before the {@code TICK}, design §5.1), and the dispatcher drains to a
+ * acknowledgment {@code EVENT} is delivered before the {@code TICK}), and the dispatcher drains to a
  * fixed point.
  */
 public final class ProtocolAdapterWrapperTestHarness {
@@ -236,7 +236,7 @@ public final class ProtocolAdapterWrapperTestHarness {
     // ── driving (each builds the actor on first use) ────────────────────────────────────────────────────────────
 
     /**
-     * Activate the northbound direction — a live-goal command (design §6.1, §7.1).
+     * Activate the northbound direction — a live-goal command.
      *
      * @return this harness.
      */
@@ -273,7 +273,7 @@ public final class ProtocolAdapterWrapperTestHarness {
 
     /**
      * Activate both directions in one command, so the first connect verifies every active aspect in a single
-     * shared {@code verifyBatch} (design §6.3, §7.6).
+     * shared {@code verifyBatch}.
      *
      * @return this harness.
      */
@@ -296,8 +296,7 @@ public final class ProtocolAdapterWrapperTestHarness {
     }
 
     /**
-     * Simulate a config reload that flips a tag's activation preference (an {@code ACTIVATION_ONLY} difference,
-     * design §8.2): update the preference and tell the wrapper one {@code ApplyActivation} carrying the current
+     * Simulate a config reload that flips a tag's activation preference (an {@code ACTIVATION_ONLY} difference): update the preference and tell the wrapper one {@code ApplyActivation} carrying the current
      * direction goal and the new activation map — no reconnect.
      *
      * @param tagName   the tag whose preference changes.
@@ -326,7 +325,7 @@ public final class ProtocolAdapterWrapperTestHarness {
     }
 
     /**
-     * Simulate a tags-only config reload (design §8.2): tell the wrapper one {@code UpdateTagSet} carrying the
+     * Simulate a tags-only config reload: tell the wrapper one {@code UpdateTagSet} carrying the
      * current node set and activation with the given {@code used} sets — the coordinator re-verifies the new set
      * without ever reconnecting the adapter.
      *
@@ -343,7 +342,7 @@ public final class ProtocolAdapterWrapperTestHarness {
     }
 
     /**
-     * Retry a tag out of permanent verification failure — a runtime-only command (design §7.6).
+     * Retry a tag out of permanent verification failure — a runtime-only command.
      *
      * @param tagName the tag to retry.
      * @return this harness.
@@ -355,7 +354,7 @@ public final class ProtocolAdapterWrapperTestHarness {
     }
 
     /**
-     * Submit a southbound write to a tag's write aspect — the "write arrives" trigger (design §7.5).
+     * Submit a southbound write to a tag's write aspect — the "write arrives" trigger.
      *
      * @param tagName the tag to write to.
      * @param value   the value to write.
@@ -369,7 +368,7 @@ public final class ProtocolAdapterWrapperTestHarness {
     }
 
     /**
-     * Stop the adapter — the supervisor's removal/shutdown command (design §6.1).
+     * Stop the adapter — the supervisor's removal/shutdown command.
      *
      * @return this harness.
      */
@@ -382,7 +381,7 @@ public final class ProtocolAdapterWrapperTestHarness {
 
     /**
      * Advance time by {@code ticks} harness ticks, delivering each tick and the simulator's scripted replies in
-     * priority-band order (design §5.1, §10.2).
+     * priority-band order.
      *
      * @param ticks the number of harness ticks to advance.
      * @return this harness.
@@ -415,7 +414,7 @@ public final class ProtocolAdapterWrapperTestHarness {
 
     /**
      * @param tagName the tag to look up.
-     * @return the externally visible {@link TagStatus} folded from the tag's published snapshot (design §7.7).
+     * @return the externally visible {@link TagStatus} folded from the tag's published snapshot.
      */
     public @NotNull TagStatus tagStatus(final @NotNull String tagName) {
         return TagStatus.of(tag(tagName));
@@ -465,7 +464,7 @@ public final class ProtocolAdapterWrapperTestHarness {
     }
 
     /**
-     * @return the error reasons the supervisor was notified of (design §6.4, §8.3).
+     * @return the error reasons the supervisor was notified of.
      */
     public @NotNull List<String> errorNotifications() {
         return runtime().health.errorReasons;
@@ -561,7 +560,7 @@ public final class ProtocolAdapterWrapperTestHarness {
 
             this.output = new RecordingOutput(new ProtocolAdapterOutputFacade(mailbox));
             this.adapter = new ChaosProtocolAdapter(adapterId, output, script);
-            final NevskyMetrics metrics = new NevskyMetrics(metricRegistry, adapterId, mailbox::size);
+            final ProtocolAdapterMetrics metrics = new ProtocolAdapterMetrics(metricRegistry, adapterId, mailbox::size);
             final TagAspectRuntimeCoordinator coordinator = new TagAspectRuntimeCoordinator(
                     adapterId, nodes, activation, readUsed, writeUsed, goal, pollIntervalMillis, retryPolicy);
             final ProtocolAdapterWrapperContext context = new ProtocolAdapterWrapperContext(
@@ -669,7 +668,7 @@ public final class ProtocolAdapterWrapperTestHarness {
 
     /**
      * Records the supervisor notifications the wrapper emits, so a test can assert a start, stop, or error was
-     * reported (design §6.4, §8.3).
+     * reported.
      */
     private static final class RecordingHealthListener implements ProtocolAdapterWrapperEventListener {
 

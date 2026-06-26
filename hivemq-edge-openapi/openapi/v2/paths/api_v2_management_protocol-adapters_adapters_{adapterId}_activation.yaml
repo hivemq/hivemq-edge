@@ -1,6 +1,6 @@
 post:
   description: >-
-    Activate or deactivate a direction of a Nevsky (v2) adapter. This is a live-goal command and is never
+    Activate or deactivate a direction of a v2 adapter. This is a live-goal command and is never
     persisted; after a restart the configuration-declared activation applies again.
   operationId: setAdapterActivation
   x-roles-allowed:
@@ -34,6 +34,6 @@ post:
           schema:
             $ref: ../components/schemas/errors/AdapterNotFoundError.yaml
       description: Adapter not found
-  summary: Set a Nevsky adapter's direction activation
+  summary: Set a v2 adapter's direction activation
   tags:
     - Protocol Adapters

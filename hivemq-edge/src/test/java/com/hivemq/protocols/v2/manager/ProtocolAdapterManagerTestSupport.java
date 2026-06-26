@@ -47,7 +47,7 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Shared fixtures for the manager tests: fluent builders for the read-only {@code <v2-protocol-adapters>} entities,
+ * Shared fixtures for the manager tests: fluent builders for the read-only {@code <v2>} entities,
  * and the minimal SDK-v2 doubles (a Jackson-friendly {@link Node}, a synchronous protocol adapter, its information,
  * and a factory) the real wiring is exercised against. The doubles are deliberately tiny — the manager and the
  * wrapper factory are what these tests prove, not a real protocol.

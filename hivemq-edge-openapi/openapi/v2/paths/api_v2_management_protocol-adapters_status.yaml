@@ -1,5 +1,5 @@
 get:
-  description: Obtain the runtime status of every Nevsky (v2) protocol adapter.
+  description: Obtain the runtime status of every v2 protocol adapter.
   operationId: getAdapterStatuses
   x-roles-allowed:
     - admin
@@ -14,6 +14,6 @@ get:
             items:
               $ref: ../components/schemas/AdapterStatus.yaml
       description: Success
-  summary: Obtain the status of all Nevsky adapters
+  summary: Obtain the status of all v2 adapters
   tags:
     - Protocol Adapters

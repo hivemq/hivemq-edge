@@ -16,12 +16,12 @@
 package com.hivemq.protocols.v2.tag;
 
 /**
- * The states of a <b>subscribed</b> read aspect (design §7.4): the five shared pre-operating states plus the
+ * The states of a <b>subscribed</b> read aspect: the five shared pre-operating states plus the
  * three subscription states. The {@code spontaneous} bit on a per-node error selects the recovery path — a
  * command-response loss backs off and re-adds the subscription ({@link #WAITING_FOR_SUBSCRIPTION_RETRY}); a
  * spontaneous loss power-cycles the aspect back through verification.
  * <p>
- * <b>Known limitation (design §7.4):</b> {@link #SUBSCRIBED} is confirmed only by the first {@code dataPoint}, so
+ * <b>Known limitation:</b> {@link #SUBSCRIBED} is confirmed only by the first {@code dataPoint}, so
  * a protocol that does not push an initial value parks in {@link #WAITING_FOR_SUBSCRIPTION} (reported as not
  * operating) until the first value arrives.
  */
@@ -48,7 +48,7 @@ public enum TagAspectReadSubscribedState implements TagAspectState {
     WAITING_FOR_VERIFICATION_RETRY,
 
     /**
-     * Verification failed permanently; suspended until a user-commanded tag retry (design §7.6).
+     * Verification failed permanently; suspended until a user-commanded tag retry.
      */
     ERROR_PERMANENT_VERIFICATION_FAILURE,
 

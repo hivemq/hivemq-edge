@@ -354,7 +354,9 @@
             <southboundMappings/>
         </protocol-adapter>
     </protocol-adapters>
-    <v2-protocol-adapters/>
+    <v2>
+        <protocol-adapters/>
+    </v2>
     <data-combiners/>
     <asset-mappers/>
     <pulse>

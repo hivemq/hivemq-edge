@@ -1,5 +1,5 @@
 type: object
-description: A summary of a Nevsky adapter's tags, counted by externally visible status.
+description: A summary of a v2 adapter's tags, counted by externally visible status.
 properties:
   total:
     type: integer

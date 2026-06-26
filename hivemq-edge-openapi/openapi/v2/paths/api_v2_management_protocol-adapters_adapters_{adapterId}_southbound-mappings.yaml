@@ -1,5 +1,5 @@
 get:
-  description: List a Nevsky (v2) adapter's southbound mappings with their derived runtime status.
+  description: List a v2 adapter's southbound mappings with their derived runtime status.
   operationId: getSouthboundMappings
   x-roles-allowed:
     - admin
@@ -27,6 +27,6 @@ get:
           schema:
             $ref: ../components/schemas/errors/AdapterNotFoundError.yaml
       description: Adapter not found
-  summary: List a Nevsky adapter's southbound mappings
+  summary: List a v2 adapter's southbound mappings
   tags:
     - Protocol Adapters

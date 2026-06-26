@@ -16,7 +16,7 @@
 package com.hivemq.protocols.v2.tag;
 
 /**
- * The states of a <b>polled</b> read aspect (design §7.3): the five shared pre-operating states plus the two
+ * The states of a <b>polled</b> read aspect: the five shared pre-operating states plus the two
  * poll-cycle states. A poll failure introduces <b>no</b> new state — the aspect returns to
  * {@link #WAITING_FOR_POLL_INTERVAL} and the next scheduled poll is the retry; the failure only increments a
  * counter that drives escalating log severity.
@@ -44,7 +44,7 @@ public enum TagAspectReadPolledState implements TagAspectState {
     WAITING_FOR_VERIFICATION_RETRY,
 
     /**
-     * Verification failed permanently; suspended until a user-commanded tag retry (design §7.6).
+     * Verification failed permanently; suspended until a user-commanded tag retry.
      */
     ERROR_PERMANENT_VERIFICATION_FAILURE,
 

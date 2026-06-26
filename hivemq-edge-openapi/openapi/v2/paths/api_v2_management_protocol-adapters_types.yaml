@@ -1,6 +1,6 @@
 get:
   description: >-
-    Obtain the list of registered Nevsky (v2) protocol adapter types. Empty in production until a real adapter
+    Obtain the list of registered v2 protocol adapter types. Empty in production until a real adapter
     type is ported.
   operationId: getAdapterTypes
   x-roles-allowed:
@@ -16,6 +16,6 @@ get:
             items:
               $ref: ../components/schemas/AdapterType.yaml
       description: Success
-  summary: Obtain the registered Nevsky adapter types
+  summary: Obtain the registered v2 adapter types
   tags:
     - Protocol Adapters

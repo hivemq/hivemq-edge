@@ -26,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * The write aspect (design §7.5; scenario S4 and the S30 write-only fold at unit level). The aspect verifies on
+ * The write aspect (scenario S4 and the S30 write-only fold at unit level). The aspect verifies on
  * connect, then rests ready for writes; a write arriving requests it and waits for the acknowledgment; a write
  * failure is logged and counted but never flaps the tag to {@code ERROR}; one write is in flight at a time; an
  * unused or permanently-failed write aspect is off. All driven on {@code FakeClock} + {@code ManualDispatcher}
@@ -85,7 +85,7 @@ class TagAspectWriteTest {
         assertThat(fixture.writeState("setpoint")).isEqualTo("WAITING_FOR_WRITE_REQUEST");
         assertThat(fixture.tag("setpoint").failureCount()).isEqualTo(1);
         assertThat(fixture.tag("setpoint").lastFailureReason()).isEqualTo("device rejected the value");
-        // A normal write round-trip — even a failed one — never flaps the tag to ERROR (design §7.7).
+        // A normal write round-trip — even a failed one — never flaps the tag to ERROR.
         assertThat(fixture.tagStatus("setpoint")).isEqualTo(TagStatus.SOUTHBOUND_ONLY);
     }
 
@@ -97,7 +97,7 @@ class TagAspectWriteTest {
         fixture.submitWrite("setpoint", WrapperTestSupport.dataPoint("setpoint", "1"));
         assertThat(fixture.writeState("setpoint")).isEqualTo("WAITING_FOR_WRITE_RESULT");
 
-        // One write in flight at a time (design §7.5): a second write while waiting is dropped, not queued.
+        // One write in flight at a time: a second write while waiting is dropped, not queued.
         fixture.submitWrite("setpoint", WrapperTestSupport.dataPoint("setpoint", "2"));
         assertThat(fixture.writeState("setpoint")).isEqualTo("WAITING_FOR_WRITE_RESULT");
     }
@@ -125,7 +125,7 @@ class TagAspectWriteTest {
 
         fixture.activate(ProtocolAdapterDirection.SOUTHBOUND);
 
-        assertThat(fixture.state()).isEqualTo(CONNECTED); // failures do not block CONNECTED (design §6.3)
+        assertThat(fixture.state()).isEqualTo(CONNECTED); // failures do not block CONNECTED
         assertThat(fixture.writeState("setpoint")).isEqualTo("ERROR_PERMANENT_VERIFICATION_FAILURE");
         assertThat(fixture.tagStatus("setpoint")).isEqualTo(TagStatus.ERROR);
     }

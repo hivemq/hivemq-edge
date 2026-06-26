@@ -20,10 +20,10 @@ import com.hivemq.protocols.v2.wrapper.ProtocolAdapterWrapperEventListener;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The wrapper&rarr;manager health seam (design §6.1, §8.3): turns each {@link ProtocolAdapterWrapperEventListener}
+ * The wrapper&rarr;manager health seam: turns each {@link ProtocolAdapterWrapperEventListener}
  * callback a managed wrapper makes into one immutable {@link ProtocolAdapterManagerMessage} told onto the manager's
  * own mailbox. A wrapper runs on its own dispatch thread and tells the manager from there; the manager then handles
- * the health event on its single thread (the actor model — no shared state crosses the boundary, design §5.2).
+ * the health event on its single thread (the actor model — no shared state crosses the boundary).
  * <p>
  * One instance is shared by every wrapper the manager owns: each callback already carries the adapter id, so the
  * listener only needs the manager's send-only handle.

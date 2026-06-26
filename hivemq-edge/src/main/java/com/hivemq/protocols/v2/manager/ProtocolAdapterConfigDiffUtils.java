@@ -28,7 +28,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Classifies the difference between an adapter's running configuration and a freshly-loaded one into the gentlest
- * correct {@link ProtocolAdapterConfigStateTransition} (design §8.2). A pure function of the two entities — it touches no runtime state,
+ * correct {@link ProtocolAdapterConfigStateTransition}. A pure function of the two entities — it touches no runtime state,
  * so it is exhaustively unit-testable on its own.
  * <p>
  * The classification is layered, gentlest last to win only when nothing more disruptive changed:
@@ -44,7 +44,7 @@ import org.jetbrains.annotations.NotNull;
  * </ol>
  * A {@code TAGS_ONLY} difference may carry activation changes too; the manager applies the tag-set update and, only
  * when the adapter-level direction goal also changed, follows it with an activation command (the REST live goal is
- * otherwise preserved — design §8.2).
+ * otherwise preserved).
  */
 public final class ProtocolAdapterConfigDiffUtils {
 

@@ -18,10 +18,9 @@ package com.hivemq.protocols.v2.wrapper;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * How the wrapper notifies its supervisor of health transitions (design §6.1, §6.4, §8.3) — the seam to the
+ * How the wrapper notifies its supervisor of health transitions — the seam to the
  * manager (a later task). The wrapper tells its supervisor when it has started, stopped, or entered {@code ERROR};
- * the manager records the health and, in this project, performs no automatic recreate (manual recovery, design
- * §8.3).
+ * the manager records the health and, in this project, performs no automatic recreate (manual recovery).
  * <p>
  * Defined as a small listener so this task carries no dependency on the manager package. A later task supplies an
  * implementation that tells the corresponding manager message; tests supply a recording implementation.

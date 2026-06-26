@@ -1,6 +1,6 @@
 type: object
 description: >-
-  The read-only configured definition of a Nevsky adapter, as loaded from the externally-generated configuration
+  The read-only configured definition of a v2 adapter, as loaded from the externally-generated configuration
   section. The v2 API never writes configuration.
 required:
   - id

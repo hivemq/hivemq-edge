@@ -23,8 +23,8 @@ import com.hivemq.protocols.v2.fsm.FSM;
 import com.hivemq.protocols.v2.runtime.Backoff;
 import com.hivemq.protocols.v2.runtime.BatchCollector;
 import com.hivemq.protocols.v2.runtime.Clock;
-import com.hivemq.protocols.v2.runtime.NevskyMetrics;
 import com.hivemq.protocols.v2.runtime.PriorityTimerQueue;
+import com.hivemq.protocols.v2.runtime.ProtocolAdapterMetrics;
 import com.hivemq.protocols.v2.runtime.RetryPolicy;
 import com.hivemq.protocols.v2.runtime.TimerHandle;
 import org.jetbrains.annotations.NotNull;
@@ -33,14 +33,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The read half of a tag's behavior (design §7.3, §7.4) — one of the two independent aspects every tag has. A
+ * The read half of a tag's behavior — one of the two independent aspects every tag has. A
  * read aspect is a {@link FSM} over an {@link TagAspectState} enum: <b>polled</b> (poll-interval cadence) when the
  * tag is not subscribable, <b>subscribed</b> (push) when it is. Both share the five pre-operating states; their
  * tables are built by {@link TagAspectReadTransitions}, the shared rows by one builder.
  * <p>
  * The aspect lives inside the wrapper actor and runs only on its single dispatch thread. It owns no thread: it
  * requests work by appending to the shared {@link BatchCollector}, schedules its own poll / verification-retry /
- * subscription-retry timers on the actor's single {@link PriorityTimerQueue} (design §5.5), observes the events
+ * subscription-retry timers on the actor's single {@link PriorityTimerQueue}, observes the events
  * the wrapper routes to it, and re-verifies through the shared {@link SharedNodeVerification}.
  * <p>
  * Two kinds of input drive it, mirroring the adapter machine:
@@ -58,7 +58,7 @@ public final class TagAspectRead implements TagAspectVerifying {
 
     /**
      * The failure count past which a tag's failures are logged at {@code ERROR} rather than {@code WARN} — a few
-     * hiccups are routine, sustained failures are not (design §7.3).
+     * hiccups are routine, sustained failures are not.
      */
     private static final int SUSTAINED_FAILURE_THRESHOLD = 5;
 
@@ -87,7 +87,7 @@ public final class TagAspectRead implements TagAspectVerifying {
     private final @NotNull Clock clock;
     private final @NotNull PriorityTimerQueue timers;
     private final @NotNull BatchCollector batches;
-    private final @NotNull NevskyMetrics metrics;
+    private final @NotNull ProtocolAdapterMetrics metrics;
     private final @NotNull SharedNodeVerification sharedNodeVerification;
     private final long pollIntervalMillis;
     private final @NotNull Backoff verificationRetryBackoff;
@@ -127,7 +127,7 @@ public final class TagAspectRead implements TagAspectVerifying {
             final @NotNull Clock clock,
             final @NotNull PriorityTimerQueue timers,
             final @NotNull BatchCollector batches,
-            final @NotNull NevskyMetrics metrics,
+            final @NotNull ProtocolAdapterMetrics metrics,
             final @NotNull SharedNodeVerification sharedNodeVerification,
             final long pollIntervalMillis,
             final @NotNull RetryPolicy retryPolicy) {
@@ -158,12 +158,12 @@ public final class TagAspectRead implements TagAspectVerifying {
         }
     }
 
-    // ── goal and adapter-readiness coupling (bypass the table, design §7.1, §7.2) ───────────────────────────────
+    // ── goal and adapter-readiness coupling (bypass the table) ───────────────────────────────
 
     /**
-     * Apply a new aspect goal (the three-condition rule, design §7.1). When the goal becomes active the aspect
+     * Apply a new aspect goal (the three-condition rule). When the goal becomes active the aspect
      * leaves {@code DEACTIVATED}; when it becomes inactive the aspect returns to {@code DEACTIVATED}, tearing down
-     * any subscription and cancelling timers — never reconnecting the adapter (design §8.2).
+     * any subscription and cancelling timers — never reconnecting the adapter.
      *
      * @param newGoal the recomputed goal.
      */
@@ -186,7 +186,7 @@ public final class TagAspectRead implements TagAspectVerifying {
             case DISCONNECTED -> moveTo(waitingForAdapterReady);
             case VERIFYING, READY -> {
                 // Activated while the adapter is up: this node missed the connect-time gate verification, so ask
-                // for a fresh one of its own (design §7.6) — no reconnect.
+                // for a fresh one of its own — no reconnect.
                 moveTo(waitingForVerification);
                 requestVerification();
             }
@@ -205,7 +205,7 @@ public final class TagAspectRead implements TagAspectVerifying {
     }
 
     /**
-     * The adapter began verifying (design §6.3): an active aspect waiting for the adapter moves into verification
+     * The adapter began verifying: an active aspect waiting for the adapter moves into verification
      * and consumes the connect-time gate result the wrapper routes to it — it does not request its own.
      */
     public void onAdapterVerifying() {
@@ -216,7 +216,7 @@ public final class TagAspectRead implements TagAspectVerifying {
     }
 
     /**
-     * The adapter reached {@code CONNECTED} (design §7.2). When verification was skipped the aspect is still
+     * The adapter reached {@code CONNECTED}. When verification was skipped the aspect is still
      * waiting for the adapter — treat the connection as verified and begin operating; otherwise it has already
      * advanced through verification and nothing happens here.
      */
@@ -228,9 +228,9 @@ public final class TagAspectRead implements TagAspectVerifying {
     }
 
     /**
-     * The adapter is no longer connected (design §7.2): every aspect except a deactivated or permanently-failed
+     * The adapter is no longer connected: every aspect except a deactivated or permanently-failed
      * one returns to waiting for the adapter and re-verifies on the next connection. A permanent verification
-     * failure is sticky — only a user-commanded retry clears it (design §7.6).
+     * failure is sticky — only a user-commanded retry clears it.
      */
     public void onAdapterUnavailable() {
         adapterPhase = AdapterPhase.DISCONNECTED;
@@ -244,7 +244,7 @@ public final class TagAspectRead implements TagAspectVerifying {
     }
 
     /**
-     * A user-commanded tag retry (design §7.6): if the aspect is in permanent verification failure, reset its
+     * A user-commanded tag retry: if the aspect is in permanent verification failure, reset its
      * counters and re-verify (or wait for the adapter). Any other state is left untouched — a no-op here, reported
      * as a skip reason by the REST layer in a later task.
      */
@@ -266,7 +266,7 @@ public final class TagAspectRead implements TagAspectVerifying {
     // ── routed events (drive the table) ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * Feed the node's verification outcome to the machine (design §7.2).
+     * Feed the node's verification outcome to the machine.
      *
      * @param outcome the verification outcome.
      */
@@ -281,7 +281,7 @@ public final class TagAspectRead implements TagAspectVerifying {
     }
 
     /**
-     * Feed a received value — a poll response or a subscription push (design §7.3, §7.4).
+     * Feed a received value — a poll response or a subscription push.
      *
      * @param value the reused v1 value.
      */
@@ -290,7 +290,7 @@ public final class TagAspectRead implements TagAspectVerifying {
     }
 
     /**
-     * Feed a per-node failure (design §7.3, §7.4).
+     * Feed a per-node failure.
      *
      * @param reason      a human-readable description.
      * @param spontaneous whether the failure arrived outside a command-response exchange.
@@ -372,7 +372,7 @@ public final class TagAspectRead implements TagAspectVerifying {
                 machine.state());
     }
 
-    // ── snapshot accessors (pure reads on the dispatch thread, design §6.6, §7.7) ───────────────────────────────
+    // ── snapshot accessors (pure reads on the dispatch thread) ───────────────────────────────
 
     /**
      * @return the current aspect state.
@@ -410,7 +410,7 @@ public final class TagAspectRead implements TagAspectVerifying {
     }
 
     /**
-     * @return whether the aspect is awaiting the connect-time verification result (design §6.3) — the signal the
+     * @return whether the aspect is awaiting the connect-time verification result — the signal the
      *         coordinator uses to select this node for the single connect verification batch.
      */
     public boolean awaitingVerification() {
@@ -478,7 +478,7 @@ public final class TagAspectRead implements TagAspectVerifying {
         failureCount++;
         lastFailureReason = reason;
         metrics.incrementTagFailure(tag.name());
-        // Escalating severity: a first hiccup is routine, sustained failures are not (design §7.3).
+        // Escalating severity: a first hiccup is routine, sustained failures are not.
         if (failureCount == 1) {
             log.debug("Read aspect of tag '{}' on adapter '{}' failed: {}", tag.name(), adapterId, reason);
         } else if (failureCount < SUSTAINED_FAILURE_THRESHOLD) {

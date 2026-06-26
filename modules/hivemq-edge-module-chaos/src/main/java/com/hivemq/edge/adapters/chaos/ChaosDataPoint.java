@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * A minimal reused-v1 {@link DataPoint} the chaos scripts carry as poll responses, subscription pushes, and write
- * values (design §3.1). The wrapper stamps the owning tag's name before handing it northbound, so the simplest
+ * values. The wrapper stamps the owning tag's name before handing it northbound, so the simplest
  * concrete value suffices — the scripts use this where a real adapter would build one with the v1
  * {@code DataPointFactory}.
  *
