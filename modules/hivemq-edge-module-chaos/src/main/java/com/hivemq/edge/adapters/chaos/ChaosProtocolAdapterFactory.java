@@ -28,14 +28,17 @@ import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The factory for the {@link ChaosProtocolAdapter} type. Tests add it to the constructor-injected
- * factory set of the {@code ProtocolAdapterFactoryRegistry} (the production set is empty, D8); the wired end-to-end
- * suite (a later task) drives the simulator through the full manager → wrapper → adapter stack.
- * <p>
- * Because the simulator is scripted per command, the factory resolves the {@link ChaosScript} for each instance
- * from its {@link ProtocolAdapterInput} through a supplied function — so the end-to-end suite can hand each
- * configured chaos adapter its own script. {@link #withScript(ChaosScript)} builds a factory that hands the same
- * script to every instance, with the default {@code "chaos"} protocol id and all three capabilities.
+ * The factory for the {@link ChaosProtocolAdapter} type. It comes in two forms for the two ways the simulator is
+ * driven:
+ * <ul>
+ * <li>The <b>no-argument</b> constructor is the form the module loader instantiates when a build bundles the chaos
+ * module: it advertises the default {@code "chaos"} protocol id and all three capabilities, and resolves each
+ * instance's {@link ChaosScript} from {@link ChaosControl} by its {@code adapter-id} — so a test that boots a real
+ * Edge runtime registers a script per adapter there before start. It also captures each instance's node references
+ * for node-keyed event injection.</li>
+ * <li>The <b>explicit</b> constructor (and {@link #withScript(ChaosScript)}) resolves the script through a supplied
+ * function, for the deterministic harness that constructs the factory directly.</li>
+ * </ul>
  */
 public final class ChaosProtocolAdapterFactory implements ProtocolAdapterFactory {
 
@@ -49,6 +52,21 @@ public final class ChaosProtocolAdapterFactory implements ProtocolAdapterFactory
 
     private final @NotNull ProtocolAdapterInformation information;
     private final @NotNull Function<ProtocolAdapterInput, ChaosScript> scriptResolver;
+
+    /**
+     * The form the module loader instantiates: the default {@code "chaos"} protocol id and all three capabilities,
+     * each instance's script resolved from {@link ChaosControl} by {@code adapter-id} and its node references captured
+     * there for node-keyed injection.
+     */
+    public ChaosProtocolAdapterFactory() {
+        this(
+                new ChaosProtocolAdapterInformation(
+                        DEFAULT_PROTOCOL_ID, EnumSet.allOf(ProtocolAdapterCapability.class)),
+                input -> {
+                    ChaosControl.captureNodes(input);
+                    return ChaosControl.scriptFor(input.adapterId());
+                });
+    }
 
     /**
      * @param information    the type identity and capabilities.

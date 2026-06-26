@@ -52,6 +52,8 @@ import com.hivemq.persistence.PersistenceStartup;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.persistence.ioc.PersistenceModule;
 import com.hivemq.protocols.ProtocolAdapterManager;
+import com.hivemq.protocols.v2.config.ProtocolAdapterExtractor;
+import com.hivemq.protocols.v2.manager.ProtocolAdapterHandleRegistry;
 import com.hivemq.protocols.v2.wiring.ProtocolAdapterLifecycle;
 import com.hivemq.protocols.v2.wiring.ProtocolAdapterModule;
 import com.hivemq.security.ioc.SecurityModule;
@@ -121,6 +123,10 @@ public interface Injector {
     ProtocolAdapterManager protocolAdapterManager();
 
     ProtocolAdapterLifecycle protocolAdapterLifecycle();
+
+    ProtocolAdapterHandleRegistry protocolAdapterV2HandleRegistry();
+
+    ProtocolAdapterExtractor protocolAdapterV2ConfigExtractor();
 
     EventService eventService();
 

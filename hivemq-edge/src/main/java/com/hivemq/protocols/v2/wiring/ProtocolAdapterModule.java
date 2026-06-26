@@ -17,10 +17,12 @@ package com.hivemq.protocols.v2.wiring;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.v2.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.v2.messaging.DefaultMailbox;
 import com.hivemq.adapter.sdk.api.v2.messaging.Mailbox;
 import com.hivemq.adapter.sdk.api.v2.messaging.MailboxSender;
 import com.hivemq.adapter.sdk.api.v2.messaging.MessageDispatcher;
+import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.protocols.v2.manager.DefaultProtocolAdapterWrapperFactory;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterFactoryRegistry;
 import com.hivemq.protocols.v2.manager.ProtocolAdapterHandleRegistry;
@@ -34,15 +36,21 @@ import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
 import jakarta.inject.Singleton;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The single additive Dagger module that wires the v2 protocol-adapter subsystem into Edge <b>beside</b> the legacy
- * framework (touchpoint 4). It contributes only new bindings — it edits nothing the legacy path depends
- * on — and its production factory registry is <b>empty</b> (D8): no demo or simulation adapter ships, so
- * {@code GET /api/v2/.../types} is empty until a real adapter type is ported. Tests that exercise a
- * {@code ChaosProtocolAdapter} build their own constructor-injected registry, never through this production graph.
+ * framework (touchpoint 4). It contributes only new bindings — it edits nothing the legacy path depends on. Its
+ * factory registry is discovered from the loaded modules through the shared {@link ModuleLoader}, exactly as the
+ * legacy framework discovers its own adapter types: each loaded module is scanned for the v2
+ * {@link ProtocolAdapterFactory} service. A production distribution bundles no v2 adapter module, so the registry is
+ * <b>empty</b> and {@code GET /api/v2/.../types} is empty until a real adapter type is ported; a build that bundles a
+ * v2 adapter module — for example a test build carrying the chaos test simulator — has that type discovered here and
+ * served like any other.
  * <p>
  * The module provides the actor-runtime singletons (one production {@link SystemClock} and one {@link SystemDispatcher}
  * shared by the manager and every wrapper), the two registries, the wrapper-assembly seam, the supervisor
@@ -55,6 +63,8 @@ import org.jetbrains.annotations.NotNull;
  */
 @Module
 public abstract class ProtocolAdapterModule {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdapterModule.class);
 
     /** The wrapper tick period (~50 ms): the cadence at which each wrapper fires its timers. */
     private static final long WRAPPER_TICK_PERIOD_MILLIS = 50L;
@@ -79,10 +89,32 @@ public abstract class ProtocolAdapterModule {
 
     @Provides
     @Singleton
-    static @NotNull ProtocolAdapterFactoryRegistry factoryRegistry() {
-        // D8: empty in production. No real adapter is ported in this project and no simulation adapter ships; the
-        // hidden ChaosProtocolAdapterFactory is injected only by tests, into their own registry.
-        return new ProtocolAdapterFactoryRegistry(Set.of());
+    static @NotNull ProtocolAdapterFactoryRegistry factoryRegistry(final @NotNull ModuleLoader moduleLoader) {
+        // The v2 adapter types are discovered from the loaded modules through the shared module loader, the same way
+        // the legacy framework discovers its own: each loaded module is scanned for the v2 ProtocolAdapterFactory
+        // service and the implementations are instantiated through their no-argument constructor. A production
+        // distribution bundles no v2 adapter module, so this set is empty and GET .../types is empty until a real
+        // adapter type is ported; a build that bundles a v2 adapter module has its factory discovered here.
+        final Set<ProtocolAdapterFactory> discovered = new LinkedHashSet<>();
+        final Set<Class<? extends ProtocolAdapterFactory>> alreadySeen = new LinkedHashSet<>();
+        for (final Class<? extends ProtocolAdapterFactory> factoryClass :
+                moduleLoader.findImplementations(ProtocolAdapterFactory.class)) {
+            // A module classloader delegates to its parent, so a factory on the application classpath is reported once
+            // per loaded module — keep only the first sighting of each type, or the registry rejects the duplicate.
+            if (!alreadySeen.add(factoryClass)) {
+                continue;
+            }
+            try {
+                discovered.add(factoryClass.getDeclaredConstructor().newInstance());
+            } catch (final ReflectiveOperationException exception) {
+                log.error(
+                        "Skipping v2 protocol adapter factory '{}': it could not be instantiated through a "
+                                + "no-argument constructor ({})",
+                        factoryClass.getName(),
+                        exception.getMessage());
+            }
+        }
+        return new ProtocolAdapterFactoryRegistry(discovered);
     }
 
     @Provides

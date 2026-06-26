@@ -26,11 +26,11 @@ import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * The set of protocol-adapter type factories the manager can instantiate, keyed by {@code protocol-id} (D8). The factory set is <b>constructor-injected</b> and is <b>empty in production wiring</b> — no real adapter is
- * ported in this project. The {@code ChaosProtocolAdapterFactory} lives in its own {@code hivemq-edge-module-chaos}
- * module and is injected only by tests, as a <b>hidden</b> type. An
- * adapter whose {@code protocol-id} has no factory here is surfaced as an {@code ERROR} registry handle with no
- * wrapper created.
+ * The set of protocol-adapter type factories the manager can instantiate, keyed by {@code protocol-id}. The factory
+ * set is <b>constructor-injected</b>: the production wiring discovers it from the loaded modules (the module loader
+ * scans each loaded module for the v2 {@code ProtocolAdapterFactory} service), so it is <b>empty when no v2 adapter
+ * module is bundled</b> and grows by one entry per bundled v2 adapter type. An adapter whose {@code protocol-id} has
+ * no factory here is surfaced as an {@code ERROR} registry handle with no wrapper created.
  * <p>
  * A factory may be registered as <b>listable</b> or <b>hidden</b>. Both are resolvable by {@code protocol-id}
  * through {@link #findByProtocolId(String)} — so a configured instance of a hidden type is created and run exactly
@@ -43,8 +43,8 @@ public final class ProtocolAdapterFactoryRegistry {
     private final @NotNull List<ProtocolAdapterFactory> listableFactories;
 
     /**
-     * @param factorySet the listable protocol-adapter factories available to this Edge instance; empty in
-     *                   production.
+     * @param factorySet the listable protocol-adapter factories available to this Edge instance; empty when no v2
+     *                   adapter module is bundled.
      * @throws IllegalArgumentException if two factories declare the same {@code protocol-id}.
      */
     public ProtocolAdapterFactoryRegistry(final @NotNull Set<ProtocolAdapterFactory> factorySet) {
@@ -54,8 +54,8 @@ public final class ProtocolAdapterFactoryRegistry {
     /**
      * @param listableFactorySet the factories listed by {@link #all()} (the v2 {@code GET /types} source).
      * @param hiddenFactorySet   the factories resolvable by {@link #findByProtocolId(String)} but excluded from
-     *                           {@link #all()} — e.g. the chaos test adapter, which must never appear in the
-     *                           frontend.
+     *                           {@link #all()} — a type that runs when configured yet must never appear in the
+     *                           frontend's adapter catalog.
      * @throws IllegalArgumentException if two factories (across either set) declare the same {@code protocol-id}.
      */
     public ProtocolAdapterFactoryRegistry(
