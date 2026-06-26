@@ -27,7 +27,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A tag in the {@code <v2-protocol-adapters>} section — one node the adapter exposes, plus the persisted
+ * A tag in the {@code <v2>} section — one node the adapter exposes, plus the persisted
  * per-aspect activation preferences that carry the tag lifecycle (D7). The {@code node-string} is the opaque
  * JSON node definition, stored as-is and round-tripped to the adapter unchanged. {@code read-activated} and
  * {@code write-activated} default to {@code true} when absent; a reload that flips only these flags is an

@@ -41,7 +41,7 @@ import org.jetbrains.annotations.NotNull;
 public sealed interface ProtocolAdapterManagerMessage extends MailboxMessage {
 
     /**
-     * A freshly-loaded {@code <v2-protocol-adapters>} section from the extractor — the same
+     * A freshly-loaded {@code <v2>} section from the extractor — the same
      * path at startup and on every reload. The manager diffs it against the running set and applies the gentlest
      * correct transition per adapter.
      *

@@ -40,7 +40,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * One v2 adapter instance in the {@code <v2-protocol-adapters>} section — the disjoint, side-by-side
+ * One v2 adapter instance in the {@code <v2>} section — the disjoint, side-by-side
  * counterpart of the legacy {@link com.hivemq.configuration.entity.adapter.ProtocolAdapterEntity} (per N1, the same
  * name distinguished by package). It carries the adapter identity, the config-declared direction activation goals, the
  * opaque adapter configuration, the retry / watchdog / command-timeout policy, the tag set with its persisted

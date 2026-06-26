@@ -24,7 +24,7 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Pure translations from the read-only {@code <v2-protocol-adapters>} configuration entities into the
+ * Pure translations from the read-only {@code <v2>} configuration entities into the
  * runtime value types the wrapper consumes — the parts that need no protocol-specific deserialization (node-string
  * &rarr; {@code Node} translation needs the adapter type's {@code nodeClass} and lives in the wrapper factory).
  * Shared by the manager and the wrapper factory so the config-declared goal and per-tag activation are derived in

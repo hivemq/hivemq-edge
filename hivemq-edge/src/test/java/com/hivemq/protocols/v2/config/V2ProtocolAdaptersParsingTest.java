@@ -28,9 +28,9 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * JAXB parsing of the {@code <v2-protocol-adapters>} section: the section parses, the documented defaults
+ * JAXB parsing of the {@code <v2>} section: the section parses, the documented defaults
  * apply when elements are omitted, and an old config carrying no section is unaffected. Uses a self-contained JAXB
- * context (the closed {@code config.xsd} {@code <xs:all>} is extended to admit {@code <v2-protocol-adapters>} when the
+ * context (the closed {@code config.xsd} {@code <xs:all>} is extended to admit {@code <v2>} when the
  * extractor is wired into the reader, a later task).
  */
 class V2ProtocolAdaptersParsingTest {
@@ -38,7 +38,7 @@ class V2ProtocolAdaptersParsingTest {
     @Test
     void fullSection_parsesEveryField() throws JAXBException {
         final ProtocolAdapterEntity entity = parse("""
-                <v2-protocol-adapter>
+                <protocol-adapter>
                   <adapter-id>chaos-1</adapter-id>
                   <protocol-id>chaos</protocol-id>
                   <config-version>2</config-version>
@@ -70,7 +70,7 @@ class V2ProtocolAdaptersParsingTest {
                   <southbound-mappings>
                     <southbound-mapping topic="plant/a/setpoint" tag-name="temperature"/>
                   </southbound-mappings>
-                </v2-protocol-adapter>
+                </protocol-adapter>
                 """);
 
         assertThat(entity.getAdapterId()).isEqualTo("chaos-1");
@@ -113,7 +113,7 @@ class V2ProtocolAdaptersParsingTest {
     @Test
     void minimalSection_appliesTheDocumentedDefaults() throws JAXBException {
         final ProtocolAdapterEntity entity = parse("""
-                <v2-protocol-adapter>
+                <protocol-adapter>
                   <adapter-id>chaos-min</adapter-id>
                   <protocol-id>chaos</protocol-id>
                   <tags>
@@ -122,7 +122,7 @@ class V2ProtocolAdaptersParsingTest {
                       <node-string>{}</node-string>
                     </tag>
                   </tags>
-                </v2-protocol-adapter>
+                </protocol-adapter>
                 """);
 
         assertThat(entity.getConfigVersion()).isEqualTo(ProtocolAdapterEntity.DEFAULT_CONFIG_VERSION);
@@ -143,7 +143,7 @@ class V2ProtocolAdaptersParsingTest {
     @Test
     void aConfigWithoutTheSection_yieldsAnEmptyList() {
         // touchpoint 1: absent ⇒ empty list, so old configs parse unchanged
-        assertThat(new HiveMQConfigEntity().getV2ProtocolAdapterConfig()).isEmpty();
+        assertThat(new HiveMQConfigEntity().getV2().getProtocolAdapters()).isEmpty();
     }
 
     private static @NotNull ProtocolAdapterEntity parse(final @NotNull String xml) throws JAXBException {

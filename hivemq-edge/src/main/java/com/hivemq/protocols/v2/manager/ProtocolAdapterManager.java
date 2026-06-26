@@ -53,7 +53,7 @@ import org.slf4j.LoggerFactory;
  * The Protocol Adapter Manager — the supervisor {@link MessageHandler} of the v2 subsystem. It owns
  * the wrapper/adapter pairs, applies the gentlest correct transition on configuration change, routes the
  * runtime-state commands from REST, and reacts to wrapper health. It reads <b>only</b> the
- * {@code <v2-protocol-adapters>} section (through the {@link ConfigurationChanged} message the extractor's consumer
+ * {@code <v2>} section (through the {@link ConfigurationChanged} message the extractor's consumer
  * tells it) and it never writes configuration.
  * <p>
  * Like every v2 component it is an actor: {@link #receive(ProtocolAdapterManagerMessage)} runs on the manager's

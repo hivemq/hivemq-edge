@@ -179,7 +179,7 @@ public class ConfigFileReaderWriter {
         this.configurators = configurators;
         this.bridgeExtractor = new BridgeExtractor(this);
         this.protocolAdapterExtractor = new ProtocolAdapterExtractor(this);
-        // The read-only v2 extractor reads the disjoint <v2-protocol-adapters> section beside the legacy
+        // The read-only v2 extractor reads the disjoint <v2> section beside the legacy
         // <protocol-adapters> one; the two never interact (touchpoint 2).
         this.v2ProtocolAdapterExtractor = new com.hivemq.protocols.v2.config.ProtocolAdapterExtractor();
         this.dataCombiningExtractor = new DataCombiningExtractor(this);

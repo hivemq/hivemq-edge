@@ -6,8 +6,9 @@ protocol-adapter framework. `ChaosProtocolAdapter` in this module is the worked,
 end-to-end SDK-v2 reference — read it alongside this guide.
 
 > SDK v2 runs **side by side** with the legacy v1 framework; the two never
-> interact. v2 adapters are declared in the `<v2-protocol-adapters>` config
-> section and served by the `/api/v2/...` REST surface. Configuration is
+> interact. v2 adapters are declared in the `<v2>` config
+> section (the adapter list nests under `<v2><protocol-adapters>`) and served by
+> the `/api/v2/...` REST surface. Configuration is
 > produced by external tooling — Edge only reads it.
 
 ## 1. The mental model

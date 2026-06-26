@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
  * wrapper's health notifications back to itself);</li>
  * <li>attach the manager to the shared {@link MessageDispatcher}, starting its single dispatch thread;</li>
  * <li>schedule the manager's periodic housekeeping tick on the shared {@link SystemClock};</li>
- * <li>register the configuration consumer so the read-only {@code <v2-protocol-adapters>} extractor {@code tell}s a
+ * <li>register the configuration consumer so the read-only {@code <v2>} extractor {@code tell}s a
  * {@code ConfigurationChanged} at startup and on every reload — the manager applies the gentlest correct transition.</li>
  * </ol>
  * The order matters: the manager is bound and pumping before the first configuration is delivered. {@link #stop()}
@@ -70,7 +70,7 @@ public class ProtocolAdapterLifecycle {
      * @param managerMailbox   the manager's mailbox — attached to the dispatcher here and pumped on a single thread.
      * @param dispatcher       the shared production dispatcher (one thread per actor).
      * @param clock            the shared production clock; closing it on stop cancels every v2 protocol-adapter tick.
-     * @param configExtractor  the read-only {@code <v2-protocol-adapters>} extractor whose consumer feeds the manager.
+     * @param configExtractor  the read-only {@code <v2>} extractor whose consumer feeds the manager.
      */
     @Inject
     public ProtocolAdapterLifecycle(

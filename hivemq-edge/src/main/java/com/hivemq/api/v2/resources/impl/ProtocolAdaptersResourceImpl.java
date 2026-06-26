@@ -113,7 +113,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
      * @param manager          the manager mailbox the runtime-state commands are told to.
      * @param handleRegistry   the REST-readable adapter registry (snapshots and senders).
      * @param factoryRegistry  the registered adapter type factories (empty in production, D8).
-     * @param configExtractor  the read-only {@code <v2-protocol-adapters>} configuration extractor.
+     * @param configExtractor  the read-only {@code <v2>} configuration extractor.
      * @param objectMapper     the JSON mapper used to deserialize browse filter node strings.
      */
     @Inject
