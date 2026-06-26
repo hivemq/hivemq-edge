@@ -47,7 +47,7 @@ class ProtocolAdapterManagerBrowseTest {
     private FakeClock clock;
     private ManualDispatcher dispatcher;
     private Mailbox<ProtocolAdapterManagerMessage> mailbox;
-    private ProtocolAdapterHandleRegistry registry;
+    private ProtocolAdapterHandleRegistry handleRegistry;
     private RecordingWrapperFactory wrapperFactory;
     private ProtocolAdapterManager manager;
 
@@ -56,12 +56,12 @@ class ProtocolAdapterManagerBrowseTest {
         clock = new FakeClock();
         dispatcher = new ManualDispatcher();
         mailbox = new DefaultMailbox<>();
-        registry = new ProtocolAdapterHandleRegistry();
+        handleRegistry = new ProtocolAdapterHandleRegistry();
         wrapperFactory = new RecordingWrapperFactory();
         final ProtocolAdapterFactoryRegistry factories = new ProtocolAdapterFactoryRegistry(
                 Set.of(new ProtocolAdapterManagerTestSupport.TestProtocolAdapterFactory(
                         ProtocolAdapterManagerTestSupport.TEST_PROTOCOL_ID)));
-        manager = new ProtocolAdapterManager(factories, registry, wrapperFactory, clock);
+        manager = new ProtocolAdapterManager(factories, handleRegistry, wrapperFactory, clock);
         dispatcher.attach(mailbox, manager);
         manager.bindSelf(mailbox);
     }

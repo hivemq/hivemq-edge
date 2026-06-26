@@ -76,7 +76,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
     private static final @NotNull MailboxSender<ProtocolAdapterWrapperMessage> NO_OP_WRAPPER_SENDER = message -> {};
 
     private final @NotNull ProtocolAdapterFactoryRegistry factoryRegistry;
-    private final @NotNull ProtocolAdapterHandleRegistry registry;
+    private final @NotNull ProtocolAdapterHandleRegistry handleRegistry;
     private final @NotNull ProtocolAdapterWrapperFactory wrapperFactory;
     private final @NotNull Clock clock;
 
@@ -93,17 +93,17 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
 
     /**
      * @param factoryRegistry the protocol-adapter type factories (empty in production, D8).
-     * @param registry       the REST-readable adapter registry the manager populates.
+     * @param handleRegistry  the REST-readable adapter registry the manager populates.
      * @param wrapperFactory the seam that builds and attaches a wrapper/adapter pair from one configuration.
      * @param clock          the clock used to stamp the {@code ERROR} snapshots and the health summary.
      */
     public ProtocolAdapterManager(
             final @NotNull ProtocolAdapterFactoryRegistry factoryRegistry,
-            final @NotNull ProtocolAdapterHandleRegistry registry,
+            final @NotNull ProtocolAdapterHandleRegistry handleRegistry,
             final @NotNull ProtocolAdapterWrapperFactory wrapperFactory,
             final @NotNull Clock clock) {
         this.factoryRegistry = factoryRegistry;
-        this.registry = registry;
+        this.handleRegistry = handleRegistry;
         this.wrapperFactory = wrapperFactory;
         this.clock = clock;
     }
@@ -267,7 +267,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
             return;
         }
         containerMap.put(adapterId, adapter);
-        registry.register(adapter.handle());
+        handleRegistry.register(adapter.handle());
         // Apply the config-declared activation to bring the freshly-created wrapper to its initial goal. The wrapper
         // starts in STOPPED; this is the command that steps it toward CONNECTED when a direction
         // is activated, and leaves it STOPPED when neither is.
@@ -287,7 +287,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
         final ProtocolAdapterHandle handle =
                 new ProtocolAdapterHandle(adapterId, NO_OP_WRAPPER_SENDER, new AtomicReference<>(errorSnapshot));
         containerMap.put(adapterId, ProtocolAdapterContainer.unknown(handle, entity));
-        registry.register(handle);
+        handleRegistry.register(handle);
         log.warn("v2 adapter '{}' is unavailable: {}", adapterId, reason);
     }
 
@@ -314,7 +314,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
         }
         if (!adapter.isReal() || isStopped(adapter)) {
             // No wrapper to wind down, or it is already at rest — tear down now.
-            registry.unregister(adapterId);
+            handleRegistry.unregister(adapterId);
             adapter.close();
             if (recreateAs != null) {
                 createAdapter(recreateAs);
@@ -324,7 +324,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
         // Running: ask it to stop and tear it down when it reports stopped. Remove the handle now so REST no longer
         // sees an adapter that is going away.
         tellWrapper(adapter, new ProtocolAdapterWrapperCommand.StopAdapter());
-        registry.unregister(adapterId);
+        handleRegistry.unregister(adapterId);
         pendingRemovalMap.put(adapterId, new PendingRemoval(adapter, recreateAs));
     }
 
@@ -358,7 +358,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
     // ── browse bridge ─────────────────────────────────────────────────────────────────────────────
 
     private void handleBrowse(final @NotNull BrowseRequested browse) {
-        final ProtocolAdapterHandle handle = registry.find(browse.adapterId());
+        final ProtocolAdapterHandle handle = handleRegistry.find(browse.adapterId());
         if (handle == null) {
             // A race: the adapter was removed after the resource's own 404 check. The resource maps this to 404.
             browse.completion()
@@ -388,7 +388,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
         int error = 0;
         int stopped = 0;
         int transitioning = 0;
-        for (final ProtocolAdapterHandle handle : registry.all()) {
+        for (final ProtocolAdapterHandle handle : handleRegistry.all()) {
             total++;
             final AdapterStatusSnapshot snapshot = handle.snapshot().get();
             if (snapshot == null) {
@@ -409,7 +409,7 @@ public final class ProtocolAdapterManager implements MessageHandler<ProtocolAdap
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────────────────
 
     private void forwardCommand(final @NotNull String adapterId, final @NotNull ProtocolAdapterWrapperCommand command) {
-        final ProtocolAdapterHandle handle = registry.find(adapterId);
+        final ProtocolAdapterHandle handle = handleRegistry.find(adapterId);
         if (handle == null) {
             log.warn(
                     "Dropping {} for unknown v2 adapter '{}'",

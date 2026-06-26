@@ -51,7 +51,7 @@ class ProtocolAdapterManagerTest {
     private FakeClock clock;
     private ManualDispatcher dispatcher;
     private Mailbox<ProtocolAdapterManagerMessage> mailbox;
-    private ProtocolAdapterHandleRegistry registry;
+    private ProtocolAdapterHandleRegistry handleRegistry;
     private RecordingWrapperFactory wrapperFactory;
     private ProtocolAdapterManager manager;
 
@@ -60,12 +60,12 @@ class ProtocolAdapterManagerTest {
         clock = new FakeClock();
         dispatcher = new ManualDispatcher();
         mailbox = new DefaultMailbox<>();
-        registry = new ProtocolAdapterHandleRegistry();
+        handleRegistry = new ProtocolAdapterHandleRegistry();
         wrapperFactory = new RecordingWrapperFactory();
         final ProtocolAdapterFactoryRegistry factories = new ProtocolAdapterFactoryRegistry(
                 Set.of(new ProtocolAdapterManagerTestSupport.TestProtocolAdapterFactory(
                         ProtocolAdapterManagerTestSupport.TEST_PROTOCOL_ID)));
-        manager = new ProtocolAdapterManager(factories, registry, wrapperFactory, clock);
+        manager = new ProtocolAdapterManager(factories, handleRegistry, wrapperFactory, clock);
         dispatcher.attach(mailbox, manager);
         manager.bindSelf(mailbox);
     }
@@ -75,7 +75,7 @@ class ProtocolAdapterManagerTest {
         send(new ConfigurationChanged(List.of(adapter("a").build())));
 
         assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a");
-        assertThat(registry.find("a")).isNotNull();
+        assertThat(handleRegistry.find("a")).isNotNull();
         // The config-declared activation is applied to bring the freshly-created wrapper to its goal.
         assertThat(wrapperFactory.commands("a"))
                 .last()
@@ -91,11 +91,11 @@ class ProtocolAdapterManagerTest {
 
         assertThat(wrapperFactory.commands("a"))
                 .hasAtLeastOneElementOfType(ProtocolAdapterWrapperCommand.StopAdapter.class);
-        assertThat(registry.find("a")).isNull();
+        assertThat(handleRegistry.find("a")).isNull();
 
         // The wrapper reports stopped; teardown completes and there is no recreate.
         fireWrapperStopped("a");
-        assertThat(registry.find("a")).isNull();
+        assertThat(handleRegistry.find("a")).isNull();
         assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a");
     }
 
@@ -105,7 +105,7 @@ class ProtocolAdapterManagerTest {
 
         send(new ConfigurationChanged(List.of()));
 
-        assertThat(registry.find("a")).isNull();
+        assertThat(handleRegistry.find("a")).isNull();
         assertThat(wrapperFactory.commands("a")).noneMatch(ProtocolAdapterWrapperCommand.StopAdapter.class::isInstance);
     }
 
@@ -176,12 +176,12 @@ class ProtocolAdapterManagerTest {
 
         assertThat(wrapperFactory.commands("a"))
                 .hasAtLeastOneElementOfType(ProtocolAdapterWrapperCommand.StopAdapter.class);
-        assertThat(registry.find("a")).isNull();
+        assertThat(handleRegistry.find("a")).isNull();
 
         fireWrapperStopped("a");
 
         assertThat(wrapperFactory.createdAdapterIds()).containsExactly("a", "a");
-        assertThat(registry.find("a")).isNotNull();
+        assertThat(handleRegistry.find("a")).isNotNull();
     }
 
     @Test
@@ -192,7 +192,7 @@ class ProtocolAdapterManagerTest {
         fireWrapperError("a", "boom");
 
         assertThat(wrapperFactory.createdAdapterIds()).hasSize(createdBefore);
-        assertThat(registry.find("a")).isNotNull();
+        assertThat(handleRegistry.find("a")).isNotNull();
     }
 
     @Test
@@ -225,7 +225,7 @@ class ProtocolAdapterManagerTest {
         send(new ConfigurationChanged(
                 List.of(adapter("ghost").protocolId("nope").build())));
 
-        final ProtocolAdapterHandle handle = registry.find("ghost");
+        final ProtocolAdapterHandle handle = handleRegistry.find("ghost");
         assertThat(handle).isNotNull();
         final AdapterStatusSnapshot snapshot = handle.snapshot().get();
         assertThat(snapshot).isNotNull();
@@ -238,7 +238,7 @@ class ProtocolAdapterManagerTest {
     void restCommandToUnknownAdapter_isDroppedSafely() {
         send(new ActivateAdapter("ghost", ProtocolAdapterDirection.BOTH));
 
-        assertThat(registry.find("ghost")).isNull();
+        assertThat(handleRegistry.find("ghost")).isNull();
     }
 
     @Test

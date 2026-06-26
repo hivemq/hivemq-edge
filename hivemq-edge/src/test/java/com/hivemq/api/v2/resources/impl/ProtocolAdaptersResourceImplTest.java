@@ -103,12 +103,12 @@ class ProtocolAdaptersResourceImplTest {
     private static final MailboxSender<ProtocolAdapterWrapperMessage> NO_OP_WRAPPER_SENDER = message -> {};
 
     private final RecordingManager manager = new RecordingManager();
-    private final ProtocolAdapterHandleRegistry registry = new ProtocolAdapterHandleRegistry();
+    private final ProtocolAdapterHandleRegistry handleRegistry = new ProtocolAdapterHandleRegistry();
     private final ProtocolAdapterExtractor configExtractor = mock(ProtocolAdapterExtractor.class);
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private @NotNull ProtocolAdaptersResourceImpl resource(final @NotNull ProtocolAdapterFactoryRegistry factories) {
-        return new ProtocolAdaptersResourceImpl(manager, registry, factories, configExtractor, objectMapper, 50L);
+        return new ProtocolAdaptersResourceImpl(manager, handleRegistry, factories, configExtractor, objectMapper, 50L);
     }
 
     private @NotNull ProtocolAdaptersResourceImpl resource() {
@@ -568,7 +568,7 @@ class ProtocolAdaptersResourceImplTest {
     // ── helpers ──────────────────────────────────────────────────────────────────────────────────────────────────
 
     private void register(final @NotNull String adapterId, final @NotNull AdapterStatusSnapshot snapshot) {
-        registry.register(new ProtocolAdapterHandle(
+        handleRegistry.register(new ProtocolAdapterHandle(
                 adapterId, NO_OP_WRAPPER_SENDER, new java.util.concurrent.atomic.AtomicReference<>(snapshot)));
     }
 
