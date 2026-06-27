@@ -46,7 +46,7 @@ describe('AssetsTable', () => {
     cy.get('.chakra-skeleton').should('have.length', 18)
 
     cy.wait('@getStatus')
-    cy.get('table[aria-label="List of Pulse assets"] td[colspan="6"]').within(() => {
+    cy.get('table[aria-label="List of Assets"] td[colspan="6"]').within(() => {
       cy.get('[role="alert"]').should('have.text', 'No assets found').should('have.attr', 'data-status', 'info')
     })
   })
@@ -63,7 +63,7 @@ describe('AssetsTable', () => {
 
     cy.wait('@getStatus')
 
-    cy.get('table').should('have.attr', 'aria-label', 'List of Pulse assets')
+    cy.get('table').should('have.attr', 'aria-label', 'List of Assets')
     cy.get('table thead tr th').should('have.length', 6)
     cy.get('table thead tr th button').eq(0).should('have.text', 'Name')
     cy.get('table thead tr th button').eq(1).should('have.text', 'Description')
@@ -137,7 +137,7 @@ describe('AssetsTable', () => {
 
     cy.wait('@getStatus')
 
-    cy.get('table').should('have.attr', 'aria-label', 'List of Pulse assets')
+    cy.get('table').should('have.attr', 'aria-label', 'List of Assets')
     cy.get('table thead tr th').should('have.length', 4)
     cy.get('table thead tr th button').eq(0).should('have.text', 'Name')
     cy.get('table thead tr th button').eq(1).should('contain.text', 'Topic')

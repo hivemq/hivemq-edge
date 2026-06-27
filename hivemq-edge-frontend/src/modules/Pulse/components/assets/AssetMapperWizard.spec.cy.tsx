@@ -58,7 +58,7 @@ describe('AssetMapperWizard', () => {
         cy.getByTestId('more-info-trigger').click()
         cy.get('[data-testid="more-info-popover"] p').should(
           'have.text',
-          'Asset mappers group selected sources of data together, to restrict access to integration points (tags and topic filters) and to enable the destination schema from Pulse.'
+          'Asset mappers group selected sources of data together, to restrict access to integration points (tags and topic filters) and to enable the destination schema from HiveMQ Platform.'
         )
         cy.get('[data-testid="more-info-popover"] a').should(
           'have.attr',

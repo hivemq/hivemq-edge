@@ -53,7 +53,7 @@ describe('EntityReferencesWizard', () => {
           .should('be.visible')
           .should(
             'contain.text',
-            'Data sources are the entities from the Workspace where integration points are collected from. Edge and the Pulse Agent will be added automatically.'
+            'Data sources are the entities from the Workspace where integration points are collected from. Edge and the HiveMQ Platform will be added automatically.'
           )
         cy.getByTestId('more-info-trigger').click()
         cy.get('[data-testid="more-info-popover"]').should('not.be.visible')
