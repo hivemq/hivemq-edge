@@ -10,7 +10,7 @@ export class AssetMapperFormPage extends RJSFormField {
   }
 
   get submit() {
-    return cy.get('[role="dialog"][aria-label="Managing Pulse Asset Mappings"] footer button[type="submit"]')
+    return cy.get('[role="dialog"][aria-label="Managing Asset Mappings"] footer button[type="submit"]')
   }
 
   get assetMappings() {

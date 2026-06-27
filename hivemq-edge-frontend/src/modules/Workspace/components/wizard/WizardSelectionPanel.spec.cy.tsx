@@ -42,7 +42,7 @@ describe('WizardSelectionPanel', () => {
     position: { x: 500, y: 100 },
     data: {
       id: 'pulse-1',
-      label: 'Pulse Agent',
+      label: 'HiveMQ Platform',
       status: {
         activation: PulseStatus.activation.ACTIVATED,
         runtime: PulseStatus.runtime.CONNECTED,
@@ -325,7 +325,7 @@ describe('WizardSelectionPanel', () => {
         actions.startWizard(EntityType.ASSET_MAPPER)
       })
 
-      cy.contains(/pulse agent.*required/i).should('be.visible')
+      cy.contains('Required').should('be.visible')
     })
 
     it('should mark Pulse Agent as required in Asset Mapper', () => {
