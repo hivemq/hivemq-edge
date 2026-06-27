@@ -6,7 +6,7 @@ export class ActivationFormPage extends RJSFormField {
   }
 
   get form() {
-    return cy.get('[role="dialog"][aria-label="Pulse Agent Activation"]')
+    return cy.get('[role="dialog"][aria-label="HiveMQ Platform Connection"]')
   }
 
   get status() {
