@@ -109,6 +109,18 @@ public final class InternalTopicFilterSubscriber {
     // The per-message handler. Set once at construction (Builder requires it).
     private final @NotNull Processor processor;
 
+    // The factory that built this subscriber, kept as a back-reference so that attach()/detach() can
+    // (de)register this subscriber in the factory's registry — see isExcludedIngressClientId() below.
+    private final @NotNull InternalTopicFilterSubscriberFactory factory;
+
+    // excludedIngressClientId — ingress-exclusion (generalized No Local). If set, a message whose
+    //            INGRESS client id (the publishing client, i.e. the distributor's `sender`) equals this
+    //            value must NOT be delivered to us. Set once via the builder, immutable after build();
+    //            null means "no exclusion — accept from everyone". The check happens at distribution
+    //            time (PublishDistributorImpl), BEFORE the message is queued, so an excluded message
+    //            never enters our queue. See isExcludedIngressClientId().
+    private final @Nullable String excludedIngressClientId;
+
     // ── mutable lifecycle state, all touched only via the verbs below ────────────────────────────
     // topicFilters — the CURRENT desired filter set. When detached this is just a remembered set
     //                (replayed by the next attach()); when attached the topic tree is kept reconciled
@@ -123,6 +135,12 @@ public final class InternalTopicFilterSubscriber {
     //             drained and handed to the processor).
     private boolean consuming = false;
 
+    // deallocated — true once deallocate() has cleared the queue. TERMINAL: once deallocated the
+    //               subscriber is dead and cannot be resurrected; every verb is a no-op (or, for
+    //               attach/consume, rejected) from then on. This flag makes deallocate()/stop() safely
+    //               idempotent and guards the other verbs against use-after-deallocate.
+    private boolean deallocated = false;
+
     // endregion
 
     // region constructor — package-private, only the factory/builder construct this
@@ -135,18 +153,24 @@ public final class InternalTopicFilterSubscriber {
     //                   configuration ID of the owning instance.
     // processor       — the per-message handler (runs on the SingleWriter thread).
     // initialFilters  — the topic filter set assembled in the builder (may be empty; that is valid).
+    // excludedIngressClientId — ingress-exclusion id, or null for none (see the field above).
+    // factory         — the factory that built us, used as the registry for ingress-exclusion lookups.
     //
     InternalTopicFilterSubscriber(
             final @NotNull String componentPrefix,
             final @NotNull String instanceId,
             final @NotNull Processor processor,
             final @NotNull Set<String> initialFilters,
+            final @Nullable String excludedIngressClientId,
+            final @NotNull InternalTopicFilterSubscriberFactory factory,
             final @NotNull LocalTopicTree topicTree,
             final @NotNull ClientQueuePersistence clientQueuePersistence,
             final @NotNull SingleWriterService singleWriterService) {
         this.clientId = INTERNAL_SUBSCRIBER_PREFIX + componentPrefix + "::" + instanceId;
         this.processor = processor;
         this.topicFilters.addAll(initialFilters);
+        this.excludedIngressClientId = excludedIngressClientId;
+        this.factory = factory;
         this.topicTree = topicTree;
         this.clientQueuePersistence = clientQueuePersistence;
         this.singleWriterService = singleWriterService;
@@ -185,22 +209,27 @@ public final class InternalTopicFilterSubscriber {
 
         private final @NotNull String componentPrefix;
         private final @NotNull String instanceId;
+        private final @NotNull InternalTopicFilterSubscriberFactory factory;
         private final @NotNull LocalTopicTree topicTree;
         private final @NotNull ClientQueuePersistence clientQueuePersistence;
         private final @NotNull SingleWriterService singleWriterService;
 
         private @Nullable Processor processor = null; // required; checked in build()
         private final @NotNull Set<String> topicFilters = new LinkedHashSet<>();
+        private @Nullable String excludedIngressClientId = null; // optional; ingress-exclusion
 
-        // Package-private — only the factory creates builders (it supplies the injected singletons).
+        // Package-private — only the factory creates builders (it supplies the injected singletons and
+        // itself, as the registry the built subscriber registers with on attach()).
         Builder(
                 final @NotNull String componentPrefix,
                 final @NotNull String instanceId,
+                final @NotNull InternalTopicFilterSubscriberFactory factory,
                 final @NotNull LocalTopicTree topicTree,
                 final @NotNull ClientQueuePersistence clientQueuePersistence,
                 final @NotNull SingleWriterService singleWriterService) {
             this.componentPrefix = componentPrefix;
             this.instanceId = instanceId;
+            this.factory = factory;
             this.topicTree = topicTree;
             this.clientQueuePersistence = clientQueuePersistence;
             this.singleWriterService = singleWriterService;
@@ -209,6 +238,15 @@ public final class InternalTopicFilterSubscriber {
         // Required: the per-message work.
         public @NotNull Builder withProcessor(final @NotNull Processor processor) {
             this.processor = processor;
+            return this;
+        }
+
+        // Optional: ingress-exclusion (generalized No Local). A message whose ingress (publishing)
+        // client id equals this value will not be delivered to the built subscriber. Build-time only;
+        // immutable after build(). For a bridge, this is the peer it forwards to — so a message it sent
+        // us is not sent straight back. The plain No Local case is excludedIngressClientId == our own id.
+        public @NotNull Builder withExcludedIngressClientId(final @NotNull String excludedIngressClientId) {
+            this.excludedIngressClientId = excludedIngressClientId;
             return this;
         }
 
@@ -259,6 +297,8 @@ public final class InternalTopicFilterSubscriber {
                     instanceId,
                     processor,
                     topicFilters,
+                    excludedIngressClientId,
+                    factory,
                     topicTree,
                     clientQueuePersistence,
                     singleWriterService);
@@ -280,6 +320,7 @@ public final class InternalTopicFilterSubscriber {
     }
 
     public synchronized @NotNull InternalTopicFilterSubscriber withTopicFilter(final @NotNull List<String> newFilters) {
+        throwIfDeallocated();
         final Set<String> target = new LinkedHashSet<>(newFilters);
         if (attached) {
             // Reconcile the tree with the new target: remove what is no longer wanted, add what is new.
@@ -305,6 +346,7 @@ public final class InternalTopicFilterSubscriber {
 
     public synchronized @NotNull InternalTopicFilterSubscriber addTopicFilter(
             final @NotNull List<String> topicFiltersToAdd) {
+        throwIfDeallocated();
         for (final String topicFilter : topicFiltersToAdd) {
             if (topicFilters.add(topicFilter) && attached) {
                 addToTree(topicFilter);
@@ -319,6 +361,7 @@ public final class InternalTopicFilterSubscriber {
 
     public synchronized @NotNull InternalTopicFilterSubscriber removeTopicFilter(
             final @NotNull List<String> topicFiltersToRemove) {
+        throwIfDeallocated();
         for (final String topicFilter : topicFiltersToRemove) {
             if (topicFilters.remove(topicFilter) && attached) {
                 removeFromTree(topicFilter);
@@ -349,17 +392,22 @@ public final class InternalTopicFilterSubscriber {
     // verbs so state transitions and tree reconciliation never interleave.
     //
     public synchronized @NotNull InternalTopicFilterSubscriber attach() {
+        throwIfDeallocated();
         if (attached) {
             return this;
         }
         for (final String topicFilter : topicFilters) {
             addToTree(topicFilter);
         }
+        // Register with the factory's registry so the distributor can find us by clientId and ask
+        // isExcludedIngressClientId(...) before queueing a message to us. Symmetric with detach().
+        factory.register(this);
         attached = true;
         return this;
     }
 
     public synchronized @NotNull InternalTopicFilterSubscriber consume() {
+        throwIfDeallocated();
         if (consuming) {
             return this;
         }
@@ -373,6 +421,7 @@ public final class InternalTopicFilterSubscriber {
     }
 
     public synchronized @NotNull InternalTopicFilterSubscriber pause() {
+        throwIfDeallocated();
         if (!consuming) {
             return this;
         }
@@ -382,25 +431,45 @@ public final class InternalTopicFilterSubscriber {
     }
 
     public synchronized @NotNull InternalTopicFilterSubscriber detach() {
+        throwIfDeallocated();
         if (!attached) {
             return this;
         }
         for (final String topicFilter : topicFilters) {
             removeFromTree(topicFilter);
         }
+        factory.deregister(this); // symmetric with attach()
         attached = false;
         return this;
     }
 
+    // deallocate() is the one terminal verb — and the one exception to throwIfDeallocated(): calling it
+    // on an already-dead subscriber is a no-op (idempotent), not an error.
     public synchronized void deallocate() {
+        if (deallocated) {
+            return; // idempotent — already dead, nothing to clear
+        }
         if (attached || consuming) {
             throw new IllegalStateException("InternalTopicFilterSubscriber '" + clientId
                     + "' must be detached and paused before deallocate() (attached="
                     + attached + ", consuming="
                     + consuming + ")");
         }
-        // Remove the queue entry from persistence entirely. false == do not keep a tombstone.
+        // Remove the queue entry from persistence entirely. false == do not keep a tombstone. This
+        // also DROPS any messages that were collected but not yet processed — which is exactly why a
+        // long-lived subscriber must eventually stop()/deallocate() rather than just detach(), or the
+        // queue (and its memory) would linger.
         clientQueuePersistence.clear(clientId, false);
+        deallocated = true;
+    }
+
+    // Guard for every verb except deallocate(): a deallocated subscriber is dead and cannot be
+    // resurrected or operated on. Throws on any use-after-deallocate.
+    private void throwIfDeallocated() {
+        if (deallocated) {
+            throw new IllegalStateException(
+                    "InternalTopicFilterSubscriber '" + clientId + "' has been deallocated and cannot be used");
+        }
     }
 
     // endregion
@@ -415,6 +484,10 @@ public final class InternalTopicFilterSubscriber {
     // They exist only to spare callers the common two-/three-call sequences; a caller that wants finer
     // control (e.g. attach without consuming, or pause without deallocating) calls the verbs directly.
     //
+    // start() throws on a deallocated subscriber (you cannot resurrect a dead one — that goes through
+    // attach()). stop() is idempotent: it is the only composition you can safely call on a dead
+    // subscriber, returning quietly (it just deallocates, which is itself a no-op when already dead).
+    //
     public synchronized @NotNull InternalTopicFilterSubscriber start() {
         attach();
         consume();
@@ -422,9 +495,33 @@ public final class InternalTopicFilterSubscriber {
     }
 
     public synchronized void stop() {
+        if (deallocated) {
+            return; // already dead — stop() is idempotent
+        }
         detach();
         pause();
         deallocate();
+    }
+
+    // endregion
+
+    // region ingress-exclusion — identity and the accept decision
+    // =================================================================================================================
+    // clientId() — this subscriber's reserved-prefix id, used by the factory as the registry key.
+    //
+    // isExcludedIngressClientId(senderClientId) — the ingress-exclusion decision, called by the publish
+    //   path at distribution time (BEFORE queueing) with the ingress/publishing client id (its
+    //   `sender`). Returns true iff an excluded id is configured and equals senderClientId — in which
+    //   case the message must NOT be queued to us. With no excluded id (the common case) it always
+    //   returns false. The excluded id is immutable after build(), so this is a lock-free read and safe
+    //   to call from the publish path concurrently with the lifecycle verbs.
+    //
+    public @NotNull String clientId() {
+        return clientId;
+    }
+
+    public boolean isExcludedIngressClientId(final @Nullable String senderClientId) {
+        return excludedIngressClientId != null && excludedIngressClientId.equals(senderClientId);
     }
 
     // endregion

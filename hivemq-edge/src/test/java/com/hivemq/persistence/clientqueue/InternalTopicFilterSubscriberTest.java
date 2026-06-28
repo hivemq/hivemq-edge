@@ -189,6 +189,81 @@ class InternalTopicFilterSubscriberTest {
         assertThat(treeIdsFor("anything")).isEmpty();
     }
 
+    // ── ingress-exclusion ───────────────────────────────────────────────────────────────────────────
+
+    @Test
+    void isExcludedIngressClientId_excludesOnlyTheConfiguredId() {
+        final InternalTopicFilterSubscriber s = factory.create("tynebridge", "my-bridge")
+                .withProcessor(m -> {})
+                .withExcludedIngressClientId("peer-broker")
+                .build();
+
+        assertThat(s.isExcludedIngressClientId("peer-broker"))
+                .as("the configured id is excluded")
+                .isTrue();
+        assertThat(s.isExcludedIngressClientId("someone-else"))
+                .as("any other id is not excluded")
+                .isFalse();
+        assertThat(s.isExcludedIngressClientId(null))
+                .as("a null sender is not excluded")
+                .isFalse();
+    }
+
+    @Test
+    void isExcludedIngressClientId_excludesNoOneWhenNoExclusionConfigured() {
+        final InternalTopicFilterSubscriber s = build("sensors/#"); // no withExcludedIngressClientId
+
+        assertThat(s.isExcludedIngressClientId("anyone")).isFalse();
+        assertThat(s.isExcludedIngressClientId(null)).isFalse();
+    }
+
+    // ── terminal state: dead after deallocate ───────────────────────────────────────────────────────
+
+    @Test
+    void afterDeallocate_everyVerbThrows_exceptDeallocateAndStop() {
+        final InternalTopicFilterSubscriber s = build("sensors/#");
+        s.stop(); // attach was never called; stop() = detach (no-op) + pause (no-op) + deallocate
+
+        // deallocate() and stop() are idempotent no-ops on a dead subscriber.
+        s.deallocate();
+        s.stop();
+
+        // every other verb throws use-after-deallocate.
+        assertThatThrownBy(s::attach).isInstanceOf(IllegalStateException.class).hasMessageContaining("deallocated");
+        assertThatThrownBy(s::consume).isInstanceOf(IllegalStateException.class).hasMessageContaining("deallocated");
+        assertThatThrownBy(s::pause).isInstanceOf(IllegalStateException.class).hasMessageContaining("deallocated");
+        assertThatThrownBy(s::detach).isInstanceOf(IllegalStateException.class).hasMessageContaining("deallocated");
+        assertThatThrownBy(s::start).isInstanceOf(IllegalStateException.class).hasMessageContaining("deallocated");
+        assertThatThrownBy(() -> s.addTopicFilter("x/#"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("deallocated");
+        assertThatThrownBy(() -> s.removeTopicFilter("x/#"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("deallocated");
+        assertThatThrownBy(() -> s.withTopicFilter("x/#"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("deallocated");
+    }
+
+    @Test
+    void attach_registersInFactory_detachDeregisters() {
+        final InternalTopicFilterSubscriber s = build("sensors/#");
+
+        assertThat(factory.getSubscriber(clientId()))
+                .as("not registered before attach")
+                .isNull();
+
+        s.attach();
+        assertThat(factory.getSubscriber(clientId()))
+                .as("registered after attach")
+                .isSameAs(s);
+
+        s.detach();
+        assertThat(factory.getSubscriber(clientId()))
+                .as("deregistered after detach")
+                .isNull();
+    }
+
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────────
 
     private @NotNull InternalTopicFilterSubscriber build(final @NotNull String... filters) {

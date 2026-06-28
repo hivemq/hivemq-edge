@@ -19,7 +19,9 @@ import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 // region InternalTopicFilterSubscriberFactory — the injected entry point for building subscribers
 // =====================================================================================================================
@@ -43,6 +45,13 @@ public class InternalTopicFilterSubscriberFactory {
     private final @NotNull ClientQueuePersistence clientQueuePersistence;
     private final @NotNull SingleWriterService singleWriterService;
 
+    // Registry of currently-attached subscribers, keyed by their reserved-prefix clientId. Populated
+    // by attach(), cleared by detach(). The PublishDistributor consults it (getSubscriber) to ask a
+    // subscriber's isExcludedIngressClientId(...) before queueing a publish — i.e. ingress-exclusion.
+    // Concurrent because the publish path reads it while lifecycle verbs (any thread) mutate it.
+    private final @NotNull ConcurrentHashMap<String, InternalTopicFilterSubscriber> registry =
+            new ConcurrentHashMap<>();
+
     @Inject
     InternalTopicFilterSubscriberFactory(
             final @NotNull LocalTopicTree topicTree,
@@ -51,6 +60,24 @@ public class InternalTopicFilterSubscriberFactory {
         this.topicTree = topicTree;
         this.clientQueuePersistence = clientQueuePersistence;
         this.singleWriterService = singleWriterService;
+    }
+
+    // ── registry — called by the subscriber's attach()/detach(), read by the distributor ────────────
+
+    void register(final @NotNull InternalTopicFilterSubscriber subscriber) {
+        registry.put(subscriber.clientId(), subscriber);
+    }
+
+    void deregister(final @NotNull InternalTopicFilterSubscriber subscriber) {
+        registry.remove(subscriber.clientId(), subscriber);
+    }
+
+    /**
+     * The attached subscriber with this reserved-prefix clientId, or null if none is attached. Used by
+     * the PublishDistributor to ask isExcludedIngressClientId(...) before queueing a publish.
+     */
+    public @Nullable InternalTopicFilterSubscriber getSubscriber(final @NotNull String clientId) {
+        return registry.get(clientId);
     }
 
     // Begin building a subscriber for the given component identity.
@@ -63,7 +90,7 @@ public class InternalTopicFilterSubscriberFactory {
     public @NotNull InternalTopicFilterSubscriber.Builder create(
             final @NotNull String componentPrefix, final @NotNull String instanceId) {
         return new InternalTopicFilterSubscriber.Builder(
-                componentPrefix, instanceId, topicTree, clientQueuePersistence, singleWriterService);
+                componentPrefix, instanceId, this, topicTree, clientQueuePersistence, singleWriterService);
     }
 }
 
