@@ -23,6 +23,7 @@ import com.hivemq.configuration.entity.listener.ListenerEntity;
 import com.hivemq.configuration.entity.pulse.PulseEntity;
 import com.hivemq.configuration.entity.uns.UnsConfigEntity;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
+import com.hivemq.protocols.v2.config.V2ConfigEntity;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -96,6 +97,11 @@ public class HiveMQConfigEntity {
     @XmlElementWrapper(name = "protocol-adapters")
     @XmlElement(name = "protocol-adapter")
     private @NotNull List<ProtocolAdapterEntity> protocolAdapterConfig = new ArrayList<>();
+
+    // v2 side-by-side config container (touchpoint 1): additive and disjoint from the legacy
+    // <protocol-adapters> above. Absent ⇒ empty container, so old configs parse unchanged.
+    @XmlElement(name = "v2")
+    private @NotNull V2ConfigEntity v2 = new V2ConfigEntity();
 
     @XmlElementWrapper(name = "data-combiners")
     @XmlElement(name = "data-combiner")
@@ -193,6 +199,10 @@ public class HiveMQConfigEntity {
 
     public @NotNull List<ProtocolAdapterEntity> getProtocolAdapterConfig() {
         return protocolAdapterConfig;
+    }
+
+    public @NotNull V2ConfigEntity getV2() {
+        return v2;
     }
 
     public @NotNull Map<String, Object> getModuleConfigs() {
